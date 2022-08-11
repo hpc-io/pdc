@@ -48,7 +48,7 @@ set(PROGRAMS
   region_transfer_overlap_2D
   region_transfer_overlap_3D
   region_transfer_merge
-#  obj_round_robin_io
+  obj_round_robin_io
   close_server
 #  stat_obj
   delete_obj
@@ -301,9 +301,9 @@ if(BUILD_MPI_TESTING)
     add_test(NAME region_transfer_all_append_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_transfer_all_append_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 2 4 )
     add_test(NAME region_transfer_all_append_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 2 4 )
-    add_test(NAME obj_round_robin_io_1D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 1 )
-    add_test(NAME obj_round_robin_io_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 2 )
-    add_test(NAME obj_round_robin_io_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 3 )
+   # add_test(NAME obj_round_robin_io_1D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 1 )
+   # add_test(NAME obj_round_robin_io_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 2 )
+   # add_test(NAME obj_round_robin_io_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 3 )
     add_test(NAME pdc_init_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./pdc_init ${MPI_RUN_CMD} 2 4 )
 #    add_test(NAME create_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_prop ${MPI_RUN_CMD} 2 4 )
 #    add_test(NAME set_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./set_prop ${MPI_RUN_CMD} 2 4 )
@@ -357,9 +357,9 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_all_append_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_append_2D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_append_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_1D     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_2D     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_3D     PROPERTIES LABELS parallel )
+#    set_tests_properties(obj_round_robin_io_1D     PROPERTIES LABELS parallel )
+#    set_tests_properties(obj_round_robin_io_2D     PROPERTIES LABELS parallel )
+#    set_tests_properties(obj_round_robin_io_3D     PROPERTIES LABELS parallel )
     set_tests_properties(pdc_init_mpi     PROPERTIES LABELS parallel )
 #    set_tests_properties(create_prop_mpi  PROPERTIES LABELS parallel )
 #    set_tests_properties(set_prop_mpi  PROPERTIES LABELS parallel )
