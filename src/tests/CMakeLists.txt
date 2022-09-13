@@ -66,7 +66,7 @@ set(PROGRAMS
 #  kvtag_query
 #  kvtag_query_scale
 #  obj_transformation
-  query_data
+  region_transfer_query
   region_transfer
   region_transfer_status
   region_transfer_skewed

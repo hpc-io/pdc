@@ -7789,21 +7789,29 @@ perr_t
 attach_local_storage_region_to_query(pdc_query_t *query)
 
 {
-    pdc_metadata_t *meta;
+    /* pdc_metadata_t *meta; */
+    data_server_region_t *obj_reg;
 
     if (NULL == query->constraint) {
         printf("==PDC_SERVER[%d]: %s - query->constraint is NULL!\n", pdc_server_rank_g, __func__);
         return FAIL;
     }
 
-    meta = PDC_Server_get_obj_metadata(query->constraint->obj_id);
-    if (NULL == meta) {
-        printf("==PDC_SERVER[%d]: %s - cannot find metadata %" PRIu64 "!\n", pdc_server_rank_g, __func__,
-               query->constraint->obj_id);
-        return FAIL;
-    }
+    /* meta = PDC_Server_get_obj_metadata(query->constraint->obj_id); */
+    /* if (NULL == meta) { */
+    /*     printf("==PDC_SERVER[%d]: %s - cannot find metadata %" PRIu64 "!\n", pdc_server_rank_g, __func__, */
+    /*            query->constraint->obj_id); */
+    /*     return FAIL; */
+    /* } */
+    /* query->constraint->storage_region_list_head = meta->storage_region_list_head; */
 
-    query->constraint->storage_region_list_head = meta->storage_region_list_head;
+    obj_reg = PDC_Server_get_obj_region(query->constraint->obj_id);
+    if (obj_reg == NULL) {
+        printf("==PDC_SERVER[%d]: %s - cannot find region from object!\n", pdc_server_rank_g, __func__);
+    }
+    else
+        query->constraint->storage_region_list_head = obj_reg->region_storage_head;
+
     return SUCCEED;
 }
 
