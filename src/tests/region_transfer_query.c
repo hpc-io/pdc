@@ -55,9 +55,9 @@ main(int argc, char **argv)
     offset_length[1] = 3;
     offset_length[2] = 5;
 
-    double *data      = (double *)malloc(sizeof(double) * BUF_LEN);
-    double *query_data      = (double *)malloc(sizeof(double) * BUF_LEN);
-    dims[0]        = BUF_LEN;
+    double *data       = (double *)malloc(sizeof(double) * BUF_LEN);
+    double *query_data = (double *)malloc(sizeof(double) * BUF_LEN);
+    dims[0]            = BUF_LEN;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -161,7 +161,7 @@ main(int argc, char **argv)
 
     // Query
     pdc_query_t *q, *q0, *q1;
-    double lo=1.0, hi=8.0;
+    double       lo = 1.0, hi = 8.0;
     printf("constraint: %f < value < %f\n", lo, hi);
     pdc_selection_t sel;
 

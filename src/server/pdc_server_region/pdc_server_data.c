@@ -7799,7 +7799,8 @@ attach_local_storage_region_to_query(pdc_query_t *query)
 
     /* meta = PDC_Server_get_obj_metadata(query->constraint->obj_id); */
     /* if (NULL == meta) { */
-    /*     printf("==PDC_SERVER[%d]: %s - cannot find metadata %" PRIu64 "!\n", pdc_server_rank_g, __func__, */
+    /*     printf("==PDC_SERVER[%d]: %s - cannot find metadata %" PRIu64 "!\n", pdc_server_rank_g, __func__,
+     */
     /*            query->constraint->obj_id); */
     /*     return FAIL; */
     /* } */
