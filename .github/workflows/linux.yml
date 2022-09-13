@@ -36,5 +36,5 @@ jobs:
       #     mpirun -n 1 ./close_server
 
       - name: Test PDC
-      #  working-directory: ./src/build
+        working-directory: build
         run: ctest -L serial
