@@ -773,7 +773,7 @@ drc_access_again:
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
-    *hg_class = HG_Init_opt(na_info_string, NA_TRUE, &init_info);
+    *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
         printf("Error with HG_Init()\n");
         return FAIL;

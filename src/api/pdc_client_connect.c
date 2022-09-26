@@ -44,7 +44,6 @@
 
 #include "mercury.h"
 #include "mercury_macros.h"
-#include "mercury_hl.h"
 
 #include <stdio.h>
 #include <stdlib.h>

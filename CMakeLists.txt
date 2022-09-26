@@ -265,15 +265,6 @@ if(PDC_TIMING)
 endif()
 
 #-----------------------------------------------------------------------------
-# SERVER CACHE option
-#-----------------------------------------------------------------------------
-option(PDC_SERVER_CACHE "Enable timing." OFF)
-if(PDC_SERVER_CACHE)
-  set(PDC_SERVER_CACHE 1)
-endif()
-
-
-#-----------------------------------------------------------------------------
 # CHECKPOINT option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_CHECKPOINT "Enable checkpointing." ON)
