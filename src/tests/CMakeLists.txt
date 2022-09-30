@@ -71,9 +71,9 @@ set(PROGRAMS
   region_transfer_status
   region_transfer_skewed
   region_transfer_2D
-  region_transfer_2D_skewed
+  # region_transfer_2D_skewed
   region_transfer_3D
-  region_transfer_3D_skewed
+  # region_transfer_3D_skewed
   region_transfer_write_only
   region_transfer_read_only
   region_transfer_write_read
