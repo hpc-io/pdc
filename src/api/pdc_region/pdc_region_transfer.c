@@ -1983,7 +1983,8 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     }
     else {
         // metadata is freed with previous wait (e.g. with posix consistency)
-        /* printf("PDC Client PDCregion_transfer_status attempt to check status for inactive transfer request @ " */
+        /* printf("PDC Client PDCregion_transfer_status attempt to check status for inactive transfer request
+         * @ " */
         /*        "line %d\n", */
         /*        __LINE__); */
         ret_value = SUCCEED;
