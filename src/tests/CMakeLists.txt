@@ -55,6 +55,7 @@ set(PROGRAMS
 #  stat_obj
   delete_obj
   vpicio
+  vpicio_mts
   bdcats
   vpicio_old
   bdcats_old
