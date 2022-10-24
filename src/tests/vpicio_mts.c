@@ -91,11 +91,12 @@ main(int argc, char **argv)
     numparticles = NPARTICLES;
     if (argc == 4) {
         numparticles = atoll(argv[1]);
-        steps = atoi(argv[2]);
-        sleeptime = atoi(argv[3]);
+        steps        = atoi(argv[2]);
+        sleeptime    = atoi(argv[3]);
     }
     if (rank == 0)
-        printf("Writing %" PRIu64 " number of particles for %d steps with %d clients.\n", numparticles, steps, size);
+        printf("Writing %" PRIu64 " number of particles for %d steps with %d clients.\n", numparticles, steps,
+               size);
 
     dims[0] = numparticles;
 
@@ -192,9 +193,8 @@ main(int argc, char **argv)
     region_id11 = PDCregion_create(ndim, offset_remote, mysize);
     region_id22 = PDCregion_create(ndim, offset_remote, mysize);
 
-
     for (i = 0; i < steps; i++) {
-        
+
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
@@ -292,12 +292,14 @@ main(int argc, char **argv)
             printf("Array pz transfer request creation failed\n");
             return 1;
         }
-        transfer_request_id1 = PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_id1, region_id11);
+        transfer_request_id1 =
+            PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_id1, region_id11);
         if (transfer_request_id1 == 0) {
             printf("Array id1 transfer request creation failed\n");
             return 1;
         }
-        transfer_request_id2 = PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_id2, region_id22);
+        transfer_request_id2 =
+            PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_id2, region_id22);
         if (transfer_request_id2 == 0) {
             printf("Array id2 transfer request creation failed\n");
             return 1;
