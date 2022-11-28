@@ -171,7 +171,7 @@ Run 64 client processes that concurrently create 1000 objects in total:
 PDC on Perlmutter
 ---------------------------
 
-For job allocation on Perlmutter make sure you are using the most recent version of Cray MPICH (8.1.17). You can verify that with `echo $CRAY_MPICH_VERSION`. You also need to export `FI_CXI_DEFAULT_VNI` environment variable to a unique value for each concurrent srun command that shares a node, otherwise you will receive "MPI OFI Address already in use".
+For job allocation on Perlmutter make sure you are using the most recent version of Cray MPICH (8.1.17). You can verify that with ``echo $CRAY_MPICH_VERSION``. You also need to export ``FI_CXI_DEFAULT_VNI`` environment variable to a unique value for each concurrent srun command that shares a node, otherwise you will receive "MPI OFI Address already in use".
 
 .. code-block:: Bash
 
