@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -76,6 +75,7 @@ main(int argc, char **argv)
     uint64_t *offset;
     uint64_t *offset_remote;
     uint64_t *mysize;
+    double    t0, t1;
 
     pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
         transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
@@ -153,6 +153,47 @@ main(int argc, char **argv)
     obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
 
+    for (i = 0; i < numparticles; i++) {
+        id1[i] = i;
+        id2[i] = i * 2;
+        x[i]   = uniform_random_number() * x_dim;
+        y[i]   = uniform_random_number() * y_dim;
+        z[i]   = ((float)id1[i] / numparticles) * z_dim;
+        px[i]  = uniform_random_number() * x_dim;
+        py[i]  = uniform_random_number() * y_dim;
+        pz[i]  = ((float)id2[i] / numparticles) * z_dim;
+    }
+
+    offset           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset_remote    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    mysize           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+    offset[0]        = 0;
+    offset_remote[0] = rank * numparticles;
+    mysize[0]        = numparticles;
+
+    // create a region
+    region_x   = PDCregion_create(ndim, offset, mysize);
+    region_y   = PDCregion_create(ndim, offset, mysize);
+    region_z   = PDCregion_create(ndim, offset, mysize);
+    region_px  = PDCregion_create(ndim, offset, mysize);
+    region_py  = PDCregion_create(ndim, offset, mysize);
+    region_pz  = PDCregion_create(ndim, offset, mysize);
+    region_id1 = PDCregion_create(ndim, offset, mysize);
+    region_id2 = PDCregion_create(ndim, offset, mysize);
+
+    region_xx   = PDCregion_create(ndim, offset_remote, mysize);
+    region_yy   = PDCregion_create(ndim, offset_remote, mysize);
+    region_zz   = PDCregion_create(ndim, offset_remote, mysize);
+    region_pxx  = PDCregion_create(ndim, offset_remote, mysize);
+    region_pyy  = PDCregion_create(ndim, offset_remote, mysize);
+    region_pzz  = PDCregion_create(ndim, offset_remote, mysize);
+    region_id11 = PDCregion_create(ndim, offset_remote, mysize);
+    region_id22 = PDCregion_create(ndim, offset_remote, mysize);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    t0 = MPI_Wtime();
+#endif
     obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0, comm);
     if (obj_xx == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
@@ -196,34 +237,12 @@ main(int argc, char **argv)
         exit(-1);
     }
 
-    offset           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset_remote    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    mysize           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0]        = 0;
-    offset_remote[0] = rank * numparticles;
-    mysize[0]        = numparticles;
-
-    // create a region
-    region_x   = PDCregion_create(ndim, offset, mysize);
-    region_y   = PDCregion_create(ndim, offset, mysize);
-    region_z   = PDCregion_create(ndim, offset, mysize);
-    region_px  = PDCregion_create(ndim, offset, mysize);
-    region_py  = PDCregion_create(ndim, offset, mysize);
-    region_pz  = PDCregion_create(ndim, offset, mysize);
-    region_id1 = PDCregion_create(ndim, offset, mysize);
-    region_id2 = PDCregion_create(ndim, offset, mysize);
-
-    region_xx   = PDCregion_create(ndim, offset_remote, mysize);
-    region_yy   = PDCregion_create(ndim, offset_remote, mysize);
-    region_zz   = PDCregion_create(ndim, offset_remote, mysize);
-    region_pxx  = PDCregion_create(ndim, offset_remote, mysize);
-    region_pyy  = PDCregion_create(ndim, offset_remote, mysize);
-    region_pzz  = PDCregion_create(ndim, offset_remote, mysize);
-    region_id11 = PDCregion_create(ndim, offset_remote, mysize);
-    region_id22 = PDCregion_create(ndim, offset_remote, mysize);
-
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (rank == 0) {
+        printf("Obj create time: %.2f\n", t1 - t0);
+    }
 #endif
 
     transfer_request_x = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_x, region_xx);
@@ -267,16 +286,13 @@ main(int argc, char **argv)
         return 1;
     }
 
-    for (i = 0; i < numparticles; i++) {
-        id1[i] = i;
-        id2[i] = i * 2;
-        x[i]   = uniform_random_number() * x_dim;
-        y[i]   = uniform_random_number() * y_dim;
-        z[i]   = ((float)id1[i] / numparticles) * z_dim;
-        px[i]  = uniform_random_number() * x_dim;
-        py[i]  = uniform_random_number() * y_dim;
-        pz[i]  = ((float)id2[i] / numparticles) * z_dim;
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    t0 = MPI_Wtime();
+    if (rank == 0) {
+        printf("Transfer create time: %.2f\n", t0 - t1);
     }
+#endif
 
     ret = PDCregion_transfer_start(transfer_request_x);
     if (ret != SUCCEED) {
@@ -319,6 +335,14 @@ main(int argc, char **argv)
         return 1;
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (rank == 0) {
+        printf("Transfer start time: %.2f\n", t1 - t0);
+    }
+#endif
+
     ret = PDCregion_transfer_wait(transfer_request_x);
     if (ret != SUCCEED) {
         printf("Failed to transfer wait for region_xx\n");
@@ -360,6 +384,14 @@ main(int argc, char **argv)
         return 1;
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    t0 = MPI_Wtime();
+    if (rank == 0) {
+        printf("Transfer wait time: %.2f\n", t0 - t1);
+    }
+#endif
+
     ret = PDCregion_transfer_close(transfer_request_x);
     if (ret != SUCCEED) {
         printf("region xx transfer close failed\n");
@@ -400,12 +432,14 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
-#ifdef PDC_TIMING
-    PDC_timing_report("write");
-#endif
 
+    PDC_timing_report("write");
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (rank == 0) {
+        printf("Transfer close time: %.2f\n", t1 - t0);
+    }
 #endif
 
     if (PDCobj_close(obj_xx) < 0) {

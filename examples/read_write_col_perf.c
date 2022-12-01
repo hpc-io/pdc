@@ -33,8 +33,6 @@
 #include "pdc.h"
 #include "pdc_analysis.h"
 
-#include "pdc_timing.h"
-
 #define BUF_LEN 128
 
 int
@@ -230,9 +228,9 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-#if PDC_TIMING == 1
+
     PDC_timing_report("write");
-#endif
+
     for (i = 0; i < n_objects; ++i) {
         sprintf(obj_name1, "o1_%d", i);
         obj1 = PDCobj_open(obj_name1, pdc);
@@ -298,9 +296,9 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
-#if PDC_TIMING == 1
+
     PDC_timing_report("read");
-#endif
+
     // close a container
     if (PDCcont_close(cont) < 0) {
         printf("fail to close container c1 @ line %d\n", __LINE__);

@@ -2,16 +2,41 @@
 # Include source and build directories
 #------------------------------------------------------------------------------
 include_directories(
-  ${CMAKE_ROOT}
+  ${PDC_INCLUDES_BUILD_TIME}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_BINARY_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}
+  ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
+  ${PDC_SOURCE_DIR}/src/server/dablooms
+  ${PDC_SOURCE_DIR}/src/api/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/api/profiling/include
+  ${PDC_SOURCE_DIR}/src/utils/include
+  ${MERCURY_INCLUDE_DIR}
+  ${FASTBIT_INCLUDE_DIR}
+)
+
+install(
+  FILES
+    ${CMAKE_BINARY_DIR}/pdc_config.h
+  DESTINATION
+    ${PDC_INSTALL_INCLUDE_DIR}
+  COMPONENT
+    headers
 )
 
 #------------------------------------------------------------------------------
 # Options
 #------------------------------------------------------------------------------
-#add_definitions(-DENABLE_MPI=1)
-#add_definitions(-DENABLE_TIMING=1)
-#add_definitions(-DENABLE_CHECKPOINT=1)
+#add_definitions(-DPDC_ENABLE_MPI=1)
+#add_definitions(-DPDC_TIMING=1)
+#add_definitions(-DPDC_ENABLE_CHECKPOINT=1)
 #add_definitions(-DENABLE_MULTITHREAD=1)
 
 #------------------------------------------------------------------------------
@@ -47,8 +72,8 @@ set(PDC_EXPORTED_LIBS pdcprof ${PDC_EXPORTED_LIBS})
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
 set(PDC_PROF_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hashtab.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_stack_ops.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/pdc_hashtab.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/pdc_stack_ops.h
   )
 
 #-----------------------------------------------------------------------------
