@@ -55,6 +55,7 @@ set(PROGRAMS
 #  stat_obj
   delete_obj
   vpicio
+  vpicio_mts
   bdcats
   vpicio_old
   bdcats_old
@@ -71,9 +72,9 @@ set(PROGRAMS
   region_transfer_status
   region_transfer_skewed
   region_transfer_2D
-  region_transfer_2D_skewed
+  # region_transfer_2D_skewed
   region_transfer_3D
-  region_transfer_3D_skewed
+  # region_transfer_3D_skewed
   region_transfer_write_only
   region_transfer_read_only
   region_transfer_write_read
@@ -177,8 +178,8 @@ add_test(NAME region_transfer_status    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT
 add_test(NAME region_transfer_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D )
 add_test(NAME region_transfer_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D )
 add_test(NAME region_transfer_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_skewed )
-add_test(NAME region_transfer_2D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D_skewed )
-add_test(NAME region_transfer_3D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D_skewed )
+# add_test(NAME region_transfer_2D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D_skewed )
+# add_test(NAME region_transfer_3D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D_skewed )
 add_test(NAME region_transfer_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_partial )
 add_test(NAME region_transfer_2D_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D_partial )
 add_test(NAME region_transfer_3D_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D_partial )
@@ -256,8 +257,8 @@ set_tests_properties(region_transfer_status     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_3D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_skewed     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_2D_skewed     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_3D_skewed     PROPERTIES LABELS serial )
+# set_tests_properties(region_transfer_2D_skewed     PROPERTIES LABELS serial )
+# set_tests_properties(region_transfer_3D_skewed     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_partial     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_2D_partial  PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_3D_partial  PROPERTIES LABELS serial )
@@ -331,8 +332,8 @@ if(BUILD_MPI_TESTING)
     add_test(NAME region_transfer_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D ${MPI_RUN_CMD} 4 6 )
     add_test(NAME region_transfer_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D ${MPI_RUN_CMD} 4 6 )
     add_test(NAME region_transfer_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_skewed ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_2D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D_skewed ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_3D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D_skewed ${MPI_RUN_CMD} 4 6 )
+    # add_test(NAME region_transfer_2D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D_skewed ${MPI_RUN_CMD} 4 6 )
+    # add_test(NAME region_transfer_3D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D_skewed ${MPI_RUN_CMD} 4 6 )
     add_test(NAME region_transfer_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_partial ${MPI_RUN_CMD} 4 6 )
     add_test(NAME region_transfer_2D_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D_partial ${MPI_RUN_CMD} 4 6 )
     add_test(NAME region_transfer_3D_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D_partial ${MPI_RUN_CMD} 4 6 )
@@ -417,8 +418,8 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_2D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_3D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_skewed_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_2D_skewed_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_3D_skewed_mpi     PROPERTIES LABELS parallel )
+    # set_tests_properties(region_transfer_2D_skewed_mpi     PROPERTIES LABELS parallel )
+    # set_tests_properties(region_transfer_3D_skewed_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_write_read_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_2D_mpi     PROPERTIES LABELS parallel )
