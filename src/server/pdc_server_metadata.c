@@ -1231,18 +1231,15 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 #endif
 
     PDC_metadata_init(metadata);
-    metadata->cont_id          = in->data.cont_id;
-    metadata->data_type        = in->data_type;
-    metadata->user_id          = in->data.user_id;
-    metadata->data_server_id   = in->data.data_server_id;
-    metadata->region_partition = in->data.region_partition;
-    metadata->consistency      = in->data.consistency;
-    metadata->time_step        = in->data.time_step;
-    metadata->ndim             = in->data.ndim;
-    metadata->dims[0]          = in->data.dims0;
-    metadata->dims[1]          = in->data.dims1;
-    metadata->dims[2]          = in->data.dims2;
-    metadata->dims[3]          = in->data.dims3;
+    metadata->cont_id   = in->data.cont_id;
+    metadata->data_type = in->data_type;
+    metadata->user_id   = in->data.user_id;
+    metadata->time_step = in->data.time_step;
+    metadata->ndim      = in->data.ndim;
+    metadata->dims[0]   = in->data.dims0;
+    metadata->dims[1]   = in->data.dims1;
+    metadata->dims[2]   = in->data.dims2;
+    metadata->dims[3]   = in->data.dims3;
     for (i = metadata->ndim; i < DIM_MAX; i++)
         metadata->dims[i] = 0;
 

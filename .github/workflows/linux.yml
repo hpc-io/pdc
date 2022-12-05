@@ -21,6 +21,7 @@ jobs:
         run: .github/workflows/dependencies-linux.sh
 
       - name: Build PDC
+        working-directory: ./src
         run: |
           mkdir build && cd build
           cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=mpicc
@@ -35,5 +36,5 @@ jobs:
       #     mpirun -n 1 ./close_server
 
       - name: Test PDC
-        working-directory: ./build
+        working-directory: ./src/build
         run: ctest -L serial

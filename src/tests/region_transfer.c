@@ -187,7 +187,6 @@ main(int argc, char **argv)
     reg        = PDCregion_create(1, local_offset, offset_length);
     reg_global = PDCregion_create(1, offset, offset_length);
 
-    memset(data_read, 0, sizeof(int) * BUF_LEN);
     transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
 
     ret = PDCregion_transfer_start(transfer_request);

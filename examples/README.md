@@ -68,19 +68,7 @@
     - BD-CATS-IO is an example for reading data written by VIPIC I/O.
   + To run this example, use the following commands. Step 1 is refers to the case that read is run right after write applications. In step 2, PDC server is closed after vpicio. The server is restarted before calling bdcats.
 ```
-0. make
+0. cd make
 1. ./run_multiple_test.sh ./vpicio ./bdcats
 2. ./run_checkpoint_restart_test.sh ./vpicio ./bdcats
-```
-  + "vpicio_batch.c" is an extension of the VPICIO benchmark that supports batched processing of VPICIO in multiple timestamps. In addition, it allows users to set a fake computation time between the "region_transfer_request_start" and ""region_transfer_request_wait". The output of this program is the detailed timings of individual region transfer request functions. The timings provide minimum, average, and maximum timings for each of the functions among all process ranks.
-  + "script_cori_shared.sh" provides an example script for running PDC on NERSC Cori supercomputer. This example places one PDC server per compute node. Each of the compute node also has 32 client processes running PDC client APIs collectively. First, select your Cori repository by replacing "#SBATCH -A mxxx" with the your correct repository ID. Then, you can set the partition method "PARTITION_METHOD" from 0 to 3. This allows the "vpicio_batch.c" select the region partition method. There are two experiments in this script. The first one has no interval between "region_transfer_request_start" and ""region_transfer_request_wait". The second one has 10 seconds intervals between these two functions for each of the timestamps.
-  + "vpicio_object_partition_4.txt", "vpicio_static_partition_4.txt", and "vpicio_dynamic_partition_4.txt" are examples for running "script_cori_shared.sh" with object static partitioning, region static partitioning, and region dynamic partitioning methods on 4 Cori KNL nodes. It is obvious that the 10 seconds fake computation time can overlap with the asynchronous region transfer I/O functions.
-![Alt text](vpicio_batch_results.png)
-  ## PDC and HDF5 mapping
-  + In folder C_plus_plus_example, the implementations in "multidataset_plugin.cc" illustrates an simple example for switching a HDF5 application into a PDC application. C MACRO functions are used to switch the code. In "region_transfer_1D_append.cc", there is a simple application for running the functions implemented in "multidataset_plugin.cc".
-  + This multidataset_plugin implementation is designed for wrapping HDF5 operations and call HDF5 multidataset. We demonstrate that PDC can substitute a storage structure comparable to HDF5. Therefore, it is possible to make direct comparison between these two. Currently, only write is implemented in this example.
-```
-0. cd C_plus_plus_example;make
-1. mpiexec -n 1 ./pdc_server.exe &
-2. mpiexec -n 1 ./region_transfer_1D_append
 ```

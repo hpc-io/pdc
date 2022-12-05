@@ -56,7 +56,6 @@ export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 One can replace mpicc to other available MPI compilers. -DCMAKE_C_FLAGS="-dynamic" is sometimes required for Cori. For example, on Cori, cc can be used to replace mpicc.
 ctest contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.
 ```
-
 git clone https://github.com/hpc-io/pdc.git
 cd pdc
 git checkout stable

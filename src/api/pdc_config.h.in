@@ -1,0 +1,73 @@
+/* Generated file. Only edit pdc_config.h.in. */
+
+#ifndef _pdc_config_H
+#define _pdc_config_H
+
+/* Reflects major releases of PDC */
+#define PDC_VERSION_MAJOR @PDC_VERSION_MAJOR @
+/* Reflects any API changes */
+#define PDC_VERSION_MINOR @PDC_VERSION_MINOR @
+/* Reflects any library code changes */
+#define PDC_VERSION_PATCH @PDC_VERSION_PATCH @
+
+#if defined(_WIN32)
+#define PDC_ABI_IMPORT __declspec(dllimport)
+#define PDC_ABI_EXPORT __declspec(dllexport)
+#define PDC_ABI_HIDDEN
+#elif defined(__GNUC__) && (__GNUC__ >= 4)
+#define PDC_ABI_IMPORT __attribute__((visibility("default")))
+#define PDC_ABI_EXPORT __attribute__((visibility("default")))
+#define PDC_ABI_HIDDEN __attribute__((visibility("hidden")))
+#else
+#define PDC_ABI_IMPORT
+#define PDC_ABI_EXPORT
+#define PDC_ABI_HIDDEN
+#endif
+
+#cmakedefine PDC_BUILD_SHARED_LIBS
+
+#ifdef PDC_BUILD_SHARED_LIBS
+#ifdef pdc_EXPORTS
+#define PDC_EXPORT PDC_ABI_EXPORT
+#else
+#define PDC_EXPORT PDC_ABI_IMPORT
+#endif
+#else
+#define PDC_EXPORT
+#endif
+
+/* TODO To be fixed
+#ifdef _WIN32
+    typedef signed   __int64 pdc_int64_t;
+    typedef signed   __int32 pdc_int32_t;
+    typedef signed   __int16 pdc_int16_t;
+    typedef signed   __int8  pdc_int8_t;
+    typedef unsigned __int64 pdc_uint64_t;
+    typedef unsigned __int32 pdc_uint32_t;
+    typedef unsigned __int16 pdc_uint16_t;
+    typedef unsigned __int8  pdc_uint8_t;
+#else
+    #include <stdint.h>
+    #include <stddef.h>
+    typedef int64_t  pdc_int64_t;
+    typedef int32_t  pdc_int32_t;
+    typedef int16_t  pdc_int16_t;
+    typedef int8_t   pdc_int8_t;
+    typedef uint64_t pdc_uint64_t;
+    typedef uint32_t pdc_uint32_t;
+    typedef uint16_t pdc_uint16_t;
+    typedef uint8_t  pdc_uint8_t;
+#endif
+typedef pdc_uint64_t  pdc_ptr_t;
+typedef pdc_uint8_t   pdc_bool_t;
+#define PDC_TRUE     1
+#define PDC_FALSE    0
+
+#ifdef _WIN32
+   #define PDC_INLINE __inline
+#else
+   #define PDC_INLINE __inline__
+#endif
+*/
+
+#endif /* _pdc_config_H */
