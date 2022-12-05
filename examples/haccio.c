@@ -88,7 +88,7 @@ int
 main(int argc, char **argv)
 {
     int mpi_rank, mpi_size;
-    int i;
+    int i, k;
 
     pdcid_t pdc_id, cont_prop, cont_id;
 
@@ -141,9 +141,6 @@ main(int argc, char **argv)
     time_lock = MPI_Wtime();
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCreg_obtain_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE, PDC_NOBLOCK);
-        if (ret != SUCCEED) {
-            printf("Fail to obtain lock @ line  %d!\n", __LINE__);
-        }
     }
     MPI_Barrier(MPI_COMM_WORLD);
     time_lock = MPI_Wtime() - time_lock;
@@ -171,22 +168,14 @@ main(int argc, char **argv)
 
     // Release lock
     time_release = MPI_Wtime();
-    for (i = 0; i < NUM_VARS; i++) {
+    for (i = 0; i < NUM_VARS; i++)
         ret = PDCreg_release_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE);
-        if (ret != SUCCEED) {
-            printf("Fail to release lock @ line  %d!\n", __LINE__);
-        }
-    }
     MPI_Barrier(MPI_COMM_WORLD);
     time_release = MPI_Wtime() - time_release;
 
     // Unmap objects
-    for (i = 0; i < NUM_VARS; i++) {
+    for (i = 0; i < NUM_VARS; i++)
         ret = PDCbuf_obj_unmap(obj_ids[i], region_remote_ids[i]);
-        if (ret != SUCCEED) {
-            printf("Fail to unmap @ line  %d!\n", __LINE__);
-        }
-    }
     MPI_Barrier(MPI_COMM_WORLD);
     time_total = MPI_Wtime() - time_total;
 
@@ -199,7 +188,7 @@ main(int argc, char **argv)
         free(buffers[i]);
     }
 
-#ifdef PDC_TIMING
+#if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif
 

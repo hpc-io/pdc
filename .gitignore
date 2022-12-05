@@ -2,6 +2,7 @@
 *.swp
 
 # build dir
+*build*
 
 # exes
 *.exe

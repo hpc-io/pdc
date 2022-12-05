@@ -20,39 +20,7 @@
     - [Query operators](#query-operators)
     - [Query structures](#query-structures)
     - [Selection structure](#selection-structure)
-  + [Developers notes](#developers-notes)
-    - [How to implement an RPC from client to server](#how-to-implement-an-rpc-from-client-to-server)
-    - [PDC Server metadata overview](#pdc-server-metadata-overview)
-      + [PDC metadata structure](#pdc-metadata-structure)
-      + [Metadata operations at client side](#metadata-operations-at-client-side)
-    - [PDC metadata management strategy](#pdc-metadata-management-strategy)
-      + [Managing metadata and data by the same server](#managing-metadata-and-data-by-the-same-server)
-      + [Separate metadata server from data server](#separate-metadata-server-from-data-server)
-      + [Static object region mappings](#static-object-region-mappings)
-      + [Dynamic object region mappings](#dynamic-object-region-mappings)
-    - [PDC metadata management implementation](#pdc-metadata-management-implementation)
-      + [Create metadata](#create-metadata)
-      + [Binding metadata to object](#binding-metadata-to-object)
-      + [Register object metadata at metadata server](#register-object-metadata-at-metadata-server)
-      + [Retrieve metadata from metadata server](#retrieve-metadata-from-metadata-server)
-      + [Object metadata at client](#object-metadata-at-client)
-      + [Metadata at data server](#metadata-at-data-server)
-      + [Object metadata update](#object-metadata-update)
-      + [Object region metadata](#object-region-metadata)
-      + [Metadata checkpoint](#object-metadata-update)
-    - [Region transfer request at client](#region-transfer-request-at-client)
-      + [Region transfer request create and close](#region-transfer-request-create-and-close)
-      + [Region transfer request start](#region-transfer-request-start)
-      + [Region transfer request wait](#region-transfer-request-wait)
-    - [Region transfer request at server](#region-transfer-request-at-server)
-      + [Server region transfer request RPC](#server-region-transfer-request-rpc)
-        - [Server nonblocking control](#server-nonblocking-control)
-        - [Server region transfer request start](#server-region-transfer-request-start)
-        - [Server region transfer request wait](#server-region-transfer-request-wait)
-      + [Server region storage](#server-region-storage)
-        - [Storage by file offset](#storage-by-file-offset)
-        - [Storage by region](#storage-by-region)
-    - [Open tasks for PDC](#open-tasks-for-pdc)
+  + [Developers notes](#developer-notes)
 # PDC user APIs
   ## PDC general APIs
   + pdcid_t PDCinit(const char *pdc_name)
@@ -207,8 +175,8 @@
       + comm: MPI communicator for the rank_id
     - Output: 
       + Local object ID
-    - Create a PDC object at the rank_id in the communicator comm. Object is created based on the arguments provided by the process with rank_id. This function is a colllective operation. All MPI processes must call this function together.
-    - For developers: see pdc_mpi.c.
+    - Create a PDC object at the rank_id in the communicator comm. This function is a colllective operation.
+    - For developers: see pdc_mpi.c. If rank_id equals local process rank, then a local object is created. Otherwise we create a global object. The object metadata ID is broadcasted to all processes if a global object is created using MPI_Bcast.
   + pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc)
     - Input:
       + obj_name: Name of objects to be created
@@ -216,14 +184,6 @@
     - Output: 
       + Local object ID
     - Open a PDC ID created previously by name.
-    - For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
-  + pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc)
-    - Input:
-      + obj_name: Name of objects to be created, only rank 0 need to provide a value.
-      + pdc: PDC class ID, returned from PDCInit
-    - Output: 
-      + Local object ID
-    - Open a PDC ID created previously by name collectively. All MPI processes must call this function together.
     - For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
   + perr_t PDCobj_close(pdcid_t obj_id)
     - Input:
@@ -293,36 +253,6 @@
       + error code, SUCCEED or FAIL.
     - Delete a tag.
     - For developers: see pdc_client_connect.c. Need to use PDCtag_delete to submit RPCs to the servers for metadata update.
-  + perr_t PDCobj_flush_start(pdcid_t obj_id)
-    - Input:
-      + obj_id: Local object ID
-    - Output:
-      + error code, SUCCEED or FAIL.
-    - Flush an object server cache data. This function is a dummy function if server cache is not enabled.
-    - For developers: pdc_obj.c. Start a RPC for each of the data servers to flush the input object.
-  + perr_t PDCobj_flush_start()
-    - Output:
-      + error code, SUCCEED or FAIL.
-    - Flush all objects' server cache data. This function is a dummy function if server cache is not enabled.
-    - For developers: pdc_obj.c. Start a RPC for each of the data servers to flush all objects.
-  + perr_t PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims)
-    - Input:
-      + obj_id: Local object ID
-      + ndim: Number of dimensions. (must be the same as the object dimension set previously)
-      + dims: Dimension array that has the size of ndim.
-    - Output:
-      + error code, SUCCEED or FAIL.
-    - Reset object dimension. In general, it is recommended to set an object's property before creating the object. However, this function allows users to enlarge or shrink an object's dimension. The motivation is to cover the functionality of H5Dset_extent.
-    - For developers: pdc_obj.c. Start a RPC and send the updated dimensions to metadata server. In addition, local memory is updated accordingly. There is no need to send the update for data server because every time a request submitted to the data server will include the up-to-dated object dimension information.
-  + perr_t PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims)
-    - Input:
-      + obj_id: Local object ID
-    - Output:
-      + ndim: Number of dimensions. (must be the same as the object dimension set previously)
-      + dims: Dimension array that has the size of ndim.
-      + error code, SUCCEED or FAIL.
-    - Get object dimension dynamically. This operation allows users to query an object's dimension, in case PDCobj_set_dims is called on this object previously.
-    - For developers: pdc_obj.c. Start a RPC and retrieve object dimensions from metadata server. In addition, local memory is updated accordingly.
   ## PDC region APIs
   + pdcid_t PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
     - Input:
@@ -340,7 +270,7 @@
       + None
     - Close a PDC region
     - For developers: see pdc_region.c. Free offset and size arrays.
-  + (deprecated) perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
+  + perr_t PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t remote_obj, pdcid_t remote_reg)
     - Input:
       + buf: Memory buffer
       + local_type: one of PDC basic types, see [PDC basic types](#basic-types)
@@ -351,7 +281,7 @@
       + Region ID
     - Create a region with ndims offset/length pairs. At this stage of PDC development, the buffer has to be filled if you are performing PDC_WRITE with lock and release functions.
     - For developers: see pdc_region.c. Need to use PDC_get_kvtag to submit RPCs to the servers for metadata update.
-  + (deprecated) perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
+  + perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
     - Input:
       + remote_obj_id: remote object ID
       + remote_reg_id: remote region ID
@@ -359,7 +289,7 @@
       + error code, SUCCEED or FAIL.
     - Unmap a region to the user buffer. PDCbuf_obj_map must be called previously.
     - For developers: see pdc_region.c.
-  + (deprecated) perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
+  + perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc_lock_mode_t lock_mode)
     - Input:
       + obj_id: local object ID
       + reg_id: remote region ID
@@ -369,7 +299,7 @@
       + error code, SUCCEED or FAIL.
     - Obtain the lock to access a region in an object.
     - For developers: see pdc_region.c.
-  + (deprecated) perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
+  + perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
     - Input:
       + obj_id: local object ID
       + reg_id: remote region ID
@@ -381,49 +311,35 @@
   + pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg, pdcid_t remote_reg)
     - Input:
       + buf: The data buffer to be transferred.
-      + access_type: PDC_WRITE for write operation. PDC_READ for read operation.
+      + access_type: Data type to be transferred.
       + obj_id: Local object id the region attached to.
-      + local_reg: Region ID describing the shape of buf (boundary aligns to object dimension).
-      + remote_reg: Region ID describing the region this request will access for the object at remote side.
+      + local_reg: Region ID describing the shape of buf.
+      + remote_reg: Region ID describing the shape of file domain stored at server.
     - Output:
       + Region ransfer request ID generated.
-    - Wrap necessary componenets for a region transfer request into a PDC ID to be referred later. local_reg and remote_reg are copied, so they can be closed immediately after this function.
-    - For developers: see pdc_region_transfer_request.c. This function only contains local memory operations.
+    - Wrap necessary componenets for a region transfer request into a PDC ID to be referred later.
+    - For developers: see pdc_region.c. This function only contains local memory operations.
   + perr_t PDCregion_transfer_close(pdcid_t transfer_request_id)
     - Input:
       + transfer_request_id: Region transfer request ID referred to
     - Output:
       + SUCCEED or FAIL
-    - Clearn up function corresponds to PDCregion_transfer_create. transfer_request_id is no longer valid. If this request has been started and not waited, "PDCregion_transfer_wait" is automatically called inside this function.
-    - For developers: see pdc_region.c. This function only contains local memory operations, unless wait is triggered inside this function.
+    - Clearn up function corresponds to PDCregion_transfer_create. transfer_request_id is no longer valid.
+    - For developers: see pdc_region.c. This function only contains local memory operations.
   + perr_t PDCregion_transfer_start(pdcid_t transfer_request_id)
     - Input:
       + transfer_request_id: Region transfer request ID referred to
     - Output:
       + Region ID
-    - Start a region transfer from local region to remote region for an object on buf. By the end of this function, neither data transfer nor I/O are guaranteed be finished. It is not safe to free buf until a wait function (or close the request/object) call is made.
-    - For developers: see pdc_region_transfer_request.c. Bulk transfer and RPC are set up. The server side will immediately return upon receiving argument payload, ignoring completion of data transfers.
+    - Start a region transfer from local region to remote region for an object on buf. By the end of this function, neither data transfer nor I/O are guaranteed be finished.
+    - For developers: see pdc_region.c. Bulk transfer and RPC are set up. The server side will immediately return upon receiving argument payload, ignoring completion of data transfers.
   + perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id)
     - Input:
       + transfer_request_id: Region transfer request ID referred to
     - Output:
       + Region ID
-    - Block until the region transfer process is finished for the input region transfer request. By the end of this function, data buffer passed by the buf argument in function PDCregion_transfer_create can be reused or freed. In addition, data consistency at server side is guaranteed for future region transfer request operations.
-    - For developers: see pdc_region_transfer_request.c. The server returns immediately after the request is finished without delay. See developer's note [Server region transfer request RPC](#server-region-transfer-request-rpc).
-  + perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
-    - Input:
-      + transfer_request_id: Region transfer request ID referred to
-    - Output:
-      + Region ID
-    - Start multiple region transfers from local region to remote region for an object on buf. This function is equivalent to calling PDCregion_transfer_start(pdcid_t transfer_request_id) for each of the element in the array (no guarantee of orders).
-    - For developers: see pdc_region_transfer_request.c. Bulk transfer and RPC are set up. The server side will immediately return upon receiving argument payload, ignoring completion of data transfers.
-  + perr_t PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
-    - Input:
-      + transfer_request_id: Region transfer request ID referred to
-    - Output:
-      + Region ID
-    - Wait multiple region transfers. This function is equivalent to calling PDCregion_transfer_wait(pdcid_t transfer_request_id) for each of the element in the array (no guarantee of orders). Block until all the input region transfer requests are finished.
-    - For developers: see pdc_region_transfer_request.c.
+    - Block until the region transfer process is finished for the input region transfer request. By the end of this function, data buffer passed by the buf argument in function PDCregion_transfer_create can be reused. In addition, data consistency at server side is guaranteed for future region transfer request operations.
+    - For developers: see pdc_region.c. One RPC is used. There will be an infinite loop checking for the completion of essential operations at the server side. Once all operations are done, the server will return the RPC to the client.
   + perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
     - Input:
       + transfer_request_id: Region transfer request ID referred to
@@ -431,7 +347,7 @@
       + completed: [Transfer request status](#transfer-request-status)
       + SUCCEED or FAIL
     - Check for the completion of a region transfer request. PDC_TRANSFER_STATUS_COMPLETE is equivalent to the result of PDCregion_transfer_wait. PDC_TRANSFER_STATUS_PENDING refers to the case that the region transfer request is not completed. PDC_TRANSFER_STATUS_NOT_FOUND refers to the case either the request is invalid or the request completion has been checked by either this function or PDCregion_transfer_wait previously.
-    - For developers: see pdc_region_transfer_request.c. The server returns immediately after all the requests are finished without delay. See developer's note [Server region transfer request RPC](#server-region-transfer-request-rpc).
+    - For developers: see pdc_region.c. One RPC is used. The server immediately returns the status of the region transfer request.
 ## PDC property APIs
   + pdcid_t PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
     - Input:
@@ -511,22 +427,6 @@
       + error code, SUCCEED or FAIL.
     - Set the type of an object.
     - For developers: see pdc_obj.c. Update the obj_prop_pub->type field under [object property public](#object-property-public). See developer's note for more details about this structure.
-  + PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)
-    - Input:
-      + obj_prop: PDC property ID (has to be an object)
-      + type: one of PDC region transfer partition type, see [region transfer partition type](#region-transfer-partition-type)
-    - Output:
-      + error code, SUCCEED or FAIL.
-    - Set the region partition method for this object. The region transfer request operations will select implementations based on this property. See [PDC metadata management implementation](#pdc-metadata-management-implementation) for details.
-    - For developers: see pdc_obj.c.
-  + PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consistency)
-    - Input:
-      + obj_prop: PDC property ID (has to be an object)
-      + consistency: one of PDC object consistency, see [Object consistency semantics type](#object-consistency-semantics-type)
-    - Output:
-      + error code, SUCCEED or FAIL.
-    - Set the object consistency semantics for this object. The region transfer request operations will select implementations based on this property. PDC_CONSISTENCY_POSIX will call region_transfer_request_wait at the end of region_transfer_request_start automatically, so users do not need to explicitly call the wait function. The rest of the consistency types are not implemented yet, so they are equivalent to PDC_CONSISTENCY_DEFAULT.
-    - For developers: see pdc_obj.c.
   + perr_t PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
     - Input:
       + obj_prop: PDC property ID (has to be an object)
@@ -699,25 +599,6 @@
     NCLASSES         = 12  /* this must be last                          */
   } pdc_var_type_t;
   ```
-  ## region transfer partition type
-  ```
-  typedef enum {
-      PDC_OBJ_STATIC     = 0,
-      PDC_REGION_STATIC  = 1,
-      PDC_REGION_DYNAMIC = 2,
-      PDC_REGION_LOCAL   = 3
-  } pdc_region_partition_t;
-  ```
-  ## Object consistency semantics type
-  ```
-  typedef enum {
-      PDC_CONSISTENCY_DEFAULT  = 0,
-      PDC_CONSISTENCY_POSIX    = 1,
-      PDC_CONSISTENCY_COMMIT   = 2,
-      PDC_CONSISTENCY_SESSION  = 3,
-      PDC_CONSISTENCY_EVENTUAL = 4
-  } pdc_consistency_t;
-  ```
   ## Histogram structure
   ```
   typedef struct pdc_histogram_t {
@@ -730,7 +611,7 @@
   ```
   ## Container info
   ```
-  struct pdc_cont_info {
+     struct pdc_cont_info {
       /*Inherited from property*/
       char                   *name;
       /*Registered using PDC_id_register */
@@ -742,8 +623,8 @@
   ## Container life time
   ```
   typedef enum {
-      PDC_PERSIST,
-      PDC_TRANSIENT
+    PDC_PERSIST,
+    PDC_TRANSIENT
   } pdc_lifetime_t;
   ```
   ## Object property public
@@ -755,28 +636,48 @@
       size_t            ndim;
       uint64_t         *dims;
       pdc_var_type_t    type;
-      pdc_region_partition_t region_partition;
-      pdc_consistency_t      consistency;
   };
   ```
   ## Object property
   ```
   struct _pdc_obj_prop {
-      struct pdc_obj_prop *obj_prop_pub;
-      struct _pdc_class *  pdc;
+      /* Suffix _pub probably means public attributes to be accessed. */
+      struct pdc_obj_prop *obj_prop_pub {
+          /* This ID is the one returned from PDC_id_register . This is a property ID*/
+          pdcid_t           obj_prop_id;
+          /* object dimensions */
+          size_t            ndim;
+          uint64_t         *dims;
+          pdc_var_type_t    type;
+      };
+      /* This ID is returned from PDC_find_id with an input of ID returned from PDC init. 
+       * This is true for both object and container. 
+       * I think it is referencing the global PDC engine through its ID (or name). */
+      struct _pdc_class   *pdc{
+          char        *name;
+          pdcid_t     local_id;
+      };
+      /* The following are created with NULL values in the PDC_obj_create function. */
       uint32_t             user_id;
-      char *               app_name;
+      char                *app_name;
       uint32_t             time_step;
-      char *               data_loc;
-      char *               tags;
-      void *               buf;
-      pdc_kvtag_t *        kvtag;
+      char                *data_loc;
+      char                *tags;
+      void                *buf;
+      pdc_kvtag_t         *kvtag;
 
-      /* The following have been added to support of PDC analysis and transforms */
-      size_t                      type_extent;
-      uint64_t                    locus;
-      uint32_t                    data_state;
-      struct _pdc_transform_state transform_prop;
+      /* The following have been added to support of PDC analysis and transforms.
+         Will add meanings to them later, they are not critical. */
+      size_t            type_extent;
+      uint64_t          locus;
+      uint32_t          data_state;
+      struct _pdc_transform_state transform_prop{
+          _pdc_major_type_t storage_order;
+          pdc_var_type_t    dtype;
+          size_t            ndim;
+          uint64_t          dims[4];
+          int               meta_index; /* transform to this state */
+      };
   };
   ```
   ## Object info
@@ -789,10 +690,8 @@
       pdcid_t                 meta_id;
       /* Registered using PDC_id_register */
       pdcid_t                 local_id;
-      /* Set to 0 at creation time. */
+      /* Set to 0 at creation time. *
       int                     server_id;
-      /* Metadata server for this object */
-      uint32_t             metadata_server_id;
       /* Object property. Directly copy from user argument at object creation. */
       struct pdc_obj_prop    *obj_pt;
   };
@@ -800,15 +699,41 @@
   ## Object structure
   ```
   struct _pdc_obj_info {
-      struct pdc_obj_info *       obj_info_pub;
-      _pdc_obj_location_t         location;
-      void *                      metadata;
-      struct _pdc_cont_info *     cont;
-      struct _pdc_obj_prop *      obj_pt;
-      struct region_map_list *    region_list_head;
-      pdc_local_transfer_request *local_transfer_request_head;
-      pdc_local_transfer_request *local_transfer_request_end;
-      int                         local_transfer_request_size;
+      /* Public properties */
+      struct pdc_obj_info    *obj_info_pub {
+          /* Directly copied from user argument at object creation. */
+          char                   *name;
+          /* 0 for location = PDC_OBJ_LOAL. 
+          * When PDC_OBJ_GLOBAL = 1, use PDC_Client_send_name_recv_id to retrieve ID. */
+          pdcid_t                 meta_id;
+          /* Registered using PDC_id_register */
+          pdcid_t                 local_id;
+          /* Set to 0 at creation time. *
+          int                     server_id;
+          /* Object property. Directly copy from user argument at object creation. */
+          struct pdc_obj_prop    *obj_pt;
+      };
+      /* Argument passed to obj create*/
+      _pdc_obj_location_t     location enum {
+          /* Either local or global */
+          PDC_OBJ_GLOBAL,
+          PDC_OBJ_LOCAL
+      }
+      /* May be used or not used depending on which creation function called. */
+      void                   *metadata;
+      /* The container pointer this object sits in. Copied*/
+      struct _pdc_cont_info  *cont;
+      /* Pointer to object property. Copied*/
+      struct _pdc_obj_prop   *obj_pt;
+      /* Linked list for region, initialized with NULL at create time.*/
+      struct region_map_list *region_list_head {
+          pdcid_t                orig_reg_id;
+          pdcid_t                des_obj_id;
+          pdcid_t                des_reg_id;
+          /* Double linked list usage*/
+          struct region_map_list *prev;
+          struct region_map_list *next;
+      };
   };
   ```
   ## Region info
@@ -822,7 +747,6 @@
     bool                  mapping;
     int                   registered_op;
     void                 *buf;
-    size_t                unit;
   };
   ```
   ## Access type
@@ -886,253 +810,103 @@
   } pdc_selection_t;
   ```
 # Developers notes
-## How to implement an RPC from client to server
-Mercury is not easy to use. Do not worry, I am going to make your life easier by doing a walk-through. This section teaches you how to implement a simple RPC from client to server. The outcome is that if you call a RPC at the client side, the server should be able to get the argument you passed from the client and execute the corresponding server RPC function.
-
-A concrete example is “PDC_region_transfer_wait_all”. Mercury transfers at the client side are implemented in “pdc_client_connect.c”. The name of the function we are using is “transfer_request_wait_all”. For each of the components I mentioned in the following, replace “transfer_request_wait_all” with your own function name. I am not going to discuss how “transfer_request_wait_all” is designed in this section. This section simply tells you where the mercury components are and how they interact with each other.
-
-Firstly, in “pdc_client_connect.c”, search for “transfer_request_wait_all_register_id_g”. Make another variable by replacing “transfer_request_wait_all” with your function name. Secondly, search for “client_send_transfer_request_wait_all_rpc_cb”, do the same text copy and replacement. This function is the call back function at the client side when the RPC is finished at the server side. For most of the cases, this function simply loads the server return arguments to a structure and returns the values to the client RPC function. There are also some error checking. Then, search for “PDC_transfer_request_wait_all_register(*hg_class)”. Do text copy and replacement. Finally, in the function “PDC_Client_transfer_request_wait_all”, do text copy and replacement. This function is the entry point of the mercury RPC call. It contains argument loading, which has the variable name “in”. This RPC creates a mercury bulk transfer inside it (). “HG_Create” and “HG_Bulk_create” are not needed if your mercury transfer does not transfer variable-sized data. As you can see, “HG_Forward” has an argument “client_send_transfer_request_wait_all_rpc_cb”. The return values from the callback function are placed in “transfer_args”.
-
-In file “pdc_client_connect.h”, search for “_pdc_transfer_request_wait_all_args”, do the text copy and replacement. This structure is the structure for returning values from client call back function “client_send_transfer_request_wait_all_rpc_cb” to client RPC function “PDC_Client_transfer_request_wait_all”. For most cases, an error code is sufficient. For other cases like creating some object IDs, you need to define the structure accordingly. Do not forget to load data in “_pdc_transfer_request_wait_all_args”. Search for “PDC_Client_transfer_request_wait_all”, make sure you register your client connect entry function in the same way.
-
-In file “pdc_server.c”, search for “PDC_transfer_request_wait_all_register(hg_class_g);”, make a copy and replace the “transfer_request_wait_all” part with your own function name. (Again, your function name has to be defined and used consistently throughout all these copy and replacement)
-
-In file “pdc_client_server_common.h”, search for “typedef struct transfer_request_wait_all_in_t”, this is the structure used by a client passing its argument to the server side. You can define whatever you want that is fixed-sized inside this structure. If you have variable-sized data, it can be passed through mercury bulk transfer. The handle is “hg_bulk_t local_bulk_handle”. “typedef struct transfer_request_wait_all_out_t” is the return arguments from server to client after the server RPC is finished. Next, search for “hg_proc_transfer_request_wait_all_in_t”, this function defines how arguments are transferred through mercury. There is nothing much you can do, just follow the conventions and documentations from Mochi website to transfer these arguments. Study how the rest of RPCs’ are implemented. Similarly, “hg_proc_transfer_request_wait_all_in_t” is the other way around. Next, search for “struct transfer_request_wait_all_local_bulk_args”. This structure is useful when bulk transfer is used. The server passes its variables from the RPC call to the bulk transfer call back function using this function. Finally, search for “PDC_transfer_request_wait_all_register”. All these structures and functions should be copied and replaced text “transfer_request_wait_all” with your own function name.
-
-In file “pdc_client_server_common.c”, search for “PDC_FUNC_DECLARE_REGISTER(transfer_request_wait_all)” and “HG_TEST_THREAD_CB(transfer_request_wait_all)”, do text copy and function name replacement. “pdc_server_region_request_handler.h” is included directly in “pdc_client_server_common.c”. The server RPC of “transfer_request_wait_all” is implemented in “pdc_server_region_request_handler.h”. However, it is possible to put it directly in the “pdc_client_server_common.c”. Let us open “pdc_server_region_request_handler.h”. Search for “HG_TEST_RPC_CB(transfer_request_wait_all, handle)”. This function is the entry point for the server RPC function call. “transfer_request_wait_all_in_t” contains the arguments you loaded previously from the client side. If you want to add more arguments, go back to “pdc_client_server_common.h” and do the correct modifications. “HG_Bulk_create” and “HG_Bulk_transfer” are the mercury bulk function calls. When the bulk transfer is finished, “transfer_request_wait_all_bulk_transfer_cb” is called.
-
-After a walk-through of “transfer_request_wait_all”, you should have learned where different components of a mercury RPC should be placed and how they interact with each other. You can trace other RPC by searching their function names. If you miss things that are not optional, it is likely that the program will hang there forever or show segmentation faults.
-## PDC Server metadata overview
-
-PDC metadata servers, a subset of PDC servers, store metadata for PDC classes such as objects and containers. PDC data server, also a subset of PDC servers (potentially overlap with PDC metadata server), manages data from users. Such management includes server local caching and I/O to the file system. Both PDC metadata and data servers have some local metadata.  In the section that describes the checkpoint for metadata, every single byte of the metadata will be discussed. 
-
-### PDC metadata structure
-PDC metadata is held in server memories. When servers are closed, metadata will be checkpointed into the local file system. Details about the checkpoint will be discussed in the metadata implementation in later sections.
-
-PDC metadata consists of three major parts at the moment. The first part contains metadata stored in the hash tables at the metadata server. This part of metadata stores persistent properties for PDC containers and PDC objects. When objects are created, these metadata are registered at the metadata server using mercury RPCs. The second part of metadata is called metadata query class at the metadata server. The main purpose is to map an object region to a data server, so clients can query for this information to access the corresponding data server. It is only used by dynamic region partition strategy. The third part contains object regions stored at the data server. This part includes file names and region chunking information inside the object file on the file system.
-
-### Metadata operations at client side
-In general, PDC object metadata is initialized when an object is created. The metadata stored at the metadata server is permanent. When clients create the objects, PDC property is used as one of the arguments for the object creation function. Metadata for the object is set by using PDC property APIs. Most of the metadata are not subject to any changes. Currently, we support setting/getting object dimension using object API. In the future, we may add more APIs of this kind.
-
-## PDC metadata management strategy
-This section discusses the metadata management approaches of PDC. First, we give a brief summary for how PDC managed metadata in the past. Then, we propose new infrastructures for metadata management.
-### Managing metadata and data by the same server
-Historically, a PDC server manages both metadata and data for objects it is responsible for. A client forwards I/O requests to the server computed based on MPI ranks statically. If a server is located on the same node as the client, the server will be chosen with a higher priority. This design can achieve high I/O parallelism if the I/O workloads from all clients are well-balanced. In addition, communication contention is minimized because servers are dedicated to serving disjoint subsets of clients.
-
-However, this design has two potential drawbacks. The first disadvantage is supporting general I/O access. For clients served by different PDC servers, accessing overlapping regions is infeasible. Therefore, this design is specialized in applications with a non-overlapping I/O pattern. The second disadvantage is a lack of dynamic load balancing mechanisms. For example, some applications use a subset of processes for processing I/O. A subset of servers may stay idle because the clients mapped to them are not sending I/O requests.
-### Separate metadata server from data server
-For distributed I/O applications with a one-sided communication design, metadata service processes are necessary. When a client attempts to modify or access an object, metadata provides the essential information such as object dimensions and the data server rank that contains the regions of interest. In general, a PDC client does not have the runtime global metadata information. As a result, the first task is to obtain the essential metadata of the object from the correct metadata server. 
-
-Instead of managing metadata and data server together, we can separate the metadata management from region I/O. A metadata server stores and manages all attributes related to a subset of PDC objects. A PDC server can be both metadata and data servers. However, the metadata and data can refer to different sets of objects. 
-
-The main advantage of this approach is that the assignment of object regions to data servers becomes more flexible. When an object is created, the name of the object maps to a unique metadata server. In our implementation, we adopt string hash values for object names and modulus operations to achieve this goal. The metadata information will be registered at the metadata server. Later, when other clients open the object, they can use the name of the object to locate the same metadata server.
-
-When a client accesses regions of an object, the metadata server informs the client the corresponding data servers it should transfer its I/O requests to. There are a few different methods how metadata servers can map object regions to data servers.
-### Static object region mappings
-A metadata server can partition the object space evenly to all data servers. For high-dimensional objects, it is possible to define block partitioning methods similar to HDF5’s chunking strategies.
-
-For applications with balanced workload, static object region partitioning can theoretically achieve optimal parallel performance. In addition, static partitioning determines the mapping from object regions to data servers at object create/open time. No additional metadata management is required.
-### Dynamic object region mappings
-For applications that access a subset of regions for different objects, some data servers can stay idle while the rest of servers are busy with fetching or storing data for these regions concentrated around coordinates of interests. Dynamic object partitioning allows metadata servers to balance data server workloads in runtime. The mapping from object regions to data server is determined at the time of starting region transfer request time.
-
-Partitioning object regions dynamically increases the complexity of metadata management. For example, a read from one client 0 after a write from another client 1 on overlapping regions demands metadata support. Client 0 has to locate the data server that client 1 writes the region data to using information from the metadata server. As a result, metadata servers must maintain up-to-date metadata of the objects they manage. There are a few options we can implement this feature.
-
-Option 1: When a client attempts to modify object regions, the client can send the metadata of this transfer request to the metadata server as well. Consequently, the metadata server serving for the modified objects always has the most up-to-date metadata.
-
-Advantage: No need to perform communications between the servers. ( Current strategy  )
-
-Disadvantage:  Metadata server can be a bottleneck because the number of clients accessing the server may scale up quickly.
-
-Option 2: When a data server receives region transfer requests from any client, the data server forwards the corresponding metadata to the metadata server of the object.
-
-Advantage: The number of servers are less than the number of clients, we are having less chance of communication contention
-
-Disadvantage: Server-to-serve RPC infrastructures are not there yet. It takes some effort to implement.
-
-Option3: Similar to option2, but the data server will modify a metadata file. Later, a metadata server always checks the metadata file for updates of metadata information.
-
-Advantage: No communications are required if a metadata file is used.
-
-Disadvantage: Reading metadata files may take some time. If multiple servers are modifying the same metadata file, how should we proceed?
-
-The following table summarizes the communication of the three mapping methods from clients to types of PDC servers when different PDC functions are called.
-
-## PDC metadata management implementation
-This section discusses how object metadata is implemented in the PDC production library. The following figure illustrates the flow of object metadata for different object operations. We label the 4 types of metadata in bold.
-![alt text](pdc_metadata_flow.png)
-### Create metadata
-Metadata for an object is created by using PDC property. PDC property is created using client API “PDCprop_create(pdc_prop_type_t type, pdcid_t pdc_id)”. After a property instance is created, it is possible to set elements in this property using object property APIs. Details are in https://github.com/hpc-io/pdc/tree/stable/docs#pdc-property-apis.
-
-An alternative way is to use “pdcid_t PDCprop_obj_dup(pdcid_t prop_id);”, which copies all the existing entries in a property to a new object instance.
-
-### Binding metadata to object
-Metadata is attached to an object at the object creation time. “PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)” is the prototype for binding an object property when an object is created.
-
-### Register object metadata at metadata server
-Once an object is created locally at a client, the object metadata is sent to the corresponding metadata server based on the hash value computed from the object name. Internally, search for “typedef struct pdc_metadata_t {...} pdc_metadata_t;” in the file pdc_client_server_common.h. This data structure contains essential metadata about the object, such as its dimension and name.
-
-### Retrieve metadata from metadata server
-Object metadata can be obtained from metadata server when clients open an object using the prototype “pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc);”. The client contacts the corresponding metadata server to retrieve data from the data type “pdc_metadata_t” stored at the server.
-
-### Object metadata at client
-The current implementation stores metadata at client in two separate places for historical reasons. Both places can be accessed from the data type “struct _pdc_obj_info*”, which is a data type defined in “pdc_obj_pkg.h”.
-
-In general, we can use “struct _pdc_id_info *PDC_find_id(pdcid_t obj_id)” to locate the object info pointer “obj”. Then, (struct _pdc_obj_info *)(obj->obj_ptr); allows use to obtain the “struct _pdc_obj_info*” structure. We call this pointer “obj_info_ptr”
-
-The first piece of local metadata, denoted as metadata buffer, is stored in “obj_info_ptr->metadata”. This value is a pointer that represents “pdc_metadata_t”. Its content matches the values stored at the metadata server side exactly. For object create, we copy the data from the pointer to the server memory using mercury RPCs. For object open, we copy from server memory to client memory.
-
-The second piece of local metadata, denoted as object public property, is stored in “obj_info_ptr->obj_pt”, which has type “struct pdc_obj_prop” defined in file “pdc_prop.h”. The values in this data type are copied from the first piece. This metadata data type contains essential information such as object dims and region partition types. In the future, more metadata may be added.
-
-### Metadata at data server
-Details about the data server will not be discussed in this section. In general, a data server takes inputs (both metadata and data for an object) from clients and processes them accordingly. It is not supposed to store metadata information for objects. However, it is responsible for storing the locations of data in the file system, including path and offset for regions.
-
-If server cache is enabled, object dimension is stored by the server cache infrastructure when an object is registered for the first time. Object dimension is not used anywhere unless the I/O mode is set to be canonical file order storage. Currently, this mode does not allow clients to change object dimension, so it is not subject to metadata update, which is discussed in the next subsection.
-
-### Object metadata update
-Object metadata is defined before creating an object. At the early stage of PDC, we did not plan to change any of the metadata after an object was created. However, it may be necessary to do this in the future. For example, sometimes applications want to change the sizes of PDC objects along different dimensions. An example is implemented as “perr_t PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims);”. This function can change object dimensions in runtime.  As mentioned earlier, there are three places we need to update the metadata. Two places are at the client side and the other place is at the metadata server.
-
-### Object region metadata
-Region metadata is required for dynamic region partitioning. Dynamic region partitioning strategy at metadata server assigns data server IDs for regions in runtime. The file “pdc_server_region_transfer_metadata_query.c” implements the assignments of data server ID for individual regions. For dynamic region partition and local region partition strategies, a metadata server receives client region transfer requests. The metadata server returns a data server ID back to the client, so the client can send data to the corresponding data server. Details about how the client connects to the metadata server will be discussed in the implementation of the region transfer request.
-
-### Metadata checkpoint
-When PDC servers are closed, metadata stored by metadata servers are saved to the file system. Later, when users restart the servers, essential metadata are read back to the memory of the metadata server. In general, if servers are closed and restarted, client applications should not be aware of any changes. This subsection layouts the data format of PDC metadata when they are checkpointed.
-
-Implementation of server checkpoint is in the function “PDC_Server_checkpoint” and the corresponding restart is in the function “PDC_Server_restart(char *filename)”. The source file is “pdc_server.c”.  
-
-There are four categories of metadata to be checkpointed. One category is concatenated after another seamlessly. We demonstrate the first three categories of metadata in the following figures. Before each of the brackets, an integer value will indicate the number of repetition for contents in the brackets.contents after the bracket will start from the next byte after the last repetition for contents in the bracket. The last category is managed by an independent module "pdc_server_region_transfer_metadata_query.c". The content of the metadata is subject to future changes.
-
-![Alt text](container_hashtable_checkpoint.png)
-![Alt text](data_hashtable_checkpoint.png)
-![Alt text](data_server_checkpoint.png)
-
-Region metadata checkpoint is placed at the end of the server checkpoint file, right after the last byte of data server region. Function “transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoint_size)” in file pdc_server_region_transfer_metadata_query.c handles the wrapping of region metadata.
-
-## Region transfer request at client
-![Alt text](pdc_region_transfer_request_flow.png)
-This section describes how the region transfer request module in PDC works. Region transfer request module is the core of PDC I/O. From the client's point of view, some data is written to regions of objects through transfer request APIs. PDC region transfer request module arranges how data is transferred from clients to servers and how data is stored at servers.
-PDC region:
-A PDC object abstracts a multi-dimensional array. The current implementation supports up to 3D. To access a subarray of the object, the PDC region can be used. A PDC region describes the offsets and lengths to access an multi-dimensional array. Its prototype for creation is “PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size);”. The values of the input to this create function will be copied into PDC internal memories, so it is safe to free the pointers later.
-
-### Region transfer request create and close
-Region transfer request create function has prototype “PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg, pdcid_t remote_reg);”. The function takes a contiguous data buffer as input. Content in this data buffer will be stored in the region described by “remote_reg” for objects with “obj_id”. Therefore, “remote_reg” has to be contained in the dimension boudaries of the object. The transfer request create function copies the region information into the transfer request’s memory, so it is safe to immediately close both “local_reg” and “remote_reg” after the create function is called.
-
-“local_reg”  describes the shape of the data buffer, aligning to the object’s dimensions. For example, if “local_reg” is a 1D region, the start index of the buf to be stored begins at the “offset[0]” of the “local_reg”, with a size of “size[0]”. Recall that “offset” and “size” are the input argument. If “local_reg” has dimensions larger than 1, then the shape of the data buffer is a subarray described by “local_reg” that aligns to the boundaries of object dimensions. In summary, “local_reg” is analogous to HDF5’s memory space. “remote_reg” is parallel to HDF5’s data space for data set I/O operations.
-
-“PDCregion_transfer_close(pdcid_t transfer_request_id);” is used to clean up the internal memories associated with the “transfer_request_id”.
-
-Both create and close functions are local memory operations, so no mercury modules will be involved.
-
-### Region transfer request start
-Starting a region transfer request function will trigger the I/O operation. Data will be transferred from client to server using the pdc_client_connect module. pdc_client_connect module is a middleware layer that transfers client data to a designated server and triggers a corresponding RPC at the server side. In addition, the RPC transfer also allows data transfer by argument. Variables transferred by argument are fixed-sized. For variable-sized variables, mercury bulk transfer is used to transfer a contiguous memory buffer.
-Region transfer request start APIs:
-To transfer metadata and data with the pdc_client_connect module, the “region_transfer_request.c” file contains mechanisms to wrap request data into a contiguous buffer. There are two ways to start a transfer request, the first prototype is “PDCregion_transfer_start(pdcid_t transfer_request_id);”. This function starts a single transfer request, specified by its ID. The second way is to use the aggregated prototype “PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size);”. This function can start multiple transfer requests. It is recommended to use the aggregated version when multiple requests can start together, because it allows both client and server to aggregate the requests and achieve better performance.
-
-For 1D local region, “PDCregion_transfer_start” passes the pointer pointing to the “offset[0] * unit” location of the input buffer to the pdc_client_connect module. For higher dimensions, user data will be copied to a new contiguous buffer using subregion copy based on local region shape. This implementation is in the static function “pack_region_buffer”. The new memory buffer will be passed to the pdc_client_conenct module.
-
-This memory buffer passed to the pdc_client_connect module is registered with mercury bulk transfer. If it is a read operation, the bulk transfer is a pull operation. Otherwise it is a push operation. Remote region information and some other relevant metadata are transferred using mercury RPC arguments. Once the pdc_client_connect module receives a return code and remote transfer request ID from the designated data server, “PDCregion_transfer_start” will cache the remote transfer request ID and exit.
-
-“PDCregion_transfer_start” can be interpreted as “PDCregion_transfer_start_all” with the size argument set to be 1, though the implementation is optimized. “PDCregion_transfer_start_all” performs aggregation of mercury bulk transfer, whenever it is possible. Firstly, the function split the read and write requests. Write requests are handled before the read requests. 
-Wrapping region transfer requests to internal transfer packages:
-For each of the write requests, it is converted into one or more instances of structure described by  “pdc_transfer_request_start_all_pkg” defined in “pdc_region_transfer.c”. This structure contains the data buffer to be transferred, remote region shapes, and a data server server rank to be transferred to. “PDCregion_transfer_start_all” implements the package translation in static function “prepare_start_all_requests”.
-
-As mentioned earlier in the metadata implementation, an abstract region for an object can be partitioned in different ways. There are 4 types of partitions: Object static partitioning, region static partitioning, region dynamic partitioning, and node-local region placement. “PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t region_partition)” allows users to set the partition method before creating an object at the client side. Different partitioning strategies have differences in the target data server rank when a transfer request is packed into  “pdc_transfer_request_start_all_pkg”(s). We describe them separately.
-
-For object static partitioning strategy, the input transfer request is directly packed into “pdc_transfer_request_start_all_pkg” using a one-to-one mapping. The data server rank is determined at the object create/open time.
-
-For dynamic region partitioning or node-local placement, the static function “static perr_t register_metadata” (in “pdc_region_transfer.c”) is used to contact the metadata server. The metadata server selects a data server for the input region transfer request dynamically based on current system status. If local region placement is selected, metadata servers choose the data server that is on the same node (or as close as possible) of the client rank that transferred this request. If dynamic region partitioning is selected, the metadata server picks the data server that currently holds the minimum number of bytes of data. The metadata server holds the region to data server mapping in its metadata region query system “pdc_server_region_transfer_metadata_query.c”. Metadata held by this module will be permanently stored into the file system as part of the metadata checkpoint file at PDC server close time. After retrieving the correct data server ID, one “pdc_transfer_request_start_all_pkg” is created. The only difference in the process of creating “pdc_transfer_request_start_all_pkg” compared with the object static partitioning strategy is the way how data server ID is retrieved.
-
-For static region partitioning strategy, a region is equally partitioned across all data servers. As a result, one region transfer request generates the number of “pdc_transfer_request_start_all_pkg” equal to the total number of PDC servers. This implementation is in the static function “static_region_partition” in file “pdc_region_transfer_request.c”
-
-Sending internal transfer request packages from client to server:
-For an aggregated region transfer request start all function call, two arrays of “pdc_transfer_request_start_all_pkg” are created as described in the previous subsection depending on the partitioning strategies. One is for PDC_WRITE and the other is for PDC_READ. This section describes how “pdc_region_transfer_request.c” implements the communication from client to transfer. The core implementation is in the static function “PDC_Client_start_all_requests”.
-
-Firstly, an array of “pdc_transfer_request_start_all_pkg” is sorted based on the target data server ID. Then, For adjacent “pdc_transfer_request_start_all_pkg” that sends to the same data server ID, these packages are packed into a single contiguous memory buffer using the static function “PDC_Client_pack_all_requests”. This memory buffer is passed to the pdc_client_connect layer for mercury transfer. 
-
-Region transfer request wait:
-Region transfer request start does not guarantee the finish of data communication or I/O at the server by default. To make sure the input memory buffer is reusable or deletable, a wait function can be used. Wait function is also called implicitly when the object is closed or special POSIX semantics is set ahead of time when the object is created.
-
-### Region transfer request wait
-
-Similar to the start case, wait API has single and aggregated versions “PDCregion_transfer_start” and “PDCregion_transfer_start_all”. It is possible to wait for more than one request using the aggregated version.
-
-The implementation of the wait all operation is similar to the implementation of the start all request. Firstly, packages defined by the structure “PDCregion_transfer_wait_all” are created. “PDCregion_transfer_wait_all” only contains the remote region transfer request ID and data server ID. These packages are sorted based on the data server ID. Region transfer requests that go to the same data server are packed into a contiguous buffer and sent through the PDC client connect module.
-
-Region transfer request wait client control:
-As mentioned earlier, the region transfer request start all function packs many data packages into the same contiguous buffer and passes this buffer to the PDC client connect layer for mercury transfer. This buffer can be shared by more than one region transfer request. This buffer cannot be freed until wait operations are called on all of these requests (not necessarily in a single wait operation call). 
-
-When a wait operation is called on a subset of these requests, we reduce the reference counter of the buffer. This reference counter is a pointer stored by the structure “pdc_transfer_request”. 
-In terms of implementation, “pdc_transfer_request” stores an array of reference counter pointers and an array of data buffer pointers. Both arrays have the same size, forming a one-to-one mapping. Each of the data buffer pointers points to an aggregated memory buffer that this region transfer request packs some of its metadata/data into. When the aggregated buffer is created, the corresponding reference counter is set to be the number of region transfer requests that store the reference counter/data buffer pointers. As a result, when all of these region transfer requests have been waited, the reference counter becomes zero and the data buffer can be freed.
-
-## Region transfer request at server
-The region transfer request module at the server side is implemented in the folder “server/pdc_server_region”. This section describes how a data server is implemented at the server side.
-
-## Server region transfer request RPC
-
-At the PDC server side, “pdc_client_server_common.c” contains all the RPCs’ entrances from client calls. “pdc_server_region_request_handler.h” contains all the RPCs’ related to region transfer requests. The source code is directly included in the “pdc_client_server_common.c”.
-“HG_TEST_RPC_CB(transfer_request, handle)” and “HG_TEST_RPC_CB(transfer_request_all, handle)” are the server RPCs for region transfer request start and region transfer request start all functions called at client side. “HG_TEST_RPC_CB(transfer_request_wait, handle)” and “HG_TEST_RPC_CB(transfer_request_wait_all, handle)” are the server RPCs for region transfer request wait and region transfer request wait all. 
-
-All functions that contain “cb” at the end refer to the call back functions of the mercury bulk transfer. Mercury bulk transfer is used for transferring variable-sized data from client to server. When server RPC is triggered, the bulk transfer argument is passed through mercury RPC augment. This argument is used by “HG_Bulk_create” and “HG_Bulk_transfer” to initiate the transfer of data from client to server. Once the transfer is finished, the mercury bulk transfer function triggers the call back function (one of the arguments passed to “HG_Bulk_transfer”) and processes the data received (or sent to the client).
-
-### Server nonblocking control
-
-By design, region transfer request start does not guarantee the finish of data transfer or server I/O. In fact, this function should return to the application as soon as possible. Data transfer and server I/O can take place in the background, so client applications can take advantage of overlapping timings between application computations and PDC data management. 
-
-### Server region transfer request start
-
-When server RPC for region transfer request start is triggered, it immediately starts the bulk transfer by calling the mercury bulk transfer functions. 
-
-In addition, the region transfer request received by the data server triggers a register function “PDC_transfer_request_id_register” implemented “pdc_server_region_transfer.c”. This function returns a unique remote region transfer ID. This remote ID is returned back to the client for future references, so the wait operation can know which region transfer request should be finished at the data server side.
-
-Then, “PDC_commit_request” is called for request registration. This operation pushes the metadata for the region transfer request to the end of the data server’s linked list for temporary storage.
-
-Finally, the server RPC returns a finished code to the client, so the client can return to the application immediately.
-
-### Server region transfer request wait
-
-The request wait RPC at server side receives remote region transfer request ID from client. The RPC returns to the client when local data server I/O for this request is finished. 
-
-The implementation is by using the “PDC_check_request” function in the file “pdc_server_region_transfer.c”. This function returns two possibilities. One possible return value is “PDC_TRANSFER_STATUS_COMPLETE”. In this case, the wait function can immediately return to the client. Another possibility is “PDC_TRANSFER_STATUS_PENDING”. This flag means that the local server I/O has not finished yet, so this RPC function will not return to the client. Instead, the mercury handle is binded to the structure “pdc_transfer_request_status” (defined in “pdc_server_region_transfer.h”) that stores the metadata of the region transfer request (search by its ID) within the function “PDC_check_request”. 
-
-When the region transfer request call back function for this region transfer is triggered and the I/O operations are finished, the call back function calls “PDC_finish_request” to trigger the return of the wait mercury handle binded to the region transfer request. In case of a mercury handler is not found, “PDC_finish_request” sets the flag of “pdc_transfer_request_status” for the region transfer request to be “PDC_TRANSFER_STATUS_COMPLETE”, so a wait request called later can immediately return as described before.
-Server region transfer request aggregated mode:
-For aggregated region transfer request start and wait calls, the server acquired a contiguous memory buffer through mercury bulk transfer. This contiguous memory buffer contains packed request metadata/data from client side. These requests are parsed. For each of the requests, we process them one at a time. The processing method is described in the previous section.
-
-## Server region storage
-PDC is a data management library. I/O is part of its service. Therefore, I/O operation is critical for data persistence. The function “PDC_Server_transfer_request_io” in file “pdc_server_region_transfer.c” implements the core I/O function. There are two I/O modes for PDC.
-
-In general, one PDC object is stored at one file per data server.
-
-### Storage by file offset
-I/O by file only works for objects with fixed-dimension. Clients are not allowed to modify object dimensions by any means. When a region is written to an object, the region is translated into arrays of offsets and offset lengths based on the region shape using list I/O. Therefore, a region has fixed offsets to be placed on the file.
-
-### Storage by region
-I/O by region is a special feature of the PDC I/O management system. Writing a region to an object will append the region to the end of a file. If the same region is read back again some time later, it only takes a single POSIX lseek and I/O operation to complete either write or read.
-
-However, when a new region is written to an object, it is necessary to scan all the previously written regions to check for overlapping. The overlapping areas must be updated accordingly. If the new region is fully contained in any of the previously stored regions, then it is unnecessary to append it to the end of the file.
-
-I/O by region will store repeated bytes when write requests contain overlapping parts. In addition, the region update mechanism generates extra I/O operations. This is one of its disadvantages. Optimization for region search (as R trees) in the future can relieve this problem.
-
-## Open tasks for PDC
-
-### Replacing individual modules with efficient Hash table data structures
-For functionalities implemented in modules “pdc_server_region_transfer_metadata_query.c”, “pdc_server_region_cache.c”, and “pdc_server_region_transfer.c, the basic implementation for holding metadata are in form of linked list. It is frequent in these modules to search for a particular linked list node by comparing IDs.
-
-One project is to replace the search of linked list nodes with Hash table functions, so we can avoid the linear search of entries by IDs.
-
-### Restarting pdc_server.exe with different numbers of servers
-Currently, PDC checkpoint restart function has an assumption that users use the same number of server processes every time they run on the pdc_server.exe. If servers are started with a different number of processes, undefined behavior will happen. This project should allow users to restart servers with different numbers of processes from previous runs without issues. Before you carry out this implementation, can you answer the following questions?
-Have you carefully read and understood the PDC metadata checkpoint processes?
-
-How are metadata distributed to metadata servers given you have a smaller/larger number of servers?
-
-How are metadata distributed to data servers given you have a smaller/larger number of servers?
-
-For previously checkpointed files by different ranks, how are you reading them (must be a way to confirm how many these checkpoint files previously written)?
-
-### Fast region search mechanisms
-Currently, PDC stores regions in linked lists. This implementation is used by both “pdc_server_region_cache.c” and “pdc_server_data.c”. For example, “PDC_Server_data_write_out” in “pdc_server_data.c” checks whether an input region overlaps with all previously stored regions by functions “check_overlap” and “PDC_region_overlap_detect” implemented in “pdc_region_utils.c” using a for loop.
-
-Tree structures for managing regions can relieve the need for going through the entire list of previously stored regions. For example, KD trees can rule out regions that will fail the overlapping test easily.
-
-### Merge overlapping regions
-“PDC_Server_data_write_out” in “pdc_server_data.c” can frequently generate new regions, though these regions may have large overlapping portions. In the end, the many duplicated bytes are stored into file systems. With the help of efficient tree-based region management, it is possible to periodically merge many regions that have overlapping parts by separating the overlapping region out and splitting the rest of regions. Alternatively, it is possible to create a large region that contains a group of regions that have a lot of overlapping parts. Either way, we can reduce the number of bytes to be stored. Moreover, searching can become more efficient if regions are merged together.
+  + This note is for developers. It helps developers to understand the code structure of PDC code as fast as possible.
+  + PDC internal data structure
+    - Linkedlist
+      * Linkedlist is an important data structure for managing PDC IDs.
+      * Overall. An PDC instance after PDC_Init() has a global variable pdc_id_list_g. See pdc_interface.h
+      ```
+      struct PDC_id_type {
+          PDC_free_t                  free_func;         /* Free function for object's of this type    */
+          PDC_type_t                  type_id;           /* Class ID for the type                      */
+          unsigned                    init_count;        /* # of times this type has been initialized  */
+          unsigned                    id_count;          /* Current number of IDs held                 */
+          pdcid_t                     nextid;            /* ID to use for the next atom                */
+          PDC_LIST_HEAD(_pdc_id_info)  ids;               /* Head of list of IDs                        */
+      };
+
+      struct pdc_id_list {
+          struct PDC_id_type *PDC_id_type_list_g[PDC_MAX_NUM_TYPES];
+      };
+      struct pdc_id_list *pdc_id_list_g;
+      ```
+      * pdc_id_list_g is an array that stores the head of linked list for each types.
+      * The _pdc_id_info is defined as the followng in pdc_id_pkg.h.
+      ```
+      struct _pdc_id_info {
+          pdcid_t             id;             /* ID for this info                 */
+          hg_atomic_int32_t   count;          /* ref. count for this atom         */
+          void                *obj_ptr;       /* pointer associated with the atom */
+          PDC_LIST_ENTRY(_pdc_id_info) entry;
+      };
+      ```
+      * obj_ptr is the pointer to the item the ID refers to.
+      * See pdc_linkedlist.h for implementations of search, insert, remove etc. operations
+    - ID
+      * ID is important for managing different data structures in PDC.
+      * e.g Creating objects or containers will return IDs for them
+    - pdcid_t PDC_id_register(PDC_type_t type, void *object)
+      * This function maintains a linked list. Entries of the linked list is going to be the pointers to the objects. Every time we create an object ID for object using some magics. Then the linked list entry is going to be put to the beginning of the linked list.
+      * type: One of the followings
+      ```
+        typedef enum {
+            PDC_BADID            = -1, /* invalid Type                                */
+            PDC_CLASS            = 1,  /* type ID for PDC                             */
+            PDC_CONT_PROP        = 2,  /* type ID for container property              */
+            PDC_OBJ_PROP         = 3,  /* type ID for object property                 */
+            PDC_CONT             = 4,  /* type ID for container                       */
+            PDC_OBJ              = 5,  /* type ID for object                          */
+            PDC_REGION           = 6,  /* type ID for region                          */
+            PDC_TRANSFER_REQUEST = 7,  /* type ID for region transfer                          */
+            PDC_NTYPES           = 8   /* number of library types, MUST BE LAST!      */
+        } PDC_type_t;
+      ```
+      * Object: Pointer to the class instance created ( bad naming, not necessarily a PDC object).
+    - struct _pdc_id_info *PDC_find_id(pdcid_t idid);
+      * Use ID to get struct _pdc_id_info. For most of the times, we want to locate the object pointer inside the structure. This is linear search in the linked list.
+      * idid: ID you want to search.
+
+  + PDC core classes.
+    - Property
+      * Property in PDC serves as hint and metadata storage purposes.
+      * Different types of object has different classes (struct) of properties.
+      * See pdc_prop.c, pdc_prop.h and pdc_prop_pkg.h for details.
+    - Container
+      * Container property
+      ```
+      struct _pdc_cont_prop {
+          /* This class ID is returned from PDC_find_id with an input of ID returned from PDC init. This is true for both object and container. 
+           *I think it is referencing the global PDC engine through its ID (or name). */
+         struct _pdc_class *pdc{
+             /* PDC class instance name*/
+             char        *name;
+             /* PDC class instance ID. For most of the times, we only have 1 PDC class instance. This is like a global variable everywhere.*/
+             pdcid_t     local_id;
+          };
+          /* This ID is the one returned from PDC_id_register . This is a property ID type. 
+           * Some kind of hashing algorithm is used to generate it at property create time*/
+          pdcid_t           cont_prop_id;
+          /* Not very important */          pdc_lifetime_t    cont_life;
+      };
+      ```
+      * Container structure (pdc_cont_pkg.h and pdc_cont.h)
+      ```
+      struct _pdc_cont_info {
+          struct pdc_cont_info    *cont_info_pub {
+              /*Inherited from property*/
+              char                   *name;
+              /*Registered using PDC_id_register */
+              pdcid_t                 local_id;
+              /* Need to register at server using function PDC_Client_create_cont_id */
+              uint64_t                meta_id;
+          };
+          /* Pointer to container property.
+           * This struct is copied at create time.*/
+          struct _pdc_cont_prop   *cont_pt;
+      };
+      ```
+    - Object
+      * Object property
+      See [object property](#object-property)
+      * Object structure (pdc_obj_pkg.h and pdc_obj.h)
+      See [Object structure](#object-structure)

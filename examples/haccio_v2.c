@@ -74,7 +74,6 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var
     PDCprop_set_obj_time_step(*obj_prop, 0);
     PDCprop_set_obj_user_id(*obj_prop, getuid());
     PDCprop_set_obj_app_name(*obj_prop, "HACCIO");
-    PDCprop_set_obj_consistency_semantics(*obj_prop, PDC_CONSISTENCY_POSIX);
 
     pdcid_t obj_id = PDCobj_create_mpi(cont_id, obj_name, *obj_prop, 0, comm);
     if (obj_id == 0) {
@@ -89,7 +88,7 @@ int
 main(int argc, char **argv)
 {
     int mpi_rank, mpi_size;
-    int i;
+    int i, k;
 
     pdcid_t pdc_id, cont_prop, cont_id;
 
@@ -97,7 +96,7 @@ main(int argc, char **argv)
     pdcid_t region_ids[NUM_VARS], region_remote_ids[NUM_VARS];
     pdcid_t transfer_ids[NUM_VARS];
 
-    // perr_t ret;
+    perr_t ret;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
@@ -174,7 +173,7 @@ main(int argc, char **argv)
         free(buffers[i]);
     }
 
-#ifdef PDC_TIMING
+#if PDC_TIMING == 1
     PDC_timing_report("write");
 #endif
 

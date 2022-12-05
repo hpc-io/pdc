@@ -32,6 +32,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
+#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -221,6 +222,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx, region_xx);
     if (ret < 0) {
         printf("Array x PDCbuf_obj_map failed\n");
@@ -261,6 +263,7 @@ main(int argc, char **argv)
         printf("Array id2 PDCbuf_obj_map failed\n");
         return 1;
     }
+
     ret = PDCreg_obtain_lock(obj_xx, region_xx, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
         printf("Failed to obtain lock for region_xx\n");
@@ -312,6 +315,7 @@ main(int argc, char **argv)
         py[i]  = uniform_random_number() * y_dim;
         pz[i]  = ((float)id2[i] / numparticles) * z_dim;
     }
+
     ret = PDCreg_release_lock(obj_xx, region_xx, PDC_WRITE);
     if (ret != SUCCEED) {
         printf("Failed to release lock for region_xx\n");
@@ -352,6 +356,7 @@ main(int argc, char **argv)
         printf("Failed to release lock for region_id22\n");
         return 1;
     }
+
     ret = PDCbuf_obj_unmap(obj_xx, region_xx);
     if (ret != SUCCEED) {
         printf("region xx unmap failed\n");
@@ -392,7 +397,10 @@ main(int argc, char **argv)
         printf("region id22 unmap failed\n");
         return 1;
     }
+#if PDC_TIMING == 1
     PDC_timing_report("write");
+#endif
+
     if (PDCobj_close(obj_xx) < 0) {
         printf("fail to close obj_xx\n");
         return 1;

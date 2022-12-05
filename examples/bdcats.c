@@ -32,6 +32,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
+#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -337,8 +338,9 @@ main(int argc, char **argv)
         printf("region id22 transfer close failed\n");
         return 1;
     }
-
+#if PDC_TIMING == 1
     PDC_timing_report("read");
+#endif
 
     if (PDCobj_close(obj_xx) < 0)
         printf("fail to close obj_xx\n");

@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SRCDIR=`dirname ${BASH_SOURCE[0]}`
+
+export ENABLE_MPI=OFF
+export ENABLE_LUSTRE=OFF
+export ENABLE_TIMING=OFF
+export ENABLE_CHECKPOINT=ON
+export ENABLE_MULTITHREAD=OFF
+export BUILD_TESTING=ON
+export BUILD_MPI_TESTING=OFF
+export BUILD_DOCUMENTATION=OFF
+export MPI_TEST_CMD=mpiexec
+export CMAKE_PREFIX_PATH=/Users/kmu/Research/PDC/tools/mercury/share/cmake/mercury
+export PDC_DATA_LOC=/Users/kmu/Research/PDC/pdc/src/build/gen_data
+export HG_TRANSPORT=bmi+tcp
+
+cmake $SRCDIR

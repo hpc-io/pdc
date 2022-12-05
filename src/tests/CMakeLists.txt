@@ -2,12 +2,13 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
-  ${PROJECT_BINARY_DIR}
-  ${PDC_SOURCE_DIR}
-  ${PDC_SOURCE_DIR}/src/client_api/include
   $ENV{HOME}/Sandbox/c-blosc/blosc
   $ENV{HOME}/include
 )
+
+if(PDC_ENABLE_TIMING)
+    add_definitions(-DPDC_TIMING=1)
+endif()
 
 set(PROGRAMS
   pdc_init
@@ -27,10 +28,8 @@ set(PROGRAMS
   cont_del
   cont_getid
   cont_tags
-  consistency_semantics
-  create_obj
+#  create_obj
   open_obj
-  open_existing_obj
   obj_info
   obj_del
   obj_iter
@@ -50,12 +49,10 @@ set(PROGRAMS
   region_transfer_overlap_3D
   region_transfer_merge
   obj_round_robin_io
-  obj_round_robin_io_all
-#  close_server
+  close_server
 #  stat_obj
   delete_obj
   vpicio
-  vpicio_mts
   bdcats
   vpicio_old
   bdcats_old
@@ -72,9 +69,9 @@ set(PROGRAMS
   region_transfer_status
   region_transfer_skewed
   region_transfer_2D
-  # region_transfer_2D_skewed
+  region_transfer_2D_skewed
   region_transfer_3D
-  # region_transfer_3D_skewed
+  region_transfer_3D_skewed
   region_transfer_write_only
   region_transfer_read_only
   region_transfer_write_read
@@ -84,10 +81,6 @@ set(PROGRAMS
   region_transfer_all_append
   region_transfer_all_append_2D
   region_transfer_all_append_3D
-  region_transfer_all_split_wait
-  region_transfer_set_dims
-  region_transfer_set_dims_2D
-  region_transfer_set_dims_3D
   #query_vpic_create_data
   #query_vpic
   #query_vpic_multi
@@ -178,8 +171,8 @@ add_test(NAME region_transfer_status    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT
 add_test(NAME region_transfer_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D )
 add_test(NAME region_transfer_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D )
 add_test(NAME region_transfer_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_skewed )
-# add_test(NAME region_transfer_2D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D_skewed )
-# add_test(NAME region_transfer_3D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D_skewed )
+add_test(NAME region_transfer_2D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D_skewed )
+add_test(NAME region_transfer_3D_skewed    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D_skewed )
 add_test(NAME region_transfer_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_partial )
 add_test(NAME region_transfer_2D_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_2D_partial )
 add_test(NAME region_transfer_3D_partial WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_3D_partial )
@@ -194,25 +187,6 @@ add_test(NAME region_transfer_all_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT
 add_test(NAME region_transfer_all_append    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append )
 add_test(NAME region_transfer_all_append_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_2D )
 add_test(NAME region_transfer_all_append_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_3D )
-add_test(NAME region_transfer_all2    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all 0)
-add_test(NAME region_transfer_all2_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_2D 0)
-add_test(NAME region_transfer_all2_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_3D 0)
-add_test(NAME region_transfer_all_append2    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append 0)
-add_test(NAME region_transfer_all_append2_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_2D 0)
-add_test(NAME region_transfer_all_append2_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_3D 0)
-add_test(NAME region_transfer_all3    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all 0 0)
-add_test(NAME region_transfer_all3_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_2D 0 0)
-add_test(NAME region_transfer_all3_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_3D 0 0)
-add_test(NAME region_transfer_all_append3    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append 0 0)
-add_test(NAME region_transfer_all_append3_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_2D 0 0)
-add_test(NAME region_transfer_all_append3_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_3D 0 0)
-add_test(NAME region_transfer_all4    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all 1 0)
-add_test(NAME region_transfer_all4_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_2D 1 0)
-add_test(NAME region_transfer_all4_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_3D 1 0)
-add_test(NAME region_transfer_all_append4    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append 1 0)
-add_test(NAME region_transfer_all_append4_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_2D 1 0)
-add_test(NAME region_transfer_all_append4_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_append_3D 1 0)
-add_test(NAME region_transfer_all_split_wait    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_split_wait )
 add_test(NAME read_obj_int     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int)
 add_test(NAME read_obj_float   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 float)
 add_test(NAME read_obj_double  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 double)
@@ -257,12 +231,11 @@ set_tests_properties(region_transfer_status     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_3D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_skewed     PROPERTIES LABELS serial )
-# set_tests_properties(region_transfer_2D_skewed     PROPERTIES LABELS serial )
-# set_tests_properties(region_transfer_3D_skewed     PROPERTIES LABELS serial )
+set_tests_properties(region_transfer_2D_skewed     PROPERTIES LABELS serial )
+set_tests_properties(region_transfer_3D_skewed     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_partial     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_2D_partial  PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_3D_partial  PROPERTIES LABELS serial )
-
 set_tests_properties(region_transfer_overlap     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_overlap_3D     PROPERTIES LABELS serial )
@@ -273,25 +246,6 @@ set_tests_properties(region_transfer_all_3D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_append     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_append_2D     PROPERTIES LABELS serial )
 set_tests_properties(region_transfer_all_append_3D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all2     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all2_2D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all2_3D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append2     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append2_2D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append2_3D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all3     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all3_2D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all3_3D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append3     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append3_2D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append3_3D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all4     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all4_2D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all4_3D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append4     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append4_2D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_append4_3D     PROPERTIES LABELS serial )
-set_tests_properties(region_transfer_all_split_wait     PROPERTIES LABELS serial )
 set_tests_properties(read_obj_int      PROPERTIES LABELS serial )
 set_tests_properties(read_obj_float    PROPERTIES LABELS serial )
 set_tests_properties(read_obj_double   PROPERTIES LABELS serial )
@@ -316,84 +270,61 @@ set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS seria
 #add_test(NAME vpicio_query_vpic_exyz_nopreload WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic_exyz_nopreload )
 
 if(BUILD_MPI_TESTING)
-    add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int)
-    add_test(NAME read_obj_shared_float WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 float)
-    add_test(NAME read_obj_shared_double WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 double)
-    add_test(NAME read_obj_shared_char WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 char)
-    add_test(NAME read_obj_shared_uint WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 uint)
-    add_test(NAME read_obj_shared_int64 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int64)
-    add_test(NAME read_obj_shared_uint64 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 uint64)
-    add_test(NAME read_obj_shared_int16 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int16)
-    add_test(NAME read_obj_shared_int8 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int8)
-#    add_test(NAME create_obj_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj_coll ${MPI_RUN_CMD} 4 6 )
-#    add_test(NAME create_cont_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_cont_coll ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_status_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_status ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_skewed ${MPI_RUN_CMD} 4 6 )
-    # add_test(NAME region_transfer_2D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D_skewed ${MPI_RUN_CMD} 4 6 )
-    # add_test(NAME region_transfer_3D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D_skewed ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_partial ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_2D_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D_partial ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_3D_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D_partial ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_overlap_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_overlap_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap_2D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_overlap_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap_3D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_write_read_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_write_read ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_all_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_all_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_2D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_all_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_3D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_all_append_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_all_append_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_all_append_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME region_transfer_all2_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all ${MPI_RUN_CMD} 4 6 0 1)
-    add_test(NAME region_transfer_all2_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_2D ${MPI_RUN_CMD} 4 6 0 1)
-    add_test(NAME region_transfer_all2_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_3D ${MPI_RUN_CMD} 4 6 0 1)
-    add_test(NAME region_transfer_all_append2_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 4 6 0 1)
-    add_test(NAME region_transfer_all_append2_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 4 6 0 1)
-    add_test(NAME region_transfer_all_append2_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 4 6 0 1)
-    add_test(NAME region_transfer_all3_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all ${MPI_RUN_CMD} 4 6 0 0)
-    add_test(NAME region_transfer_all3_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_2D ${MPI_RUN_CMD} 4 6 0 0)
-    add_test(NAME region_transfer_all3_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_3D ${MPI_RUN_CMD} 4 6 0 0)
-    add_test(NAME region_transfer_all_append3_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 4 60 0)
-    add_test(NAME region_transfer_all_append3_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 4 6 0 0)
-    add_test(NAME region_transfer_all_append3_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 4 6 0 0)
-    add_test(NAME region_transfer_all4_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all ${MPI_RUN_CMD} 4 6 1 0)
-    add_test(NAME region_transfer_all4_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_2D ${MPI_RUN_CMD} 4 6 1 0)
-    add_test(NAME region_transfer_all4_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_3D ${MPI_RUN_CMD} 4 6 1 0)
-    add_test(NAME region_transfer_all_append4_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 2 4 1 0)
-    add_test(NAME region_transfer_all_append4_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 4 6 1 0)
-    add_test(NAME region_transfer_all_append4_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 4 6 1 0)
-    add_test(NAME region_transfer_all_split_wait_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_split_wait ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_round_robin_io_1D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 4 4 int 1 )
-    add_test(NAME obj_round_robin_io_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 4 4 int 2 )
-    add_test(NAME obj_round_robin_io_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 4 4 int 3 )
-    add_test(NAME obj_round_robin_io_all_1D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 4 4 int 1 )
-    add_test(NAME obj_round_robin_io_all_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 4 4 int 2 )
-    add_test(NAME obj_round_robin_io_all_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 4 4 int 3 )
-    add_test(NAME pdc_init_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./pdc_init ${MPI_RUN_CMD} 4 6 )
-#    add_test(NAME create_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_prop ${MPI_RUN_CMD} 4 6 )
-#    add_test(NAME set_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./set_prop ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME dup_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./dup_prop ${MPI_RUN_CMD} 4 6 )
-#    add_test(NAME create_cont_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_cont ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME open_cont_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_cont ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME cont_life_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_life ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME cont_iter_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_iter ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME cont_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_info ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME cont_getid_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_getid ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME cont_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_tags ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME consistency_semantics WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./consistency_semantics ${MPI_RUN_CMD} 2 4 )
-#    add_test(NAME create_obj_mpi  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME open_obj_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_obj ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_iter_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_iter ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_life_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_life ${MPI_RUN_CMD} 4 6 )
-#    add_test(NAME obj_dim_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_dim ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_buf_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_buf ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_tags ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_info ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_put_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_put_data ${MPI_RUN_CMD} 4 6 )
-    add_test(NAME obj_get_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_get_data ${MPI_RUN_CMD} 4 6 )
+    add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int)
+    add_test(NAME read_obj_shared_float WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 float)
+    add_test(NAME read_obj_shared_double WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 double)
+    add_test(NAME read_obj_shared_char WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 char)
+    add_test(NAME read_obj_shared_uint WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 uint)
+    add_test(NAME read_obj_shared_int64 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int64)
+    add_test(NAME read_obj_shared_uint64 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 uint64)
+    add_test(NAME read_obj_shared_int16 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int16)
+    add_test(NAME read_obj_shared_int8 WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 2 4 o 1 int8)
+#    add_test(NAME create_obj_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj_coll ${MPI_RUN_CMD} 2 4 )
+#    add_test(NAME create_cont_coll    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_cont_coll ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_status_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_status ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_skewed ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_2D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D_skewed ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_3D_skewed_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D_skewed ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_partial ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_2D_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_2D_partial ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_3D_partial_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_3D_partial ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_overlap_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_overlap_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap_2D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_overlap_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_overlap_3D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_write_read_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_write_read ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_2D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_3D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_append_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_append_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME region_transfer_all_append_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 2 4 )
+   # add_test(NAME obj_round_robin_io_1D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 1 )
+   # add_test(NAME obj_round_robin_io_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 2 )
+   # add_test(NAME obj_round_robin_io_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_round_robin_io ${MPI_RUN_CMD} 2 2 int 3 )
+    add_test(NAME pdc_init_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./pdc_init ${MPI_RUN_CMD} 2 4 )
+#    add_test(NAME create_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_prop ${MPI_RUN_CMD} 2 4 )
+#    add_test(NAME set_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./set_prop ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME dup_prop_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./dup_prop ${MPI_RUN_CMD} 2 4 )
+#    add_test(NAME create_cont_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_cont ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME open_cont_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_cont ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME cont_life_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_life ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME cont_iter_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_iter ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME cont_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_info ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME cont_getid_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_getid ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME cont_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_tags ${MPI_RUN_CMD} 2 4 )
+#    add_test(NAME create_obj_mpi  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./create_obj ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME open_obj_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_obj ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME obj_iter_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_iter ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME obj_life_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_life ${MPI_RUN_CMD} 2 4 )
+#    add_test(NAME obj_dim_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_dim ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME obj_buf_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_buf ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME obj_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_tags ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME obj_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_info ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME obj_put_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_put_data ${MPI_RUN_CMD} 2 4 )
+    add_test(NAME obj_get_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_get_data ${MPI_RUN_CMD} 2 4 )
 
     set_tests_properties(read_obj_shared_int  PROPERTIES LABELS parallel )
     set_tests_properties(read_obj_shared_float  PROPERTIES LABELS parallel )
@@ -406,7 +337,6 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(read_obj_shared_int8  PROPERTIES LABELS parallel )
 #    set_tests_properties(create_obj_coll     PROPERTIES LABELS parallel )
 #    set_tests_properties(create_cont_coll     PROPERTIES LABELS parallel )
-    set_tests_properties(consistency_semantics PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_partial_mpi  PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_2D_partial_mpi PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_3D_partial_mpi PROPERTIES LABELS parallel )
@@ -418,8 +348,8 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_2D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_3D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_skewed_mpi     PROPERTIES LABELS parallel )
-    # set_tests_properties(region_transfer_2D_skewed_mpi     PROPERTIES LABELS parallel )
-    # set_tests_properties(region_transfer_3D_skewed_mpi     PROPERTIES LABELS parallel )
+    set_tests_properties(region_transfer_2D_skewed_mpi     PROPERTIES LABELS parallel )
+    set_tests_properties(region_transfer_3D_skewed_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_write_read_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_2D_mpi     PROPERTIES LABELS parallel )
@@ -427,31 +357,9 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_all_append_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_append_2D_mpi     PROPERTIES LABELS parallel )
     set_tests_properties(region_transfer_all_append_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all2_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all2_2D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all2_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append2_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append2_2D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append2_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all3_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all3_2D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all3_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append3_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append3_2D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append3_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all4_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all4_2D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all4_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append4_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append4_2D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_append4_3D_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(region_transfer_all_split_wait_mpi     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_1D     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_2D     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_3D     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_all_1D     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_all_2D     PROPERTIES LABELS parallel )
-    set_tests_properties(obj_round_robin_io_all_3D     PROPERTIES LABELS parallel )
+#    set_tests_properties(obj_round_robin_io_1D     PROPERTIES LABELS parallel )
+#    set_tests_properties(obj_round_robin_io_2D     PROPERTIES LABELS parallel )
+#    set_tests_properties(obj_round_robin_io_3D     PROPERTIES LABELS parallel )
     set_tests_properties(pdc_init_mpi     PROPERTIES LABELS parallel )
 #    set_tests_properties(create_prop_mpi  PROPERTIES LABELS parallel )
 #    set_tests_properties(set_prop_mpi  PROPERTIES LABELS parallel )

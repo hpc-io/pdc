@@ -130,7 +130,7 @@ main(int argc, char **argv)
     reg_global       = PDCregion_create(1, offset, offset_length);
 
     for (i = 0; i < BUF_LEN; ++i) {
-        data[i] = i + 77;
+        data[i] = i;
     }
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
 
@@ -171,8 +171,8 @@ main(int argc, char **argv)
 
     // Check if data written previously has been correctly read.
     for (i = 0; i < BUF_LEN / 2; ++i) {
-        if (data_read[i + BUF_LEN / 2] != i + 77 + 1) {
-            printf("wrong value %d!=%d\n", data_read[i + BUF_LEN / 2], i + 77 + 1);
+        if (data_read[i + BUF_LEN / 2] != i + 1) {
+            printf("wrong value %d!=%d\n", data_read[i + BUF_LEN / 2], i + 1);
             ret_value = 1;
             break;
         }

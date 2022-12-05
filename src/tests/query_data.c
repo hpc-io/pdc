@@ -40,7 +40,6 @@ main(int argc, char **argv)
     struct timeval ht_total_end;
     long long      ht_total_elapsed;
     double         ht_total_sec;
-    uint32_t       metadata_server_id;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -110,7 +109,7 @@ main(int argc, char **argv)
 #endif
 
     // Query the created object
-    PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata, &metadata_server_id);
+    PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
     if (metadata == NULL || metadata->obj_id == 0) {
         printf("Error with metadata!\n");
         ret_value = 1;
