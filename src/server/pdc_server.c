@@ -1705,7 +1705,7 @@ PDC_Server_multithread_loop(hg_context_t *context)
 static perr_t
 PDC_Server_loop(hg_context_t *hg_context)
 {
-    perr_t ret_value = SUCCEED;
+    perr_t       ret_value = SUCCEED;
     hg_return_t  hg_ret;
     unsigned int actual_count;
 #ifdef PDC_ENABLE_CHECKPOINT
