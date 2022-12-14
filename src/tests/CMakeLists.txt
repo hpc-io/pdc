@@ -100,6 +100,7 @@ set(PROGRAMS
   #gen_fastbit_idx
   #query_vpic_exyz_nopreload
   #query_vpic_exyz_preload
+  query_data
   )
 
 foreach(program ${PROGRAMS})
@@ -221,7 +222,7 @@ add_test(NAME read_obj_int64   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 add_test(NAME read_obj_uint64  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 uint64)
 add_test(NAME read_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int16)
 add_test(NAME read_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int8)
-add_test(NAME query_data        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data o 1)
+# add_test(NAME query_data        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data o 1)
 #add_test(NAME region_transfer_write_read2     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_checkpoint_restart_test.sh ./region_transfer_write_only ./region_transfer_read_only)
 
 #add_test(NAME vpicio_bdcats     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio_old ./bdcats_old)
@@ -300,7 +301,7 @@ set_tests_properties(read_obj_int64    PROPERTIES LABELS serial )
 set_tests_properties(read_obj_uint64   PROPERTIES LABELS serial )
 set_tests_properties(read_obj_int16    PROPERTIES LABELS serial )
 set_tests_properties(read_obj_int8     PROPERTIES LABELS serial )
-set_tests_properties(query_data         PROPERTIES LABELS serial )
+# set_tests_properties(query_data         PROPERTIES LABELS serial )
 #set_tests_properties(vpicio_bdcats      PROPERTIES LABELS serial )
 set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS serial )
 #set_tests_properties(region_transfer_write_read2      PROPERTIES LABELS serial )

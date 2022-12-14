@@ -1287,9 +1287,17 @@ drc_access_again:
     hg_thread_mutex_init(&meta_buf_map_mutex_g);
     hg_thread_mutex_init(&meta_obj_map_mutex_g);
 #endif
-    // Client 0 looks up all servers, others only lookup their node local server
+
     char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
-    if (client_lookup_env == NULL || strcmp(client_lookup_env, "ALL") == 0) {
+    if (client_lookup_env == NULL) {
+        // Each client connect to its node local server only at start time
+        local_server_id =
+            PDC_get_local_server_id(pdc_client_mpi_rank_g, pdc_nclient_per_server_g, pdc_server_num_g);
+        if (PDC_Client_try_lookup_server(local_server_id) != SUCCEED)
+            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g,
+                        local_server_id);
+    }
+    else if (strcmp(client_lookup_env, "ALL") == 0) {
         if (pdc_client_mpi_rank_g == 0)
             printf("==PDC_CLIENT[%d]: Client lookup all servers at start time!\n", pdc_client_mpi_rank_g);
         for (local_server_id = 0; local_server_id < pdc_server_num_g; local_server_id++) {
@@ -1300,17 +1308,9 @@ drc_access_again:
                             local_server_id);
         }
     }
-    else if (client_lookup_env != NULL && strcmp(client_lookup_env, "NONE") == 0) {
+    else {
         if (pdc_client_mpi_rank_g == 0)
             printf("==PDC_CLIENT[%d]: Client lookup server at start time disabled!\n", pdc_client_mpi_rank_g);
-    }
-    else {
-        // Each client connect to its node local server only at start time
-        local_server_id =
-            PDC_get_local_server_id(pdc_client_mpi_rank_g, pdc_nclient_per_server_g, pdc_server_num_g);
-        if (PDC_Client_try_lookup_server(local_server_id) != SUCCEED)
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g,
-                        local_server_id);
     }
 
     if (is_client_debug_g == 1 && pdc_client_mpi_rank_g == 0) {

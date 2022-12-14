@@ -1706,7 +1706,6 @@ static perr_t
 PDC_Server_loop(hg_context_t *hg_context)
 {
     perr_t ret_value = SUCCEED;
-    ;
     hg_return_t  hg_ret;
     unsigned int actual_count;
 #ifdef PDC_ENABLE_CHECKPOINT
@@ -1722,6 +1721,7 @@ PDC_Server_loop(hg_context_t *hg_context)
         if (checkpoint_interval % PDC_CHECKPOINT_INTERVAL == 0) {
             cur_time            = clock();
             double elapsed_time = ((double)(cur_time - last_checkpoint_time)) / CLOCKS_PER_SEC;
+            /* fprintf(stderr, "PDC_SERVER: loop elapsed time %.2f\n", elapsed_time); */
             // Do not checkpoint too often, has a min time interval between checkpoints
             if (elapsed_time > PDC_CHECKPOINT_MIN_INTERVAL_SEC) {
                 PDC_Server_checkpoint();
