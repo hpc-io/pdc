@@ -39,7 +39,7 @@ PDC_timing_init()
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
-    if (!(rank % 32)) {
+    if (!(rank % 31)) {
         printf("client process rank %d, hostname = %s\n", rank, hostname);
     }
     MPI_Barrier(MPI_COMM_WORLD);

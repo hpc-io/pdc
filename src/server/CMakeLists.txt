@@ -60,6 +60,14 @@ install(
   DESTINATION ${PDC_INSTALL_BIN_DIR}
 )
 
+if(NOT ${PDC_INSTALL_BIN_DIR} MATCHES ${PROJECT_BINARY_DIR}/bin)
+install(
+  TARGETS
+    pdc_server.exe
+  DESTINATION ${PDC_INSTALL_BIN_DIR}
+)
+endif()
+
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
     target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
