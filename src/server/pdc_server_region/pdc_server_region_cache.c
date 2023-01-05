@@ -824,9 +824,9 @@ PDC_region_cache_clock_cycle(void *ptr)
     pdc_obj_cache *obj_cache, *obj_cache_iter;
     struct timeval current_time;
     struct timeval finish_time;
-    int nflush = 0;
-    double flush_frequency_s = 2.0, elapsed_time;
-    int server_rank = 0;
+    int            nflush            = 0;
+    double         flush_frequency_s = 2.0, elapsed_time;
+    int            server_rank       = 0;
 
     char *p = getenv("PDC_SERVER_CACHE_FLUSH_FREQUENCY_S");
     if (p != NULL)
@@ -842,11 +842,12 @@ PDC_region_cache_clock_cycle(void *ptr)
             pthread_mutex_lock(&pdc_obj_cache_list_mutex);
             gettimeofday(&current_time, NULL);
             obj_cache_iter = obj_cache_list;
-            nflush = 0;
+            nflush         = 0;
             while (obj_cache_iter != NULL) {
                 obj_cache = obj_cache_iter;
                 // flush every *flush_frequency_s seconds
-                elapsed_time = current_time.tv_sec - obj_cache->timestamp.tv_sec + (current_time.tv_usec - obj_cache->timestamp.tv_usec)/1000000.0;
+                elapsed_time = current_time.tv_sec - obj_cache->timestamp.tv_sec +
+                               (current_time.tv_usec - obj_cache->timestamp.tv_usec) / 1000000.0;
                 /* if (current_time.tv_sec - obj_cache->timestamp.tv_sec > flush_frequency_s) { */
                 if (elapsed_time >= flush_frequency_s) {
                     nflush += PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
@@ -858,9 +859,12 @@ PDC_region_cache_clock_cycle(void *ptr)
                 MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
 #endif
                 gettimeofday(&finish_time, NULL);
-                elapsed_time = finish_time.tv_sec - current_time.tv_sec + (finish_time.tv_usec - current_time.tv_usec)/1000000.0;
-                fprintf(stderr, "==PDC_SERVER[%d]: flushed %d regions from cache to storage (every %.1fs), took %.4fs\n",
-                        server_rank, nflush, flush_frequency_s, elapsed_time);
+                elapsed_time = finish_time.tv_sec - current_time.tv_sec +
+                               (finish_time.tv_usec - current_time.tv_usec) / 1000000.0;
+                fprintf(
+                    stderr,
+                    "==PDC_SERVER[%d]: flushed %d regions from cache to storage (every %.1fs), took %.4fs\n",
+                    server_rank, nflush, flush_frequency_s, elapsed_time);
             }
             pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
         }
