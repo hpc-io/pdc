@@ -1739,7 +1739,7 @@ PDC_Server_loop(hg_context_t *hg_context)
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_cas32(&close_server_g, 1, 1))
             break;
-        hg_ret = HG_Progress(hg_context, 30000);
+        hg_ret = HG_Progress(hg_context, 1000);
 
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
@@ -2110,7 +2110,11 @@ main(int argc, char *argv[])
 #ifdef ENABLE_TIMING
         printf("==PDC_SERVER[%d]: total startup time = %.6f\n", pdc_server_rank_g, server_init_time);
 #endif
+#ifdef ENABLE_MPI
         printf("==PDC_SERVER[%d]: Server ready!\n\n\n", pdc_server_rank_g);
+#else
+        printf("==PDC_SERVER[%d]: Server ready (no MPI)!\n\n\n", pdc_server_rank_g);
+#endif
     }
     fflush(stdout);
 
