@@ -4,12 +4,12 @@
 # defined and points to the MPI libraries used by the linker (e.g. -L<path -lmpi)
 
 extra_cmd=""
-if [[ "$HOSTNAME" == "cori"* ]]; then
+if [[ "$HOSTNAME" == "cori"* || "$HOSTNAME" == "nid"* ]]; then
     extra_cmd="--mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap "
 fi
 
-if [[ "$HOSTNAME" == "nid"* ]]; then
-    extra_cmd="--mem=25600 --cpu_bind=cores --overlap "
+if [[ "$SUPERCOMPUTER" == "perlmutter" ]]; then
+    extra_cmd="--cpu_bind=cores --overlap "
 fi
 
 if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi

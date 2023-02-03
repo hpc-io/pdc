@@ -32,6 +32,7 @@ perlmutter-build:
         - perlmutter
     variables:
         SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
     script:
         - module load libfabric/1.15.2.0
@@ -148,6 +149,7 @@ perlmutter-parallel-pdc:
         - perlmutter
     variables:
         SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-pdc"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-pdc"
@@ -166,6 +168,7 @@ perlmutter-parallel-obj:
         - perlmutter
     variables:
         SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-obj"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-obj"
@@ -184,6 +187,7 @@ perlmutter-parallel-cont:
         - perlmutter
     variables:
         SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-cont"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-cont"
@@ -202,6 +206,7 @@ perlmutter-parallel-prop:
         - perlmutter
     variables:
         SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-prop"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-prop"
@@ -220,6 +225,7 @@ perlmutter-parallel-region:
         - perlmutter
     variables:
         SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-region"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-region"
