@@ -58,8 +58,6 @@ ctest contains both sequential and MPI tests for the PDC settings. These can be 
 ```
 git clone https://github.com/hpc-io/pdc.git
 cd pdc
-git checkout stable
-cd src
 mkdir install
 cd install
 export PDC_DIR=$(pwd)
