@@ -95,8 +95,8 @@ make install
 export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
 export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 
-echo "export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH" >> $WORK_SPACE/pdc_env.sh
-echo "export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH" >> $WORK_SPACE/pdc_env.sh
+echo 'export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
+echo 'export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
 
 ### Compile and Install `mercury`
@@ -122,8 +122,8 @@ ctest
 export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 
-echo "export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH" >> $WORK_SPACE/pdc_env.sh
-echo "export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH" >> $WORK_SPACE/pdc_env.sh
+echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
+echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
 
 ## Compile and Install PDC
@@ -166,8 +166,8 @@ If all the tests pass, you can now specify the environment variables.
 export LD_LIBRARY_PATH="$PDC_DIR/lib:$LD_LIBRARY_PATH"
 export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
 
-echo "export LD_LIBRARY_PATH=$PDC_DIR/lib:$LD_LIBRARY_PATH" >> $WORK_SPACE/pdc_env.sh
-echo "export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH" >> $WORK_SPACE/pdc_env.sh
+echo 'export LD_LIBRARY_PATH=$PDC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
+echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
 
 <!-- 
