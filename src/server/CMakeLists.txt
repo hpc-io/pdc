@@ -54,11 +54,11 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
-install(
-  TARGETS
-    pdc_server.exe
-  DESTINATION ${PDC_INSTALL_BIN_DIR}
-)
+#install(
+#  TARGETS
+#    pdc_server.exe
+#  DESTINATION ${PDC_INSTALL_BIN_DIR}
+#)
 
 if(NOT ${PDC_INSTALL_BIN_DIR} MATCHES ${PROJECT_BINARY_DIR}/bin)
 install(
