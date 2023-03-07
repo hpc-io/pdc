@@ -160,6 +160,8 @@ Once you are on the compute node, you can run `ctest`.
 ctest
 ```
 
+Note: On Cori, if you happen to see failures regarding `libibverb` validation, login to one of the compute nodes by running an interactive job and re-compile all PDC's dependencies and PDC itself. Then problem will be solved.
+
 If all the tests pass, you can now specify the environment variables.
 
 ```bash
@@ -169,80 +171,6 @@ export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
 echo 'export LD_LIBRARY_PATH=$PDC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
 echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
-
-<!-- 
-
-# Install libfabric
-```
-wget https://github.com/ofiwg/libfabric/archive/v1.11.2.tar.gz
-tar xvzf v1.11.2.tar.gz
-cd libfabric-1.11.2
-mkdir install
-export LIBFABRIC_DIR=$(pwd)/install
-
-./autogen.sh
-./configure --prefix=$LIBFABRIC_DIR CC=gcc CFLAG="-O2"
-make -j8
-make install
-
-export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
-export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
-```
-# Install Mercury
-Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
-
-Step 2 in the following is not required. It is a stable commit that has been used to test when these these instructions were written (mercury-2.0.1 release commit). One may skip it to use the current master branch of Mercury.
-```
-git clone https://github.com/mercury-hpc/mercury.git
-cd mercury
-git checkout cabb83758f9e07842dc34b0443d0873301fbdf91
-git submodule update --init
-export MERCURY_DIR=$(pwd)/install
-mkdir install
-cd install
-
-cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF
-make
-make install
-
-ctest
-
-export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
-```
-# Install PDC
-One can replace mpicc to other available MPI compilers. -DCMAKE_C_FLAGS="-dynamic" is sometimes required for Cori. For example, on Cori, cc can be used to replace mpicc.
-ctest contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.
-```
-git clone https://github.com/hpc-io/pdc.git
-cd pdc
-mkdir install
-cd install
-export PDC_DIR=$(pwd)
-
-cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
-make -j8
-
-ctest
-
-export LD_LIBRARY_PATH="$PDC_DIR/lib:$LD_LIBRARY_PATH"
-export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
-```
-
-# Environmental variables
-During installation, we have set some environmental variables. These variables may disappear after the close the current session ends.
-We recommend adding the following lines to ~/.bashrc. (One may also execute them manually after logging in).
-The MERCURY_DIR and LIBFABRIC_DIR variables should be identical to the values that were set during the installation of Mercury and libfabric.
-The install path is the path containing bin and lib directory, instead of the one containing the source code.
-```
-export PDC_DIR="where/you/installed/your/pdc"
-export MERCURY_DIR="where/you/installed/your/mercury"
-export LIBFABRIC_DIR="where/you/installed/your/libfabric"
-export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-export PATH="$PDC_DIR/include:$PDC_DIR/lib:LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
-```
-
--->
 
 ## About Spack
 
