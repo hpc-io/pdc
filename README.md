@@ -174,7 +174,13 @@ echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
 ## About Spack
 
-One can also manage the path with Spack, which is a lot more easier to load and unload these libraries.
+One can also manage the path with [`Spack`](https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/pdc/package.py), which is a lot easier to load and unload these libraries.
+
+```bash
+git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+cd spack/bin
+./spack install zlib
+```
 
 ## Running PDC
 The ctest under PDC install folder runs PDC examples using PDC APIs.
