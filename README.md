@@ -142,7 +142,7 @@ cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMA
 make -j 32 && make install
 ```
 
-Let's run `ctest` now on interactively on a compute node:
+Let's run `ctest` now on a compute node:
 
 ### On Cori
 ```bash
@@ -174,46 +174,56 @@ echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
 ## About Spack
 
-One can also manage the path with [`Spack`](https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/pdc/package.py), which is a lot easier to load and unload these libraries.
+One can also install `PDC` with [`Spack`](https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/pdc/package.py), with which the dependencies of `PDC` can be easily managed and installed.
 
 ```bash
 git clone -c feature.manyFiles=true https://github.com/spack/spack.git
 cd spack/bin
-./spack install zlib
+./spack install pdc
 ```
 
 ## Running PDC
-The ctest under PDC install folder runs PDC examples using PDC APIs.
-PDC needs to run at least two applications. The PDC servers need to be started first. 
-The client programs that send I/O request to servers as Mercury RPCs are started next.
 
-We provide a convenient function (mpi_text.sh) to start MPI tests. 
-One needs to change the MPI launching function (mpiexec) with the relevant launcher on a system. 
-On Cori at NERSC, the mpiexec argument needs to be changed to srun. On Theta, it is aprun. On Summit, it is jsrun.
-```
+Essentially, PDC is a typical client-server application.
+To run `PDC`, one needs to start the server processes first, and then the clients can be started to issue RPC requests handled by the `Mercury` RPC framework. 
+
+We provide [`mpi_test.sh` utility](https://github.com/hpc-io/pdc/blob/develop/examples/mpi_test.sh) for running MPI tests. For example, on a regular Linux machine, you may run the following:
+
+```bash
+export JOB_RUNNER=mpiexec
 cd $PDC_DIR/bin
-./mpi_test.sh ./pdc_init mpiexec 2 4
+./mpi_test.sh ./pdc_init $JOB_RUNNER 2 4
 ```
-This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, one can run any of the client examples in ctest.
+
+This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, one can run any of the client examples in `ctest`.
+
+Depending on the specific HPC environment where you run `PDC` , the value of `$JOB_RUNNER` variable can be changed to `srun` (for NERSC), `aprun` (for Theta), or `jsrun` for `Summit`, accordingly.
+
 These source code will provide some knowledge of how to use PDC. For more reference, one may check the documentation folder in this repository.
-# PDC on Cori.
-Installation on Cori is not very different from a regular linux machine. Simply replacing all gcc/mpicc with the default cc compiler on Cori would work. "-DMPI_RUN_CMD=srun" is needed for ctest command later. In some instances and on some systems, unload darshan before installation may be needed.
 
-For job allocation on Cori it is recommended to add "--gres=craynetwork:2" to the command:
-```sh
-salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
-```
-And to launch the PDC server and the client, add "--gres=craynetwork:1" before the executables:
+# PDC on Cori
 
-* Run 4 server processes, each on one node in background:
-```sh
-srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
-```
+If you are running `PDC` on Cori supercomputer, here are some tips you would need to follow:
 
-* Run 64 client processes that concurrently create 1000 objects in total:
-```sh
-srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
-```
+* On Cori, it is recommended to use `cc` as the default compiler when compiling PDC and its dependencies. 
+* When preparing compilation for `PDC` using `CMake`, it is suggested to append console argument `-DMPI_RUN_CMD=srun` so that `ctest` can be executed on Cori.
+* Sometimes, it might be helpful to unload `darshan` module before the installation. 
+
+* For opening an interactive job session on Cori, it is recommended to add `--gres=craynetwork:2` option to the `salloc` command:
+    ```bash
+    salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
+    ```
+* To launch the PDC server and the client, add `--gres=craynetwork:1` before the executables, for example:
+
+  * Run 4 server processes, each on one node in background:
+    ```bash
+    srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
+    ```
+
+  * Run 64 client processes that concurrently create 1000 objects in total:
+    ```bash
+    srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
+    ```
 
 
 
