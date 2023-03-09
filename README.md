@@ -87,7 +87,7 @@ Configure, compile and install:
 
 ```bash
 ./autogen.sh
-./configure --prefix=$LIBFABRIC_DIR --disable-efa --disable-sockets CC=cc CFLAG="-O2"
+./configure --prefix=$LIBFABRIC_DIR CC=cc CFLAG="-O2"
 
 make -j 32
 make install
@@ -98,6 +98,8 @@ export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 echo 'export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
 echo 'export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
+
+Note: On NERSC supercomputers, e.g. Cori and Perlmutter, we should add `--disable-efa --disable-sockets` to the `./configure` command during the compilation on login nodes.
 
 ### Compile and Install `mercury`
 
@@ -130,7 +132,6 @@ echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pd
 Now, it's time to compile and install PDC.
 
 * One can replace `mpicc` to other available MPI compilers. For example, on Cori, `cc` can be used to replace `mpicc`. 
-* `-DCMAKE_C_FLAGS="-dynamic"` used to be required for Cori, but now it is not necessary any more.
 * `ctest` contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.
 
 ```bash
