@@ -58,19 +58,6 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
     return 1;
 }
 
-
-uint64_t
-atoui64(char *arg) {
-    char *endptr;
-    uint64_t num = strtoull(arg, &endptr, 10);
-
-    if (*endptr != '\0') {
-        printf("Invalid input: %s\n", arg);
-        return 1;
-    }
-    return num;
-}
-
 void
 print_usage(char *name)
 {
@@ -100,9 +87,9 @@ main(int argc, char *argv[])
             print_usage(argv[0]);
         goto done;
     }
-    n_obj     = atoui64(argv[1]);
-    n_add_tag = atoui64(argv[2]);
-    n_query   = atoui64(argv[3]);
+    n_obj     = atoi(argv[1]);
+    n_add_tag = atoi(argv[2]);
+    n_query   = atoi(argv[3]);
 
     if (n_add_tag > n_obj || n_query > n_obj) {
         if (my_rank == 0)
@@ -119,7 +106,7 @@ main(int argc, char *argv[])
     query_1percent = my_query / 100;
 
     if (my_rank == 0)
-        printf("Create %llu obj, %llu tags, query %llu\n", my_obj, my_add_tag, my_query);
+        printf("Create %d obj, %d tags, query %d\n", my_obj, my_add_tag, my_query);
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -148,7 +135,7 @@ main(int argc, char *argv[])
 #endif
 
     for (i = 0; i < my_obj; i++) {
-        sprintf(obj_name, "obj%llu", my_obj_s + i);
+        sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
             printf("Fail to create object @ line  %d!\n", __LINE__);
