@@ -58,6 +58,19 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
     return 1;
 }
 
+
+uint64_t
+atoui64(char *arg) {
+    char *endptr;
+    uint64_t num = strtoull(arg, &endptr, 10);
+
+    if (*endptr != '\0') {
+        printf("Invalid input: %s\n", arg);
+        return 1;
+    }
+    return num;
+}
+
 void
 print_usage(char *name)
 {
@@ -69,8 +82,9 @@ main(int argc, char *argv[])
 {
     pdcid_t       pdc, cont_prop, cont, obj_prop;
     pdcid_t *     obj_ids;
-    int           n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
-    int           proc_num, my_rank, i, v;
+    uint64_t      n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
+    int           proc_num, my_rank
+    uint64_t      i, v;
     char          obj_name[128];
     double        stime, total_time;
     pdc_kvtag_t   kvtag;
@@ -86,9 +100,9 @@ main(int argc, char *argv[])
             print_usage(argv[0]);
         goto done;
     }
-    n_obj     = atoi(argv[1]);
-    n_add_tag = atoi(argv[2]);
-    n_query   = atoi(argv[3]);
+    n_obj     = atoui64(argv[1]);
+    n_add_tag = atoui64(argv[2]);
+    n_query   = atoui64(argv[3]);
 
     if (n_add_tag > n_obj || n_query > n_obj) {
         if (my_rank == 0)
@@ -101,7 +115,7 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
 
     if (my_rank == 0)
-        printf("Create %d obj, %d tags, query %d\n", my_obj, my_add_tag, my_query);
+        printf("Create %llu obj, %llu tags, query %llu\n", my_obj, my_add_tag, my_query);
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -124,14 +138,14 @@ main(int argc, char *argv[])
     // Create a number of objects, add at least one tag to that object
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
     for (i = 0; i < my_obj; i++) {
-        sprintf(obj_name, "obj%d", my_obj_s + i);
+        sprintf(obj_name, "obj%llu", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
             printf("Fail to create object @ line  %d!\n", __LINE__);
     }
 
     if (my_rank == 0)
-        printf("Created %d objects\n", n_obj);
+        printf("Created %llu objects\n", n_obj);
 
     // Add tags
     kvtag.name  = "Group";
@@ -145,7 +159,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_add_tag; i++) {
         v = i + my_add_tag_s;
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.size) < 0)
-            printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+            printf("fail to add a kvtag to o%llu\n", i + my_obj_s);
     }
 
 #ifdef ENABLE_MPI
@@ -153,7 +167,7 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to add tags to %d objects: %.4f\n", n_add_tag, total_time);
+        printf("Total time to add tags to %llu objects: %.4f\n", n_add_tag, total_time);
 
     values = (pdc_kvtag_t **)calloc(my_query, sizeof(pdc_kvtag_t *));
 
@@ -163,7 +177,7 @@ main(int argc, char *argv[])
 #endif
     for (i = 0; i < my_query; i++) {
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_size) < 0)
-            printf("fail to get a kvtag from o%d\n", i + my_query_s);
+            printf("fail to get a kvtag from o%llu\n", i + my_query_s);
     }
 
 #ifdef ENABLE_MPI
@@ -171,13 +185,13 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to retrieve tags from %d objects: %.4f\n", n_query, total_time);
+        printf("Total time to retrieve tags from %llu objects: %.4f\n", n_query, total_time);
 
     fflush(stdout);
 
     for (i = 0; i < my_query; i++) {
         if (*(int *)(values[i]->value) != i + my_add_tag_s)
-            printf("Error with retrieved tag from o%d\n", i + my_query_s);
+            printf("Error with retrieved tag from o%llu\n", i + my_query_s);
 
         PDC_free_kvtag(&values[i]);
     }
@@ -186,7 +200,7 @@ main(int argc, char *argv[])
     // close first object
     for (i = 0; i < my_obj; i++) {
         if (PDCobj_close(obj_ids[i]) < 0)
-            printf("fail to close object o%d\n", i + my_obj_s);
+            printf("fail to close object o%llu\n", i + my_obj_s);
     }
 
     // close a container
