@@ -67,15 +67,15 @@ print_usage(char *name)
 int
 main(int argc, char *argv[])
 {
-    pdcid_t       pdc, cont_prop, cont, obj_prop;
-    pdcid_t *     obj_ids;
-    int           n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
-    int           proc_num, my_rank, i, v;
-    char          obj_name[128];
-    double        stime, total_time;
-    pdc_kvtag_t   kvtag;
-    void **       values;
-    size_t        value_size;
+    pdcid_t     pdc, cont_prop, cont, obj_prop;
+    pdcid_t *   obj_ids;
+    int         n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
+    int         proc_num, my_rank, i, v;
+    char        obj_name[128];
+    double      stime, total_time;
+    pdc_kvtag_t kvtag;
+    void **     values;
+    size_t      value_size;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
