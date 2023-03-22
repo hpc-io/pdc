@@ -33,13 +33,13 @@
 int
 main()
 {
-    pdcid_t      pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
-    pdc_kvtag_t  kvtag1, kvtag2, kvtag3;
-    char *       v1 = "value1";
-    int          v2 = 2;
-    double       v3 = 3.45;
-    void         *value1, *value2, *value3;
-    psize_t      value_size;
+    pdcid_t     pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
+    pdc_kvtag_t kvtag1, kvtag2, kvtag3;
+    char *      v1 = "value1";
+    int         v2 = 2;
+    double      v3 = 3.45;
+    void *      value1, *value2, *value3;
+    psize_t     value_size;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -126,8 +126,7 @@ main()
     if (PDCobj_get_tag(obj2, kvtag3.name, (void *)&value3, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o2\n");
     else
-        printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", kvtag3.name,
-               *(double *)value3);
+        printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", kvtag3.name, *(double *)value3);
 
     if (PDCtag_delete(obj1, kvtag1.name) < 0)
         printf("fail to delete a kvtag from o1\n");
