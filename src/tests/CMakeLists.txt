@@ -61,7 +61,7 @@ set(PROGRAMS
   bdcats_old
 #  cont_add_del
 #  data_server_meta_test
-#  kvtag_add_get
+ kvtag_add_get
 #  kvtag_get
  kvtag_add_get_scale
 #  kvtag_query
