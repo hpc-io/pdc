@@ -4,7 +4,7 @@ Getting Started
 
 Proactive Data Containers (PDC) software provides an object-centric API and a runtime system with a set of data object management services. These services allow placing data in the memory and storage hierarchy, performing data movement asynchronously, and providing scalable metadata operations to find data objects. PDC revolutionizes how data is stored and accessed by using object-centric abstractions to represent data that moves in the high-performance computing (HPC) memory and storage subsystems. PDC manages extensive metadata to describe data objects to find desired data efficiently as well as to store information in the data objects.
 
-PDC API, data types, and developer notes are available in `docs/readme.md   <https://github.com/hpc-io/pdc/blob/kenneth_develop/docs/readme.md>`_
+PDC API, data types, and developer notes are available in `docs/readme.md   <https://github.com/hpc-io/pdc/blob/stable/docs/readme.md>`_
 
 More information and publications of PDC is available at https://sdm.lbl.gov/pdc
 
@@ -168,3 +168,19 @@ Run 64 client processes that concurrently create 1000 objects in total:
 
 	srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
 
+PDC on Perlmutter
+---------------------------
+
+For job allocation on Perlmutter make sure you are using the most recent version of Cray MPICH (8.1.17). You can verify that with ``echo $CRAY_MPICH_VERSION``. You also need to export ``FI_CXI_DEFAULT_VNI`` environment variable to a unique value for each concurrent srun command that shares a node, otherwise you will receive "MPI OFI Address already in use".
+
+.. code-block:: Bash
+
+	export FI_CXI_DEFAULT_VNI=0
+	srun --overlap --exact --cpu-bind=sockets,verbose -u -n 2 -c 1 ./bin/pdc_server.exe &
+	
+.. code-block:: Bash
+
+	export FI_CXI_DEFAULT_VNI=1
+	srun --overlap --exact --cpu-bind=sockets,verbose -u -n 2 -c 1 ./bin/create_obj_scale -r 1000
+
+Notice the distinct values for `FI_CXI_DEFAULT_VNI`.

@@ -2,9 +2,10 @@
 *.swp
 
 # build dir
-*build*
 
 # exes
 *.exe
 
 *.pdf
+
+src/install

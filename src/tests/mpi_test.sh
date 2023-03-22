@@ -8,6 +8,10 @@ if [[ "$HOSTNAME" == "cori"* || "$HOSTNAME" == "nid"* ]]; then
     extra_cmd="--mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap "
 fi
 
+if [[ "$SUPERCOMPUTER" == "perlmutter" ]]; then
+    extra_cmd="--cpu_bind=cores --overlap "
+fi
+
 if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 # check the test to be run:
 test_exe="$1"
@@ -25,7 +29,6 @@ rm -rf pdc_tmp pdc_data
 echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &"
 $mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &
 # WAIT a bit, for 1 second
-sleep 1
 # RUN the actual test
 echo "$mpi_cmd -n $n_client $extra_cmd $test_exe $test_args"
 $mpi_cmd -n $n_client $extra_cmd $test_exe $test_args

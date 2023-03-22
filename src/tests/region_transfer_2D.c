@@ -72,7 +72,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create a container
-    sprintf(cont_name, "c%d", rank);
+    sprintf(cont_name, "c%d_2d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
         printf("Create a container c1\n");
@@ -103,7 +103,7 @@ main(int argc, char **argv)
     PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
     // create first object
-    sprintf(obj_name1, "o1_%d", rank);
+    sprintf(obj_name1, "o1_%d_2d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
         printf("Create an object o1\n");
@@ -113,7 +113,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     // create second object
-    sprintf(obj_name2, "o2_%d", rank);
+    sprintf(obj_name2, "o2_%d_2d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if (obj2 > 0) {
         printf("Create an object o2\n");

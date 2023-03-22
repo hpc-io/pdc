@@ -31,8 +31,8 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#define BUF_LEN 128
-#define OBJ_NUM 10
+#define BUF_LEN 256
+#define OBJ_NUM 13
 
 int
 main(int argc, char **argv)
@@ -49,12 +49,20 @@ main(int argc, char **argv)
 
     uint64_t offset[2], offset_length[2];
     uint64_t dims[2];
+    int      start_method = 1;
+    int      wait_method  = 1;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+    if (argc >= 2) {
+        start_method = atoi(argv[1]);
+    }
+    if (argc >= 3) {
+        wait_method = atoi(argv[2]);
+    }
 
     data         = (int **)malloc(sizeof(int *) * OBJ_NUM);
     data_read    = (int **)malloc(sizeof(int *) * OBJ_NUM);
@@ -116,6 +124,26 @@ main(int argc, char **argv)
     // create many objects
     obj = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
     for (i = 0; i < OBJ_NUM; ++i) {
+        switch (i % 4) {
+            case 0: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_STATIC);
+                break;
+            }
+            case 1: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_OBJ_STATIC);
+                break;
+            }
+            case 2: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL);
+                break;
+            }
+            case 3: {
+                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC);
+                break;
+            }
+            default: {
+            }
+        }
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj[i] > 0) {
@@ -162,15 +190,52 @@ main(int argc, char **argv)
         transfer_request[i] = PDCregion_transfer_create(data[i], PDC_WRITE, obj[i], reg, reg_global);
     }
 
-    ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
-    if (ret != SUCCEED) {
-        printf("Fail to region transfer start @ line %d\n", __LINE__);
-        ret_value = 1;
+    if (start_method) {
+        ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer start @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
     }
-    ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
-    if (ret != SUCCEED) {
-        printf("Fail to region transfer wait @ line %d\n", __LINE__);
-        ret_value = 1;
+    else {
+        for (i = 0; i < OBJ_NUM; ++i) {
+            ret = PDCregion_transfer_start(transfer_request[i]);
+            if (ret != SUCCEED) {
+                printf("Fail to region transfer start @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+        }
+    }
+    if (wait_method == 1) {
+        ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer wait @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+    }
+    else if (wait_method == 0) {
+        pdcid_t *transfer_request_all = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
+        int      request_size         = 0;
+        for (i = 0; i < OBJ_NUM; i += 2) {
+            transfer_request_all[request_size] = transfer_request[i];
+            request_size++;
+        }
+        ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer wait @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+        request_size = 0;
+        for (i = 1; i < OBJ_NUM; i += 2) {
+            transfer_request_all[request_size] = transfer_request[i];
+            request_size++;
+        }
+        ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer wait @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+        free(transfer_request_all);
     }
     for (i = 0; i < OBJ_NUM; ++i) {
         ret = PDCregion_transfer_close(transfer_request[i]);
@@ -208,15 +273,52 @@ main(int argc, char **argv)
         memset(data_read[i], 0, sizeof(int) * BUF_LEN);
         transfer_request[i] = PDCregion_transfer_create(data_read[i], PDC_READ, obj[i], reg, reg_global);
     }
-    ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
-    if (ret != SUCCEED) {
-        printf("Fail to region transfer start @ line %d\n", __LINE__);
-        ret_value = 1;
+    if (start_method) {
+        ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer start @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
     }
-    ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
-    if (ret != SUCCEED) {
-        printf("Fail to region transfer wait @ line %d\n", __LINE__);
-        ret_value = 1;
+    else {
+        for (i = 0; i < OBJ_NUM; ++i) {
+            ret = PDCregion_transfer_start(transfer_request[i]);
+            if (ret != SUCCEED) {
+                printf("Fail to region transfer start @ line %d\n", __LINE__);
+                ret_value = 1;
+            }
+        }
+    }
+    if (wait_method == 1) {
+        ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer wait @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+    }
+    else if (wait_method == 0) {
+        pdcid_t *transfer_request_all = (pdcid_t *)malloc(sizeof(pdcid_t) * OBJ_NUM);
+        int      request_size         = 0;
+        for (i = 0; i < OBJ_NUM; i += 2) {
+            transfer_request_all[request_size] = transfer_request[i];
+            request_size++;
+        }
+        ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer wait @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+        request_size = 0;
+        for (i = 1; i < OBJ_NUM; i += 2) {
+            transfer_request_all[request_size] = transfer_request[i];
+            request_size++;
+        }
+        ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
+        if (ret != SUCCEED) {
+            printf("Fail to region transfer wait @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+        free(transfer_request_all);
     }
     for (i = 0; i < OBJ_NUM; ++i) {
         ret = PDCregion_transfer_close(transfer_request[i]);
@@ -225,6 +327,18 @@ main(int argc, char **argv)
             ret_value = 1;
         }
     }
+
+    // close object
+    for (i = 0; i < OBJ_NUM; ++i) {
+        if (PDCobj_close(obj[i]) < 0) {
+            printf("fail to close object o1 @ line %d\n", __LINE__);
+            ret_value = 1;
+        }
+        else {
+            printf("successfully close object o1 @ line %d\n", __LINE__);
+        }
+    }
+
     // Check if data written previously has been correctly read.
     for (j = 0; j < OBJ_NUM; ++j) {
         for (i = 0; i < BUF_LEN; ++i) {
@@ -251,16 +365,6 @@ main(int argc, char **argv)
         printf("successfully closed global region @ line %d\n", __LINE__);
     }
 
-    // close object
-    for (i = 0; i < OBJ_NUM; ++i) {
-        if (PDCobj_close(obj[i]) < 0) {
-            printf("fail to close object o1 @ line %d\n", __LINE__);
-            ret_value = 1;
-        }
-        else {
-            printf("successfully close object o1 @ line %d\n", __LINE__);
-        }
-    }
     // close a container
     if (PDCcont_close(cont) < 0) {
         printf("fail to close container c1 @ line %d\n", __LINE__);

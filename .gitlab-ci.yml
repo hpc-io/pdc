@@ -1,30 +1,274 @@
-# This is a global variable
 variables:
-    LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-    MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
+    PDC_BUILD_PATH: "${CI_PROJECT_DIR}/build"
+    PDC_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
     
 stages:
     - build
+    - test
 
-# This stage uses the global SCHEDULER_PARAMETERS variable
-build:
+cori-build:
     stage: build
     tags:
-      - cori
+        - cori
     variables:
         SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        # SCHEDULER_PARAMETERS: "--clusters=escori -N 1 --qos=compile -t 00:30:00"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
     script:
-      - echo "Build PDC"
-      # - pwd
-      - module list
-      - cd src && mkdir build && cd build
-      - cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DPDC_ENABLE_TIMING=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DMPI_RUN_CMD=srun -DPDC_ENABLE_LUSTRE=ON -DPDC_DISABLE_CHECKPOINT=ON
-      - make -j
-      - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-      - echo $LD_LIBRARY_PATH
-      # - echo "Run Serial Tests"
-      # - ctest -L serial
-      - echo "Run Parallel Tests"
-      - ctest -L parallel
+        - module list
+        - mkdir -p ${PDC_BUILD_PATH}/cori
+        - cd ${PDC_BUILD_PATH}/cori
+        - cmake ../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DPDC_ENABLE_TIMING=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DMPI_RUN_CMD=srun -DPDC_ENABLE_LUSTRE=ON -DPDC_DISABLE_CHECKPOINT=ON -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/cori
+        - make -j
+        - make install
+    artifacts:
+        paths:
+            - ${PDC_BUILD_PATH}/cori
+            - ${PDC_INSTALL_PATH}/cori
 
+perlmutter-build:
+    stage: build
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
+    script:
+        - module load libfabric/1.15.2.0
+        - module list
+        - mkdir -p ${PDC_BUILD_PATH}/perlmutter
+        - cd ${PDC_BUILD_PATH}/perlmutter
+        - cmake ../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD="srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter
+        - make -j
+        - make install
+    artifacts:
+        paths:
+            - ${PDC_BUILD_PATH}/perlmutter
+            - ${PDC_INSTALL_PATH}/perlmutter
+
+cori-parallel-pdc:
+    stage: test
+    needs:
+        - cori-build
+    tags:
+        - cori
+    variables:
+        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-pdc"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-pdc"
+    script:        
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/cori
+        - ctest -L parallel_pdc
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+cori-parallel-obj:
+    stage: test
+    needs:
+        - cori-build
+        - cori-parallel-pdc
+    tags:
+        - cori
+    variables:
+        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-obj"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-obj"
+    script:        
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/cori
+        - ctest -L parallel_obj
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+cori-parallel-cont:
+    stage: test
+    needs:
+        - cori-build
+        - cori-parallel-pdc
+    tags:
+        - cori
+    variables:
+        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-cont"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-cont"
+    script:        
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/cori
+        - ctest -L parallel_cont
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+cori-parallel-prop:
+    stage: test
+    needs:
+        - cori-build
+        - cori-parallel-pdc
+    tags:
+        - cori
+    variables:
+        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-prop"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-prop"
+    script:        
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/cori
+        - ctest -L parallel_prop
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+cori-parallel-region:
+    stage: test
+    needs:
+        - cori-build
+        - cori-parallel-pdc
+    tags:
+        - cori
+    variables:
+        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-region"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-region"
+    script:        
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/cori
+        - ctest -L parallel_region_transfer
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+cori-parallel-region-all:
+    stage: test
+    needs:
+        - cori-build
+        - cori-parallel-pdc
+    tags:
+        - cori
+    variables:
+        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-region-all"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-region-all"
+    script:        
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/cori
+        - ctest -L parallel_region_transfer_all
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+perlmutter-parallel-pdc:
+    stage: test
+    needs:
+        - perlmutter-build
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-pdc"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-pdc"
+    script:        
+        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/perlmutter
+        - ctest -L parallel_pdc
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+perlmutter-parallel-obj:
+    stage: test
+    needs:
+        - perlmutter-build
+        - perlmutter-parallel-pdc
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-obj"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-obj"
+    script:        
+        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/perlmutter
+        - ctest -L parallel_obj
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+perlmutter-parallel-cont:
+    stage: test
+    needs:
+        - perlmutter-build
+        - perlmutter-parallel-pdc
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-cont"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-cont"
+    script:        
+        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/perlmutter
+        - ctest -L parallel_cont
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+perlmutter-parallel-prop:
+    stage: test
+    needs:
+        - perlmutter-build
+        - perlmutter-parallel-pdc
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-prop"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-prop"
+    script:        
+        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/perlmutter
+        - ctest -L parallel_prop
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+perlmutter-parallel-region:
+    stage: test
+    needs:
+        - perlmutter-build
+        - perlmutter-parallel-pdc
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-region"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-region"
+    script:        
+        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/perlmutter
+        - ctest -L parallel_region_transfer
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+
+perlmutter-parallel-region-all:
+    stage: test
+    needs:
+        - perlmutter-build
+        - perlmutter-parallel-pdc
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
+        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-region-all"
+        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-region-all"
+    script:        
+        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - cd ${PDC_BUILD_PATH}/perlmutter
+        - ctest -L parallel_region_transfer_all
+        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
