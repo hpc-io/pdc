@@ -74,7 +74,7 @@ main(int argc, char *argv[])
     char          obj_name[128];
     double        stime, total_time;
     pdc_kvtag_t   kvtag;
-    pdc_kvtag_t **values;
+    void **       values;
     size_t        value_size;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -155,7 +155,7 @@ main(int argc, char *argv[])
     if (my_rank == 0)
         printf("Total time to add tags to %d objects: %.4f\n", n_add_tag, total_time);
 
-    values = (pdc_kvtag_t **)calloc(my_query, sizeof(pdc_kvtag_t *));
+    values = (void **)calloc(my_query, sizeof(void *));
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -176,10 +176,8 @@ main(int argc, char *argv[])
     fflush(stdout);
 
     for (i = 0; i < my_query; i++) {
-        if (*(int *)(values[i]->value) != i + my_add_tag_s)
+        if (*(int *)(values[i]) != i + my_add_tag_s)
             printf("Error with retrieved tag from o%d\n", i + my_query_s);
-
-        PDC_free_kvtag(&values[i]);
     }
     free(values);
 
