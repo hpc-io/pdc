@@ -66,6 +66,7 @@ set(PROGRAMS
  kvtag_add_get_scale
 #  kvtag_query
 #  kvtag_query_scale
+ kvtag_scale_add_get
 #  obj_transformation
   region_transfer_query
   region_transfer
