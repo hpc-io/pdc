@@ -81,7 +81,7 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    if (argc != 4) {
+    if (argc < 4) {
         if (my_rank == 0)
             print_usage(argv[0]);
         goto done;
