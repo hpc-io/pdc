@@ -69,7 +69,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #define ADDR_MAX                     512
 #define DIM_MAX                      4
 #define TAG_LEN_MAX                  2048
-#define PDC_SERVER_ID_INTERVEL       1000000
+#define PDC_SERVER_ID_INTERVEL       1000000000ull
 #define PDC_SERVER_MAX_PROC_PER_NODE 32
 #define PDC_SERIALIZE_MAX_SIZE       256
 #define PDC_MAX_CORE_PER_NODE        68 // Cori KNL has 68 cores per node, Haswell 32
