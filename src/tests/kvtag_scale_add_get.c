@@ -84,7 +84,8 @@ main(int argc, char *argv[])
     pdcid_t              pdc, cont_prop, cont, obj_prop;
     pdcid_t             *obj_ids;
     uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s, curr_total_obj;
-    uint64_t             i, v;
+    uint64_t             n_attr;
+    uint64_t             i, j, v;
     int                  proc_num, my_rank;
     char                 obj_name[128];
     char                 tag_name[128];
@@ -98,13 +99,14 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    if (argc < 3) {
+    if (argc < 4) {
         if (my_rank == 0)
             print_usage(argv[0]);
         goto done;
     }
     n_obj      = atoui64(argv[1]);
     n_obj_incr = atoui64(argv[2]);
+    n_attr     = atoui64(argv[3]);
 
     if (n_obj_incr > n_obj) {
         if (my_rank == 0)
@@ -193,9 +195,12 @@ main(int argc, char *argv[])
         stime = MPI_Wtime();
 #endif
         for (i = 0; i < my_obj; i++) {
-            v = i + my_obj_s + curr_total_obj - n_obj_incr;
-            if (PDCobj_get_tag(obj_ids[i], tag_name, (void **)&values[i], (void *)&value_size) < 0)
-                printf("fail to get a kvtag from o%llu\n", v);
+            for (j = 0; j < n_attr; j++) {
+                v = i + my_obj_s + curr_total_obj - n_obj_incr;
+                sprintf(tag_name, "tag%llu.%llu", j, v);
+                if (PDCobj_get_tag(obj_ids[i], tag_name, (void **)&values[i], (void *)&value_size) < 0)
+                    printf("fail to get a kvtag from o%llu\n", v);
+            }
         }
 
 #ifdef ENABLE_MPI
@@ -229,35 +234,6 @@ main(int argc, char *argv[])
     }
     free(obj_ids);
     free(values);
-
-    // oh = PDCobj_iter_start(cont);
-
-    // while (!PDCobj_iter_null(oh)) {
-    //     info = PDCobj_iter_get_info(oh);
-    //     info->
-    //     if (info->obj_pt->type != PDC_DOUBLE) {
-    //         printf("Type is not properly inherited from object property.\n");
-    //         ret_value = 1;
-    //     }
-    //     if (info->obj_pt->ndim != ndim) {
-    //         printf("Number of dimensions is not properly inherited from object property.\n");
-    //         ret_value = 1;
-    //     }
-    //     if (info->obj_pt->dims[0] != dims[0]) {
-    //         printf("First dimension is not properly inherited from object property.\n");
-    //         ret_value = 1;
-    //     }
-    //     if (info->obj_pt->dims[1] != dims[1]) {
-    //         printf("Second dimension is not properly inherited from object property.\n");
-    //         ret_value = 1;
-    //     }
-    //     if (info->obj_pt->dims[2] != dims[2]) {
-    //         printf("Third dimension is not properly inherited from object property.\n");
-    //         ret_value = 1;
-    //     }
-
-    //     oh = PDCobj_iter_next(oh, cont);
-    // }
 
     // close a container
     if (PDCcont_close(cont) < 0)
