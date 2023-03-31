@@ -143,15 +143,13 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_obj_incr, &my_obj, &my_obj_s);
 
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
-    values = (void **)calloc(my_obj, sizeof(void *));
-    sprintf(tag_name, "tag%d", 2);
-    do {
 
+    do {
+        values = (void **)calloc(my_obj, sizeof(void *));
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         stime = MPI_Wtime();
 #endif
-
         if (my_rank == 0)
             printf("starting creating %llu objects... \n", my_obj);
 
@@ -216,9 +214,9 @@ main(int argc, char *argv[])
             v = i + my_obj_s + curr_total_obj - n_obj_incr;
             if (*(int *)(values[i]) != v)
                 printf("Error with retrieved tag from o%llu\n", v);
-            // free(values[i]);
+            free(values[i]);
         }
-        // free(values);
+        free(values);
 
         // close  objects
         for (i = 0; i < my_obj; i++) {
@@ -229,11 +227,12 @@ main(int argc, char *argv[])
 
     } while (curr_total_obj < n_obj);
 
-    for (i = 0; i < my_obj; i++) {
-        free(values[i]);
-    }
+    // for (i = 0; i < my_obj; i++) {
+    //     free(values[i]);
+    // }
+    // free(values);
     free(obj_ids);
-    free(values);
+    
 
     // close a container
     if (PDCcont_close(cont) < 0)
