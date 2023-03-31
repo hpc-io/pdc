@@ -140,7 +140,7 @@ print_usage(char *name)
  * @return obj_ids     Pointer to an array of object IDs for the created objects.
  */
 pdcid_t *
-init_test(int my_rank, int proc_num, uint64_t *n_obj_incr, uint64_t *my_obj, uint64_t *my_obj_s,
+init_test(int my_rank, int proc_num, uint64_t n_obj_incr, uint64_t *my_obj, uint64_t *my_obj_s,
           pdcid_t *obj_prop, pdcid_t *pdc, pdcid_t *cont_prop, pdcid_t *cont)
 {
     // create a pdc
@@ -167,7 +167,7 @@ init_test(int my_rank, int proc_num, uint64_t *n_obj_incr, uint64_t *my_obj, uin
     // Create a number of objects, add at least one tag to that object
     assign_work_to_rank(my_rank, proc_num, n_obj_incr, my_obj, my_obj_s);
 
-    return (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
+    return (pdcid_t *)calloc(*my_obj, sizeof(pdcid_t));
 }
 
 /**
@@ -338,7 +338,8 @@ main(int argc, char *argv[])
     
 
     // making necessary preparation for the test.
-    obj_ids = init_test(my_rank, proc_num, &n_obj_incr, &my_obj, &my_obj_s, &obj_prop);
+    
+    obj_ids = init_test(my_rank, proc_num, n_obj_incr, &my_obj, &my_obj_s, &obj_prop, &pdc, &cont_prop, &cont);
 
     do {
 
