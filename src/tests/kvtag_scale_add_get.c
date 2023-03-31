@@ -141,26 +141,24 @@ print_usage(char *name)
  */
 pdcid_t *
 init_test(int my_rank, int proc_num, uint64_t *n_obj_incr, uint64_t *my_obj, uint64_t *my_obj_s,
-          pdcid_t *obj_prop)
+          pdcid_t *obj_prop, pdcid_t *pdc, pdcid_t *cont_prop, pdcid_t *cont)
 {
-
-    pdcid_t              pdc, cont_prop, cont;
     // create a pdc
-    pdc = PDCinit("pdc");
+    *pdc = PDCinit("pdc");
 
     // create a container property
-    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if (cont_prop <= 0)
+    *cont_prop = PDCprop_create(PDC_CONT_CREATE, *pdc);
+    if (*cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if (cont <= 0)
+    *cont = PDCcont_create("c1", *cont_prop);
+    if (*cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    *obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if (obj_prop <= 0)
+    *obj_prop = PDCprop_create(PDC_OBJ_CREATE, *pdc);
+    if (*obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     if (my_rank == 0)
@@ -276,10 +274,27 @@ send_queries(uint64_t my_obj_s, uint64_t curr_total_obj, uint64_t n_obj_incr, in
     }
 }
 
+void closePDC(pdcid_t pdc, pdcid_t cont_prop, pdcid_t cont, pdcid_t obj_prop){
+    // close a container
+    if (PDCcont_close(cont) < 0)
+        printf("fail to close container c1\n");
+
+    // close a container property
+    if (PDCprop_close(obj_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+
+    if (PDCprop_close(cont_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+
+    // close pdc
+    if (PDCclose(pdc) < 0)
+        printf("fail to close PDC\n");
+}
+
 int
 main(int argc, char *argv[])
 {
-    pdcid_t              obj_prop;
+    pdcid_t              pdc, cont_prop, cont, obj_prop;
     pdcid_t             *obj_ids;
     uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s, curr_total_obj;
     uint64_t             n_attr, n_attr_len, n_query;
@@ -405,20 +420,8 @@ main(int argc, char *argv[])
     // free(values);
     free(obj_ids);
 
-    // close a container
-    if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
-
-    // close a container property
-    if (PDCprop_close(obj_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
-
-    if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
-
-    // close pdc
-    if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+    closePDC(pdc, cont_prop, cont, obj_prop);
+    
 
 done:
 #ifdef ENABLE_MPI
