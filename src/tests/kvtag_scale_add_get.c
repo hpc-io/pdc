@@ -143,6 +143,8 @@ pdcid_t *
 init_test(int my_rank, int proc_num, uint64_t *n_obj_incr, uint64_t *my_obj, uint64_t *my_obj_s,
           pdcid_t *obj_prop)
 {
+
+    pdcid_t              pdc, cont_prop, cont;
     // create a pdc
     pdc = PDCinit("pdc");
 
@@ -161,12 +163,11 @@ init_test(int my_rank, int proc_num, uint64_t *n_obj_incr, uint64_t *my_obj, uin
     if (obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    curr_total_obj = 0;
-
     if (my_rank == 0)
         printf("create obj_ids array\n");
+
     // Create a number of objects, add at least one tag to that object
-    assign_work_to_rank(my_rank, proc_num, n_obj_incr, &my_obj, &my_obj_s);
+    assign_work_to_rank(my_rank, proc_num, n_obj_incr, my_obj, my_obj_s);
 
     return (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
 }
@@ -278,7 +279,7 @@ send_queries(uint64_t my_obj_s, uint64_t curr_total_obj, uint64_t n_obj_incr, in
 int
 main(int argc, char *argv[])
 {
-    pdcid_t              pdc, cont_prop, cont, obj_prop;
+    pdcid_t              obj_prop;
     pdcid_t             *obj_ids;
     uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s, curr_total_obj;
     uint64_t             n_attr, n_attr_len, n_query;
@@ -316,6 +317,10 @@ main(int argc, char *argv[])
 
     if (my_rank == 0)
         printf("Create %llu obj, %llu tags, query %llu\n", n_obj, n_obj, n_obj);
+    
+    curr_total_obj = 0;
+
+    
 
     // making necessary preparation for the test.
     obj_ids = init_test(my_rank, proc_num, &n_obj_incr, &my_obj, &my_obj_s, &obj_prop);
