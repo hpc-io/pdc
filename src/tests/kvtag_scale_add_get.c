@@ -370,7 +370,7 @@ main(int argc, char *argv[])
         stime = MPI_Wtime();
 #endif
 
-        add_n_tags(my_obj, my_obj_s, curr_total_obj, n_obj_incr, n_attr, tag_values, obj_ids);
+        add_n_tags(my_obj, my_obj_s, curr_total_obj, n_obj_incr, n_attr, tag_values, n_attr_len, obj_ids);
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
