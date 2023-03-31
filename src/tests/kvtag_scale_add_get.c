@@ -84,7 +84,7 @@ main(int argc, char *argv[])
     pdcid_t              pdc, cont_prop, cont, obj_prop;
     pdcid_t             *obj_ids;
     uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s, curr_total_obj;
-    uint64_t             n_attr, n_query;
+    uint64_t             n_attr, n_attr_len, n_query;
     uint64_t             i, j, k, v;
     int                  proc_num, my_rank, attr_value;
     char                 obj_name[128];
