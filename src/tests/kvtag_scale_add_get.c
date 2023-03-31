@@ -84,12 +84,13 @@ main(int argc, char *argv[])
     pdcid_t              pdc, cont_prop, cont, obj_prop;
     pdcid_t             *obj_ids;
     uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s, curr_total_obj;
-    uint64_t             n_attr;
-    uint64_t             i, j, v;
-    int                  proc_num, my_rank;
+    uint64_t             n_attr, n_query;
+    uint64_t             i, j, k, v;
+    int                  proc_num, my_rank, attr_value;
     char                 obj_name[128];
     char                 tag_name[128];
     double               stime, total_time;
+    int                 *value_to_add;
     void               **values;
     size_t               value_size;
     obj_handle          *oh;
@@ -99,7 +100,7 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    if (argc < 4) {
+    if (argc < 6) {
         if (my_rank == 0)
             print_usage(argv[0]);
         goto done;
@@ -107,6 +108,8 @@ main(int argc, char *argv[])
     n_obj      = atoui64(argv[1]);
     n_obj_incr = atoui64(argv[2]);
     n_attr     = atoui64(argv[3]);
+    n_attr_len = atoui64(argv[4]);
+    n_query    = atoui64(argv[5]);
 
     if (n_obj_incr > n_obj) {
         if (my_rank == 0)
@@ -145,7 +148,7 @@ main(int argc, char *argv[])
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
 
     do {
-        values = (void **)calloc(my_obj, sizeof(void *));
+
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         stime = MPI_Wtime();
@@ -177,8 +180,13 @@ main(int argc, char *argv[])
 
         for (i = 0; i < my_obj; i++) {
             v = i + my_obj_s + curr_total_obj - n_obj_incr;
-            if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)&v, sizeof(uint64_t)) < 0)
-                printf("fail to add a kvtag to o%llu\n", i + my_obj_s);
+            for (j = 0; j < n_attr; j++) {
+                printf("print tag name before add");
+                fflush(stdout);
+                sprintf(tag_name, "tag%llu.%llu", j, v);
+                if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)&v, sizeof(uint64_t)) < 0)
+                    printf("fail to add a kvtag to o%llu\n", i + my_obj_s);
+            }
         }
 
 #ifdef ENABLE_MPI
@@ -188,17 +196,18 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             printf("Total time to add tags to %llu objects: %.4f\n", my_obj, total_time);
 
+        values = (void **)calloc(my_obj, sizeof(void *));
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         stime = MPI_Wtime();
 #endif
         for (i = 0; i < my_obj; i++) {
-            for (j = 0; j < n_attr; j++) {
-                v = i + my_obj_s + curr_total_obj - n_obj_incr;
-                sprintf(tag_name, "tag%llu.%llu", j, v);
-                if (PDCobj_get_tag(obj_ids[i], tag_name, (void **)&values[i], (void *)&value_size) < 0)
-                    printf("fail to get a kvtag from o%llu\n", v);
-            }
+            v = i + my_obj_s + curr_total_obj - n_obj_incr;
+            printf("print tag name before query");
+            fflush(stdout);
+            sprintf(tag_name, "tag%llu.%llu", j, v);
+            if (PDCobj_get_tag(obj_ids[i], tag_name, (void **)&values[i], (void *)&value_size) < 0)
+                printf("fail to get a kvtag from o%llu\n", v);
         }
 
 #ifdef ENABLE_MPI
@@ -232,7 +241,6 @@ main(int argc, char *argv[])
     // }
     // free(values);
     free(obj_ids);
-    
 
     // close a container
     if (PDCcont_close(cont) < 0)
