@@ -332,7 +332,7 @@ main(int argc, char *argv[])
     char                 tag_name[128];
     double               stime, total_time;
     int                 *value_to_add;
-    char               **query_rst_cache;
+    void               **query_rst_cache;
     uint64_t            *value_size;
     obj_handle          *oh;
     struct pdc_obj_info *info;
