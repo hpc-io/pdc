@@ -220,8 +220,7 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
         v = i + my_obj_s;
         for (j = 0; j < n_attr; j++) {
             sprintf(tag_name, "tag%llu.%llu", v, j);
-            if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)&tag_values[j], tag_value_len * sizeof(char)) <
-                0)
+            if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)&tag_values[j], tag_value_len + 1) < 0)
                 printf("fail to add a kvtag to o%llu\n", i + my_obj_s);
         }
     }
@@ -277,7 +276,8 @@ send_queries(uint64_t my_obj_s, int n_query, uint64_t n_attr, pdcid_t *obj_ids, 
 }
 
 void
-check_and_release_query_result(uint64_t n_query, uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_values, void **values, pdcid_t *obj_ids)
+check_and_release_query_result(uint64_t n_query, uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr,
+                               char **tag_values, void **values, pdcid_t *obj_ids)
 {
     uint64_t i, j, v;
 
@@ -285,8 +285,9 @@ check_and_release_query_result(uint64_t n_query, uint64_t my_obj, uint64_t my_ob
         v = i + my_obj_s;
         for (j = 0; j < n_attr; j++) {
             char *query_rst = (char *)values[j + i * n_attr];
-            if (strcmp(query_rst, tag_values[j])!=0) {
-                 printf("Error with retrieved tag from o%llu. Expected %s, Found %s \n", v, tag_values[j], query_rst);
+            if (strcmp(query_rst, tag_values[j]) != 0) {
+                printf("Error with retrieved tag from o%llu. Expected %s, Found %s \n", v, tag_values[j],
+                       query_rst);
             }
             free(values[j + i * n_attr]);
         }
@@ -421,7 +422,8 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             printf("Total time to retrieve tags from %llu objects: %.4f\n", curr_total_obj, total_time);
 
-        check_and_release_query_result(my_query, my_obj, my_obj_s, n_attr, tag_values, query_rst_cache, obj_ids);
+        check_and_release_query_result(my_query, my_obj, my_obj_s, n_attr, tag_values, query_rst_cache,
+                                       obj_ids);
         fflush(stdout);
 
         my_obj_s += n_obj_incr;
