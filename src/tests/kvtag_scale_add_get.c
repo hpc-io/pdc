@@ -327,11 +327,13 @@ main(int argc, char *argv[])
     pdcid_t             *obj_ids;
     uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s, curr_total_obj;
     uint64_t             n_attr, n_attr_len, n_query, my_query, my_query_s;
+    uint64_t             n_servers, n_clients;
     uint64_t             i, j, k, v;
     int                  proc_num, my_rank, attr_value;
     char                 obj_name[128];
     char                 tag_name[128];
-    double               stime, total_time;
+    double               stime, step_elapse, total_object_time, total_tag_time, total_query_time;
+    uint64_t             total_object_count, total_tag_count, total_query_count;
     int                 *value_to_add;
     void               **query_rst_cache;
     uint64_t            *value_size;
@@ -342,7 +344,7 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    if (argc < 6) {
+    if (argc < 7) {
         if (my_rank == 0)
             print_usage(argv[0]);
         goto done;
@@ -352,6 +354,8 @@ main(int argc, char *argv[])
     n_attr     = atoui64(argv[3]);
     n_attr_len = atoui64(argv[4]);
     n_query    = atoui64(argv[5]);
+    n_servers  = atoui64(argv[6]);
+    n_clients  = proc_num;
 
     if (n_obj_incr > n_obj) {
         if (my_rank == 0)
@@ -370,6 +374,9 @@ main(int argc, char *argv[])
 
     char **tag_values = gen_strings(n_attr, n_attr_len);
 
+    total_time = 0;
+    k = 1;
+
     do {
 
 #ifdef ENABLE_MPI
@@ -387,10 +394,13 @@ main(int argc, char *argv[])
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        total_time = MPI_Wtime() - stime;
+        step_elapse = MPI_Wtime() - stime;
+        total_object_time += step_elapse;
+        total_object_count += n_obj_incr;
 #endif
         if (my_rank == 0)
-            printf("Created %llu objects in total now in %.4f seconds.\n", curr_total_obj, total_time);
+            printf("Iteration %llu : Objects: %llu , Time: %.4f sec. Object throughput in this iteration: %.4f .\n", k, n_obj_incr, step_elapse, ((double)n_obj_incr)/step_elapse);
+            printf("Overall   %llu : Objects: %llu , Time: %.4f sec. Overall object throughput:           %.4f .\n", k, total_object_count, total_object_time, ((double)total_object_count)/total_object_time);
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
@@ -401,10 +411,13 @@ main(int argc, char *argv[])
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        total_time = MPI_Wtime() - stime;
+        step_elapse = MPI_Wtime() - stime;
+        total_tag_time += step_elapse;
+        total_tag_count += n_obj_incr * n_attr;
 #endif
         if (my_rank == 0)
-            printf("Total time to add tags to %llu objects: %.4f\n", curr_total_obj, total_time);
+            printf("Iteration %llu : Tags: %llu , Time: %.4f sec. Tag throughput in this iteration: %.4f .\n", k, n_obj_incr * n_attr, step_elapse, (double)(n_obj_incr * n_attr)/step_elapse);
+            printf("Overall   %llu : Tags: %llu , Time: %.4f sec. Overall tag throughput:           %.4f .\n", k, total_tag_count, total_tag_time, ((double)total_tag_count)/total_tag_time);
 
         query_rst_cache = (void **)malloc(my_query * n_attr * sizeof(void *));
         value_size      = malloc(my_query * n_attr * sizeof(uint64_t));
@@ -417,19 +430,29 @@ main(int argc, char *argv[])
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        total_time = MPI_Wtime() - stime;
+        step_elapse = MPI_Wtime() - stime;
+        total_query_time += step_elapse;
+        total_query_count += n_query * n_attr;
 #endif
         if (my_rank == 0)
-            printf("Total time to retrieve tags from %llu objects: %.4f\n", curr_total_obj, total_time);
+            printf("Iteration %llu : Queries: %llu , Time: %.4f sec. Query throughput in this iteration: %.4f .\n", k, n_query * n_attr, step_elapse, (double)(n_query * n_attr)/step_elapse);
+            printf("Overall   %llu : Queries: %llu , Time: %.4f sec. Overall query throughput:           %.4f .\n", k, total_query_count, total_query_time, ((double)total_query_count)/total_query_time);
 
         check_and_release_query_result(my_query, my_obj, my_obj_s, n_attr, tag_values, query_rst_cache,
                                        obj_ids);
         fflush(stdout);
 
         my_obj_s += n_obj_incr;
+        k++;
 
     } while (curr_total_obj < n_obj);
 
+    if (my_rank == 0):
+        printf("Final Report: \n");
+        printf("Servers: %llu , Clients: %llu , C/S ratio: %.4f \n", n_servers, n_clients, (double)n_clients/(double)n_servers);
+        printf("Iterations: %llu ,  Objects: %llu , Tags/Object: %llu ,  Queries/Iteration: %llu , \n",  k, curr_total_obj, n_attr, n_query);
+        printf("Object throughput: %.4f , Tag Throughput: %.4f , Query Throughput: %.4f ,", (double)curr_total_obj/total_object_time, (double)(curr_total_obj*n_attr)/total_tag_time, (double)(total_query_count * n_attr)/total_query_time);
+        
     for (i = 0; i < n_attr; i++) {
         free(tag_values[i]);
     }
