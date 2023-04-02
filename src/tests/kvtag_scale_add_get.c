@@ -396,7 +396,7 @@ main(int argc, char *argv[])
         total_object_time += step_elapse;
         total_object_count += n_obj_incr;
 #endif
-        if (my_rank == 0)
+        if (my_rank == 0){
             printf("Iteration %llu : Objects: %llu , Time: %.4f sec. Object throughput in this iteration: "
                    "%.4f .\n",
                    k, n_obj_incr, step_elapse, ((double)n_obj_incr) / step_elapse);
@@ -404,6 +404,8 @@ main(int argc, char *argv[])
             "Overall   %llu : Objects: %llu , Time: %.4f sec. Overall object throughput:           %.4f .\n",
             k, total_object_count, total_object_time, ((double)total_object_count) / total_object_time);
 
+        }
+            
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         stime = MPI_Wtime();
@@ -417,11 +419,13 @@ main(int argc, char *argv[])
         total_tag_time += step_elapse;
         total_tag_count += n_obj_incr * n_attr;
 #endif
-        if (my_rank == 0)
+        if (my_rank == 0){
             printf("Iteration %llu : Tags: %llu , Time: %.4f sec. Tag throughput in this iteration: %.4f .\n",
                    k, n_obj_incr * n_attr, step_elapse, (double)(n_obj_incr * n_attr) / step_elapse);
         printf("Overall   %llu : Tags: %llu , Time: %.4f sec. Overall tag throughput:           %.4f .\n", k,
                total_tag_count, total_tag_time, ((double)total_tag_count) / total_tag_time);
+        }
+            
 
         query_rst_cache = (void **)malloc(my_query * n_attr * sizeof(void *));
         value_size      = malloc(my_query * n_attr * sizeof(uint64_t));
@@ -438,13 +442,14 @@ main(int argc, char *argv[])
         total_query_time += step_elapse;
         total_query_count += n_query * n_attr;
 #endif
-        if (my_rank == 0)
+        if (my_rank == 0) {
             printf("Iteration %llu : Queries: %llu , Time: %.4f sec. Query throughput in this iteration: "
                    "%.4f .\n",
                    k, n_query * n_attr, step_elapse, (double)(n_query * n_attr) / step_elapse);
         printf(
             "Overall   %llu : Queries: %llu , Time: %.4f sec. Overall query throughput:           %.4f .\n",
             k, total_query_count, total_query_time, ((double)total_query_count) / total_query_time);
+        }
 
         check_and_release_query_result(my_query, my_obj, my_obj_s, n_attr, tag_values, query_rst_cache,
                                        obj_ids);
