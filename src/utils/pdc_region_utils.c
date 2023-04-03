@@ -33,7 +33,7 @@ PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t
     for (i = 0; i < ndim; ++i) {
         output_offset[0][i] = offset2[i] < offset1[i] ? offset1[i] : offset2[i];
         output_size[0][i]   = ((offset2[i] + size2[i] < offset1[i] + size1[i]) ? (offset2[i] + size2[i])
-                                                                             : (offset1[i] + size1[i])) -
+                                                                               : (offset1[i] + size1[i])) -
                             output_offset[0][i];
     }
 

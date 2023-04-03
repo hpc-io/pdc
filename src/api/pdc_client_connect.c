@@ -1195,7 +1195,7 @@ drc_access_again:
     init_info.na_init_info.progress_mode = NA_NO_BLOCK; // busy mode
 #endif
 
-//#ifndef PDC_HAS_CRAY_DRC
+// #ifndef PDC_HAS_CRAY_DRC
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
