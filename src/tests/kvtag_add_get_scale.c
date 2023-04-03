@@ -178,7 +178,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_query; i++) {
         if (*(int *)(values[i]) != i + my_add_tag_s)
             printf("Error with retrieved tag from o%d\n", i + my_query_s);
-        // PDC_free_kvtag(&values[i]);
+        free(values[i]);
     }
     free(values);
 
