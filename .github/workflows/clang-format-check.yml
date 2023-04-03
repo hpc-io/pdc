@@ -13,6 +13,6 @@ jobs:
       with:
         source: '.'
         extensions: 'c,h,cpp,hpp'
-        clangFormatVersion: 11
+        clangFormatVersion: 10
         style: file
         # exclude: './config'
