@@ -451,10 +451,6 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 
-# set(ADD_EXE_PERMISSION_CMD "chmod +x ${}/test/*")
-# add_custom_command(TARGET ${PROJECT_NAME} POST_INSTALL COMMAND ${add_permission_cmd})
-
-
 #install(
 #  FILES
 #    ${PDC_BINARY_DIR}/bin/pdc_server.exe
