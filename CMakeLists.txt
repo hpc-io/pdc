@@ -433,6 +433,8 @@ configure_file(
   ${PDC_BINARY_DIR}/CMakeFiles/pdc-config-version.cmake @ONLY
 )
 
+
+
 install(
   FILES
     ${PDC_BINARY_DIR}/CMakeFiles/pdc-config-version.cmake
@@ -444,9 +446,13 @@ install(
   DIRECTORY
     ${PDC_BINARY_DIR}/bin
 
+  FILES_MATCHING PATTERN "*"
   DESTINATION
     ${PDC_INSTALL_DATA_DIR}/test
 )
+
+# set(ADD_EXE_PERMISSION_CMD "chmod +x ${}/test/*")
+# add_custom_command(TARGET ${PROJECT_NAME} POST_INSTALL COMMAND ${add_permission_cmd})
 
 
 #install(
