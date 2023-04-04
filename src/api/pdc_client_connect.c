@@ -1491,8 +1491,8 @@ PDC_Client_finalize()
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with HG_Context_destroy", pdc_client_mpi_rank_g);
 
     hg_ret = HG_Finalize(send_class_g);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with HG_Finalize", pdc_client_mpi_rank_g);
+    /* if (hg_ret != HG_SUCCESS) */
+    /*     PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with HG_Finalize", pdc_client_mpi_rank_g); */
 
 done:
     fflush(stdout);

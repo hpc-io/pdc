@@ -493,7 +493,6 @@ main(int argc, char **argv)
             printf("fail to close object obj_id22\n");
             return 1;
         }
-        sleep(sleeptime);
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
@@ -502,6 +501,12 @@ main(int argc, char **argv)
             printf("Obj close time: %.2f\n", t0 - t1);
         }
 #endif
+        if (i != steps - 1) {
+            sleep(sleeptime);
+            if (rank == 0) {
+                printf("Sleep time: %d.00\n", sleeptime);
+            }
+        }
     } // End for steps
 
     PDC_timing_report("write");

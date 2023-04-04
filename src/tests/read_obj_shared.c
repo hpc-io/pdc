@@ -145,8 +145,11 @@ main(int argc, char **argv)
     PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
     // Create a object
+#ifdef ENABLE_MPI
     global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
-    // global_obj = PDCobj_create(cont, obj_name, obj_prop);
+#else
+    global_obj = PDCobj_create(cont, obj_name, obj_prop);
+#endif
 
     if (global_obj <= 0) {
         printf("Error creating an object [%s], exit...\n", obj_name);
