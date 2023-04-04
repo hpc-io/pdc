@@ -51,8 +51,21 @@ option(USE_SYSTEM_HDF5 "Use system-installed HDF5." ON)
   endif()
 endif()
 
+option(USE_SYSTEM_OPENMP "Use system-installed OpenMP." ON)
+if(USE_SYSTEM_OPENMP)
+  find_package(OpenMP REQUIRED)
+
+  if(OPENMP_FOUND)
+      set(OPENMP_LIBRARIES "${OpenMP_C_LIBRARIES}")
+  else()
+      message(FATAL_ERROR "OpenMP not found")
+  endif()
+endif()
+
+
 add_definitions(-DENABLE_MPI=1)
 add_library(cjson cjson/cJSON.c)
+add_subdirectory(llsm)
 
 set(PROGRAMS
   pdc_ls
