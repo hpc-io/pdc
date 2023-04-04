@@ -26,7 +26,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Comm comm;
 #else
-    int comm = 1;
+    int comm   = 1;
 #endif
     pdcid_t global_obj = 0;
     pdcid_t local_region, global_region;
