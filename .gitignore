@@ -9,3 +9,6 @@
 *.pdf
 
 src/install
+
+.vscode
+ build
