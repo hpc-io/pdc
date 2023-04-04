@@ -61,8 +61,8 @@
 #include <rdmacred.h>
 #endif
 
-#define PDC_CHECKPOINT_INTERVAL         200
-#define PDC_CHECKPOINT_MIN_INTERVAL_SEC 300
+#define PDC_CHECKPOINT_INTERVAL         1000
+#define PDC_CHECKPOINT_MIN_INTERVAL_SEC 1800
 
 // Global debug variable to control debug printfs
 int is_debug_g       = 0;
