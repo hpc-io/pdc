@@ -81,7 +81,7 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    if (argc != 4) {
+    if (argc < 4) {
         if (my_rank == 0)
             print_usage(argv[0]);
         goto done;
@@ -178,6 +178,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_query; i++) {
         if (*(int *)(values[i]) != i + my_add_tag_s)
             printf("Error with retrieved tag from o%d\n", i + my_query_s);
+        free(values[i]);
     }
     free(values);
 

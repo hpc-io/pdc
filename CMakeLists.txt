@@ -433,6 +433,8 @@ configure_file(
   ${PDC_BINARY_DIR}/CMakeFiles/pdc-config-version.cmake @ONLY
 )
 
+
+
 install(
   FILES
     ${PDC_BINARY_DIR}/CMakeFiles/pdc-config-version.cmake
@@ -443,11 +445,11 @@ install(
 install(
   DIRECTORY
     ${PDC_BINARY_DIR}/bin
-
   DESTINATION
     ${PDC_INSTALL_DATA_DIR}/test
+  FILES_MATCHING PATTERN "*"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
-
 
 #install(
 #  FILES
