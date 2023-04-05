@@ -2555,6 +2555,8 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     hash_key = in->hash_value;
     obj_id   = in->obj_id;
 
+    printf("==SERVER[%d]: PDC_add_kvtag::in.obj_id = %llu \n ", pdc_server_rank_g, in.obj_id);
+
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     unlocked = 0;
