@@ -221,7 +221,7 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
         for (j = 0; j < n_attr; j++) {
             sprintf(tag_name, "tag%llu.%llu", v, j);
             if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)tag_values[j], tag_value_len + 1) < 0)
-                printf("fail to add a kvtag to o%llu\n", i + my_obj_s);
+                printf("fail to add a kvtag to o%llu\n", v);
         }
     }
 }

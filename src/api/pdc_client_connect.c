@@ -6960,6 +6960,9 @@ PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
         in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
     }
 
+    //TODO: delete this line after debugging.
+    printf("PDC_add_kvtag::in.obj_id = %llu \n ", in.obj_id);
+
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
