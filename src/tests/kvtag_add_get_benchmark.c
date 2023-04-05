@@ -156,7 +156,7 @@ init_test(int my_rank, int proc_num, uint64_t n_obj_incr, uint64_t n_query, uint
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    *cont = PDCcont_create("c1", *cont_prop);
+    *cont = PDCcont_create_col("c1", *cont_prop);
     if (*cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
