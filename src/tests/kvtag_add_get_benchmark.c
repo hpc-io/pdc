@@ -267,10 +267,16 @@ void
 send_queries(uint64_t my_obj_s, uint64_t n_query, uint64_t n_attr, pdcid_t *obj_ids, void **tag_values,
              uint64_t *value_size)
 {
-    uint64_t i, v;
+    uint64_t i, j, v;
+    char     tag_name[128];
 
     for (i = 0; i < n_query; i++) {
         v = i + my_obj_s;
+        // for (j = 0; j < n_attr; j++) {
+        //     sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", v, j);
+        //     if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[j], (void *)&value_size[j]) < 0)
+        //         printf("fail to get a kvtag from o%" PRIu64 "\n", v);
+        // }
         get_object_tags(obj_ids[i], v, n_attr, &tag_values[i * n_attr], &value_size[i * n_attr]);
     }
 }
