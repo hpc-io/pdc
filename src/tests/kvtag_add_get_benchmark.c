@@ -430,7 +430,11 @@ main(int argc, char *argv[])
         MPI_Barrier(MPI_COMM_WORLD);
         stime = MPI_Wtime();
 #endif
-
+        if (my_rank == 0) {
+            printf("send queries\n");
+            fflush(stdout);
+        }
+        
         send_queries(my_obj_s, my_query, n_attr, obj_ids, query_rst_cache, value_size);
 
 #ifdef ENABLE_MPI
