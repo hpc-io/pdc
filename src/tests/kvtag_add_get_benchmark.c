@@ -242,7 +242,7 @@ get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, uint64_t n_attr, void **tag
     char     tag_name[256];
 
     for (i = 0; i < n_attr; i++) {
-        sprintf(tag_name, "tag%llu.%llu", obj_name_v, i);
+        sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", obj_name_v, i);
         if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], (void *)&value_size[i]) < 0)
             printf("fail to get a kvtag from o%" PRIu64 "\n", obj_name_v);
     }
