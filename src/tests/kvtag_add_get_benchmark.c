@@ -192,7 +192,7 @@ create_object(uint64_t my_obj, uint64_t my_obj_s, pdcid_t cont, pdcid_t obj_prop
 
     for (i = 0; i < my_obj; i++) {
         v = i + my_obj_s;
-        sprintf(obj_name, "obj%llu", v);
+        sprintf(obj_name, "obj%" PRIu64 "", v);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
             printf("Fail to create object @ line  %d!\n", __LINE__);
@@ -236,15 +236,15 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
  * @param value_size  An array to store the size of each tag value.
  */
 void
-get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, int n_attr, void **tag_values, uint64_t *value_size)
+get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, uint64_t n_attr, void **tag_values, uint64_t *value_size)
 {
-    uint64_t i, v;
+    uint64_t i;
     char     tag_name[128];
 
     for (i = 0; i < n_attr; i++) {
         sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", obj_name_v, i);
         if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], (void *)&value_size[i]) < 0)
-            printf("fail to get a kvtag from o%" PRIu64 "\n", v);
+            printf("fail to get a kvtag from o%" PRIu64 "\n", obj_name_v);
     }
 }
 
@@ -264,7 +264,7 @@ get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, int n_attr, void **tag_valu
  *                         The caller is responsible for allocating memory for the array.
  */
 void
-send_queries(uint64_t my_obj_s, int n_query, uint64_t n_attr, pdcid_t *obj_ids, void **tag_values,
+send_queries(uint64_t my_obj_s, uint64_t n_query, uint64_t n_attr, pdcid_t *obj_ids, void **tag_values,
              uint64_t *value_size)
 {
     uint64_t i, v;
@@ -325,21 +325,17 @@ main(int argc, char *argv[])
 {
     pdcid_t              pdc, cont_prop, cont, obj_prop;
     pdcid_t *            obj_ids;
-    uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s, curr_total_obj = 0;
+    uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s;
     uint64_t             n_attr, n_attr_len, n_query, my_query, my_query_s;
     uint64_t             n_servers, n_clients;
-    uint64_t             i, j, k, v;
-    int                  proc_num, my_rank, attr_value;
-    char                 obj_name[128];
-    char                 tag_name[128];
+    uint64_t             i, k;
+    int                  proc_num, my_rank;
     double               stime = 0.0, step_elapse = 0.0;
     double               total_object_time = 0.0, total_tag_time = 0.0, total_query_time = 0.0;
     uint64_t             total_object_count = 0, total_tag_count = 0, total_query_count = 0;
-    int *                value_to_add;
     void **              query_rst_cache;
     uint64_t *           value_size;
-    obj_handle *         oh;
-    struct pdc_obj_info *info;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
@@ -365,7 +361,7 @@ main(int argc, char *argv[])
     }
 
     if (my_rank == 0)
-        printf("Create %llu obj, %llu tags, query %llu\n", n_obj, n_obj, n_obj);
+        printf("Create %" PRIu64 " obj, %" PRIu64 " tags, query %" PRIu64 "\n", n_obj, n_attr, n_query);
 
     // making necessary preparation for the test.
 
@@ -386,14 +382,14 @@ main(int argc, char *argv[])
         // n_obj_incr.
         create_object(my_obj, my_obj_s, cont, obj_prop, obj_ids);
         // therefore, after 'create_objects' function, we should add 'curr_total_obj' by 'n_obj_incr'.
-        curr_total_obj += n_obj_incr;
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         step_elapse = MPI_Wtime() - stime;
         total_object_time += step_elapse;
-        total_object_count += n_obj_incr;
 #endif
+        total_object_count += n_obj_incr;
+
         if (my_rank == 0) {
             printf("Iteration %" PRIu64 " : Objects: %" PRIu64
                    " , Time: %.4f sec. Object throughput in this iteration: "
@@ -461,7 +457,7 @@ main(int argc, char *argv[])
         my_obj_s += n_obj_incr;
         k++;
 
-    } while (curr_total_obj < n_obj);
+    } while (total_object_count < n_obj);
 
     if (my_rank == 0) {
         printf("Final Report: \n");
