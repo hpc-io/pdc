@@ -188,7 +188,7 @@ void
 create_object(uint64_t my_obj, uint64_t my_obj_s, pdcid_t cont, pdcid_t obj_prop, pdcid_t *obj_ids)
 {
     uint64_t i, v;
-    char     obj_name[128];
+    char     obj_name[256];
 
     for (i = 0; i < my_obj; i++) {
         v = i + my_obj_s;
@@ -214,12 +214,12 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
            pdcid_t *obj_ids)
 {
     uint64_t i, j, v;
-    char     tag_name[128];
+    char     tag_name[256];
 
     for (i = 0; i < my_obj; i++) {
         v = i + my_obj_s;
         for (j = 0; j < n_attr; j++) {
-            sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", v, i);
+            sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", v, j);
             if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)tag_values[j], tag_value_len + 1) < 0)
                 printf("fail to add a kvtag to o%" PRIu64 "\n", v);
         }
@@ -239,7 +239,7 @@ void
 get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, uint64_t n_attr, void **tag_values, uint64_t *value_size)
 {
     uint64_t i;
-    char     tag_name[128];
+    char     tag_name[256];
 
     for (i = 0; i < n_attr; i++) {
         sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", obj_name_v, i);
@@ -267,10 +267,16 @@ void
 send_queries(uint64_t my_obj_s, uint64_t n_query, uint64_t n_attr, pdcid_t *obj_ids, void **tag_values,
              uint64_t *value_size)
 {
-    uint64_t i, v;
+    uint64_t i, j, v;
+    char     tag_name[128];
 
     for (i = 0; i < n_query; i++) {
         v = i + my_obj_s;
+        // for (j = 0; j < n_attr; j++) {
+        //     sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", v, j);
+        //     if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[j], (void *)&value_size[j]) < 0)
+        //         printf("fail to get a kvtag from o%" PRIu64 "\n", v);
+        // }
         get_object_tags(obj_ids[i], v, n_attr, &tag_values[i * n_attr], &value_size[i * n_attr]);
     }
 }
@@ -357,6 +363,13 @@ main(int argc, char *argv[])
     if (n_obj_incr > n_obj) {
         if (my_rank == 0)
             printf("n_obj_incr cannot be larger than n_obj! Exiting...\n");
+        goto done;
+    }
+
+    if (n_query > n_obj_incr) {
+        if (my_rank == 0) {
+            printf("n_query cannot be larger than n_obj_incr! Exiting...\n");
+        }
         goto done;
     }
 
@@ -455,6 +468,7 @@ main(int argc, char *argv[])
         fflush(stdout);
 
         my_obj_s += n_obj_incr;
+        my_query_s += n_obj_incr;
         k++;
 
     } while (total_object_count < n_obj);
