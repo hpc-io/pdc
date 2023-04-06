@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
-#REGSBATCH -p regular
-#DBGSBATCH -p debug
+#REGSBATCH -q regular
+#DBGSBATCH -q debug
 #SBATCH -N NODENUM
 #REGSBATCH -t 4:00:00
 #DBGSBATCH -t 0:30:00
@@ -16,7 +16,7 @@
 
 # export PDC_DEBUG=0
 
-export PDC_TMPDIR=/global/cscratch1/sd/wzhang5/data/pdc/conf
+export PDC_TMPDIR=$SCRATCH/data/pdc/conf
 
 rm -rf $PDC_TMPDIR/*
 
