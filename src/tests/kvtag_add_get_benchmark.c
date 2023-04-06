@@ -431,7 +431,7 @@ main(int argc, char *argv[])
         stime = MPI_Wtime();
 #endif
 
-        send_queries(my_obj_s, my_query, n_attr, obj_ids, query_rst_cache, value_size);
+        send_queries(my_query_s, my_query, n_attr, obj_ids, query_rst_cache, value_size);
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
