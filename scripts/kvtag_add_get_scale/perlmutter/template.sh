@@ -27,14 +27,14 @@ mkdir -p $PDC_TMPDIR
 
 let TOTALPROC=$NCLIENT*$N_NODE
 
-EXECPATH=/global/cfs/cdirs/m2621/wzhang5/cori/install/pdc/share/test/bin
+EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 SERVER=$EXECPATH/pdc_server.exe
 CLIENT=$EXECPATH/kvtag_add_get_scale
 CLOSE=$EXECPATH/close_server
 
 chmod +x $EXECPATH/*
 
-NUM_OBJ=$((1024*1024))
+NUM_OBJ=$((1024*1024*100))
 NUM_TAGS=$NUM_OBJ
 NUM_QUERY=$((NUM_OBJ))
 

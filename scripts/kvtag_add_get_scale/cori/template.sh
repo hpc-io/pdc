@@ -37,7 +37,7 @@ CLOSE=$EXECPATH/close_server
 
 chmod +x $EXECPATH/*
 
-NUM_OBJ=$((1024*1024))
+NUM_OBJ=$((1024*1024*100))
 NUM_TAGS=$NUM_OBJ
 NUM_QUERY=$((NUM_OBJ))
 
