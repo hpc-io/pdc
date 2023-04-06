@@ -70,9 +70,10 @@ main(int argc, char *argv[])
     pdcid_t     pdc, cont_prop, cont, obj_prop;
     pdcid_t *   obj_ids;
     int         n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
+    int         obj_10percent = 0, tag_10percent = 0, query_10percent = 0;
     int         proc_num, my_rank, i, v;
     char        obj_name[128];
-    double      stime, total_time;
+    double      stime, total_time, percent_time;
     pdc_kvtag_t kvtag;
     void **     values;
     size_t      value_size;
@@ -100,6 +101,10 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_query, &my_query, &my_query_s);
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
 
+    obj_10percent   = my_obj / 10;
+    tag_10percent   = my_add_tag / 10;
+    query_10percent = my_query / 10;
+
     if (my_rank == 0)
         printf("Create %d obj, %d tags, query %d\n", my_obj, my_add_tag, my_query);
 
@@ -123,15 +128,40 @@ main(int argc, char *argv[])
 
     // Create a number of objects, add at least one tag to that object
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
+#endif
+
     for (i = 0; i < my_obj; i++) {
         sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
             printf("Fail to create object @ line  %d!\n", __LINE__);
+
+        if (i % obj_10percent == 0) {
+#ifdef ENABLE_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+            percent_time = MPI_Wtime() - stime;
+            if (my_rank == 0) {
+                int    current_percentage              = i / obj_10percent;
+                int    estimated_current_object_number = n_obj / 100 * current_percentage;
+                double tps                             = estimated_current_object_number / percent_time;
+                printf("[OBJ PROGRESS %d%% ] %d objects, %.2f seconds, TPS: %.4f", current_percentage,
+                       estimated_current_object_number, percent_time, tps);
+            }
+#endif
+        }
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+#endif
+
     if (my_rank == 0)
-        printf("Created %d objects\n", n_obj);
+        printf("Total time to create %d objects: %.4f\n\n", n_obj, total_time);
 
     // Add tags
     kvtag.name  = "Group";
@@ -146,6 +176,18 @@ main(int argc, char *argv[])
         v = i + my_add_tag_s;
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.size) < 0)
             printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        percent_time = MPI_Wtime() - stime;
+        if (my_rank == 0) {
+            int    current_percentage           = i / tag_10percent;
+            int    estimated_current_tag_number = n_obj / 100 * current_percentage;
+            double tps                          = estimated_current_tag_number / percent_time;
+            printf("[TAG PROGRESS %d%% ] %d tags, %.2f seconds, TPS: %.4f", current_percentage,
+                   estimated_current_tag_number, percent_time, tps);
+        }
+#endif
     }
 
 #ifdef ENABLE_MPI
@@ -164,6 +206,18 @@ main(int argc, char *argv[])
     for (i = 0; i < my_query; i++) {
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_size) < 0)
             printf("fail to get a kvtag from o%d\n", i + my_query_s);
+
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        percent_time = MPI_Wtime() - stime;
+        if (my_rank == 0) {
+            int    current_percentage             = i / query_10percent;
+            int    estimated_current_query_number = n_obj / 100 * current_percentage;
+            double tps                            = estimated_current_query_number / percent_time;
+            printf("[QRY PROGRESS %d%% ] %d queries, %.2f seconds, TPS: %.4f", current_percentage,
+                   estimated_current_query_number, percent_time, tps);
+        }
+#endif
     }
 
 #ifdef ENABLE_MPI
@@ -171,7 +225,7 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to retrieve tags from %d objects: %.4f\n", n_query, total_time);
+        printf("Total time to retrieve 1 tag from %d objects: %.4f\n", n_query, total_time);
 
     fflush(stdout);
 
