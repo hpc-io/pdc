@@ -474,7 +474,7 @@ main(int argc, char *argv[])
         printf("[Final Report 2] Iterations: %" PRIu64 " ,  Objects: %" PRIu64 " , Tags/Object: %" PRIu64
                " ,  Queries/Iteration: "
                "%" PRIu64 " , \n",
-               k, total_object_count, n_attr, n_query);
+               k-1, total_object_count, n_attr, n_query);
         printf("[Final Report 3] Object throughput: %.4f , Tag Throughput: %.4f , Query Throughput: %.4f ,",
                (double)total_object_count / total_object_time,
                (double)(total_object_count * n_attr) / total_tag_time,
