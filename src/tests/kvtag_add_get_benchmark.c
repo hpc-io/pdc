@@ -242,7 +242,7 @@ get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, uint64_t n_attr, void **tag
     char     tag_name[128];
 
     for (i = 0; i < n_attr; i++) {
-        sprintf(tag_name, "tag%llu.%llu", obj_name_v, i);
+        sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", obj_name_v, i);
         if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], (void *)&value_size[i]) < 0)
             printf("fail to get a kvtag from o%" PRIu64 "\n", obj_name_v);
     }
@@ -323,18 +323,18 @@ closePDC(pdcid_t pdc, pdcid_t cont_prop, pdcid_t cont, pdcid_t obj_prop)
 int
 main(int argc, char *argv[])
 {
-    pdcid_t              pdc, cont_prop, cont, obj_prop;
-    pdcid_t *            obj_ids;
-    uint64_t             n_obj, n_obj_incr, my_obj, my_obj_s;
-    uint64_t             n_attr, n_attr_len, n_query, my_query, my_query_s;
-    uint64_t             n_servers, n_clients;
-    uint64_t             i, k;
-    int                  proc_num, my_rank;
-    double               stime = 0.0, step_elapse = 0.0;
-    double               total_object_time = 0.0, total_tag_time = 0.0, total_query_time = 0.0;
-    uint64_t             total_object_count = 0, total_tag_count = 0, total_query_count = 0;
-    void **              query_rst_cache;
-    uint64_t *           value_size;
+    pdcid_t   pdc, cont_prop, cont, obj_prop;
+    pdcid_t * obj_ids;
+    uint64_t  n_obj, n_obj_incr, my_obj, my_obj_s;
+    uint64_t  n_attr, n_attr_len, n_query, my_query, my_query_s;
+    uint64_t  n_servers, n_clients;
+    uint64_t  i, k;
+    int       proc_num, my_rank;
+    double    stime = 0.0, step_elapse = 0.0;
+    double    total_object_time = 0.0, total_tag_time = 0.0, total_query_time = 0.0;
+    uint64_t  total_object_count = 0, total_tag_count = 0, total_query_count = 0;
+    void **   query_rst_cache;
+    uint64_t *value_size;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -430,11 +430,7 @@ main(int argc, char *argv[])
         MPI_Barrier(MPI_COMM_WORLD);
         stime = MPI_Wtime();
 #endif
-        if (my_rank == 0) {
-            printf("send queries\n");
-            fflush(stdout);
-        }
-        
+
         send_queries(my_obj_s, my_query, n_attr, obj_ids, query_rst_cache, value_size);
 
 #ifdef ENABLE_MPI
@@ -472,7 +468,8 @@ main(int argc, char *argv[])
                "%" PRIu64 " , \n",
                k, total_object_count, n_attr, n_query);
         printf("[Final Report 3] Object throughput: %.4f , Tag Throughput: %.4f , Query Throughput: %.4f ,",
-               (double)total_object_count / total_object_time, (double)(total_object_count * n_attr) / total_tag_time,
+               (double)total_object_count / total_object_time,
+               (double)(total_object_count * n_attr) / total_tag_time,
                (double)(total_query_count * n_attr) / total_query_time);
     }
 
