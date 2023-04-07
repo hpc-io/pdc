@@ -161,7 +161,8 @@ main(int argc, char *argv[])
 #endif
 
     if (my_rank == 0)
-        printf("Total time to create %d objects: %.4f , throughput %.4f \n", n_obj, total_time, n_obj / total_time);
+        printf("Total time to create %d objects: %.4f , throughput %.4f \n", n_obj, total_time,
+               n_obj / total_time);
 
     // Add tags
     kvtag.name  = "Group";
@@ -197,7 +198,8 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to add tags to %d objects: %.4f , throughput %.4f \n", n_add_tag, total_time, n_add_tag / total_time);
+        printf("Total time to add tags to %d objects: %.4f , throughput %.4f \n", n_add_tag, total_time,
+               n_add_tag / total_time);
 
     values = (void **)calloc(my_query, sizeof(void *));
 
@@ -229,7 +231,8 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to retrieve 1 tag from %d objects: %.4f , throughput %.4f \n", n_query, total_time, n_query / total_time);
+        printf("Total time to retrieve 1 tag from %d objects: %.4f , throughput %.4f \n", n_query, total_time,
+               n_query / total_time);
 
     fflush(stdout);
 

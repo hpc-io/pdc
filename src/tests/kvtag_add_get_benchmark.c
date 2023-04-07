@@ -378,7 +378,7 @@ main(int argc, char *argv[])
     char **tag_values = gen_strings(n_attr, n_attr_len);
 
     do {
-        
+
         k++;
 
 #ifdef ENABLE_MPI
@@ -463,7 +463,6 @@ main(int argc, char *argv[])
 
         my_obj_s += n_obj_incr;
         my_query_s += n_obj_incr;
-        
 
     } while (total_object_count < n_obj);
 

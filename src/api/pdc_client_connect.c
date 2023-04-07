@@ -6960,7 +6960,7 @@ PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
         in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
     }
 
-    //TODO: delete this line after debugging.
+    // TODO: delete this line after debugging.
     // printf("==CLIENT[%d]: PDC_add_kvtag::in.obj_id = %llu \n ", pdc_client_mpi_rank_g, in.obj_id);
 
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
