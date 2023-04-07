@@ -145,8 +145,8 @@ main(int argc, char *argv[])
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
-                int    current_percentage              = i / obj_10percent;
-                int    estimated_current_object_number = n_obj / 1000 * current_percentage;
+                int    current_percentage              = i / obj_10percent * 10;
+                int    estimated_current_object_number = n_obj / 100 * current_percentage;
                 double tps                             = estimated_current_object_number / percent_time;
                 printf("[OBJ PROGRESS %d%% ] %d objects, %.2f seconds, TPS: %.4f \n", current_percentage,
                        estimated_current_object_number, percent_time, tps);
@@ -182,8 +182,8 @@ main(int argc, char *argv[])
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
-                int    current_percentage           = i / tag_10percent;
-                int    estimated_current_tag_number = n_obj / 1000 * current_percentage;
+                int    current_percentage           = i / tag_10percent * 10;
+                int    estimated_current_tag_number = n_obj / 100 * current_percentage;
                 double tps                          = estimated_current_tag_number / percent_time;
                 printf("[TAG PROGRESS %d%% ] %d tags, %.2f seconds, TPS: %.4f \n", current_percentage,
                     estimated_current_tag_number, percent_time, tps);
@@ -214,8 +214,8 @@ main(int argc, char *argv[])
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
-                int    current_percentage             = i / query_10percent;
-                int    estimated_current_query_number = n_obj / 1000 * current_percentage;
+                int    current_percentage             = i / query_10percent * 10;
+                int    estimated_current_query_number = n_obj / 100 * current_percentage;
                 double tps                            = estimated_current_query_number / percent_time;
                 printf("[QRY PROGRESS %d%% ] %d queries, %.2f seconds, TPS: %.4f \n", current_percentage,
                     estimated_current_query_number, percent_time, tps);
