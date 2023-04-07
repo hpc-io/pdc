@@ -146,9 +146,9 @@ main(int argc, char *argv[])
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
                 int    current_percentage              = i / obj_10percent;
-                int    estimated_current_object_number = n_obj / 100 * current_percentage;
+                int    estimated_current_object_number = n_obj / 1000 * current_percentage;
                 double tps                             = estimated_current_object_number / percent_time;
-                printf("[OBJ PROGRESS %d%% ] %d objects, %.2f seconds, TPS: %.4f", current_percentage,
+                printf("[OBJ PROGRESS %d%% ] %d objects, %.2f seconds, TPS: %.4f \n", current_percentage,
                        estimated_current_object_number, percent_time, tps);
             }
 #endif
@@ -177,17 +177,19 @@ main(int argc, char *argv[])
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.size) < 0)
             printf("fail to add a kvtag to o%d\n", i + my_obj_s);
 
+        if (i % tag_10percent == 0) {
 #ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-        percent_time = MPI_Wtime() - stime;
-        if (my_rank == 0) {
-            int    current_percentage           = i / tag_10percent;
-            int    estimated_current_tag_number = n_obj / 100 * current_percentage;
-            double tps                          = estimated_current_tag_number / percent_time;
-            printf("[TAG PROGRESS %d%% ] %d tags, %.2f seconds, TPS: %.4f", current_percentage,
-                   estimated_current_tag_number, percent_time, tps);
-        }
+            MPI_Barrier(MPI_COMM_WORLD);
+            percent_time = MPI_Wtime() - stime;
+            if (my_rank == 0) {
+                int    current_percentage           = i / tag_10percent;
+                int    estimated_current_tag_number = n_obj / 1000 * current_percentage;
+                double tps                          = estimated_current_tag_number / percent_time;
+                printf("[TAG PROGRESS %d%% ] %d tags, %.2f seconds, TPS: %.4f \n", current_percentage,
+                    estimated_current_tag_number, percent_time, tps);
+            }
 #endif
+        }
     }
 
 #ifdef ENABLE_MPI
@@ -207,17 +209,19 @@ main(int argc, char *argv[])
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_size) < 0)
             printf("fail to get a kvtag from o%d\n", i + my_query_s);
 
+        if (i % query_10percent == 0) {
 #ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-        percent_time = MPI_Wtime() - stime;
-        if (my_rank == 0) {
-            int    current_percentage             = i / query_10percent;
-            int    estimated_current_query_number = n_obj / 100 * current_percentage;
-            double tps                            = estimated_current_query_number / percent_time;
-            printf("[QRY PROGRESS %d%% ] %d queries, %.2f seconds, TPS: %.4f", current_percentage,
-                   estimated_current_query_number, percent_time, tps);
-        }
+            MPI_Barrier(MPI_COMM_WORLD);
+            percent_time = MPI_Wtime() - stime;
+            if (my_rank == 0) {
+                int    current_percentage             = i / query_10percent;
+                int    estimated_current_query_number = n_obj / 1000 * current_percentage;
+                double tps                            = estimated_current_query_number / percent_time;
+                printf("[QRY PROGRESS %d%% ] %d queries, %.2f seconds, TPS: %.4f \n", current_percentage,
+                    estimated_current_query_number, percent_time, tps);
+            }
 #endif
+        }
     }
 
 #ifdef ENABLE_MPI
