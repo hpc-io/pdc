@@ -328,7 +328,7 @@ main(int argc, char *argv[])
     uint64_t  n_obj, n_obj_incr, my_obj, my_obj_s;
     uint64_t  n_attr, n_attr_len, n_query, my_query, my_query_s;
     uint64_t  n_servers, n_clients;
-    uint64_t  i, k;
+    uint64_t  i = 0, k = 0;
     int       proc_num, my_rank;
     double    stime = 0.0, step_elapse = 0.0;
     double    total_object_time = 0.0, total_tag_time = 0.0, total_query_time = 0.0;
@@ -377,9 +377,9 @@ main(int argc, char *argv[])
 
     char **tag_values = gen_strings(n_attr, n_attr_len);
 
-    k = 1;
-
     do {
+        
+        k++;
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
@@ -463,7 +463,7 @@ main(int argc, char *argv[])
 
         my_obj_s += n_obj_incr;
         my_query_s += n_obj_incr;
-        k++;
+        
 
     } while (total_object_count < n_obj);
 
@@ -474,7 +474,7 @@ main(int argc, char *argv[])
         printf("[Final Report 2] Iterations: %" PRIu64 " ,  Objects: %" PRIu64 " , Tags/Object: %" PRIu64
                " ,  Queries/Iteration: "
                "%" PRIu64 " , \n",
-               k-1, total_object_count, n_attr, n_query);
+               k, total_object_count, n_attr, n_query);
         printf("[Final Report 3] Object throughput: %.4f , Tag Throughput: %.4f , Query Throughput: %.4f ,",
                (double)total_object_count / total_object_time,
                (double)(total_object_count * n_attr) / total_tag_time,

@@ -13,35 +13,31 @@ first_submit=1
 
 for (( i = 1; i <= $MAX_PROC; i*=2 )); do
     mkdir -p $i
-    for (( j = 1; j <= $MAX_ATTR; j*=4 )); do
-        for (( k = 100; k <= $MAX_ATTRLEN; k*=10 )); do
-            JOBNAME=kvtag_bench_${i}_${j}_${k}
-            TARGET=./$i/JOBNAME.sh
+    JOBNAME=kvtag_scale_${i}
+    TARGET=./$i/JOBNAME.sh
 
-            njob=`squeue -u $USER | grep kvtag_bench | wc -l`
-            echo $njob
-            while [ $njob -ge 4 ]
-            do
-                sleeptime=$[ ( $RANDOM % 1000 )  ]
-                sleep $sleeptime
-                njob=`squeue -u $USER | grep kvtag_bench | wc -l`
-                echo $njob
-            done
-
-            if [[ $first_submit == 1 ]]; then
-                # Submit first job w/o dependency
-                echo "Submitting $TARGET"
-                job=`sbatch $TARGET`
-                first_submit=0
-            else
-                echo "Submitting $TARGET after ${job: -8}"
-                job=`sbatch -d afterany:${job: -8} $TARGET`
-            fi
-
-            sleeptime=$[ ( $RANDOM % 5 )  ]
-            sleep $sleeptime
-        done
+    njob=`squeue -u $USER | grep kvtag_scale | wc -l`
+    echo $njob
+    while [ $njob -ge 4 ]
+    do
+        sleeptime=$[ ( $RANDOM % 1000 )  ]
+        sleep $sleeptime
+        njob=`squeue -u $USER | grep kvtag_scale | wc -l`
+        echo $njob
     done
+
+    if [[ $first_submit == 1 ]]; then
+        # Submit first job w/o dependency
+        echo "Submitting $TARGET"
+        job=`sbatch $TARGET`
+        first_submit=0
+    else
+        echo "Submitting $TARGET after ${job: -8}"
+        job=`sbatch -d afterany:${job: -8} $TARGET`
+    fi
+
+    sleeptime=$[ ( $RANDOM % 5 )  ]
+    sleep $sleeptime
 done
 
 
