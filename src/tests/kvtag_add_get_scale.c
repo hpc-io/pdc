@@ -247,26 +247,31 @@ main(int argc, char *argv[])
         fflush(stdout);
     }
 
-    // close first object
-    for (i = 0; i < my_obj; i++) {
-        if (PDCobj_close(obj_ids[i]) < 0)
-            printf("fail to close object o%d\n", i + my_obj_s);
-    }
+    /* // close first object */
+    /* for (i = 0; i < my_obj; i++) { */
+    /*     if (PDCobj_close(obj_ids[i]) < 0) */
+    /*         printf("fail to close object o%d\n", i + my_obj_s); */
+    /* } */
 
-    // close a container
-    if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+    /* // close a container */
+    /* if (PDCcont_close(cont) < 0) */
+    /*     printf("fail to close container c1\n"); */
 
-    // close a container property
-    if (PDCprop_close(obj_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+    /* // close a container property */
+    /* if (PDCprop_close(obj_prop) < 0) */
+    /*     printf("Fail to close property @ line %d\n", __LINE__); */
 
-    if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+    /* if (PDCprop_close(cont_prop) < 0) */
+    /*     printf("Fail to close property @ line %d\n", __LINE__); */
 
-    // close pdc
-    if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+    /* // close pdc */
+    /* if (PDCclose(pdc) < 0) */
+    /*     printf("fail to close PDC\n"); */
+
+    /* if (my_rank == 0) { */
+    /*     printf("Done closing PDC\n"); */
+    /*     fflush(stdout); */
+    /* } */
 
 done:
 #ifdef ENABLE_MPI

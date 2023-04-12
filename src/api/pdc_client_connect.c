@@ -2674,9 +2674,15 @@ PDC_Client_close_all_server()
 
     FUNC_ENTER(NULL);
 
-    if (pdc_client_mpi_rank_g == 0) {
-        for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
-            server_id = pdc_server_num_g - 1 - i;
+    if (pdc_client_mpi_size_g < pdc_server_num_g) {
+        if (pdc_client_mpi_rank_g == 0)
+            printf("==CLIENT[%d]: run close_server with equal ranks of servers (%d) for faster checkpoint!",
+                    pdc_client_mpi_rank_g, pdc_server_num_g);
+    }
+
+    if (pdc_client_mpi_size_g >= pdc_server_num_g) {
+        if (pdc_client_mpi_rank_g < pdc_server_num_g) {
+            server_id = pdc_client_mpi_rank_g;
             if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
                 PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server",
                             pdc_client_mpi_rank_g);
@@ -2691,15 +2697,46 @@ PDC_Client_close_all_server()
                 PGOTO_ERROR(FAIL, "PDC_Client_close_all_server(): Could not start HG_Forward()");
 
             // Wait for response from server
-
             work_todo_g = 1;
             PDC_Client_check_response(&send_context_g);
 
             hg_ret = HG_Destroy(close_server_handle);
             if (hg_ret != HG_SUCCESS)
                 PGOTO_ERROR(FAIL, "PDC_Client_close_all_server(): Could not destroy handle");
-        }
-    } // end of mpi_rank == 0
+        } // End pdc_client_mpi_rank_g < pdc_server_num_g
+    }// End pdc_client_mpi_size_g >= pdc_server_num_g
+    else {
+        if (pdc_client_mpi_rank_g == 0) {
+            for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
+                server_id = pdc_server_num_g - 1 - i;
+                if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+                    PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server",
+                                pdc_client_mpi_rank_g);
+
+                HG_Create(send_context_g, pdc_server_info_g[server_id].addr, close_server_register_id_g,
+                          &close_server_handle);
+
+                // Fill input structure
+                in.client_id = 0;
+                hg_ret = HG_Forward(close_server_handle, client_send_close_all_server_rpc_cb, &rpc_return, &in);
+                if (hg_ret != HG_SUCCESS)
+                    PGOTO_ERROR(FAIL, "PDC_Client_close_all_server(): Could not start HG_Forward()");
+
+                // Wait for response from server
+
+                work_todo_g = 1;
+                PDC_Client_check_response(&send_context_g);
+
+                hg_ret = HG_Destroy(close_server_handle);
+                if (hg_ret != HG_SUCCESS)
+                    PGOTO_ERROR(FAIL, "PDC_Client_close_all_server(): Could not destroy handle");
+            }
+        } // End of mpi_rank == 0
+    } // End pdc_client_mpi_size_g < pdc_server_num_g
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
 done:
     fflush(stdout);
