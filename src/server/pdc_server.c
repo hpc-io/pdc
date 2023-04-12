@@ -62,7 +62,7 @@
 #endif
 
 // Check how long PDC has run every OP_INTERVAL operations
-#define PDC_CHECKPOINT_CHK_OP_INTERVAL  2000
+#define PDC_CHECKPOINT_CHK_OP_INTERVAL 2000
 // Checkpoint every INTERVAL_SEC second and at least OP_INTERVAL operations
 #define PDC_CHECKPOINT_MIN_INTERVAL_SEC 1800
 
@@ -1146,7 +1146,7 @@ PDC_Server_checkpoint()
     struct timeval pdc_timer_start;
     struct timeval pdc_timer_end;
     struct timeval pdc_timer_end_rank;
-    double checkpoint_time, checkpoint_time_rank;
+    double         checkpoint_time, checkpoint_time_rank;
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
@@ -1156,11 +1156,11 @@ PDC_Server_checkpoint()
 
     snprintf(cmd, 4096, "mkdir -p %s/%d", pdc_server_tmp_dir_g, pdc_server_rank_g);
     system(cmd);
-    snprintf(cmd, 4096, "lfs setstripe -c 1 -S 16m -i %d %s/%d", pdc_server_rank_g % PDC_LUSTRE_TOTAL_OST, 
-                         pdc_server_tmp_dir_g, pdc_server_rank_g);
+    snprintf(cmd, 4096, "lfs setstripe -c 1 -S 16m -i %d %s/%d", pdc_server_rank_g % PDC_LUSTRE_TOTAL_OST,
+             pdc_server_tmp_dir_g, pdc_server_rank_g);
     system(cmd);
-    snprintf(checkpoint_file, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", pdc_server_tmp_dir_g, pdc_server_rank_g, 
-                                         pdc_server_rank_g);
+    snprintf(checkpoint_file, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", pdc_server_tmp_dir_g,
+             pdc_server_rank_g, pdc_server_rank_g);
     snprintf(checkpoint_file_local, ADDR_MAX, "/tmp/metadata_checkpoint.%d", pdc_server_rank_g);
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER[%4d]: Checkpoint file [%s]\n", pdc_server_rank_g, checkpoint_file);
@@ -1241,8 +1241,8 @@ PDC_Server_checkpoint()
                     if (has_hist == 1) {
                         fwrite(&region_elt->region_hist->dtype, sizeof(int), 1, file);
                         fwrite(&region_elt->region_hist->nbin, sizeof(int), 1, file);
-                        fwrite(region_elt->region_hist->range, sizeof(double), region_elt->region_hist->nbin * 2,
-                               file);
+                        fwrite(region_elt->region_hist->range, sizeof(double),
+                               region_elt->region_hist->nbin * 2, file);
                         fwrite(region_elt->region_hist->bin, sizeof(uint64_t), region_elt->region_hist->nbin,
                                file);
                         fwrite(&region_elt->region_hist->incr, sizeof(double), 1, file);
@@ -1250,7 +1250,8 @@ PDC_Server_checkpoint()
                 }
 
                 if (n_write_region != n_region)
-                    fprintf(stderr, "==PDC_SERVER[%d]: %s - ERROR with number of regions", pdc_server_rank_g, __func__);
+                    fprintf(stderr, "==PDC_SERVER[%d]: %s - ERROR with number of regions", pdc_server_rank_g,
+                            __func__);
             }
 #if 0
             // Write storage region info
@@ -1270,8 +1271,8 @@ PDC_Server_checkpoint()
 #endif
             metadata_size++;
             region_count += n_region;
-        }// End for metadata entry linked list
-    }// End for hash table metadata entry
+        } // End for metadata entry linked list
+    }     // End for hash table metadata entry
 
     // Note data server region are managed by data server instead of metadata server
     data_server_region_t *region = NULL;
@@ -1320,8 +1321,8 @@ PDC_Server_checkpoint()
 #endif
 
 #ifdef PDC_TIMING
-    printf("==PDC_SERVER[%4d]: checkpointed %10d objects, with %10d regions, took %7.2fs\n", 
-            pdc_server_rank_g, metadata_size, region_count, checkpoint_time_rank);
+    printf("==PDC_SERVER[%4d]: checkpointed %10d objects, with %10d regions, took %7.2fs\n",
+           pdc_server_rank_g, metadata_size, region_count, checkpoint_time_rank);
 
     gettimeofday(&pdc_timer_end, 0);
     checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -1332,8 +1333,8 @@ PDC_Server_checkpoint()
 #endif
 
     if (pdc_server_rank_g == 0) {
-        printf("==PDC_SERVER[ ALL]: checkpointed %10d objects, with %10d regions \n", 
-                all_metadata_size, all_region_count);
+        printf("==PDC_SERVER[ ALL]: checkpointed %10d objects, with %10d regions \n", all_metadata_size,
+               all_region_count);
         fflush(stdout);
     }
 
