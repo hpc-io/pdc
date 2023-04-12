@@ -72,7 +72,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #define PDC_SERVER_ID_INTERVEL       1000000000ull
 #define PDC_SERVER_MAX_PROC_PER_NODE 32
 #define PDC_SERIALIZE_MAX_SIZE       256
-#define PDC_MAX_CORE_PER_NODE        68 // Cori KNL has 68 cores per node, Haswell 32
+#define PDC_MAX_CORE_PER_NODE        128 // Perlmutter CPU has 128 cores per node
 #define PDC_MAX_TRIAL_NUM            10
 #define PDC_STR_DELIM                7
 #define PDC_SEQ_ID_INIT_VALUE        1000
