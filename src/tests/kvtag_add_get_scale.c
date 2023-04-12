@@ -148,8 +148,8 @@ main(int argc, char *argv[])
                 int    current_percentage              = i / obj_1percent;
                 int    estimated_current_object_number = n_obj / 100 * current_percentage;
                 double tps                             = estimated_current_object_number / percent_time;
-                printf("[OBJ PROGRESS %3d%% ] %11d objects, %7.2f seconds, TPS: %10.2f \n", current_percentage,
-                       estimated_current_object_number, percent_time, tps);
+                printf("[OBJ PROGRESS %3d%% ] %11d objects, %7.2f seconds, TPS: %10.2f \n",
+                       current_percentage, estimated_current_object_number, percent_time, tps);
             }
 #endif
         }
@@ -219,8 +219,8 @@ main(int argc, char *argv[])
                 int    current_percentage             = i / query_1percent;
                 int    estimated_current_query_number = n_obj / 100 * current_percentage;
                 double tps                            = estimated_current_query_number / percent_time;
-                printf("[QRY PROGRESS %3d%% ] %11d queries, %7.2f seconds, TPS: %10.2f \n", current_percentage,
-                       estimated_current_query_number, percent_time, tps);
+                printf("[QRY PROGRESS %3d%% ] %11d queries, %7.2f seconds, TPS: %10.2f \n",
+                       current_percentage, estimated_current_query_number, percent_time, tps);
             }
 #endif
         }
@@ -231,8 +231,8 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query, total_time,
-               n_query / total_time);
+        printf("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
+               total_time, n_query / total_time);
 
     fflush(stdout);
 
