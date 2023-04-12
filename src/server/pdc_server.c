@@ -1157,12 +1157,12 @@ PDC_Server_checkpoint()
     snprintf(cmd, 4096, "mkdir -p %s/%d", pdc_server_tmp_dir_g, pdc_server_rank_g);
     system(cmd);
 #ifdef ENABLE_LUSTRE
-    snprintf(cmd, 4096, "lfs setstripe -c 1 -S 16m -i %d %s/%d", pdc_server_rank_g % lustre_total_ost_g, 
-                         pdc_server_tmp_dir_g, pdc_server_rank_g);
+    snprintf(cmd, 4096, "lfs setstripe -c 1 -S 16m -i %d %s/%d", pdc_server_rank_g % lustre_total_ost_g,
+             pdc_server_tmp_dir_g, pdc_server_rank_g);
     system(cmd);
 #endif
-    snprintf(checkpoint_file, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", pdc_server_tmp_dir_g, 
-                                        pdc_server_rank_g, pdc_server_rank_g);
+    snprintf(checkpoint_file, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", pdc_server_tmp_dir_g,
+             pdc_server_rank_g, pdc_server_rank_g);
     snprintf(checkpoint_file_local, ADDR_MAX, "/tmp/metadata_checkpoint.%d", pdc_server_rank_g);
     if (pdc_server_rank_g == 0) {
         printf("==PDC_SERVER[%4d]: Checkpoint file [%s]\n", pdc_server_rank_g, checkpoint_file);
