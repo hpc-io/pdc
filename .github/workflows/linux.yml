@@ -4,7 +4,7 @@ on:
   # push:
   #   branches: [ stable ]
   pull_request:
-    branches: [ stable ]
+    branches: [ stable, develop ]
 
   # Allows to run this workflow manually from the Actions tab
   workflow_dispatch:
