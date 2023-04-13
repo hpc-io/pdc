@@ -870,8 +870,8 @@ drc_access_again:
     // TODO: support restart with different number of servers than previous run
     char checkpoint_file[ADDR_MAX + sizeof(int) + 1];
     if (is_restart_g == 1) {
-        snprintf(checkpoint_file, ADDR_MAX + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g,
-                 "metadata_checkpoint.", pdc_server_rank_g);
+        snprintf(checkpoint_file, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", pdc_server_tmp_dir_g,
+                 pdc_server_rank_g, pdc_server_rank_g);
 
         ret_value = PDC_Server_restart(checkpoint_file);
         if (ret_value != SUCCEED) {
