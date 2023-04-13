@@ -1642,7 +1642,7 @@ PDC_Server_restart(char *filename)
     if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) {
         printf("Read failed for checkpoint size\n");
     }
-    printf("checkpoint size for metadata query = %lu\n", checkpoint_size);
+    /* printf("checkpoint size for metadata query = %lu\n", checkpoint_size); */
     checkpoint_buf = (char *)malloc(checkpoint_size);
     if (fread(checkpoint_buf, checkpoint_size, 1, file) != 1) {
         printf("Read failed for checkpoint buf\n");
