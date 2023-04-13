@@ -2,12 +2,12 @@
 N_THREAD=NO
 MAX_NODE=512
 MAX_ATTR=1024
-MAX_ATTRLEN=1000
+MAX_ATTRLEN=1000000
 
 for (( i = 1; i <= $MAX_NODE; i*=2 )); do
     mkdir -p $i
     for (( j = 1; j <= $MAX_ATTR; j*=4 )); do
-        for (( k = 100; k <= $MAX_ATTRLEN; k+=100 )); do
+        for (( k = 100; k <= $MAX_ATTRLEN; k*=10 )); do
             JOBNAME=kvtag_bench_${i}_${j}_${k}
             TARGET=./$i/$JOBNAME.sbatch
             cp template.sh $TARGET
