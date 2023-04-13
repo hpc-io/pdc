@@ -148,8 +148,8 @@ main(int argc, char *argv[])
                 int    current_percentage              = i / obj_1percent;
                 int    estimated_current_object_number = n_obj / 100 * current_percentage;
                 double tps                             = estimated_current_object_number / percent_time;
-                printf("[OBJ PROGRESS %d%% ] %d objects, %.2f seconds, TPS: %.4f \n", current_percentage,
-                       estimated_current_object_number, percent_time, tps);
+                printf("[OBJ PROGRESS %3d%% ] %11d objects, %7.2f seconds, TPS: %10.2f \n",
+                       current_percentage, estimated_current_object_number, percent_time, tps);
             }
 #endif
         }
@@ -161,7 +161,7 @@ main(int argc, char *argv[])
 #endif
 
     if (my_rank == 0)
-        printf("Total time to create %d objects: %.4f , throughput %.4f \n", n_obj, total_time,
+        printf("Total time to create %11d objects: %7.2f , throughput %10.2f \n", n_obj, total_time,
                n_obj / total_time);
 
     // Add tags
@@ -186,7 +186,7 @@ main(int argc, char *argv[])
                 int    current_percentage           = i / tag_1percent;
                 int    estimated_current_tag_number = n_obj / 100 * current_percentage;
                 double tps                          = estimated_current_tag_number / percent_time;
-                printf("[TAG PROGRESS %d%% ] %d tags, %.2f seconds, TPS: %.4f \n", current_percentage,
+                printf("[TAG PROGRESS %3d%% ] %11d tags, %7.2f seconds, TPS: %10.2f \n", current_percentage,
                        estimated_current_tag_number, percent_time, tps);
             }
 #endif
@@ -198,7 +198,7 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to add tags to %d objects: %.4f , throughput %.4f \n", n_add_tag, total_time,
+        printf("Total time to add tags to %11d objects: %7.2f , throughput %10.2f \n", n_add_tag, total_time,
                n_add_tag / total_time);
 
     values = (void **)calloc(my_query, sizeof(void *));
@@ -219,8 +219,8 @@ main(int argc, char *argv[])
                 int    current_percentage             = i / query_1percent;
                 int    estimated_current_query_number = n_obj / 100 * current_percentage;
                 double tps                            = estimated_current_query_number / percent_time;
-                printf("[QRY PROGRESS %d%% ] %d queries, %.2f seconds, TPS: %.4f \n", current_percentage,
-                       estimated_current_query_number, percent_time, tps);
+                printf("[QRY PROGRESS %3d%% ] %11d queries, %7.2f seconds, TPS: %10.2f \n",
+                       current_percentage, estimated_current_query_number, percent_time, tps);
             }
 #endif
         }
@@ -231,8 +231,8 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to retrieve 1 tag from %d objects: %.4f , throughput %.4f \n", n_query, total_time,
-               n_query / total_time);
+        printf("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
+               total_time, n_query / total_time);
 
     fflush(stdout);
 
@@ -242,27 +242,36 @@ main(int argc, char *argv[])
         free(values[i]);
     }
     free(values);
-
-    // close first object
-    for (i = 0; i < my_obj; i++) {
-        if (PDCobj_close(obj_ids[i]) < 0)
-            printf("fail to close object o%d\n", i + my_obj_s);
+    if (my_rank == 0) {
+        printf("Done checking values\n");
+        fflush(stdout);
     }
 
-    // close a container
-    if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+    /* // close first object */
+    /* for (i = 0; i < my_obj; i++) { */
+    /*     if (PDCobj_close(obj_ids[i]) < 0) */
+    /*         printf("fail to close object o%d\n", i + my_obj_s); */
+    /* } */
 
-    // close a container property
-    if (PDCprop_close(obj_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+    /* // close a container */
+    /* if (PDCcont_close(cont) < 0) */
+    /*     printf("fail to close container c1\n"); */
 
-    if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+    /* // close a container property */
+    /* if (PDCprop_close(obj_prop) < 0) */
+    /*     printf("Fail to close property @ line %d\n", __LINE__); */
 
-    // close pdc
-    if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+    /* if (PDCprop_close(cont_prop) < 0) */
+    /*     printf("Fail to close property @ line %d\n", __LINE__); */
+
+    /* // close pdc */
+    /* if (PDCclose(pdc) < 0) */
+    /*     printf("fail to close PDC\n"); */
+
+    /* if (my_rank == 0) { */
+    /*     printf("Done closing PDC\n"); */
+    /*     fflush(stdout); */
+    /* } */
 
 done:
 #ifdef ENABLE_MPI
