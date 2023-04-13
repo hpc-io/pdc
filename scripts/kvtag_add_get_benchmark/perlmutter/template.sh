@@ -49,7 +49,7 @@ echo ""
 echo "============="
 echo "$i Init server"
 echo "============="
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $((N_NODE*4)) -c 2 --cpu_bind=cores $SERVER  &
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $((N_NODE*1)) -c 2 --cpu_bind=cores $SERVER  &
 sleep 5
 
 
