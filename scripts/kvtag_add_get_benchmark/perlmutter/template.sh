@@ -21,6 +21,7 @@ rm -rf $PDC_TMPDIR/*
 REPEAT=1
 
 N_NODE=NODENUM
+# NCLIENT=127
 NCLIENT=31
 
 export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE
@@ -48,19 +49,19 @@ echo ""
 echo "============="
 echo "$i Init server"
 echo "============="
-srun -N $N_NODE -n $N_NODE -c 2 --mem=100000 --cpu_bind=cores stdbuf -i0 -o0 -e0 $SERVER  &
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $((N_NODE*4)) -c 2 --cpu_bind=cores $SERVER  &
 sleep 5
 
 
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-srun -N $N_NODE -n $TOTALPROC -c 2 --mem=100000 --cpu_bind=cores stdbuf -i0 -o0 -e0 $CLIENT $MAX_OBJ_COUNT $OBJ_INCR $ATTR_COUNT $ATTR_LENGTH $QUERY_COUNT $N_NODE
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $TOTALPROC -c 2 --cpu_bind=cores $CLIENT $MAX_OBJ_COUNT $OBJ_INCR $ATTR_COUNT $ATTR_LENGTH $QUERY_COUNT $N_NODE
 
 echo ""
 echo "================="
 echo "$i Closing server"
 echo "================="
-srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores stdbuf -i0 -o0 -e0 $CLOSE
+stdbuf -i0 -o0 -e0 srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores $CLOSE
 
 date
