@@ -83,6 +83,6 @@ foreach(program ${PROGRAMS})
   target_link_libraries(${program} ${PDC_EXT_LIB_DEPENDENCIES})
   target_link_libraries(${program} cjson)
   target_link_libraries(${program} llsm_tiff)
-  target_include_directories(${program} PUBLIC ${PDC_EXT_INCLUDE_DEPENDENCIES})
+  target_include_directories(${program} PUBLIC ${PDC_INCLUDE_DIR})
 endforeach(program)
 
