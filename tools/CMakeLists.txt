@@ -54,7 +54,6 @@ endif()
 option(USE_SYSTEM_OPENMP "Use system-installed OpenMP." ON)
 if(USE_SYSTEM_OPENMP)
   find_package(OpenMP REQUIRED)
-
   if(OPENMP_FOUND)
       set(OPENMP_LIBRARIES "${OpenMP_C_LIBRARIES}")
   else()
@@ -65,12 +64,18 @@ endif()
 
 add_definitions(-DENABLE_MPI=1)
 add_library(cjson cjson/cJSON.c)
-add_subdirectory(llsm)
+add_library(llsm_tiff llsm/parallelReadTiff.c)
+target_compile_options(llsm_tiff PRIVATE ${OpenMP_C_FLAGS})
+target_include_directories(llsm_tiff PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/llsm)
+target_link_libraries(llsm_tiff PUBLIC ${OpenMP_C_LIBRARIES})
+
+# add_subdirectory(llsm)
 
 set(PROGRAMS
   pdc_ls
   pdc_import
   pdc_export
+  llsm_importer
   )
 
 foreach(program ${PROGRAMS})
