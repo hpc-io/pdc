@@ -82,5 +82,6 @@ foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   target_link_libraries(${program} ${PDC_EXT_LIB_DEPENDENCIES})
   target_link_libraries(${program} cjson)
+  target_link_libraries(${program} llsm_tiff)
 endforeach(program)
 
