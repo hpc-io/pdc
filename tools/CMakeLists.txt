@@ -81,6 +81,7 @@ set(PROGRAMS
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   target_link_libraries(${program} ${PDC_EXT_LIB_DEPENDENCIES})
+  target_link_libraries(${program} pdc)
   target_link_libraries(${program} cjson)
   target_link_libraries(${program} llsm_tiff)
   target_include_directories(${program} PUBLIC ${PDC_INCLUDE_DIR})
