@@ -675,8 +675,8 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
             printf("tiff:inputError", "Input range is not 2");
         }
         else {
-            *startSlice = (uint64_t) (*(strip_range->range)) - 1;
-            *z          = (uint64_t) (*(strip_range->range + 1)) - startSlice;
+            *startSlice = (uint64_t) ((strip_range->range[0])) - 1;
+            *z          = (uint64_t) ((strip_range->range[1])) - startSlice;
             if (!TIFFSetDirectory(tif, startSlice[0] + z[0] - 1) || !TIFFSetDirectory(tif, startSlice[0])) {
                 printf("tiff:rangeOutOfBound", "Range is out of bounds");
             }
