@@ -773,15 +773,15 @@ _get_tiff_array(int bits, int ndim, size_t *dims)
 }
 
 void
-_TIFF_load(char *fileName, uint64_t x, uint64_t y, uint64_t z, uint64_t bits, uint64_t startSlice,
-           uint64_t stripSize, uint8_t flipXY, int ndim, size_t *dims, void **tiff_ptr)
+_TIFF_load(char *fileName, uint8_t isImageJIm, uint64_t x, uint64_t y, uint64_t z, uint64_t bits,
+           uint64_t startSlice, uint64_t stripSize, uint8_t flipXY, int ndim, size_t *dims, void **tiff_ptr)
 {
-    if (tiff == NULL) {
+    if (tiff_ptr == NULL) {
         printf("tiff:dataTypeError, Data type not suppported\n");
     }
     *tiff_ptr = _get_tiff_array(bits, ndim, dims);
     // Case for ImageJ
-    if (imageJIm) {
+    if (isImageJIm) {
         readTiffParallelImageJ(x, y, z, fileName, *tiff_ptr, bits, startSlice, stripSize, flipXY);
     }
     // Case for 2D
@@ -799,7 +799,7 @@ parallel_TIFF_load(char *fileName, void **tiff_ptr, uint8_t flipXY, parallel_tif
 {
     uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0, stripeSize = 0, is_imageJ = 0, imageJ_Z = 0;
 
-    get_tiff_info(file_name, strip_range, &x, &y, &z, &bits, &startSlice, &stripeSize, &is_imageJ, &imageJ_Z);
+    get_tiff_info(fileName, strip_range, &x, &y, &z, &bits, &startSlice, &stripeSize, &is_imageJ, &imageJ_Z);
 
     int      ndim = 3;
     uint64_t dims[ndim];
@@ -807,7 +807,7 @@ parallel_TIFF_load(char *fileName, void **tiff_ptr, uint8_t flipXY, parallel_tif
     dims[1] = flipXY ? x : y;
     dims[2] = z;
 
-    _TIFF_load(file_name, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, tiff_ptr);
+    _TIFF_load(fileName, is_imageJ, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, tiff_ptr);
 }
 
 // void
