@@ -16,8 +16,7 @@
 
 #include "llsm/parallelReadTiff.h"
 
-
-void
+int
 parse_console_args(int argc, char *argv[], char **file_name)
 {
     int c;
@@ -25,7 +24,7 @@ parse_console_args(int argc, char *argv[], char **file_name)
     while ((c = getopt(argc, argv, "f:")) != -1) {
         switch (c) {
             case 'f':
-                *filename = optarg;
+                *file_name = optarg;
                 break;
             case '?':
                 if (optopt == 'f') {
@@ -41,21 +40,22 @@ parse_console_args(int argc, char *argv[], char **file_name)
     }
 }
 
-
-
 int
 main(int argc, char *argv[])
 {
 
-    char *   file_name = NULL;
-    void *tiff = NULL;
+    char *file_name = NULL;
+    void *tiff      = NULL;
 
-    parse_console_args(argc, argv, &file_name);
+    int parse_code = parse_console_args(argc, argv, &file_name);
+
+    if (parse_code) {
+        return parse_code;
+    }
 
     printf("Filename: %s\n", file_name ? file_name : "(none)");
 
     parallel_TIFF_load(file_name, &tiff, 1, NULL);
-
 
     return 0;
 }
