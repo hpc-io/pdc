@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <time.h>
 
 #define ENABLE_MPI 1
 
@@ -55,7 +56,6 @@ main(int argc, char *argv[])
 
     parallel_TIFF_load(file_name, &tiff, 1, NULL);
 
-    
 
     return 0;
 }
