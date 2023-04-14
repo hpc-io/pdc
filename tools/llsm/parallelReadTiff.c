@@ -668,7 +668,7 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
                     t = m;
             }
         }
-        z = s + 1;
+        *z = s + 1;
     }
     else {
         if (strip_range->length != 2) {
@@ -676,7 +676,7 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
         }
         else {
             *startSlice = (uint64_t) * (strip_range->range) - 1;
-            *z          = (uint64_t) * (strip_range->range + 1)) - startSlice;
+            *z          = (uint64_t) * (strip_range->range + 1) - startSlice;
             if (!TIFFSetDirectory(tif, startSlice[0] + z[0] - 1) || !TIFFSetDirectory(tif, startSlice[0])) {
                 printf("tiff:rangeOutOfBound", "Range is out of bounds");
             }
@@ -687,7 +687,7 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
     *imageJ_Z  = imageJImGetZ(tif);
     if (*is_imageJ) {
         *is_imageJ = 1;
-        *imageJ_Z  = imageJImGetZ(fileName);
+        *imageJ_Z  = imageJImGetZ(tif);
         if (*imageJ_Z)
             *z = *imageJ_Z;
     }
@@ -753,8 +753,8 @@ createDoubleArray(int ndim, size_t *dim)
     return array;
 }
 
-void
-_get_tiff_array(int bits, int ndim, size_t *dim)
+void *
+_get_tiff_array(int bits, int ndim, size_t *dims)
 {
     void *tiff = NULL;
     if (bits == 8) {
@@ -774,7 +774,7 @@ _get_tiff_array(int bits, int ndim, size_t *dim)
 
 void
 _TIFF_load(char *fileName, uint64_t x, uint64_t y, uint64_t z, uint64_t bits, uint64_t startSlice,
-           uint64_t stripSize, uint8_t flipXY, int ndim, sizt_t *dims, void **tiff_ptr)
+           uint64_t stripSize, uint8_t flipXY, int ndim, size_t *dims, void **tiff_ptr)
 {
     if (tiff == NULL) {
         printf("tiff:dataTypeError, Data type not suppported\n");
@@ -799,7 +799,7 @@ parallel_TIFF_load(char *fileName, void **tiff_ptr, uint8_t flipXY, parallel_tif
 {
     uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0, stripeSize = 0, is_imageJ = 0, imageJ_Z = 0;
 
-    get_tif_info(file_name, strip_range, &x, &y, &z, &bits, &startSlice, &stripeSize, &is_imageJ, &imageJ_Z);
+    get_tiff_info(file_name, strip_range, &x, &y, &z, &bits, &startSlice, &stripeSize, &is_imageJ, &imageJ_Z);
 
     int      ndim = 3;
     uint64_t dims[ndim];
@@ -807,7 +807,7 @@ parallel_TIFF_load(char *fileName, void **tiff_ptr, uint8_t flipXY, parallel_tif
     dims[1] = flipXY ? x : y;
     dims[2] = z;
 
-    _TIFF_load(fileName, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, tiff_ptr);
+    _TIFF_load(file_name, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, tiff_ptr);
 }
 
 // void
