@@ -676,7 +676,7 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
         }
         else {
             *startSlice = (uint64_t) * (strip_range->range) - 1;
-            *z          = (uint64_t) * (strip_range->range + 1) - startSlice;
+            *z          = (uint64_t) * (strip_range->range[1]) - startSlice;
             if (!TIFFSetDirectory(tif, startSlice[0] + z[0] - 1) || !TIFFSetDirectory(tif, startSlice[0])) {
                 printf("tiff:rangeOutOfBound", "Range is out of bounds");
             }
@@ -882,7 +882,7 @@ parallel_TIFF_load(char *fileName, void **tiff_ptr, uint8_t flipXY, parallel_tif
 //         }
 //         else {
 //             startSlice = (uint64_t) * (mxGetPr(prhs[1])) - 1;
-//             z          = (uint64_t) * ((mxGetPr(prhs[1]) + 1)) - startSlice;
+            // z          = (uint64_t) * ((mxGetPr(prhs[1]) + 1)) - startSlice;
 //             if (!TIFFSetDirectory(tif, startSlice + z - 1) || !TIFFSetDirectory(tif, startSlice)) {
 //                 printf("tiff:rangeOutOfBound", "Range is out of bounds");
 //             }
