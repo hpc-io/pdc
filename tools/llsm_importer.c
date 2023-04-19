@@ -48,6 +48,7 @@ main(int argc, char *argv[])
     void *tiff      = NULL;
     int i = 0;
     char bytes[10];
+    char *tiff_str_ptr;
     int parse_code = parse_console_args(argc, argv, &file_name);
 
     if (parse_code) {
@@ -58,8 +59,9 @@ main(int argc, char *argv[])
 
     parallel_TIFF_load(file_name, &tiff, 1, NULL);
 
+    tiff_str_ptr = (char *)tiff;
     for (i = 0; i < 10; i++) {
-        bytes[i] = (char)tiff[i];
+        bytes[i] = tiff_str_ptr[i];
     }
     printf("first few bytes : %s\n", bytes);
 
