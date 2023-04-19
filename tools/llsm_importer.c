@@ -27,16 +27,9 @@ parse_console_args(int argc, char *argv[], char **file_name)
             case 'f':
                 *file_name = optarg;
                 break;
-            case '?':
-                if (optopt == 'f') {
-                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
-                }
-                else {
-                    fprintf(stderr, "Unknown option: -%c\n", optopt);
-                }
-                return 1;
             default:
-                abort();
+                fprintf(stderr, "Usage: %s [-f filename]\n", argv[0]);
+                exit(EXIT_FAILURE);
         }
     }
 }
