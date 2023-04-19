@@ -870,8 +870,8 @@ drc_access_again:
     // TODO: support restart with different number of servers than previous run
     char checkpoint_file[ADDR_MAX + sizeof(int) + 1];
     if (is_restart_g == 1) {
-        snprintf(checkpoint_file, ADDR_MAX + sizeof(int), "%s%s%d", pdc_server_tmp_dir_g,
-                 "metadata_checkpoint.", pdc_server_rank_g);
+        snprintf(checkpoint_file, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", pdc_server_tmp_dir_g,
+                 pdc_server_rank_g, pdc_server_rank_g);
 
         ret_value = PDC_Server_restart(checkpoint_file);
         if (ret_value != SUCCEED) {
@@ -1642,7 +1642,7 @@ PDC_Server_restart(char *filename)
     if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) {
         printf("Read failed for checkpoint size\n");
     }
-    printf("checkpoint size for metadata query = %lu\n", checkpoint_size);
+    /* printf("checkpoint size for metadata query = %lu\n", checkpoint_size); */
     checkpoint_buf = (char *)malloc(checkpoint_size);
     if (fread(checkpoint_buf, checkpoint_size, 1, file) != 1) {
         printf("Read failed for checkpoint buf\n");

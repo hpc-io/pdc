@@ -2676,7 +2676,7 @@ PDC_Client_close_all_server()
 
     if (pdc_client_mpi_size_g < pdc_server_num_g) {
         if (pdc_client_mpi_rank_g == 0)
-            printf("==CLIENT[%d]: run close_server with equal ranks of servers (%d) for faster checkpoint!",
+            printf("==CLIENT[%d]: run close_server with equal ranks of servers (%d) for faster checkpoint!\n",
                    pdc_client_mpi_rank_g, pdc_server_num_g);
     }
 
