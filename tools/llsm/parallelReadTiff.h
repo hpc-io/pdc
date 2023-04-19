@@ -10,9 +10,6 @@
 #include <fcntl.h>
 #include <limits.h>
 
-#include "tiffio.h"
-#include "omp.h"
-// #include "commons/generic/pdc_generic.h"
 
 typedef struct {
     uint64_t *range; 
