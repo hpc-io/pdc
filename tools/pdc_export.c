@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include "hdf5.h"
 
-#define ENABLE_MPI 1
+// #define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"

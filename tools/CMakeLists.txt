@@ -64,18 +64,12 @@ endif()
 
 add_definitions(-DENABLE_MPI=1)
 add_library(cjson cjson/cJSON.c)
-add_library(llsm_tiff llsm/parallelReadTiff.c)
-target_compile_options(llsm_tiff PRIVATE ${OpenMP_C_FLAGS})
-target_include_directories(llsm_tiff PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/llsm)
-target_link_libraries(llsm_tiff PUBLIC ${OpenMP_C_LIBRARIES})
 
-# add_subdirectory(llsm)
 
 set(PROGRAMS
   pdc_ls
   pdc_import
   pdc_export
-  llsm_importer
   )
 
 foreach(program ${PROGRAMS})
@@ -87,3 +81,26 @@ foreach(program ${PROGRAMS})
   target_include_directories(${program} PUBLIC ${PDC_INCLUDE_DIR})
 endforeach(program)
 
+
+# Find LibTIFF
+option(USE_LIB_TIFF "Enable LibTiff." ON)
+if(USE_LIB_TIFF)
+  find_package(TIFF REQUIRED)
+  if(TIFF_FOUND)
+    # Add the LibTIFF include directory to the include path
+    include_directories(${TIFF_INCLUDE_DIRS})
+    add_library(llsm_tiff llsm/parallelReadTiff.c)
+    target_compile_options(llsm_tiff PRIVATE ${OpenMP_C_FLAGS})
+    target_include_directories(llsm_tiff PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/llsm)
+    target_link_libraries(llsm_tiff PUBLIC ${OpenMP_C_LIBRARIES})
+    target_link_libraries(llsm_tiff ${TIFF_LIBRARIES})
+
+    add_executable(llsm_importer llsm_importer.c)
+    target_link_libraries(llsm_importer ${PDC_EXT_LIB_DEPENDENCIES})
+    target_link_libraries(llsm_importer pdc)
+    target_link_libraries(llsm_importer cjson)
+    target_link_libraries(llsm_importer ${TIFF_LIBRARIES})
+    target_link_libraries(llsm_importer llsm_tiff)
+  else()
+    message(WARNING "LibTiff not found, ignore building the executables which requires LibTiff support.")
+  endif()
