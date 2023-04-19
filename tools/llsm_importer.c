@@ -19,19 +19,22 @@
 int
 parse_console_args(int argc, char *argv[], char **file_name)
 {
-    int c;
-
+    int c, parse_code = -1;
+    
     while ((c = getopt(argc, argv, "f:")) != -1) {
         printf("c : %c \n", c);
         switch (c) {
             case 'f':
                 *file_name = optarg;
+                parse_code = 1;
                 break;
             default:
                 fprintf(stderr, "Usage: %s [-f filename]\n", argv[0]);
+                parse_code = -1;
                 exit(EXIT_FAILURE);
         }
     }
+    return parse_code;
 }
 
 int
