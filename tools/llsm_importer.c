@@ -26,7 +26,7 @@ parse_console_args(int argc, char *argv[], char **file_name)
         switch (c) {
             case 'f':
                 *file_name = optarg;
-                parse_code = 1;
+                parse_code = 0;
                 break;
             default:
                 fprintf(stderr, "Usage: %s [-f filename]\n", argv[0]);
