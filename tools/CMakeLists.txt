@@ -1,5 +1,24 @@
 cmake_minimum_required (VERSION 2.8.12)
 
+# Setup cmake policies.
+foreach(p
+    CMP0012
+    CMP0013
+    CMP0014
+    CMP0022 # CMake 2.8.12
+    CMP0025 # CMake 3.0
+    CMP0053 # CMake 3.1
+    CMP0054 # CMake 3.1
+    CMP0074 # CMake 3.12
+    CMP0075 # CMake 3.12
+    CMP0083 # CMake 3.14
+    CMP0093 # CMake 3.15
+  )
+  if(POLICY ${p})
+    cmake_policy(SET ${p} NEW)
+  endif()
+endforeach()
+
 project(PDC_VOL C)
 
 include_directories(
