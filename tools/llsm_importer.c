@@ -22,6 +22,7 @@ parse_console_args(int argc, char *argv[], char **file_name)
     int c;
 
     while ((c = getopt(argc, argv, "f:")) != -1) {
+        printf("c : %c \n", c);
         switch (c) {
             case 'f':
                 *file_name = optarg;
@@ -49,8 +50,9 @@ main(int argc, char *argv[])
     int i = 0;
     char bytes[10];
     char *tiff_str_ptr;
+    printf("Program started!\n");
     int parse_code = parse_console_args(argc, argv, &file_name);
-
+    printf("parse_code %d\n", parse_code);
     if (parse_code) {
         return parse_code;
     }
