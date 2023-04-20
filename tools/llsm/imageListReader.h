@@ -21,8 +21,13 @@ typedef struct {
     double objectiveZ_um_;
 } image_file_info_t;
 
-typedef void (*on_image_ptr_t)(image_file_info_t *);
+typedef struct {
+    void *input;
+    void *output;
+} img_scan_callback_args_t;
 
-void scan_image_list(char *imageListFileName, on_image_ptr_t image_callback);
+typedef void (*on_image_ptr_t)(image_file_info_t *, img_scan_callback_args_t *args);
+
+void scan_image_list(char *imageListFileName, on_image_ptr_t image_callback, img_scan_callback_args_t *args);
 
 #endif // IMAGELISTREADER_H

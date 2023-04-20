@@ -2,7 +2,7 @@
 #include "parallelReadTiff.h"
 
 void
-scan_image_list(char *imageListFileName, on_image_ptr_t image_callback)
+scan_image_list(char *imageListFileName, on_image_ptr_t image_callback, img_scan_callback_args_t *args)
 {
     FILE* file = fopen(imageListFileName, "r");
 
@@ -60,7 +60,7 @@ scan_image_list(char *imageListFileName, on_image_ptr_t image_callback)
 
         // Do something with the extracted image info...
         if (image_callback != NULL) {
-            image_callback(&image_info);
+            image_callback(&image_info, args);
         }
         
     }
