@@ -730,60 +730,83 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
     TIFFClose(tif);
 }
 
-uint8_t ***
+uint8_t *
 createU8Array(int ndim, size_t *dim)
 {
-    size_t     i, j;
-    uint8_t ***array = (uint8_t ***)malloc(dim[0] * sizeof(uint8_t **));
-    for (i = 0; i < dim[0]; i++) {
-        array[i] = (uint8_t **)malloc(dim[1] * sizeof(uint8_t *));
-        for (j = 0; j < dim[1]; j++) {
-            array[i][j] = (uint8_t *)calloc(dim[2], sizeof(uint8_t));
-        }
+    size_t i = 0, dim_prod = 1;
+    for (i = 0; i < ndim; i++) {
+        dim_prod *= dim[i];
     }
-    return array;
+    return (uint8_t*)malloc(dim_prod * sizeof(uint8_t));
+    // size_t     i, j;
+    // uint8_t ***array = (uint8_t ***)malloc(dim[0] * sizeof(uint8_t **));
+    // for (i = 0; i < dim[0]; i++) {
+    //     array[i] = (uint8_t **)malloc(dim[1] * sizeof(uint8_t *));
+    //     for (j = 0; j < dim[1]; j++) {
+    //         array[i][j] = (uint8_t *)calloc(dim[2], sizeof(uint8_t));
+    //     }
+    // }
+    // return array;
 }
 
-uint16_t ***
+uint16_t *
 createU16Array(int ndim, size_t *dim)
 {
-    size_t      i, j;
-    uint16_t ***array = (uint16_t ***)malloc(dim[0] * sizeof(uint16_t **));
-    for (i = 0; i < dim[0]; i++) {
-        array[i] = (uint16_t **)malloc(dim[1] * sizeof(uint16_t *));
-        for (j = 0; j < dim[1]; j++) {
-            array[i][j] = (uint16_t *)calloc(dim[2], sizeof(uint16_t));
-        }
+    size_t i = 0, dim_prod = 1;
+    for (i = 0; i < ndim; i++) {
+        dim_prod *= dim[i];
     }
-    return array;
+    return (uint16_t*)malloc(dim_prod * sizeof(uint16_t));
+
+    // size_t      i, j;
+    // uint16_t ***array = (uint16_t ***)malloc(dim[0] * sizeof(uint16_t **));
+    // for (i = 0; i < dim[0]; i++) {
+    //     array[i] = (uint16_t **)malloc(dim[1] * sizeof(uint16_t *));
+    //     for (j = 0; j < dim[1]; j++) {
+    //         array[i][j] = (uint16_t *)calloc(dim[2], sizeof(uint16_t));
+    //     }
+    // }
+    // return array;
 }
 
-float ***
+float *
 createFloatArray(int ndim, size_t *dim)
 {
-    size_t   i, j;
-    float ***array = (float ***)malloc(dim[0] * sizeof(float **));
-    for (i = 0; i < dim[0]; i++) {
-        array[i] = (float **)malloc(dim[1] * sizeof(float *));
-        for (j = 0; j < dim[1]; j++) {
-            array[i][j] = (float *)calloc(dim[2], sizeof(float));
-        }
+    size_t i = 0, dim_prod = 1;
+    for (i = 0; i < ndim; i++) {
+        dim_prod *= dim[i];
     }
-    return array;
+    return (float *)malloc(dim_prod * sizeof(float));
+
+    // size_t   i, j;
+    // float ***array = (float ***)malloc(dim[0] * sizeof(float **));
+    // for (i = 0; i < dim[0]; i++) {
+    //     array[i] = (float **)malloc(dim[1] * sizeof(float *));
+    //     for (j = 0; j < dim[1]; j++) {
+    //         array[i][j] = (float *)calloc(dim[2], sizeof(float));
+    //     }
+    // }
+    // return array;
 }
 
-double ***
+double *
 createDoubleArray(int ndim, size_t *dim)
 {
-    size_t    i, j;
-    double ***array = (double ***)malloc(dim[0] * sizeof(double **));
-    for (i = 0; i < dim[0]; i++) {
-        array[i] = (double **)malloc(dim[1] * sizeof(double *));
-        for (j = 0; j < dim[1]; j++) {
-            array[i][j] = (double *)calloc(dim[2], sizeof(double));
-        }
+    size_t i = 0, dim_prod = 1;
+    for (i = 0; i < ndim; i++) {
+        dim_prod *= dim[i];
     }
-    return array;
+    return (double *)malloc(dim_prod * sizeof(double));
+
+    // size_t    i, j;
+    // double ***array = (double ***)malloc(dim[0] * sizeof(double **));
+    // for (i = 0; i < dim[0]; i++) {
+    //     array[i] = (double **)malloc(dim[1] * sizeof(double *));
+    //     for (j = 0; j < dim[1]; j++) {
+    //         array[i][j] = (double *)calloc(dim[2], sizeof(double));
+    //     }
+    // }
+    // return array;
 }
 
 void *
