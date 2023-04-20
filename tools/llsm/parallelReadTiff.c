@@ -7,6 +7,14 @@
 #include "omp.h"
 #endif
 
+#define CREATE_ARRAY(result_var, type, ndim, dim) do { \
+    size_t i = 0, dim_prod = 1;                         \
+    for (i = 0; i < (ndim); i++) {                      \
+        dim_prod *= (dim)[i];                           \
+    }                                                   \
+    result_var = (void *)malloc(dim_prod * sizeof(type)); \
+} while (0)
+
 void
 DummyHandler(const char *module, const char *fmt, va_list ap)
 {
@@ -730,104 +738,21 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
     TIFFClose(tif);
 }
 
-uint8_t *
-createU8Array(int ndim, size_t *dim)
-{
-    size_t i = 0, dim_prod = 1;
-    for (i = 0; i < ndim; i++) {
-        dim_prod *= dim[i];
-    }
-    return (uint8_t*)malloc(dim_prod * sizeof(uint8_t));
-    // size_t     i, j;
-    // uint8_t ***array = (uint8_t ***)malloc(dim[0] * sizeof(uint8_t **));
-    // for (i = 0; i < dim[0]; i++) {
-    //     array[i] = (uint8_t **)malloc(dim[1] * sizeof(uint8_t *));
-    //     for (j = 0; j < dim[1]; j++) {
-    //         array[i][j] = (uint8_t *)calloc(dim[2], sizeof(uint8_t));
-    //     }
-    // }
-    // return array;
-}
-
-uint16_t *
-createU16Array(int ndim, size_t *dim)
-{
-    size_t i = 0, dim_prod = 1;
-    for (i = 0; i < ndim; i++) {
-        dim_prod *= dim[i];
-    }
-    return (uint16_t*)malloc(dim_prod * sizeof(uint16_t));
-
-    // size_t      i, j;
-    // uint16_t ***array = (uint16_t ***)malloc(dim[0] * sizeof(uint16_t **));
-    // for (i = 0; i < dim[0]; i++) {
-    //     array[i] = (uint16_t **)malloc(dim[1] * sizeof(uint16_t *));
-    //     for (j = 0; j < dim[1]; j++) {
-    //         array[i][j] = (uint16_t *)calloc(dim[2], sizeof(uint16_t));
-    //     }
-    // }
-    // return array;
-}
-
-float *
-createFloatArray(int ndim, size_t *dim)
-{
-    size_t i = 0, dim_prod = 1;
-    for (i = 0; i < ndim; i++) {
-        dim_prod *= dim[i];
-    }
-    return (float *)malloc(dim_prod * sizeof(float));
-
-    // size_t   i, j;
-    // float ***array = (float ***)malloc(dim[0] * sizeof(float **));
-    // for (i = 0; i < dim[0]; i++) {
-    //     array[i] = (float **)malloc(dim[1] * sizeof(float *));
-    //     for (j = 0; j < dim[1]; j++) {
-    //         array[i][j] = (float *)calloc(dim[2], sizeof(float));
-    //     }
-    // }
-    // return array;
-}
-
-double *
-createDoubleArray(int ndim, size_t *dim)
-{
-    size_t i = 0, dim_prod = 1;
-    for (i = 0; i < ndim; i++) {
-        dim_prod *= dim[i];
-    }
-    return (double *)malloc(dim_prod * sizeof(double));
-
-    // size_t    i, j;
-    // double ***array = (double ***)malloc(dim[0] * sizeof(double **));
-    // for (i = 0; i < dim[0]; i++) {
-    //     array[i] = (double **)malloc(dim[1] * sizeof(double *));
-    //     for (j = 0; j < dim[1]; j++) {
-    //         array[i][j] = (double *)calloc(dim[2], sizeof(double));
-    //     }
-    // }
-    // return array;
-}
-
 void *
 _get_tiff_array(int bits, int ndim, size_t *dims)
 {
     void *tiff = NULL;
     if (bits == 8) {
         CREATE_ARRAY(tiff, uint8_t, ndim, dims);
-        // tiff = (void *)createU8Array(ndim, dims);
     }
     else if (bits == 16) {
         CREATE_ARRAY(tiff, uint16_t, ndim, dims);
-        // tiff = (void *)createU16Array(ndim, dims);
     }
     else if (bits == 32) {
         CREATE_ARRAY(tiff, float, ndim, dims);
-        // tiff = (void *)createFloatArray(ndim, dims);
     }
     else if (bits == 64) {
         CREATE_ARRAY(tiff, double, ndim, dims);
-        // tiff = (void *)createDoubleArray(ndim, dims);
     }
     return tiff;
 }
@@ -869,180 +794,3 @@ parallel_TIFF_load(char *fileName, void **tiff_ptr, uint8_t flipXY, parallel_tif
 
     _TIFF_load(fileName, is_imageJ, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, tiff_ptr);
 }
-
-// void
-// mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
-// {
-//     // Check if the fileName is a char array or matlab style
-//     char *fileName = NULL;
-//     if (!mxIsClass(prhs[0], "string")) {
-//         if (!mxIsChar(prhs[0]))
-//             printf("tiff:inputError", "The first argument must be a string");
-//         fileName = mxArrayToString(prhs[0]);
-//     }
-//     else {
-//         mxArray *mString[1];
-//         mxArray *mCharA[1];
-
-//         // Convert string to char array
-//         mString[0] = mxDuplicateArray(prhs[0]);
-//         mexCallMATLAB(1, mCharA, 1, mString, "char");
-//         fileName = mxArrayToString(mCharA[0]);
-//     }
-
-//     // Handle the tilde character in filenames on Linux/Mac
-//     // #ifndef _WIN32
-//     // if(strchr(fileName,'~')) fileName = expandTilde(fileName);
-//     // #endif
-
-//     uint8_t flipXY = 1;
-//     // uint8_t flipXY = 0;
-
-//     // if(nrhs > 2){
-//     //    flipXY = (uint8_t)*(mxGetPr(prhs[2]));
-//     //}
-
-//     TIFFSetWarningHandler(DummyHandler);
-//     TIFF *tif = TIFFOpen(fileName, "r");
-//     if (!tif)
-//         printf("tiff:inputError", "File \"%s\" cannot be opened", fileName);
-
-//     uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0;
-//     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &x);
-//     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &y);
-
-//     if (nrhs == 1) {
-//         uint16_t s = 0, m = 0, t = 1;
-//         while (TIFFSetDirectory(tif, t)) {
-//             s = t;
-//             t *= 8;
-//             if (s > t) {
-//                 t = 65535;
-//                 printf("Number of slices > 32768\n");
-//                 break;
-//             }
-//         }
-//         while (s != t) {
-//             m = (s + t + 1) / 2;
-//             if (TIFFSetDirectory(tif, m)) {
-//                 s = m;
-//             }
-//             else {
-//                 if (m > 0)
-//                     t = m - 1;
-//                 else
-//                     t = m;
-//             }
-//         }
-//         z = s + 1;
-//     }
-//     else {
-//         if (mxGetN(prhs[1]) != 2) {
-//             printf("tiff:inputError", "Input range is not 2");
-//         }
-//         else {
-//             startSlice = (uint64_t) * (mxGetPr(prhs[1])) - 1;
-// z          = (uint64_t) * ((mxGetPr(prhs[1]) + 1)) - startSlice;
-//             if (!TIFFSetDirectory(tif, startSlice + z - 1) || !TIFFSetDirectory(tif, startSlice)) {
-//                 printf("tiff:rangeOutOfBound", "Range is out of bounds");
-//             }
-//         }
-//     }
-
-//     TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bits);
-//     uint64_t stripSize = 1;
-//     TIFFGetField(tif, TIFFTAG_ROWSPERSTRIP, &stripSize);
-//     TIFFClose(tif);
-
-//     uint8_t imageJIm = 0;
-//     if (isImageJIm(fileName)) {
-//         imageJIm       = 1;
-//         uint64_t tempZ = imageJImGetZ(fileName);
-//         if (tempZ)
-//             z = tempZ;
-//     }
-
-//     uint64_t dim[3];
-//     dim[0] = y;
-//     dim[1] = x;
-//     dim[2] = z;
-
-//     // Case for ImageJ
-//     if (imageJIm) {
-//         if (bits == 8) {
-//             plhs[0]       = mxCreateNumericArray(3, dim, mxUINT8_CLASS, mxREAL);
-//             uint8_t *tiff = (uint8_t *)mxGetPr(plhs[0]);
-//             readTiffParallelImageJ(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 16) {
-//             plhs[0]        = mxCreateNumericArray(3, dim, mxUINT16_CLASS, mxREAL);
-//             uint16_t *tiff = (uint16_t *)mxGetPr(plhs[0]);
-//             readTiffParallelImageJ(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 32) {
-//             plhs[0]     = mxCreateNumericArray(3, dim, mxSINGLE_CLASS, mxREAL);
-//             float *tiff = (float *)mxGetPr(plhs[0]);
-//             readTiffParallelImageJ(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 64) {
-//             plhs[0]      = mxCreateNumericArray(3, dim, mxDOUBLE_CLASS, mxREAL);
-//             double *tiff = (double *)mxGetPr(plhs[0]);
-//             readTiffParallelImageJ(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else {
-//             printf("tiff:dataTypeError", "Data type not suppported");
-//         }
-//     }
-//     // Case for 2D
-//     else if (z <= 1) {
-//         if (bits == 8) {
-//             plhs[0]       = mxCreateNumericArray(3, dim, mxUINT8_CLASS, mxREAL);
-//             uint8_t *tiff = (uint8_t *)mxGetPr(plhs[0]);
-//             readTiffParallel2D(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 16) {
-//             plhs[0]        = mxCreateNumericArray(3, dim, mxUINT16_CLASS, mxREAL);
-//             uint16_t *tiff = (uint16_t *)mxGetPr(plhs[0]);
-//             readTiffParallel2D(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 32) {
-//             plhs[0]     = mxCreateNumericArray(3, dim, mxSINGLE_CLASS, mxREAL);
-//             float *tiff = (float *)mxGetPr(plhs[0]);
-//             readTiffParallel2D(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 64) {
-//             plhs[0]      = mxCreateNumericArray(3, dim, mxDOUBLE_CLASS, mxREAL);
-//             double *tiff = (double *)mxGetPr(plhs[0]);
-//             readTiffParallel2D(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else {
-//             printf("tiff:dataTypeError", "Data type not suppported");
-//         }
-//     }
-//     // Case for 3D
-//     else {
-//         if (bits == 8) {
-//             plhs[0]       = mxCreateNumericArray(3, dim, mxUINT8_CLASS, mxREAL);
-//             uint8_t *tiff = (uint8_t *)mxGetPr(plhs[0]);
-//             readTiffParallel(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 16) {
-//             plhs[0]        = mxCreateNumericArray(3, dim, mxUINT16_CLASS, mxREAL);
-//             uint16_t *tiff = (uint16_t *)mxGetPr(plhs[0]);
-//             readTiffParallel(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 32) {
-//             plhs[0]     = mxCreateNumericArray(3, dim, mxSINGLE_CLASS, mxREAL);
-//             float *tiff = (float *)mxGetPr(plhs[0]);
-//             readTiffParallel(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else if (bits == 64) {
-//             plhs[0]      = mxCreateNumericArray(3, dim, mxDOUBLE_CLASS, mxREAL);
-//             double *tiff = (double *)mxGetPr(plhs[0]);
-//             readTiffParallel(x, y, z, fileName, (void *)tiff, bits, startSlice, stripSize, flipXY);
-//         }
-//         else {
-//             printf("tiff:dataTypeError", "Data type not suppported");
-//         }
-//     }
-// }
