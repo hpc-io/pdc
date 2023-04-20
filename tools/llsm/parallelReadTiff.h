@@ -10,15 +10,6 @@
 #include <fcntl.h>
 #include <limits.h>
 
-
-#define CREATE_ARRAY(result_var, type, ndim, dim) do { \
-    size_t i = 0, dim_prod = 1;                         \
-    for (i = 0; i < (ndim); i++) {                      \
-        dim_prod *= (dim)[i];                           \
-    }                                                   \
-    result_var = (void *)malloc(dim_prod * sizeof(type)); \
-} while (0)
-
 typedef struct {
     uint64_t *range; 
     size_t length;
