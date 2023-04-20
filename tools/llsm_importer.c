@@ -22,7 +22,6 @@ parse_console_args(int argc, char *argv[], char **file_name)
     int c, parse_code = -1;
     
     while ((c = getopt(argc, argv, "f:")) != -1) {
-        printf("c : %c \n", c);
         switch (c) {
             case 'f':
                 *file_name = optarg;
@@ -46,15 +45,16 @@ main(int argc, char *argv[])
     int i = 0;
     char bytes[10];
     char *tiff_str_ptr;
-    printf("Program started!\n");
+    // parse console argument
     int parse_code = parse_console_args(argc, argv, &file_name);
-    printf("parse_code %d\n", parse_code);
     if (parse_code) {
         return parse_code;
     }
 
+    // print file name for validating purpose
     printf("Filename: %s\n", file_name ? file_name : "(none)");
 
+    // calling tiff loading process.
     parallel_TIFF_load(file_name, &tiff, 1, NULL);
 
     tiff_str_ptr = (char *)tiff;

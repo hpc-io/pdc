@@ -1,9 +1,9 @@
 #include "parallelReadTiff.h"
 #include "tiffio.h"
 
-#define USE_OMP 0
+#define ENABLE_OPENMP
 
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #include "omp.h"
 #endif
 
@@ -31,7 +31,7 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
     uint64_t bytes      = bits / 8;
 
     int32_t w;
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp parallel for
 #endif
     for (w = 0; w < numWorkers; w++) {
@@ -114,7 +114,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
     char    errString[10000];
     if (compressed > 1 || z < 32768) {
         TIFFClose(tif);
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp parallel for
 #endif
         for (w = 0; w < numWorkers; w++) {
@@ -124,7 +124,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
             while (!tif) {
                 tif = TIFFOpen(fileName, "r");
                 if (outCounter == 3) {
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp critical
 #endif
                     {
@@ -146,7 +146,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
                 while (!TIFFSetDirectory(tif, (uint64_t)dir) && counter < 3) {
                     counter++;
                     if (counter == 3) {
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp critical
 #endif
                         {
@@ -162,7 +162,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
                     // loading the data into a buffer
                     int64_t cBytes = TIFFReadEncodedStrip(tif, i, buffer, stripSize * x * bytes);
                     if (cBytes < 0) {
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp critical
 #endif
                         {
@@ -274,7 +274,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
         uint64_t size  = x * y * z * (bits / 8);
         void *   tiffC = malloc(size);
         memcpy(tiffC, tiff, size);
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp parallel for
 #endif
         for (uint64_t k = 0; k < z; k++) {
@@ -321,7 +321,7 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
     uint64_t bytes      = bits / 8;
 
     int32_t w;
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp parallel for
 #endif
     for (w = 0; w < numWorkers; w++) {
@@ -402,7 +402,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
     uint8_t errBak = 0;
     char    errString[10000];
 
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp parallel for
 #endif
     for (w = 0; w < numWorkers; w++) {
@@ -412,7 +412,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
         while (!tif) {
             tif = TIFFOpen(fileName, "r");
             if (outCounter == 3) {
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp critical
 #endif
                 {
@@ -432,7 +432,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
                    counter + 1);
             counter++;
             if (counter == 3) {
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp critical
 #endif
                 {
@@ -447,7 +447,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
             // loading the data into a buffer
             int64_t cBytes = TIFFReadEncodedStrip(tif, i, buffer, stripSize * x * bytes);
             if (cBytes < 0) {
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp critical
 #endif
                 {
@@ -569,7 +569,7 @@ readTiffParallelImageJ(uint64_t x, uint64_t y, uint64_t z, const char *fileName,
     // Swap endianess for types greater than 8 bits
     // TODO: May need to change later because we may not always need to swap
     if (bits > 8) {
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp parallel for
 #endif
         for (uint64_t i = 0; i < x * y * z; i++) {
@@ -609,7 +609,7 @@ readTiffParallelImageJ(uint64_t x, uint64_t y, uint64_t z, const char *fileName,
         uint64_t size  = x * y * z * (bits / 8);
         void *   tiffC = malloc(size);
         memcpy(tiffC, tiff, size);
-#ifdef USE_OMP
+#ifdef ENABLE_OPENMP
 #pragma omp parallel for
 #endif
         for (uint64_t k = 0; k < z; k++) {
