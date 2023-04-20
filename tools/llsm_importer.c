@@ -16,6 +16,7 @@
 
 #include "llsm/parallelReadTiff.h"
 #include "llsm/imageListReader.h"
+#include <libgen.h>
 
 int
 parse_console_args(int argc, char *argv[], char **file_name)
@@ -51,13 +52,26 @@ print_image_file_info(const image_file_info_t *image_info)
 }
 
 void
-on_image(image_file_info_t *imageinfo)
+on_image(image_file_info_t *image_info, img_scan_callback_args_t *args)
 {
-    print_image_file_info(imageinfo);
+    print_image_file_info(image_info);
+    
+    char *dirname = (char *)args->input;
+    char filepath[256];
     // calling tiff loading process.
     void *tiff      = NULL;
     int   i         = 0;
-    parallel_TIFF_load(imageinfo->filename, &tiff, 1, NULL);
+
+    // check if the path ends with a forward slash
+    if (dirname[strlen(dirname) - 1] != '/') {
+        strcat(dirname, "/"); // add a forward slash to the end of the path
+    }
+
+    strcpy(filepath, dirname); // copy the directory path to the file path
+    strcat(filepath, image_info->filename); // concatenate the file name to the file path
+
+
+    parallel_TIFF_load(filepath, &tiff, 1, NULL);
 
     if (!tiff)
         return 1;
@@ -75,20 +89,20 @@ main(int argc, char *argv[])
 {
 
     char *file_name = NULL;
-    
-    
-    char  bytes[10];
-    
+    img_scan_callback_args_t callback_args;
     // parse console argument
     int parse_code = parse_console_args(argc, argv, &file_name);
     if (parse_code) {
         return parse_code;
     }
+    char* directory_path = dirname(strdup(directory_path));
 
     // print file name for validating purpose
     printf("Filename: %s\n", file_name ? file_name : "(none)");
+    printf("Directory: %s\n", directory_path ? directory_path : "(none)");
 
-    scan_image_list(file_name, &on_image);
+    callback_args.input = (void *)directory_path;
+    scan_image_list(file_name, &on_image, &callback_args);
 
     return 0;
 }
