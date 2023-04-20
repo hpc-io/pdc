@@ -814,16 +814,20 @@ _get_tiff_array(int bits, int ndim, size_t *dims)
 {
     void *tiff = NULL;
     if (bits == 8) {
-        tiff = (void *)createU8Array(ndim, dims);
+        CREATE_ARRAY(tiff, uint8_t, ndim, dims);
+        // tiff = (void *)createU8Array(ndim, dims);
     }
     else if (bits == 16) {
-        tiff = (void *)createU16Array(ndim, dims);
+        CREATE_ARRAY(tiff, uint16_t, ndim, dims);
+        // tiff = (void *)createU16Array(ndim, dims);
     }
     else if (bits == 32) {
-        tiff = (void *)createFloatArray(ndim, dims);
+        CREATE_ARRAY(tiff, float, ndim, dims);
+        // tiff = (void *)createFloatArray(ndim, dims);
     }
     else if (bits == 64) {
-        tiff = (void *)createDoubleArray(ndim, dims);
+        CREATE_ARRAY(tiff, double, ndim, dims);
+        // tiff = (void *)createDoubleArray(ndim, dims);
     }
     return tiff;
 }
