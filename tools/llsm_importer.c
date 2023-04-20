@@ -15,12 +15,13 @@
 // #include "pdc_client_connect.h"
 
 #include "llsm/parallelReadTiff.h"
+#include "llsm/imageListReader.h"
 
 int
 parse_console_args(int argc, char *argv[], char **file_name)
 {
     int c, parse_code = -1;
-    
+
     while ((c = getopt(argc, argv, "f:")) != -1) {
         switch (c) {
             case 'f':
@@ -36,15 +37,48 @@ parse_console_args(int argc, char *argv[], char **file_name)
     return parse_code;
 }
 
+void
+print_image_file_info(const image_file_info_t *image_info)
+{
+    printf("Filepath: %s\n", image_info->filepath);
+    printf("Filename: %s\n", image_info->filename);
+    printf("Stage X (um): %.2f\n", image_info->stageX_um_);
+    printf("Stage Y (um): %.2f\n", image_info->stageY_um_);
+    printf("Stage Z (um): %.2f\n", image_info->stageZ_um_);
+    printf("Objective X (um): %.2f\n", image_info->objectiveX_um_);
+    printf("Objective Y (um): %.2f\n", image_info->objectiveY_um_);
+    printf("Objective Z (um): %.2f\n", image_info->objectiveZ_um_);
+}
+
+void
+on_image(image_file_info_t *imageinfo)
+{
+    print_image_file_info(imageinfo);
+    // calling tiff loading process.
+    void *tiff      = NULL;
+    int   i         = 0;
+    parallel_TIFF_load(imageinfo->filename, &tiff, 1, NULL);
+
+    if (!tiff)
+        return 1;
+
+    printf("first few bytes ");
+    for (i = 0; i < 10; i++) {
+        printf("%d ", ((uint8_t *)tiff)[i]);
+    }
+    printf("\n");
+    free(tiff);
+}
+
 int
 main(int argc, char *argv[])
 {
 
     char *file_name = NULL;
-    void *tiff      = NULL;
-    int i = 0;
-    char bytes[10];
-    char *tiff_str_ptr;
+    
+    
+    char  bytes[10];
+    
     // parse console argument
     int parse_code = parse_console_args(argc, argv, &file_name);
     if (parse_code) {
@@ -54,14 +88,7 @@ main(int argc, char *argv[])
     // print file name for validating purpose
     printf("Filename: %s\n", file_name ? file_name : "(none)");
 
-    // calling tiff loading process.
-    parallel_TIFF_load(file_name, &tiff, 1, NULL);
-
-    tiff_str_ptr = (char *)tiff;
-    for (i = 0; i < 10; i++) {
-        bytes[i] = tiff_str_ptr[i];
-    }
-    printf("first few bytes : %s\n", bytes);
+    scan_image_list(file_name, &on_image);
 
     return 0;
 }

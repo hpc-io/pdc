@@ -7,13 +7,14 @@
 #include "omp.h"
 #endif
 
-#define CREATE_ARRAY(result_var, type, ndim, dim) do { \
-    size_t i = 0, dim_prod = 1;                         \
-    for (i = 0; i < (ndim); i++) {                      \
-        dim_prod *= (dim)[i];                           \
-    }                                                   \
-    result_var = (void *)malloc(dim_prod * sizeof(type)); \
-} while (0)
+#define CREATE_ARRAY(result_var, type, ndim, dim)                                                            \
+    do {                                                                                                     \
+        size_t i = 0, dim_prod = 1;                                                                          \
+        for (i = 0; i < (ndim); i++) {                                                                       \
+            dim_prod *= (dim)[i];                                                                            \
+        }                                                                                                    \
+        result_var = (void *)malloc(dim_prod * sizeof(type));                                                \
+    } while (0)
 
 void
 DummyHandler(const char *module, const char *fmt, va_list ap)
