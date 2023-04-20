@@ -110,7 +110,7 @@ if(USE_LIB_TIFF)
   if(TIFF_FOUND)
     # Add the LibTIFF include directory to the include path
     include_directories(${TIFF_INCLUDE_DIRS})
-    add_library(llsm_tiff llsm/parallelReadTiff.c llsm/parallelReadTiff.h)
+    add_library(llsm_tiff llsm/parallelReadTiff.c llsm/imageListReader.c)
     target_compile_options(llsm_tiff PRIVATE ${OpenMP_C_FLAGS})
     target_link_libraries(llsm_tiff PUBLIC ${OpenMP_C_LIBRARIES})
     target_link_libraries(llsm_tiff PUBLIC ${TIFF_LIBRARIES})
