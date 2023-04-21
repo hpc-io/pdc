@@ -95,7 +95,7 @@ main(int argc, char *argv[])
     if (parse_code) {
         return parse_code;
     }
-    char* directory_path = dirname(strdup(directory_path));
+    char* directory_path = dirname(strdup(file_name));
 
     // print file name for validating purpose
     printf("Filename: %s\n", file_name ? file_name : "(none)");
