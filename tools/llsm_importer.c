@@ -74,7 +74,7 @@ on_image(image_file_info_t *image_info, img_scan_callback_args_t *args)
     parallel_TIFF_load(filepath, &tiff, 1, NULL);
 
     if (!tiff)
-        return 1;
+        return;
 
     printf("first few bytes ");
     for (i = 0; i < 10; i++) {
