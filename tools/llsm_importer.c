@@ -18,6 +18,8 @@
 #include "llsm/imageListReader.h"
 #include <libgen.h>
 
+int     rank = 0, size = 1;
+
 int
 parse_console_args(int argc, char *argv[], char **file_name)
 {
@@ -50,6 +52,17 @@ print_image_file_info(const image_file_info_t *image_info)
     printf("Objective Y (um): %.2f\n", image_info->objectiveY_um_);
     printf("Objective Z (um): %.2f\n", image_info->objectiveZ_um_);
 }
+
+// void
+// import_to_pdc(const image_file_info_t *image_info) {
+
+
+//     PDCprop_set_obj_dims(obj_prop_g, cur_ndims, (uint64_t *)cur_dims);
+//     PDCprop_set_obj_type(obj_prop_g, cur_type);
+//     PDCprop_set_obj_time_step(obj_prop_g, 0);
+//     PDCprop_set_obj_user_id(obj_prop_g, getuid());
+//     PDCprop_set_obj_app_name(obj_prop_g, app_name);
+// }
 
 void
 on_image(image_file_info_t *image_info, img_scan_callback_args_t *args)
@@ -98,6 +111,12 @@ int
 main(int argc, char *argv[])
 {
 
+// #ifdef ENABLE_MPI
+//     MPI_Init(&argc, &argv);
+//     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+//     MPI_Comm_size(MPI_COMM_WORLD, &size);
+// #endif
+
     char *                   file_name = NULL;
     img_scan_callback_args_t callback_args;
     // parse console argument
@@ -113,6 +132,11 @@ main(int argc, char *argv[])
 
     callback_args.input = (void *)directory_path;
     scan_image_list(file_name, &on_image, &callback_args);
+
+
+// #ifdef ENABLE_MPI
+//     MPI_Finalize();
+// #endif
 
     return 0;
 }
