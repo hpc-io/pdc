@@ -39,7 +39,7 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
 
         TIFF *tif = TIFFOpen(fileName, "r");
         if (!tif)
-            printf("tiff:threadError", "Thread %d: File \"%s\" cannot be opened\n", w, fileName);
+            printf("tiff:threadError | Thread %d: File \"%s\" cannot be opened\n", w, fileName);
 
         void *buffer = malloc(x * bytes);
         for (int64_t dir = startSlice + (w * batchSize); dir < startSlice + ((w + 1) * batchSize); dir++) {
@@ -241,17 +241,17 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
         int fd = open(fileName, O_RDONLY);
 #endif
         if (fd == -1)
-            printf("disk:threadError", "File \"%s\" cannot be opened from Disk\n", fileName);
+            printf("disk:threadError | File \"%s\" cannot be opened from Disk\n", fileName);
 
         if (!tif)
-            printf("tiff:threadError", "File \"%s\" cannot be opened\n", fileName);
+            printf("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
         uint64_t  offset  = 0;
         uint64_t *offsets = NULL;
         TIFFGetField(tif, TIFFTAG_STRIPOFFSETS, &offsets);
         uint64_t *byteCounts = NULL;
         TIFFGetField(tif, TIFFTAG_STRIPBYTECOUNTS, &byteCounts);
         if (!offsets || !byteCounts)
-            printf("tiff:threadError", "Could not get offsets or byte counts from the tiff file\n");
+            printf("tiff:threadError | Could not get offsets or byte counts from the tiff file\n");
         offset           = offsets[0];
         uint64_t fOffset = offsets[stripsPerDir - 1] + byteCounts[stripsPerDir - 1];
         uint64_t zSize   = fOffset - offset;
@@ -308,7 +308,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
         if (errBak)
             readTiffParallelBak(x, y, z, fileName, tiff, bits, startSlice, flipXY);
         else
-            printf("tiff:threadError", errString);
+            printf("tiff:threadError %s\n", errString);
     }
 }
 
@@ -329,7 +329,7 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
 
         TIFF *tif = TIFFOpen(fileName, "r");
         if (!tif)
-            printf("tiff:threadError", "Thread %d: File \"%s\" cannot be opened\n", w, fileName);
+            printf("tiff:threadError | Thread %d: File \"%s\" cannot be opened\n", w, fileName);
 
         void *buffer = malloc(x * bytes);
         for (int64_t dir = startSlice + (w * batchSize); dir < startSlice + ((w + 1) * batchSize); dir++) {
@@ -517,7 +517,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
         if (errBak)
             readTiffParallel2DBak(x, y, z, fileName, tiff, bits, startSlice, flipXY);
         else
-            printf("tiff:threadError", errString);
+            printf("tiff:threadError %s\n", errString);
     }
 }
 
@@ -533,7 +533,7 @@ readTiffParallelImageJ(uint64_t x, uint64_t y, uint64_t z, const char *fileName,
 #endif
     TIFF *tif = TIFFOpen(fileName, "r");
     if (!tif)
-        printf("tiff:threadError", "File \"%s\" cannot be opened\n", fileName);
+        printf("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
     uint64_t  offset  = 0;
     uint64_t *offsets = NULL;
     TIFFGetField(tif, TIFFTAG_STRIPOFFSETS, &offsets);
@@ -682,7 +682,7 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
     TIFFSetWarningHandler(DummyHandler);
     TIFF *tif = TIFFOpen(fileName, "r");
     if (!tif)
-        printf("tiff:inputError", "File \"%s\" cannot be opened", fileName);
+        printf("tiff:inputError | File \"%s\" cannot be opened", fileName);
 
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, x);
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, y);
@@ -714,13 +714,13 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
     }
     else {
         if (strip_range->length != 2) {
-            printf("tiff:inputError", "Input range is not 2");
+            printf("tiff:inputError | Input range is not 2");
         }
         else {
             *startSlice = (uint64_t)(*(strip_range->range)) - 1;
             *z          = (uint64_t)(*(strip_range->range + 1)) - startSlice[0];
             if (!TIFFSetDirectory(tif, startSlice[0] + z[0] - 1) || !TIFFSetDirectory(tif, startSlice[0])) {
-                printf("tiff:rangeOutOfBound", "Range is out of bounds");
+                printf("tiff:rangeOutOfBound | Range is out of bounds");
             }
         }
     }
