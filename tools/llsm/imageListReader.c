@@ -67,5 +67,5 @@ scan_image_list(char *imageListFileName, on_image_ptr_t image_callback, img_scan
 
     fclose(file);
 
-    printf("Read %d lines from file %s\n", line_count, imageListFileName);
+    printf("Read %d lines from file %s after the header line.\n", line_count - 1, imageListFileName);
 }
