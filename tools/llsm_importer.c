@@ -281,7 +281,7 @@ main(int argc, char *argv[])
         PDC_LIST_ITERATOR *iter = pdc_list_iterator_new(list);
         while (pdc_list_iterator_has_next(iter)) {
             char *csv_line = (char *)pdc_list_iterator_next(iter);
-            MPI_Bcast(csv_line, bcast_count, MPI_CHAR, 0, MPI_COMM_WORLD);
+            MPI_Bcast(csv_line, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
         }
 #endif
     }
@@ -293,8 +293,8 @@ main(int argc, char *argv[])
         // receive the file names
         int i;
         for (i = 0; i < num_lines; i++) {
-            csv_line = (char *)malloc(bcast_count * sizeof(char));
-            MPI_Bcast(csv_line, bcast_count, MPI_CHAR, 0, MPI_COMM_WORLD);
+            csv_line = (char *)malloc(512 * sizeof(char));
+            MPI_Bcast(csv_line, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
             pdc_list_add(list, csv_line);
         }
 #endif
