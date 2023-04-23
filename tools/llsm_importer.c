@@ -69,14 +69,21 @@ import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
     PDCprop_set_obj_user_id(obj_prop_g, getuid());
     PDCprop_set_obj_app_name(obj_prop_g, "LLSM");
 
+    uint64_t *offsets = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
+    uint64_t *num_bytes  = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
+    for (int i = 0; i < ndims; i++) {
+        offsets[i] = 0;
+        num_bytes[i]  = dims[i] * image_info->bits/8;
+    }
+
     // create object
     // FIXME: There are many attributes currently in one file name, 
     // and we should do some research to see what would be a good object name for each image.
     pdcid_t cur_obj_g = PDCobj_create(cont_id_g, fileName_cell->field_value, cur_obj_prop_g);
 
     // write data to object
-    pdcid_t local_region     = PDCregion_create(ndims, 0, image_info->tiff_size);
-    pdcid_t remote_region    = PDCregion_create(ndims, 0, image_info->tiff_size);
+    pdcid_t local_region     = PDCregion_create(ndims, offsets, num_bytes);
+    pdcid_t remote_region    = PDCregion_create(ndims, offsets, num_bytes);
     pdcid_t transfer_request = PDCregion_transfer_create(image_info->tiff_ptr, PDC_WRITE, cur_obj_g, local_region, remote_region);
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
@@ -124,6 +131,14 @@ import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
                (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
 
     printf("[Rank %4d]create object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value, duration / 1e9);
+
+    // free memory
+    free(offsets);
+    free(num_bytes);
+    PDCregion_close(local_region);
+    PDCregion_close(remote_region);
+    PDCregion_transfer_close(transfer_request);
+    PDCprop_close(cur_obj_prop_g);
 
 }
 
@@ -180,9 +195,6 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
     free(image_info->tiff_ptr);
     free(image_info);
     free(dirname);
-
-    // free the csv row
-    csv_free_row(row);
 }
 
 void
