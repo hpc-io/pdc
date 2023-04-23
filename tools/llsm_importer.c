@@ -273,15 +273,20 @@ main(int argc, char *argv[])
     // Rank 0 reads the filename list and distribute data to other ranks
     if (rank == 0) {
         read_txt(file_name, list, &bcast_count);
+        // print bcast_count
+        printf("bcast_count: %d", bcast_count);
+
 #ifdef ENABLE_MPI
         // broadcast the number of lines
         int num_lines = pdc_list_size(list);
         MPI_Bcast(&num_lines, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        // broadcast the bcast_count
+        MPI_Bcast(&bcast_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
         // broadcast the file names
         PDC_LIST_ITERATOR *iter = pdc_list_iterator_new(list);
         while (pdc_list_iterator_has_next(iter)) {
             char *csv_line = (char *)pdc_list_iterator_next(iter);
-            MPI_Bcast(csv_line, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
+            MPI_Bcast(csv_line, bcast_count, MPI_CHAR, 0, MPI_COMM_WORLD);
         }
 #endif
     }
@@ -290,11 +295,13 @@ main(int argc, char *argv[])
         // other ranks receive the number of files
         int num_lines;
         MPI_Bcast(&num_lines, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        // receive the bcast_count
+        MPI_Bcast(&bcast_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
         // receive the file names
         int i;
         for (i = 0; i < num_lines; i++) {
-            csv_line = (char *)malloc(512 * sizeof(char));
-            MPI_Bcast(csv_line, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
+            csv_line = (char *)malloc(bcast_count * sizeof(char));
+            MPI_Bcast(csv_line, bcast_count, MPI_CHAR, 0, MPI_COMM_WORLD);
             pdc_list_add(list, csv_line);
         }
 #endif
