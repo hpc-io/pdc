@@ -50,7 +50,7 @@ parse_console_args(int argc, char *argv[], char **file_name)
 }
 
 void
-import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
+import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 {
     struct timespec start, end;
     double          duration;
@@ -59,8 +59,8 @@ import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
 
     pdcid_t cur_obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
-    psize_t ndims   = 3;
-    // FIXME: we should support uint64_t. 
+    psize_t ndims = 3;
+    // FIXME: we should support uint64_t.
     uint64_t dims[3] = {image_info->x, image_info->y, image_info->z};
     // FIXME: we should change the ndims parameter to psize_t type.
     PDCprop_set_obj_dims(obj_prop_g, (PDC_int_t)ndims, dims);
@@ -69,39 +69,40 @@ import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
     PDCprop_set_obj_user_id(obj_prop_g, getuid());
     PDCprop_set_obj_app_name(obj_prop_g, "LLSM");
 
-    uint64_t *offsets = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
-    uint64_t *num_bytes  = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
+    uint64_t *offsets   = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
+    uint64_t *num_bytes = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
     for (int i = 0; i < ndims; i++) {
-        offsets[i] = 0;
-        num_bytes[i]  = dims[i] * image_info->bits/8;
+        offsets[i]   = 0;
+        num_bytes[i] = dims[i] * image_info->bits / 8;
     }
 
     // create object
-    // FIXME: There are many attributes currently in one file name, 
+    // FIXME: There are many attributes currently in one file name,
     // and we should do some research to see what would be a good object name for each image.
     pdcid_t cur_obj_g = PDCobj_create(cont_id_g, fileName_cell->field_value, cur_obj_prop_g);
 
     // write data to object
-    pdcid_t local_region     = PDCregion_create(ndims, offsets, num_bytes);
-    pdcid_t remote_region    = PDCregion_create(ndims, offsets, num_bytes);
-    pdcid_t transfer_request = PDCregion_transfer_create(image_info->tiff_ptr, PDC_WRITE, cur_obj_g, local_region, remote_region);
+    pdcid_t local_region  = PDCregion_create(ndims, offsets, num_bytes);
+    pdcid_t remote_region = PDCregion_create(ndims, offsets, num_bytes);
+    pdcid_t transfer_request =
+        PDCregion_transfer_create(image_info->tiff_ptr, PDC_WRITE, cur_obj_g, local_region, remote_region);
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
 
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
     while (cell != NULL) {
-        char *field_name = cell->header->field_name;
-        char data_type   = cell->header->field_type;
+        char *field_name  = cell->header->field_name;
+        char  data_type   = cell->header->field_type;
         char *field_value = cell->field_value;
-        switch(data_type) {
+        switch (data_type) {
             case 'i':
-                int value = atoi(field_value);
-                PDCobj_put_tag(cur_obj_g, field_name, &value, sizeof(int));
+                int ivalue = atoi(field_value);
+                PDCobj_put_tag(cur_obj_g, field_name, &ivalue, sizeof(int));
                 break;
             case 'f':
-                double value = atof(field_value);
-                PDCobj_put_tag(cur_obj_g, field_name, &value, sizeof(double));
+                double fvalue = atof(field_value);
+                PDCobj_put_tag(cur_obj_g, field_name, &fvalue, sizeof(double));
                 break;
             case 's':
                 PDCobj_put_tag(cur_obj_g, field_name, field_value, sizeof(char) * strlen(field_value));
@@ -113,14 +114,14 @@ import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
     }
 
     // add extra metadata tags based on the image_info struct
-    PDCobj_put_tag(cur_obj_g, "x", &image_info->x, sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "y", &image_info->y, sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "z", &image_info->z, sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "bits", &image_info->bits, sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "startSlice", &image_info->startSlice, sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "stripeSize", &image_info->stripeSize, sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "is_imageJ", &image_info->is_imageJ, sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "imageJ_Z", &image_info->imageJ_Z, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "x", &(image_info->x), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "y", &(image_info->y), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "z", &(image_info->z), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "bits", &(image_info->bits), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "startSlice", &(image_info->startSlice), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "stripeSize", &(image_info->stripeSize), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "is_imageJ", &(image_info->is_imageJ), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "imageJ_Z", &(image_info->imageJ_Z), sizeof(uint64_t));
 
     // close object
     PDCobj_close(cur_obj_g);
@@ -130,7 +131,8 @@ import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
     duration = (end.tv_sec - start.tv_sec) * 1e9 +
                (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
 
-    printf("[Rank %4d]create object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value, duration / 1e9);
+    printf("[Rank %4d]create object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
+           duration / 1e9);
 
     // free memory
     free(offsets);
@@ -139,7 +141,6 @@ import_to_pdc(const image_info_t *image_info, const csv_cell_t *fileName_cell)
     PDCregion_close(remote_region);
     PDCregion_transfer_close(transfer_request);
     PDCprop_close(cur_obj_prop_g);
-
 }
 
 void
@@ -164,7 +165,7 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
         strcat(dirname, "/"); // add a forward slash to the end of the path
     }
 
-    strcpy(filepath, dirname);                         // copy the directory path to the file path
+    strcpy(filepath, dirname);                    // copy the directory path to the file path
     strcat(filepath, fileName_cell->field_value); // concatenate the file name to the file path
 
     clock_gettime(CLOCK_MONOTONIC, &start); // start timing the operation
@@ -223,14 +224,14 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    char *                file_name       = NULL;
-    PDC_LIST *            list            = pdc_list_new();
-    char *                csv_line        = NULL;
-    int                   num_row_read    = 0;
-    csv_header_t *        csv_header      = NULL;
-    csv_row_t *           csv_row         = NULL;
-    llsm_importer_args_t *llsm_args       = NULL;
-    char *                csv_field_types = {'s', 's', 'f', 'f', 'f', 'f', 'f', 'f'};
+    char *                file_name         = NULL;
+    PDC_LIST *            list              = pdc_list_new();
+    char *                csv_line          = NULL;
+    int                   num_row_read      = 0;
+    csv_header_t *        csv_header        = NULL;
+    csv_row_t *           csv_row           = NULL;
+    llsm_importer_args_t *llsm_args         = NULL;
+    char                  csv_field_types[] = {'s', 's', 'f', 'f', 'f', 'f', 'f', 'f'};
     // parse console argument
     int parse_code = parse_console_args(argc, argv, &file_name);
     if (parse_code) {
