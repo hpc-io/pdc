@@ -109,7 +109,9 @@ if(USE_LIB_TIFF)
   find_package(TIFF REQUIRED)
   if(TIFF_FOUND)
     set(LLSM_LIB_SOURCE 
-      llsm/*.c
+      llsm/parallelReadTiff.c
+      llsm/csvReader.c
+      llsm/pdc_list.c
     )
     # Add the LibTIFF include directory to the include path
     include_directories(${TIFF_INCLUDE_DIRS})
