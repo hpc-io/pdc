@@ -804,5 +804,5 @@ parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_
     (*image_info)->imageJ_Z = imageJ_Z;
     (*image_info)->tiff_size = dims[0] * dims[1] * dims[2] * (bits / 8);
 
-    _TIFF_load(fileName, is_imageJ, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, (void **)&((*image_info)->data));
+    _TIFF_load(fileName, is_imageJ, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, (void **)&((*image_info)->tiff_ptr));
 }
