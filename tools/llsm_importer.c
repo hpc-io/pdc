@@ -202,9 +202,11 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
 }
 
 void
-read_txt(char *txtFileName, PDC_LIST *list)
+read_txt(char *txtFileName, PDC_LIST *list, int *max_row_length)
 {
     FILE *file = fopen(txtFileName, "r");
+
+    int row_length = 0;
 
     if (file == NULL) {
         printf("Error: could not open file %s\n", txtFileName);
@@ -214,7 +216,15 @@ read_txt(char *txtFileName, PDC_LIST *list)
     // Read the lines of the file
     while (fgets(buffer, sizeof(buffer), file)) {
         pdc_list_add(list, strdup(buffer));
+        if (row_length < strlen(buffer)) {
+            row_length = strlen(buffer);
+        }
     }
+
+    fclose(file);
+
+    // Find the maximum row length
+    *max_row_length = row_length + 5;
 }
 
 int
@@ -234,6 +244,7 @@ main(int argc, char *argv[])
     csv_header_t *        csv_header        = NULL;
     csv_row_t *           csv_row           = NULL;
     llsm_importer_args_t *llsm_args         = NULL;
+    int                   bcast_count       = 512;
     char                  csv_field_types[] = {'s', 's', 'f', 'f', 'f', 'f', 'f', 'f'};
     // parse console argument
     int parse_code = parse_console_args(argc, argv, &file_name);
@@ -261,7 +272,7 @@ main(int argc, char *argv[])
 
     // Rank 0 reads the filename list and distribute data to other ranks
     if (rank == 0) {
-        read_txt(file_name, list);
+        read_txt(file_name, list, &bcast_count);
 #ifdef ENABLE_MPI
         // broadcast the number of lines
         int num_lines = pdc_list_size(list);
@@ -270,7 +281,7 @@ main(int argc, char *argv[])
         PDC_LIST_ITERATOR *iter = pdc_list_iterator_new(list);
         while (pdc_list_iterator_has_next(iter)) {
             char *csv_line = (char *)pdc_list_iterator_next(iter);
-            MPI_Bcast(csv_line, 1024, MPI_CHAR, 0, MPI_COMM_WORLD);
+            MPI_Bcast(csv_line, bcast_count, MPI_CHAR, 0, MPI_COMM_WORLD);
         }
 #endif
     }
@@ -282,8 +293,8 @@ main(int argc, char *argv[])
         // receive the file names
         int i;
         for (i = 0; i < num_lines; i++) {
-            csv_line = (char *)malloc(1024 * sizeof(char));
-            MPI_Bcast(csv_line, 1024, MPI_CHAR, 0, MPI_COMM_WORLD);
+            csv_line = (char *)malloc(bcast_count * sizeof(char));
+            MPI_Bcast(csv_line, bcast_count, MPI_CHAR, 0, MPI_COMM_WORLD);
             pdc_list_add(list, csv_line);
         }
 #endif
