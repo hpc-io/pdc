@@ -1,33 +1,38 @@
 #include "pdc_list.h"
 
-
-PDC_LIST *pdc_list_new(){
+PDC_LIST *
+pdc_list_new()
+{
     return pdc_list_create(100, 2.0);
 }
 
-PDC_LIST* pdc_list_create(size_t initial_capacity, double expansion_factor) {
+PDC_LIST *
+pdc_list_create(size_t initial_capacity, double expansion_factor)
+{
     // Allocate memory for the list struct.
-    PDC_LIST* list = (PDC_LIST*) malloc(sizeof(PDC_LIST));
+    PDC_LIST *list = (PDC_LIST *)malloc(sizeof(PDC_LIST));
     if (list == NULL) {
         return NULL;
     }
 
     // Allocate memory for the array of items.
-    list->items = (void**) malloc(initial_capacity * sizeof(void*));
+    list->items = (void **)malloc(initial_capacity * sizeof(void *));
     if (list->items == NULL) {
         free(list);
         return NULL;
     }
 
     // Initialize the list fields.
-    list->item_count = 0;
-    list->capacity = initial_capacity;
+    list->item_count       = 0;
+    list->capacity         = initial_capacity;
     list->expansion_factor = expansion_factor;
 
     return list;
 }
 
-void pdc_list_destroy(PDC_LIST* list) {
+void
+pdc_list_destroy(PDC_LIST *list)
+{
     if (list == NULL) {
         return;
     }
@@ -42,7 +47,9 @@ void pdc_list_destroy(PDC_LIST* list) {
     free(list);
 }
 
-void pdc_list_add(PDC_LIST* list, void* item) {
+void
+pdc_list_add(PDC_LIST *list, void *item)
+{
     if (list == NULL || item == NULL) {
         return;
     }
@@ -50,7 +57,7 @@ void pdc_list_add(PDC_LIST* list, void* item) {
     // Expand the array of items if necessary.
     if (list->item_count >= list->capacity) {
         list->capacity *= list->expansion_factor;
-        list->items = (void**) realloc(list->items, list->capacity * sizeof(void*));
+        list->items = (void **)realloc(list->items, list->capacity * sizeof(void *));
         if (list->items == NULL) {
             return;
         }
@@ -60,7 +67,9 @@ void pdc_list_add(PDC_LIST* list, void* item) {
     list->items[list->item_count++] = item;
 }
 
-void* pdc_list_get(PDC_LIST* list, size_t index) {
+void *
+pdc_list_get(PDC_LIST *list, size_t index)
+{
     if (list == NULL || index >= list->item_count) {
         return NULL;
     }
@@ -69,7 +78,9 @@ void* pdc_list_get(PDC_LIST* list, size_t index) {
     return list->items[index];
 }
 
-size_t pdc_list_size(PDC_LIST* list) {
+size_t
+pdc_list_size(PDC_LIST *list)
+{
     if (list == NULL) {
         return 0;
     }
@@ -78,7 +89,9 @@ size_t pdc_list_size(PDC_LIST* list) {
     return list->item_count;
 }
 
-void pdc_list_set_expansion_factor(PDC_LIST* list, double expansion_factor) {
+void
+pdc_list_set_expansion_factor(PDC_LIST *list, double expansion_factor)
+{
     if (list == NULL) {
         return;
     }
@@ -87,7 +100,9 @@ void pdc_list_set_expansion_factor(PDC_LIST* list, double expansion_factor) {
     list->expansion_factor = expansion_factor;
 }
 
-double pdc_list_get_expansion_factor(PDC_LIST* list) {
+double
+pdc_list_get_expansion_factor(PDC_LIST *list)
+{
     if (list == NULL) {
         return 0;
     }
@@ -96,25 +111,29 @@ double pdc_list_get_expansion_factor(PDC_LIST* list) {
     return list->expansion_factor;
 }
 
-PDC_LIST_ITERATOR* pdc_list_iterator_new(PDC_LIST* list) {
+PDC_LIST_ITERATOR *
+pdc_list_iterator_new(PDC_LIST *list)
+{
     if (list == NULL) {
         return NULL;
     }
 
     // Allocate memory for the iterator struct.
-    PDC_LIST_ITERATOR* iterator = (PDC_LIST_ITERATOR*) malloc(sizeof(PDC_LIST_ITERATOR));
+    PDC_LIST_ITERATOR *iterator = (PDC_LIST_ITERATOR *)malloc(sizeof(PDC_LIST_ITERATOR));
     if (iterator == NULL) {
         return NULL;
     }
 
     // Initialize the iterator fields.
-    iterator->list = list;
+    iterator->list  = list;
     iterator->index = 0;
 
     return iterator;
 }
 
-void pdc_list_iterator_destroy(PDC_LIST_ITERATOR* iterator) {
+void
+pdc_list_iterator_destroy(PDC_LIST_ITERATOR *iterator)
+{
     if (iterator == NULL) {
         return;
     }
@@ -123,7 +142,9 @@ void pdc_list_iterator_destroy(PDC_LIST_ITERATOR* iterator) {
     free(iterator);
 }
 
-void* pdc_list_iterator_next(PDC_LIST_ITERATOR* iterator) {
+void *
+pdc_list_iterator_next(PDC_LIST_ITERATOR *iterator)
+{
     if (iterator == NULL) {
         return NULL;
     }
@@ -132,7 +153,9 @@ void* pdc_list_iterator_next(PDC_LIST_ITERATOR* iterator) {
     return pdc_list_get(iterator->list, iterator->index++);
 }
 
-int pdc_list_iterator_has_next(PDC_LIST_ITERATOR* iterator) {
+int
+pdc_list_iterator_has_next(PDC_LIST_ITERATOR *iterator)
+{
     if (iterator == NULL) {
         return 0;
     }

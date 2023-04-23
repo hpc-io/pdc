@@ -17,10 +17,9 @@ typedef struct {
  * A generic iterator for iterating over the items in a PDC_LIST.
  */
 typedef struct {
-    PDC_LIST *list; // The list being iterated over.
-    size_t index;   // The index of the next item to be returned.
+    PDC_LIST *list;  // The list being iterated over.
+    size_t    index; // The index of the next item to be returned.
 } PDC_LIST_ITERATOR;
-
 
 /**
  * Creates a new PDC_LIST with default initial capacity 100 and default expansion factor 2.0.
@@ -32,7 +31,7 @@ PDC_LIST *pdc_list_new();
  * Creates a new PDC_LIST with the given initial capacity and expansion factor.
  * @param initial_capacity The initial capacity of the list.
  * @param expansion_factor The factor by which the capacity is expanded when the list is full.
- * 
+ *
  * @return A pointer to the new PDC_LIST.
  */
 PDC_LIST *pdc_list_create(size_t initial_capacity, double expansion_factor);
@@ -47,7 +46,7 @@ void pdc_list_destroy(PDC_LIST *list);
  * Adds the given item to the end of the given PDC_LIST.
  * @param list The PDC_LIST to add the item to.
  * @param item The item to add to the PDC_LIST.
- * 
+ *
  */
 void pdc_list_add(PDC_LIST *list, void *item);
 
@@ -55,7 +54,7 @@ void pdc_list_add(PDC_LIST *list, void *item);
  * Gets the item at the given index in the given PDC_LIST.
  * @param list The PDC_LIST to get the item from.
  * @param index The index of the item to get.
- * 
+ *
  * @return A pointer to the item at the given index.
  */
 void *pdc_list_get(PDC_LIST *list, size_t index);
@@ -63,7 +62,7 @@ void *pdc_list_get(PDC_LIST *list, size_t index);
 /**
  * Sets the item at the given index in the given PDC_LIST.
  * @param list The PDC_LIST to set the item in.
- * 
+ *
  * @return The number of items in the list.
  */
 size_t pdc_list_size(PDC_LIST *list);

@@ -91,7 +91,7 @@ csv_table_t *csv_parse_file(char *file_name, char *field_types);
  * @param list A PDC_LIST of strings to parse.
  * @param field_types A string of field types. The field types are 's' for string, 'i' for long integer, 'f'
  * for float, and 'd' for double. If this is NULL, all fields are assumed to be strings.
- * 
+ *
  * @return A pointer to the csv_table_t struct.
  */
 csv_table_t *csv_parse_list(PDC_LIST *list, char *field_types);
