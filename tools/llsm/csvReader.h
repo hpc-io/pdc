@@ -47,34 +47,34 @@ csv_header_t *csv_parse_header(char *line, char *field_types);
  * @param line The CSV row line to parse.
  * @param header A pointer to the first csv_header_t struct in the linked list.
  *
- * @return A pointer to the first csv_cell_t struct in the linked list. The value in the csv_cell should be
+ * @return A pointer to the csv_row_t struct. The value in the csv_cell should be
  * free of quotes or spaces.
  */
-csv_cell_t *csv_parse_row(char *line, csv_header_t *header);
+csv_row_t *csv_parse_row(char *line, csv_header_t *header);
 
 /**
  * @brief This function returns the string value of a field for a given row string. The row string may contain
  * quotes and spaces
- * @param line The CSV row line to parse.
+ * @param row The CSV row to look for.
  * @param header A pointer to the first csv_header_t struct in the linked list.
  * @param field_name The name of the field to get the value for.
  *
  * @return A pointer to the csv_cell struct of the field. The value in the csv_cell should be free of quotes
  * or spaces.
  */
-csv_cell_t *csv_get_field_value_by_name(char *line, csv_header_t *header, char *field_name);
+csv_cell_t *csv_get_field_value_by_name(csv_row_t *row, csv_header_t *header, char *field_name);
 
 /**
  * @brief This function returns the string value of a field for a given row string. The row string may contain
  * quotes and spaces
- * @param line The CSV row line to parse.
+ * @param row The CSV row to look for.
  * @param header A pointer to the first csv_header_t struct in the linked list.
  * @param field_index The index of the field to get the value for.
  *
  * @return A pointer to the csv_cell struct of the field. The value in the csv_cell should be free of quotes
  * or spaces.
  */
-csv_cell_t *csv_get_field_value_by_index(char *line, csv_header_t *header, int field_index);
+csv_cell_t *csv_get_field_value_by_index(csv_row_t *row, csv_header_t *header, int field_index);
 
 /**
  * @brief This function parses a CSV file and returns a csv_table_t struct.
