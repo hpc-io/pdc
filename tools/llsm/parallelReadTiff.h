@@ -28,7 +28,7 @@ typedef struct {
     size_t   tiff_size;
 } image_info_t;
 
-
-void parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_range, image_info_t **image_info_t);
+void parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_range,
+                        image_info_t **image_info_t);
 
 #endif // PARALLELREADTIFF_H

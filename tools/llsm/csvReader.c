@@ -105,7 +105,7 @@ csv_parse_row(char *line, csv_header_t *header)
             current_header = current_header->next;
         }
     }
-    csv_row_t *row = (csv_row_t *)malloc(sizeof(csv_row_t));
+    csv_row_t *row  = (csv_row_t *)malloc(sizeof(csv_row_t));
     row->first_cell = first_cell;
     row->next       = NULL;
     return row;
@@ -185,21 +185,24 @@ csv_parse_file(char *file_name, char *field_types)
     return table;
 }
 
-csv_table_t *csv_parse_list(PDC_LIST *list, char *field_types){
+csv_table_t *
+csv_parse_list(PDC_LIST *list, char *field_types)
+{
     csv_table_t *table = (csv_table_t *)malloc(sizeof(csv_table_t));
     if (table == NULL) {
         return NULL;
     }
-    int num_file_read = 0;
-    csv_row_t *first_row = NULL;
-    csv_row_t *last_row  = NULL;
+    int        num_file_read = 0;
+    csv_row_t *first_row     = NULL;
+    csv_row_t *last_row      = NULL;
 
     PDC_LIST_ITERATOR *iter = pdc_list_iterator_new(list);
     while (pdc_list_iterator_has_next(iter)) {
         char *line = (char *)pdc_list_iterator_next(iter);
         if (num_file_read == 0) {
             table->first_header = csv_parse_header(line, field_types);
-        } else {
+        }
+        else {
             // Allocate memory for the row struct
             csv_row_t *row = csv_parse_row(line, table->first_header);
             if (row == NULL) {
@@ -308,28 +311,24 @@ csv_print_cell(csv_cell_t *cell, int with_key)
     if (with_key) {
         printf("%s: ", cell->header->field_name);
     }
-    switch (cell->header->field_type)
-    {
-    case 'i':
-        printf("%ld", strtol(cell->field_value, NULL, 10));
-        break;
+    switch (cell->header->field_type) {
+        case 'i':
+            printf("%ld", strtol(cell->field_value, NULL, 10));
+            break;
 
-    case 'f':
-        printf("%f", strtod(cell->field_value, NULL));
-        break;
+        case 'f':
+            printf("%f", strtod(cell->field_value, NULL));
+            break;
 
-    case 's':
-        printf("%s", cell->field_value);
-        break;
+        case 's':
+            printf("%s", cell->field_value);
+            break;
 
-    default:
-        printf("%s", cell->field_value);
-        break;
+        default:
+            printf("%s", cell->field_value);
+            break;
     }
-    
 }
-
-
 
 void
 csv_print_table(csv_table_t *table)

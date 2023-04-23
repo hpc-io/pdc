@@ -781,7 +781,8 @@ _TIFF_load(char *fileName, uint8_t isImageJIm, uint64_t x, uint64_t y, uint64_t 
 }
 
 void
-parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_range, image_info_t **image_info)
+parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_range,
+                   image_info_t **image_info)
 {
     uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0, stripeSize = 0, is_imageJ = 0, imageJ_Z = 0;
 
@@ -793,16 +794,17 @@ parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_
     dims[1] = flipXY ? x : y;
     dims[2] = z;
 
-    *image_info = (image_info_t *)malloc(sizeof(image_info_t));
-    (*image_info)->x = dims[0];
-    (*image_info)->y = dims[1];
-    (*image_info)->z = dims[2];
-    (*image_info)->bits = bits;
+    *image_info               = (image_info_t *)malloc(sizeof(image_info_t));
+    (*image_info)->x          = dims[0];
+    (*image_info)->y          = dims[1];
+    (*image_info)->z          = dims[2];
+    (*image_info)->bits       = bits;
     (*image_info)->startSlice = startSlice;
     (*image_info)->stripeSize = stripeSize;
-    (*image_info)->is_imageJ = is_imageJ;
-    (*image_info)->imageJ_Z = imageJ_Z;
-    (*image_info)->tiff_size = dims[0] * dims[1] * dims[2] * (bits / 8);
+    (*image_info)->is_imageJ  = is_imageJ;
+    (*image_info)->imageJ_Z   = imageJ_Z;
+    (*image_info)->tiff_size  = dims[0] * dims[1] * dims[2] * (bits / 8);
 
-    _TIFF_load(fileName, is_imageJ, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims, (void **)&((*image_info)->tiff_ptr));
+    _TIFF_load(fileName, is_imageJ, x, y, z, bits, startSlice, stripeSize, flipXY, ndim, dims,
+               (void **)&((*image_info)->tiff_ptr));
 }
