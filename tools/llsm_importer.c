@@ -4,7 +4,9 @@
 #include <getopt.h>
 #include <time.h>
 
-#define ENABLE_MPI 1
+#ifndef ENABLE_MPI
+#define ENABLE_MPI
+#endif
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
