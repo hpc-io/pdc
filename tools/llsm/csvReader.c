@@ -57,7 +57,7 @@ csv_parse_header(char *line, char *field_types)
     return first_header;
 }
 
-csv_cell_t *
+csv_row_t *
 csv_parse_row(char *line, csv_header_t *header)
 {
     csv_cell_t *  first_cell     = NULL;
@@ -105,14 +105,16 @@ csv_parse_row(char *line, csv_header_t *header)
             current_header = current_header->next;
         }
     }
-
-    return first_cell;
+    csv_row_t *row = (csv_row_t *)malloc(sizeof(csv_row_t));
+    row->first_cell = first_cell;
+    row->next       = NULL;
+    return row;
 }
 
 csv_cell_t *
-csv_get_field_value_by_name(char *line, csv_header_t *header, char *field_name)
+csv_get_field_value_by_name(csv_row_t *row, csv_header_t *header, char *field_name)
 {
-    csv_cell_t *cell = csv_parse_row(line, header);
+    csv_cell_t *cell = row->first_cell;
     while (cell != NULL) {
         if (strcmp(cell->header->field_name, field_name) == 0) {
             return cell;
@@ -123,9 +125,9 @@ csv_get_field_value_by_name(char *line, csv_header_t *header, char *field_name)
 }
 
 csv_cell_t *
-csv_get_field_value_by_index(char *line, csv_header_t *header, int field_index)
+csv_get_field_value_by_index(csv_row_t *row, csv_header_t *header, int field_index)
 {
-    csv_cell_t *cell = csv_parse_row(line, header);
+    csv_cell_t *cell = row->first_cell;
     while (cell != NULL) {
         if (cell->header->field_index == field_index) {
             return cell;
@@ -162,16 +164,10 @@ csv_parse_file(char *file_name, char *field_types)
     csv_row_t *last_row  = NULL;
     while ((read = getline(&line, &len, fp)) != -1) {
         // Allocate memory for the row struct
-        csv_row_t *row = (csv_row_t *)malloc(sizeof(csv_row_t));
+        csv_row_t *row = csv_parse_row(line, table->first_header);
         if (row == NULL) {
             return NULL;
         }
-
-        // Parse the row
-        row->first_cell = csv_parse_row(line, table->first_header);
-
-        // Set the next pointer to NULL
-        row->next = NULL;
 
         // Add the row to the linked list
         if (first_row == NULL) {
@@ -205,16 +201,10 @@ csv_table_t *csv_parse_list(PDC_LIST *list, char *field_types){
             table->first_header = csv_parse_header(line, field_types);
         } else {
             // Allocate memory for the row struct
-            csv_row_t *row = (csv_row_t *)malloc(sizeof(csv_row_t));
+            csv_row_t *row = csv_parse_row(line, table->first_header);
             if (row == NULL) {
                 return NULL;
             }
-
-            // Parse the row
-            row->first_cell = csv_parse_row(line, table->first_header);
-
-            // Set the next pointer to NULL
-            row->next = NULL;
 
             // Add the row to the linked list
             if (first_row == NULL) {
