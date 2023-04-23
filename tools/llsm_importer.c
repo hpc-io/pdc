@@ -246,20 +246,20 @@ main(int argc, char *argv[])
     printf("Filename: %s\n", file_name ? file_name : "(none)");
     printf("Directory: %s\n", directory_path ? directory_path : "(none)");
 
-#ifdef ENABLE_MPI
-    // create a pdc
-    pdc_id_g = PDCinit("pdc");
 
-    // create a container property
-    cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+    // // create a pdc
+    // pdc_id_g = PDCinit("pdc");
 
-    // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
-#endif
+    // // create a container property
+    // cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc);
+    // if (cont_prop <= 0)
+    //     printf("Fail to create container property @ line  %d!\n", __LINE__);
+
+    // // create a container
+    // cont = PDCcont_create("c1", cont_prop);
+    // if (cont <= 0)
+    //     printf("Fail to create container @ line  %d!\n", __LINE__);
+
 
     // Rank 0 reads the filename list and distribute data to other ranks
     if (rank == 0) {
