@@ -265,7 +265,14 @@ PDC_get_var_type_size(pdc_var_type_t dtype)
             break;
         case PDC_INT8:
             ret_value = sizeof(int8_t);
-
+            goto done;
+            break;
+        case PDC_UINT8:
+            ret_value = sizeof(uint8_t);
+            goto done;
+            break;
+        case PDC_UINT16:
+            ret_value = sizeof(uint16_t);
             goto done;
             break;
         case PDC_INT64:
