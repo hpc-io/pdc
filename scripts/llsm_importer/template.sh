@@ -38,7 +38,9 @@ CLOSE=$EXECPATH/close_server
 chmod +x $EXECPATH/*
 chmod +x $TOOLPATH/llsm_importer
 
-IMGLIST_PATH=/global/cfs/cdirs/m2621/wzhang5/data/20220115_Korra_LLCPK_LFOV_0p1PSAmpKan/run1/ImageList_from_encoder.csv
+LLSM_DATA_PATH=/pscratch/sd/w/wzhang5/data/llsm/20220115_Korra_LLCPK_LFOV_0p1PSAmpKan/run1
+# LLSM_DATA_PATH=/global/cfs/cdirs/m2621/wzhang5/data/20220115_Korra_LLCPK_LFOV_0p1PSAmpKan/run1
+IMGLIST_PATH=${LLSM_DATA_PATH}/ImageList_from_encoder.csv
 
 date
 
