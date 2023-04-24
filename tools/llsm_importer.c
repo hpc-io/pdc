@@ -84,12 +84,12 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     pdcid_t cur_obj_g = PDCobj_create(cont_id_g, fileName_cell->field_value, obj_prop_g);
 
     // write data to object
-    pdcid_t local_region  = PDCregion_create(ndims, offsets, num_bytes);
-    pdcid_t remote_region = PDCregion_create(ndims, offsets, num_bytes);
-    pdcid_t transfer_request =
-        PDCregion_transfer_create(image_info->tiff_ptr, PDC_WRITE, cur_obj_g, local_region, remote_region);
-    PDCregion_transfer_start(transfer_request);
-    PDCregion_transfer_wait(transfer_request);
+    // pdcid_t local_region  = PDCregion_create(ndims, offsets, num_bytes);
+    // pdcid_t remote_region = PDCregion_create(ndims, offsets, num_bytes);
+    // pdcid_t transfer_request =
+    //     PDCregion_transfer_create(image_info->tiff_ptr, PDC_WRITE, cur_obj_g, local_region, remote_region);
+    // PDCregion_transfer_start(transfer_request);
+    // PDCregion_transfer_wait(transfer_request);
 
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
@@ -139,9 +139,9 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     // free memory
     free(offsets);
     free(num_bytes);
-    PDCregion_close(local_region);
-    PDCregion_close(remote_region);
-    PDCregion_transfer_close(transfer_request);
+    // PDCregion_close(local_region);
+    // PDCregion_close(remote_region);
+    // PDCregion_transfer_close(transfer_request);
     PDCprop_close(obj_prop_g);
 }
 
