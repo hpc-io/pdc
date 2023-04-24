@@ -192,7 +192,7 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
     printf("\n");
 
     // import the image to PDC
-    // import_to_pdc(image_info, fileName_cell);
+    import_to_pdc(image_info, fileName_cell);
 
     // free the image info
     free(image_info->tiff_ptr);
