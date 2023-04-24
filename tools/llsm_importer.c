@@ -29,7 +29,6 @@ typedef struct llsm_importer_args_t {
 
 int rank = 0, size = 1;
 
-pdcid_t pdc, cont_prop, cont, obj_prop;
 pdcid_t pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
 
 int
@@ -60,7 +59,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 
     clock_gettime(CLOCK_MONOTONIC, &start); // start timing the operation
 
-    pdcid_t cur_obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
+    obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
     psize_t ndims = 3;
     // FIXME: we should support uint64_t.
@@ -82,7 +81,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     // create object
     // FIXME: There are many attributes currently in one file name,
     // and we should do some research to see what would be a good object name for each image.
-    pdcid_t cur_obj_g = PDCobj_create(cont_id_g, fileName_cell->field_value, cur_obj_prop_g);
+    pdcid_t cur_obj_g = PDCobj_create(cont_id_g, fileName_cell->field_value, obj_prop_g);
 
     // write data to object
     pdcid_t local_region  = PDCregion_create(ndims, offsets, num_bytes);
@@ -143,7 +142,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     PDCregion_close(local_region);
     PDCregion_close(remote_region);
     PDCregion_transfer_close(transfer_request);
-    PDCprop_close(cur_obj_prop_g);
+    PDCprop_close(obj_prop_g);
 }
 
 void
@@ -257,18 +256,18 @@ main(int argc, char *argv[])
     printf("Filename: %s\n", file_name ? file_name : "(none)");
     printf("Directory: %s\n", directory_path ? directory_path : "(none)");
 
-    // // create a pdc
-    // pdc_id_g = PDCinit("pdc");
+    // create a pdc
+    pdc_id_g = PDCinit("pdc");
 
-    // // create a container property
-    // cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc);
-    // if (cont_prop <= 0)
-    //     printf("Fail to create container property @ line  %d!\n", __LINE__);
+    // create a container property
+    cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
+    if (cont_prop_g <= 0)
+        printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    // // create a container
-    // cont = PDCcont_create("c1", cont_prop);
-    // if (cont <= 0)
-    //     printf("Fail to create container @ line  %d!\n", __LINE__);
+    // create a container
+    cont_id_g = PDCcont_create("c1", cont_prop_g);
+    if (cont_id_g <= 0)
+        printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // Rank 0 reads the filename list and distribute data to other ranks
     if (rank == 0) {
@@ -327,6 +326,13 @@ main(int argc, char *argv[])
     }
 
     csv_free_table(csv_table);
+
+    // close the container
+    PDCcont_close(cont_id_g);
+    // close the container property
+    PDCprop_close(cont_prop_g);
+    // close the pdc
+    PDCclose(pdc_id_g);
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
