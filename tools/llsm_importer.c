@@ -9,8 +9,8 @@
 #endif
 
 #ifdef ENABLE_MPI
-// #include "mpi.h"
-#undef ENABLE_MPI
+#include "mpi.h"
+// #undef ENABLE_MPI
 #endif
 
 #include "pdc.h"
