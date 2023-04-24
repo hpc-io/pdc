@@ -61,15 +61,15 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 
     obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
-    psize_t ndims = 3;
-    uint64_t offsets[3] = {0, 0, 0};
-    // FIXME: we should support uint64_t.
-    uint64_t dims[3] = {image_info->x , image_info->y , image_info->z};
-
-    // psize_t ndims = 1;
-    // uint64_t offsets[1] = {0};
+    // psize_t ndims = 3;
+    // uint64_t offsets[3] = {0, 0, 0};
     // // FIXME: we should support uint64_t.
-    // uint64_t dims[1] = {image_info->x * image_info->y * image_info->z};
+    // uint64_t dims[3] = {image_info->x , image_info->y , image_info->z};
+
+    psize_t ndims = 1;
+    uint64_t offsets[1] = {0};
+    // FIXME: we should support uint64_t.
+    uint64_t dims[1] = {image_info->x * image_info->y * image_info->z};
     
     // FIXME: we should change the ndims parameter to psize_t type.
     PDCprop_set_obj_dims(obj_prop_g, (PDC_int_t)ndims, dims);
