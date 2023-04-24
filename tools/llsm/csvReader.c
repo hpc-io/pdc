@@ -325,9 +325,9 @@ csv_print_row(csv_row_t *row, int with_key)
         csv_print_cell(current_cell, with_key);
         if (current_cell->next != NULL) {
             printf(", ");
-            if (with_key) {
-                printf("\n");
-            }
+        }
+        if (with_key) {
+            printf("\n");
         }
         current_cell = current_cell->next;
     }
