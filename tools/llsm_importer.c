@@ -144,8 +144,8 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
            duration / 1e9);
 
     // free memory
-    free(offsets);
-    free(num_bytes);
+    // free(offsets);
+    // free(num_bytes);
     // PDCregion_close(local_region);
     // PDCregion_close(remote_region);
     // PDCregion_transfer_close(transfer_request);
