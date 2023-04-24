@@ -61,16 +61,16 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 
     obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
-    psize_t ndims = 3;
+    psize_t  ndims      = 3;
     uint64_t offsets[3] = {0, 0, 0};
     // FIXME: we should support uint64_t.
-    uint64_t dims[3] = {image_info->x , image_info->y , image_info->z};
+    uint64_t dims[3] = {image_info->x, image_info->y, image_info->z};
 
     // psize_t ndims = 1;
     // uint64_t offsets[1] = {0};
     // // FIXME: we should support uint64_t.
     // uint64_t dims[1] = {image_info->x * image_info->y * image_info->z};
-    
+
     // FIXME: we should change the ndims parameter to psize_t type.
     PDCprop_set_obj_dims(obj_prop_g, (PDC_int_t)ndims, dims);
     pdc_var_type_t pdc_type = PDC_UNKNOWN;
@@ -116,6 +116,13 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
 
+    clock_gettime(CLOCK_MONOTONIC, &end); // end timing the operation
+    duration = (end.tv_sec - start.tv_sec) * 1e9 +
+               (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
+
+    printf("[Rank %4d] Region Transfer for object %s [%d Bytes] Done! Time taken: %.4f seconds\n", rank,
+           fileName_cell->field_value, image_info->tiff_size , duration / 1e9);
+
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
     while (cell != NULL) {
@@ -158,7 +165,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     duration = (end.tv_sec - start.tv_sec) * 1e9 +
                (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
 
-    printf("[Rank %4d]create object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
+    printf("[Rank %4d] Create object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
            duration / 1e9);
 
     // free memory
@@ -204,7 +211,7 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
     duration = (end.tv_sec - start.tv_sec) * 1e9 +
                (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
 
-    printf("[Rand %4d]Read %s Done! Time taken: %.4f seconds\n", rank, filepath, duration / 1e9);
+    printf("[Rand %4d] Read %s Done! Time taken: %.4f seconds\n", rank, filepath, duration / 1e9);
 
     if (image_info == NULL || image_info->tiff_ptr == NULL) {
         return;
