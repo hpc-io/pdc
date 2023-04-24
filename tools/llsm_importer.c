@@ -73,7 +73,25 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     
     // FIXME: we should change the ndims parameter to psize_t type.
     PDCprop_set_obj_dims(obj_prop_g, (PDC_int_t)ndims, dims);
-    PDCprop_set_obj_type(obj_prop_g, PDC_FLOAT);
+    pdc_var_type_t pdc_type = PDC_UNKNOWN;
+    switch (image_info->bits) {
+        case 8:
+            pdc_type = PDC_INT8;
+            break;
+        case 16:
+            pdc_type = PDC_INT16;
+            break;
+        case 32:
+            pdc_type = PDC_FLOAT;
+            break;
+        case 64:
+            pdc_type = PDC_DOUBLE;
+            break;
+        default:
+            printf("Error: unsupported data type.\n");
+            exit(-1);
+    }
+    PDCprop_set_obj_type(obj_prop_g, pdc_type);
     PDCprop_set_obj_time_step(obj_prop_g, 0);
     PDCprop_set_obj_user_id(obj_prop_g, getuid());
     PDCprop_set_obj_app_name(obj_prop_g, "LLSM");
