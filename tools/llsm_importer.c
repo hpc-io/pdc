@@ -61,9 +61,16 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 
     obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
-    psize_t ndims = 1;
+    psize_t ndims = 3;
+    uint64_t offsets[3] = {0, 0, 0};
     // FIXME: we should support uint64_t.
-    uint64_t dims[1] = {image_info->x * image_info->y * image_info->z};
+    uint64_t dims[3] = {image_info->x , image_info->y , image_info->z};
+
+    // psize_t ndims = 1;
+    // uint64_t offsets[1] = {0};
+    // // FIXME: we should support uint64_t.
+    // uint64_t dims[1] = {image_info->x * image_info->y * image_info->z};
+    
     // FIXME: we should change the ndims parameter to psize_t type.
     PDCprop_set_obj_dims(obj_prop_g, (PDC_int_t)ndims, dims);
     PDCprop_set_obj_type(obj_prop_g, PDC_FLOAT);
@@ -71,12 +78,12 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     PDCprop_set_obj_user_id(obj_prop_g, getuid());
     PDCprop_set_obj_app_name(obj_prop_g, "LLSM");
 
-    uint64_t *offsets   = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
-    uint64_t *num_bytes = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
-    for (int i = 0; i < ndims; i++) {
-        offsets[i]   = 0;
-        num_bytes[i] = dims[i] * image_info->bits / 8;
-    }
+    // uint64_t *offsets   = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
+    // uint64_t *num_bytes = (uint64_t *)malloc(sizeof(uint64_t) * ndims);
+    // for (int i = 0; i < ndims; i++) {
+    //     offsets[i]   = 0;
+    //     num_bytes[i] = dims[i] * image_info->bits / 8;
+    // }
 
     // create object
     // FIXME: There are many attributes currently in one file name,
@@ -84,12 +91,12 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     pdcid_t cur_obj_g = PDCobj_create(cont_id_g, fileName_cell->field_value, obj_prop_g);
 
     // write data to object
-    // pdcid_t local_region  = PDCregion_create(ndims, offsets, num_bytes);
-    // pdcid_t remote_region = PDCregion_create(ndims, offsets, num_bytes);
-    // pdcid_t transfer_request =
-    //     PDCregion_transfer_create(image_info->tiff_ptr, PDC_WRITE, cur_obj_g, local_region, remote_region);
-    // PDCregion_transfer_start(transfer_request);
-    // PDCregion_transfer_wait(transfer_request);
+    pdcid_t local_region  = PDCregion_create(ndims, offsets, dims);
+    pdcid_t remote_region = PDCregion_create(ndims, offsets, dims);
+    pdcid_t transfer_request =
+        PDCregion_transfer_create(image_info->tiff_ptr, PDC_WRITE, cur_obj_g, local_region, remote_region);
+    PDCregion_transfer_start(transfer_request);
+    PDCregion_transfer_wait(transfer_request);
 
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
