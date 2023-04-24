@@ -1,5 +1,34 @@
 #include "csvReader.h"
 
+char csv_delimiter = ',';
+char csv_quote     = '\"';
+char csv_escape    = '\\';
+char csv_newline   = '\n';
+
+void
+csv_set_delimiter(char delimiter)
+{
+    csv_delimiter = delimiter;
+}
+
+void
+csv_set_quote(char quote)
+{
+    csv_quote = quote;
+}
+
+void
+csv_set_escape(char escape)
+{
+    csv_escape = escape;
+}
+
+void
+csv_set_newline(char newline)
+{
+    csv_newline = newline;
+}
+
 csv_header_t *
 csv_parse_header(char *line, char *field_types)
 {
@@ -12,18 +41,18 @@ csv_parse_header(char *line, char *field_types)
     int           value_start  = 0;
     int           i            = 0;
 
-    for (int i = 0; line[i] != '\0'; ++i) {
-        if (line[i] == '\"') {
+    for (int i = 0; line[i] != csv_newline; ++i) {
+        if (line[i] == csv_quote) {
             in_quotes = !in_quotes;
         }
-        else if (!in_quotes && (line[i] == ',' || line[i + 1] == '\0')) {
+        else if (!in_quotes && (line[i] == csv_delimiter || line[i + 1] == csv_newline)) {
             // Allocate memory for the header struct
             csv_header_t *header = (csv_header_t *)malloc(sizeof(csv_header_t));
             if (header == NULL) {
                 return NULL;
             }
             // Remove quotes and spaces from the field name
-            header->field_name = strndup(line + value_start, i - value_start + (line[i + 1] == '\0'));
+            header->field_name = strndup(line + value_start, i - value_start + (line[i + 1] == csv_newline));
 
             // Set the field index
             header->field_index = field_index;
@@ -70,11 +99,11 @@ csv_parse_row(char *line, csv_header_t *header)
     int           value_start    = 0;
     int           i              = 0;
 
-    for (int i = 0; line[i] != '\0'; ++i) {
-        if (line[i] == '\"') {
+    for (int i = 0; line[i] != csv_newline; ++i) {
+        if (line[i] == csv_quote) {
             in_quotes = !in_quotes;
         }
-        else if (!in_quotes && (line[i] == ',' || line[i + 1] == '\0')) {
+        else if (!in_quotes && (line[i] == csv_delimiter || line[i + 1] == csv_newline)) {
             // Allocate memory for the cell struct
             csv_cell_t *cell = (csv_cell_t *)malloc(sizeof(csv_cell_t));
             if (cell == NULL) {
@@ -85,7 +114,7 @@ csv_parse_row(char *line, csv_header_t *header)
             cell->header = current_header;
 
             // Set the field value
-            cell->field_value = strndup(line + value_start, i - value_start + (line[i + 1] == '\0'));
+            cell->field_value = strndup(line + value_start, i - value_start + (line[i + 1] == csv_newline));
 
             // Set the next pointer to NULL
             cell->next = NULL;

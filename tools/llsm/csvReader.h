@@ -31,6 +31,31 @@ typedef struct csv_table_t {
 } csv_table_t;
 
 /**
+ * @brief This function sets the delimiter for the CSV file. The default is a comma.
+ * @param delimiter The delimiter to use.
+ */
+void csv_set_delimiter(char delimiter);
+
+/**
+ * @brief This function sets the quote character for the CSV file. The default is a double quote.
+ * @param quote The quote character to use.
+ */
+void csv_set_quote(char quote);
+
+/**
+ * @brief This function sets the escape character for the CSV file. The default is a backslash.
+ * @param escape The escape character to use.
+ */
+void csv_set_escape(char escape);
+
+/**
+ * @brief This function sets the newline character for the CSV file. The default is a newline.
+ * @param newline The newline character to use.
+ */
+void csv_set_newline(char newline);
+
+
+/**
  * @brief This function parses a CSV header line and returns a linked list of csv_header_t structs. The header
  * string may contain quotes and spaces
  * @param line The CSV header line to parse.
