@@ -4686,7 +4686,7 @@ static perr_t
 PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
 {
     // Write 1GB at a time
-    uint64_t write_bytes = 0, max_write_size = 1073741824;
+    uint64_t write_bytes = 0, max_write_size = 1073741824 * 2;
     perr_t   ret_value = SUCCEED;
     ssize_t  ret;
 
