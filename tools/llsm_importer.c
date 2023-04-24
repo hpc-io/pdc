@@ -274,7 +274,7 @@ main(int argc, char *argv[])
     if (rank == 0) {
         read_txt(file_name, list, &bcast_count);
         // print bcast_count
-        printf("bcast_count: %d", bcast_count);
+        printf("bcast_count: %d \n", bcast_count);
 
 #ifdef ENABLE_MPI
         // broadcast the number of lines
