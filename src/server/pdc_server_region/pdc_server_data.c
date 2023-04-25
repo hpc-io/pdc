@@ -4703,18 +4703,13 @@ PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
         buf += max_write_size;
         write_size -= max_write_size;
     }
+
     ret = write(fd, buf, write_size);
     if (ret < 0 || ret != (ssize_t)write_size) {
-        printf("==PDC_SERVER[%d]: write %d failed\n", pdc_server_rank_g, fd);
+        printf("==PDC_SERVER[%d]: write %d failed, not all data written %lu/%lu\n", 
+                pdc_server_rank_g, fd, write_bytes, write_size);
         ret_value = FAIL;
         goto done;
-    }
-    write_bytes += ret;
-
-    if (write_bytes != write_size) {
-        printf("==PDC_SERVER[%d]: write %d failed, not all data written %lu/%lu\n", pdc_server_rank_g, fd,
-               write_bytes, write_size);
-        ret_value = FAIL;
     }
 
 done:
