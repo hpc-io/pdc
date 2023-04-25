@@ -39,8 +39,20 @@ Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, J
 
    hellopdcexample
    api
+   tools
    inflightanalysis
    futurework
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Documentation
+
+   documentation/objects
+   documentation/regions
+   documentation/query
+   documentation/analysis
+   documentation/transformation
 
 
 Indices and tables

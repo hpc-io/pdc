@@ -13,14 +13,18 @@
 import os
 import sys
 import sphinx_rtd_theme
+import subprocess, os
 
+from sphinx.builders.html import StandaloneHTMLBuilder
 
+# Doxygen
+subprocess.call('doxygen Doxyfile.in', shell=True)
 
 # -- Project information -----------------------------------------------------
 
 project = 'PDC'
-copyright = '2021, Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu, Richard Warren, Jerome Soumagne, François Tessier,Venkat Vishwanath'
-author = 'Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu, Richard Warren, Jerome Soumagne, François Tessier,Venkat Vishwanath'
+copyright = '2021'
+author = 'Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu, Richard Warren, Jerome Soumagne, François Tessier, Venkat Vishwanath'
 
 
 # -- General configuration ---------------------------------------------------
@@ -28,18 +32,38 @@ author = 'Houjun Tang, Qiao Kang, Bin Dong, Quincey Koziol, Suren Byna, Kimmy Mu
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
-
-pygments_style = 'sphinx'
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = [
+    '_templates'
+]
+
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store'
+]
+
+highlight_language = 'c'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.autosectionlabel',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.mathjax',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.viewcode',
+    'sphinx_sitemap',
+    'sphinx.ext.inheritance_diagram',
+    'breathe'
+]
 
+pygments_style = 'default'
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -47,15 +71,25 @@ exclude_patterns = []
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    'style_nav_header_background': '#efefef', 
+    'logo_only': True,
+    'display_version': False
+}
+
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['images']
-html_logo = "images/pdclogo.png"
-# html_static_path = ['/Users/kenneth/Documents/Berkeley_Lab/pdc/docs/_static']
-# html_logo = "/Users/kenneth/Documents/Berkeley_Lab/pdc/docs/_static/pdc_logo.png"
 
-def setup(app):
-	app.add_css_file('custom.css')
+html_logo = "../_static/image/pdc.png"
+html_static_path = ['../_static']
+html_css_files = ['css/pdc.css']
+
+breathe_projects = {
+    "PDC": "_build/xml/"
+}
+
+breathe_default_project = "PDC"
+breathe_default_members = ('members', 'undoc-members')
