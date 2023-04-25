@@ -130,7 +130,7 @@ with open(sys.argv[2], 'r') as f:
         elif 'Sleep time' in line:
             t = float(line.split(':')[1])
             sleep_time_file_agg += t
-            total_time_file_agg += t
+            observed_time_file_agg += t
             sleep_time_node.append(t)
 
         if 'PDC Metadata servers, running with' in line and (pdc_metadata_servers is None or pdc_metadata_clients is None):
