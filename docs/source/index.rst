@@ -22,8 +22,8 @@ Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, J
    :caption: Getting Started
 
    getting_started
-   definitions
-   assumptions
+   .. definitions
+   .. assumptions
 
 .. toctree::
    :maxdepth: 2
