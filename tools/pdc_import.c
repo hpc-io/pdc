@@ -542,7 +542,7 @@ do_dset(hid_t did, char *name, char *app_name)
 
     scan_attrs(did, obj_id);
 
-    pdc_metadata_t *meta = NULL;
+    // pdc_metadata_t *meta = NULL;
     obj_region.ndim      = ndim;
     for (i = 0; i < ndim; i++) {
         offset[i] = 0;
