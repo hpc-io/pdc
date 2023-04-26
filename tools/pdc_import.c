@@ -17,6 +17,7 @@
 #define MAX_FILES        2500
 #define MAX_FILENAME_LEN 64
 #define MAX_TAG_SIZE     8192
+#define TAG_LEN_MAX      2048
 
 typedef struct ArrayList {
     int    length;
