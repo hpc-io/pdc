@@ -90,7 +90,7 @@ add_library(cjson cjson/cJSON.c)
 set(PROGRAMS
   pdc_ls
   pdc_import
-  pdc_export
+  # pdc_export
   )
 
 foreach(program ${PROGRAMS})
