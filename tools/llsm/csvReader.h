@@ -54,7 +54,6 @@ void csv_set_escape(char escape);
  */
 void csv_set_newline(char newline);
 
-
 /**
  * @brief This function parses a CSV header line and returns a linked list of csv_header_t structs. The header
  * string may contain quotes and spaces
