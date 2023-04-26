@@ -46,7 +46,7 @@ Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, J
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation
+   :caption: Developer Documentation
 
    documentation/objects
    documentation/regions
