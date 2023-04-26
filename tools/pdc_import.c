@@ -10,8 +10,8 @@
 
 #include "hdf5.h"
 #include "pdc.h"
-#include "pdc_client_server_common.h"
-#include "pdc_client_connect.h"
+// #include "pdc_client_server_common.h"
+// #include "pdc_client_connect.h"
 
 #define MAX_NAME         1024
 #define MAX_FILES        2500
@@ -698,12 +698,15 @@ scan_attrs(hid_t oid, pdcid_t obj_id)
 void
 do_attr(hid_t aid, pdcid_t obj_id)
 {
-    ssize_t     len;
-    hid_t       atype;
-    hid_t       aspace;
-    char        buf[MAX_NAME]         = {0};
-    char        read_buf[TAG_LEN_MAX] = {0};
-    pdc_kvtag_t kvtag1;
+    ssize_t len;
+    hid_t   atype;
+    hid_t   aspace;
+    char    buf[MAX_NAME]         = {0};
+    char    read_buf[TAG_LEN_MAX] = {0};
+    // pdc_kvtag_t kvtag1;
+    char * tag_name;
+    void * tag_value;
+    size_t tag_size;
 
     /*
      * Get the name of the attribute.
@@ -717,15 +720,15 @@ do_attr(hid_t aid, pdcid_t obj_id)
 
     atype = H5Aget_type(aid);
     H5Aread(aid, atype, read_buf);
-    kvtag1.name  = buf;
-    kvtag1.value = (void *)read_buf;
+    tag_name  = buf;
+    tag_value = (void *)read_buf;
     if (atype == H5T_STRING) {
-        kvtag1.size = strlen(read_buf) + 1;
+        tag_size = strlen(read_buf) + 1;
     }
     else {
-        kvtag1.size = H5Tget_size(atype);
+        tag_size = H5Tget_size(atype);
     }
-    PDCobj_put_tag(obj_id, kvtag1.name, kvtag1.value, kvtag1.size);
+    PDCobj_put_tag(obj_id, tag_name, tag_value, tag_size);
 
     /*
      * Get attribute information: dataspace, data type
