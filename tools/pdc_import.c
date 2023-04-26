@@ -83,8 +83,7 @@ int     ndset_g = 0;
 /* FILE *summary_fp_g; */
 int               max_tag_size_g = 0;
 pdcid_t           pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
-struct timeval    write_timer_start_g;
-struct timeval    write_timer_end_g;
+struct timespec   write_timer_start_g, write_timer_end_g;
 struct ArrayList *container_names;
 int               overwrite = 0;
 
@@ -249,9 +248,8 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-        struct timeval pdc_timer_start;
-        struct timeval pdc_timer_end;
-        gettimeofday(&pdc_timer_start, 0);
+        struct timespec pdc_timer_start, pdc_timer_end;
+        clock_gettime(CLOCK_MONOTONIC, &pdc_timer_start);
 
         for (i = 0; i < my_count; i++) {
             filename = my_filenames[i];
@@ -275,7 +273,8 @@ main(int argc, char **argv)
 #endif
             // Checkpoint all metadata after import each hdf5 file
             if (rank == 0) {
-                PDC_Client_all_server_checkpoint();
+                // FIXME: this should be replaced by a function in public headers.
+                // PDC_Client_all_server_checkpoint();
             }
             /* printf("%s, %d\n", filename, max_tag_size_g); */
             /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
@@ -288,8 +287,9 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-        gettimeofday(&pdc_timer_end, 0);
-        double write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        clock_gettime(CLOCK_MONOTONIC, &pdc_timer_end);
+        double write_time = (pdc_timer_end.tv_sec - pdc_timer_start.tv_sec) * 1e9 +
+               (pdc_timer_end.tv_nsec - pdc_timer_start.tv_nsec); // calculate duration in nanoseconds
 
 #ifdef ENABLE_MPI
         MPI_Reduce(&ndset_g, &total_dset, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -297,7 +297,7 @@ main(int argc, char **argv)
         total_dset = ndset_g;
 #endif
         if (rank == 0) {
-            printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size, write_time);
+            printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size, write_time/1e9);
         }
     }
 
@@ -553,7 +553,7 @@ do_dset(hid_t did, char *name, char *app_name)
     obj_region.size   = size;
 
     if (ndset_g == 1)
-        gettimeofday(&write_timer_start_g, 0);
+        clock_gettime(CLOCK_MONOTONIC, &write_timer_start_g);
 
     /* PDC_Client_query_metadata_name_timestep(dset_name_g, 0, &meta); */
     /* if (meta == NULL) */
@@ -569,12 +569,13 @@ do_dset(hid_t did, char *name, char *app_name)
 
     // PDC_Client_write_id(obj_id, &obj_region, buf);
     if (ndset_g % 100 == 0) {
-        gettimeofday(&write_timer_end_g, 0);
-        double elapsed_time = PDC_get_elapsed_time_double(&write_timer_start_g, &write_timer_end_g);
-        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank, elapsed_time,
+        clock_gettime(CLOCK_MONOTONIC, &write_timer_end_g);
+        double elapsed_time = (write_timer_end_g.tv_sec - write_timer_start_g.tv_sec) * 1e9 +
+               (write_timer_end_g.tv_nsec - write_timer_start_g.tv_nsec); // calculate duration in nanoseconds;
+        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank, elapsed_time/1e9,
                ndset_g);
         fflush(stdout);
-        gettimeofday(&write_timer_start_g, 0);
+        clock_gettime(CLOCK_MONOTONIC, &write_timer_start_g);
     }
 
     free(buf);
