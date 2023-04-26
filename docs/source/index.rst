@@ -40,7 +40,7 @@ Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, J
    hellopdcexample
    api
    tools
-   inflightanalysis
+   .. inflightanalysis
    futurework
 
 
