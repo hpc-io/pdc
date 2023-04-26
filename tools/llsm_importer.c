@@ -121,7 +121,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
                (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
 
     printf("[Rank %4d] Region Transfer for object %s [%d Bytes] Done! Time taken: %.4f seconds\n", rank,
-           fileName_cell->field_value, image_info->tiff_size , duration / 1e9);
+           fileName_cell->field_value, image_info->tiff_size, duration / 1e9);
 
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
