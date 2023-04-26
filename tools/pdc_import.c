@@ -288,8 +288,9 @@ main(int argc, char **argv)
 #endif
 
         clock_gettime(CLOCK_MONOTONIC, &pdc_timer_end);
-        double write_time = (pdc_timer_end.tv_sec - pdc_timer_start.tv_sec) * 1e9 +
-               (pdc_timer_end.tv_nsec - pdc_timer_start.tv_nsec); // calculate duration in nanoseconds
+        double write_time =
+            (pdc_timer_end.tv_sec - pdc_timer_start.tv_sec) * 1e9 +
+            (pdc_timer_end.tv_nsec - pdc_timer_start.tv_nsec); // calculate duration in nanoseconds
 
 #ifdef ENABLE_MPI
         MPI_Reduce(&ndset_g, &total_dset, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -297,7 +298,8 @@ main(int argc, char **argv)
         total_dset = ndset_g;
 #endif
         if (rank == 0) {
-            printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size, write_time/1e9);
+            printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size,
+                   write_time / 1e9);
         }
     }
 
@@ -543,7 +545,7 @@ do_dset(hid_t did, char *name, char *app_name)
     scan_attrs(did, obj_id);
 
     // pdc_metadata_t *meta = NULL;
-    obj_region.ndim      = ndim;
+    obj_region.ndim = ndim;
     for (i = 0; i < ndim; i++) {
         offset[i] = 0;
         size[i]   = dims[i];
@@ -570,10 +572,11 @@ do_dset(hid_t did, char *name, char *app_name)
     // PDC_Client_write_id(obj_id, &obj_region, buf);
     if (ndset_g % 100 == 0) {
         clock_gettime(CLOCK_MONOTONIC, &write_timer_end_g);
-        double elapsed_time = (write_timer_end_g.tv_sec - write_timer_start_g.tv_sec) * 1e9 +
-               (write_timer_end_g.tv_nsec - write_timer_start_g.tv_nsec); // calculate duration in nanoseconds;
-        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank, elapsed_time/1e9,
-               ndset_g);
+        double elapsed_time =
+            (write_timer_end_g.tv_sec - write_timer_start_g.tv_sec) * 1e9 +
+            (write_timer_end_g.tv_nsec - write_timer_start_g.tv_nsec); // calculate duration in nanoseconds;
+        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank,
+               elapsed_time / 1e9, ndset_g);
         fflush(stdout);
         clock_gettime(CLOCK_MONOTONIC, &write_timer_start_g);
     }
