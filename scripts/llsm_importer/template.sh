@@ -13,6 +13,7 @@
 
 # export PDC_DEBUG=0
 
+
 export PDC_TMPDIR=$SCRATCH/data/pdc/conf
 
 rm -rf $PDC_TMPDIR/*
@@ -20,7 +21,7 @@ rm -rf $PDC_TMPDIR/*
 REPEAT=1
 
 N_NODE=NODENUM
-NCLIENT=31
+NCLIENT=1
 # NCLIENT=126
 
 export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE
@@ -29,15 +30,17 @@ mkdir -p $PDC_TMPDIR
 let TOTALPROC=$NCLIENT*$N_NODE
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
+TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/source/pdc_llsm/tools/build
 SERVER=$EXECPATH/pdc_server.exe
-CLIENT=$EXECPATH/kvtag_add_get_scale
+CLIENT=$TOOLPATH/llsm_importer
 CLOSE=$EXECPATH/close_server
 
 chmod +x $EXECPATH/*
+chmod +x $TOOLPATH/llsm_importer
 
-NUM_OBJ=$((1024*1024*1024))
-NUM_TAGS=$NUM_OBJ
-NUM_QUERY=$((NUM_OBJ))
+LLSM_DATA_PATH=/pscratch/sd/w/wzhang5/data/llsm/20220115_Korra_LLCPK_LFOV_0p1PSAmpKan/run1
+# LLSM_DATA_PATH=/global/cfs/cdirs/m2621/wzhang5/data/20220115_Korra_LLCPK_LFOV_0p1PSAmpKan/run1
+IMGLIST_PATH=${LLSM_DATA_PATH}/ImageList_from_encoder.csv
 
 date
 
@@ -53,7 +56,7 @@ sleep 5
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $TOTALPROC -c 2 --cpu_bind=cores $CLIENT $NUM_OBJ $NUM_TAGS $NUM_QUERY
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $TOTALPROC -c 2 --cpu_bind=cores $CLIENT -f $IMGLIST_PATH
 
 echo ""
 echo "================="

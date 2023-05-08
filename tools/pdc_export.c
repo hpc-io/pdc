@@ -8,16 +8,16 @@
 #include <sys/types.h>
 #include "hdf5.h"
 
-#define ENABLE_MPI 1
+// #define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
 
 #include "pdc.h"
-#include "pdc_client_server_common.h"
-#include "pdc_client_connect.h"
-#include "../src/server/include/pdc_server_metadata.h"
+// #include "pdc_client_server_common.h"
+// #include "pdc_client_connect.h"
+// #include "../src/server/include/pdc_server_metadata.h"
 #include "cjson/cJSON.h"
 
 const char *avail_args[] = {"-f"};

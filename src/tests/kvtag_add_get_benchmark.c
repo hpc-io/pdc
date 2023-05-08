@@ -293,12 +293,12 @@ check_and_release_query_result(uint64_t n_query, uint64_t my_obj, uint64_t my_ob
         }
     }
     free(values);
-    // close  objects
-    for (i = 0; i < my_obj; i++) {
-        v = i + my_obj_s;
-        if (PDCobj_close(obj_ids[i]) < 0)
-            printf("fail to close object o%" PRIu64 "\n", v);
-    }
+    // FIXME: close  objects. This is currently commented off to save node hours for benchmarks.
+    // for (i = 0; i < my_obj; i++) {
+    //     v = i + my_obj_s;
+    //     if (PDCobj_close(obj_ids[i]) < 0)
+    //         printf("fail to close object o%" PRIu64 "\n", v);
+    // }
 }
 
 void
@@ -486,7 +486,9 @@ main(int argc, char *argv[])
     free(tag_values);
     free(obj_ids);
 
-    closePDC(pdc, cont_prop, cont, obj_prop);
+    // FIXME: the following is currently commented off to reduce node hours taken by time-consuming resource
+    // releasing procedure.
+    // closePDC(pdc, cont_prop, cont, obj_prop);
 
 done:
 #ifdef ENABLE_MPI

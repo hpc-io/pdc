@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <time.h>
 
-#define ENABLE_MPI 1
+// #define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -10,13 +12,14 @@
 
 #include "hdf5.h"
 #include "pdc.h"
-#include "pdc_client_server_common.h"
-#include "pdc_client_connect.h"
+// #include "pdc_client_server_common.h"
+// #include "pdc_client_connect.h"
 
 #define MAX_NAME         1024
 #define MAX_FILES        2500
 #define MAX_FILENAME_LEN 64
 #define MAX_TAG_SIZE     8192
+#define TAG_LEN_MAX      2048
 
 typedef struct ArrayList {
     int    length;
@@ -80,8 +83,7 @@ int     ndset_g = 0;
 /* FILE *summary_fp_g; */
 int               max_tag_size_g = 0;
 pdcid_t           pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
-struct timeval    write_timer_start_g;
-struct timeval    write_timer_end_g;
+struct timespec   write_timer_start_g, write_timer_end_g;
 struct ArrayList *container_names;
 int               overwrite = 0;
 
@@ -246,9 +248,8 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-        struct timeval pdc_timer_start;
-        struct timeval pdc_timer_end;
-        gettimeofday(&pdc_timer_start, 0);
+        struct timespec pdc_timer_start, pdc_timer_end;
+        clock_gettime(CLOCK_MONOTONIC, &pdc_timer_start);
 
         for (i = 0; i < my_count; i++) {
             filename = my_filenames[i];
@@ -272,7 +273,8 @@ main(int argc, char **argv)
 #endif
             // Checkpoint all metadata after import each hdf5 file
             if (rank == 0) {
-                PDC_Client_all_server_checkpoint();
+                // FIXME: this should be replaced by a function in public headers.
+                // PDC_Client_all_server_checkpoint();
             }
             /* printf("%s, %d\n", filename, max_tag_size_g); */
             /* printf("\n\n======================\nNumber of datasets: %d\n", ndset_g); */
@@ -285,8 +287,10 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-        gettimeofday(&pdc_timer_end, 0);
-        double write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+        clock_gettime(CLOCK_MONOTONIC, &pdc_timer_end);
+        double write_time =
+            (pdc_timer_end.tv_sec - pdc_timer_start.tv_sec) * 1e9 +
+            (pdc_timer_end.tv_nsec - pdc_timer_start.tv_nsec); // calculate duration in nanoseconds
 
 #ifdef ENABLE_MPI
         MPI_Reduce(&ndset_g, &total_dset, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -294,7 +298,8 @@ main(int argc, char **argv)
         total_dset = ndset_g;
 #endif
         if (rank == 0) {
-            printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size, write_time);
+            printf("Import %d datasets with %d ranks took %.2f seconds.\n", total_dset, size,
+                   write_time / 1e9);
         }
     }
 
@@ -539,8 +544,8 @@ do_dset(hid_t did, char *name, char *app_name)
 
     scan_attrs(did, obj_id);
 
-    pdc_metadata_t *meta = NULL;
-    obj_region.ndim      = ndim;
+    // pdc_metadata_t *meta = NULL;
+    obj_region.ndim = ndim;
     for (i = 0; i < ndim; i++) {
         offset[i] = 0;
         size[i]   = dims[i];
@@ -550,7 +555,7 @@ do_dset(hid_t did, char *name, char *app_name)
     obj_region.size   = size;
 
     if (ndset_g == 1)
-        gettimeofday(&write_timer_start_g, 0);
+        clock_gettime(CLOCK_MONOTONIC, &write_timer_start_g);
 
     /* PDC_Client_query_metadata_name_timestep(dset_name_g, 0, &meta); */
     /* if (meta == NULL) */
@@ -566,12 +571,14 @@ do_dset(hid_t did, char *name, char *app_name)
 
     // PDC_Client_write_id(obj_id, &obj_region, buf);
     if (ndset_g % 100 == 0) {
-        gettimeofday(&write_timer_end_g, 0);
-        double elapsed_time = PDC_get_elapsed_time_double(&write_timer_start_g, &write_timer_end_g);
-        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank, elapsed_time,
-               ndset_g);
+        clock_gettime(CLOCK_MONOTONIC, &write_timer_end_g);
+        double elapsed_time =
+            (write_timer_end_g.tv_sec - write_timer_start_g.tv_sec) * 1e9 +
+            (write_timer_end_g.tv_nsec - write_timer_start_g.tv_nsec); // calculate duration in nanoseconds;
+        printf("Importer%2d: Finished written 100 objects, took %.2f, my total %d\n", rank,
+               elapsed_time / 1e9, ndset_g);
         fflush(stdout);
-        gettimeofday(&write_timer_start_g, 0);
+        clock_gettime(CLOCK_MONOTONIC, &write_timer_start_g);
     }
 
     free(buf);
@@ -698,12 +705,15 @@ scan_attrs(hid_t oid, pdcid_t obj_id)
 void
 do_attr(hid_t aid, pdcid_t obj_id)
 {
-    ssize_t     len;
-    hid_t       atype;
-    hid_t       aspace;
-    char        buf[MAX_NAME]         = {0};
-    char        read_buf[TAG_LEN_MAX] = {0};
-    pdc_kvtag_t kvtag1;
+    ssize_t len;
+    hid_t   atype;
+    hid_t   aspace;
+    char    buf[MAX_NAME]         = {0};
+    char    read_buf[TAG_LEN_MAX] = {0};
+    // pdc_kvtag_t kvtag1;
+    char * tag_name;
+    void * tag_value;
+    size_t tag_size;
 
     /*
      * Get the name of the attribute.
@@ -717,15 +727,15 @@ do_attr(hid_t aid, pdcid_t obj_id)
 
     atype = H5Aget_type(aid);
     H5Aread(aid, atype, read_buf);
-    kvtag1.name  = buf;
-    kvtag1.value = (void *)read_buf;
+    tag_name  = buf;
+    tag_value = (void *)read_buf;
     if (atype == H5T_STRING) {
-        kvtag1.size = strlen(read_buf) + 1;
+        tag_size = strlen(read_buf) + 1;
     }
     else {
-        kvtag1.size = H5Tget_size(atype);
+        tag_size = H5Tget_size(atype);
     }
-    PDCobj_put_tag(obj_id, kvtag1.name, kvtag1.value, kvtag1.size);
+    PDCobj_put_tag(obj_id, tag_name, tag_value, tag_size);
 
     /*
      * Get attribute information: dataspace, data type

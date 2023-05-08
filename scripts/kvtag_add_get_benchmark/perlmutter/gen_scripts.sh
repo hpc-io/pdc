@@ -2,7 +2,7 @@
 N_THREAD=NO
 MAX_NODE=512
 MAX_ATTR=1024
-MAX_ATTRLEN=1000
+MAX_ATTRLEN=1000000
 
 for (( i = 1; i <= $MAX_NODE; i*=2 )); do
     mkdir -p $i
