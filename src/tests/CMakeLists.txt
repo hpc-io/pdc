@@ -63,9 +63,10 @@ set(PROGRAMS
 #  data_server_meta_test
  kvtag_add_get
 #  kvtag_get
+ kvtag_add_get_benchmark
  kvtag_add_get_scale
 #  kvtag_query
-#  kvtag_query_scale
+ kvtag_query_scale
 #  obj_transformation
   region_transfer_query
   region_transfer

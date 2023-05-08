@@ -28,6 +28,7 @@
 #include "pdc_config.h"
 #include "pdc_public.h"
 #include <stdio.h>
+// #include <sys/time.h>			/* gettimeofday() */
 
 /****************************/
 /* Library Private Typedefs */
