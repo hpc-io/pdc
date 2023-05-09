@@ -1,5 +1,24 @@
 cmake_minimum_required (VERSION 2.8.12)
 
+# Setup cmake policies.
+foreach(p
+    CMP0012
+    CMP0013
+    CMP0014
+    CMP0022 # CMake 2.8.12
+    CMP0025 # CMake 3.0
+    CMP0053 # CMake 3.1
+    CMP0054 # CMake 3.1
+    CMP0074 # CMake 3.12
+    CMP0075 # CMake 3.12
+    CMP0083 # CMake 3.14
+    CMP0093 # CMake 3.15
+  )
+  if(POLICY ${p})
+    cmake_policy(SET ${p} NEW)
+  endif()
+endforeach()
+
 project(PDC_VOL C)
 
 include_directories(
@@ -51,18 +70,65 @@ option(USE_SYSTEM_HDF5 "Use system-installed HDF5." ON)
   endif()
 endif()
 
+option(USE_SYSTEM_OPENMP "Use system-installed OpenMP." ON)
+if(USE_SYSTEM_OPENMP)
+  find_package(OpenMP REQUIRED)
+  if(OPENMP_FOUND)
+      add_definitions(-DENABLE_OPENMP=1)
+      set(ENABLE_OPENMP 1)
+      set(OPENMP_LIBRARIES "${OpenMP_C_LIBRARIES}")
+  else()
+      message(FATAL_ERROR "OpenMP not found")
+  endif()
+endif()
+
+
 add_definitions(-DENABLE_MPI=1)
 add_library(cjson cjson/cJSON.c)
 
-set(PROGRAMS
-  pdc_ls
-  pdc_import
-  pdc_export
-  )
 
-foreach(program ${PROGRAMS})
-  add_executable(${program} ${program}.c)
-  target_link_libraries(${program} ${PDC_EXT_LIB_DEPENDENCIES})
-  target_link_libraries(${program} cjson)
-endforeach(program)
+# set(PROGRAMS
+#   pdc_ls
+#   pdc_import
+#   pdc_export
+#   )
 
+# foreach(program ${PROGRAMS})
+#   add_executable(${program} ${program}.c)
+#   target_link_libraries(${program} ${PDC_EXT_LIB_DEPENDENCIES})
+#   target_link_libraries(${program} pdc)
+#   target_link_libraries(${program} cjson)
+#   target_include_directories(${program} PUBLIC ${PDC_INCLUDE_DIR})
+# endforeach(program)
+
+
+# Find LibTIFF
+option(USE_LIB_TIFF "Enable LibTiff." ON)
+if(USE_LIB_TIFF)
+  find_package(TIFF REQUIRED)
+  if(TIFF_FOUND)
+    set(LLSM_LIB_SOURCE 
+      llsm/parallelReadTiff.c
+      llsm/csvReader.c
+      llsm/pdc_list.c
+    )
+    # Add the LibTIFF include directory to the include path
+    include_directories(${TIFF_INCLUDE_DIRS})
+    add_library(llsm_tiff ${LLSM_LIB_SOURCE})
+    target_compile_options(llsm_tiff PRIVATE ${OpenMP_C_FLAGS})
+    target_link_libraries(llsm_tiff PUBLIC ${OpenMP_C_LIBRARIES})
+    target_link_libraries(llsm_tiff PUBLIC ${TIFF_LIBRARIES})
+    target_include_directories(llsm_tiff PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/llsm)
+    
+
+    add_executable(llsm_importer llsm_importer.c)
+    target_link_libraries(llsm_importer ${PDC_EXT_LIB_DEPENDENCIES})
+    target_link_libraries(llsm_importer pdc)
+    target_link_libraries(llsm_importer cjson)
+    target_link_libraries(llsm_importer ${TIFF_LIBRARIES})
+    target_link_libraries(llsm_importer llsm_tiff)
+    target_include_directories(llsm_importer PUBLIC ${PDC_INCLUDE_DIR})
+  else()
+    message(WARNING "LibTiff not found, ignore building the executables which requires LibTiff support.")
+  endif()
+endif()

@@ -55,7 +55,9 @@ typedef enum {
     PDC_UINT64   = 9,  /* 64-bit unsigned integer types              */
     PDC_INT16    = 10,
     PDC_INT8     = 11,
-    NCLASSES     = 12 /* this must be last                          */
+    PDC_UINT8    = 12,
+    PDC_UINT16   = 13,
+    NCLASSES     = 14 /* this must be last                          */
 } pdc_var_type_t;
 
 typedef enum { PDC_PERSIST, PDC_TRANSIENT } pdc_lifetime_t;
