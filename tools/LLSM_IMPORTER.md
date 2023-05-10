@@ -72,3 +72,5 @@ Note: you may download the sample dataset from the this [link](https://drive.goo
 Now, run `gen_script.sh` to generate scripts for different settings with various number of servers. 
 
 After this, enter into any directory named with a number, and submit the job with `sbatch` command.
+
+Note: This program is still under development and changes will be made available from time to time. Please always use the develop branch for a stable version of this llsm_importer tool.
