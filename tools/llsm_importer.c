@@ -139,7 +139,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
                 PDCobj_put_tag(cur_obj_g, field_name, &fvalue, sizeof(double));
                 break;
             case 's':
-                PDCobj_put_tag(cur_obj_g, field_name, field_value, sizeof(char) * strlen(field_value));
+                PDCobj_put_tag(cur_obj_g, field_name, field_value, sizeof(char) * (strlen(field_value) + 1));
                 break;
             default:
                 break;
