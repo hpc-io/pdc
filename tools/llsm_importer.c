@@ -29,7 +29,16 @@ typedef struct llsm_importer_args_t {
 
 int rank = 0, size = 1;
 
-pdcid_t pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
+pdcid_t         pdc_id_g = 0, cont_prop_g = 0, cont_id_g = 0, obj_prop_g = 0;
+struct timespec ts;
+
+double
+getDoubleTimestamp()
+{
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    double timestamp = (double)ts.tv_sec + (double)ts.tv_nsec / 1e9;
+    return timestamp;
+}
 
 int
 parse_console_args(int argc, char *argv[], char **file_name)
@@ -54,10 +63,9 @@ parse_console_args(int argc, char *argv[], char **file_name)
 void
 import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 {
-    struct timespec start, end;
-    double          duration;
+    double duration, start;
 
-    clock_gettime(CLOCK_MONOTONIC, &start); // start timing the operation
+    start = getDoubleTimestamp(); // start timing the operation
 
     obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
@@ -116,12 +124,10 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
 
-    clock_gettime(CLOCK_MONOTONIC, &end); // end timing the operation
-    duration = (end.tv_sec - start.tv_sec) * 1e9 +
-               (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
+    duration = getDoubleTimestamp() - start; // end timing the operation and calculate duration in nanoseconds
 
-    printf("[Rank %4d] Region Transfer for object %s [%d Bytes] Done! Time taken: %.4f seconds\n", rank,
-           fileName_cell->field_value, image_info->tiff_size, duration / 1e9);
+    printf("[Rank %4d] Region_Transfer %s_[%d_Bytes] Done! Time taken: %.4f seconds\n", rank,
+           fileName_cell->field_value, image_info->tiff_size, duration);
 
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
@@ -161,12 +167,10 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     PDCobj_close(cur_obj_g);
 
     // get timing
-    clock_gettime(CLOCK_MONOTONIC, &end); // end timing the operation
-    duration = (end.tv_sec - start.tv_sec) * 1e9 +
-               (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
+    duration = getDoubleTimestamp() - start; // end timing the operation calculate duration in nanoseconds
 
-    printf("[Rank %4d] Create object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
-           duration / 1e9);
+    printf("[Rank %4d] Create_object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
+           duration);
 
     // free memory
     // free(offsets);
@@ -185,10 +189,9 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
     char *dirname = strdup(llsm_args->directory_path);
     char  filepath[256];
     // calling tiff loading process.
-    image_info_t *  image_info = NULL;
-    int             i          = 0;
-    struct timespec start, end;
-    double          duration;
+    image_info_t *image_info = NULL;
+    int           i          = 0;
+    double        duration, start;
     // Filepath,Filename,StageX_um_,StageY_um_,StageZ_um_,ObjectiveX_um_,ObjectiveY_um_,ObjectiveZ_um_
 
     // get the file name from the csv row
@@ -202,16 +205,13 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
     strcpy(filepath, dirname);                    // copy the directory path to the file path
     strcat(filepath, fileName_cell->field_value); // concatenate the file name to the file path
 
-    clock_gettime(CLOCK_MONOTONIC, &start); // start timing the operation
+    start = getDoubleTimestamp(); // start timing the operation
 
     parallel_TIFF_load(filepath, 1, NULL, &image_info);
 
-    clock_gettime(CLOCK_MONOTONIC, &end); // end timing the operation
+    duration = getDoubleTimestamp() - start; // end timing the operation and calculate duration in nanoseconds
 
-    duration = (end.tv_sec - start.tv_sec) * 1e9 +
-               (end.tv_nsec - start.tv_nsec); // calculate duration in nanoseconds
-
-    printf("[Rand %4d] Read %s Done! Time taken: %.4f seconds\n", rank, filepath, duration / 1e9);
+    printf("[Rank %4d] Read %s Done! Time taken: %.4f seconds\n", rank, filepath, duration);
 
     if (image_info == NULL || image_info->tiff_ptr == NULL) {
         return;
@@ -268,14 +268,15 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    char *                file_name         = NULL;
-    PDC_LIST *            list              = pdc_list_new();
-    char *                csv_line          = NULL;
-    int                   num_row_read      = 0;
-    csv_header_t *        csv_header        = NULL;
-    csv_row_t *           csv_row           = NULL;
-    llsm_importer_args_t *llsm_args         = NULL;
-    int                   bcast_count       = 512;
+    char *                file_name    = NULL;
+    PDC_LIST *            list         = pdc_list_new();
+    char *                csv_line     = NULL;
+    int                   num_row_read = 0;
+    csv_header_t *        csv_header   = NULL;
+    csv_row_t *           csv_row      = NULL;
+    llsm_importer_args_t *llsm_args    = NULL;
+    int                   bcast_count  = 512;
+    double                duration = 0, start = 0;
     char                  csv_field_types[] = {'s', 's', 'f', 'f', 'f', 'f', 'f', 'f'};
     // parse console argument
     int parse_code = parse_console_args(argc, argv, &file_name);
@@ -347,6 +348,12 @@ main(int argc, char *argv[])
     llsm_args->directory_path = directory_path;
     llsm_args->csv_header     = csv_table->first_header;
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    start = MPI_Wtime();
+#else
+    start = getDoubleTimestamp();
+#endif
     // go through the csv table
     csv_row_t *current_row = csv_table->first_row;
     while (current_row != NULL) {
@@ -357,6 +364,17 @@ main(int argc, char *argv[])
         current_row = current_row->next;
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    duration = MPI_Wtime() - start;
+#else
+    duration = getDoubleTimestamp() - start;
+#endif
+
+    if (rank == 0) {
+        printf("[Completion Time] LLSM IMPORTER FINISHES! Time taken: %.4f seconds\n", rank, duration);
+    }
+    
     csv_free_table(csv_table);
 
     // close the container
