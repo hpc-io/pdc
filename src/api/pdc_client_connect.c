@@ -244,7 +244,6 @@ PDC_Client_check_response(hg_context_t **hg_context)
 
     ret_value = SUCCEED;
 
-    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
