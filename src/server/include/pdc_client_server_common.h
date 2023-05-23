@@ -282,6 +282,7 @@ typedef struct {
 typedef struct {
     int32_t client_id;
     int32_t nclient;
+    int32_t is_init;
     char    client_addr[ADDR_MAX];
 } client_test_connect_args;
 
@@ -688,6 +689,7 @@ typedef struct {
 typedef struct {
     uint32_t    client_id;
     int32_t     nclient;
+    int         is_init;
     hg_string_t client_addr;
 } client_test_connect_in_t;
 
@@ -2136,6 +2138,11 @@ hg_proc_client_test_connect_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->nclient);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->is_init);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
