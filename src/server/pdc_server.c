@@ -78,13 +78,13 @@ pdc_task_list_t *pdc_server_agg_task_head_g = NULL;
 pdc_task_list_t *pdc_server_s2s_task_head_g = NULL;
 int              pdc_server_task_id_g       = PDC_SERVER_TASK_INIT_VALUE;
 
-pdc_client_info_t *       pdc_client_info_g         = NULL;
-pdc_remote_server_info_t *pdc_remote_server_info_g  = NULL;
-char *                    all_addr_strings_1d_g     = NULL;
-char **                   all_addr_strings_g        = NULL;
-int                       is_hash_table_init_g      = 0;
-int                       lustre_stripe_size_mb_g   = 16;
-int                       lustre_total_ost_g        = 0;
+pdc_client_info_t *       pdc_client_info_g        = NULL;
+pdc_remote_server_info_t *pdc_remote_server_info_g = NULL;
+char *                    all_addr_strings_1d_g    = NULL;
+char **                   all_addr_strings_g       = NULL;
+int                       is_hash_table_init_g     = 0;
+int                       lustre_stripe_size_mb_g  = 16;
+int                       lustre_total_ost_g       = 0;
 
 hg_id_t get_remote_metadata_register_id_g;
 hg_id_t buf_map_server_register_id_g;
@@ -266,12 +266,13 @@ PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
 
     if (pdc_client_info_g && in->is_init == 1) {
         if (is_debug_g && pdc_server_rank_g == 0) {
-            printf("==PDC_SERVER[%d]: new application run detected, create new client info\n", pdc_server_rank_g);
+            printf("==PDC_SERVER[%d]: new application run detected, create new client info\n",
+                   pdc_server_rank_g);
             fflush(stdout);
         }
 
         PDC_Server_destroy_client_info(pdc_client_info_g);
-        pdc_client_info_g         = NULL;
+        pdc_client_info_g = NULL;
     }
 
 #ifdef ENABLE_MULTITHREAD
