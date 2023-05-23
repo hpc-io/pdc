@@ -352,7 +352,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     start = MPI_Wtime();
 #else
-    start = getDoubleTimestamp();
+    start    = getDoubleTimestamp();
 #endif
     // go through the csv table
     csv_row_t *current_row = csv_table->first_row;
@@ -374,7 +374,7 @@ main(int argc, char *argv[])
     if (rank == 0) {
         printf("[Completion Time] LLSM IMPORTER FINISHES! Time taken: %.4f seconds\n", rank, duration);
     }
-    
+    // free memory for csv table
     csv_free_table(csv_table);
 
     // close the container
