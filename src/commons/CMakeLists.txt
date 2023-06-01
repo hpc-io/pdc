@@ -2,6 +2,7 @@
 #------------------------------------------------------------------------------
 # Setup SRC path for each package
 #------------------------------------------------------------------------------
+set(GENERIC_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/generic)
 set(COLLECTIONS_DIR     ${CMAKE_CURRENT_SOURCE_DIR}/collections)
 set(INDEX_DIR           ${CMAKE_CURRENT_SOURCE_DIR}/index)
 set(FILE_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/file)
@@ -12,6 +13,7 @@ set(UTILS_DIR           ${CMAKE_CURRENT_SOURCE_DIR}/utils)
 #------------------------------------------------------------------------------
 # Collect all source files
 #------------------------------------------------------------------------------
+file(GLOB_RECURSE GENERIC_DIR_SOURCES ${GENERIC_DIR}/*.c)
 file(GLOB_RECURSE COLLECTIONS_DIR_SOURCES ${COLLECTIONS_DIR}/*.c)
 file(GLOB_RECURSE INDEX_DIR_SOURCES ${INDEX_DIR}/*.c)
 file(GLOB_RECURSE FILE_DIR_SOURCES ${FILE_DIR}/*.c)
@@ -23,6 +25,7 @@ file(GLOB_RECURSE UTILS_DIR_SOURCES ${UTILS_DIR}/*.c)
 #------------------------------------------------------------------------------
 # Collect all header files
 #------------------------------------------------------------------------------
+file(GLOB_RECURSE GENERIC_DIR_HEADERS ${GENERIC_DIR}/*.h)
 file(GLOB_RECURSE COLLECTIONS_DIR_HEADERS ${COLLECTIONS_DIR}/*.h)
 file(GLOB_RECURSE INDEX_DIR_HEADERS ${INDEX_DIR}/*.h)
 file(GLOB_RECURSE FILE_DIR_HEADERS ${FILE_DIR}/*.h)
@@ -32,6 +35,7 @@ file(GLOB_RECURSE UTILS_DIR_HEADERS ${UTILS_DIR}/*.h)
 
 
 set(PDC_COMMONS_INCLUDE_LIST
+    ${GENERIC_DIR}
     ${COLLECTIONS_DIR}
     ${INDEX_DIR}
     ${FILE_DIR}
@@ -60,6 +64,7 @@ endfunction()
 
 
 # Build libraries for each subdirectory
+build_subdirectory_libraries(generic "${GENERIC_DIR_SOURCES}" "${GENERIC_DIR_HEADERS}")
 build_subdirectory_libraries(utils "${UTILS_DIR_SOURCES}" "${UTILS_DIR_HEADERS}")
 build_subdirectory_libraries(collections "${COLLECTIONS_DIR_SOURCES}" "${COLLECTIONS_DIR_HEADERS}")
 build_subdirectory_libraries(serde "${SERDE_DIR_SOURCES}" "${SERDE_DIR_HEADERS}")
