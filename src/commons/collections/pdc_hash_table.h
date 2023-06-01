@@ -138,10 +138,9 @@ typedef void (*HashTableKeyFreeFunc)(HashTableKey value);
 
 typedef void (*HashTableValueFreeFunc)(HashTableValue value);
 
-
 /************ Default function pointer **************/
 
-extern HashTableHashFunc pdc_default_string_hash_func_ptr;
+extern HashTableHashFunc  pdc_default_string_hash_func_ptr;
 extern HashTableEqualFunc pdc_default_string_equal_func_ptr;
 
 extern HashTableHashFunc  pdc_default_integer_hash_func_ptr;

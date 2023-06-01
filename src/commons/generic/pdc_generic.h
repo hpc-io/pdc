@@ -14,7 +14,6 @@ typedef enum {
     LONG,
     FLOAT,
     DOUBLE,
-    LONG_DOUBLE,
     INT8_T,
     INT16_T,
     INT32_T,
@@ -23,10 +22,22 @@ typedef enum {
     UINT16_T,
     UINT32_T,
     UINT64_T,
+    STRING,
     IARCH,
     UARCH,
     SIZE_COUNT
-} DataType;
+} PDC_CType;
+
+typedef enum {
+    SCALAR,
+    ARRAY,
+    STRUCT,
+    UNION, // not implemented
+    ENUM,  // not implemented
+    POINTER, // not implemented
+    FUNCTION, // not implemented
+    TYPE_COUNT // not implemented
+} PDC_CTypeClass;
 
 const size_t DataTypeSizes[SIZE_COUNT] = {
     sizeof(char),
@@ -35,7 +46,6 @@ const size_t DataTypeSizes[SIZE_COUNT] = {
     sizeof(long),
     sizeof(float),
     sizeof(double),
-    sizeof(long double),
     sizeof(int8_t),
     sizeof(int16_t),
     sizeof(int32_t),
@@ -44,6 +54,7 @@ const size_t DataTypeSizes[SIZE_COUNT] = {
     sizeof(uint16_t),
     sizeof(uint32_t),
     sizeof(uint64_t),
+    sizeof(char *),
     sizeof(void *),
     sizeof(size_t)
 };
@@ -55,7 +66,6 @@ const char *DataTypeNames[SIZE_COUNT] = {
     "long",
     "float",
     "double",
-    "long double",
     "int8_t",
     "int16_t",
     "int32_t",
@@ -64,10 +74,11 @@ const char *DataTypeNames[SIZE_COUNT] = {
     "uint16_t",
     "uint32_t",
     "uint64_t",
+    "char *",
     "intptr_t",
     "size_t"
 };
 
-DataType getDataTypeByName(const char* typeName);
+PDC_CType getDataTypeByName(const char* typeName);
 
 #endif /* PDC_GENERIC_H */
