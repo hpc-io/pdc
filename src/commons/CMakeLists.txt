@@ -55,7 +55,7 @@ function(build_subdirectory_libraries SUBDIR SOURCES HEADERS)
   install(FILES ${HEADERS} DESTINATION ${PDC_INSTALL_INCLUDE_DIR}/commons/${SUBDIR})
 
   # Set the installation path for the library
-  install(TARGETS ${SUBDIR} DESTINATION ${PDC_INSTALL_LIB_DIR})
+  install(TARGETS ${LIBRARY_NAME} DESTINATION ${PDC_INSTALL_LIB_DIR})
 endfunction()
 
 
