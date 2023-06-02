@@ -216,7 +216,63 @@ if len(obj_create_time_node) > 0:
         'observed_time_max_file': np.max(observed_time_file) if observed_time_file else None
     }
 
-    dataset = pd.DataFrame.from_dict([observations])
+    # dataset = pd.DataFrame.from_dict([observations])
+
+    # print(dataset)
+
+    # dataset.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+
+    # df_values = dataset.values.tolist()
+
+    # if False:
+    #     # Submit the header to the spreadsheet
+    #     gs.values_append(
+    #         sys.argv[1],
+    #         {
+    #             'valueInputOption': 'USER_ENTERED'
+    #         },
+    #         {
+    #             'values': [dataset.columns.tolist()]
+    #         }
+    #     )
+
+    # gs.values_append(
+    #     sys.argv[1],
+    #     {
+    #         'valueInputOption': 'USER_ENTERED'
+    #     },
+    #     {
+    #         'values': df_values
+    #     }
+    # )
+
+    lines = []
+
+    # Record all the steps
+    for step in range(0, len(obj_create_time_node)):
+        line = {
+            'branch': sys.argv[3],
+            'JOBID': sys.argv[4],
+
+            'pdc_metadata_servers': pdc_metadata_servers,
+            'pdc_metadata_clients': pdc_metadata_clients,
+
+            'date': str(today),
+
+            'step': step + 1,
+
+            'obj_create_time_step': obj_create_time_node[step],
+            'xfer_create_time_step': xfer_create_time_node[step],
+            'xfer_start_time_step': xfer_start_time_node[step],
+            'xfer_wait_time_step': xfer_wait_time_node[step],
+            'xfer_close_time_step': xfer_close_time_node[step],
+            'obj_close_time_step': obj_close_time_node[step],
+            'sleep_time_step': sleep_time_node[step] if len(sleep_time_node) < step else 0
+        }
+
+        lines.append(line)
+
+    dataset = pd.DataFrame.from_dict(lines)
 
     print(dataset)
 
@@ -227,7 +283,7 @@ if len(obj_create_time_node) > 0:
     if False:
         # Submit the header to the spreadsheet
         gs.values_append(
-            sys.argv[1],
+            '{} - Steps'.format(sys.argv[1]),
             {
                 'valueInputOption': 'USER_ENTERED'
             },
@@ -237,7 +293,7 @@ if len(obj_create_time_node) > 0:
         )
 
     gs.values_append(
-        sys.argv[1],
+        '{} - Steps'.format(sys.argv[1]),
         {
             'valueInputOption': 'USER_ENTERED'
         },

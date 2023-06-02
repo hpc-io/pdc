@@ -176,6 +176,6 @@ perlmutter-metrics:
         - echo "Installing dependencies..."
         - pip install pydrive gspread gspread-dataframe google
         - echo "Storing PDC metrics..."
-        - python3 ../../.github/workflows/store-metrics.py Perlmutter ${PDC_JOB_OUTPUT}
+        - python3 ../../.github/workflows/store-metrics.py Perlmutter ${PDC_JOB_OUTPUT} `git branch --show-current` $SLURM_JOB_ID
         - echo "Removing files..."
         - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
