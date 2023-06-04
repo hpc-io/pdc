@@ -162,7 +162,7 @@ perlmutter-metrics:
         PDC_JOB_OUTPUT: "pdc-metrics.log"
     script: 
         - hostname
-        - echo "JOBID: ${SLURM_JOB_ID}"
+        - echo "JOBID ${SLURM_JOB_ID}"
         - export NERSC_HOST=`cat /etc/clustername`
         - module load python
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
