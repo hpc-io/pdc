@@ -251,8 +251,8 @@ if len(obj_create_time_node) > 0:
     # Record all the steps
     for step in range(0, len(obj_create_time_node)):
         line = {
-            'branch': sys.argv[2],
-            'JOBID': sys.argv[3],
+            'branch': sys.argv[3],
+            'JOBID': sys.argv[4],
 
             'pdc_metadata_servers': pdc_metadata_servers,
             'pdc_metadata_clients': pdc_metadata_clients,
