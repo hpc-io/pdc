@@ -148,7 +148,7 @@ perlmutter-metrics:
     tags:
         - perlmutter
     variables:
-        PDC_N_NODES: 64
+        PDC_N_NODES: 4
         PDC_N_CLIENTS: 127
         SCHEDULER_PARAMETERS: "-A m1248 --qos=regular --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
