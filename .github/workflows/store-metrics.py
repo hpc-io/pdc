@@ -154,6 +154,9 @@ with open(sys.argv[2], 'r') as f:
 
 if len(obj_create_time_node) > 0:
     observations = {
+        'branch': sys.argv[3],
+        'JOBID': sys.argv[4],
+
         'pdc_metadata_servers': pdc_metadata_servers,
         'pdc_metadata_clients': pdc_metadata_clients,
 
@@ -216,35 +219,35 @@ if len(obj_create_time_node) > 0:
         'observed_time_max_file': np.max(observed_time_file) if observed_time_file else None
     }
 
-    # dataset = pd.DataFrame.from_dict([observations])
+    dataset = pd.DataFrame.from_dict([observations])
 
-    # print(dataset)
+    print(dataset)
 
-    # dataset.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    dataset.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
-    # df_values = dataset.values.tolist()
+    df_values = dataset.values.tolist()
 
-    # if False:
-    #     # Submit the header to the spreadsheet
-    #     gs.values_append(
-    #         sys.argv[1],
-    #         {
-    #             'valueInputOption': 'USER_ENTERED'
-    #         },
-    #         {
-    #             'values': [dataset.columns.tolist()]
-    #         }
-    #     )
+    if False:
+        # Submit the header to the spreadsheet
+        gs.values_append(
+            sys.argv[1],
+            {
+                'valueInputOption': 'USER_ENTERED'
+            },
+            {
+                'values': [dataset.columns.tolist()]
+            }
+        )
 
-    # gs.values_append(
-    #     sys.argv[1],
-    #     {
-    #         'valueInputOption': 'USER_ENTERED'
-    #     },
-    #     {
-    #         'values': df_values
-    #     }
-    # )
+    gs.values_append(
+        sys.argv[1],
+        {
+            'valueInputOption': 'USER_ENTERED'
+        },
+        {
+            'values': df_values
+        }
+    )
 
     lines = []
 
