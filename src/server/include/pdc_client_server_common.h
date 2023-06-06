@@ -31,6 +31,7 @@
 #include "pdc_analysis_and_transforms_common.h"
 #include "pdc_query.h"
 
+#include "mercury.h"
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
 #include "mercury_list.h"

@@ -32,6 +32,7 @@
 #include "mercury_proc_string.h"
 #include "mercury_request.h"
 #include "pdc_region.h"
+#include "dart_core.h"
 
 extern int                      pdc_server_num_g;
 extern int                      pdc_client_mpi_rank_g;
