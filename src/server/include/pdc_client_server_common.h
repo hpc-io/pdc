@@ -1243,7 +1243,7 @@ hg_proc_dart_get_server_info_in_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_uint32_t(proc, &struct_data->serverId);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1257,13 +1257,13 @@ hg_proc_dart_get_server_info_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_int64_t(proc, &struct_data->indexed_word_count);
     if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
+	    // HG_LOG_ERROR("Proc error");
         return ret;
     }
 
     ret = hg_proc_int64_t(proc, &struct_data->request_count);
     if (ret != HG_SUCCESS) {
-	    HG_LOG_ERROR("Proc error");
+	    // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1278,48 +1278,48 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
     dart_perform_one_server_in_t *struct_data = (dart_perform_one_server_in_t *) data;
     ret = hg_proc_int8_t(proc, &struct_data->op_type);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int8_t(proc, &struct_data->hash_algo);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_key);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_val);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int8_t(proc, &struct_data->obj_ref_type);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_primary_ref);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_secondary_ref);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_server_ref);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     
     ret = hg_proc_int64_t(proc, &struct_data->timestamp);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
