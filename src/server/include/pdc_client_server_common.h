@@ -1333,42 +1333,42 @@ hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
     dart_perform_one_server_out_t *struct_data = (dart_perform_one_server_out_t *) data;
     ret = hg_proc_int8_t(proc, &struct_data->op_type);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int64_t(proc, &struct_data->indexed_word_count);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int64_t(proc, &struct_data->request_count);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int8_t(proc, &struct_data->has_bulk);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int64_t(proc, &struct_data->n_items);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int64_t(proc, &struct_data->timestamp);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1384,42 +1384,42 @@ hg_proc_metadata_index_create_in_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_hg_const_string_t(proc, &struct_data->key);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->str_value);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int64_t(proc, &struct_data->int64_val);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->key_hash);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->server_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->index_type);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int8_t(proc, &struct_data->pseudo);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1433,7 +1433,7 @@ hg_proc_metadata_index_create_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_uint64_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
 
@@ -1448,27 +1448,27 @@ hg_proc_metadata_index_delete_in_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_hg_const_string_t(proc, &struct_data->key);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_hg_const_string_t(proc, &struct_data->str_value);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_uint32_t(proc, &struct_data->index_type);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     ret = hg_proc_int8_t(proc, &struct_data->pseudo);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
@@ -1483,7 +1483,7 @@ hg_proc_metadata_index_delete_out_t(hg_proc_t proc, void *data)
 
     ret = hg_proc_uint64_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
-        HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
