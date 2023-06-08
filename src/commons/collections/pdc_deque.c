@@ -1,4 +1,4 @@
-#include "../pdc_deque.h"
+#include "pdc_deque.h"
 #include <stdio.h>
 
 #define DEFAULT_CAPACITY 16

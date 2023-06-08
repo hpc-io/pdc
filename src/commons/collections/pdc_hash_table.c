@@ -24,7 +24,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <string.h>
 #include <math.h>
 #include <stdint.h>
-#include "../pdc_hash_table.h"
+#include "pdc_hash_table.h"
 
 #ifdef ALLOC_TESTING
 #include "alloc-testing.h"

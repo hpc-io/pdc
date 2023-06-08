@@ -1,7 +1,7 @@
 #------------------------------------------------------------------------------
 # Include source and build directories
 #------------------------------------------------------------------------------
-set( LOCAL_INCLUDE_DIR
+set(LOCAL_INCLUDE_DIR
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_BINARY_DIR}
   ${PDC_SOURCE_DIR}
@@ -20,7 +20,10 @@ set( LOCAL_INCLUDE_DIR
   ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
   ${PDC_SOURCE_DIR}/src/api/profiling/include
   ${PDC_SOURCE_DIR}/src/utils/include
+  ${PDC_COMMONS_INCLUDE_LIST}
 )
+
+message(STATUS "API PDC_COMMONS_INCLUDE_LIST: ${PDC_COMMONS_INCLUDE_LIST}")
 
 include_directories(
   ${LOCAL_INCLUDE_DIR}
@@ -103,6 +106,7 @@ set(PDC_BUILD_INCLUDE_DEPENDENCIES
   ${LOCAL_INCLUDE_DIR}
 )
 
+
 add_library(pdc ${PDC_SRCS})
 
 target_include_directories(pdc
@@ -111,6 +115,7 @@ target_include_directories(pdc
 )
 
 target_link_libraries(pdc
+  ${PDC_COMMON_LIBRARY_NAME}
   ${PDC_EXPORTED_LIBS}
   ${PDC_EXT_LIB_DEPENDENCIES}
   -ldl

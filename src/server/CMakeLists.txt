@@ -6,7 +6,10 @@ if(PDC_ENABLE_FASTBIT)
     find_library(FASTBIT_LIBRARY fastbit $ENV{HOME}/cori/fastbit-2.0.3/install)
 endif()
 
+message(STATUS "SERVER PDC_COMMONS_INCLUDE_LIST: ${PDC_COMMONS_INCLUDE_LIST}")
+
 include_directories(
+  ${PDC_COMMONS_INCLUDE_LIST}
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
@@ -54,6 +57,13 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
+if(PDC_ENABLE_FASTBIT)
+    message(STATUS "Enabled fastbit")
+    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} pdc_commons ${FASTBIT_LIBRARY}/libfastbit.so)
+else()
+    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} pdc_commons)
+endif()
+
 #install(
 #  TARGETS
 #    pdc_server.exe
@@ -68,11 +78,6 @@ install(
 )
 endif()
 
-if(PDC_ENABLE_FASTBIT)
-    message(STATUS "Enabled fastbit")
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
-else()
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
-endif()
+
 
 

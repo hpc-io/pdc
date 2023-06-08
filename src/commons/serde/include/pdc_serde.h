@@ -55,7 +55,7 @@ inline PDC_SERDE_Key *
 PDC_SERDE_KEY(void *key, PDC_CType type, size_t size)
 {
     PDC_SERDE_Key *pdc_key = malloc(sizeof(PDC_SERDE_Key));
-    if (type == STRING) {
+    if (type == PDC_CT_STRING) {
         size = (strlen((char *)key) + 1) * sizeof(char);
     }
     pdc_key->key = malloc(size);
@@ -79,13 +79,13 @@ inline PDC_SERDE_Value *
 PDC_SERDE_VALUE(void *data, PDC_CType type, PDC_CTypeClass class, size_t size)
 {
     PDC_SERDE_Value *pdc_value = malloc(sizeof(PDC_SERDE_Value));
-    if (class == STRING) {
+    if (class == PDC_CT_STRING) {
         size = (strlen((char *)data) + 1) * sizeof(char);
     }
-    if (class == ARRAY) {
-        size = size * DataTypeSizes[type];
+    if (class == PDC_CT_CLS_ARRAY) {
+        size = size * get_size_by_dtype(type);
     }
-    if (class == STRUCT) {
+    if (class == PDC_CT_CLS_STRUCT) {
         PDC_SERDE_SerializedData *struct_data = (PDC_SERDE_SerializedData *)data;
         size                                  = struct_data->totalSize;
     }

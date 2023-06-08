@@ -1,78 +1,44 @@
+set(PDC_COMMON_LIBRARY_NAME pdc_commons)
+if(THREADS_HAVE_PTHREAD_ARG)
+  set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY COMPILE_OPTIONS "-pthread")
+  set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
+endif()
 
-#------------------------------------------------------------------------------
-# Setup SRC path for each package
-#------------------------------------------------------------------------------
-set(GENERIC_DIR         ${CMAKE_CURRENT_SOURCE_DIR}/generic)
-set(COLLECTIONS_DIR     ${CMAKE_CURRENT_SOURCE_DIR}/collections)
-set(INDEX_DIR           ${CMAKE_CURRENT_SOURCE_DIR}/index)
-set(INDEX_DART_DIR           ${CMAKE_CURRENT_SOURCE_DIR}/index/dart)
-set(FILE_DIR            ${CMAKE_CURRENT_SOURCE_DIR}/file)
-set(RPC_DIR             ${CMAKE_CURRENT_SOURCE_DIR}/rpc)
-set(SERDE_DIR           ${CMAKE_CURRENT_SOURCE_DIR}/serde)
-set(UTILS_DIR           ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+if(CMAKE_THREAD_LIBS_INIT)
+  target_link_libraries(${PDC_COMMON_LIBRARY_NAME} "${CMAKE_THREAD_LIBS_INIT}")
+endif()
 
-#------------------------------------------------------------------------------
 # Collect all source files
-#------------------------------------------------------------------------------
-file(GLOB_RECURSE GENERIC_DIR_SOURCES ${GENERIC_DIR}/*.c)
-file(GLOB_RECURSE COLLECTIONS_DIR_SOURCES ${COLLECTIONS_DIR}/*.c)
-file(GLOB_RECURSE INDEX_DIR_SOURCES ${INDEX_DIR}/*.c)
-file(GLOB_RECURSE INDEX_DART_DIR_SOURCES ${INDEX_DART_DIR}*.c)
-file(GLOB_RECURSE FILE_DIR_SOURCES ${FILE_DIR}/*.c)
-file(GLOB_RECURSE RPC_DIR_SOURCES ${RPC_DIR}/*.c)
-file(GLOB_RECURSE SERDE_DIR_SOURCES ${SERDE_DIR}/*.c)
-file(GLOB_RECURSE UTILS_DIR_SOURCES ${UTILS_DIR}/*.c)
+file(GLOB_RECURSE PDC_COMMONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
+file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 
-#------------------------------------------------------------------------------
-# Collect all header files
-#------------------------------------------------------------------------------
-file(GLOB_RECURSE GENERIC_DIR_HEADERS ${GENERIC_DIR}/*.h)
-file(GLOB_RECURSE COLLECTIONS_DIR_HEADERS ${COLLECTIONS_DIR}/*.h)
-file(GLOB_RECURSE INDEX_DIR_HEADERS ${INDEX_DIR}/*.h)
-file(GLOB_RECURSE INDEX_DART_DIR_HEADERS ${INDEX_DART_DIR}/*.h)
-file(GLOB_RECURSE FILE_DIR_HEADERS ${FILE_DIR}/*.h)
-file(GLOB_RECURSE RPC_DIR_HEADERS ${RPC_DIR}/*.h)
-file(GLOB_RECURSE SERDE_DIR_HEADERS ${SERDE_DIR}/*.h)
-file(GLOB_RECURSE UTILS_DIR_HEADERS ${UTILS_DIR}/*.h)
+# Get a list of all directories that contain header files
+file(GLOB_RECURSE PDC_COMMONS_INCLUDE_LIST LIST_DIRECTORIES true "*.h")
 
+# Remove the /filename.h at the end of each directory
+list(TRANSFORM PDC_COMMONS_INCLUDE_LIST REPLACE "/[^/]*$" "")
 
-set(PDC_COMMONS_INCLUDE_LIST
-    ${GENERIC_DIR}
-    ${COLLECTIONS_DIR}
-    ${INDEX_DIR}
-    ${INDEX_DART_DIR}
-    ${FILE_DIR}
-    ${RPC_DIR}
-    ${SERDE_DIR}
-    ${UTILS_DIR}
+# Remove duplicates
+list(REMOVE_DUPLICATES PDC_COMMONS_INCLUDE_LIST)
+
+message(STATUS "COMMONS PDC_COMMONS_INCLUDE_LIST: ${PDC_COMMONS_INCLUDE_LIST}")
+
+set(PDC_COMMONS_INCLUDE_LIST ${PDC_COMMONS_INCLUDE_LIST} PARENT_SCOPE)
+
+# Create library for the subdirectory
+add_library(${PDC_COMMON_LIBRARY_NAME} ${PDC_COMMONS_SOURCES} ${PDC_COMMONS_HEADERS})
+
+# Include subdirectory's header files
+target_include_directories(${PDC_COMMON_LIBRARY_NAME} PUBLIC 
+  $<BUILD_INTERFACE:${PDC_COMMONS_INCLUDE_LIST}>  # for building
+  $<INSTALL_INTERFACE:include/pdc_commons>  # for installed package
 )
 
-# Function to build libraries in subdirectories
-function(build_subdirectory_libraries SUBDIR SOURCES HEADERS)
-  # Set the library name
-  set(LIBRARY_NAME pdc_commons_${SUBDIR})
+# Publish header files for client/server programs to use
+install(FILES ${PDC_COMMONS_HEADERS} DESTINATION ${PDC_INSTALL_INCLUDE_DIR}/commons)
 
-  # Create library for the subdirectory
-  add_library(${LIBRARY_NAME} ${SOURCES})
-
-  # Include subdirectory's header files
-  target_include_directories(${LIBRARY_NAME} PUBLIC ${PDC_COMMONS_INCLUDE_LIST})
-
-  # Publish header files for client/server programs to use
-  install(FILES ${HEADERS} DESTINATION ${PDC_INSTALL_INCLUDE_DIR}/commons/${SUBDIR})
-
-  # Set the installation path for the library
-  install(TARGETS ${LIBRARY_NAME} DESTINATION ${PDC_INSTALL_LIB_DIR})
-endfunction()
+# Set the installation path for the library
+install(TARGETS ${PDC_COMMON_LIBRARY_NAME} DESTINATION ${PDC_INSTALL_LIB_DIR})
 
 
-# Build libraries for each subdirectory
-build_subdirectory_libraries(generic "${GENERIC_DIR_SOURCES}" "${GENERIC_DIR_HEADERS}")
-build_subdirectory_libraries(utils "${UTILS_DIR_SOURCES}" "${UTILS_DIR_HEADERS}")
-build_subdirectory_libraries(collections "${COLLECTIONS_DIR_SOURCES}" "${COLLECTIONS_DIR_HEADERS}")
-build_subdirectory_libraries(serde "${SERDE_DIR_SOURCES}" "${SERDE_DIR_HEADERS}")
-build_subdirectory_libraries(file "${FILE_DIR_SOURCES}" "${FILE_DIR_HEADERS}")
-build_subdirectory_libraries(rpc "${RPC_DIR_SOURCES}" "${RPC_DIR_HEADERS}")
-build_subdirectory_libraries(index "${INDEX_DIR_SOURCES}" "${INDEX_DIR_HEADERS}")
-build_subdirectory_libraries(index_dart "${INDEX_DART_DIR_SOURCES}" "${INDEX_DART_DIR_HEADERS}")

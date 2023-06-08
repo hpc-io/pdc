@@ -265,10 +265,6 @@ if(PDC_ENABLE_MPI)
   find_package(MPI)
   if(MPI_FOUND)
     set(ENABLE_MPI 1)
-    if(APPLE)
-      message(STATUS "MPI_INCLUDE_PATH: ${MPI_INCLUDE_PATH}")
-      include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-    endif()
   endif()
 endif()
 
@@ -335,6 +331,13 @@ endif()
 option(PDC_ENABLE_MULTITHREAD "Enable multithreading." OFF)
 if(PDC_ENABLE_MULTITHREAD)
   set(ENABLE_MULTITHREAD 1)
+endif()
+
+#-----------------------------------------------------------------------------
+# Pthread support on Mac OS X
+#-----------------------------------------------------------------------------
+if(APPLE)
+  find_package(Threads REQUIRED)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -408,6 +411,8 @@ configure_file(
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/commons)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/api)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
+
+
 
 #-----------------------------------------------------------------------------
 # Testing

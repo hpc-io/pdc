@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../pdc_stack.h"
+#include "pdc_stack.h"
 
 #define DEFAULT_CAPACITY 16
 

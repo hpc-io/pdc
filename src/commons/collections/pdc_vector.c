@@ -1,4 +1,4 @@
-#include "../pdc_vector.h"
+#include "pdc_vector.h"
 
 PDC_VECTOR *
 pdc_vector_new()
