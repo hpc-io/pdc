@@ -45,7 +45,11 @@
 #include "mercury.h"
 #include "mercury_macros.h"
 
+#include "string_utils.h"
 #include "dart_core.h"
+#include "timer_utils.h"
+#include "query_utils.h"
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -2530,7 +2534,7 @@ dart_server dart_retrieve_server_info_cb(uint32_t serverId){
     struct client_genetic_lookup_args lookup_args;
     hg_return_t hg_ret = HG_Forward(dart_get_server_info_handle, client_dart_get_server_info_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "dart_get_server_info_g(): Could not start HG_Forward() on serverId = %ld with host = %s\n", serverId
+        fprintf(stderr, "dart_get_server_info_g(): Could not start HG_Forward() on serverId = %u with host = %s\n", serverId
         ,pdc_server_info_g[serverId].addr_string);
         HG_Destroy(dart_get_server_info_handle);
         return ret;
@@ -2562,9 +2566,9 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     struct bulk_args_t *client_lookup_args;
     hg_handle_t handle;
     dart_perform_one_server_out_t output;
-    uint32_t n_meta;
     int bulk_checked = 0;
     hg_op_id_t hg_bulk_op_id;
+    uint32_t n_meta;
 
     hg_bulk_t local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t origin_bulk_handle = HG_BULK_NULL;
@@ -2577,7 +2581,7 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     // println("[Client_Side_Bulk]  Entering dart_perform_one_server_on_receive_cb. rank = %d", pdc_client_mpi_rank_g);
     /* printf("Entered metadata_query_bulk_cb()\n"); */
     client_lookup_args = (struct bulk_args_t*) callback_info->arg;
-    client_lookup_args->n_meta = (uint32_t *)malloc(sizeof(uint32_t));
+    // client_lookup_args->n_meta = (uint32_t *)malloc(sizeof(uint32_t));
     handle = callback_info->info.forward.handle;
     // println("[Client_Side_Bulk]  before get output. rank = %d", pdc_client_mpi_rank_g);
     // Get output from server
@@ -2585,7 +2589,7 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     if (ret_value != HG_SUCCESS) {
         printf("==PDC_CLIENT[%d]: metadata_query_bulk_cb - error HG_Get_output\n", pdc_client_mpi_rank_g);
         // hg_atomic_set32(&bulk_transfer_done_g, 1);
-        *(client_lookup_args->n_meta)=0;
+        client_lookup_args->n_meta=0;
         goto done;
     }
 
@@ -2594,24 +2598,22 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     if (ret_value == HG_SUCCESS && output.has_bulk == 0) {
         // printf("=== NO Bulk data should be taken care of.  \n");
         // hg_atomic_set32(&bulk_transfer_done_g, 1);
-        *(client_lookup_args->n_meta)=0;
+        client_lookup_args->n_meta=0;
         goto done;
     }
 
     // println("[Client_Side_Bulk]  before copy n_meta. rank = %d", pdc_client_mpi_rank_g);
     // printf("==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret);
-    n_meta = output.n_items;
 
-    
-    *(client_lookup_args->n_meta) = n_meta;
+    n_meta = output.n_items;
+    client_lookup_args->n_meta = n_meta;
 
     // printf("*(client_lookup_args->n_meta) = %ld\n", *(client_lookup_args->n_meta));
 
     // println("[Client_Side_Bulk]  before determining size. rank = %d", pdc_client_mpi_rank_g);
-    if (n_meta == 0) {
+    if (client_lookup_args->n_meta == 0) {
         // hg_atomic_set32(&bulk_transfer_done_g, 1);
         client_lookup_args->meta_arr = NULL;
-        *(client_lookup_args->n_meta)=0;
         goto done;
     }
 
@@ -2648,7 +2650,7 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     if (ret_value!= HG_SUCCESS) {
         fprintf(stderr, "Could not read bulk data\n");
         // hg_atomic_set32(&bulk_transfer_done_g, 1);
-        *(client_lookup_args->n_meta)=0;
+        client_lookup_args->n_meta=0;
         goto done;
     }
 
@@ -2679,12 +2681,6 @@ done:
     HG_Free_output(handle, &output);
     HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
-}
-
-void dart_perform_on_one_server_thread(void *thread_param){
-    dart_perform_one_thread_param_t *param = (dart_perform_one_thread_param_t *)thread_param;
-    int rst = dart_perform_on_one_server(param->server_id, param->dart_in, param->hashset);
-    return (void *)rst;
 }
 
 int dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in, hashset_t *hashset){
@@ -2758,7 +2754,7 @@ int dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart
     // if (lookup_args.ret == 0 ) {
     //     goto done;
     // }
-    if (*(lookup_args.n_meta) == 0) {
+    if (lookup_args.n_meta == 0) {
         goto done;
     }
     
@@ -2780,12 +2776,12 @@ int dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart
     size_t out_size = 0;
     // println("*(lookup_args.n_meta) = %d", *(lookup_args.n_meta));
     int res_id = 0;
-    for (res_id = 0; res_id < *(lookup_args.n_meta); res_id++) {
+    for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
         if (hashset != NULL && (*hashset) != NULL) {
             hashset_add(*hashset, (void *)((uint64_t *)lookup_args.meta_arr[res_id])[0]);
         }
     }
-    ret_val = *(lookup_args.n_meta);
+    ret_val = lookup_args.n_meta;
 
     timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d", 
@@ -2797,6 +2793,12 @@ done:
     // printf("done->ret_val, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key, dart_in->attr_val);
     // println("===================================\n===============================");
     return ret_val;
+}
+
+int dart_perform_on_one_server_thread(void *thread_param){
+    dart_perform_one_thread_param_t *param = (dart_perform_one_thread_param_t *)thread_param;
+    int rst = dart_perform_on_one_server(param->server_id, param->dart_in, param->hashset);
+    return rst;
 }
 
 perr_t PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_string, 
@@ -2903,9 +2905,9 @@ perr_t PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *
     if (num_ids > 0) {
         // println("num_ids = %d", num_ids);
         *n_res = (int)num_ids;
-        *out = (void**)calloc(*n_res, sizeof(void*));
+        *out = (uint64_t**)calloc(*n_res, sizeof(uint64_t*));
         for (i = 0; i < (*n_res); i++) {
-            (*out)[i] = (void*)calloc(1, sizeof(void*));
+            (*out)[i] = (uint64_t*)calloc(1, sizeof(uint64_t));
         }
 
         i=0;

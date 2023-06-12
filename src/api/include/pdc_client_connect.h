@@ -33,6 +33,7 @@
 #include "mercury_request.h"
 #include "pdc_region.h"
 #include "dart_core.h"
+#include "hashset.h"
 
 extern int                      pdc_server_num_g;
 extern int                      pdc_client_mpi_rank_g;
@@ -151,6 +152,39 @@ struct _pdc_query_result_list {
     struct _pdc_query_result_list *prev;
     struct _pdc_query_result_list *next;
 };
+
+struct client_genetic_lookup_args{
+    char *char_value1;
+    char *char_value2;
+    char *char_value3;
+    char *char_value4;
+
+    int int_value1;
+    int int_value2;
+    int int_value3;
+    int int_value4;
+
+    uint32_t uint32_value1;
+    uint32_t uint32_value2;
+    uint32_t uint32_value3;
+    uint32_t uint32_value4;
+
+    uint64_t uint64_value1;
+    uint64_t uint64_value2;
+    uint64_t uint64_value3;
+    uint64_t uint64_value4;
+
+    int64_t int64_value1;
+    int64_t int64_value2;
+    int64_t int64_value3;
+    int64_t int64_value4;
+};
+
+typedef struct dart_perform_one_thread_param_t {
+    int server_id;
+    dart_perform_one_server_in_t *dart_in;
+    hashset_t *hashset;
+} dart_perform_one_thread_param_t;
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 

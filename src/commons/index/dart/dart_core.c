@@ -554,5 +554,6 @@ int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, uint64
             out[0][i] = i;
         }
         return dart_g->num_server;
-    } 
+    }
+    return 0;
 }

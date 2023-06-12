@@ -14,6 +14,7 @@
 #include "dart_algo.h"
 #include "dart_math.h"
 #include "thpool.h"
+#include "string_utils.h"
 
 typedef enum{
     DHT_FULL_HASH    = 1,

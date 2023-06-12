@@ -1154,20 +1154,9 @@ typedef struct send_nhits_t {
     uint64_t nhits;
 } send_nhits_t;
 
-
-
-
-
-
 /* **************** DART related Begins  **********************/
 
-
-typedef enum {
-    NUMERIC = 1,
-    TIME    = 2,
-    CHAR    = 3,
-    BINARY  = 4
-} dart_indexed_value_type_t;
+typedef enum { NUMERIC = 1, TIME = 2, CHAR = 3, BINARY = 4 } dart_indexed_value_type_t;
 
 typedef struct {
     uint32_t serverId;
@@ -1178,42 +1167,40 @@ typedef struct {
     int64_t request_count;
 } dart_get_server_info_out_t;
 
-
-typedef struct{
-    int8_t                  op_type;
-    int8_t                  hash_algo;
-    hg_const_string_t       attr_key;
-    hg_const_string_t       attr_val;
-    int8_t                  obj_ref_type;
-    uint64_t                obj_primary_ref;
-    uint64_t                obj_secondary_ref;
-    uint64_t                obj_server_ref;
-    int64_t                 timestamp;
+typedef struct {
+    int8_t            op_type;
+    int8_t            hash_algo;
+    hg_const_string_t attr_key;
+    hg_const_string_t attr_val;
+    int8_t            obj_ref_type;
+    uint64_t          obj_primary_ref;
+    uint64_t          obj_secondary_ref;
+    uint64_t          obj_server_ref;
+    int64_t           timestamp;
 } dart_perform_one_server_in_t;
 
-
-typedef struct{
-    int8_t op_type;
-    int32_t ret;
+typedef struct {
+    int8_t    op_type;
+    int32_t   ret;
     hg_bulk_t bulk_handle;
-    int64_t indexed_word_count;
-    int64_t request_count;
-    int8_t  has_bulk;
-    int64_t n_items;
-    int64_t timestamp;
+    int64_t   indexed_word_count;
+    int64_t   request_count;
+    int8_t    has_bulk;
+    int64_t   n_items;
+    int64_t   timestamp;
 } dart_perform_one_server_out_t;
 
 typedef struct {
-    hg_const_string_t    key;
-    hg_const_string_t    str_value;
-    int64_t              int64_val;
-    uint64_t             obj_id;
-    uint32_t             key_hash;
-    uint32_t             server_id;
-    uint32_t             index_type;
-    int8_t               pseudo;
-    void *          param;
-    size_t          param_size;
+    hg_const_string_t key;
+    hg_const_string_t str_value;
+    int64_t           int64_val;
+    uint64_t          obj_id;
+    uint32_t          key_hash;
+    uint32_t          server_id;
+    uint32_t          index_type;
+    int8_t            pseudo;
+    void *            param;
+    size_t            param_size;
 } metadata_index_create_in_t;
 
 typedef struct {
@@ -1221,25 +1208,70 @@ typedef struct {
 } metadata_index_create_out_t;
 
 typedef struct {
-    hg_const_string_t    key;
-    hg_const_string_t    str_value;
-    
-    uint64_t             obj_id;
-    uint32_t            index_type;
-    int8_t              pseudo;
+    hg_const_string_t key;
+    hg_const_string_t str_value;
+
+    uint64_t obj_id;
+    uint32_t index_type;
+    int8_t   pseudo;
 } metadata_index_delete_in_t;
 
 typedef struct {
     uint64_t ret;
 } metadata_index_delete_out_t;
 
+typedef struct {
+    hg_const_string_t query_string;
+    uint32_t index_type;
+} metadata_index_search_in_t;
+
+typedef struct {
+    int32_t ret;
+    hg_bulk_t bulk_handle;
+} metadata_index_search_out_t;
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_index_search_out_t(hg_proc_t proc, void *data){
+    hg_return_t ret;
+    metadata_index_search_out_t *out = (metadata_index_search_out_t *)data;
+    ret = hg_proc_int32_t(proc, &out->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &out->bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_index_search_in_t(hg_proc_t proc, void *data){
+    hg_return_t ret;
+    metadata_index_search_in_t *in = (metadata_index_search_in_t *)data;
+    ret = hg_proc_hg_const_string_t(proc, &in->query_string);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &in->index_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 
 static HG_INLINE hg_return_t
 hg_proc_dart_get_server_info_in_t(hg_proc_t proc, void *data)
 {
     hg_return_t ret;
-    
-    dart_get_server_info_in_t *struct_data = (dart_get_server_info_in_t*) data;
+
+    dart_get_server_info_in_t *struct_data = (dart_get_server_info_in_t *)data;
 
     ret = hg_proc_uint32_t(proc, &struct_data->serverId);
     if (ret != HG_SUCCESS) {
@@ -1252,31 +1284,29 @@ hg_proc_dart_get_server_info_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_dart_get_server_info_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    dart_get_server_info_out_t *struct_data = (dart_get_server_info_out_t*) data;
+    hg_return_t                 ret;
+    dart_get_server_info_out_t *struct_data = (dart_get_server_info_out_t *)data;
 
     ret = hg_proc_int64_t(proc, &struct_data->indexed_word_count);
     if (ret != HG_SUCCESS) {
-	    // HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
 
     ret = hg_proc_int64_t(proc, &struct_data->request_count);
     if (ret != HG_SUCCESS) {
-	    // HG_LOG_ERROR("Proc error");
+        // HG_LOG_ERROR("Proc error");
         return ret;
     }
     return ret;
 }
 
-
-
 static HG_INLINE hg_return_t
 hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    dart_perform_one_server_in_t *struct_data = (dart_perform_one_server_in_t *) data;
-    ret = hg_proc_int8_t(proc, &struct_data->op_type);
+    hg_return_t                   ret;
+    dart_perform_one_server_in_t *struct_data = (dart_perform_one_server_in_t *)data;
+    ret                                       = hg_proc_int8_t(proc, &struct_data->op_type);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -1316,7 +1346,7 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    
+
     ret = hg_proc_int64_t(proc, &struct_data->timestamp);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -1325,13 +1355,12 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
 static HG_INLINE hg_return_t
 hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    dart_perform_one_server_out_t *struct_data = (dart_perform_one_server_out_t *) data;
-    ret = hg_proc_int8_t(proc, &struct_data->op_type);
+    hg_return_t                    ret;
+    dart_perform_one_server_out_t *struct_data = (dart_perform_one_server_out_t *)data;
+    ret                                        = hg_proc_int8_t(proc, &struct_data->op_type);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -1374,13 +1403,11 @@ hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
-
 static HG_INLINE hg_return_t
 hg_proc_metadata_index_create_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    metadata_index_create_in_t *struct_data = (metadata_index_create_in_t*) data;
+    hg_return_t                 ret;
+    metadata_index_create_in_t *struct_data = (metadata_index_create_in_t *)data;
 
     ret = hg_proc_hg_const_string_t(proc, &struct_data->key);
     if (ret != HG_SUCCESS) {
@@ -1428,8 +1455,8 @@ hg_proc_metadata_index_create_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_metadata_index_create_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    metadata_index_create_out_t *struct_data = (metadata_index_create_out_t*) data;
+    hg_return_t                  ret;
+    metadata_index_create_out_t *struct_data = (metadata_index_create_out_t *)data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1443,8 +1470,8 @@ hg_proc_metadata_index_create_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_metadata_index_delete_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    metadata_index_delete_in_t *struct_data = (metadata_index_delete_in_t*) data;
+    hg_return_t                 ret;
+    metadata_index_delete_in_t *struct_data = (metadata_index_delete_in_t *)data;
 
     ret = hg_proc_hg_const_string_t(proc, &struct_data->key);
     if (ret != HG_SUCCESS) {
@@ -1474,12 +1501,11 @@ hg_proc_metadata_index_delete_in_t(hg_proc_t proc, void *data)
     return ret;
 }
 
-
 static HG_INLINE hg_return_t
 hg_proc_metadata_index_delete_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t ret;
-    metadata_index_delete_out_t *struct_data = (metadata_index_delete_out_t*) data;
+    hg_return_t                  ret;
+    metadata_index_delete_out_t *struct_data = (metadata_index_delete_out_t *)data;
 
     ret = hg_proc_uint64_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1488,7 +1514,6 @@ hg_proc_metadata_index_delete_out_t(hg_proc_t proc, void *data)
     }
     return ret;
 }
-
 
 /* **************** DART related Ends   ***********************/
 
@@ -4112,6 +4137,8 @@ struct bulk_args_t {
     uint64_t         obj_id;
     uint64_t *       obj_ids;
     int              client_seq_id;
+    int              is_id; // if is_id == true, then use uint64_t; otherwise, pdc_metadata_t
+    int8_t           op_type;
 
     int query_id;
 
@@ -4363,6 +4390,10 @@ hg_id_t PDC_metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
+hg_id_t dart_get_server_info_register(hg_class_t *hg_class);
+hg_id_t dart_perform_one_server_register(hg_class_t *hg_class);
+hg_id_t metadata_index_create_register(hg_class_t *hg_class);
+hg_id_t metadata_index_delete_register(hg_class_t *hg_class);
 
 hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_all_register(hg_class_t *hg_class);

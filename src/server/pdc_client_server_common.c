@@ -1485,6 +1485,35 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info ATTRIBUTE(un
 {
     return HG_SUCCESS;
 }
+
+hg_return_t
+PDC_Server_metadata_index_create(metadata_index_create_in_t *in, metadata_index_create_out_t *out)
+{
+    return HG_SUCCESS;
+}
+hg_return_t
+PDC_Server_metadata_index_delete(metadata_index_delete_in_t *in, metadata_index_delete_out_t *out)
+{
+    return HG_SUCCESS;
+}
+hg_return_t
+PDC_Server_metadata_index_search(metadata_index_search_in_t *in, metadata_index_search_out_t *out,
+                                 uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
+{
+    return HG_SUCCESS;
+}
+hg_return_t
+PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_server_info_out_t *out)
+{
+    return HG_SUCCESS;
+}
+hg_return_t
+PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perform_one_server_out_t *out,
+                                   uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
+{
+    return HG_SUCCESS;
+}
+
 #else
 hg_return_t
 PDC_Client_work_done_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
@@ -1527,8 +1556,8 @@ PDC_recv_read_coords_data(const struct hg_cb_info *callback_info ATTRIBUTE(unuse
 /* dart_get_server_info_cb(hg_handle_t handle) */
 HG_TEST_RPC_CB(dart_get_server_info, handle)
 {
-    hg_return_t ret = HG_SUCCESS;
-    dart_get_server_info_in_t in;
+    hg_return_t                ret = HG_SUCCESS;
+    dart_get_server_info_in_t  in;
     dart_get_server_info_out_t out;
 
     FUNC_ENTER(NULL);
@@ -1548,14 +1577,12 @@ HG_TEST_RPC_CB(dart_get_server_info, handle)
     return ret;
 }
 
-
-
 /* static hg_return_t */
 // metadata_index_create_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_index_create, handle)
 {
-    hg_return_t ret = HG_SUCCESS;
-    metadata_index_create_in_t in;
+    hg_return_t                 ret = HG_SUCCESS;
+    metadata_index_create_in_t  in;
     metadata_index_create_out_t out;
 
     FUNC_ENTER(NULL);
@@ -1566,7 +1593,7 @@ HG_TEST_RPC_CB(metadata_index_create, handle)
 
     // Send response to client
     HG_Respond(handle, NULL, NULL, &out);
-    //printf("==PDC_SERVER: metadata_index_create_cb(): returned %llu\n", out.ret);
+    // printf("==PDC_SERVER: metadata_index_create_cb(): returned %llu\n", out.ret);
     // Free input
     HG_Free_input(handle, &in);
     // Free handle
@@ -1579,8 +1606,8 @@ HG_TEST_RPC_CB(metadata_index_create, handle)
 // metadata_index_delete_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_index_delete, handle)
 {
-    hg_return_t ret = HG_SUCCESS;
-    metadata_index_delete_in_t in;
+    hg_return_t                 ret = HG_SUCCESS;
+    metadata_index_delete_in_t  in;
     metadata_index_delete_out_t out;
 
     FUNC_ENTER(NULL);
@@ -1591,7 +1618,7 @@ HG_TEST_RPC_CB(metadata_index_delete, handle)
 
     // Send response to client
     HG_Respond(handle, NULL, NULL, &out);
-    //printf("==PDC_SERVER: metadata_index_delete_cb(): returned %llu\n", out.ret);
+    // printf("==PDC_SERVER: metadata_index_delete_cb(): returned %llu\n", out.ret);
     // Free input
     HG_Free_input(handle, &in);
     // Free handle
@@ -1600,25 +1627,25 @@ HG_TEST_RPC_CB(metadata_index_delete, handle)
     return ret;
 }
 
-
 /* static hg_return_t */
 // dart_perform_one_server_cb(hg_handle_t handle)
-HG_TEST_RPC_CB(dart_perform_one_server, handle){
-    hg_return_t ret = HG_SUCCESS;
-    hg_return_t hg_ret = HG_SUCCESS;
-    dart_perform_one_server_in_t in;
+HG_TEST_RPC_CB(dart_perform_one_server, handle)
+{
+    hg_return_t                   ret    = HG_SUCCESS;
+    hg_return_t                   hg_ret = HG_SUCCESS;
+    dart_perform_one_server_in_t  in;
     dart_perform_one_server_out_t out;
 
-    hg_bulk_t bulk_handle = HG_BULK_NULL;
-    uint64_t *n_obj_ids_ptr, n_buf;
+    hg_bulk_t  bulk_handle = HG_BULK_NULL;
+    uint64_t * n_obj_ids_ptr, n_buf;
     uint64_t **buf_ptrs;
-    size_t *buf_sizes;
-    uint32_t i;
+    size_t *   buf_sizes;
+    uint32_t   i;
 
     FUNC_ENTER(NULL);
     // Extract input from handle
     HG_Get_input(handle, &in);
-    
+
     n_obj_ids_ptr = (uint64_t *)calloc(1, sizeof(uint64_t));
 
     PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, &buf_ptrs);
@@ -1630,14 +1657,14 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle){
         // *n_obj_ids_ptr = 1;
         // buf_ptrs[0]= (void*)0;
         out.bulk_handle = HG_BULK_NULL;
-        out.ret = 0;
-        //printf("No object ids returned for the query\n");
+        out.ret         = 0;
+        // printf("No object ids returned for the query\n");
         ret = HG_Respond(handle, NULL, NULL, &out);
         goto done;
     }
     n_buf = *n_obj_ids_ptr;
 
-    buf_sizes = (size_t*)malloc( (n_buf+1) * sizeof(size_t));
+    buf_sizes = (size_t *)malloc((n_buf + 1) * sizeof(size_t));
     for (i = 0; i < *n_obj_ids_ptr; i++) {
         buf_sizes[i] = sizeof(uint64_t);
     }
@@ -1645,7 +1672,7 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle){
     // TODO: free buf_sizes
 
     // Note: it seems Mercury bulk transfer has issues if the total transfer size is less
-    //       than 3862 bytes in Eager Bulk mode, so need to add some padding data 
+    //       than 3862 bytes in Eager Bulk mode, so need to add some padding data
     /* pdc_metadata_t *padding; */
     /* if (*n_obj_ids_ptr < 11) { */
     /*     size_t padding_size; */
@@ -1661,21 +1688,19 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle){
     // Fix when Mercury output in HG_Respond gets too large and cannot be transfered
     // hg_set_output(): Output size exceeds NA expected message size
 
-    //printf("dart perform one bulk : %d of %ld\n", *n_obj_ids_ptr, ((uint64_t *)buf_ptrs[0])[0]);
+    // printf("dart perform one bulk : %d of %ld\n", *n_obj_ids_ptr, ((uint64_t *)buf_ptrs[0])[0]);
 
     uint64_t *large_serial_obj_id_buf;
     if (*n_obj_ids_ptr > 80) {
-        large_serial_obj_id_buf = (uint64_t*)malloc( sizeof(uint64_t) * (*n_obj_ids_ptr) );
+        large_serial_obj_id_buf = (uint64_t *)malloc(sizeof(uint64_t) * (*n_obj_ids_ptr));
         for (i = 0; i < *n_obj_ids_ptr; i++) {
-            memcpy(&large_serial_obj_id_buf[i], buf_ptrs[i], sizeof(uint64_t) );
+            memcpy(&large_serial_obj_id_buf[i], buf_ptrs[i], sizeof(uint64_t));
         }
         buf_ptrs[0]  = large_serial_obj_id_buf;
         buf_sizes[0] = sizeof(uint64_t) * (*n_obj_ids_ptr);
-        n_buf = 1;
-        //printf("dart perform one bulk (over 80) : %ld\n", buf_ptrs[0][0]);
+        n_buf        = 1;
+        // printf("dart perform one bulk (over 80) : %ld\n", buf_ptrs[0][0]);
     }
-
-    
 
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class_g, n_buf, buf_ptrs, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
@@ -1684,9 +1709,9 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle){
         return EXIT_FAILURE;
     }
 
-    // Fill bulk handle and return number of metadata that satisfy the query 
+    // Fill bulk handle and return number of metadata that satisfy the query
     out.bulk_handle = bulk_handle;
-    out.ret = *n_obj_ids_ptr;
+    out.ret         = *n_obj_ids_ptr;
     // printf("out.ret = %d\n", out.ret);
 
     // Send bulk handle to client
@@ -1706,13 +1731,26 @@ done:
 }
 
 hg_id_t
+dart_get_server_info_register(hg_class_t *hg_class)
+{
+    hg_id_t ret_value;
+    FUNC_ENTER(NULL);
+
+    ret_value = MERCURY_REGISTER(hg_class, "dart_get_server_info", dart_get_server_info_in_t,
+                                 dart_get_server_info_out_t, dart_get_server_info_cb);
+
+    FUNC_LEAVE(ret_value);
+}
+
+hg_id_t
 dart_perform_one_server_register(hg_class_t *hg_class)
 {
     hg_id_t ret_value;
 
     FUNC_ENTER(NULL);
 
-    ret_value = MERCURY_REGISTER(hg_class, "dart_perform_one_server", dart_perform_one_server_in_t, dart_perform_one_server_out_t, dart_perform_one_server_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "dart_perform_one_server", dart_perform_one_server_in_t,
+                                 dart_perform_one_server_out_t, dart_perform_one_server_cb);
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1725,12 +1763,12 @@ metadata_index_create_register(hg_class_t *hg_class)
 
     FUNC_ENTER(NULL);
 
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_index_create", metadata_index_create_in_t, metadata_index_create_out_t, metadata_index_create_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_index_create", metadata_index_create_in_t,
+                                 metadata_index_create_out_t, metadata_index_create_cb);
 
 done:
     FUNC_LEAVE(ret_value);
 }
-
 
 hg_id_t
 metadata_index_delete_register(hg_class_t *hg_class)
@@ -1739,25 +1777,25 @@ metadata_index_delete_register(hg_class_t *hg_class)
 
     FUNC_ENTER(NULL);
 
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_index_delete", metadata_index_delete_in_t, metadata_index_delete_out_t, metadata_index_delete_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_index_delete", metadata_index_delete_in_t,
+                                 metadata_index_delete_out_t, metadata_index_delete_cb);
 
 done:
     FUNC_LEAVE(ret_value);
 }
-
 /* static hg_return_t */
 // metadata_index_search_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_index_search, handle)
 {
-    hg_return_t ret = HG_SUCCESS;
-    hg_return_t hg_ret = HG_SUCCESS;
-    metadata_index_search_in_t in;
+    hg_return_t                 ret    = HG_SUCCESS;
+    hg_return_t                 hg_ret = HG_SUCCESS;
+    metadata_index_search_in_t  in;
     metadata_index_search_out_t out;
-    hg_bulk_t bulk_handle = HG_BULK_NULL;
-    uint64_t *n_obj_ids_ptr, n_buf;
-    uint64_t **buf_ptrs;
-    size_t *buf_sizes;
-    uint32_t i;
+    hg_bulk_t                   bulk_handle = HG_BULK_NULL;
+    uint64_t *                  n_obj_ids_ptr, n_buf;
+    uint64_t **                 buf_ptrs;
+    size_t *                    buf_sizes;
+    uint32_t                    i;
 
     FUNC_ENTER(NULL);
     // Extract input from handle
@@ -1772,22 +1810,22 @@ HG_TEST_RPC_CB(metadata_index_search, handle)
         // *n_obj_ids_ptr = 1;
         // buf_ptrs[0]= (void*)0;
         out.bulk_handle = HG_BULK_NULL;
-        out.ret = 0;
-        //printf("No object ids returned for the query\n");
+        out.ret         = 0;
+        // printf("No object ids returned for the query\n");
         ret = HG_Respond(handle, NULL, NULL, &out);
         goto done;
     }
 
     n_buf = *n_obj_ids_ptr;
 
-    buf_sizes = (size_t*)malloc( (n_buf+1) * sizeof(size_t));
+    buf_sizes = (size_t *)malloc((n_buf + 1) * sizeof(size_t));
     for (i = 0; i < *n_obj_ids_ptr; i++) {
         buf_sizes[i] = sizeof(uint64_t);
     }
     // TODO: free buf_sizes
 
     // Note: it seems Mercury bulk transfer has issues if the total transfer size is less
-    //       than 3862 bytes in Eager Bulk mode, so need to add some padding data 
+    //       than 3862 bytes in Eager Bulk mode, so need to add some padding data
     /* pdc_metadata_t *padding; */
     /* if (*n_obj_ids_ptr < 11) { */
     /*     size_t padding_size; */
@@ -1804,13 +1842,13 @@ HG_TEST_RPC_CB(metadata_index_search, handle)
     // hg_set_output(): Output size exceeds NA expected message size
     uint64_t *large_serial_obj_id_buf;
     if (*n_obj_ids_ptr > 80) {
-        large_serial_obj_id_buf = (uint64_t*)malloc( sizeof(uint64_t) * (*n_obj_ids_ptr) );
+        large_serial_obj_id_buf = (uint64_t *)malloc(sizeof(uint64_t) * (*n_obj_ids_ptr));
         for (i = 0; i < *n_obj_ids_ptr; i++) {
-            memcpy(&large_serial_obj_id_buf[i], buf_ptrs[i], sizeof(uint64_t) );
+            memcpy(&large_serial_obj_id_buf[i], buf_ptrs[i], sizeof(uint64_t));
         }
         buf_ptrs[0]  = large_serial_obj_id_buf;
         buf_sizes[0] = sizeof(uint64_t) * (*n_obj_ids_ptr);
-        n_buf = 1;
+        n_buf        = 1;
     }
 
     // Create bulk handle
@@ -1820,10 +1858,9 @@ HG_TEST_RPC_CB(metadata_index_search, handle)
         return EXIT_FAILURE;
     }
 
-    // Fill bulk handle and return number of metadata that satisfy the query 
+    // Fill bulk handle and return number of metadata that satisfy the query
     out.bulk_handle = bulk_handle;
-    out.ret = *n_obj_ids_ptr;
-
+    out.ret         = *n_obj_ids_ptr;
 
     // Send bulk handle to client
     /* printf("query_partial_cb(): Sending bulk handle to client\n"); */
@@ -1841,6 +1878,7 @@ done:
     FUNC_LEAVE(ret);
 }
 
+
 hg_id_t
 metadata_index_search_register(hg_class_t *hg_class)
 {
@@ -1848,14 +1886,14 @@ metadata_index_search_register(hg_class_t *hg_class)
 
     FUNC_ENTER(NULL);
 
-    ret_value = MERCURY_REGISTER(hg_class, "metadata_index_search", metadata_index_search_in_t, metadata_index_search_out_t, metadata_index_search_cb);
+    ret_value = MERCURY_REGISTER(hg_class, "metadata_index_search", metadata_index_search_in_t,
+                                 metadata_index_search_out_t, metadata_index_search_cb);
 
 done:
     FUNC_LEAVE(ret_value);
 }
 
 // ************************** DART Related Ends ************************** //
-
 
 /*
  * The routine that sets up the routines that actually do the work.
