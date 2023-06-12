@@ -1486,32 +1486,32 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info ATTRIBUTE(un
     return HG_SUCCESS;
 }
 
-hg_return_t
+perr_t
 PDC_Server_metadata_index_create(metadata_index_create_in_t *in, metadata_index_create_out_t *out)
 {
-    return HG_SUCCESS;
+    return SUCCEED;
 }
-hg_return_t
+perr_t
 PDC_Server_metadata_index_delete(metadata_index_delete_in_t *in, metadata_index_delete_out_t *out)
 {
-    return HG_SUCCESS;
+    return SUCCEED;
 }
-hg_return_t
+perr_t
 PDC_Server_metadata_index_search(metadata_index_search_in_t *in, metadata_index_search_out_t *out,
                                  uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
 {
-    return HG_SUCCESS;
+    return SUCCEED;
 }
-hg_return_t
+perr_t
 PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_server_info_out_t *out)
 {
-    return HG_SUCCESS;
+    return SUCCEED;
 }
-hg_return_t
+perr_t
 PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perform_one_server_out_t *out,
                                    uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
 {
-    return HG_SUCCESS;
+    return SUCCEED;
 }
 
 #else
@@ -1877,7 +1877,6 @@ done:
 
     FUNC_LEAVE(ret);
 }
-
 
 hg_id_t
 metadata_index_search_register(hg_class_t *hg_class)

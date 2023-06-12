@@ -23,8 +23,6 @@ set(LOCAL_INCLUDE_DIR
   ${PDC_COMMONS_INCLUDE_LIST}
 )
 
-message(STATUS "API PDC_COMMONS_INCLUDE_LIST: ${PDC_COMMONS_INCLUDE_LIST}")
-
 include_directories(
   ${LOCAL_INCLUDE_DIR}
   ${MERCURY_INCLUDE_DIR}
@@ -42,7 +40,6 @@ set(PDC_EXPORTED_LIBS pdcprof)
 # Mercury
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
-  message(STATUS "mercury dir ${MERCURY_DIR}")
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
     ${PDC_EXT_INCLUDE_DEPENDENCIES}
     )
@@ -127,7 +124,7 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 add_executable(close_server
                close_server.c
 )
-target_link_libraries(close_server pdc)
+target_link_libraries(close_server pdc ${PDC_COMMON_LIBRARY_NAME})
 
 install(
   TARGETS
@@ -175,6 +172,36 @@ install(
     headers
 )
 
+
+install(
+  TARGETS
+    pdc_commons
+  EXPORT
+    ${PDC_EXPORTED_TARGETS}
+  LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
+  RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
+)
+
+install(
+  EXPORT
+    ${PDC_EXPORTED_TARGETS}
+  DESTINATION
+    ${PDC_INSTALL_DATA_DIR}/cmake/pdc_commons
+  FILE
+    ${PDC_EXPORTED_TARGETS}.cmake
+)
+
+if(NOT PDC_EXTERNALLY_CONFIGURED)
+EXPORT (
+  TARGETS
+    ${PDC_EXPORTED_LIBS}
+  FILE
+    ${PDC_EXPORTED_TARGETS}.cmake
+  APPEND
+)
+endif()
+
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
@@ -209,6 +236,7 @@ EXPORT (
     ${PDC_EXPORTED_LIBS}
   FILE
     ${PDC_EXPORTED_TARGETS}.cmake
+  APPEND
 )
 endif()
 

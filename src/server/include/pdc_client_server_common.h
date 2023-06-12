@@ -5002,4 +5002,18 @@ perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint6
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
                                       int is_write);
 
+
+perr_t
+PDC_Server_metadata_index_create(metadata_index_create_in_t *in, metadata_index_create_out_t *out);
+perr_t
+PDC_Server_metadata_index_delete(metadata_index_delete_in_t *in, metadata_index_delete_out_t *out);
+perr_t
+PDC_Server_metadata_index_search(metadata_index_search_in_t *in, metadata_index_search_out_t *out,
+                                 uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs);
+perr_t
+PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_server_info_out_t *out);
+perr_t
+PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perform_one_server_out_t *out,
+                                   uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs);
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

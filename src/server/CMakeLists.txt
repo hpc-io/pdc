@@ -6,8 +6,6 @@ if(PDC_ENABLE_FASTBIT)
     find_library(FASTBIT_LIBRARY fastbit $ENV{HOME}/cori/fastbit-2.0.3/install)
 endif()
 
-message(STATUS "SERVER PDC_COMMONS_INCLUDE_LIST: ${PDC_COMMONS_INCLUDE_LIST}")
-
 include_directories(
   ${PDC_COMMONS_INCLUDE_LIST}
   ${PDC_INCLUDES_BUILD_TIME}

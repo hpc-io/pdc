@@ -904,6 +904,9 @@ drc_access_again:
 
     n_metadata_g = 0;
 
+    // Initialize DART
+    PDC_Server_dart_init();
+
     // PDC transfer_request infrastructures
     PDC_server_transfer_request_init();
 #ifdef PDC_SERVER_CACHE
