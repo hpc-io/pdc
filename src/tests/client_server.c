@@ -237,7 +237,7 @@ main(int argc, char **argv)
     hg_time_get_current(&end_time);
     elapsed_time        = hg_time_subtract(end_time, start_time);
     elapsed_time_double = hg_time_to_double(elapsed_time);
-    printf("Total elapsed time for PDC server connection: %.6fs\n", elapsed_time_double);
+    printf("Total elapsed time for PDC server connection: %.5e s\n", elapsed_time_double);
 
     for (i = 0; i < n_server; i++) {
         printf("\"%s\" obj_id = %d\n", client_lookup_args[i].obj_name, client_lookup_args[i].obj_id);
