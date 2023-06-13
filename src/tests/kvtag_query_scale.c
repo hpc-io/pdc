@@ -175,7 +175,7 @@ main(int argc, char *argv[])
 #endif
 
         if (my_rank == 0)
-            printf("Total time to query %d objects with tag: %.4f\n", ntotal, total_time);
+            printf("Total time to query %d objects with tag: %.5e\n", ntotal, total_time);
         fflush(stdout);
     }
 

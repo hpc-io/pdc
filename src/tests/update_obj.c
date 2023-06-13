@@ -211,7 +211,7 @@ main(int argc, char **argv)
                                    ht_total_end.tv_usec - ht_total_start.tv_usec;
                 ht_total_sec = ht_total_elapsed / 1000000.0;
 
-                printf("updated %10d ... %.2f\n", i * size, ht_total_sec);
+                printf("updated %10d ... %.5e\n", i * size, ht_total_sec);
                 fflush(stdout);
             }
         }
@@ -225,7 +225,7 @@ main(int argc, char **argv)
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to update %d obj/rank with %d ranks: %.6f\n\n\n", count, size, ht_total_sec);
+        printf("Time to update %d obj/rank with %d ranks: %.5e\n\n\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 

@@ -401,12 +401,12 @@ main(int argc, char *argv[])
 
         if (my_rank == 0) {
             printf("Iteration %" PRIu64 " : Objects: %" PRIu64
-                   " , Time: %.4f sec. Object throughput in this iteration: "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Object throughput in this iteration: "
+                   "%.5e .\n",
                    k, n_obj_incr, step_elapse, ((double)n_obj_incr) / step_elapse);
             printf("Overall   %" PRIu64 " : Objects: %" PRIu64
-                   " , Time: %.4f sec. Overall object throughput:           "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Overall object throughput:           "
+                   "%.5e .\n",
                    k, total_object_count, total_object_time,
                    ((double)total_object_count) / total_object_time);
         }
@@ -426,10 +426,10 @@ main(int argc, char *argv[])
 #endif
         if (my_rank == 0) {
             printf("Iteration %" PRIu64 " : Tags: %" PRIu64
-                   " , Time: %.4f sec. Tag throughput in this iteration: %.4f .\n",
+                   " , Time: %.5e sec. Tag throughput in this iteration: %.5e .\n",
                    k, n_obj_incr * n_attr, step_elapse, (double)(n_obj_incr * n_attr) / step_elapse);
             printf("Overall   %" PRIu64 " : Tags: %" PRIu64
-                   " , Time: %.4f sec. Overall tag throughput:           %.4f .\n",
+                   " , Time: %.5e sec. Overall tag throughput:           %.5e .\n",
                    k, total_tag_count, total_tag_time, ((double)total_tag_count) / total_tag_time);
         }
 
@@ -450,12 +450,12 @@ main(int argc, char *argv[])
 #endif
         if (my_rank == 0) {
             printf("Iteration %" PRIu64 " : Queries: %" PRIu64
-                   " , Time: %.4f sec. Query throughput in this iteration: "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Query throughput in this iteration: "
+                   "%.5e .\n",
                    k, n_query * n_attr, step_elapse, (double)(n_query * n_attr) / step_elapse);
             printf("Overall   %" PRIu64 " : Queries: %" PRIu64
-                   " , Time: %.4f sec. Overall query throughput:           "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Overall query throughput:           "
+                   "%.5e .\n",
                    k, total_query_count, total_query_time, ((double)total_query_count) / total_query_time);
         }
 
@@ -470,13 +470,13 @@ main(int argc, char *argv[])
 
     if (my_rank == 0) {
         printf("Final Report: \n");
-        printf("[Final Report 1] Servers: %" PRIu64 " , Clients: %" PRIu64 " , C/S ratio: %.4f \n", n_servers,
+        printf("[Final Report 1] Servers: %" PRIu64 " , Clients: %" PRIu64 " , C/S ratio: %.5e \n", n_servers,
                n_clients, (double)n_clients / (double)n_servers);
         printf("[Final Report 2] Iterations: %" PRIu64 " ,  Objects: %" PRIu64 " , Tags/Object: %" PRIu64
                " ,  Queries/Iteration: "
                "%" PRIu64 " , \n",
                k, total_object_count, n_attr, n_query);
-        printf("[Final Report 3] Object throughput: %.4f , Tag Throughput: %.4f , Query Throughput: %.4f ,",
+        printf("[Final Report 3] Object throughput: %.5e , Tag Throughput: %.5e , Query Throughput: %.5e ,",
                (double)total_object_count / total_object_time,
                (double)(total_object_count * n_attr) / total_tag_time,
                (double)(total_query_count * n_attr) / total_query_time);
