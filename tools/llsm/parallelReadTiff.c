@@ -1,7 +1,7 @@
 #include "parallelReadTiff.h"
 #include "tiffio.h"
 
-// #define ENABLE_OPENMP
+#define ENABLE_OPENMP
 
 #ifdef ENABLE_OPENMP
 #include "omp.h"
