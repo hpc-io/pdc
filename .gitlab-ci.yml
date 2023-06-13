@@ -30,6 +30,8 @@ perlmutter-build:
 
 perlmutter-parallel-pdc:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
     tags:
@@ -48,6 +50,8 @@ perlmutter-parallel-pdc:
 
 perlmutter-parallel-obj:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -67,6 +71,8 @@ perlmutter-parallel-obj:
 
 perlmutter-parallel-cont:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -86,6 +92,8 @@ perlmutter-parallel-cont:
 
 perlmutter-parallel-prop:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -105,6 +113,8 @@ perlmutter-parallel-prop:
 
 perlmutter-parallel-region:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -124,6 +134,8 @@ perlmutter-parallel-region:
 
 perlmutter-parallel-region-all:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -143,14 +155,16 @@ perlmutter-parallel-region-all:
 
 perlmutter-metrics:
     stage: metrics
+    rules:
+        - if: '$METRICS == "true"'
     needs:
         - perlmutter-build
     tags:
         - perlmutter
     variables:
-        PDC_N_NODES: 64
+        PDC_N_NODES: 4
         PDC_N_CLIENTS: 127
-        SCHEDULER_PARAMETERS: "-A m1248 --qos=regular --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-metrics"
