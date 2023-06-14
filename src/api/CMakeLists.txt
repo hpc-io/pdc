@@ -20,7 +20,6 @@ set(LOCAL_INCLUDE_DIR
   ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
   ${PDC_SOURCE_DIR}/src/api/profiling/include
   ${PDC_SOURCE_DIR}/src/utils/include
-  ${PDC_COMMONS_INCLUDE_LIST}
 )
 
 include_directories(
@@ -100,9 +99,9 @@ set(PDC_SRCS
 #------------------------------------------------------------------------------
 # PDC
 set(PDC_BUILD_INCLUDE_DEPENDENCIES
+  ${PDC_COMMON_INCLUDE_DIRS}
   ${LOCAL_INCLUDE_DIR}
 )
-
 
 add_library(pdc ${PDC_SRCS})
 
@@ -112,7 +111,7 @@ target_include_directories(pdc
 )
 
 target_link_libraries(pdc
-  ${PDC_COMMON_LIBRARY_NAME}
+  ${PDC_COMMON_LIBRARIES}
   ${PDC_EXPORTED_LIBS}
   ${PDC_EXT_LIB_DEPENDENCIES}
   -ldl
@@ -172,10 +171,12 @@ install(
     headers
 )
 
-
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install
+#-----------------------------------------------------------------------------
 install(
   TARGETS
-    pdc_commons
+    ${PDC_COMMON_LIBRARIES}
   EXPORT
     ${PDC_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
@@ -183,28 +184,6 @@ install(
   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
 )
 
-install(
-  EXPORT
-    ${PDC_EXPORTED_TARGETS}
-  DESTINATION
-    ${PDC_INSTALL_DATA_DIR}/cmake/pdc_commons
-  FILE
-    ${PDC_EXPORTED_TARGETS}.cmake
-)
-
-if(NOT PDC_EXTERNALLY_CONFIGURED)
-EXPORT (
-  TARGETS
-    ${PDC_EXPORTED_LIBS}
-  FILE
-    ${PDC_EXPORTED_TARGETS}.cmake
-  APPEND
-)
-endif()
-
-#-----------------------------------------------------------------------------
-# Add Target(s) to CMake Install
-#-----------------------------------------------------------------------------
 install(
   TARGETS
     pdc
