@@ -7,26 +7,6 @@ stages:
     - test
     - metrics
 
-cori-build:
-    stage: build
-    tags:
-        - cori
-    variables:
-        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-    script:
-        - module list
-        - mkdir -p ${PDC_BUILD_PATH}/cori
-        - cd ${PDC_BUILD_PATH}/cori
-        - cmake ../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DPDC_ENABLE_TIMING=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DCMAKE_C_FLAGS=-dynamic -DMPI_RUN_CMD=srun -DPDC_ENABLE_LUSTRE=ON -DPDC_DISABLE_CHECKPOINT=ON -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/cori
-        - make -j
-        - make install
-    artifacts:
-        paths:
-            - ${PDC_BUILD_PATH}/cori
-            - ${PDC_INSTALL_PATH}/cori
-
 perlmutter-build:
     stage: build
     tags:
@@ -48,121 +28,10 @@ perlmutter-build:
             - ${PDC_BUILD_PATH}/perlmutter
             - ${PDC_INSTALL_PATH}/perlmutter
 
-cori-parallel-pdc:
-    stage: test
-    needs:
-        - cori-build
-    tags:
-        - cori
-    variables:
-        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-pdc"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-pdc"
-    script:        
-        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-        - cd ${PDC_BUILD_PATH}/cori
-        - ctest -L parallel_pdc
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
-cori-parallel-obj:
-    stage: test
-    needs:
-        - cori-build
-        - cori-parallel-pdc
-    tags:
-        - cori
-    variables:
-        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-obj"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-obj"
-    script:        
-        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-        - cd ${PDC_BUILD_PATH}/cori
-        - ctest -L parallel_obj
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
-cori-parallel-cont:
-    stage: test
-    needs:
-        - cori-build
-        - cori-parallel-pdc
-    tags:
-        - cori
-    variables:
-        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-cont"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-cont"
-    script:        
-        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-        - cd ${PDC_BUILD_PATH}/cori
-        - ctest -L parallel_cont
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
-cori-parallel-prop:
-    stage: test
-    needs:
-        - cori-build
-        - cori-parallel-pdc
-    tags:
-        - cori
-    variables:
-        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-prop"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-prop"
-    script:        
-        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-        - cd ${PDC_BUILD_PATH}/cori
-        - ctest -L parallel_prop
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
-cori-parallel-region:
-    stage: test
-    needs:
-        - cori-build
-        - cori-parallel-pdc
-    tags:
-        - cori
-    variables:
-        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-region"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-region"
-    script:        
-        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-        - cd ${PDC_BUILD_PATH}/cori
-        - ctest -L parallel_region_transfer
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
-cori-parallel-region-all:
-    stage: test
-    needs:
-        - cori-build
-        - cori-parallel-pdc
-    tags:
-        - cori
-    variables:
-        SCHEDULER_PARAMETERS: "-C haswell --qos=debug -N 1 -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-paralell-region-all"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-paralell-region-all"
-    script:        
-        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-        - cd ${PDC_BUILD_PATH}/cori
-        - ctest -L parallel_region_transfer_all
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-parallel-pdc:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
     tags:
@@ -181,6 +50,8 @@ perlmutter-parallel-pdc:
 
 perlmutter-parallel-obj:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -200,6 +71,8 @@ perlmutter-parallel-obj:
 
 perlmutter-parallel-cont:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -219,6 +92,8 @@ perlmutter-parallel-cont:
 
 perlmutter-parallel-prop:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -238,6 +113,8 @@ perlmutter-parallel-prop:
 
 perlmutter-parallel-region:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -257,6 +134,8 @@ perlmutter-parallel-region:
 
 perlmutter-parallel-region-all:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -274,56 +153,18 @@ perlmutter-parallel-region-all:
         - ctest -L parallel_region_transfer_all
         - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
 
-cori-metrics:
-    stage: metrics
-    needs:
-        - cori-build
-    tags:
-        - cori
-    variables:
-        PDC_N_NODES: 64
-        PDC_N_CLIENTS: 31
-        SCHEDULER_PARAMETERS: "-C haswell --qos=regular -N ${PDC_N_NODES} -t 00:30:00 --gres=craynetwork:3"
-        LIBFABRIC_DIR: "/global/cfs/cdirs/m1248/pdc/libfabric-1.12.1/install"
-        MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc/mercury-2.0.0/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-metrics"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-metrics"
-        PDC_CLIENT_LOOKUP: "NONE"
-        PDC_SERVER: "${PDC_BUILD_PATH}/cori/bin/pdc_server.exe"
-        PDC_SERVER_CLOSE: "${PDC_BUILD_PATH}/cori/bin/close_server"
-        PDC_CLIENT: "${PDC_BUILD_PATH}/cori/bin/vpicio_mts"
-        PDC_JOB_OUTPUT: "pdc-metrics.log"
-    script: 
-        - module load python
-        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-        - cd ${PDC_BUILD_PATH}/cori
-        - let TOTAL_PROCESSES=$PDC_N_CLIENTS*$PDC_N_NODES
-        - echo "Starting PDC servers..."
-        - export FI_CXI_DEFAULT_VNI=0
-        - srun --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap -u -o ${PDC_JOB_OUTPUT} --open-mode=append -N ${PDC_N_NODES} -n ${PDC_N_NODES} -c 1 ${PDC_SERVER} &
-        - echo "Starting application..."
-        - export FI_CXI_DEFAULT_VNI=1
-        - srun --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap -u -o ${PDC_JOB_OUTPUT} --open-mode=append -N ${PDC_N_NODES} -n ${TOTAL_PROCESSES} -c 1 ${PDC_CLIENT} 8388608 5 20
-        - echo "Closing PDC servers..."
-        - export FI_CXI_DEFAULT_VNI=2
-        - srun --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap -u -o ${PDC_JOB_OUTPUT} --open-mode=append -N ${PDC_N_NODES} -n ${PDC_N_NODES} -c 1 ${PDC_SERVER_CLOSE}
-        - echo "Installing dependencies..."
-        - pip install pydrive gspread gspread-dataframe google
-        - echo "Storing PDC metrics..."
-        - python3 ../../.github/workflows/store-metrics.py Cori ${PDC_JOB_OUTPUT}
-        - echo "Removing files..."
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-metrics:
     stage: metrics
+    rules:
+        - if: '$METRICS == "true"'
     needs:
         - perlmutter-build
     tags:
         - perlmutter
     variables:
-        PDC_N_NODES: 64
+        PDC_N_NODES: 4
         PDC_N_CLIENTS: 127
-        SCHEDULER_PARAMETERS: "-A m1248 --qos=regular --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A m1248 --qos=debug --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/m1248/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-metrics"
@@ -335,6 +176,7 @@ perlmutter-metrics:
         PDC_JOB_OUTPUT: "pdc-metrics.log"
     script: 
         - hostname
+        - echo "JOBID ${SLURM_JOB_ID}"
         - export NERSC_HOST=`cat /etc/clustername`
         - module load python
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
@@ -349,6 +191,6 @@ perlmutter-metrics:
         - echo "Installing dependencies..."
         - pip install pydrive gspread gspread-dataframe google
         - echo "Storing PDC metrics..."
-        - python3 ../../.github/workflows/store-metrics.py Perlmutter ${PDC_JOB_OUTPUT}
+        - python3 ../../.github/workflows/store-metrics.py Perlmutter ${PDC_JOB_OUTPUT} ${CI_COMMIT_BRANCH} ${SLURM_JOB_ID}
         - echo "Removing files..."
         - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
