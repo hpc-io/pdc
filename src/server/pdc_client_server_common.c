@@ -1656,6 +1656,7 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 #endif
     args->client_id = in.client_id;
     args->nclient   = in.nclient;
+    args->is_init   = in.is_init;
     sprintf(args->client_addr, "%s", in.client_addr);
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&pdc_client_info_mutex_g);

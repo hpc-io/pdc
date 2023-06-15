@@ -346,7 +346,7 @@ main(int argc, char **argv)
         }
 
         if (rank == 0)
-            printf("Timestep %d: create time %.6f, query time %.6f, write time %.6f, wait time %.6f\n", ts,
+            printf("Timestep %d: create time %.5e, query time %.5e, write time %.5e, wait time %.5e\n", ts,
                    create_time, query_time, write_time, wait_time);
     }
 

@@ -44,7 +44,7 @@ main(void)
 
     gettimeofday(&pdc_timer_end, 0);
     double get_sel_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("Get selection time: %.4f\n", get_sel_time);
+    printf("Get selection time: %.5e\n", get_sel_time);
 
     printf("  Query results:\n");
     if (sel.nhits < 500)
@@ -63,12 +63,12 @@ main(void)
 
     gettimeofday(&pdc_timer_end, 0);
     double get_data_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("Get data time: %.4f\n", get_data_time);
+    printf("Get data time: %.5e\n", get_data_time);
 
     printf("Query result energy data (%" PRIu64 " hits):\n", sel.nhits);
     for (i = 0; i < sel.nhits; i++) {
         if (energy_data[i] > energy_hi0 || energy_data[i] < energy_lo0) {
-            printf("Error with result %" PRIu64 ": %.4f\n", i, energy_data[i]);
+            printf("Error with result %" PRIu64 ": %.5e\n", i, energy_data[i]);
         }
     }
     printf("Verified: all correct!\n");
