@@ -220,7 +220,7 @@ get_data_type(int data_type)
         return "PDC_ENUM";
     }
     else if (data_type == 6) {
-        return "PDC_ARRAY";
+        return "PDC_STRING";
     }
     else if (data_type == 7) {
         return "PDC_UINT";

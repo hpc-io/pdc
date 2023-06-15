@@ -7,6 +7,7 @@ if(PDC_ENABLE_FASTBIT)
 endif()
 
 include_directories(
+  ${PDC_COMMON_INCLUDE_DIRS}
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
@@ -70,9 +71,9 @@ endif()
 
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
+    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${PDC_COMMON_LIBRARIES} ${FASTBIT_LIBRARY}/libfastbit.so)
 else()
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
+    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${PDC_COMMON_LIBRARIES})
 endif()
 
 

@@ -100,6 +100,7 @@ set(PDC_SRCS
 #------------------------------------------------------------------------------
 # PDC
 set(PDC_BUILD_INCLUDE_DEPENDENCIES
+  ${PDC_COMMON_INCLUDE_DIRS}
   ${LOCAL_INCLUDE_DIR}
 )
 
@@ -111,6 +112,7 @@ target_include_directories(pdc
 )
 
 target_link_libraries(pdc
+  ${PDC_COMMON_LIBRARIES}
   ${PDC_EXPORTED_LIBS}
   ${PDC_EXT_LIB_DEPENDENCIES}
   -ldl
@@ -122,7 +124,7 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 add_executable(close_server
                close_server.c
 )
-target_link_libraries(close_server pdc)
+target_link_libraries(close_server pdc ${PDC_COMMON_LIBRARIES})
 
 install(
   TARGETS
@@ -173,6 +175,16 @@ install(
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
+install(
+  TARGETS
+    ${PDC_COMMON_LIBRARIES}
+  EXPORT
+    ${PDC_EXPORTED_TARGETS}
+  LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
+  RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
+)
+
 install(
   TARGETS
     pdc

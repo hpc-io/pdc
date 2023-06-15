@@ -1,58 +1,67 @@
 # PDC Documentations
-  + [PDC user APIs](#pdc-user-apis)
-    - [PDC general APIs](#pdc-general-apis)
-    - [PDC container APIs](#pdc-container-apis)
-    - [PDC object APIs](#pdc-object-apis)
-    - [PDC region APIs](#pdc-region-apis)
-    - [PDC property APIs](#pdc-property-apis)
-    - [PDC query APIs](#pdc-query-apis)
-  + [PDC data types](#PDC-type-categories)
-    - [Basic types](#basic-types)
-    - [Histogram structure](#histogram-structure)
-    - [Container info](#container-info)
-    - [Container life time](#container-life-time)
-    - [Object property](#object-property)
-    - [Object info](#object-info)
-    - [Object structure](#object-structure)
-    - [Region info](#region-info)
-    - [Access type](#access-type)
-    - [Transfer request status](#transfer-request-status)
-    - [Query operators](#query-operators)
-    - [Query structures](#query-structures)
-    - [Selection structure](#selection-structure)
-  + [Developers notes](#developers-notes)
-    - [How to implement an RPC from client to server](#how-to-implement-an-rpc-from-client-to-server)
-    - [PDC Server metadata overview](#pdc-server-metadata-overview)
-      + [PDC metadata structure](#pdc-metadata-structure)
-      + [Metadata operations at client side](#metadata-operations-at-client-side)
-    - [PDC metadata management strategy](#pdc-metadata-management-strategy)
-      + [Managing metadata and data by the same server](#managing-metadata-and-data-by-the-same-server)
-      + [Separate metadata server from data server](#separate-metadata-server-from-data-server)
-      + [Static object region mappings](#static-object-region-mappings)
-      + [Dynamic object region mappings](#dynamic-object-region-mappings)
-    - [PDC metadata management implementation](#pdc-metadata-management-implementation)
-      + [Create metadata](#create-metadata)
-      + [Binding metadata to object](#binding-metadata-to-object)
-      + [Register object metadata at metadata server](#register-object-metadata-at-metadata-server)
-      + [Retrieve metadata from metadata server](#retrieve-metadata-from-metadata-server)
-      + [Object metadata at client](#object-metadata-at-client)
-      + [Metadata at data server](#metadata-at-data-server)
-      + [Object metadata update](#object-metadata-update)
-      + [Object region metadata](#object-region-metadata)
-      + [Metadata checkpoint](#object-metadata-update)
-    - [Region transfer request at client](#region-transfer-request-at-client)
-      + [Region transfer request create and close](#region-transfer-request-create-and-close)
-      + [Region transfer request start](#region-transfer-request-start)
-      + [Region transfer request wait](#region-transfer-request-wait)
-    - [Region transfer request at server](#region-transfer-request-at-server)
-      + [Server region transfer request RPC](#server-region-transfer-request-rpc)
-        - [Server nonblocking control](#server-nonblocking-control)
-        - [Server region transfer request start](#server-region-transfer-request-start)
-        - [Server region transfer request wait](#server-region-transfer-request-wait)
-      + [Server region storage](#server-region-storage)
-        - [Storage by file offset](#storage-by-file-offset)
-        - [Storage by region](#storage-by-region)
-    - [Open tasks for PDC](#open-tasks-for-pdc)
+- [PDC Documentations](#pdc-documentations)
+- [PDC user APIs](#pdc-user-apis)
+  - [PDC general APIs](#pdc-general-apis)
+  - [PDC container APIs](#pdc-container-apis)
+  - [PDC object APIs](#pdc-object-apis)
+  - [PDC region APIs](#pdc-region-apis)
+  - [PDC property APIs](#pdc-property-apis)
+  - [PDC query APIs](#pdc-query-apis)
+  - [PDC hist APIs](#pdc-hist-apis)
+- [PDC Data types](#pdc-data-types)
+  - [Basic types](#basic-types)
+  - [region transfer partition type](#region-transfer-partition-type)
+  - [Object consistency semantics type](#object-consistency-semantics-type)
+  - [Histogram structure](#histogram-structure)
+  - [Container info](#container-info)
+  - [Container life time](#container-life-time)
+  - [Object property public](#object-property-public)
+  - [Object property](#object-property)
+  - [Object info](#object-info)
+  - [Object structure](#object-structure)
+  - [Region info](#region-info)
+  - [Access type](#access-type)
+  - [Transfer request status](#transfer-request-status)
+  - [Query operators](#query-operators)
+  - [Query structures](#query-structures)
+  - [Selection structure](#selection-structure)
+- [Developers notes](#developers-notes)
+  - [How to implement an RPC from client to server](#how-to-implement-an-rpc-from-client-to-server)
+  - [PDC Server metadata overview](#pdc-server-metadata-overview)
+    - [PDC metadata structure](#pdc-metadata-structure)
+    - [Metadata operations at client side](#metadata-operations-at-client-side)
+  - [PDC metadata management strategy](#pdc-metadata-management-strategy)
+    - [Managing metadata and data by the same server](#managing-metadata-and-data-by-the-same-server)
+    - [Separate metadata server from data server](#separate-metadata-server-from-data-server)
+    - [Static object region mappings](#static-object-region-mappings)
+    - [Dynamic object region mappings](#dynamic-object-region-mappings)
+  - [PDC metadata management implementation](#pdc-metadata-management-implementation)
+    - [Create metadata](#create-metadata)
+    - [Binding metadata to object](#binding-metadata-to-object)
+    - [Register object metadata at metadata server](#register-object-metadata-at-metadata-server)
+    - [Retrieve metadata from metadata server](#retrieve-metadata-from-metadata-server)
+    - [Object metadata at client](#object-metadata-at-client)
+    - [Metadata at data server](#metadata-at-data-server)
+    - [Object metadata update](#object-metadata-update)
+    - [Object region metadata](#object-region-metadata)
+    - [Metadata checkpoint](#metadata-checkpoint)
+  - [Region transfer request at client](#region-transfer-request-at-client)
+    - [Region transfer request create and close](#region-transfer-request-create-and-close)
+    - [Region transfer request start](#region-transfer-request-start)
+    - [Region transfer request wait](#region-transfer-request-wait)
+  - [Region transfer request at server](#region-transfer-request-at-server)
+  - [Server region transfer request RPC](#server-region-transfer-request-rpc)
+    - [Server nonblocking control](#server-nonblocking-control)
+    - [Server region transfer request start](#server-region-transfer-request-start)
+    - [Server region transfer request wait](#server-region-transfer-request-wait)
+  - [Server region storage](#server-region-storage)
+    - [Storage by file offset](#storage-by-file-offset)
+    - [Storage by region](#storage-by-region)
+  - [Open tasks for PDC](#open-tasks-for-pdc)
+    - [Replacing individual modules with efficient Hash table data structures](#replacing-individual-modules-with-efficient-hash-table-data-structures)
+    - [Restarting pdc\_server.exe with different numbers of servers](#restarting-pdc_serverexe-with-different-numbers-of-servers)
+    - [Fast region search mechanisms](#fast-region-search-mechanisms)
+    - [Merge overlapping regions](#merge-overlapping-regions)
 # PDC user APIs
   ## PDC general APIs
   + pdcid_t PDCinit(const char *pdc_name)
@@ -683,21 +692,26 @@
   ## Basic types
   ```
   typedef enum {
-    PDC_UNKNOWN      = -1, /* error                                      */
-    PDC_INT          = 0,  /* integer types                              */
-    PDC_FLOAT        = 1,  /* floating-point types                       */
-    PDC_DOUBLE       = 2,  /* double types                               */
-    PDC_CHAR         = 3,  /* character types                            */
-    PDC_COMPOUND     = 4,  /* compound types                             */
-    PDC_ENUM         = 5,  /* enumeration types                          */
-    PDC_ARRAY        = 6,  /* Array types                                */
-    PDC_UINT         = 7,  /* unsigned integer types                     */
-    PDC_INT64        = 8,  /* 64-bit integer types                       */
-    PDC_UINT64       = 9,  /* 64-bit unsigned integer types              */
-    PDC_INT16        = 10, 
-    PDC_INT8         = 11,
-    NCLASSES         = 12  /* this must be last                          */
-  } pdc_var_type_t;
+    PDC_UNKNOWN  = -1, /* error                                                          */
+    PDC_INT      = 0,  /* integer types     (identical to int32_t)                       */
+    PDC_FLOAT    = 1,  /* floating-point types                                           */
+    PDC_DOUBLE   = 2,  /* double types                                                   */
+    PDC_CHAR     = 3,  /* character types                                                */
+    PDC_STRING   = 4,  /* string types                                                   */
+    PDC_BOOLEAN  = 5,  /* boolean types                                                  */
+    PDC_SHORT    = 6,  /* short types                                                    */
+    PDC_UINT     = 7,  /* unsigned integer types (identical to uint32_t)                 */
+    PDC_INT64    = 8,  /* 64-bit integer types                                           */
+    PDC_UINT64   = 9,  /* 64-bit unsigned integer types                                  */
+    PDC_INT16    = 10, /* 16-bit integer types                                           */
+    PDC_INT8     = 11, /* 8-bit integer types                                            */
+    PDC_UINT8    = 12, /* 8-bit unsigned integer types                                   */
+    PDC_UINT16   = 13, /* 16-bit unsigned integer types                                  */
+    PDC_LONG     = 14, /* long types                                                     */
+    PDC_VOID_PTR = 15, /* void pointer type                                              */
+    PDC_SIZE_T   = 16, /* size_t type                                                    */
+    TYPE_COUNT   = 17  /* this is the number of var types and has to be the last         */
+} pdc_c_var_type_t;
   ```
   ## region transfer partition type
   ```
