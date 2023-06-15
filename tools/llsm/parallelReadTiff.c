@@ -1,7 +1,7 @@
 #include "parallelReadTiff.h"
 #include "tiffio.h"
 
-// #define ENABLE_OPENMP
+#define ENABLE_OPENMP
 
 #ifdef ENABLE_OPENMP
 #include "omp.h"
@@ -543,7 +543,7 @@ readTiffParallelImageJ(uint64_t x, uint64_t y, uint64_t z, const char *fileName,
     TIFFClose(tif);
     lseek(fd, offset, SEEK_SET);
     uint64_t bytes = bits / 8;
-    //#pragma omp parallel for
+    // #pragma omp parallel for
     /*
     for(uint64_t i = 0; i < z; i++){
     uint64_t cOffset = x*y*bytes*i;
@@ -784,7 +784,7 @@ void
 parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_range,
                    image_info_t **image_info)
 {
-    uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0, stripeSize = 0, is_imageJ = 0, imageJ_Z = 0;
+    uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0, stripeSize = 1, is_imageJ = 0, imageJ_Z = 0;
 
     get_tiff_info(fileName, strip_range, &x, &y, &z, &bits, &startSlice, &stripeSize, &is_imageJ, &imageJ_Z);
 

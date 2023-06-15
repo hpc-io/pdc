@@ -102,6 +102,8 @@ add_library(cjson cjson/cJSON.c)
 # endforeach(program)
 
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -fopenmp -DNDEBUG")
+
 # Find LibTIFF
 option(USE_LIB_TIFF "Enable LibTiff." ON)
 if(USE_LIB_TIFF)
