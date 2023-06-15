@@ -475,6 +475,9 @@ typedef struct metadata_query_transfer_in_t {
     size_t ndim;
 
     const char *tags;
+    const char *k_query;
+    const char *vfrom_query;
+    const char *vto_query;
 } metadata_query_transfer_in_t;
 
 /* Define metadata_query_in_t */
@@ -1222,19 +1225,20 @@ typedef struct {
 
 typedef struct {
     hg_const_string_t query_string;
-    uint32_t index_type;
+    uint32_t          index_type;
 } metadata_index_search_in_t;
 
 typedef struct {
-    int32_t ret;
+    int32_t   ret;
     hg_bulk_t bulk_handle;
 } metadata_index_search_out_t;
 
 static HG_INLINE hg_return_t
-hg_proc_metadata_index_search_out_t(hg_proc_t proc, void *data){
-    hg_return_t ret;
+hg_proc_metadata_index_search_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                  ret;
     metadata_index_search_out_t *out = (metadata_index_search_out_t *)data;
-    ret = hg_proc_int32_t(proc, &out->ret);
+    ret                              = hg_proc_int32_t(proc, &out->ret);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -1247,12 +1251,12 @@ hg_proc_metadata_index_search_out_t(hg_proc_t proc, void *data){
     return ret;
 }
 
-
 static HG_INLINE hg_return_t
-hg_proc_metadata_index_search_in_t(hg_proc_t proc, void *data){
-    hg_return_t ret;
+hg_proc_metadata_index_search_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                 ret;
     metadata_index_search_in_t *in = (metadata_index_search_in_t *)data;
-    ret = hg_proc_hg_const_string_t(proc, &in->query_string);
+    ret                            = hg_proc_hg_const_string_t(proc, &in->query_string);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -1264,7 +1268,6 @@ hg_proc_metadata_index_search_in_t(hg_proc_t proc, void *data){
     }
     return ret;
 }
-
 
 static HG_INLINE hg_return_t
 hg_proc_dart_get_server_info_in_t(hg_proc_t proc, void *data)
@@ -1908,6 +1911,21 @@ hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_hg_string_t(proc, &struct_data->tags);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->k_query);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->vfrom_query);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->vto_query);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -5002,18 +5020,13 @@ perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint6
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
                                       int is_write);
 
-
-perr_t
-PDC_Server_metadata_index_create(metadata_index_create_in_t *in, metadata_index_create_out_t *out);
-perr_t
-PDC_Server_metadata_index_delete(metadata_index_delete_in_t *in, metadata_index_delete_out_t *out);
-perr_t
-PDC_Server_metadata_index_search(metadata_index_search_in_t *in, metadata_index_search_out_t *out,
-                                 uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs);
-perr_t
-PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_server_info_out_t *out);
-perr_t
-PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perform_one_server_out_t *out,
-                                   uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs);
+perr_t PDC_Server_metadata_index_create(metadata_index_create_in_t *in, metadata_index_create_out_t *out);
+perr_t PDC_Server_metadata_index_delete(metadata_index_delete_in_t *in, metadata_index_delete_out_t *out);
+perr_t PDC_Server_metadata_index_search(metadata_index_search_in_t *in, metadata_index_search_out_t *out,
+                                        uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs);
+perr_t PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_server_info_out_t *out);
+perr_t PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t * in,
+                                          dart_perform_one_server_out_t *out, uint64_t *n_obj_ids_ptr,
+                                          uint64_t ***buf_ptrs);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */
