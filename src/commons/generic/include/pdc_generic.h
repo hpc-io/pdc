@@ -33,10 +33,12 @@ typedef enum {
     PDC_INT8       = 11, /* 8-bit integer types                                            */
     PDC_UINT8      = 12, /* 8-bit unsigned integer types                                   */
     PDC_UINT16     = 13, /* 16-bit unsigned integer types                                  */
-    PDC_LONG       = 14, /* long types                                                     */
-    PDC_VOID_PTR   = 15, /* void pointer type                                              */
-    PDC_SIZE_T     = 16, /* size_t type                                                    */
-    PDC_TYPE_COUNT = 17  /* this is the number of var types and has to be the last         */
+    PDC_INT32      = 14, /* 32-bit integer types                                           */
+    PDC_UINT32     = 15, /* 32-bit unsigned integer types                                  */
+    PDC_LONG       = 16, /* long types                                                     */
+    PDC_VOID_PTR   = 17, /* void pointer type                                              */
+    PDC_SIZE_T     = 18, /* size_t type                                                    */
+    PDC_TYPE_COUNT = 19  /* this is the number of var types and has to be the last         */
 } pdc_c_var_type_t;
 
 typedef pdc_c_var_type_t PDC_CType;
