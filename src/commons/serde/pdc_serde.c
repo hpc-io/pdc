@@ -28,6 +28,53 @@ pdc_serde_append_key_value(PDC_SERDE_SerializedData *data, PDC_SERDE_Key *key, P
     data->data->totalSize += (sizeof(int) + sizeof(int) + sizeof(size_t) + value->size);
 }
 
+size_t get_total_size_for_serialized_data(PDC_SERDE_SerializedData *data) {
+    if (data->totalSize <= 0) {
+        size_t total_size = data->header->totalSize + data->data->totalSize + sizeof(size_t) * 6;
+        data->totalSize = total_size;
+    }
+    return data->totalSize;
+}
+
+// clang-format off
+/**
+ * This function serializes the entire PDC_SERDE_SerializedData structure.
+ * 
+ * The overview of the serialized binary data layout is:
+ * +---------------------+---------------------+----------------------+---------------------+----------------------+----------------------+----------------------+----------------------+
+ * | Size of the Header  |   Size of the Data  | Number of Keys       |   Header Region     | Data Offset          | Number of Values     |   Data Region        | Data Offset          |
+ * |     (size_t)        |     (size_t)        |   (size_t)           |                     |   (size_t)           |   (size_t)           |                      |   (size_t)           |
+ * +---------------------+---------------------+----------------------+---------------------+----------------------+----------------------+----------------------+----------------------+
+ * 
+ * The first 2 field is called meta-header, which provides metadata about size of the header region and the size of the data region.
+ * Note that the size of the header region doesn't include the 'Number of Keys' field.
+ * Also, the size of the data region doesn't include the 'Data Offset' field.
+ * 
+ * Then the following is the header region with two keys:
+ * +-----------------------+-------------------------+-----------------------------+---------------------------+--------------------------+-----------------------------+---------------------------+
+ * | Number of Keys        | Key 1 Type              | Key 1 Size                  | Key 1 Data                | Key 2 Type               | Key 2 Size                  | Key 2 Data                |
+ * | (size_t)              | (int8_t)                | (size_t)                    | (Variable size depending  | (int8_t)                 | (size_t)                    | (Variable size depending  |
+ * |                       |                         |                             | on Key 1 Size)            |                          |                             | on Key 2 Size)            |
+ * +-----------------------+-------------------------+-----------------------------+---------------------------+--------------------------+-----------------------------+---------------------------+
+ * 
+ * Then, the following is a header offset validation point and the data region with the final offset validation point.
+ *
+ * |----------------------------------------------------------------------------------------------------------|
+ * | Data Offset (size_t) | Number of Value Entries (size_t) | Value 1 Class (int8_t) | Value 1 Type (int8_t) |
+ * |----------------------------------------------------------------------------------------------------------|
+ * | Value 1 Size (size_t)| Value 1 Data (Variable size depending on Value 1 Size) | Value 2 Class (int8_t)   |
+ * |----------------------------------------------------------------------------------------------------------|
+ * | Value 2 Type (int8_t)| Value 2 Size (size_t) | Value 2 Data (Variable size depending on Value 2 Size)    |
+ * |----------------------------------------------------------------------------------------------------------|
+ * | ...repeated for the number of value entries in the data...                                               |
+ * |----------------------------------------------------------------------------------------------------------|
+ * | Final Data Offset (size_t)                                                                               |
+ * |----------------------------------------------------------------------------------------------------------|
+ * 
+ * Please refer to `get_size_by_class_n_type` function in pdc_generic.h for size calculation on scalar values and array values.
+ *
+ */
+// clang-format on
 void *
 pdc_serde_serialize(PDC_SERDE_SerializedData *data)
 {
@@ -39,7 +86,7 @@ pdc_serde_serialize(PDC_SERDE_SerializedData *data)
     // the data offset (size_t) +
     // the number of value entries (size_t) +
     // the data region
-    void *buffer = malloc(data->header->totalSize + data->data->totalSize + sizeof(size_t) * 5);
+    void *buffer = malloc(get_total_size_for_serialized_data(data));
     // serialize the meta header, which contains only the size of the header and the size of the data region.
     memcpy(buffer, &data->header->totalSize, sizeof(size_t));
     memcpy(buffer + sizeof(size_t), &data->data->totalSize, sizeof(size_t));
@@ -50,16 +97,16 @@ pdc_serde_serialize(PDC_SERDE_SerializedData *data)
     // then the keys
     size_t offset = sizeof(size_t) * 3;
     for (int i = 0; i < data->header->numKeys; i++) {
-        int type = (int)(data->header->keys[i].type);
-        memcpy(buffer + offset, &type, sizeof(int));
-        offset += sizeof(int);
+        int8_t pdc_type = (int8_t)(data->header->keys[i].pdc_type);
+        memcpy(buffer + offset, &pdc_type, sizeof(int8_t));
+        offset += sizeof(int8_t);
         memcpy(buffer + offset, &data->header->keys[i].size, sizeof(size_t));
         offset += sizeof(size_t);
         memcpy(buffer + offset, data->header->keys[i].key, data->header->keys[i].size);
         offset += data->header->keys[i].size;
     }
 
-    // serialize the data offset
+    // serialize the data offset, this is for validation purpose to see if header region is corrupted.
     memcpy(buffer + offset, &offset, sizeof(size_t));
     offset += sizeof(size_t);
 
@@ -69,17 +116,20 @@ pdc_serde_serialize(PDC_SERDE_SerializedData *data)
     offset += sizeof(size_t);
     // then the values
     for (int i = 0; i < data->data->numValues; i++) {
-        int class = (int)data->data->values[i].class;
-        int type  = (int)data->data->values[i].type;
-        memcpy(buffer + offset, &class, sizeof(int));
-        offset += sizeof(int);
-        memcpy(buffer + offset, &type, sizeof(int));
-        offset += sizeof(int);
+        int8_t pdc_class = (int8_t)data->data->values[i].pdc_class;
+        int8_t pdc_type  = (int8_t)data->data->values[i].pdc_type;
+        memcpy(buffer + offset, &pdc_class, sizeof(int8_t));
+        offset += sizeof(int8_t);
+        memcpy(buffer + offset, &pdc_type, sizeof(int8_t));
+        offset += sizeof(int8_t);
         memcpy(buffer + offset, &data->data->values[i].size, sizeof(size_t));
         offset += sizeof(size_t);
         memcpy(buffer + offset, data->data->values[i].data, data->data->values[i].size);
         offset += data->data->values[i].size;
     }
+    // serialize the data offset again, this is for validation purpose to see if data region is corrupted.
+    memcpy(buffer + offset, &offset, sizeof(size_t));
+    offset += sizeof(size_t);
     return buffer;
 }
 
@@ -104,18 +154,18 @@ pdc_serde_deserialize(void *buffer)
     header->numKeys          = numKeys;
     header->totalSize        = headerSize;
     for (int i = 0; i < numKeys; i++) {
-        int    type;
+        int8_t pdc_type;
         size_t size;
-        memcpy(&type, buffer + offset, sizeof(int));
-        offset += sizeof(int);
+        memcpy(&pdc_type, buffer + offset, sizeof(int8_t));
+        offset += sizeof(int8_t);
         memcpy(&size, buffer + offset, sizeof(size_t));
         offset += sizeof(size_t);
-        char *key = malloc(size);
+        void *key = malloc(size);
         memcpy(key, buffer + offset, size);
         offset += size;
-        header->keys[i].key  = key;
-        header->keys[i].type = (PDC_CType)type;
-        header->keys[i].size = size;
+        header->keys[i].key      = key;
+        header->keys[i].pdc_type = (PDC_CType)pdc_type;
+        header->keys[i].size     = size;
     }
 
     // read the data offset
@@ -137,25 +187,32 @@ pdc_serde_deserialize(void *buffer)
     data->numValues      = numValues;
     data->totalSize      = dataSize;
     for (int i = 0; i < numValues; i++) {
-        int class;
-        int    type;
+        int8_t pdc_class;
+        int8_t pdc_type;
         size_t size;
-        memcpy(&class, buffer + offset, sizeof(int));
-        offset += sizeof(int);
-        memcpy(&type, buffer + offset, sizeof(int));
-        offset += sizeof(int);
+        memcpy(&pdc_class, buffer + offset, sizeof(int8_t));
+        offset += sizeof(int8_t);
+        memcpy(&pdc_type, buffer + offset, sizeof(int8_t));
+        offset += sizeof(int8_t);
         memcpy(&size, buffer + offset, sizeof(size_t));
         offset += sizeof(size_t);
         void *value = malloc(size);
         memcpy(value, buffer + offset, size);
         offset += size;
-        data->values[i].data  = value;
-        data->values[i].class = (PDC_CTypeClass) class;
-        data->values[i].type  = (PDC_CType)type;
-        data->values[i].size  = size;
+        data->values[i].data      = value;
+        data->values[i].pdc_class = (PDC_CType_Class)pdc_class;
+        data->values[i].pdc_type  = (PDC_CType)pdc_type;
+        data->values[i].size      = size;
     }
     // check the total size
-    if (offset != headerSize + sizeof(size_t) * 5 + dataSize) {
+    memcpy(&dataOffset, buffer + offset, sizeof(size_t));
+    // check the data offset
+    if (dataOffset != offset) {
+        printf("Error: data offset does not match the expected offset.\n");
+        return NULL;
+    }
+    offset += sizeof(size_t);
+    if (offset != headerSize + sizeof(size_t) * 6 + dataSize) {
         printf("Error: total size does not match the expected size.\n");
         return NULL;
     }
@@ -163,7 +220,7 @@ pdc_serde_deserialize(void *buffer)
     PDC_SERDE_SerializedData *serializedData = malloc(sizeof(PDC_SERDE_SerializedData));
     serializedData->header                   = header;
     serializedData->data                     = data;
-    serializedData->totalSize                = headerSize + dataSize + sizeof(size_t) * 5;
+    serializedData->totalSize                = headerSize + dataSize + sizeof(size_t) * 6;
 
     return serializedData;
 }
@@ -192,7 +249,7 @@ pdc_serde_print(PDC_SERDE_SerializedData *data)
     printf("  totalSize: %zu\n", data->header->totalSize);
     for (int i = 0; i < data->header->numKeys; i++) {
         printf("  key %d:\n", i);
-        printf("    type: %d\n", data->header->keys[i].type);
+        printf("    type: %d\n", data->header->keys[i].pdc_type);
         printf("    size: %zu\n", data->header->keys[i].size);
         printf("    key: %s\n", (char *)data->header->keys[i].key);
     }
@@ -201,11 +258,11 @@ pdc_serde_print(PDC_SERDE_SerializedData *data)
     printf("  totalSize: %zu\n", data->data->totalSize);
     for (int i = 0; i < data->data->numValues; i++) {
         printf("  value %d:\n", i);
-        printf("    class: %d\n", data->data->values[i].class);
-        printf("    type: %d\n", data->data->values[i].type);
+        printf("    class: %d\n", data->data->values[i].pdc_class);
+        printf("    type: %d\n", data->data->values[i].pdc_type);
         printf("    size: %zu\n", data->data->values[i].size);
         printf("    data: ");
-        if (data->data->values[i].class == PDC_CT_STRING) {
+        if (data->data->values[i].pdc_class == PDC_STRING) {
             printf("%s\n", (char *)data->data->values[i].data);
         }
         else {
@@ -223,28 +280,28 @@ test_serde_framework()
     // Create and append key-value pairs for different data types
     char *           intKey_str = "int";
     int              intVal     = 42;
-    PDC_SERDE_Key *  intKey     = PDC_SERDE_KEY(intKey_str, PDC_CT_STRING, sizeof(intKey_str));
-    PDC_SERDE_Value *intValue   = PDC_SERDE_VALUE(&intVal, PDC_CT_INT, PDC_CT_CLS_SCALAR, sizeof(int));
+    PDC_SERDE_Key *  intKey     = PDC_SERDE_KEY(intKey_str, PDC_STRING, sizeof(intKey_str));
+    PDC_SERDE_Value *intValue   = PDC_SERDE_VALUE(&intVal, PDC_INT, PDC_CLS_SCALAR, sizeof(int));
     pdc_serde_append_key_value(data, intKey, intValue);
 
     char *           doubleKey_str = "double";
     double           doubleVal     = 3.14159;
-    PDC_SERDE_Key *  doubleKey     = PDC_SERDE_KEY(doubleKey_str, PDC_CT_STRING, sizeof(doubleKey_str));
+    PDC_SERDE_Key *  doubleKey     = PDC_SERDE_KEY(doubleKey_str, PDC_STRING, sizeof(doubleKey_str));
     PDC_SERDE_Value *doubleValue =
-        PDC_SERDE_VALUE(&doubleVal, PDC_CT_DOUBLE, PDC_CT_CLS_SCALAR, sizeof(double));
+        PDC_SERDE_VALUE(&doubleVal, PDC_DOUBLE, PDC_CLS_SCALAR, sizeof(double));
     pdc_serde_append_key_value(data, doubleKey, doubleValue);
 
     char *         strKey_str = "string";
     char *         strVal     = "Hello, World!";
-    PDC_SERDE_Key *strKey = PDC_SERDE_KEY(strKey_str, PDC_CT_STRING, (strlen(strKey_str) + 1) * sizeof(char));
+    PDC_SERDE_Key *strKey = PDC_SERDE_KEY(strKey_str, PDC_STRING, (strlen(strKey_str) + 1) * sizeof(char));
     PDC_SERDE_Value *strValue =
-        PDC_SERDE_VALUE(strVal, PDC_CT_STRING, PDC_CT_CLS_SCALAR, (strlen(strVal) + 1) * sizeof(char));
+        PDC_SERDE_VALUE(strVal, PDC_STRING, PDC_CLS_SCALAR, (strlen(strVal) + 1) * sizeof(char));
     pdc_serde_append_key_value(data, strKey, strValue);
 
     char *           arrayKey_str = "array";
     int              intArray[3]  = {1, 2, 3};
-    PDC_SERDE_Key *  arrayKey     = PDC_SERDE_KEY(arrayKey_str, PDC_CT_STRING, sizeof(arrayKey_str));
-    PDC_SERDE_Value *arrayValue   = PDC_SERDE_VALUE(intArray, PDC_CT_INT, PDC_CT_CLS_ARRAY, sizeof(int) * 3);
+    PDC_SERDE_Key *  arrayKey     = PDC_SERDE_KEY(arrayKey_str, PDC_STRING, sizeof(arrayKey_str));
+    PDC_SERDE_Value *arrayValue   = PDC_SERDE_VALUE(intArray, PDC_INT, PDC_CLS_ARRAY, sizeof(int) * 3);
     pdc_serde_append_key_value(data, arrayKey, arrayValue);
 
     typedef struct {
@@ -256,19 +313,19 @@ test_serde_framework()
     Point pointVal = {10, 20};
 
     PDC_SERDE_SerializedData *point_data = pdc_serde_init(2);
-    PDC_SERDE_Key *           x_name     = PDC_SERDE_KEY("x", PDC_CT_STRING, sizeof(char *));
-    PDC_SERDE_Value *x_value = PDC_SERDE_VALUE(&pointVal.x, PDC_CT_INT, PDC_CT_CLS_SCALAR, sizeof(int));
+    PDC_SERDE_Key *           x_name     = PDC_SERDE_KEY("x", PDC_STRING, sizeof(char *));
+    PDC_SERDE_Value *x_value = PDC_SERDE_VALUE(&pointVal.x, PDC_INT, PDC_CLS_SCALAR, sizeof(int));
 
-    PDC_SERDE_Key *  y_name  = PDC_SERDE_KEY("y", PDC_CT_STRING, sizeof(char *));
-    PDC_SERDE_Value *y_value = PDC_SERDE_VALUE(&pointVal.y, PDC_CT_INT, PDC_CT_CLS_SCALAR, sizeof(int));
+    PDC_SERDE_Key *  y_name  = PDC_SERDE_KEY("y", PDC_STRING, sizeof(char *));
+    PDC_SERDE_Value *y_value = PDC_SERDE_VALUE(&pointVal.y, PDC_INT, PDC_CLS_SCALAR, sizeof(int));
 
     pdc_serde_append_key_value(point_data, x_name, x_value);
     pdc_serde_append_key_value(point_data, y_name, y_value);
     void *point_buffer = pdc_serde_serialize(point_data);
 
-    PDC_SERDE_Key *  structKey = PDC_SERDE_KEY(pointKey, PDC_CT_STRING, sizeof(pointKey));
+    PDC_SERDE_Key *  structKey = PDC_SERDE_KEY(pointKey, PDC_STRING, sizeof(pointKey));
     PDC_SERDE_Value *structValue =
-        PDC_SERDE_VALUE(point_buffer, PDC_CT_VOID_PTR, PDC_CT_CLS_STRUCT, sizeof(Point));
+        PDC_SERDE_VALUE(point_buffer, PDC_VOID_PTR, PDC_CLS_STRUCT, sizeof(Point));
     pdc_serde_append_key_value(data, structKey, structValue);
 
     // Serialize the data

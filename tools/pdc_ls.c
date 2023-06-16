@@ -214,13 +214,13 @@ get_data_type(int data_type)
         return "PDC_CHAR";
     }
     else if (data_type == 4) {
-        return "PDC_COMPOUND";
+        return "PDC_STRING";
     }
     else if (data_type == 5) {
-        return "PDC_ENUM";
+        return "PDC_BOOLEAN";
     }
     else if (data_type == 6) {
-        return "PDC_STRING";
+        return "PDC_SHORT";
     }
     else if (data_type == 7) {
         return "PDC_UINT";
