@@ -1224,6 +1224,7 @@ PDC_Server_checkpoint()
                 fwrite(&key_len, sizeof(int), 1, file);
                 fwrite(kvlist_elt->kvtag->name, key_len, 1, file);
                 fwrite(&kvlist_elt->kvtag->size, sizeof(uint32_t), 1, file);
+                fwrite(&kvlist_elt->kvtag->type, sizeof(int8_t), 1, file);
                 fwrite(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size, 1, file);
             }
 
@@ -1491,6 +1492,9 @@ PDC_Server_restart(char *filename)
                 }
                 if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) {
                     printf("Read failed for kvtag_list->kvtag->size\n");
+                }
+                if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) {
+                    printf("Read failed for kvtag_list->kvtag->type\n");
                 }
                 kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                 if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {

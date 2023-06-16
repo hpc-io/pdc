@@ -33,9 +33,10 @@
 int
 main()
 {
-    pdcid_t      pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
-    pdc_kvtag_t *value1, *value2, *value3;
-    psize_t      value_size;
+    pdcid_t        pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
+    pdc_kvtag_t *  value1, *value2, *value3;
+    pdc_var_type_t type1, type2, type3;
+    psize_t        value_size;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -82,17 +83,17 @@ main()
     else
         printf("Fail to create object @ line  %d!\n", __LINE__);
 
-    if (PDCobj_get_tag(obj1, "key1string", (void *)&value1, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj1, "key1string", (void *)&value1, (void *)&type1, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o1\n");
     else
         printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", value1->name, (char *)value1->value);
 
-    if (PDCobj_get_tag(obj2, "key2int", (void *)&value2, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj2, "key2int", (void *)&value2, (void *)&type2, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o2\n");
     else
         printf("successfully retrieved a kvtag [%s] = [%d] from o2\n", value2->name, *(int *)value2->value);
 
-    if (PDCobj_get_tag(obj2, "key3double", (void *)&value3, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj2, "key3double", (void *)&value3, (void *)&type3, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o2\n");
     else
         printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", value3->name,
@@ -100,7 +101,7 @@ main()
 
     PDC_free_kvtag(&value1);
 
-    if (PDCobj_get_tag(obj1, "key1string", (void *)&value1, (void *)&value_size) < 0)
+    if (PDCobj_get_tag(obj1, "key1string", (void *)&value1, (void *)&type1, (void *)&value_size) < 0)
         printf("fail to get a kvtag from o1\n");
     else
         printf("successfully retrieved a kvtag [%s] = [%s] from o1\n", value1->name, (char *)value1->value);

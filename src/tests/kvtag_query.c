@@ -91,32 +91,35 @@ main()
 
     kvtag1.name  = "key1string";
     kvtag1.value = (void *)v1;
+    kvtag1.type  = PDC_STRING;
     kvtag1.size  = strlen(v1) + 1;
 
     kvtag2.name  = "key2int";
     kvtag2.value = (void *)&v2;
+    kvtag2.type  = PDC_INT;
     kvtag2.size  = sizeof(int);
 
     kvtag3.name  = "key3double";
     kvtag3.value = (void *)&v3;
+    kvtag3.type  = PDC_DOUBLE;
     kvtag3.size  = sizeof(double);
 
-    if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.size) < 0)
+    if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size) < 0)
         printf("fail to add a kvtag to o1\n");
     else
         printf("successfully added a kvtag to o1\n");
 
-    if (PDCobj_put_tag(obj1, kvtag2.name, kvtag2.value, kvtag2.size) < 0)
+    if (PDCobj_put_tag(obj1, kvtag2.name, kvtag2.value, kvtag2.type, kvtag2.size) < 0)
         printf("fail to add a kvtag to o1\n");
     else
         printf("successfully added a kvtag to o1\n");
 
-    if (PDCobj_put_tag(obj2, kvtag2.name, kvtag2.value, kvtag2.size) < 0)
+    if (PDCobj_put_tag(obj2, kvtag2.name, kvtag2.value, kvtag2.type, kvtag2.size) < 0)
         printf("fail to add a kvtag to o2\n");
     else
         printf("successfully added a kvtag to o2\n");
 
-    if (PDCobj_put_tag(obj2, kvtag3.name, kvtag3.value, kvtag3.size) < 0)
+    if (PDCobj_put_tag(obj2, kvtag3.name, kvtag3.value, kvtag3.type, kvtag3.size) < 0)
         printf("fail to add a kvtag to o2\n");
     else
         printf("successfully added a kvtag to o2\n");

@@ -1190,6 +1190,11 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    ret = hg_proc_int8_t(proc, &struct_data->type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     if (struct_data->size) {
         switch (hg_proc_get_op(proc)) {
             case HG_DECODE:
