@@ -1404,7 +1404,8 @@ PDC_Server_restart(char *filename)
     }
 
     // init hash table
-    PDC_Server_init_hash_table();
+    // FIXME: check if we need to init the hash table again.
+    // PDC_Server_init_hash_table();
 
     if (fread(&n_cont, sizeof(int), 1, file) != 1) {
         printf("Read failed for n_count\n");

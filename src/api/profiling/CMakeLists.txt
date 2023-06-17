@@ -1,7 +1,8 @@
 #------------------------------------------------------------------------------
 # Include source and build directories
 #------------------------------------------------------------------------------
-include_directories(
+set(PROFILING_INCLUDE_DIRS
+  ${PDC_COMMON_INCLUDE_DIRS}
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
@@ -20,6 +21,10 @@ include_directories(
   ${PDC_SOURCE_DIR}/src/utils/include
   ${MERCURY_INCLUDE_DIR}
   ${FASTBIT_INCLUDE_DIR}
+)
+message(STATUS "PDC_COMMON_INCLUDE_DIRS: ${PDC_COMMON_INCLUDE_DIRS}")
+include_directories(
+  ${PROFILING_INCLUDE_DIRS}
 )
 
 install(
@@ -65,6 +70,8 @@ set(PDC_PROF_SRCS
 # PDCPROF
 add_library(pdcprof ${PDC_PROF_SRCS})
 pdc_set_lib_options(pdcprof "pdcprof" ${PDC_LIBTYPE})
+target_include_directories(pdcprof PUBLIC "$<BUILD_INTERFACE:${PROFILING_INCLUDE_DIRS}>"  
+                                           $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_DIR}>)
 
 set(PDC_EXPORTED_LIBS pdcprof ${PDC_EXPORTED_LIBS})
 

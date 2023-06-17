@@ -257,7 +257,7 @@ endif()
 option(PDC_ENABLE_LUSTRE "Enable Lustre." OFF)
 if(PDC_ENABLE_LUSTRE)
   set(ENABLE_LUSTRE 1)
-  set(PDC_LUSTRE_TOTAL_OST "248" CACHE STRING "Number of Lustre OSTs")
+  set(PDC_LUSTRE_TOTAL_OST "256" CACHE STRING "Number of Lustre OSTs")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -384,8 +384,9 @@ configure_file(
 #-----------------------------------------------------------------------------
 # Source
 #-----------------------------------------------------------------------------
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/commons)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/api)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
 
 #-----------------------------------------------------------------------------
 # Testing

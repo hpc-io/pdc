@@ -43,9 +43,9 @@
 #ifndef PDC_LINKEDLIST_H
 #define PDC_LINKEDLIST_H
 
-#include "pdc_cont_pkg.h"
-#include "pdc_cont.h"
-#include "mercury_thread_mutex.h"
+// #include "pdc_cont_pkg.h"
+// #include "pdc_cont.h"
+// #include "mercury_thread_mutex.h"
 #include <string.h>
 
 #define PDC_LIST_HEAD_INITIALIZER(name)                                                                      \

@@ -87,12 +87,9 @@ set(PDC_SRCS
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_cache.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer_metadata_query.c
-  ${PDC_SOURCE_DIR}/src/utils/pdc_timing.c
-  ${PDC_SOURCE_DIR}/src/utils/pdc_malloc.c
-  ${PDC_SOURCE_DIR}/src/utils/pdc_interface.c
-  ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
   )
 
+  set(PDC_COMMON_INCLUDE_DIRS ${PDC_COMMON_INCLUDE_DIRS})
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
 
 #------------------------------------------------------------------------------
@@ -175,19 +172,20 @@ install(
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
-install(
-  TARGETS
-    ${PDC_COMMON_LIBRARIES}
-  EXPORT
-    ${PDC_EXPORTED_TARGETS}
-  LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
-  ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
-  RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
-)
+message(STATUS "PDC_COMMON_LIBRARIES: ${PDC_COMMON_LIBRARIES}")
+# install(
+#   TARGETS
+#     ${PDC_COMMON_LIBRARIES}
+#   EXPORT
+#     ${PDC_EXPORTED_TARGETS}
+#   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
+#   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
+#   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
+# )
 
 install(
   TARGETS
-    pdc
+    pdc_commons pdc 
   EXPORT
     ${PDC_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
