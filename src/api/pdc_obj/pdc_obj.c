@@ -27,6 +27,7 @@
 #include "pdc_malloc.h"
 #include "pdc_id_pkg.h"
 #include "pdc_cont.h"
+#include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_obj.h"
