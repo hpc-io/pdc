@@ -32,9 +32,9 @@ include_directories(
 # External dependencies
 #------------------------------------------------------------------------------
 # profiling
-#set(PDC_EXT_LIB_DEPENDENCIES pdcprof ${PDC_EXT_LIB_DEPENDENCIES})
-set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
-set(PDC_EXPORTED_LIBS pdcprof)
+# set(PDC_EXT_LIB_DEPENDENCIES pdcprof ${PDC_EXT_LIB_DEPENDENCIES})
+# set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+# set(PDC_EXPORTED_LIBS pdcprof)
 
 # Mercury
 find_package(MERCURY REQUIRED)
@@ -87,10 +87,12 @@ set(PDC_SRCS
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_cache.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer_metadata_query.c
+  ${PDC_SOURCE_DIR}/src/utils/pdc_interface.c
+  ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
   )
 
   set(PDC_COMMON_INCLUDE_DIRS ${PDC_COMMON_INCLUDE_DIRS})
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+  # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -101,6 +103,8 @@ set(PDC_BUILD_INCLUDE_DEPENDENCIES
   ${LOCAL_INCLUDE_DIR}
 )
 
+message(STATUS "PDC_BUILD_INCLUDE_DEPENDENCIES: ${PDC_BUILD_INCLUDE_DEPENDENCIES}")
+
 add_library(pdc ${PDC_SRCS})
 
 target_include_directories(pdc
@@ -108,8 +112,12 @@ target_include_directories(pdc
           $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>
 )
 
+message(STATUS "PDC_EXPORTED_LIBS: ${PDC_EXPORTED_LIBS}")
+message(STATUS "PDC_EXT_LIB_DEPENDENCIES: ${PDC_EXT_LIB_DEPENDENCIES}")
+message(STATUS "PDC_COMMONS_LIBRARIES: ${PDC_COMMONS_LIBRARIES}")
+
 target_link_libraries(pdc
-  ${PDC_COMMON_LIBRARIES}
+  ${PDC_COMMONS_LIBRARIES}
   ${PDC_EXPORTED_LIBS}
   ${PDC_EXT_LIB_DEPENDENCIES}
   -ldl
@@ -144,6 +152,7 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/api/pdc_query/include/pdc_query.h
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/api/pdc_transform/include/pdc_transform.h
+  ${PDC_SOURCE_DIR}/src/utils/include/pdc_interface.h
   ${PROJECT_BINARY_DIR}/pdc_config_sys.h
   ${PROJECT_BINARY_DIR}/pdc_config.h
   )
@@ -172,20 +181,10 @@ install(
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
-message(STATUS "PDC_COMMON_LIBRARIES: ${PDC_COMMON_LIBRARIES}")
-# install(
-#   TARGETS
-#     ${PDC_COMMON_LIBRARIES}
-#   EXPORT
-#     ${PDC_EXPORTED_TARGETS}
-#   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
-#   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
-#   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
-# )
 
 install(
   TARGETS
-    pdc_commons pdc 
+    pdc 
   EXPORT
     ${PDC_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}

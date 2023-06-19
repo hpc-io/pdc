@@ -33,6 +33,7 @@
 
 #include "pdc_utlist.h"
 #include "pdc_id_pkg.h"
+#include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_cont.h"

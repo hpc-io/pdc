@@ -17,19 +17,6 @@ typedef enum { false = 0, true = 1 } bool;
 #endif
 #endif
 
-
-/*******************/
-/* Public Typedefs */
-/*******************/
-typedef int                perr_t;
-typedef uint64_t           pdcid_t;
-typedef unsigned long long psize_t;
-typedef bool               pbool_t;
-
-typedef int    PDC_int_t;
-typedef float  PDC_float_t;
-typedef double PDC_double_t;
-
 typedef enum {
     PDC_UNKNOWN    = -1, /* error                                                          */
     PDC_INT        = 0,  /* integer types     (identical to int32_t)                       */
@@ -163,7 +150,7 @@ static const char *DataTypeFormat[PDC_TYPE_COUNT] = {
 
 // clang-format on
 
-inline const char *
+static const char *
 get_enum_name_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -172,7 +159,7 @@ get_enum_name_by_dtype(pdc_c_var_type_t type)
     return DataTypeEnumNames[type];
 }
 
-inline const size_t
+static const size_t
 get_size_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -181,7 +168,7 @@ get_size_by_dtype(pdc_c_var_type_t type)
     return DataTypeSizes[type];
 }
 
-inline const size_t
+static const size_t
 get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_class,
                          pdc_c_var_type_t pdc_type)
 {
@@ -201,14 +188,15 @@ get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_cl
             for (i = 0; i < item_count; i++) {
                 size = size + (strlen(str_arr[i]) + 1) * sizeof(char);
             }
-        } else {
+        }
+        else {
             size = item_count * get_size_by_dtype(pdc_type);
         }
     }
     return size;
 }
 
-inline const char *
+static const char *
 get_name_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -217,7 +205,7 @@ get_name_by_dtype(pdc_c_var_type_t type)
     return DataTypeNames[type];
 }
 
-inline pdc_c_var_type_t
+static pdc_c_var_type_t
 get_dtype_by_enum_name(const char *enumName)
 {
     for (int i = 0; i < PDC_TYPE_COUNT; i++) {

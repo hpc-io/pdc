@@ -116,8 +116,6 @@ file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 #------------------------------------------------------------------------------
 # PDC COMMONS
 
-message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
-message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
 
 add_library(${PDC_COMMON_LIBRARY_NAME} ${PDC_LIBTYPE} ${PDC_COMMONS_SOURCES} ${PDC_COMMONS_HEADERS})
 
@@ -156,7 +154,6 @@ set(PDC_COMMONS_HEADERS
   ${PROJECT_BINARY_DIR}/pdc_config.h
   )
 
-message(STATUS "PDC_COMMONS_HEADERS: ${PDC_COMMONS_HEADERS}")
 #-----------------------------------------------------------------------------
 # Add file(s) to CMake Install
 #-----------------------------------------------------------------------------
@@ -215,13 +212,16 @@ set(PDC_INCLUDES_BUILD_TIME
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_EXT_INCLUDE_DEPENDENCIES}
+  ${PDC_COMMONS_INCLUDE_DIRS}
   PARENT_SCOPE
 )
 
 # Used by config.cmake.install.in
 set(PDC_INCLUDES_INSTALL_TIME
+  ${PDC_COMMONS_INCLUDE_DIRS}
   ${PDC_INSTALL_INCLUDE_DIR}
   ${PDC_EXT_INCLUDE_DEPENDENCIES}
   PARENT_SCOPE
 )
 
+set(PDC_COMMONS_LIBRARIES ${PDC_COMMON_LIBRARY_NAME} PARENT_SCOPE)

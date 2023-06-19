@@ -110,7 +110,7 @@ void pdc_serde_print(PDC_SERDE_SerializedData *data);
  *
  * @return Pointer to the created PDC_SERDE_Key structure
  */
-inline PDC_SERDE_Key *
+static inline PDC_SERDE_Key *
 PDC_SERDE_KEY(void *key, PDC_CType pdc_type, size_t size)
 {
     PDC_SERDE_Key *pdc_key = (PDC_SERDE_Key *)malloc(sizeof(PDC_SERDE_Key));
@@ -132,7 +132,7 @@ PDC_SERDE_KEY(void *key, PDC_CType pdc_type, size_t size)
  *
  * @return Pointer to the created PDC_SERDE_Value structure
  */
-inline PDC_SERDE_Value *
+static inline PDC_SERDE_Value *
 PDC_SERDE_VALUE(void *data, PDC_CType pdc_type, PDC_CType_Class pdc_class, size_t size)
 {
     PDC_SERDE_Value *pdc_value = (PDC_SERDE_Value *)malloc(sizeof(PDC_SERDE_Value));

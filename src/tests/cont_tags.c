@@ -37,6 +37,7 @@ main(int argc, char **argv)
     int rank = 0, size = 1;
 
     char    tag_value[128], tag_value2[128], *tag_value_ret;
+    pdc_var_type_t value_type;
     psize_t value_size;
     strcpy(tag_value, "some tag value");
     strcpy(tag_value2, "some tag value 2 is longer than tag 1");
@@ -78,31 +79,31 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCcont_put_tag(cont, "some tag", tag_value, strlen(tag_value) + 1);
+    ret = PDCcont_put_tag(cont, "some tag", tag_value, PDC_STRING, strlen(tag_value) + 1);
 
     if (ret != SUCCEED) {
         printf("Put tag failed at container 1\n");
         ret_value = 1;
     }
-    ret = PDCcont_put_tag(cont, "some tag 2", tag_value2, strlen(tag_value2) + 1);
+    ret = PDCcont_put_tag(cont, "some tag 2", tag_value2, PDC_STRING, strlen(tag_value2) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at container 1\n");
         ret_value = 1;
     }
 
-    ret = PDCcont_put_tag(cont2, "some tag", tag_value, strlen(tag_value) + 1);
+    ret = PDCcont_put_tag(cont2, "some tag", tag_value, PDC_STRING, strlen(tag_value) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at container 2\n");
         ret_value = 1;
     }
 
-    ret = PDCcont_put_tag(cont2, "some tag 2", tag_value2, strlen(tag_value2) + 1);
+    ret = PDCcont_put_tag(cont2, "some tag 2", tag_value2, PDC_STRING, strlen(tag_value2) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at container 2\n");
         ret_value = 1;
     }
 
-    ret = PDCcont_get_tag(cont, "some tag", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont, "some tag", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 1\n");
         ret_value = 1;
@@ -112,7 +113,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCcont_get_tag(cont, "some tag 2", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 1\n");
         ret_value = 1;
@@ -123,7 +124,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCcont_get_tag(cont2, "some tag", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont2, "some tag", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 2\n");
         ret_value = 1;
@@ -134,7 +135,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_size);
+    ret = PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 2\n");
         ret_value = 1;
