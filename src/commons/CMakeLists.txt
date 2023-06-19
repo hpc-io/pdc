@@ -1,5 +1,57 @@
 #------------------------------------------------------------------------------
-# Include source and build directories
+# PDC Commons
+#------------------------------------------------------------------------------
+
+set(PDC_COMMON_LIBRARY_NAME pdc_commons CACHE INTERNAL "")
+
+#------------------------------------------------------------------------------
+# External dependencies
+#------------------------------------------------------------------------------
+
+# #set(PDC_EXT_LIB_DEPENDENCIES ${PDC_COMMON_LIBRARY_NAME} ${PDC_EXT_LIB_DEPENDENCIES})
+# set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+# set(PDC_EXPORTED_LIBS pdcprof)
+
+if(THREADS_HAVE_PTHREAD_ARG)
+  set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY COMPILE_OPTIONS "-pthread")
+  set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
+endif()
+
+
+# Mercury
+find_package(MERCURY REQUIRED)
+if(MERCURY_FOUND)
+  message(STATUS "mercury dir ${MERCURY_DIR}")
+  if(DEFINED MERCURY_DIR AND NOT "${MERCURY_DIR}" STREQUAL "")
+    # If MERCURY_DIR contains "share/" (or "share" is at the end), truncate it along with everything following it
+    string(REGEX REPLACE "/share.*" "" trimmed_mercury_dir ${MERCURY_DIR})
+    # Check if the trimmed_mercury_dir ends with "/mercury"
+    string(REGEX MATCH ".*/mercury$" is_mercury_home ${trimmed_mercury_dir})
+    # If trimmed_mercury_dir ends with "/mercury", consider it as the home directory
+    if(is_mercury_home)
+        set(MERCURY_HOME ${trimmed_mercury_dir})
+    else()
+        # If not ending with "mercury", it's likely an error
+        message(FATAL_ERROR "Cannot determine MERCURY_HOME from MERCURY_DIR.")
+    endif()
+
+    message("Mercury home is set to ${MERCURY_HOME}")
+
+    set(MERCURY_INCLUDE_DIR ${MERCURY_HOME}/include)
+    set(MERCURY_LIBRARY_DIR ${MERCURY_HOME}/lib)
+  endif()
+  message(STATUS "mercury include dir ${MERCURY_INCLUDE_DIR}")
+  message(STATUS "mercury lib dir ${MERCURY_LIBRARY_DIR}")
+  set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
+    ${PDC_EXT_INCLUDE_DEPENDENCIES}
+    )
+  set(PDC_EXT_LIB_DEPENDENCIES mercury ${PDC_EXT_LIB_DEPENDENCIES})
+endif()
+
+include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
+
+#------------------------------------------------------------------------------
+# Include directories
 #------------------------------------------------------------------------------
 
 # Get a list of all directories that contain header files
@@ -16,11 +68,14 @@ set(PDC_COMMONS_INCLUDE_DIRS
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_BINARY_DIR}
   ${PDC_SOURCE_DIR}
+  ${PDC_EXT_INCLUDE_DEPENDENCIES}
 )
 
 include_directories(
   ${PDC_COMMONS_INCLUDE_DIRS}
 )
+
+message(STATUS "PDC_COMMONS_INCLUDE_DIRS: ${PDC_COMMONS_INCLUDE_DIRS}")
 
 install(
   FILES
@@ -30,14 +85,6 @@ install(
   COMPONENT
     headers
 )
-
-#------------------------------------------------------------------------------
-# Options
-#------------------------------------------------------------------------------
-#add_definitions(-DPDC_ENABLE_MPI=1)
-#add_definitions(-DPDC_TIMING=1)
-#add_definitions(-DPDC_ENABLE_CHECKPOINT=1)
-#add_definitions(-DENABLE_MULTITHREAD=1)
 
 #------------------------------------------------------------------------------
 # Configure module header files
@@ -51,39 +98,71 @@ else()
   set(PDC_LIBTYPE STATIC)
 endif()
 
+if(PDC_ENABLE_TIMING)
+    add_definitions(-DPDC_TIMING=1)
+endif()
+
 #------------------------------------------------------------------------------
 # Set sources
 #------------------------------------------------------------------------------
-set(PDC_PROF_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_hashtab.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/pdc_stack_ops.c
-  )
+
+# Collect all source files
+file(GLOB_RECURSE PDC_COMMONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
+file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+
 
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
-# PDCPROF
-add_library(pdcprof ${PDC_PROF_SRCS})
-pdc_set_lib_options(pdcprof "pdcprof" ${PDC_LIBTYPE})
-target_include_directories(pdcprof PUBLIC "$<BUILD_INTERFACE:${PROFILING_INCLUDE_DIRS}>"  
-                                           $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_DIR}>)
+# PDC COMMONS
 
-set(PDC_EXPORTED_LIBS pdcprof ${PDC_EXPORTED_LIBS})
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+
+add_library(${PDC_COMMON_LIBRARY_NAME} ${PDC_LIBTYPE} ${PDC_COMMONS_SOURCES} ${PDC_COMMONS_HEADERS})
+
+target_include_directories(${PDC_COMMON_LIBRARY_NAME}
+  PUBLIC  "$<BUILD_INTERFACE:${PDC_COMMONS_INCLUDE_DIRS}>"
+          $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>
+)
+
+target_link_libraries(${PDC_COMMON_LIBRARY_NAME} INTERFACE
+  ${PDC_EXT_LIB_DEPENDENCIES}
+)
+
+set(PDC_EXPORTED_LIBS ${PDC_COMMON_LIBRARY_NAME} ${PDC_EXPORTED_LIBS})
 
 #-----------------------------------------------------------------------------
 # Specify project header files to be installed
 #-----------------------------------------------------------------------------
-set(PDC_PROF_HEADERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/pdc_hashtab.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/pdc_stack_ops.h
+
+
+set(PDC_PUBLIC_HEADERS "")
+set(PUBLIC_HEADER_DIR_LIST 
+  ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/generic/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/profiling/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils/include
+)
+
+foreach(_header_dir ${PUBLIC_HEADER_DIR_LIST})
+  file(GLOB_RECURSE _dir_headers ${_header_dir}/*.h)
+  list(APPEND PDC_PUBLIC_HEADERS ${_dir_headers})
+endforeach()
+
+set(PDC_COMMONS_HEADERS
+  ${PDC_PUBLIC_HEADERS}
+  ${PROJECT_BINARY_DIR}/pdc_config_sys.h
+  ${PROJECT_BINARY_DIR}/pdc_config.h
   )
 
+message(STATUS "PDC_COMMONS_HEADERS: ${PDC_COMMONS_HEADERS}")
 #-----------------------------------------------------------------------------
 # Add file(s) to CMake Install
 #-----------------------------------------------------------------------------
 install(
   FILES
-    ${PDC_PROF_HEADERS}
+    ${PDC_COMMONS_HEADERS}
   DESTINATION
     ${PDC_INSTALL_INCLUDE_DIR}
   COMPONENT
@@ -93,15 +172,40 @@ install(
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
+
 install(
   TARGETS
-    pdcprof
+    ${PDC_COMMON_LIBRARY_NAME} 
   EXPORT
     ${PDC_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
 )
+
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install for import into other projects
+#-----------------------------------------------------------------------------
+install(
+  EXPORT
+    ${PDC_EXPORTED_TARGETS}
+  DESTINATION
+    ${PDC_INSTALL_DATA_DIR}/cmake/pdc
+  FILE
+    ${PDC_EXPORTED_TARGETS}.cmake
+)
+
+#-----------------------------------------------------------------------------
+# Export all exported targets to the build tree for use by parent project
+#-----------------------------------------------------------------------------
+if(NOT PDC_EXTERNALLY_CONFIGURED)
+EXPORT (
+  TARGETS
+    ${PDC_EXPORTED_LIBS}
+  FILE
+    ${PDC_EXPORTED_TARGETS}.cmake
+)
+endif()
 
 #------------------------------------------------------------------------------
 # Set variables for parent scope
@@ -121,44 +225,3 @@ set(PDC_INCLUDES_INSTALL_TIME
   PARENT_SCOPE
 )
 
-
-
-set(PDC_COMMON_LIBRARY_NAME pdc_commons CACHE INTERNAL "")
-
-if(THREADS_HAVE_PTHREAD_ARG)
-  set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY COMPILE_OPTIONS "-pthread")
-  set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
-endif()
-
-# Collect all source files
-file(GLOB_RECURSE PDC_COMMONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
-file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
-
-
-
-message(STATUS "LOCAL_INCLUDE_DIRS: ${LOCAL_INCLUDE_DIRS}")
-
-
-
-include_directories(${PDC_COMMONS_INCLUDE_DIRS})
-
-# Create library for the subdirectory
-add_library(${PDC_COMMON_LIBRARY_NAME} SHARED ${PDC_COMMONS_SOURCES})
-# Include subdirectory's header files
-target_include_directories(${PDC_COMMON_LIBRARY_NAME} PUBLIC 
-  "$<BUILD_INTERFACE:${PDC_COMMONS_INCLUDE_DIRS}>"  # for building
-  $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>  # for installed package
-)
-if(CMAKE_THREAD_LIBS_INIT)
-  target_link_libraries(${PDC_COMMON_LIBRARY_NAME} "${CMAKE_THREAD_LIBS_INIT}")
-endif()
-
-# Publish header files for client/server programs to use
-install(FILES ${PDC_COMMONS_HEADERS} DESTINATION ${PDC_INSTALL_INCLUDE_DIR})
-
-# Set the installation path for the library
-install(TARGETS ${PDC_COMMON_LIBRARY_NAME} DESTINATION ${PDC_INSTALL_LIB_DIR})
-
-# export library target and include directories
-set(PDC_COMMON_LIBRARIES ${PDC_COMMON_LIBRARY_NAME} CACHE INTERNAL "PDC common libraries")
-set(PDC_COMMON_INCLUDE_DIRS ${PDC_COMMON_INCLUDE_DIRS} CACHE INTERNAL "PDC common include directories")

@@ -17,6 +17,19 @@ typedef enum { false = 0, true = 1 } bool;
 #endif
 #endif
 
+
+/*******************/
+/* Public Typedefs */
+/*******************/
+typedef int                perr_t;
+typedef uint64_t           pdcid_t;
+typedef unsigned long long psize_t;
+typedef bool               pbool_t;
+
+typedef int    PDC_int_t;
+typedef float  PDC_float_t;
+typedef double PDC_double_t;
+
 typedef enum {
     PDC_UNKNOWN    = -1, /* error                                                          */
     PDC_INT        = 0,  /* integer types     (identical to int32_t)                       */
@@ -60,7 +73,7 @@ typedef enum {
 typedef pdc_c_var_class_t PDC_CType_Class;
 
 // clang-format off
-const size_t DataTypeSizes[PDC_TYPE_COUNT] = {
+static const size_t DataTypeSizes[PDC_TYPE_COUNT] = {
     sizeof(int),
     sizeof(float),
     sizeof(double),
@@ -82,7 +95,7 @@ const size_t DataTypeSizes[PDC_TYPE_COUNT] = {
     sizeof(size_t)
 };
 
-const char *DataTypeNames[PDC_TYPE_COUNT] = {
+static const char *DataTypeNames[PDC_TYPE_COUNT] = {
     "int",
     "float",
     "double",
@@ -104,7 +117,7 @@ const char *DataTypeNames[PDC_TYPE_COUNT] = {
     "size_t"
 };
 
-const char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
+static const char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
     "PDC_INT",
     "PDC_FLOAT",
     "PDC_DOUBLE",
@@ -126,7 +139,7 @@ const char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
     "PDC_SIZE_T"
 };
 
-const char *DataTypeFormat[PDC_TYPE_COUNT] = {
+static const char *DataTypeFormat[PDC_TYPE_COUNT] = {
     "%d",     // int
     "%f",     // float
     "%lf",    // double

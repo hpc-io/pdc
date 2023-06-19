@@ -385,7 +385,7 @@ configure_file(
 # Source
 #-----------------------------------------------------------------------------
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/commons)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/api)
+# add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/api)
 # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
 
 #-----------------------------------------------------------------------------

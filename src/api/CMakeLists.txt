@@ -1,7 +1,7 @@
  #------------------------------------------------------------------------------
 # Include source and build directories
 #------------------------------------------------------------------------------
-set( LOCAL_INCLUDE_DIR
+set(LOCAL_INCLUDE_DIR
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_BINARY_DIR}
   ${PDC_SOURCE_DIR}
