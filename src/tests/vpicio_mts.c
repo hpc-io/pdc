@@ -199,7 +199,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
         if (rank == 0) {
-            printf("\n#Step  %d\n", i);
+            printf("\n#Step  %llu\n", i);
         }
 #endif
         PDCprop_set_obj_time_step(obj_prop_xx, i);
