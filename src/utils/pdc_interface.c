@@ -25,6 +25,8 @@
 #include "pdc_malloc.h"
 #include "pdc_id_pkg.h"
 #include "pdc_interface.h"
+#include "pdc_cont_pkg.h"
+#include "pdc_cont.h"
 #include <stdlib.h>
 #include <assert.h>
 

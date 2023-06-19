@@ -37,9 +37,10 @@ struct _pdc_cont_prop {
 };
 
 typedef struct pdc_kvtag_t {
-    char *   name;
-    uint32_t size;
-    void *   value;
+    char *         name;
+    uint32_t       size;
+    pdc_var_type_t type;
+    void *         value;
 } pdc_kvtag_t;
 
 struct _pdc_transform_state {
