@@ -142,7 +142,6 @@ install(
 #-----------------------------------------------------------------------------
 set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/api/include/pdc.h
-  ${PDC_SOURCE_DIR}/src/api/include/pdc_public.h
   ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include/pdc_analysis.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_cont.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_mpi.h
@@ -152,7 +151,6 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/api/pdc_query/include/pdc_query.h
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/api/pdc_transform/include/pdc_transform.h
-  ${PDC_SOURCE_DIR}/src/utils/include/pdc_interface.h
   ${PROJECT_BINARY_DIR}/pdc_config_sys.h
   ${PROJECT_BINARY_DIR}/pdc_config.h
   )

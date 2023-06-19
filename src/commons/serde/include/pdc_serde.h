@@ -62,11 +62,11 @@ void pdc_serde_append_key_value(PDC_SERDE_SerializedData *data, PDC_SERDE_Key *k
 
 /**
  * @brief get the total size of PDC_SERDE_SerializedData structure instance
- * 
+ *
  * @param data Pointer to the PDC_SERDE_SerializedData structure instance
- * 
+ *
  * @return total size of the PDC_SERDE_SerializedData structure instance
-*/
+ */
 size_t get_total_size_for_serialized_data(PDC_SERDE_SerializedData *data);
 
 /**
@@ -113,9 +113,9 @@ void pdc_serde_print(PDC_SERDE_SerializedData *data);
 static inline PDC_SERDE_Key *
 PDC_SERDE_KEY(void *key, PDC_CType pdc_type, size_t size)
 {
-    PDC_SERDE_Key *pdc_key = (PDC_SERDE_Key *)malloc(sizeof(PDC_SERDE_Key));
-    size_t key_size = (size_t) get_size_by_class_n_type(key, size, PDC_CLS_SCALAR, pdc_type);
-    pdc_key->key = malloc(key_size);
+    PDC_SERDE_Key *pdc_key  = (PDC_SERDE_Key *)malloc(sizeof(PDC_SERDE_Key));
+    size_t         key_size = (size_t)get_size_by_class_n_type(key, size, PDC_CLS_SCALAR, pdc_type);
+    pdc_key->key            = malloc(key_size);
     memcpy(pdc_key->key, key, key_size);
     pdc_key->pdc_type = pdc_type;
     pdc_key->size     = key_size;
@@ -135,14 +135,15 @@ PDC_SERDE_KEY(void *key, PDC_CType pdc_type, size_t size)
 static inline PDC_SERDE_Value *
 PDC_SERDE_VALUE(void *data, PDC_CType pdc_type, PDC_CType_Class pdc_class, size_t size)
 {
-    PDC_SERDE_Value *pdc_value = (PDC_SERDE_Value *)malloc(sizeof(PDC_SERDE_Value));
-    size_t value_size = 0;
+    PDC_SERDE_Value *pdc_value  = (PDC_SERDE_Value *)malloc(sizeof(PDC_SERDE_Value));
+    size_t           value_size = 0;
     if (pdc_class == PDC_CLS_STRUCT) {
         // TODO: we need to check if data is a valid PDC_SERDE_SerializedData structure.
         PDC_SERDE_SerializedData *struct_data = (PDC_SERDE_SerializedData *)data;
         size                                  = struct_data->totalSize;
-    } else {
-        value_size = (size_t) get_size_by_class_n_type(data, size, pdc_class, pdc_type);
+    }
+    else {
+        value_size = (size_t)get_size_by_class_n_type(data, size, pdc_class, pdc_type);
     }
     pdc_value->data = malloc(value_size);
     memcpy(pdc_value->data, data, value_size);

@@ -7581,7 +7581,8 @@ PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused
 }
 
 perr_t
-PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, pdc_var_type_t value_type, psize_t value_size)
+PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, pdc_var_type_t value_type,
+                psize_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -7604,7 +7605,8 @@ done:
 }
 
 perr_t
-PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type, psize_t *value_size)
+PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+                psize_t *value_size)
 {
     perr_t       ret_value = SUCCEED;
     pdc_kvtag_t *kvtag     = NULL;

@@ -28,10 +28,12 @@ pdc_serde_append_key_value(PDC_SERDE_SerializedData *data, PDC_SERDE_Key *key, P
     data->data->totalSize += (sizeof(int) + sizeof(int) + sizeof(size_t) + value->size);
 }
 
-size_t get_total_size_for_serialized_data(PDC_SERDE_SerializedData *data) {
+size_t
+get_total_size_for_serialized_data(PDC_SERDE_SerializedData *data)
+{
     if (data->totalSize <= 0) {
         size_t total_size = data->header->totalSize + data->data->totalSize + sizeof(size_t) * 6;
-        data->totalSize = total_size;
+        data->totalSize   = total_size;
     }
     return data->totalSize;
 }
@@ -287,13 +289,12 @@ test_serde_framework()
     char *           doubleKey_str = "double";
     double           doubleVal     = 3.14159;
     PDC_SERDE_Key *  doubleKey     = PDC_SERDE_KEY(doubleKey_str, PDC_STRING, sizeof(doubleKey_str));
-    PDC_SERDE_Value *doubleValue =
-        PDC_SERDE_VALUE(&doubleVal, PDC_DOUBLE, PDC_CLS_SCALAR, sizeof(double));
+    PDC_SERDE_Value *doubleValue   = PDC_SERDE_VALUE(&doubleVal, PDC_DOUBLE, PDC_CLS_SCALAR, sizeof(double));
     pdc_serde_append_key_value(data, doubleKey, doubleValue);
 
-    char *         strKey_str = "string";
-    char *         strVal     = "Hello, World!";
-    PDC_SERDE_Key *strKey = PDC_SERDE_KEY(strKey_str, PDC_STRING, (strlen(strKey_str) + 1) * sizeof(char));
+    char *           strKey_str = "string";
+    char *           strVal     = "Hello, World!";
+    PDC_SERDE_Key *  strKey = PDC_SERDE_KEY(strKey_str, PDC_STRING, (strlen(strKey_str) + 1) * sizeof(char));
     PDC_SERDE_Value *strValue =
         PDC_SERDE_VALUE(strVal, PDC_STRING, PDC_CLS_SCALAR, (strlen(strVal) + 1) * sizeof(char));
     pdc_serde_append_key_value(data, strKey, strValue);
@@ -314,7 +315,7 @@ test_serde_framework()
 
     PDC_SERDE_SerializedData *point_data = pdc_serde_init(2);
     PDC_SERDE_Key *           x_name     = PDC_SERDE_KEY("x", PDC_STRING, sizeof(char *));
-    PDC_SERDE_Value *x_value = PDC_SERDE_VALUE(&pointVal.x, PDC_INT, PDC_CLS_SCALAR, sizeof(int));
+    PDC_SERDE_Value *         x_value    = PDC_SERDE_VALUE(&pointVal.x, PDC_INT, PDC_CLS_SCALAR, sizeof(int));
 
     PDC_SERDE_Key *  y_name  = PDC_SERDE_KEY("y", PDC_STRING, sizeof(char *));
     PDC_SERDE_Value *y_value = PDC_SERDE_VALUE(&pointVal.y, PDC_INT, PDC_CLS_SCALAR, sizeof(int));
@@ -323,9 +324,8 @@ test_serde_framework()
     pdc_serde_append_key_value(point_data, y_name, y_value);
     void *point_buffer = pdc_serde_serialize(point_data);
 
-    PDC_SERDE_Key *  structKey = PDC_SERDE_KEY(pointKey, PDC_STRING, sizeof(pointKey));
-    PDC_SERDE_Value *structValue =
-        PDC_SERDE_VALUE(point_buffer, PDC_VOID_PTR, PDC_CLS_STRUCT, sizeof(Point));
+    PDC_SERDE_Key *  structKey   = PDC_SERDE_KEY(pointKey, PDC_STRING, sizeof(pointKey));
+    PDC_SERDE_Value *structValue = PDC_SERDE_VALUE(point_buffer, PDC_VOID_PTR, PDC_CLS_STRUCT, sizeof(Point));
     pdc_serde_append_key_value(data, structKey, structValue);
 
     // Serialize the data
