@@ -21,27 +21,11 @@ endif()
 # Mercury
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
-  message(STATUS "mercury dir ${MERCURY_DIR}")
-  if(DEFINED MERCURY_DIR AND NOT "${MERCURY_DIR}" STREQUAL "")
-    # If MERCURY_DIR contains "share/" (or "share" is at the end), truncate it along with everything following it
-    string(REGEX REPLACE "/share.*" "" trimmed_mercury_dir ${MERCURY_DIR})
-    # Check if the trimmed_mercury_dir ends with "/mercury"
-    string(REGEX MATCH ".*/mercury$" is_mercury_home ${trimmed_mercury_dir})
-    # If trimmed_mercury_dir ends with "/mercury", consider it as the home directory
-    if(is_mercury_home)
-        set(MERCURY_HOME ${trimmed_mercury_dir})
-    else()
-        # If not ending with "mercury", it's likely an error
-        message(FATAL_ERROR "Cannot determine MERCURY_HOME from MERCURY_DIR.")
-    endif()
-
-    message("Mercury home is set to ${MERCURY_HOME}")
-
-    set(MERCURY_INCLUDE_DIR ${MERCURY_HOME}/include)
-    set(MERCURY_LIBRARY_DIR ${MERCURY_HOME}/lib)
-  endif()
-  message(STATUS "mercury include dir ${MERCURY_INCLUDE_DIR}")
-  message(STATUS "mercury lib dir ${MERCURY_LIBRARY_DIR}")
+  message(STATUS "mercury dir = ${MERCURY_DIR}")
+  find_path(MERCURY_INCLUDE_DIR mercury.h HINTS ${MERCURY_DIR})
+  find_library(MERCURY_LIBRARY mercury HINTS ${MERCURY_DIR})
+  message(STATUS "mercury include dir = ${MERCURY_INCLUDE_DIR}")
+  message(STATUS "mercury lib = ${MERCURY_LIBRARY}")
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
     ${PDC_EXT_INCLUDE_DEPENDENCIES}
     )
