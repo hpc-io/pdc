@@ -64,11 +64,6 @@ typedef enum { ROW_major, COL_major } _pdc_major_type_t;
 
 typedef enum { C_lang = 0, FORTRAN_lang, PYTHON_lang, JULIA_lang, N_LANGUAGES } _pdc_analysis_language_t;
 
-
-
-
-
-
 /***************************/
 /* Library Private Structs */
 /***************************/

@@ -6846,10 +6846,10 @@ PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to)
     if (from == NULL || to == NULL)
         PGOTO_DONE(FAIL);
 
-    (*to)       = (pdc_kvtag_t *)calloc(1, sizeof(pdc_kvtag_t));
-    (*to)->name = (char *)malloc(strlen(from->name) + 1);
-    (*to)->size = from->size;
-    (*to)->type = from->type;
+    (*to)        = (pdc_kvtag_t *)calloc(1, sizeof(pdc_kvtag_t));
+    (*to)->name  = (char *)malloc(strlen(from->name) + 1);
+    (*to)->size  = from->size;
+    (*to)->type  = from->type;
     (*to)->value = (void *)malloc(from->size);
     memcpy((void *)(*to)->name, (void *)from->name, strlen(from->name) + 1);
     memcpy((void *)(*to)->value, (void *)from->value, from->size);
