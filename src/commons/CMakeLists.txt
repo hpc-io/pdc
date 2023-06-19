@@ -140,7 +140,6 @@ set(PUBLIC_HEADER_DIR_LIST
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${CMAKE_CURRENT_SOURCE_DIR}/generic/include
   ${CMAKE_CURRENT_SOURCE_DIR}/profiling/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils/include
 )
 
 foreach(_header_dir ${PUBLIC_HEADER_DIR_LIST})
