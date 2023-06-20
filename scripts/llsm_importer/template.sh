@@ -30,7 +30,7 @@ mkdir -p $PDC_TMPDIR
 let TOTALPROC=$NCLIENT*$N_NODE
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
-TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/source/pdc_llsm/tools/build
+TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/source/pdc/tools/build
 SERVER=$EXECPATH/pdc_server.exe
 CLIENT=$TOOLPATH/llsm_importer
 CLOSE=$EXECPATH/close_server
