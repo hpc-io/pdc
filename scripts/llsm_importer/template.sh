@@ -43,16 +43,17 @@ if [[ "$TOTAL_NUM_PROC_PER_NODE" -gt "$TOTAL_NUM_LOGICAL_CORE_PER_NODE" ]]; then
     echo "fixing the number of client processes to $NUM_CLIENT_PROC_PER_NODE"
 fi
 
-export PDC_TMPDIR=$SCRATCH/data/pdc/conf
-
-rm -rf $PDC_TMPDIR/*
-
+# Set the number of times the test should be repeated.
 REPEAT=1
 
+# calculate the number of total processes for both server side and client side.
 N_NODE=NODENUM
 NCLIENT=$((NUM_CLIENT_PROC_PER_NODE * N_NODE))
 NSERVER=$((NUM_SERVER_PROC_PER_NODE * N_NODE))
 
+# clean up the PDC tmp directory
+export PDC_TMPDIR=$SCRATCH/data/pdc/conf
+rm -rf $PDC_TMPDIR/*
 export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE
 mkdir -p $PDC_TMPDIR
 
