@@ -138,14 +138,14 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
         switch (data_type) {
             case 'i':
                 int ivalue = atoi(field_value);
-                PDCobj_put_tag(cur_obj_g, field_name, &ivalue, sizeof(int));
+                PDCobj_put_tag(cur_obj_g, field_name, &ivalue, PDC_INT, sizeof(int));
                 break;
             case 'f':
                 double fvalue = atof(field_value);
-                PDCobj_put_tag(cur_obj_g, field_name, &fvalue, sizeof(double));
+                PDCobj_put_tag(cur_obj_g, field_name, &fvalue, PDC_DOUBLE, sizeof(double));
                 break;
             case 's':
-                PDCobj_put_tag(cur_obj_g, field_name, field_value, sizeof(char) * (strlen(field_value) + 1));
+                PDCobj_put_tag(cur_obj_g, field_name, field_value, PDC_STRING, strlen(field_value));
                 break;
             default:
                 break;
@@ -154,14 +154,14 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     }
 
     // add extra metadata tags based on the image_info struct
-    PDCobj_put_tag(cur_obj_g, "x", &(image_info->x), sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "y", &(image_info->y), sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "z", &(image_info->z), sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "bits", &(image_info->bits), sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "startSlice", &(image_info->startSlice), sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "stripeSize", &(image_info->stripeSize), sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "is_imageJ", &(image_info->is_imageJ), sizeof(uint64_t));
-    PDCobj_put_tag(cur_obj_g, "imageJ_Z", &(image_info->imageJ_Z), sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "x", &(image_info->x), PDC_UINT64, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "y", &(image_info->y), PDC_UINT64, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "z", &(image_info->z), PDC_UINT64, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "bits", &(image_info->bits), PDC_UINT64, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "startSlice", &(image_info->startSlice), PDC_UINT64, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "stripeSize", &(image_info->stripeSize), PDC_UINT64, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "is_imageJ", &(image_info->is_imageJ), PDC_UINT64, sizeof(uint64_t));
+    PDCobj_put_tag(cur_obj_g, "imageJ_Z", &(image_info->imageJ_Z), PDC_UINT64, sizeof(uint64_t));
 
     // close object
     PDCobj_close(cur_obj_g);
