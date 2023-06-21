@@ -13,6 +13,35 @@
 
 # export PDC_DEBUG=0
 
+# This is a script for running PDC in shared mode on Perlmutter
+# When running in Shared mode, the client processes and server processes are running on the same node.
+# By alternating the number of server processes and the number client processes, you should be able to change the C/S ratio.
+# You can simply set the number of server processes, and let the script to calculate the number of client processes.
+
+# Per node configuration of your HPC system. 
+MAX_PYSICAL_CORE=MPHYSICALCORE
+MAX_HYPERTHREADING=MHYPERTHREADING
+
+# Designated number of threads per process on each node 
+# (this should be associated with -c option in srun)
+NUM_THREAD_PER_SERVER_PROC=NTHREAD_PER_SPROC
+NUM_THREAD_PER_CLIENT_PROC=NTHREAD_PER_CPROC
+
+
+# Designated number of processes for server anc client on each node
+# (this should be associated with -n option in srun)
+NUM_SERVER_PROC_PER_NODE=N_SERVER_PROC
+NUM_CLIENT_PROC_PER_NODE=N_CLIENT_PROC
+
+# test if the number of threads is no larger than the total number of logical cores
+TOTAL_NUM_PROC_PER_NODE=$((NUM_THREAD_PER_SERVER_PROC * NUM_SERVER_PROC_PER_NODE + NUM_THREAD_PER_CLIENT_PROC * NUM_CLIENT_PROC_PER_NODE))
+TOTAL_NUM_LOGICAL_CORE_PER_NODE=$((MAX_PYSICAL_CORE * MAX_HYPERTHREADING))
+if [[ "$TOTAL_NUM_PROC_PER_NODE" -gt "$TOTAL_NUM_LOGICAL_CORE_PER_NODE" ]]; then
+    echo "Error: TOTAL_NUM_PROC_PER_NODE is larger than TOTAL_NUM_LOGICAL_CORE_PER_NODE"
+    TOTAL_AVAILABLE_CORE=$((TOTAL_NUM_LOGICAL_CORE_PER_NODE - NUM_THREAD_PER_SERVER_PROC * NUM_SERVER_PROC_PER_NODE))
+    NUM_CLIENT_PROC_PER_NODE=$(( TOTAL_AVAILABLE_CORE  / NUM_THREAD_PER_CLIENT_PROC))
+    echo "fixing the number of client processes to $NUM_CLIENT_PROC_PER_NODE"
+fi
 
 export PDC_TMPDIR=$SCRATCH/data/pdc/conf
 
@@ -21,13 +50,11 @@ rm -rf $PDC_TMPDIR/*
 REPEAT=1
 
 N_NODE=NODENUM
-NCLIENT=1
-# NCLIENT=126
+NCLIENT=$((NUM_CLIENT_PROC_PER_NODE * N_NODE))
+NSERVER=$((NUM_SERVER_PROC_PER_NODE * N_NODE))
 
 export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE
 mkdir -p $PDC_TMPDIR
-
-let TOTALPROC=$NCLIENT*$N_NODE
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/source/pdc/tools/build
@@ -44,19 +71,25 @@ IMGLIST_PATH=${LLSM_DATA_PATH}/ImageList_from_encoder.csv
 
 date
 
+# OpenMP settings: 
+# set the OPENMP thread number to the smaller number between $NUM_THREAD_PER_SERVER_PROC and $NUM_THREAD_PER_CLIENT_PROC
+export OMP_NUM_THREADS=$((NUM_THREAD_PER_SERVER_PROC < NUM_THREAD_PER_CLIENT_PROC ? NUM_THREAD_PER_SERVER_PROC : NUM_THREAD_PER_CLIENT_PROC))
+export OMP_PLACES=threads
+export OMP_PROC_BIND=close
+
 
 echo ""
 echo "============="
 echo "$i Init server"
 echo "============="
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $((N_NODE*1)) -c 2 --cpu_bind=cores $SERVER &
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NSERVER -c $NUM_THREAD_PER_SERVER_PROC  --cpu_bind=cores $SERVER &
 sleep 5
 
 
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $TOTALPROC -c 2 --cpu_bind=cores $CLIENT -f $IMGLIST_PATH
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT -f $IMGLIST_PATH
 
 echo ""
 echo "================="
