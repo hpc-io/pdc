@@ -811,7 +811,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
     ret_value = HG_Respond(handle, NULL, NULL, &out);
     if (in.access_type == PDC_WRITE) {
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
-                                   &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
+                                   (const hg_size_t *)&(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
         if (ret_value != HG_SUCCESS) {
             printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d \n", __LINE__);
@@ -881,7 +881,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
                        *((int *)(local_bulk_args->data_buf + sizeof(int))));
         */
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
-                                   &(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
+                                   (const hg_size_t *)&(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
         if (ret_value != HG_SUCCESS) {
             printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d \n", __LINE__);

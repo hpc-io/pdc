@@ -28,6 +28,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include "pdc_generic.h"
 
 /*******************/
 /* Public Typedefs */
@@ -41,24 +42,7 @@ typedef int    PDC_int_t;
 typedef float  PDC_float_t;
 typedef double PDC_double_t;
 
-typedef enum {
-    PDC_UNKNOWN  = -1, /* error                                      */
-    PDC_INT      = 0,  /* integer types                              */
-    PDC_FLOAT    = 1,  /* floating-point types                       */
-    PDC_DOUBLE   = 2,  /* double types                               */
-    PDC_CHAR     = 3,  /* character types                            */
-    PDC_COMPOUND = 4,  /* compound types                             */
-    PDC_ENUM     = 5,  /* enumeration types                          */
-    PDC_ARRAY    = 6,  /* Array types                                */
-    PDC_UINT     = 7,  /* unsigned integer types                     */
-    PDC_INT64    = 8,  /* 64-bit integer types                       */
-    PDC_UINT64   = 9,  /* 64-bit unsigned integer types              */
-    PDC_INT16    = 10,
-    PDC_INT8     = 11,
-    PDC_UINT8    = 12,
-    PDC_UINT16   = 13,
-    NCLASSES     = 14 /* this must be last                          */
-} pdc_var_type_t;
+typedef pdc_c_var_type_t pdc_var_type_t;
 
 typedef enum { PDC_PERSIST, PDC_TRANSIENT } pdc_lifetime_t;
 

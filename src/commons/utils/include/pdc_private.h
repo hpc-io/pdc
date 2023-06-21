@@ -146,7 +146,7 @@ extern pbool_t err_occurred;
 
 /* Include a basic profiling interface */
 #ifdef ENABLE_PROFILING
-#include "stack_ops.h"
+#include "pdc_stack_ops.h"
 
 #define FUNC_ENTER(X)                                                                                        \
     do {                                                                                                     \

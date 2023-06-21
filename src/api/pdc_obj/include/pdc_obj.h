@@ -409,7 +409,8 @@ perr_t PDCobj_del(pdcid_t obj_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size);
+perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, pdc_var_type_t value_type,
+                      psize_t value_size);
 
 /**
  * Get tag information
@@ -421,7 +422,8 @@ perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t v
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size);
+perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+                      psize_t *value_size);
 
 /**
  * Delete a tag from the object

@@ -220,7 +220,8 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
         v = i + my_obj_s;
         for (j = 0; j < n_attr; j++) {
             sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", v, j);
-            if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)tag_values[j], tag_value_len + 1) < 0)
+            if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)tag_values[j], PDC_STRING, tag_value_len + 1) <
+                0)
                 printf("fail to add a kvtag to o%" PRIu64 "\n", v);
         }
     }
@@ -238,12 +239,13 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
 void
 get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, uint64_t n_attr, void **tag_values, uint64_t *value_size)
 {
-    uint64_t i;
-    char     tag_name[256];
+    uint64_t       i;
+    char           tag_name[256];
+    pdc_var_type_t tag_type;
 
     for (i = 0; i < n_attr; i++) {
         sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", obj_name_v, i);
-        if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], (void *)&value_size[i]) < 0)
+        if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], &tag_type, (void *)&value_size[i]) < 0)
             printf("fail to get a kvtag from o%" PRIu64 "\n", obj_name_v);
     }
 }

@@ -201,45 +201,11 @@ get_data_type(int data_type)
     if (data_type == -1) {
         return "PDC_UNKNOWN";
     }
-    else if (data_type == 0) {
-        return "PDC_INT";
-    }
-    else if (data_type == 1) {
-        return "PDC_FLOAT";
-    }
-    else if (data_type == 2) {
-        return "PDC_DOUBLE";
-    }
-    else if (data_type == 3) {
-        return "PDC_CHAR";
-    }
-    else if (data_type == 4) {
-        return "PDC_COMPOUND";
-    }
-    else if (data_type == 5) {
-        return "PDC_ENUM";
-    }
-    else if (data_type == 6) {
-        return "PDC_ARRAY";
-    }
-    else if (data_type == 7) {
-        return "PDC_UINT";
-    }
-    else if (data_type == 8) {
-        return "PDC_INT64";
-    }
-    else if (data_type == 9) {
-        return "PDC_UINT64";
-    }
-    else if (data_type == 10) {
-        return "PDC_INT16";
-    }
-    else if (data_type == 11) {
-        return "PDC_INT16";
-    }
-    else {
+    char *result = get_enum_name_by_dtype(data_type);
+    if (result == NULL) {
         return "NULL";
     }
+    return result;
 }
 
 char *

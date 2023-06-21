@@ -33,6 +33,7 @@
 
 #include "pdc_utlist.h"
 #include "pdc_id_pkg.h"
+#include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_cont.h"
@@ -7018,6 +7019,7 @@ PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
     if (kvtag != NULL && kvtag != NULL && kvtag->size != 0) {
         in.kvtag.name  = kvtag->name;
         in.kvtag.value = kvtag->value;
+        in.kvtag.type  = kvtag->type;
         in.kvtag.size  = kvtag->size;
     }
     else
@@ -7061,6 +7063,7 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     client_lookup_args->ret          = output.ret;
     client_lookup_args->kvtag->name  = strdup(output.kvtag.name);
     client_lookup_args->kvtag->size  = output.kvtag.size;
+    client_lookup_args->kvtag->type  = output.kvtag.type;
     client_lookup_args->kvtag->value = malloc(output.kvtag.size);
     memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
     /* PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag); */
@@ -7315,10 +7318,12 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
 
     if (kvtag->value == NULL) {
         in.value = " ";
+        in.type  = PDC_STRING;
         in.size  = 1;
     }
     else {
         in.value = kvtag->value;
+        in.type  = kvtag->type;
         in.size  = kvtag->size;
     }
 
@@ -7576,7 +7581,8 @@ PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused
 }
 
 perr_t
-PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size)
+PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, pdc_var_type_t value_type,
+                psize_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -7585,6 +7591,7 @@ PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_
 
     kvtag.name  = tag_name;
     kvtag.value = (void *)tag_value;
+    kvtag.type  = value_type;
     kvtag.size  = (uint64_t)value_size;
 
     ret_value = PDC_add_kvtag(cont_id, &kvtag, 1);
@@ -7598,7 +7605,8 @@ done:
 }
 
 perr_t
-PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size)
+PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+                psize_t *value_size)
 {
     perr_t       ret_value = SUCCEED;
     pdc_kvtag_t *kvtag     = NULL;
@@ -7610,6 +7618,7 @@ PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *valu
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
 
     *tag_value  = kvtag->value;
+    *value_type = kvtag->type;
     *value_size = kvtag->size;
 
 done:
@@ -7772,7 +7781,7 @@ done:
 }
 
 perr_t
-PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
+PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, pdc_var_type_t value_type, psize_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -7781,6 +7790,7 @@ PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_si
 
     kvtag.name  = tag_name;
     kvtag.value = (void *)tag_value;
+    kvtag.type  = value_type;
     kvtag.size  = (uint64_t)value_size;
 
     ret_value = PDC_add_kvtag(obj_id, &kvtag, 0);
@@ -7793,7 +7803,8 @@ done:
 }
 
 perr_t
-PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
+PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+               psize_t *value_size)
 {
     perr_t       ret_value = SUCCEED;
     pdc_kvtag_t *kvtag     = NULL;
@@ -7805,6 +7816,7 @@ PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
 
     *tag_value  = kvtag->value;
+    *value_type = kvtag->type;
     *value_size = kvtag->size;
 
 done:
