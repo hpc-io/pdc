@@ -165,7 +165,7 @@ write_binary_file(char *filename, void *buffer, size_t size)
 }
 
 int
-update_binary_file(char *filename, void *buffer, size_t size, long start_pos, long length)
+update_binary_file(char *filename, void *buffer, size_t size, unsigned long start_pos, size_t length)
 {
     FILE *fp = open_file(filename, IO_MODE_BINARY IO_MODE_READ IO_MODE_WRITE);
     if (fseek(fp, start_pos, SEEK_SET) != 0) {
