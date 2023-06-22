@@ -6,14 +6,14 @@ MAX_HYPERTHREADING=2
 
 # Designated number of threads per process on each node 
 # (this should be associated with -c option in srun)
-NUM_THREAD_PER_SERVER_PROC=128
+NUM_THREAD_PER_SERVER_PROC=64
 NUM_THREAD_PER_CLIENT_PROC=64
 
 
 # Designated number of processes for server anc client on each node
 # (this should be associated with -n option in srun)
 NUM_SERVER_PROC_PER_NODE=1
-NUM_CLIENT_PROC_PER_NODE=2
+NUM_CLIENT_PROC_PER_NODE=1
 
 
 MAX_NODE=512
@@ -35,7 +35,7 @@ for (( i = 1; i <= $MAX_NODE; i*=2 )); do
     sed -i "s/N_CLIENT_PROC/${NUM_CLIENT_PROC_PER_NODE}/g"           $TARGET
     sed -i "s/NTHREAD_PER_SPROC/${NUM_THREAD_PER_SERVER_PROC}/g"           $TARGET
     sed -i "s/NTHREAD_PER_CPROC/${NUM_THREAD_PER_CLIENT_PROC}/g"           $TARGET
-    if [[ "$i" -gt "16" ]]; then
+    if [[ "$i" -gt "4" ]]; then
         sed -i "s/REG//g"           $TARGET
     else
         sed -i "s/DBG//g"           $TARGET
