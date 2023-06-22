@@ -56,6 +56,7 @@ struct _pdc_client_lookup_args {
     uint32_t    server_id;
     uint32_t    client_id;
     int         ret;
+    int         is_init;
     char *      ret_string;
     char *      client_addr;
 
@@ -821,7 +822,7 @@ hg_return_t PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *call
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_lookup_server(int server_id);
+perr_t PDC_Client_lookup_server(int server_id, int is_init);
 
 /**
  * ********

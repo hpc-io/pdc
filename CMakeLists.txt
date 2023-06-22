@@ -274,7 +274,7 @@ endif()
 option(PDC_ENABLE_LUSTRE "Enable Lustre." OFF)
 if(PDC_ENABLE_LUSTRE)
   set(ENABLE_LUSTRE 1)
-  set(PDC_LUSTRE_TOTAL_OST "248" CACHE STRING "Number of Lustre OSTs")
+  set(PDC_LUSTRE_TOTAL_OST "256" CACHE STRING "Number of Lustre OSTs")
 endif()
 
 #-----------------------------------------------------------------------------

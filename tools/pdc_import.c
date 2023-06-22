@@ -711,9 +711,10 @@ do_attr(hid_t aid, pdcid_t obj_id)
     char    buf[MAX_NAME]         = {0};
     char    read_buf[TAG_LEN_MAX] = {0};
     // pdc_kvtag_t kvtag1;
-    char * tag_name;
-    void * tag_value;
-    size_t tag_size;
+    char *         tag_name;
+    void *         tag_value;
+    pdc_var_type_t value_type;
+    size_t         tag_size;
 
     /*
      * Get the name of the attribute.
@@ -735,7 +736,7 @@ do_attr(hid_t aid, pdcid_t obj_id)
     else {
         tag_size = H5Tget_size(atype);
     }
-    PDCobj_put_tag(obj_id, tag_name, tag_value, tag_size);
+    PDCobj_put_tag(obj_id, tag_name, tag_value, value_type, tag_size);
 
     /*
      * Get attribute information: dataspace, data type

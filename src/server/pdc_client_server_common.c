@@ -2029,6 +2029,7 @@ HG_TEST_RPC_CB(client_test_connect, handle)
 #endif
     args->client_id = in.client_id;
     args->nclient   = in.nclient;
+    args->is_init   = in.is_init;
     sprintf(args->client_addr, "%s", in.client_addr);
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&pdc_client_info_mutex_g);
@@ -3468,7 +3469,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
+                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
                             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release, "
                                                         "handle) local and remote bulk size does not match");
                         }
@@ -3641,7 +3642,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
+                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
                             /* PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release,
                              * handle) local and remote bulk size does not match"); */
                         }
@@ -7218,10 +7219,10 @@ PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to)
     if (from == NULL || to == NULL)
         PGOTO_DONE(FAIL);
 
-    (*to)       = (pdc_kvtag_t *)calloc(1, sizeof(pdc_kvtag_t));
-    (*to)->name = (char *)malloc(strlen(from->name) + 1);
-    (*to)->size = from->size;
-
+    (*to)        = (pdc_kvtag_t *)calloc(1, sizeof(pdc_kvtag_t));
+    (*to)->name  = (char *)malloc(strlen(from->name) + 1);
+    (*to)->size  = from->size;
+    (*to)->type  = from->type;
     (*to)->value = (void *)malloc(from->size);
     memcpy((void *)(*to)->name, (void *)from->name, strlen(from->name) + 1);
     memcpy((void *)(*to)->value, (void *)from->value, from->size);

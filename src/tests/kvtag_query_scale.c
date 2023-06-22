@@ -129,6 +129,7 @@ main(int argc, char *argv[])
     // Add tags
     kvtag.name  = "Group";
     kvtag.value = (void *)&v;
+    kvtag.type  = PDC_INT;
     kvtag.size  = sizeof(int);
 
     for (iter = 0; iter < round; iter++) {
@@ -136,7 +137,7 @@ main(int argc, char *argv[])
 
         v = iter;
         for (i = 0; i < my_add_tag; i++) {
-            if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.size) < 0)
+            if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
                 printf("fail to add a kvtag to o%d\n", i + my_obj_s);
         }
 
@@ -153,6 +154,7 @@ main(int argc, char *argv[])
 
     kvtag.name  = "Group";
     kvtag.value = (void *)&v;
+    kvtag.type  = PDC_INT;
     kvtag.size  = sizeof(int);
 
     for (iter = 0; iter < round; iter++) {
@@ -175,7 +177,7 @@ main(int argc, char *argv[])
 #endif
 
         if (my_rank == 0)
-            printf("Total time to query %d objects with tag: %.4f\n", ntotal, total_time);
+            printf("Total time to query %d objects with tag: %.5e\n", ntotal, total_time);
         fflush(stdout);
     }
 

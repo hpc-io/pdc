@@ -78,14 +78,13 @@ pdc_task_list_t *pdc_server_agg_task_head_g = NULL;
 pdc_task_list_t *pdc_server_s2s_task_head_g = NULL;
 int              pdc_server_task_id_g       = PDC_SERVER_TASK_INIT_VALUE;
 
-pdc_client_info_t *       pdc_client_info_g         = NULL;
-pdc_remote_server_info_t *pdc_remote_server_info_g  = NULL;
-char *                    all_addr_strings_1d_g     = NULL;
-char **                   all_addr_strings_g        = NULL;
-int                       is_all_client_connected_g = 0;
-int                       is_hash_table_init_g      = 0;
-int                       lustre_stripe_size_mb_g   = 16;
-int                       lustre_total_ost_g        = 0;
+pdc_client_info_t *       pdc_client_info_g        = NULL;
+pdc_remote_server_info_t *pdc_remote_server_info_g = NULL;
+char *                    all_addr_strings_1d_g    = NULL;
+char **                   all_addr_strings_g       = NULL;
+int                       is_hash_table_init_g     = 0;
+int                       lustre_stripe_size_mb_g  = 16;
+int                       lustre_total_ost_g       = 0;
 
 hg_id_t get_remote_metadata_register_id_g;
 hg_id_t buf_map_server_register_id_g;
@@ -265,13 +264,15 @@ PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
     hg_thread_mutex_lock(&pdc_client_addr_mutex_g);
 #endif
 
-    if (is_all_client_connected_g == 1) {
-        printf("==PDC_SERVER[%d]: new application run detected, create new client info\n", pdc_server_rank_g);
-        fflush(stdout);
+    if (pdc_client_info_g && in->is_init == 1) {
+        if (is_debug_g && pdc_server_rank_g == 0) {
+            printf("==PDC_SERVER[%d]: new application run detected, create new client info\n",
+                   pdc_server_rank_g);
+            fflush(stdout);
+        }
 
         PDC_Server_destroy_client_info(pdc_client_info_g);
-        pdc_client_info_g         = NULL;
-        is_all_client_connected_g = 0;
+        pdc_client_info_g = NULL;
     }
 
 #ifdef ENABLE_MULTITHREAD
@@ -1226,6 +1227,7 @@ PDC_Server_checkpoint()
                 fwrite(&key_len, sizeof(int), 1, file);
                 fwrite(kvlist_elt->kvtag->name, key_len, 1, file);
                 fwrite(&kvlist_elt->kvtag->size, sizeof(uint32_t), 1, file);
+                fwrite(&kvlist_elt->kvtag->type, sizeof(int8_t), 1, file);
                 fwrite(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size, 1, file);
             }
 
@@ -1405,7 +1407,8 @@ PDC_Server_restart(char *filename)
     }
 
     // init hash table
-    PDC_Server_init_hash_table();
+    // FIXME: check if we need to init the hash table again.
+    // PDC_Server_init_hash_table();
 
     if (fread(&n_cont, sizeof(int), 1, file) != 1) {
         printf("Read failed for n_count\n");
@@ -1493,6 +1496,9 @@ PDC_Server_restart(char *filename)
                 }
                 if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) {
                     printf("Read failed for kvtag_list->kvtag->size\n");
+                }
+                if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) {
+                    printf("Read failed for kvtag_list->kvtag->type\n");
                 }
                 kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                 if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {

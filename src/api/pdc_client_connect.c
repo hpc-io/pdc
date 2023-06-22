@@ -33,6 +33,7 @@
 
 #include "pdc_utlist.h"
 #include "pdc_id_pkg.h"
+#include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_cont.h"
@@ -264,7 +265,6 @@ PDC_Client_check_response(hg_context_t **hg_context)
 
     ret_value = SUCCEED;
 
-    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
 
@@ -806,6 +806,7 @@ client_test_connect_lookup_cb(const struct hg_cb_info *callback_info)
     in.client_id   = pdc_client_mpi_rank_g;
     in.nclient     = pdc_client_mpi_size_g;
     in.client_addr = client_lookup_args->client_addr;
+    in.is_init     = client_lookup_args->is_init;
 
     ret_value = HG_Forward(client_test_handle, client_test_connect_rpc_cb, client_lookup_args, &in);
     if (ret_value != HG_SUCCESS)
@@ -817,7 +818,7 @@ done:
 }
 
 perr_t
-PDC_Client_lookup_server(int server_id)
+PDC_Client_lookup_server(int server_id, int is_init)
 {
     perr_t                         ret_value = SUCCEED;
     hg_return_t                    hg_ret;
@@ -838,6 +839,7 @@ PDC_Client_lookup_server(int server_id)
     lookup_args.client_id   = pdc_client_mpi_rank_g;
     lookup_args.server_id   = server_id;
     lookup_args.client_addr = self_addr;
+    lookup_args.is_init     = is_init;
     target_addr_string      = pdc_server_info_g[lookup_args.server_id].addr_string;
 
     if (is_client_debug_g == 1) {
@@ -867,7 +869,7 @@ done:
 }
 
 perr_t
-PDC_Client_try_lookup_server(int server_id)
+PDC_Client_try_lookup_server(int server_id, int is_init)
 {
     perr_t ret_value = SUCCEED;
     int    n_retry   = 1;
@@ -880,7 +882,7 @@ PDC_Client_try_lookup_server(int server_id)
     while (pdc_server_info_g[server_id].addr_valid != 1) {
         if (n_retry > PDC_MAX_TRIAL_NUM)
             break;
-        ret_value = PDC_Client_lookup_server(server_id);
+        ret_value = PDC_Client_lookup_server(server_id, is_init);
         if (ret_value != SUCCEED)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR with PDC_Client_lookup_server", pdc_client_mpi_rank_g);
         n_retry++;
@@ -1322,7 +1324,7 @@ drc_access_again:
         // Each client connect to its node local server only at start time
         local_server_id =
             PDC_get_local_server_id(pdc_client_mpi_rank_g, pdc_nclient_per_server_g, pdc_server_num_g);
-        if (PDC_Client_try_lookup_server(local_server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(local_server_id, 1) != SUCCEED)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR lookup server %d\n", pdc_client_mpi_rank_g,
                         local_server_id);
     }
@@ -1332,7 +1334,7 @@ drc_access_again:
         for (local_server_id = 0; local_server_id < pdc_server_num_g; local_server_id++) {
             if (pdc_client_mpi_size_g > 1000)
                 PDC_msleep(pdc_client_mpi_rank_g % 300);
-            if (PDC_Client_try_lookup_server(local_server_id) != SUCCEED)
+            if (PDC_Client_try_lookup_server(local_server_id, 1) != SUCCEED)
                 PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR lookup server %d", pdc_client_mpi_rank_g,
                             local_server_id);
         }
@@ -1673,7 +1675,7 @@ PDC_partial_query(int is_list_all, int user_id, const char *app_name, const char
     }
 
     for (server_id = my_server_start; server_id < my_server_end; server_id++) {
-        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
         hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g,
@@ -1757,7 +1759,7 @@ PDC_Client_query_tag(const char *tags, int *n_res, pdc_metadata_t ***out)
     *n_res = 0;
 
     for (server_id = 0; server_id < pdc_server_num_g; server_id++) {
-        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
         hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_partial_register_id_g,
@@ -1968,7 +1970,7 @@ PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_tag_register_id_g,
@@ -2053,7 +2055,7 @@ PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_update_register_id_g,
@@ -2142,7 +2144,7 @@ PDC_Client_delete_metadata_by_id(uint64_t obj_id)
     else
         debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_by_id_register_id_g,
@@ -2199,7 +2201,7 @@ PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
     else
         debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_delete_register_id_g,
@@ -2254,7 +2256,7 @@ PDC_Client_query_metadata_name_only(const char *obj_name, pdc_metadata_t **out)
         // Debug statistics for counting number of messages sent to each server.
         debug_server_id_count[server_id]++;
 
-        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g,
@@ -2311,7 +2313,7 @@ PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_query_register_id_g,
@@ -3062,7 +3064,7 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret =
@@ -3137,7 +3139,7 @@ PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, obj_reset_dims_register_id_g,
@@ -3267,7 +3269,7 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
                server_id);
         fflush(stdout);
     }
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     // We have already filled in the pdc_server_info_g[server_id].addr in previous
@@ -3328,7 +3330,7 @@ PDC_Client_close_all_server()
     if (pdc_client_mpi_size_g >= pdc_server_num_g) {
         if (pdc_client_mpi_rank_g < pdc_server_num_g) {
             server_id = pdc_client_mpi_rank_g;
-            if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+            if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
                 PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server",
                             pdc_client_mpi_rank_g);
 
@@ -3354,7 +3356,7 @@ PDC_Client_close_all_server()
         if (pdc_client_mpi_rank_g == 0) {
             for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
                 server_id = pdc_server_num_g - 1 - i;
-                if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+                if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
                     PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server",
                                 pdc_client_mpi_rank_g);
 
@@ -3422,7 +3424,7 @@ PDC_Client_buf_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id, struct pdc_re
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[data_server_id]++;
 
-    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_unmap_register_id_g,
@@ -3503,7 +3505,7 @@ PDC_Client_flush_obj(uint64_t obj_id)
     FUNC_ENTER(NULL);
     for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
         server_id = pdc_server_num_g - 1 - i;
-        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, flush_obj_register_id_g,
@@ -3543,7 +3545,7 @@ PDC_Client_flush_obj_all()
     FUNC_ENTER(NULL);
     for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
         server_id = pdc_server_num_g - 1 - i;
-        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, flush_obj_all_register_id_g,
@@ -3602,7 +3604,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
@@ -3688,7 +3690,7 @@ PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, 
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    if (PDC_Client_try_lookup_server(metadata_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(metadata_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[metadata_server_id].addr,
@@ -3759,7 +3761,7 @@ PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, i
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    if (PDC_Client_try_lookup_server(metadata_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(metadata_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[metadata_server_id].addr,
@@ -3830,7 +3832,7 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
 
     hg_class = HG_Context_get_class(send_context_g);
 
-    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
     hg_ret =
@@ -3942,7 +3944,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
 
     pack_region_metadata(remote_ndim, remote_offset, remote_size, &(in.remote_region));
 
-    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
@@ -4012,7 +4014,7 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_se
 
     in.transfer_request_id = transfer_request_id;
 
-    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
@@ -4064,7 +4066,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     in.transfer_request_id = transfer_request_id;
     in.access_type         = access_type;
 
-    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
@@ -4245,7 +4247,7 @@ PDC_Client_buf_map(pdcid_t local_region_id, pdcid_t remote_obj_id, size_t ndim, 
     else
         PGOTO_ERROR(FAIL, "mapping for array of dimension greater than 4 is not supproted");
 
-    if (PDC_Client_try_lookup_server(data_server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, buf_map_register_id_g,
@@ -4328,7 +4330,7 @@ PDC_Client_region_lock(pdcid_t remote_obj_id, struct _pdc_obj_info *object_info,
     in.data_unit = PDC_get_var_type_size(data_type);
     PDC_region_info_t_to_transfer_unit(region_info, &(in.region), in.data_unit);
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_lock_register_id_g,
@@ -4439,7 +4441,7 @@ pdc_region_release_with_server_transform(struct _pdc_obj_info *  object_info,
     unit = type_extent;
     PDC_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     // Create a bulk handle for the temp buffer used by the transform
@@ -4548,7 +4550,7 @@ pdc_region_release_with_server_analysis(struct _pdc_obj_info *  object_info,
     in.output_obj_id = obj_prop->obj_prop_pub->obj_prop_id;
     in.output_iter   = outputIter->meta_id;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_analysis_release_register_id_g,
@@ -4648,7 +4650,7 @@ pdc_region_release_with_client_transform(struct _pdc_obj_info *  object_info,
     unit = type_extent;
     PDC_region_info_t_to_transfer_unit(region_info, &(in.region), unit);
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     transform_args.data             = data_ptrs[0];
@@ -4980,7 +4982,7 @@ PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *object_in
 
     in.data_unit = PDC_get_var_type_size(data_type);
     PDC_region_info_t_to_transfer_unit(region_info, &(in.region), in.data_unit);
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, region_release_register_id_g,
@@ -5203,7 +5205,7 @@ PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadat
         read_size *= region->size[i];
     }
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_check_register_id_g,
@@ -5350,7 +5352,7 @@ PDC_Client_data_server_read(struct pdc_request *request)
     PDC_metadata_t_to_transfer_t(meta, &in.meta);
     PDC_region_info_t_to_transfer(region, &in.region);
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_read_register_id_g,
@@ -5470,7 +5472,7 @@ PDC_Client_data_server_write_check(struct pdc_request *request, int *status)
         write_size *= region->size[i];
     }
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_write_check_register_id_g,
@@ -5635,7 +5637,7 @@ PDC_Client_data_server_write(struct pdc_request *request)
     PDC_metadata_t_to_transfer_t(meta, &in.meta);
     PDC_region_info_t_to_transfer(region, &in.region);
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, data_server_write_register_id_g,
@@ -6006,7 +6008,7 @@ PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t co
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     // Send the bulk handle to the target with RPC
@@ -6124,7 +6126,7 @@ PDC_Client_add_tags_to_container(pdcid_t cont_id, char *tags)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     // Send the bulk handle to the target with RPC
@@ -6201,7 +6203,7 @@ PDC_Client_query_container_name(const char *cont_name, uint64_t *cont_meta_id)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, container_query_register_id_g,
@@ -6378,7 +6380,7 @@ PDC_Client_query_name_read_entire_obj(int nobj, char **obj_names, void ***out_bu
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     // Send the bulk handle to the target with RPC
@@ -6559,7 +6561,7 @@ PDC_Client_server_checkpoint(uint32_t server_id)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, server_checkpoint_rpc_register_id_g,
@@ -6651,7 +6653,7 @@ PDC_Client_send_client_shm_info(uint32_t server_id, char *shm_addr, uint64_t siz
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret =
@@ -6766,7 +6768,7 @@ PDC_send_region_storage_meta_shm(uint32_t server_id, int n, region_storage_meta_
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr,
@@ -7074,7 +7076,7 @@ PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_storage_m
         send_n_request++;
         debug_server_id_count[server_id]++;
 
-        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR with PDC_Client_try_lookup_server",
                         pdc_client_mpi_rank_g);
 
@@ -7651,7 +7653,7 @@ PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_add_kvtag_register_id_g,
@@ -7662,6 +7664,7 @@ PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
     if (kvtag != NULL && kvtag != NULL && kvtag->size != 0) {
         in.kvtag.name  = kvtag->name;
         in.kvtag.value = kvtag->value;
+        in.kvtag.type  = kvtag->type;
         in.kvtag.size  = kvtag->size;
     }
     else
@@ -7705,6 +7708,7 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     client_lookup_args->ret          = output.ret;
     client_lookup_args->kvtag->name  = strdup(output.kvtag.name);
     client_lookup_args->kvtag->size  = output.kvtag.size;
+    client_lookup_args->kvtag->type  = output.kvtag.type;
     client_lookup_args->kvtag->value = malloc(output.kvtag.size);
     memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
     /* PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag); */
@@ -7748,7 +7752,7 @@ PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag, int is_cont)
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_get_kvtag_register_id_g,
@@ -7800,7 +7804,7 @@ PDCtag_delete(pdcid_t obj_id, char *tag_name)
 
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_del_kvtag_register_id_g,
@@ -7959,17 +7963,19 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
 
     if (kvtag->value == NULL) {
         in.value = " ";
+        in.type  = PDC_STRING;
         in.size  = 1;
     }
     else {
         in.value = kvtag->value;
+        in.type  = kvtag->type;
         in.size  = kvtag->size;
     }
 
     *out   = NULL;
     *n_res = 0;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, query_kvtag_register_id_g,
@@ -8220,7 +8226,8 @@ PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused
 }
 
 perr_t
-PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size)
+PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, pdc_var_type_t value_type,
+                psize_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -8229,6 +8236,7 @@ PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_
 
     kvtag.name  = tag_name;
     kvtag.value = (void *)tag_value;
+    kvtag.type  = value_type;
     kvtag.size  = (uint64_t)value_size;
 
     ret_value = PDC_add_kvtag(cont_id, &kvtag, 1);
@@ -8242,7 +8250,8 @@ done:
 }
 
 perr_t
-PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size)
+PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+                psize_t *value_size)
 {
     perr_t       ret_value = SUCCEED;
     pdc_kvtag_t *kvtag     = NULL;
@@ -8254,6 +8263,7 @@ PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *valu
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
 
     *tag_value  = kvtag->value;
+    *value_type = kvtag->type;
     *value_size = kvtag->size;
 
 done:
@@ -8416,7 +8426,7 @@ done:
 }
 
 perr_t
-PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
+PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, pdc_var_type_t value_type, psize_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -8425,6 +8435,7 @@ PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_si
 
     kvtag.name  = tag_name;
     kvtag.value = (void *)tag_value;
+    kvtag.type  = value_type;
     kvtag.size  = (uint64_t)value_size;
 
     ret_value = PDC_add_kvtag(obj_id, &kvtag, 0);
@@ -8437,7 +8448,8 @@ done:
 }
 
 perr_t
-PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
+PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+               psize_t *value_size)
 {
     perr_t       ret_value = SUCCEED;
     pdc_kvtag_t *kvtag     = NULL;
@@ -8449,6 +8461,7 @@ PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
 
     *tag_value  = kvtag->value;
+    *value_type = kvtag->type;
     *value_size = kvtag->size;
 
 done:
@@ -8594,7 +8607,7 @@ PDC_send_data_query(pdc_query_t *query, pdc_query_get_op_t get_op, uint64_t *nhi
         query_xfer->next_server_id = next_server;
         query_xfer->prev_server_id = prev_server;
 
-        if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, send_data_query_register_id_g, &handle);
@@ -8748,7 +8761,7 @@ PDC_Client_get_sel_data(pdcid_t obj_id, pdc_selection_t *sel, void *data)
     server_id   = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
 
-    if (PDC_Client_try_lookup_server(server_id) != SUCCEED)
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, get_sel_data_register_id_g, &handle);

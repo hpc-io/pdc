@@ -197,7 +197,7 @@ main(int argc, char **argv)
 
     if (rank == 0) {
         printf(
-            "Total time read %d ts data each %luMB with %d ranks: %.6f, meta %.2f, wait %.2f, sleep %.2f\n",
+            "Total time read %d ts data each %luMB with %d ranks: %.5e, meta %.2f, wait %.2f, sleep %.2f\n",
             ntimestep, size_MB, size, total_elapsed / 1000000.0, total_meta_sec, total_wait_sec,
             sleepseconds * ntimestep);
         fflush(stdout);

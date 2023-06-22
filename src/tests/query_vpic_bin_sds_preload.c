@@ -94,7 +94,7 @@ main(void)
     gettimeofday(&pdc_timer_end, 0);
     get_sel_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     printf("Query result in (%" PRIu64 " hits):\n", sel.nhits);
-    printf("Get selection time: %.4f\n", get_sel_time);
+    printf("Get selection time: %.5e\n", get_sel_time);
 
     if (sel.nhits > 0) {
         energy_data = (float *)calloc(sel.nhits, sizeof(float));
@@ -110,7 +110,7 @@ main(void)
 
         gettimeofday(&pdc_timer_end, 0);
         get_data_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-        printf("Get data time: %.4f\n", get_data_time);
+        printf("Get data time: %.5e\n", get_data_time);
 
         fflush(stdout);
     }
