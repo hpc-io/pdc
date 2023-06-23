@@ -95,8 +95,8 @@ main(int argc, char **argv)
         sleeptime    = atoi(argv[3]);
     }
     if (rank == 0)
-        printf("Writing %" PRIu64 " number of particles for %d steps with %d clients.\n", numparticles, steps,
-               size);
+        printf("Writing %" PRIu64 " number of particles for %ld steps with %d clients.\n", numparticles,
+               steps, size);
 
     dims[0] = numparticles;
 
@@ -504,7 +504,7 @@ main(int argc, char **argv)
         if (i != steps - 1) {
             sleep(sleeptime);
             if (rank == 0) {
-                printf("Sleep time: %d.00\n", sleeptime);
+                printf("Sleep time: %ld.00\n", sleeptime);
             }
         }
     } // End for steps

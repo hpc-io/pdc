@@ -111,7 +111,7 @@ extern hg_thread_pool_t *hg_test_thread_pool_g;
 extern hg_thread_pool_t *hg_test_thread_pool_fs_g;
 
 hg_atomic_int32_t close_server_g;
-char              pdc_server_tmp_dir_g[ADDR_MAX];
+char              pdc_server_tmp_dir_g[ADDR_MAX / 2];
 int               is_restart_g                 = 0;
 int               pdc_server_rank_g            = 0;
 int               pdc_server_size_g            = 1;
