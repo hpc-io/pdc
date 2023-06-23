@@ -126,6 +126,7 @@ static char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
     "PDC_SIZE_T"
 };
 
+__attribute__((unused))
 static char *DataTypeFormat[PDC_TYPE_COUNT] = {
     "%d",     // int
     "%f",     // float
