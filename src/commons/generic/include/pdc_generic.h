@@ -150,7 +150,7 @@ static const char *DataTypeFormat[PDC_TYPE_COUNT] = {
 
 // clang-format on
 
-static const char *
+static char *
 get_enum_name_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -159,7 +159,7 @@ get_enum_name_by_dtype(pdc_c_var_type_t type)
     return DataTypeEnumNames[type];
 }
 
-static const size_t
+static size_t
 get_size_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -168,7 +168,7 @@ get_size_by_dtype(pdc_c_var_type_t type)
     return DataTypeSizes[type];
 }
 
-static const size_t
+static size_t
 get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_class,
                          pdc_c_var_type_t pdc_type)
 {
@@ -184,7 +184,7 @@ get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_cl
     else if (pdc_class == PDC_CLS_ARRAY) {
         if (pdc_type == PDC_STRING) {
             char **str_arr = (char **)data;
-            int    i       = 0;
+            size   i       = 0;
             for (i = 0; i < item_count; i++) {
                 size = size + (strlen(str_arr[i]) + 1) * sizeof(char);
             }
@@ -196,7 +196,7 @@ get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_cl
     return size;
 }
 
-static const char *
+static char *
 get_name_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
