@@ -1990,7 +1990,7 @@ PDC_Server_get_env()
     if (tmp_env_char == NULL)
         tmp_env_char = "./pdc_tmp";
 
-    snprintf(pdc_server_tmp_dir_g, ADDR_MAX, "%s/", tmp_env_char);
+    snprintf(pdc_server_tmp_dir_g, ADDR_MAX / 2, "%s/", tmp_env_char);
 
     lustre_total_ost_g = 1;
 #ifdef ENABLE_LUSTRE
