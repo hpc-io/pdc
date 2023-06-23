@@ -10,9 +10,9 @@
 #define MAX_BUFFER_SIZE 1000
 
 typedef struct {
-    PDC_CType pdc_type; /**< Data type of the key */
-    size_t    size;     /**< Size of the key */
-    void *    key;      /**< Pointer to the key data */
+    pdc_c_var_type_t pdc_type; /**< Data type of the key */
+    size_t           size;     /**< Size of the key */
+    void *           key;      /**< Pointer to the key data */
 } PDC_SERDE_Key;
 
 typedef struct {
@@ -111,7 +111,7 @@ void pdc_serde_print(PDC_SERDE_SerializedData *data);
  * @return Pointer to the created PDC_SERDE_Key structure
  */
 static inline PDC_SERDE_Key *
-PDC_SERDE_KEY(void *key, PDC_CType pdc_type, size_t size)
+PDC_SERDE_KEY(void *key, pdc_c_var_type_t pdc_type, size_t size)
 {
     PDC_SERDE_Key *pdc_key  = (PDC_SERDE_Key *)malloc(sizeof(PDC_SERDE_Key));
     size_t         key_size = (size_t)get_size_by_class_n_type(key, size, PDC_CLS_SCALAR, pdc_type);
@@ -133,7 +133,7 @@ PDC_SERDE_KEY(void *key, PDC_CType pdc_type, size_t size)
  * @return Pointer to the created PDC_SERDE_Value structure
  */
 static inline PDC_SERDE_Value *
-PDC_SERDE_VALUE(void *data, PDC_CType pdc_type, PDC_CType_Class pdc_class, size_t size)
+PDC_SERDE_VALUE(void *data, pdc_c_var_type_t pdc_type, pdc_c_var_class_t pdc_class, size_t size)
 {
     PDC_SERDE_Value *pdc_value  = (PDC_SERDE_Value *)malloc(sizeof(PDC_SERDE_Value));
     size_t           value_size = 0;
