@@ -130,7 +130,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
     perr_t ret_value = SUCCEED;
     size_t len;
     int    i, index;
-    char   tmp[ADDR_MAX];
+    char   tmp[TMP_DIR_STRING_LEN];
     char   cmd[TAG_LEN_MAX];
 
     FUNC_ENTER(NULL);
@@ -4695,7 +4695,7 @@ PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
     while (write_size > max_write_size) {
         ret = write(fd, buf, max_write_size);
         if (ret < 0 || ret != (ssize_t)max_write_size) {
-            printf("==PDC_SERVER[%d]: in-loop: write %d failed, ret = %d, max_write_size = %llu\n",
+            printf("==PDC_SERVER[%d]: in-loop: write %d failed, ret = %ld, max_write_size = %lu\n",
                    pdc_server_rank_g, fd, ret, max_write_size);
             ret_value = FAIL;
             goto done;
@@ -4737,7 +4737,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     double start = MPI_Wtime(), start_posix;
 #endif
 
-    uint64_t write_size;
+    uint64_t write_size = 0;
     if (region_info->ndim >= 1)
         write_size = unit * region_info->size[0];
     if (region_info->ndim >= 2)
@@ -7253,15 +7253,18 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
     pdc_selection_t *sel = query->sel;
     uint64_t         nelem;
     size_t           i, j, unit_size;
-    pdc_query_op_t   op = PDC_QUERY_OR, lop = PDC_QUERY_OR, rop = PDC_QUERY_OR;
-    float            flo = .0, fhi = .0;
-    double           dlo = .0, dhi = .0;
-    int              ilo = 0, ihi = 0, ndim, count = 0;
-    uint32_t         ulo = 0, uhi = 0;
-    int64_t          i64lo = 0, i64hi = 0;
-    uint64_t         ui64lo = 0, ui64hi = 0;
-    void *           value = NULL, *buf = NULL;
-    int              n_eval_region = 0, can_skip, region_iter = 0;
+    // FIXME: need to check the types of these 'op's. I think they should be of the following (or don't even
+    // need to be initilized):
+    pdc_query_op_t op = PDC_EQ, lop = PDC_EQ, rop = PDC_EQ;
+    // pdc_query_op_t op = PDC_QUERY_OR, lop = PDC_QUERY_OR, rop = PDC_QUERY_OR;
+    float    flo = .0, fhi = .0;
+    double   dlo = .0, dhi = .0;
+    int      ilo = 0, ihi = 0, ndim, count = 0;
+    uint32_t ulo = 0, uhi = 0;
+    int64_t  i64lo = 0, i64hi = 0;
+    uint64_t ui64lo = 0, ui64hi = 0;
+    void *   value = NULL, *buf = NULL;
+    int      n_eval_region = 0, can_skip, region_iter = 0;
 
     printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__);
     fflush(stdout);
@@ -9484,7 +9487,7 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     get_sel_data_rpc_in_t *in  = (get_sel_data_rpc_in_t *)callback_info->arg;
     query_task_t *         task_elt, *task = NULL;
     pdc_metadata_t *       meta;
-    struct hg_cb_info      fake_callback_info;
+    struct hg_cb_info      fake_callback_info = {0};
 
     DL_FOREACH(query_task_list_head_g, task_elt)
     {

@@ -76,7 +76,7 @@ main(int argc, char **argv)
     uint64_t *offset_remote;
     uint64_t *mysize;
     double    t0, t1;
-    int       steps = 1, sleeptime = 0;
+    uint64_t  steps = 1, sleeptime = 0;
 
     pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
         transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
@@ -95,8 +95,8 @@ main(int argc, char **argv)
         sleeptime    = atoi(argv[3]);
     }
     if (rank == 0)
-        printf("Writing %" PRIu64 " number of particles for %d steps with %d clients.\n", numparticles, steps,
-               size);
+        printf("Writing %" PRIu64 " number of particles for %ld steps with %d clients.\n", numparticles,
+               steps, size);
 
     dims[0] = numparticles;
 
@@ -199,7 +199,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
         if (rank == 0) {
-            printf("\n#Step  %llu\n", i);
+            printf("\n#Step  %lu\n", i);
         }
 #endif
         PDCprop_set_obj_time_step(obj_prop_xx, i);
@@ -504,7 +504,7 @@ main(int argc, char **argv)
         if (i != steps - 1) {
             sleep(sleeptime);
             if (rank == 0) {
-                printf("Sleep time: %d.00\n", sleeptime);
+                printf("Sleep time: %ld.00\n", sleeptime);
             }
         }
     } // End for steps
