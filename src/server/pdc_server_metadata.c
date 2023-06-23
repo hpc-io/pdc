@@ -2928,7 +2928,7 @@ brutal_force_partial_search(metadata_query_transfer_in_t *in, uint32_t *n_meta, 
 
     uint32_t          iter = 0;
     HashTableIterator hash_table_iter;
-    HashTableEntry *  head = NULL;
+    HashTableValue *  head = NULL;
     pdc_metadata_t *  elt;
     int               n_entry;
 
