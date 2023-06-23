@@ -250,7 +250,7 @@ pdc_serde_print(PDC_SERDE_SerializedData *data)
     printf("  numKeys: %zu\n", data->header->numKeys);
     printf("  totalSize: %zu\n", data->header->totalSize);
     for (size_t i = 0; i < data->header->numKeys; i++) {
-        printf("  key %d:\n", i);
+        printf("  key %ld:\n", i);
         printf("    type: %d\n", data->header->keys[i].pdc_type);
         printf("    size: %zu\n", data->header->keys[i].size);
         printf("    key: %s\n", (char *)data->header->keys[i].key);
@@ -259,7 +259,7 @@ pdc_serde_print(PDC_SERDE_SerializedData *data)
     printf("  numValues: %zu\n", data->data->numValues);
     printf("  totalSize: %zu\n", data->data->totalSize);
     for (size_t i = 0; i < data->data->numValues; i++) {
-        printf("  value %d:\n", i);
+        printf("  value %ld:\n", i);
         printf("    class: %d\n", data->data->values[i].pdc_class);
         printf("    type: %d\n", data->data->values[i].pdc_type);
         printf("    size: %zu\n", data->data->values[i].size);

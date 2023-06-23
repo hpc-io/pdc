@@ -17,7 +17,7 @@ typedef enum { false = 0, true = 1 } bool;
 #endif
 #endif
 
-typedef enum {
+typedef enum pdc_c_var_type_t {
     PDC_UNKNOWN    = -1, /* error                                                          */
     PDC_INT        = 0,  /* integer types     (identical to int32_t)                       */
     PDC_FLOAT      = 1,  /* floating-point types                                           */
@@ -43,7 +43,7 @@ typedef enum {
 
 // typedef pdc_c_var_type_t PDC_CType;
 
-typedef enum {
+typedef enum pdc_c_var_class_t {
     PDC_CLS_SCALAR,
     PDC_CLS_ARRAY,
     PDC_CLS_ENUM,     // not implemented, users can use PDC_CT_INT
