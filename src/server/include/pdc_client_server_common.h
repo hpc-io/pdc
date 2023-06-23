@@ -66,7 +66,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif /* HOST_NAME_MAX */
 
 #define PAGE_SIZE                    4096
-#define ADDR_MAX                     512
+#define ADDR_MAX                     1024
 #define DIM_MAX                      4
 #define TAG_LEN_MAX                  2048
 #define PDC_SERVER_ID_INTERVEL       1000000000ull
