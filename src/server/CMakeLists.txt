@@ -53,6 +53,10 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(pdc_server.exe PRIVATE ${SUPPRESS_UNUSED_ARG} ${SUPPRESS_UNUSED_VAR} ${SUPPRESS_UNUSED_FUNC})
+endif()
+
 #install(
 #  TARGETS
 #    pdc_server.exe

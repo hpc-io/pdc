@@ -107,6 +107,10 @@ message(STATUS "PDC_BUILD_INCLUDE_DEPENDENCIES: ${PDC_BUILD_INCLUDE_DEPENDENCIES
 
 add_library(pdc ${PDC_SRCS})
 
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(pdc PRIVATE ${SUPPRESS_UNUSED_ARG} ${SUPPRESS_UNUSED_VAR} ${SUPPRESS_UNUSED_FUNC})
+endif()
+
 target_include_directories(pdc
   PUBLIC  "$<BUILD_INTERFACE:${PDC_BUILD_INCLUDE_DEPENDENCIES}>"
           $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>
@@ -129,6 +133,11 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 add_executable(close_server
                close_server.c
 )
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(close_server PRIVATE ${SUPPRESS_UNUSED_ARG} ${SUPPRESS_UNUSED_VAR} ${SUPPRESS_UNUSED_FUNC})
+endif()
+
 target_link_libraries(close_server pdc ${PDC_COMMON_LIBRARIES})
 
 install(
