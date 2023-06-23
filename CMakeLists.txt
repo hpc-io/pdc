@@ -153,6 +153,12 @@ if(PDC_SUPPRESS_UNUSED_FUNC)
   set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
 endif()
 
+# Disable warnings for -Wunused-result
+option(PDC_SUPPRESS_UNUSED_RESULT "Disable unused result warnings" ON)
+if(PDC_SUPPRESS_UNUSED_RESULT)
+  set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
+endif()
+
 # Disable warnings for -Wmaybe-uninitialized
 option(PDC_SUPPRESS_MAYBE_UNINIT "Disable maybe-uninitialized warnings" ON)
 if(PDC_SUPPRESS_MAYBE_UNINIT)
