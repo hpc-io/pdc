@@ -692,9 +692,9 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
 {
     perr_t              ret_value = SUCCEED;
     int                 i         = 0;
-    char                self_addr_string[ADDR_MAX];
-    char                na_info_string[ADDR_MAX];
-    char                hostname[1024];
+    char                self_addr_string[ADDR_MAX / 2];
+    char                na_info_string[ADDR_MAX / 2];
+    char                hostname[ADDR_MAX / 2];
     struct hg_init_info init_info = {0};
 
     /* Set the default mercury transport
@@ -728,8 +728,8 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
         hg_transport = default_hg_transport;
     }
-    memset(hostname, 0, 1024);
-    gethostname(hostname, 1023);
+    memset(hostname, 0, ADDR_MAX / 2);
+    gethostname(hostname, ADDR_MAX / 2 - 1);
     snprintf(na_info_string, ADDR_MAX, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_server_rank_g == 0)
         printf("==PDC_SERVER[%d]: using %.7s\n", pdc_server_rank_g, na_info_string);
