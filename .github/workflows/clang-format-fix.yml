@@ -1,15 +1,15 @@
-name: clang-format Check
+name: clang-format autofix
 on: 
   workflow_dispatch:
   push:
 jobs:
   formatting-check:
-    name: Formatting Check
+    name: Formatting Fix
     runs-on: ubuntu-latest
     if: "!contains(github.event.head_commit.message, 'skip-ci')"
     steps:
     - uses: actions/checkout@v2
-    - name: Run clang-format style check for C programs.
+    - name: Run clang-format style fix for C programs.
       uses: DoozyX/clang-format-lint-action@v0.11
       with:
         source: '.'
