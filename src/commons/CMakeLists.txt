@@ -22,8 +22,10 @@ endif()
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
   message(STATUS "mercury dir = ${MERCURY_DIR}")
-  find_path(MERCURY_INCLUDE_DIR mercury.h HINTS ${MERCURY_DIR})
-  find_library(MERCURY_LIBRARY mercury HINTS ${MERCURY_DIR})
+  # NOTE: enable the following if you need ${MERCURY_INCLUDE_DIR} in the future
+  # NOTE: remember to add MERCURY_HOME to PATH or CMAKE_PREFIX_PATH if you enable the following.
+  # find_path(MERCURY_INCLUDE_DIR mercury.h HINTS ${MERCURY_DIR})
+  # find_library(MERCURY_LIBRARY mercury HINTS ${MERCURY_DIR})
   message(STATUS "mercury include dir = ${MERCURY_INCLUDE_DIR}")
   message(STATUS "mercury lib = ${MERCURY_LIBRARY}")
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
