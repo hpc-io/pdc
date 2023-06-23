@@ -302,7 +302,7 @@ test_serde_framework()
     char *           arrayKey_str = "array";
     int              intArray[3]  = {1, 2, 3};
     PDC_SERDE_Key *  arrayKey     = PDC_SERDE_KEY(arrayKey_str, PDC_STRING, sizeof(arrayKey_str));
-    PDC_SERDE_Value *arrayValue   = PDC_SERDE_VALUE(intArray, PDC_INT, PDC_CLS_ARRAY, sizeof(int) * 3);
+    PDC_SERDE_Value *arrayValue   = PDC_SERDE_VALUE(intArray, PDC_INT, PDC_CLS_ARRAY, 3);
     pdc_serde_append_key_value(data, arrayKey, arrayValue);
 
     typedef struct {

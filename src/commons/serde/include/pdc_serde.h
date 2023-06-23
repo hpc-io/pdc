@@ -128,7 +128,10 @@ PDC_SERDE_KEY(void *key, pdc_c_var_type_t pdc_type, size_t size)
  * @param data Pointer to the value data
  * @param pdc_type Data type of the value
  * @param pdc_class Class of the value
- * @param size Size of the value data
+ * @param size Size of the value data.
+ *        For scalar value, it is the result of sizeof(type) function;
+ *        for array, it is the number of elements;
+ *        for struct, it is the totalSize of the data chunk of the struct, etc.
  *
  * @return Pointer to the created PDC_SERDE_Value structure
  */
