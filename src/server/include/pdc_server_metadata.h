@@ -44,7 +44,7 @@
 /*****************************/
 extern int           pdc_server_rank_g;
 extern int           pdc_server_size_g;
-extern char          pdc_server_tmp_dir_g[ADDR_MAX / 2];
+extern char          pdc_server_tmp_dir_g[TMP_DIR_STRING_LEN];
 extern uint32_t      n_metadata_g;
 extern HashTable *   metadata_hash_table_g;
 extern HashTable *   container_hash_table_g;
