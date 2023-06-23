@@ -149,8 +149,7 @@ static char *DataTypeFormat[PDC_TYPE_COUNT] = {
 };
 
 // clang-format on
-
-static char *
+__attribute__((unused)) static char *
 get_enum_name_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -158,8 +157,7 @@ get_enum_name_by_dtype(pdc_c_var_type_t type)
     }
     return DataTypeEnumNames[type];
 }
-
-static size_t
+__attribute__((unused)) static size_t
 get_size_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -167,8 +165,7 @@ get_size_by_dtype(pdc_c_var_type_t type)
     }
     return DataTypeSizes[type];
 }
-
-static size_t
+__attribute__((unused)) static size_t
 get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_class,
                          pdc_c_var_type_t pdc_type)
 {
@@ -195,8 +192,7 @@ get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_cl
     }
     return size;
 }
-
-static char *
+__attribute__((unused)) static char *
 get_name_by_dtype(pdc_c_var_type_t type)
 {
     if (type < 0 || type >= PDC_TYPE_COUNT) {
@@ -204,8 +200,7 @@ get_name_by_dtype(pdc_c_var_type_t type)
     }
     return DataTypeNames[type];
 }
-
-static pdc_c_var_type_t
+__attribute__((unused)) static pdc_c_var_type_t
 get_dtype_by_enum_name(const char *enumName)
 {
     for (int i = 0; i < PDC_TYPE_COUNT; i++) {
