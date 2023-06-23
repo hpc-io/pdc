@@ -41,7 +41,7 @@ typedef enum {
     PDC_TYPE_COUNT = 19  /* this is the number of var types and has to be the last         */
 } pdc_c_var_type_t;
 
-typedef pdc_c_var_type_t PDC_CType;
+// typedef pdc_c_var_type_t PDC_CType;
 
 typedef enum {
     PDC_CLS_SCALAR,
@@ -57,10 +57,10 @@ typedef enum {
     PDC_CLS_COUNT     // just the count of the enum.
 } pdc_c_var_class_t;
 
-typedef pdc_c_var_class_t PDC_CType_Class;
+// typedef pdc_c_var_class_t PDC_CType_Class;
 
 // clang-format off
-static const size_t DataTypeSizes[PDC_TYPE_COUNT] = {
+static size_t DataTypeSizes[PDC_TYPE_COUNT] = {
     sizeof(int),
     sizeof(float),
     sizeof(double),
@@ -82,7 +82,7 @@ static const size_t DataTypeSizes[PDC_TYPE_COUNT] = {
     sizeof(size_t)
 };
 
-static const char *DataTypeNames[PDC_TYPE_COUNT] = {
+static char *DataTypeNames[PDC_TYPE_COUNT] = {
     "int",
     "float",
     "double",
@@ -104,7 +104,7 @@ static const char *DataTypeNames[PDC_TYPE_COUNT] = {
     "size_t"
 };
 
-static const char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
+static char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
     "PDC_INT",
     "PDC_FLOAT",
     "PDC_DOUBLE",
@@ -126,7 +126,7 @@ static const char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
     "PDC_SIZE_T"
 };
 
-static const char *DataTypeFormat[PDC_TYPE_COUNT] = {
+static char *DataTypeFormat[PDC_TYPE_COUNT] = {
     "%d",     // int
     "%f",     // float
     "%lf",    // double
