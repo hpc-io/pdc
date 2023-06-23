@@ -134,25 +134,36 @@ endif()
 #------------------------------------------------------------------------------
 # Set whether or not to disable compiler warnings
 #------------------------------------------------------------------------------
-
+set(SUPPRESSED_LIST "")
 # Disable warnings for unused parameters
 option(PDC_SUPPRESS_UNUSED_ARG "Disable unused argument warnings" ON)
 if(PDC_SUPPRESS_UNUSED_ARG)
-  set(SUPPRESS_UNUSED_ARG "-Wno-unused-parameter")
+  set(SUPPRESSED_LIST "-Wno-unused-parameter" ${SUPPRESSED_LIST})
 endif()
 
 # Disable warnings for unused variables
 option(PDC_SUPPRESS_UNUSED_VAR "Disable unused variable warnings" ON)
 if(PDC_SUPPRESS_UNUSED_VAR)
-  set(SUPPRESS_UNUSED_VAR "-Wno-unused-variable")
+  set(SUPPRESSED_LIST "-Wno-unused-variable" ${SUPPRESSED_LIST})
 endif()
 
 # Disable warnings for unused functions
 option(PDC_SUPPRESS_UNUSED_FUNC "Disable unused function warnings" ON)
 if(PDC_SUPPRESS_UNUSED_FUNC)
-  set(SUPPRESS_UNUSED_FUNC "-Wno-unused-function")
+  set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
 endif()
 
+# Disable warnings for -Wmaybe-uninitialized
+option(PDC_SUPPRESS_MAYBE_UNINIT "Disable maybe-uninitialized warnings" ON)
+if(PDC_SUPPRESS_MAYBE_UNINIT)
+  set(SUPPRESSED_LIST "-Wno-maybe-uninitialized" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wunused-but-set-variable
+option(PDC_SUPPRESS_UNUSED_BUT_SET "Disable unused-but-set-variable warnings" ON)
+if(PDC_SUPPRESS_UNUSED_BUT_SET)
+  set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
+endif()
 
 #------------------------------------------------------------------------------
 # Set a default build type if none was specified

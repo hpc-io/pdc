@@ -4737,7 +4737,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     double start = MPI_Wtime(), start_posix;
 #endif
 
-    uint64_t write_size;
+    uint64_t write_size = 0;
     if (region_info->ndim >= 1)
         write_size = unit * region_info->size[0];
     if (region_info->ndim >= 2)
@@ -9487,7 +9487,7 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info)
     get_sel_data_rpc_in_t *in  = (get_sel_data_rpc_in_t *)callback_info->arg;
     query_task_t *         task_elt, *task = NULL;
     pdc_metadata_t *       meta;
-    struct hg_cb_info      fake_callback_info;
+    struct hg_cb_info      fake_callback_info = {0};
 
     DL_FOREACH(query_task_list_head_g, task_elt)
     {

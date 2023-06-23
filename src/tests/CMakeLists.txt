@@ -108,7 +108,7 @@ set(PROGRAMS
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-      target_compile_options(${program} PRIVATE ${SUPPRESS_UNUSED_ARG} ${SUPPRESS_UNUSED_VAR} ${SUPPRESS_UNUSED_FUNC})
+      target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
   endif()
   target_link_libraries(${program} pdc)
 endforeach(program)

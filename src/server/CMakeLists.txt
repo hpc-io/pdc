@@ -54,7 +54,7 @@ add_executable(pdc_server.exe
 )
 
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(pdc_server.exe PRIVATE ${SUPPRESS_UNUSED_ARG} ${SUPPRESS_UNUSED_VAR} ${SUPPRESS_UNUSED_FUNC})
+    target_compile_options(pdc_server.exe PRIVATE ${SUPPRESSED_LIST})
 endif()
 
 #install(
