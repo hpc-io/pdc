@@ -16,12 +16,12 @@ typedef struct {
 } PDC_SERDE_Key;
 
 typedef struct {
-    PDC_CType_Class pdc_class; /**< Class of the value */
-    PDC_CType       pdc_type;  /**< Data type of the value */
-    size_t          size;      // size of the data. If a string, it is strlen(data) + 1;
-                               // if an array, it is the number of elements;
-                               // if a struct, it is the totalSize of the data chunk of the struct, etc.
-    void *data;                /**< Pointer to the value data */
+    pdc_c_var_class_t pdc_class; /**< Class of the value */
+    pdc_c_var_type_t  pdc_type;  /**< Data type of the value */
+    size_t            size;      // size of the data. If a string, it is strlen(data) + 1;
+                                 // if an array, it is the number of elements;
+                                 // if a struct, it is the totalSize of the data chunk of the struct, etc.
+    void *data;                  /**< Pointer to the value data */
 } PDC_SERDE_Value;
 
 typedef struct {
