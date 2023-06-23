@@ -7253,15 +7253,18 @@ PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_
     pdc_selection_t *sel = query->sel;
     uint64_t         nelem;
     size_t           i, j, unit_size;
-    pdc_query_op_t   op = PDC_QUERY_OR, lop = PDC_QUERY_OR, rop = PDC_QUERY_OR;
-    float            flo = .0, fhi = .0;
-    double           dlo = .0, dhi = .0;
-    int              ilo = 0, ihi = 0, ndim, count = 0;
-    uint32_t         ulo = 0, uhi = 0;
-    int64_t          i64lo = 0, i64hi = 0;
-    uint64_t         ui64lo = 0, ui64hi = 0;
-    void *           value = NULL, *buf = NULL;
-    int              n_eval_region = 0, can_skip, region_iter = 0;
+    // FIXME: need to check the types of these 'op's. I think they should be of the following (or don't even
+    // need to be initilized):
+    pdc_query_op_t op = PDC_EQ, lop = PDC_EQ, rop = PDC_EQ;
+    // pdc_query_op_t op = PDC_QUERY_OR, lop = PDC_QUERY_OR, rop = PDC_QUERY_OR;
+    float    flo = .0, fhi = .0;
+    double   dlo = .0, dhi = .0;
+    int      ilo = 0, ihi = 0, ndim, count = 0;
+    uint32_t ulo = 0, uhi = 0;
+    int64_t  i64lo = 0, i64hi = 0;
+    uint64_t ui64lo = 0, ui64hi = 0;
+    void *   value = NULL, *buf = NULL;
+    int      n_eval_region = 0, can_skip, region_iter = 0;
 
     printf("==PDC_SERVER[%d]: %s - start query evaluation!\n", pdc_server_rank_g, __func__);
     fflush(stdout);
