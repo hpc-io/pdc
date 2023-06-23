@@ -59,7 +59,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 
 #define PAGE_SIZE                    4096
 #define ADDR_MAX                     1024
-#define NA_STRING_INFO_LEN           ADDR_MAX / 4
+#define NA_STRING_INFO_LEN           ADDR_MAX / 2
 #define HOSTNAME_LEN                 ADDR_MAX / 8
 #define TMP_DIR_STRING_LEN           ADDR_MAX / 2
 #define DIM_MAX                      4

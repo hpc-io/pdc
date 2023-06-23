@@ -730,7 +730,7 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     }
     memset(hostname, 0, HOSTNAME_LEN);
     gethostname(hostname, HOSTNAME_LEN - 1);
-    snprintf(na_info_string, ADDR_MAX, "%s://%s:%d", hg_transport, hostname, port);
+    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_server_rank_g == 0)
         printf("==PDC_SERVER[%d]: using %.7s\n", pdc_server_rank_g, na_info_string);
 
