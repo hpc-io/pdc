@@ -166,7 +166,7 @@ pdc_serde_deserialize(void *buffer)
         memcpy(key, buffer + offset, size);
         offset += size;
         header->keys[i].key      = key;
-        header->keys[i].pdc_type = (PDC_CType)pdc_type;
+        header->keys[i].pdc_type = (pdc_c_var_type_t)pdc_type;
         header->keys[i].size     = size;
     }
 
@@ -202,8 +202,8 @@ pdc_serde_deserialize(void *buffer)
         memcpy(value, buffer + offset, size);
         offset += size;
         data->values[i].data      = value;
-        data->values[i].pdc_class = (PDC_CType_Class)pdc_class;
-        data->values[i].pdc_type  = (PDC_CType)pdc_type;
+        data->values[i].pdc_class = (pdc_c_var_class_t)pdc_class;
+        data->values[i].pdc_type  = (pdc_c_var_type_t)pdc_type;
         data->values[i].size      = size;
     }
     // check the total size
@@ -264,7 +264,7 @@ pdc_serde_print(PDC_SERDE_SerializedData *data)
         printf("    type: %d\n", data->data->values[i].pdc_type);
         printf("    size: %zu\n", data->data->values[i].size);
         printf("    data: ");
-        if (data->data->values[i].pdc_class == PDC_STRING) {
+        if (data->data->values[i].pdc_type == PDC_STRING) {
             printf("%s\n", (char *)data->data->values[i].data);
         }
         else {
