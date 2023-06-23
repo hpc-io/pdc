@@ -67,8 +67,12 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 
 #define PAGE_SIZE                    4096
 #define ADDR_MAX                     1024
+#define NA_STRING_INFO_LEN           ADDR_MAX / 4
+#define HOSTNAME_LEN                 ADDR_MAX / 8
+#define TMP_DIR_STRING_LEN           ADDR_MAX / 2
 #define DIM_MAX                      4
 #define TAG_LEN_MAX                  2048
+#define NAME_MAX                     TAG_LEN_MAX / 2
 #define PDC_SERVER_ID_INTERVEL       1000000000ull
 #define PDC_SERVER_MAX_PROC_PER_NODE 32
 #define PDC_SERIALIZE_MAX_SIZE       256
@@ -391,8 +395,8 @@ typedef struct data_server_region_unmap_t {
 // For storing metadata
 typedef struct pdc_metadata_t {
     int  user_id; // Both server and client gets it and do security check
-    char app_name[ADDR_MAX];
-    char obj_name[ADDR_MAX];
+    char app_name[NAME_MAX];
+    char obj_name[NAME_MAX];
     int  time_step;
     // Above four are the unique identifier for objects
 

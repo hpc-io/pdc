@@ -401,7 +401,7 @@ done:
 void
 PDC_mkdir(const char *dir)
 {
-    char  tmp[ADDR_MAX];
+    char  tmp[TMP_DIR_STRING_LEN];
     char *p = NULL;
 
     FUNC_ENTER(NULL);
@@ -476,8 +476,8 @@ PDC_metadata_init(pdc_metadata_t *a)
     a->ndim               = 0;
     a->data_server_id     = 0;
 
-    memset(a->app_name, 0, sizeof(char) * ADDR_MAX);
-    memset(a->obj_name, 0, sizeof(char) * ADDR_MAX);
+    memset(a->app_name, 0, sizeof(char) * NAME_MAX);
+    memset(a->obj_name, 0, sizeof(char) * NAME_MAX);
     memset(a->tags, 0, sizeof(char) * TAG_LEN_MAX);
     memset(a->data_location, 0, sizeof(char) * ADDR_MAX);
     memset(a->dims, 0, sizeof(uint64_t) * DIM_MAX);

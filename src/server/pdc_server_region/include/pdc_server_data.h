@@ -244,7 +244,7 @@ typedef struct cache_storage_region_t {
 /*****************************/
 extern int                       pdc_server_rank_g;
 extern int                       pdc_server_size_g;
-extern char                      pdc_server_tmp_dir_g[ADDR_MAX / 2];
+extern char                      pdc_server_tmp_dir_g[TMP_DIR_STRING_LEN];
 extern double                    server_write_time_g;
 extern double                    server_read_time_g;
 extern double                    server_get_storage_info_time_g;

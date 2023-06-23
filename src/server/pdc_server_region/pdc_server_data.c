@@ -130,7 +130,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
     perr_t ret_value = SUCCEED;
     size_t len;
     int    i, index;
-    char   tmp[ADDR_MAX];
+    char   tmp[TMP_DIR_STRING_LEN];
     char   cmd[TAG_LEN_MAX];
 
     FUNC_ENTER(NULL);
