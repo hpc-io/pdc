@@ -132,6 +132,29 @@ if("${PDC_SOURCE_DIR}" STREQUAL "${PDC_BINARY_DIR}")
 endif()
 
 #------------------------------------------------------------------------------
+# Set whether or not to disable compiler warnings
+#------------------------------------------------------------------------------
+
+# Disable warnings for unused parameters
+option(PDC_SUPPRESS_UNUSED_ARG "Disable unused argument warnings" ON)
+if(PDC_SUPPRESS_UNUSED_ARG)
+  set(SUPPRESS_UNUSED_ARG "-Wno-unused-parameter")
+endif()
+
+# Disable warnings for unused variables
+option(PDC_SUPPRESS_UNUSED_VAR "Disable unused variable warnings" ON)
+if(PDC_SUPPRESS_UNUSED_VAR)
+  set(SUPPRESS_UNUSED_VAR "-Wno-unused-variable")
+endif()
+
+# Disable warnings for unused functions
+option(PDC_SUPPRESS_UNUSED_FUNC "Disable unused function warnings" ON)
+if(PDC_SUPPRESS_UNUSED_FUNC)
+  set(SUPPRESS_UNUSED_FUNC "-Wno-unused-function")
+endif()
+
+
+#------------------------------------------------------------------------------
 # Set a default build type if none was specified
 #------------------------------------------------------------------------------
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
