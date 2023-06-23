@@ -184,7 +184,7 @@ get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_cl
     else if (pdc_class == PDC_CLS_ARRAY) {
         if (pdc_type == PDC_STRING) {
             char **str_arr = (char **)data;
-            size   i       = 0;
+            size_t i       = 0;
             for (i = 0; i < item_count; i++) {
                 size = size + (strlen(str_arr[i]) + 1) * sizeof(char);
             }
