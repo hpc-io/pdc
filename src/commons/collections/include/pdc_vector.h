@@ -18,8 +18,8 @@ typedef struct {
  * A generic iterator for iterating over the items in a PDC_VECTOR.
  */
 typedef struct {
-    PDC_VECTOR *vector;  // The vector being iterated over.
-    size_t    index; // The index of the next item to be returned.
+    PDC_VECTOR *vector; // The vector being iterated over.
+    size_t      index;  // The index of the next item to be returned.
 } PDC_VECTOR_ITERATOR;
 
 /**

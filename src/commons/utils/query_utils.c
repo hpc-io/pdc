@@ -3,7 +3,6 @@
 //
 #include "query_utils.h"
 
-
 /**
  *
  * return the key from a kv_pair string connected by delim character.
@@ -15,10 +14,12 @@
  * @param delim
  * @return
  */
-char *get_key(const char *kv_pair, char delim) {
+char *
+get_key(const char *kv_pair, char delim)
+{
 
     char *ret = NULL;
-    int idx= indexOf(kv_pair, delim);
+    int   idx = indexOf(kv_pair, delim);
 
     if (idx < 0) {
         return ret;
@@ -37,16 +38,18 @@ char *get_key(const char *kv_pair, char delim) {
  * @param delim
  * @return
  */
-char *get_value(const char *kv_pair, char delim) {
+char *
+get_value(const char *kv_pair, char delim)
+{
 
     char *ret = NULL;
-    int idx= indexOf(kv_pair, delim);
+    int   idx = indexOf(kv_pair, delim);
 
     if (idx < 0) {
         return ret;
     }
 
-    ret = substr(kv_pair, idx+1);
+    ret = substr(kv_pair, idx + 1);
     return ret;
 }
 
@@ -58,18 +61,20 @@ char *get_value(const char *kv_pair, char delim) {
  * @param obj_id
  * @return
  */
-char *gen_tags(int obj_id){
-    int j;
-    int tag_num = obj_id%20;
-    char *ret="";
-    for (j=0 ; j <= tag_num; j++){
-        char *fspace=ret;
-        ret = dsprintf("%stag%d=%d%d,", ret, j, obj_id, j);
-        if (strlen(fspace)>0){
+char *
+gen_tags(int obj_id)
+{
+    int   j;
+    int   tag_num = obj_id % 20;
+    char *ret     = "";
+    for (j = 0; j <= tag_num; j++) {
+        char *fspace = ret;
+        ret          = dsprintf("%stag%d=%d%d,", ret, j, obj_id, j);
+        if (strlen(fspace) > 0) {
             free(fspace);
         }
     }
-    ret[strlen(ret)-1]='\0';
+    ret[strlen(ret) - 1] = '\0';
     return ret;
 }
 
@@ -78,15 +83,17 @@ char *gen_tags(int obj_id){
  *
  * This is just a test.
  */
-void gen_tags_in_loop(){
+void
+gen_tags_in_loop()
+{
 
     int my_count = 1000;
     int i;
-    for (i = 0; i < my_count; i++){
-        int tag_num = i%20;
-        char *ret=gen_tags(tag_num);
+    for (i = 0; i < my_count; i++) {
+        int   tag_num = i % 20;
+        char *ret     = gen_tags(tag_num);
         println("helloworld, %s", ret);
-        if (ret != NULL){
+        if (ret != NULL) {
             free(ret);
         }
     }
@@ -97,7 +104,9 @@ void gen_tags_in_loop(){
  * @param tagname
  * @return
  */
-int has_tag(const char *tagslist, const char *tagname){
+int
+has_tag(const char *tagslist, const char *tagname)
+{
     /*
     char *pattern = strdup(tagname);
     if (startsWith("*", pattern)) {
@@ -116,12 +125,17 @@ int has_tag(const char *tagslist, const char *tagname){
  * @param pattern
  * @return
  */
-int has_tag_p(const char *tagslist, const char *pattern){
-    return (k_v_matches_p(tagslist, pattern, NULL)!=NULL);
+int
+has_tag_p(const char *tagslist, const char *pattern)
+{
+    return (k_v_matches_p(tagslist, pattern, NULL) != NULL);
 }
 
-char *k_v_matches_p(const char *tagslist, const char *key_pattern, const char *value_pattern){
-    char *rst_kv = NULL; char *_tags_list = NULL;
+char *
+k_v_matches_p(const char *tagslist, const char *key_pattern, const char *value_pattern)
+{
+    char *rst_kv     = NULL;
+    char *_tags_list = NULL;
 
     if (tagslist == NULL || key_pattern == NULL) {
         return rst_kv;
@@ -129,14 +143,16 @@ char *k_v_matches_p(const char *tagslist, const char *key_pattern, const char *v
     _tags_list = strdup(tagslist);
     // GO THROUGH EACH KV PAIR
     char *tag_kv = strtok(_tags_list, TAG_DELIMITER);
-    while (tag_kv != NULL){
+    while (tag_kv != NULL) {
         /**
          * Check to see if the current key-value pair is valid
          */
         if (strchr(tag_kv, '=') != NULL) {
             // get key and value
-            char *key = NULL; key = get_key(tag_kv, '=');
-            char *value = NULL; value = get_value(tag_kv, '=');
+            char *key   = NULL;
+            key         = get_key(tag_kv, '=');
+            char *value = NULL;
+            value       = get_value(tag_kv, '=');
 
             /**
              * if no value pattern is specified, we only match key pattern.
@@ -146,7 +162,8 @@ char *k_v_matches_p(const char *tagslist, const char *key_pattern, const char *v
 
             int is_value_matched = (value_pattern == NULL ? 0 : simple_matches(value, value_pattern));
 
-            int pattern_matches = (value_pattern == NULL ? is_key_matched : (is_key_matched && is_value_matched));
+            int pattern_matches =
+                (value_pattern == NULL ? is_key_matched : (is_key_matched && is_value_matched));
 
             if (key != NULL) {
                 free(key);
@@ -164,12 +181,14 @@ char *k_v_matches_p(const char *tagslist, const char *key_pattern, const char *v
     }
 
     if (_tags_list != NULL) {
-        //free(_tags_list);
+        // free(_tags_list);
     }
     return rst_kv;
 }
 
-int is_value_match(const char *tagslist, const char *tagname, const char *val){
+int
+is_value_match(const char *tagslist, const char *tagname, const char *val)
+{
     /*
     char *pattern = strdup(val);
     if (startsWith("*", pattern)) {
@@ -181,12 +200,16 @@ int is_value_match(const char *tagslist, const char *tagname, const char *val){
      */
     return is_value_match_p(tagslist, tagname, val);
 }
-int is_value_match_p(const char *tagslist, const char *tagname, const char *pattern){
-    return (k_v_matches_p(tagslist, tagname, pattern)!=NULL);
+int
+is_value_match_p(const char *tagslist, const char *tagname, const char *pattern)
+{
+    return (k_v_matches_p(tagslist, tagname, pattern) != NULL);
 }
-int is_value_in_range(const char *tagslist, const char *tagname, int from, int to) {
+int
+is_value_in_range(const char *tagslist, const char *tagname, int from, int to)
+{
     const char *matched_kv = k_v_matches_p(tagslist, tagname, NULL);
-    char *value = get_value(matched_kv, '=');
-    int v = atoi(value);
+    char *      value      = get_value(matched_kv, '=');
+    int         v          = atoi(value);
     return (v >= from && v <= to);
 }

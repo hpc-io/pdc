@@ -8,8 +8,7 @@
 #include <uuid/uuid.h>
 #include <stdint.h>
 
-
-void random_seed(long int seed);
+void   random_seed(long int seed);
 double random_uniform();
 double random_range(double min, double max);
 double random_normal(double mean, double dev);
@@ -21,4 +20,4 @@ int64_t get_timestamp_us();
 
 int64_t get_timestamp();
 
-#endif//DART_UTILS_H
+#endif // DART_UTILS_H

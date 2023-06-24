@@ -7,8 +7,6 @@
 #define TAG_DELIMITER ","
 #include "string_utils.h"
 
-
-
 /**
  * Test tag generation in a for loop
  */
@@ -80,5 +78,4 @@ int is_value_match_p(const char *tagslist, const char *tagname, const char *patt
  */
 int is_value_in_range(const char *tagslist, const char *tagname, int from, int to);
 
-
-#endif //PDC_QUERY_UTILS_H
+#endif // PDC_QUERY_UTILS_H

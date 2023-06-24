@@ -125,8 +125,8 @@ pdc_vector_iterator_new(PDC_VECTOR *vector)
     }
 
     // Initialize the iterator fields.
-    iterator->vector  = vector;
-    iterator->index = 0;
+    iterator->vector = vector;
+    iterator->index  = 0;
 
     return iterator;
 }

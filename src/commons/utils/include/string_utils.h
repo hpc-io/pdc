@@ -23,16 +23,10 @@
 #define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-
-typedef enum {
-    PATTERN_EXACT   = 2 ,
-    PATTERN_PREFIX  = 3 ,
-    PATTERN_SUFFIX  = 4 ,
-    PATTERN_MIDDLE  = 5
-} pattern_type_t;
+typedef enum { PATTERN_EXACT = 2, PATTERN_PREFIX = 3, PATTERN_SUFFIX = 4, PATTERN_MIDDLE = 5 } pattern_type_t;
 
 typedef struct {
-    char *start;
+    char * start;
     size_t length;
 } string;
 
@@ -43,7 +37,7 @@ typedef struct {
  * @param start
  * @return
  */
-char *substr(const char* str, int start);
+char *substr(const char *str, int start);
 /**
  * take the part before end position
  * you need to free str after use.
@@ -51,7 +45,7 @@ char *substr(const char* str, int start);
  * @param end
  * @return
  */
-char *subrstr(const char* str, int end);
+char *subrstr(const char *str, int end);
 /**
  * take the substring starting from start, ending at end-1
  * you need to free str after use.
@@ -60,7 +54,7 @@ char *subrstr(const char* str, int end);
  * @param end
  * @return
  */
-char *substring(const char* str, int start, int end);
+char *substring(const char *str, int start, int end);
 /**
  * determine the pattern type.
  * Currently, only support for different types:
@@ -82,7 +76,7 @@ pattern_type_t determine_pattern_type(const char *pattern);
  * @param tok
  * @return
  */
-int indexOfStr(const char* str, char *tok);
+int indexOfStr(const char *str, char *tok);
 /**
  * return the index of character c in given string str.
  * if not found, return -1
@@ -91,7 +85,7 @@ int indexOfStr(const char* str, char *tok);
  * @param c
  * @return
  */
-int indexOf(const char* str, char c);
+int indexOf(const char *str, char c);
 
 /**
  * to determine if a string str starts with prefix pre
@@ -133,7 +127,7 @@ int equals(const char *str, const char *tok);
  * @param ...
  * @return
  */
-char* dsprintf(const char *format, ...);
+char *dsprintf(const char *format, ...);
 
 /**
  * Print anything on stdout.
@@ -167,9 +161,9 @@ void stderr_println(const char *format, ...);
 int simple_matches(const char *str, const char *pattern);
 
 /**
- * get the reverse of a given string. 
- * a new reversed string of the original will be generated. 
+ * get the reverse of a given string.
+ * a new reversed string of the original will be generated.
  */
 char *reverse_str(char *str);
 
-#endif //PDC_STRING_UTILS_H
+#endif // PDC_STRING_UTILS_H
