@@ -98,7 +98,7 @@ pdc_serde_serialize(PDC_SERDE_SerializedData *data)
     memcpy(buffer + sizeof(size_t) * 2, &data->header->numKeys, sizeof(size_t));
     // then the keys
     size_t offset = sizeof(size_t) * 3;
-    for (int i = 0; i < data->header->numKeys; i++) {
+    for (size_t i = 0; i < data->header->numKeys; i++) {
         int8_t pdc_type = (int8_t)(data->header->keys[i].pdc_type);
         memcpy(buffer + offset, &pdc_type, sizeof(int8_t));
         offset += sizeof(int8_t);
@@ -117,7 +117,7 @@ pdc_serde_serialize(PDC_SERDE_SerializedData *data)
     memcpy(buffer + offset, &data->data->numValues, sizeof(size_t));
     offset += sizeof(size_t);
     // then the values
-    for (int i = 0; i < data->data->numValues; i++) {
+    for (size_t i = 0; i < data->data->numValues; i++) {
         int8_t pdc_class = (int8_t)data->data->values[i].pdc_class;
         int8_t pdc_type  = (int8_t)data->data->values[i].pdc_type;
         memcpy(buffer + offset, &pdc_class, sizeof(int8_t));
@@ -155,7 +155,7 @@ pdc_serde_deserialize(void *buffer)
     header->keys             = malloc(sizeof(PDC_SERDE_Key) * numKeys);
     header->numKeys          = numKeys;
     header->totalSize        = headerSize;
-    for (int i = 0; i < numKeys; i++) {
+    for (size_t i = 0; i < numKeys; i++) {
         int8_t pdc_type;
         size_t size;
         memcpy(&pdc_type, buffer + offset, sizeof(int8_t));
@@ -166,7 +166,7 @@ pdc_serde_deserialize(void *buffer)
         memcpy(key, buffer + offset, size);
         offset += size;
         header->keys[i].key      = key;
-        header->keys[i].pdc_type = (PDC_CType)pdc_type;
+        header->keys[i].pdc_type = (pdc_c_var_type_t)pdc_type;
         header->keys[i].size     = size;
     }
 
@@ -188,7 +188,7 @@ pdc_serde_deserialize(void *buffer)
     data->values         = malloc(sizeof(PDC_SERDE_Value) * numValues);
     data->numValues      = numValues;
     data->totalSize      = dataSize;
-    for (int i = 0; i < numValues; i++) {
+    for (size_t i = 0; i < numValues; i++) {
         int8_t pdc_class;
         int8_t pdc_type;
         size_t size;
@@ -202,8 +202,8 @@ pdc_serde_deserialize(void *buffer)
         memcpy(value, buffer + offset, size);
         offset += size;
         data->values[i].data      = value;
-        data->values[i].pdc_class = (PDC_CType_Class)pdc_class;
-        data->values[i].pdc_type  = (PDC_CType)pdc_type;
+        data->values[i].pdc_class = (pdc_c_var_class_t)pdc_class;
+        data->values[i].pdc_type  = (pdc_c_var_type_t)pdc_type;
         data->values[i].size      = size;
     }
     // check the total size
@@ -230,11 +230,11 @@ pdc_serde_deserialize(void *buffer)
 void
 pdc_serde_free(PDC_SERDE_SerializedData *data)
 {
-    for (int i = 0; i < data->header->numKeys; i++) {
+    for (size_t i = 0; i < data->header->numKeys; i++) {
         free(data->header->keys[i].key);
     }
     free(data->header->keys);
-    for (int i = 0; i < data->data->numValues; i++) {
+    for (size_t i = 0; i < data->data->numValues; i++) {
         free(data->data->values[i].data);
     }
     free(data->data->values);
@@ -249,8 +249,8 @@ pdc_serde_print(PDC_SERDE_SerializedData *data)
     printf("Header:\n");
     printf("  numKeys: %zu\n", data->header->numKeys);
     printf("  totalSize: %zu\n", data->header->totalSize);
-    for (int i = 0; i < data->header->numKeys; i++) {
-        printf("  key %d:\n", i);
+    for (size_t i = 0; i < data->header->numKeys; i++) {
+        printf("  key %ld:\n", i);
         printf("    type: %d\n", data->header->keys[i].pdc_type);
         printf("    size: %zu\n", data->header->keys[i].size);
         printf("    key: %s\n", (char *)data->header->keys[i].key);
@@ -258,13 +258,13 @@ pdc_serde_print(PDC_SERDE_SerializedData *data)
     printf("Data:\n");
     printf("  numValues: %zu\n", data->data->numValues);
     printf("  totalSize: %zu\n", data->data->totalSize);
-    for (int i = 0; i < data->data->numValues; i++) {
-        printf("  value %d:\n", i);
+    for (size_t i = 0; i < data->data->numValues; i++) {
+        printf("  value %ld:\n", i);
         printf("    class: %d\n", data->data->values[i].pdc_class);
         printf("    type: %d\n", data->data->values[i].pdc_type);
         printf("    size: %zu\n", data->data->values[i].size);
         printf("    data: ");
-        if (data->data->values[i].pdc_class == PDC_STRING) {
+        if (data->data->values[i].pdc_type == PDC_STRING) {
             printf("%s\n", (char *)data->data->values[i].data);
         }
         else {
@@ -302,7 +302,7 @@ test_serde_framework()
     char *           arrayKey_str = "array";
     int              intArray[3]  = {1, 2, 3};
     PDC_SERDE_Key *  arrayKey     = PDC_SERDE_KEY(arrayKey_str, PDC_STRING, sizeof(arrayKey_str));
-    PDC_SERDE_Value *arrayValue   = PDC_SERDE_VALUE(intArray, PDC_INT, PDC_CLS_ARRAY, sizeof(int) * 3);
+    PDC_SERDE_Value *arrayValue   = PDC_SERDE_VALUE(intArray, PDC_INT, PDC_CLS_ARRAY, 3);
     pdc_serde_append_key_value(data, arrayKey, arrayValue);
 
     typedef struct {

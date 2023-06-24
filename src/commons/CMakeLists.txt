@@ -22,6 +22,8 @@ endif()
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
   message(STATUS "mercury dir = ${MERCURY_DIR}")
+  # NOTE: enable the following if you need ${MERCURY_INCLUDE_DIR} in the future
+  # NOTE: remember to add MERCURY_HOME to PATH or CMAKE_PREFIX_PATH if you enable the following.
   find_path(MERCURY_INCLUDE_DIR mercury.h HINTS ${MERCURY_DIR})
   find_library(MERCURY_LIBRARY mercury HINTS ${MERCURY_DIR})
   message(STATUS "mercury include dir = ${MERCURY_INCLUDE_DIR}")
@@ -102,6 +104,10 @@ file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 
 add_library(${PDC_COMMON_LIBRARY_NAME} ${PDC_LIBTYPE} ${PDC_COMMONS_SOURCES} ${PDC_COMMONS_HEADERS})
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(${PDC_COMMON_LIBRARY_NAME} PRIVATE ${SUPPRESSED_LIST})
+endif()
 
 target_include_directories(${PDC_COMMON_LIBRARY_NAME}
   PUBLIC  "$<BUILD_INTERFACE:${PDC_COMMONS_INCLUDE_DIRS}>"
