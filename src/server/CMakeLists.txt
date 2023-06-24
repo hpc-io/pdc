@@ -54,11 +54,8 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
-if(PDC_ENABLE_FASTBIT)
-    message(STATUS "Enabled fastbit")
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${PDC_COMMON_LIBRARIES} ${FASTBIT_LIBRARY}/libfastbit.so)
-else()
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${PDC_COMMON_LIBRARIES})
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(pdc_server.exe PRIVATE ${SUPPRESSED_LIST})
 endif()
 
 #install(
