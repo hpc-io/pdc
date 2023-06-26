@@ -31,7 +31,7 @@ Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, J
    
    introduction
    hdf5vol
-   performance
+   .. performance
 
 .. toctree::
    :maxdepth: 2
@@ -41,7 +41,7 @@ Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, J
    api
    tools
    .. inflightanalysis
-   futurework
+   .. futurework
 
 
 .. toctree::
