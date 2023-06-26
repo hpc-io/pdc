@@ -53,3 +53,9 @@ div.rst-content dl dt {
 	border-radius: 3px;
 	display: block;
 }
+
+.cpp .function > dt.cpp {
+    background: #efe7fa;
+    color: #65419d;
+    border-left: 3px solid #65419d;
+}
