@@ -48,6 +48,7 @@ Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, J
    :maxdepth: 2
    :caption: Developer Documentation
 
+   developer-notes
    documentation/objects
    documentation/regions
    documentation/query
