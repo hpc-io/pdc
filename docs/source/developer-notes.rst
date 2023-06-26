@@ -121,7 +121,7 @@ The following table summarizes the communication of the three mapping methods fr
 +-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
 | ``PDC_region_transfer_start`` | Client - Data Server                        | Client - Data Server                              | Data Server - Metadata Server (Option 2)          |
 +-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
-| ``PDC_region_transfer_wait    | Data Server - Client (PDC_READ)             | Data Server - Client (PDC_READ)                   | Data Server - Client (PDC_READ)                   |
+| ``PDC_region_transfer_wait``  | Data Server - Client (PDC_READ)             | Data Server - Client (PDC_READ)                   | Data Server - Client (PDC_READ)                   |
 +-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
 
 ---------------------------------------------
