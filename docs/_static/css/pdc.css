@@ -1,3 +1,7 @@
+div.wy-nav-content {
+	max-width: 1024px;
+}
+
 nav.wy-nav-side, div.wy-side-nav-search,
 div.ethical-dark-theme .ethical-sidebar,
 div.rst-versions .rst-current-version {
