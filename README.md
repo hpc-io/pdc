@@ -6,19 +6,28 @@ PDC API, data types, and developer notes are available in docs/readme.md.
 
 More information and publications of PDC is available at https://sdm.lbl.gov/pdc
 
-# Installation 
+## Installation with Spack
+[Spack](https://spack.io) is a multi-platform package manager that builds and installs multiple versions and configurations of software. It works on Linux, macOS, and many supercomputers. 
+PDC and its dependent libraries can be installed with spack:
+
+```bash
+git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+cd spack/bin
+./spack install pdc
+```
+
+# Installation from source
 
 The following instructions are for installing PDC on Linux and Cray machines. 
-GCC version 7 or newer and a version of MPI are needed to install PDC. 
+We recommend using GCC 7 or a later version. 
 
-Current PDC tests have been verified with MPICH. To install MPICH, follow the documentation in https://www.mpich.org/static/downloads/3.4.1/mpich-3.4.1-installguide.pdf
+PDC requires MPI, libfabric, and Mercury libraries.
+PDC can use either MPICH or OpenMPI as the MPI library, if your system doesn't have one installed, follow [MPICH Installers’ Guide](https://www.mpich.org/documentation/guides), or [Installing Open MPI](https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html).
 
-PDC also depends on libfabric and Mercury. We provide detailed instructions for installing libfabric, Mercury, and PDC below.
-Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
+We provide detailed instructions for installing libfabric, Mercury, and PDC below.
 
 ## Preparing for Installation
 
-PDC relies on [`libfabric`](https://github.com/ofiwg/libfabric/) as well as [`mercury`](https://github.com/mercury-hpc/mercury). Therefore, let's **prepare the dependencies**.
 ### Preparing Work Space
 
 Before installing the dependencies and downloading the code repository, we assume there is a directory created for your installation already, e.g. `$WORK_SPACE` and now you are in `$WORK_SPACE`.
@@ -67,7 +76,7 @@ echo "export MERCURY_DIR=$MERCURY_DIR" >> $WORK_SPACE/pdc_env.sh
 echo "export PDC_DIR=$PDC_DIR" >> $WORK_SPACE/pdc_env.sh
 ```
 
-Remember, from now on, at any time, you can simply run the following to set the above environment variables so that you can run any of the following command for your installation.
+Remember, from now on, at any time, you can simply run the following to set the above environment variables so that you can run any of the following commands for your installation.
 
 ```bash
 export WORK_SPACE=/path/to/your/work/space
@@ -83,13 +92,13 @@ cd $LIBFABRIC_SRC_DIR
 git checkout tags/v1.11.2
 ```
 
-Configure, compile and install:
+Configure, compile, and install:
 
 ```bash
 ./autogen.sh
 ./configure --prefix=$LIBFABRIC_DIR CC=cc CFLAG="-O2"
 
-make -j 32
+make -j
 make install
 
 export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
@@ -99,7 +108,7 @@ echo 'export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE
 echo 'export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
 
-Note: On NERSC supercomputers, e.g. Cori and Perlmutter, we should add `--disable-efa --disable-sockets` to the `./configure` command during the compilation on login nodes.
+Note: On Perlmutter@NERSC, `--disable-efa --disable-sockets` should be added to the `./configure` command during the compilation on login nodes.
 
 ### Compile and Install `mercury`
 
@@ -112,12 +121,13 @@ git checkout tags/v2.2.0
 git submodule update --init
 ```
 
-Configure, compile, test and install:
+Configure, compile, test, and install:
 
 ```bash
 cd build
-cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DNA_OFI_TESTING_PROTOCOL=tcp 
-make -j 32 && make install
+cmake -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DBUILD_SHARED_LIBS=ON \
+      -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DNA_OFI_TESTING_PROTOCOL=tcp ../
+make -j && make install
 
 ctest
 
@@ -131,39 +141,35 @@ echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pd
 ## Compile and Install PDC
 Now, it's time to compile and install PDC.
 
-* One can replace `mpicc` to other available MPI compilers. For example, on Cori, `cc` can be used to replace `mpicc`. 
-* `ctest` contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.
+* One can replace `mpicc` to other available MPI compilers. For example, on Perlmutter, `cc` can be used to replace `mpicc`. 
 
 ```bash
 cd $PDC_SRC_DIR
 git checkout develop
 mkdir build
 cd build
-cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD=srun 
-make -j 32 && make install
+cmake -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR \
+      -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD=srun ../
+make -j && make install
 ```
+Note: `-DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD=srun` may need to be changed to `-DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD=mpiexec` depending on your system environment.
 
-Let's run `ctest` now on a compute node:
-
-### On Cori
-```bash
-salloc --nodes 1 --qos interactive --time 01:00:00 --constraint haswell
-```
-### On Perlmutter
-
-```bash
-salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx
-```
-
-Once you are on the compute node, you can run `ctest`.
+## Test Your Installation
+PDC's `ctest` contains both sequential and parallel/MPI tests, and can be run with the following in the `build` directory.
 
 ```bash
 ctest
 ```
 
-Note: On Cori, if you happen to see failures regarding `libibverb` validation, login to one of the compute nodes by running an interactive job and re-compile all PDC's dependencies and PDC itself. Then problem will be solved.
+### On Perlmutter or Other HPC Systems
+`ctest` should be run on a compute node, one can submit an interactive job with the following on Perlmutter:
 
-If all the tests pass, you can now specify the environment variables.
+```bash
+salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx
+```
+
+## Set Environment Variables 
+If all the tests pass, you can now add the final set of environment variables for future PDC runs.
 
 ```bash
 export LD_LIBRARY_PATH="$PDC_DIR/lib:$LD_LIBRARY_PATH"
@@ -173,57 +179,37 @@ echo 'export LD_LIBRARY_PATH=$PDC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_e
 echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
 
-## About Spack
+`$WORK_SPACE/pdc_env.sh` sets all the environment variables needed to run PDC, and you only need to do the following once in each terminal session before running PDC.
 
-One can also install `PDC` with [`Spack`](https://github.com/spack/spack/blob/develop/var/spack/repos/builtin/packages/pdc/package.py), with which the dependencies of `PDC` can be easily managed and installed.
-
-```bash
-git clone -c feature.manyFiles=true https://github.com/spack/spack.git
-cd spack/bin
-./spack install pdc
+```
+export WORK_SPACE=/path/to/your/work/space
+$WORK_SPACE/pdc_env.sh
 ```
 
-## Running PDC
+## Running PDC 
+PDC is a typical client-server application.
+To run `PDC`, one needs to start the server processes first, and then the clients can be started and connected to the PDC servers automatically. 
 
-Essentially, PDC is a typical client-server application.
-To run `PDC`, one needs to start the server processes first, and then the clients can be started to issue RPC requests handled by the `Mercury` RPC framework. 
-
-We provide [`mpi_test.sh` utility](https://github.com/hpc-io/pdc/blob/develop/examples/mpi_test.sh) for running MPI tests. For example, on a regular Linux machine, you may run the following:
-
-```bash
-export JOB_RUNNER=mpiexec
-cd $PDC_DIR/bin
-./mpi_test.sh ./pdc_init $JOB_RUNNER 2 4
-```
-
-This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, one can run any of the client examples in `ctest`.
-
-Depending on the specific HPC environment where you run `PDC` , the value of `$JOB_RUNNER` variable can be changed to `srun` (for NERSC), `aprun` (for Theta), or `jsrun` for `Summit`, accordingly.
-
-These source code will provide some knowledge of how to use PDC. For more reference, one may check the documentation folder in this repository.
-
-# PDC on Cori
-
-If you are running `PDC` on Cori supercomputer, here are some tips you would need to follow:
-
-* On Cori, it is recommended to use `cc` as the default compiler when compiling PDC and its dependencies. 
-* When preparing compilation for `PDC` using `CMake`, it is suggested to append console argument `-DMPI_RUN_CMD=srun` so that `ctest` can be executed on Cori.
-* Sometimes, it might be helpful to unload `darshan` module before the installation. 
-
-* For opening an interactive job session on Cori, it is recommended to add `--gres=craynetwork:2` option to the `salloc` command:
+### On Linux
+  * Run 2 server processes in the background:
     ```bash
-    salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
-    ```
-* To launch the PDC server and the client, add `--gres=craynetwork:1` before the executables, for example:
-
-  * Run 4 server processes, each on one node in background:
-    ```bash
-    srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
+    mpiexec -np 2 $PDC_DIR/bin/pdc_server.exe &
     ```
 
-  * Run 64 client processes that concurrently create 1000 objects in total:
+  * Run 4 client processes that concurrently create 1000 objects and then create and query 1000 tags:
     ```bash
-    srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
+    mpiexec -np 4 $PDC_DIR/share/test/bin/kvtag_add_get_scale 1000 1000 1000
+    ```
+    
+### On Perlmutter
+  * Run 4 server processes, each on one node in the background:
+    ```bash
+    srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores $PDC_DIR/bin/pdc_server.exe &
+    ```
+
+  * Run 64 client processes that concurrently create 1000 objects and then create and query 100000 tags:
+    ```bash
+    srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores $PDC_DIR/share/test/bin/kvtag_add_get_scale 100000 100000 100000
     ```
 
 
