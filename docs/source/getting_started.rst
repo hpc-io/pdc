@@ -4,27 +4,22 @@ Getting Started
 
 Proactive Data Containers (PDC) software provides an object-centric API and a runtime system with a set of data object management services. These services allow placing data in the memory and storage hierarchy, performing data movement asynchronously, and providing scalable metadata operations to find data objects. PDC revolutionizes how data is stored and accessed by using object-centric abstractions to represent data that moves in the high-performance computing (HPC) memory and storage subsystems. PDC manages extensive metadata to describe data objects to find desired data efficiently as well as to store information in the data objects.
 
-PDC API, data types, and developer notes are available in `docs/readme.md   <https://github.com/hpc-io/pdc/blob/kenneth_develop/docs/readme.md>`_
-
 More information and publications of PDC is available at https://sdm.lbl.gov/pdc
-
-The following dependencies will need to be installed:
-
-* libfabric
-* Mercury
 
 ++++++++++++++++++++++++++++++++++
 Installing PDC with Spack
 ++++++++++++++++++++++++++++++++++
 
 Spack is a package manager for supercomputers, Linux, and macOS.
-Installing spack can be found at this url: https://spack.io
+More information about Spack can be found at: https://spack.io
+PDC and its dependent libraries can be installed with spack:
 
 .. code-block:: Bash
-	
-	git clone https://github.com/spack/spack.git
-	cd spack/bin
-	./spack install pdc
+
+	# Clone Spack
+	git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+	# Install the latest PDC release version with Spack
+	./spack/bin/spack install pdc
 
 If you run into issues with ``libfabric`` on macOS and some Linux distributions, you can enable all fabrics by installing PDC using:
 
@@ -33,154 +28,206 @@ If you run into issues with ``libfabric`` on macOS and some Linux distributions,
 	spack install pdc ^libfabric fabrics=sockets,tcp,udp,rxm
 
 ++++++++++++++++++++++++++++++++++
-Installing PDC from source
+Installing PDC from source code
 ++++++++++++++++++++++++++++++++++
+We recommend using GCC 7 or a later version. Intel and Cray compilers also work.
 
 ---------------------------
 Dependencies
 ---------------------------
+The following dependencies need to be installed:
 
-The following instructions are for installing PDC on Linux and Cray machines. GCC version 7 or newer and a version of MPI are needed to install PDC.
+* MPI
+* libfabric
+* Mercury
 
-Current PDC tests have been verified with MPICH. To install MPICH, follow the documentation in https://www.mpich.org/static/downloads/3.4.1/mpich-3.4.1-installguide.pdf
+PDC can use either MPICH or OpenMPI as the MPI library, if your system doesn't have one installed, follow `MPICH Installers’ Guide <https://www.mpich.org/documentation/guides>`_ or `Installing Open MPI <https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html>`_
 
-PDC also depends on libfabric and Mercury. We provide detailed instructions for installing libfabric, Mercury, and PDC below. 
+We provide detailed instructions for installing libfabric, Mercury, and PDC below.
 
 .. attention:: 
-	Make sure to record the environmental variables (lines that contains the "export" commands). They are needed for running PDC and to use the libraries again.
+	Following the instructions below will record all the environmental variables needed to run PDC in the ``$WORK_SPACE/pdc_env.sh`` file, which can be used for future PDC runs with ``source $WORK_SPACE/pdc_env.sh``.
+
+
+Prepare Work Space and download source codes
+--------------------------------------------
+Before installing the dependencies and downloading the code repository, we assume there is a directory created for your installation already, e.g. `$WORK_SPACE` and now you are in `$WORK_SPACE`.
+
+.. code-block:: Bash
+	:emphasize-lines: 1
+
+	export WORK_SPACE=/path/to/your/work/space
+	mkdir -p $WORK_SPACE/source
+	mkdir -p $WORK_SPACE/install
+
+	cd $WORK_SPACE/source
+	git clone git@github.com:ofiwg/libfabric.git
+	git clone git@github.com:mercury-hpc/mercury.git --recursive
+	git clone git@github.com:hpc-io/pdc.git
+
+	export LIBFABRIC_SRC_DIR=$WORK_SPACE/source/libfabric
+	export MERCURY_SRC_DIR=$WORK_SPACE/source/mercury
+	export PDC_SRC_DIR=$WORK_SPACE/source/pdc
+	
+	export LIBFABRIC_DIR=$WORK_SPACE/install/libfabric
+	export MERCURY_DIR=$WORK_SPACE/install/mercury
+	export PDC_DIR=$WORK_SPACE/install/pdc
+	
+	mkdir -p $LIBFABRIC_SRC_DIR
+	mkdir -p $MERCURY_SRC_DIR
+	mkdir -p $PDC_SRC_DIR
+	
+	mkdir -p $LIBFABRIC_DIR
+	mkdir -p $MERCURY_DIR
+	mkdir -p $PDC_DIR
+
+	# Save the environment variables to a file
+	echo "export LIBFABRIC_SRC_DIR=$LIBFABRIC_SRC_DIR" > $WORK_SPACE/pdc_env.sh
+	echo "export MERCURY_SRC_DIR=$MERCURY_SRC_DIR" >> $WORK_SPACE/pdc_env.sh
+	echo "export PDC_SRC_DIR=$PDC_SRC_DIR" >> $WORK_SPACE/pdc_env.sh
+	echo "export LIBFABRIC_DIR=$LIBFABRIC_DIR" >> $WORK_SPACE/pdc_env.sh
+	echo "export MERCURY_DIR=$MERCURY_DIR" >> $WORK_SPACE/pdc_env.sh
+	echo "export PDC_DIR=$PDC_DIR" >> $WORK_SPACE/pdc_env.sh
+
+
+From now on you can simply run the following commands to set the environment variables:
+
+.. code-block:: Bash
+	:emphasize-lines: 1
+
+	export WORK_SPACE=/path/to/your/work/space
+	source $WORK_SPACE/pdc_env.sh
+
+
 
 Install libfabric
----------------------------
+-----------------
 
 .. code-block:: Bash
 
-	wget https://github.com/ofiwg/libfabric/archive/v1.11.2.tar.gz
-	tar xvzf v1.11.2.tar.gz
-	cd libfabric-1.11.2
-	mkdir install
-	export LIBFABRIC_DIR=$(pwd)/install
+	cd $LIBFABRIC_SRC_DIR
+	git checkout v1.18.0
 	./autogen.sh
-	./configure --prefix=$LIBFABRIC_DIR CC=gcc CFLAG="-O2"
-	make -j8
-	make install
+	./configure --prefix=$LIBFABRIC_DIR CC=mpicc CFLAG="-O2"
+	make -j && make install
+
+	# Test the installation
+	make check
+
+	# Set the environment variables
 	export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
 	export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
+	echo 'export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
+	echo 'export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
+
+
+.. note::
+	``CC=mpicc`` may need to be changed to the corresponding compiler in your system, e.g. ``CC=cc`` or ``CC=gcc``.
+	On Perlmutter@NERSC, ``--disable-efa --disable-sockets`` should be added to the ``./configure`` command when compiling on login nodes.
 
 
 Install Mercury
----------------------------
-
-.. attention:: 
-	Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
-
-Step 2 in the following is not required. It is a stable commit that has been used to test when these these instructions were written. One may skip it to use the current master branch of Mercury.
+---------------
 
 .. code-block:: Bash
 
-	git clone https://github.com/mercury-hpc/mercury.git
-	cd mercury
-	git checkout e741051fbe6347087171f33119d57c48cb438438
-	git submodule update --init
-	export MERCURY_DIR=$(pwd)/install
-	mkdir install
-	cd install
-	cmake ../ -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF
-	make
-	make install
+	cd $MERCURY_SRC_DIR
+	# Checkout a release version
+	git checkout v2.2.0
+	mkdir build
+	cd build
+	cmake -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DBUILD_SHARED_LIBS=ON \
+	      -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DNA_OFI_TESTING_PROTOCOL=tcp ../
+	make -j && make install
+	
+	# Test the installation
 	ctest
+	
+	# Set the environment variables
 	export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 	export PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
+	echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
+	echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
----------------------------
-Installation
----------------------------
+.. note::
+	``CC=mpicc`` may need to be changed to the corresponding compiler in your system, e.g. ``-DCMAKE_C_COMPILER=cc`` or ``-DCMAKE_C_COMPILER=gcc``.
+	Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
+
 
 Install PDC
----------------------------
-
-One can replace mpicc to other available MPI compilers. For example, on Cori, cc can be used to replace mpicc. ctest contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.
+-----------
 
 .. code-block:: Bash
 
-	git clone https://github.com/hpc-io/pdc.git
-	cd pdc
-	git checkout stable
-	cd src
-	mkdir install
-	cd install
-	export PDC_DIR=$(pwd)
-	cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc
-	make -j8
+	cd $PDC_SRC_DIR
+	git checkout develop
+	mkdir build
+	cd build
+	cmake -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR \
+	      -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD=mpiexec ../
+	make -j && make install
+
+	# Set the environment variables
+	export LD_LIBRARY_PATH="$PDC_DIR/lib:$LD_LIBRARY_PATH"
+	export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"	
+	echo 'export LD_LIBRARY_PATH=$PDC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
+	echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
+
+.. note::
+	``-DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD=mpiexec`` may need to be changed to ``-DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD=srun`` depending on your system environment.
+
+
+Test Your PDC Installation
+--------------------------
+PDC's ``ctest`` contains both sequential and parallel/MPI tests, and can be run with the following in the `build` directory.
+
+.. code-block:: Bash
+
 	ctest
 
-Environmental Variables
----------------------------
+.. note::
+	If you are using PDC on an HPC system, e.g. Perlmutter@NERSC, ``ctest`` should be run on a compute node, you can submit an interactive job on Perlmutter: ``salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx``
 
-During installation, we have set some environmental variables. These variables may disappear after the close the current session ends. We recommend adding the following lines to ~/.bashrc. (One may also execute them manually after logging in). The MERCURY_DIR and LIBFABRIC_DIR variables should be identical to the values that were set during the installation of Mercury and libfabric. The install path is the path containing bin and lib directory, instead of the one containing the source code.
-
-.. code-block:: Bash
-
-	export PDC_DIR="where/you/installed/your/pdc"
-	export MERCURY_DIR="where/you/installed/your/mercury"
-	export LIBFABRIC_DIR="where/you/installed/your/libfabric"
-	export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
-	export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
-
-One can also manage the path with Spack, which is a lot more easier to load and unload these libraries.
 
 ---------------------------
 Running PDC
 ---------------------------
 
-The ctest under PDC install folder runs PDC examples using PDC APIs. PDC needs to run at least two applications. The PDC servers need to be started first. The client programs that send I/O request to servers as Mercury RPCs are started next.
-
-We provide a convenient function (mpi_text.sh) to start MPI tests. One needs to change the MPI launching function (mpiexec) with the relevant launcher on a system. On Cori at NERSC, the mpiexec argument needs to be changed to srun. On Theta, it is aprun. On Summit, it is jsrun.
+If you have followed all the previous steps, ``$WORK_SPACE/pdc_env.sh`` sets all the environment variables needed to run PDC, and you only need to do the following once in each terminal session before running PDC.
 
 .. code-block:: Bash
 
-	cd $PDC_DIR/bin
-	./mpi_test.sh ./pdc_init mpiexec 2 4
+	export WORK_SPACE=/path/to/your/work/space
+	source $WORK_SPACE/pdc_env.sh
 
-This is test will start 2 processes for PDC servers. The client program ./pdc_init will start 4 processes. Similarly, one can run any of the client examples in ctest. These source code will provide some knowledge of how to use PDC. For more reference, one may check the documentation folder in this repository.
+PDC is a typical client-server application.
+To run PDC, one needs to start the server processes first, and then the clients can be started and connected to the PDC servers automatically. 
 
-PDC on Cori
----------------------------
-
-Installation on Cori is not very different from a regular linux machine. Simply replacing all gcc/mpicc with the default cc compiler on Cori would work. Add options -DCMAKE_C_FLAGS="-dynamic" to the cmake line of PDC. Add -DCMAKE_C_FLAGS="-dynamic" -DCMAKE_CXX_FLAGS="-dynamic" at the end of the cmake line for mercury as well. Finally, "-DMPI_RUN_CMD=srun" is needed for ctest command later. In some instances and on some systems, unload darshan before installation may be needed.
-
-For job allocation on Cori it is recommended to add "--gres=craynetwork:2" to the command, add "--overlap" to run PDC server in shared node.
+On Linux
+--------
+Run 2 server processes in the background
 
 .. code-block:: Bash
 
-	salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
+	mpiexec -np 2 $PDC_DIR/bin/pdc_server.exe &
 
-And to launch the PDC server and the client, add "--gres=craynetwork:1" before the executables:
-
-Run 4 server processes, each on one node in background:
+Run 4 client processes that concurrently create 1000 objects and then create and query 1000 tags:
 
 .. code-block:: Bash
 
-	srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
+	mpiexec -np 4 $PDC_DIR/share/test/bin/kvtag_add_get_scale 1000 1000 1000
 
-Run 64 client processes that concurrently create 1000 objects in total:
-
-.. code-block:: Bash
-
-	srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
-
-PDC on Perlmutter
----------------------------
-
-For job allocation on Perlmutter make sure you are using the most recent version of Cray MPICH (8.1.17). You can verify that with ``echo $CRAY_MPICH_VERSION``. You also need to export ``FI_CXI_DEFAULT_VNI`` environment variable to a unique value for each concurrent srun command that shares a node, otherwise you will receive "MPI OFI Address already in use".
+    
+On Perlmutter
+-------------
+Run 4 server processes, each on one compute node in the background:
 
 .. code-block:: Bash
 
-	export FI_CXI_DEFAULT_VNI=0
-	srun --overlap --exact --cpu-bind=sockets,verbose -u -n 2 -c 1 ./bin/pdc_server.exe &
-	
+	srun -N 4 -n 4 -c 2 --mem=25600 --cpu_bind=cores $PDC_DIR/bin/pdc_server.exe &
+
+Run 64 client processes that concurrently create 1000 objects and then create and query 100000 tags:
+
 .. code-block:: Bash
 
-	export FI_CXI_DEFAULT_VNI=1
-	srun --overlap --exact --cpu-bind=sockets,verbose -u -n 2 -c 1 ./bin/create_obj_scale -r 1000
-
-Notice the distinct values for `FI_CXI_DEFAULT_VNI`.
+	srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores $PDC_DIR/share/test/bin/kvtag_add_get_scale 100000 100000 100000
