@@ -3,7 +3,8 @@
 
 #ifdef PDC_SERVER_CACHE
 
-#define MAX_CACHE_SIZE 1610612736
+#define MAX_CACHE_SIZE 34359738368
+#define PDC_CACHE_FLUSH_TIME_INT 30
 
 typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
@@ -825,7 +826,7 @@ PDC_region_cache_clock_cycle(void *ptr)
     struct timeval current_time;
     struct timeval finish_time;
     int            nflush            = 0;
-    double         flush_frequency_s = 2.0, elapsed_time;
+    double         flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time;
     int            server_rank       = 0;
 
     char *p = getenv("PDC_SERVER_CACHE_FLUSH_FREQUENCY_S");
