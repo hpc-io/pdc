@@ -20,9 +20,9 @@ typedef struct {
 
 } pdc_rpc_msg_t;
 
-pdc_rpc_source_t sender_init() {
-
+pdc_rpc_source_t
+sender_init()
+{
 }
-
 
 #endif /* PDC_RPC_H */

@@ -34,5 +34,4 @@ perr_t PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t * in,
                                           dart_perform_one_server_out_t *out, uint64_t *n_obj_ids_ptr,
                                           uint64_t ***buf_ptrs);
 
-
 #endif /* PDC_SERVER_METADATA_INDEX_H */
