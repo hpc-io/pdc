@@ -179,7 +179,9 @@ endif()
 # Disable warnings for -Wmaybe-uninitialized
 option(PDC_SUPPRESS_MAYBE_UNINIT "Disable maybe-uninitialized warnings" ON)
 if(PDC_SUPPRESS_MAYBE_UNINIT)
-  set(SUPPRESSED_LIST "-Wno-maybe-uninitialized" ${SUPPRESSED_LIST})
+  if(NOT APPLE)
+    set(SUPPRESSED_LIST "-Wno-maybe-uninitialized" ${SUPPRESSED_LIST})
+  endif()
 endif()
 
 # Disable warnings for -Wunused-but-set-variable

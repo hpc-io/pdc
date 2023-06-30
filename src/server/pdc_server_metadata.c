@@ -48,15 +48,7 @@
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
-
 #include "mercury_hash_table.h"
-
-// #include "hashtab.h"
-#include "query_utils.h"
-#include "timer_utils.h"
-#include "art.h"
-#include "hashset.h"
-#include "dart_core.h"
 
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_NEW    new_counting_bloom
