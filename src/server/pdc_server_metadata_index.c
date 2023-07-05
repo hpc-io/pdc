@@ -411,7 +411,7 @@ level_two_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
     pdc_art_iterator_param_t *param = (pdc_art_iterator_param_t *)(data);
     // println("Level two start");
     if (param->level_two_infix != NULL) {
-        if (contains((char *)key, param->level_two_infix) == 0) {
+        if (contains((const char *)key, (const char *)param->level_two_infix) == 0) {
             return 0;
         }
     }
@@ -635,6 +635,5 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
             out->has_bulk = 1;
         }
     }
-done:
     return result;
 }

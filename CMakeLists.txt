@@ -202,6 +202,12 @@ if(PDC_SUPPRESS_FORMAT)
   set(SUPPRESSED_LIST "-Wno-format" ${SUPPRESSED_LIST})
 endif()
 
+# Disable warnings for -Wcast-qual
+option(PDC_SUPPRESS_CAST_QUAL "Disable cast-qual warnings" ON)
+if(PDC_SUPPRESS_CAST_QUAL)
+  set(SUPPRESSED_LIST "-Wno-cast-qual" ${SUPPRESSED_LIST})
+endif()
+
 # Disable warnings for -Wdeprecated-non-prototype if on Apple
 if(APPLE)
   set(SUPPRESSED_LIST "-Wno-deprecated-non-prototype" ${SUPPRESSED_LIST})

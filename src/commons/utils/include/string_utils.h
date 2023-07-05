@@ -168,13 +168,4 @@ int simple_matches(const char *str, const char *pattern);
  */
 char *reverse_str(char *str);
 
-/**
- * split a string into a list of strings according to the delimiter character.
- * @param str
- * @param delim
- * @return a list of strings
- * @note remember to free the list after use.
- */
-char **split(char *str, const char *delim);
-
 #endif // PDC_STRING_UTILS_H
