@@ -109,7 +109,7 @@ int                  query_id_g         = 0;
 static DART *                 dart_g;
 hg_atomic_int32_t             dart_response_done_g;
 static dart_hash_algo_t       dart_hash_algo_g    = DART_HASH;
-static dart_object_ref_type_t dart_obj_ref_type_g = REF_SECONDARY_ID;
+static dart_object_ref_type_t dart_obj_ref_type_g = REF_PRIMARY_ID;
 
 // global variables for Mercury RPC registration
 static hg_id_t client_test_connect_register_id_g;
@@ -8342,8 +8342,6 @@ client_dart_get_server_info_cb(const struct hg_cb_info *callback_info)
     work_todo_g--;
     HG_Destroy(handle);
 
-done:
-    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -8798,7 +8796,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
             itr_idx++;
         }
     }
-done:
+    // done:
     // thpool_destroy(query_pool);
     return ret;
 }
@@ -8850,7 +8848,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
             int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL);
         }
     }
-done:
+    // done:
     return ret_value;
 }
 
@@ -8903,7 +8901,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         }
         // printf("r loop at r = %d\n", r);
     }
-done:
+    // done:
     return ret_value;
 }
 

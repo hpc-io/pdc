@@ -6393,7 +6393,7 @@ HG_TEST_RPC_CB(dart_get_server_info, handle)
     // Extract input from handle
     HG_Get_input(handle, &in);
     // retrieve server info from desigated server
-    // PDC_Server_dart_get_server_info(&in, &out);
+    PDC_Server_dart_get_server_info(&in, &out);
 
     // Send response to client
     HG_Respond(handle, NULL, NULL, &out);
@@ -6427,7 +6427,7 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
 
     n_obj_ids_ptr = (uint64_t *)calloc(1, sizeof(uint64_t));
 
-    // PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, &buf_ptrs);
+    PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, &buf_ptrs);
     // printf("perform_server_cb. n_obj_ids_ptr on op_type = %d = %d\n", in.op_type ,*n_obj_ids_ptr);
     out.op_type = in.op_type;
     // printf("out.n_items= %d\n", out.n_items);
