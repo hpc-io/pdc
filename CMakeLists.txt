@@ -190,6 +190,18 @@ if(PDC_SUPPRESS_UNUSED_BUT_SET)
   set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
 endif()
 
+# Disable warnings for -Wsign-compare
+option(PDC_SUPPRESS_SIGN_COMPARE "Disable sign-compare warnings" ON)
+if(PDC_SUPPRESS_SIGN_COMPARE)
+  set(SUPPRESSED_LIST "-Wno-sign-compare" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wformat
+option(PDC_SUPPRESS_FORMAT "Disable format warnings" ON)
+if(PDC_SUPPRESS_FORMAT)
+  set(SUPPRESSED_LIST "-Wno-format" ${SUPPRESSED_LIST})
+endif()
+
 # Disable warnings for -Wdeprecated-non-prototype if on Apple
 if(APPLE)
   set(SUPPRESSED_LIST "-Wno-deprecated-non-prototype" ${SUPPRESSED_LIST})

@@ -1298,8 +1298,8 @@ drc_access_again:
     get_sel_data_register_id_g    = PDC_get_sel_data_rpc_register(*hg_class);
 
     // DART Index
-    dart_get_server_info_g    = PDC_dart_get_server_info_register(hg_class);
-    dart_perform_one_server_g = PDC_dart_perform_one_server_register(hg_class);
+    dart_get_server_info_g    = PDC_dart_get_server_info_register(*hg_class);
+    dart_perform_one_server_g = PDC_dart_perform_one_server_register(*hg_class);
 
 #ifdef ENABLE_MULTITHREAD
     /* Mutex initialization for the client versions of these... */
