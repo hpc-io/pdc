@@ -37,6 +37,7 @@
 
 #include "pdc_server_common.h"
 #include "pdc_client_server_common.h"
+#include "pdc_server_metadata_index.h"
 
 #define CREATE_BLOOM_THRESHOLD 64
 

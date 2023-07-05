@@ -1602,7 +1602,7 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
         if (strcmp(in->name, kvtag->name) != 0)
             ret_value = FALSE;
     }
-    if (ret_value == TRUE && in->value[0] != ' ') {
+    if (ret_value == TRUE && ((char *)(in->value))[0] != ' ') {
         if (memcmp(in->value, kvtag->value, in->size) != 0)
             ret_value = FALSE;
     }

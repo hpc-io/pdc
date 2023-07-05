@@ -32,6 +32,7 @@
 #include "mercury_proc_string.h"
 #include "mercury_request.h"
 #include "pdc_region.h"
+#include "dart_core.h"
 #include "hashset.h"
 
 extern int                      pdc_server_num_g;
@@ -179,6 +180,12 @@ struct client_genetic_lookup_args {
     int64_t int64_value3;
     int64_t int64_value4;
 };
+
+typedef struct dart_perform_one_thread_param_t {
+    int                           server_id;
+    dart_perform_one_server_in_t *dart_in;
+    hashset_t *                   hashset;
+} dart_perform_one_thread_param_t;
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 
@@ -1000,6 +1007,67 @@ int PDC_get_nproc_per_node();
  */
 perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 
+/**
+ * @brief delete the metadata of the specified PDC object or container
+ * @param id [IN]           ID of the object or container
+ * @param is_cont [IN]      1 if the id is a container ID, 0 if the id is an object ID
+ * @return Non-negative on success/Negative on failure
+ */
 perr_t PDC_Client_del_metadata(pdcid_t id, int is_cont);
+
+/**
+ * Return the abstract of the server by server ID
+ *
+ *
+ */
+dart_server dart_retrieve_server_info_cb(uint32_t serverId);
+
+/**
+ * Search through dart index with key-value pair.
+ * if the value is not specified, we just retrieve all the indexed data
+ * on the secondary index associated with the primary index
+ * specified by attr_name;
+ *
+ * \param hash_algo     [IN]    name of the hashing algorithm
+ * \param query_string [IN]    Name of the attribute
+ * \param n_res [OUT]   Number of object IDs
+ * \param out      [OUT]    Object IDs
+ */
+perr_t PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_string,
+                                              dart_object_ref_type_t ref_type, int *n_res, uint64_t ***out);
+
+/**
+ * Delete the inverted mapping between value and data.
+ *
+ * \param hash_algo     [IN]    name of the hashing algorithm
+ * \param attr_key [IN]    Name of the attribute
+ * \param attr_value [IN]   Value of the attribute
+ * \param ref_type  [IN]    The reference type of the object, e.g. PRIMARY_ID, SECONDARY_ID, SERVER_ID
+ * \param data      [IN]    Associated value along with the key-value pair.
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+                                           dart_object_ref_type_t ref_type, uint64_t data);
+
+/**
+ * Insert data into index with key value pair
+ *
+ * \param hash_algo     [IN]    name of the hashing algorithm
+ * \param attr_key [IN]    Name of the attribute
+ * \param attr_value [IN]   Value of the attribute
+ * \param ref_type  [IN]    The reference type of the object, e.g. PRIMARY_ID, SECONDARY_ID, SERVER_ID
+ * \param data      [IN]    Associated value along with the key-value pair.
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+                                           dart_object_ref_type_t ref_type, uint64_t data);
+
+/**
+ * Return the global dart_g from client
+ *
+ */
+DART *get_dart_g();
 
 #endif /* PDC_CLIENT_CONNECT_H */

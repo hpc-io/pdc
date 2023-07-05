@@ -1956,6 +1956,10 @@ PDC_Server_mercury_register()
     PDC_region_transform_release_register(hg_class_g);
     PDC_region_analysis_release_register(hg_class_g);
 
+    // DART Index
+    PDC_dart_get_server_info_register(hg_class_g);
+    PDC_dart_perform_one_server_register(hg_class_g);
+
     // Server to client RPC
     server_lookup_client_register_id_g = PDC_server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = PDC_notify_io_complete_register(hg_class_g);

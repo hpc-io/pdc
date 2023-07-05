@@ -38,6 +38,7 @@ endif()
 
 add_executable(pdc_server.exe
                pdc_server.c
+               pdc_server_metadata_index.c
                pdc_server_metadata.c
                pdc_client_server_common.c
                dablooms/pdc_dablooms.c

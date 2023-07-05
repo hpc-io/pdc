@@ -162,8 +162,19 @@ int simple_matches(const char *str, const char *pattern);
 
 /**
  * get the reverse of a given string.
- * a new reversed string of the original will be generated.
+ * @param str
+ * @return a reversed string
+ * @note remember to free the reversed string after use.
  */
 char *reverse_str(char *str);
+
+/**
+ * split a string into a list of strings according to the delimiter character.
+ * @param str
+ * @param delim
+ * @return a list of strings
+ * @note remember to free the list after use.
+ */
+char **split(char *str, const char *delim);
 
 #endif // PDC_STRING_UTILS_H

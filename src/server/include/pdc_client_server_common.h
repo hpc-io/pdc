@@ -1136,6 +1136,45 @@ typedef struct query_storage_region_transfer_t {
     pdc_histogram_t        hist;
 } query_storage_region_transfer_t;
 
+/* Define dart_get_server_info_in_t */
+typedef struct {
+    uint32_t serverId;
+} dart_get_server_info_in_t;
+
+/* Define dart_get_server_info_out_t */
+typedef struct {
+    int64_t indexed_word_count;
+    int64_t request_count;
+} dart_get_server_info_out_t;
+
+/* Define dart_perform_one_server_in_t */
+typedef struct {
+    int8_t            op_type;
+    int8_t            hash_algo;
+    hg_const_string_t attr_key;
+    hg_const_string_t attr_val;
+    int8_t            obj_ref_type;
+    uint64_t          obj_primary_ref;
+    uint64_t          obj_secondary_ref;
+    uint64_t          obj_server_ref;
+    int64_t           timestamp;
+} dart_perform_one_server_in_t;
+
+/* Define dart_perform_one_server_out_t */
+typedef struct {
+    int8_t    op_type;
+    int32_t   ret;
+    hg_bulk_t bulk_handle;
+    int64_t   indexed_word_count;
+    int64_t   request_count;
+    int8_t    has_bulk;
+    int64_t   n_items;
+    int64_t   timestamp;
+} dart_perform_one_server_out_t;
+
+/*****************************************/
+/*   Serialization and Deserialization   */
+/*****************************************/
 /* Define hg_proc_pdc_kvtag_t */
 static hg_return_t
 hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
@@ -3746,6 +3785,143 @@ hg_proc_query_storage_region_transfer_t(hg_proc_t proc, void *data)
     return ret;
 }
 
+static HG_INLINE hg_return_t
+hg_proc_dart_get_server_info_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t ret;
+
+    dart_get_server_info_in_t *struct_data = (dart_get_server_info_in_t *)data;
+
+    ret = hg_proc_uint32_t(proc, &struct_data->serverId);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_dart_get_server_info_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                 ret;
+    dart_get_server_info_out_t *struct_data = (dart_get_server_info_out_t *)data;
+
+    ret = hg_proc_int64_t(proc, &struct_data->indexed_word_count);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int64_t(proc, &struct_data->request_count);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                   ret;
+    dart_perform_one_server_in_t *struct_data = (dart_perform_one_server_in_t *)data;
+    ret                                       = hg_proc_int8_t(proc, &struct_data->op_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int8_t(proc, &struct_data->hash_algo);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_key);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_val);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int8_t(proc, &struct_data->obj_ref_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_primary_ref);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_secondary_ref);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_server_ref);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+
+    ret = hg_proc_int64_t(proc, &struct_data->timestamp);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t                    ret;
+    dart_perform_one_server_out_t *struct_data = (dart_perform_one_server_out_t *)data;
+    ret                                        = hg_proc_int8_t(proc, &struct_data->op_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_hg_bulk_t(proc, &struct_data->bulk_handle);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->indexed_word_count);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->request_count);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int8_t(proc, &struct_data->has_bulk);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->n_items);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->timestamp);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
 /***************************/
 /* Library Private Structs */
 /***************************/
@@ -4078,6 +4254,10 @@ hg_id_t PDC_get_sel_data_rpc_register(hg_class_t *hg_class);
 // Data query
 hg_id_t PDC_send_data_query_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_send_data_query_region_register(hg_class_t *hg_class);
+
+// DART index
+hg_id_t PDC_dart_get_server_info_register(hg_class_t *hg_class);
+hg_id_t PDC_dart_perform_one_server_register(hg_class_t *hg_class);
 
 /**
  * Calculate time from start to end

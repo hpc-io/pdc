@@ -105,6 +105,13 @@ static hg_context_t *send_context_g     = NULL;
 static int           work_todo_g        = 0;
 int                  query_id_g         = 0;
 
+// global variables for DART
+static DART *                 dart_g;
+hg_atomic_int32_t             dart_response_done_g;
+static dart_hash_algo_t       dart_hash_algo_g    = DART_HASH;
+static dart_object_ref_type_t dart_obj_ref_type_g = REF_SECONDARY_ID;
+
+// global variables for Mercury RPC registration
 static hg_id_t client_test_connect_register_id_g;
 static hg_id_t gen_obj_register_id_g;
 static hg_id_t gen_cont_register_id_g;
@@ -158,6 +165,10 @@ static hg_id_t send_region_storage_meta_shm_bulk_rpc_register_id_g;
 // data query
 static hg_id_t send_data_query_register_id_g;
 static hg_id_t get_sel_data_register_id_g;
+
+// DART index
+static hg_id_t dart_get_server_info_g;
+static hg_id_t dart_perform_one_server_g;
 
 int                        cache_percentage_g       = 0;
 int                        cache_count_g            = 0;
@@ -1285,6 +1296,10 @@ drc_access_again:
     // Data query
     send_data_query_register_id_g = PDC_send_data_query_rpc_register(*hg_class);
     get_sel_data_register_id_g    = PDC_get_sel_data_rpc_register(*hg_class);
+
+    // DART Index
+    dart_get_server_info_g    = PDC_dart_get_server_info_register(hg_class);
+    dart_perform_one_server_g = PDC_dart_perform_one_server_register(hg_class);
 
 #ifdef ENABLE_MULTITHREAD
     /* Mutex initialization for the client versions of these... */

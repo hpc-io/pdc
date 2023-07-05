@@ -3,7 +3,8 @@
 #------------------------------------------------------------------------------
 
 set(PDC_COMMON_LIBRARY_NAME pdc_commons CACHE INTERNAL "")
-
+set(PDC_COMMON_SERVER_LIB pdc_commons_server CACHE INTERNAL "")
+set(PDC_COMMON_CLIENT_LIB pdc_commons_client CACHE INTERNAL "")
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
@@ -42,6 +43,9 @@ include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
 
 # Get a list of all directories that contain header files
 file(GLOB_RECURSE LOCAL_INCLUDE_DIRS "*.h")
+
+# Remove specified directories from the list
+# list(FILTER LOCAL_INCLUDE_DIRS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/comm")
 
 # Remove the /filename.h at the end of each directory
 list(TRANSFORM LOCAL_INCLUDE_DIRS REPLACE "/[^/]*$" "")
@@ -96,6 +100,31 @@ endif()
 file(GLOB_RECURSE PDC_COMMONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
+list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/comm")
+list(FILTER PDC_COMMONS_HEADERS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/comm")
+list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
+list(FILTER PDC_COMMONS_HEADERS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
+
+# # Set source files for pdc_commons_server
+# set(PDC_COMMONS_SERVER_SOURCES 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/dart_comm_target.c
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/dart_comm.c
+# )
+
+# set(PDC_COMMONS_SERVER_HEADERS 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/include/dart_comm_target.h
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/include/dart_comm.h
+# )
+# # Set source files for pdc_commons_client
+# set(PDC_COMMONS_CLIENT_SOURCES 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/dart_comm_source.c
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/dart_comm.c
+# )
+# set(PDC_COMMONS_CLIENT_HEADERS 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/include/dart_comm_source.h
+#   ${CMAKE_CURRENT_SOURCE_DIR}/comm/include/dart_comm.h
+# )
+
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -119,6 +148,37 @@ target_link_libraries(${PDC_COMMON_LIBRARY_NAME} INTERFACE
 )
 
 set(PDC_EXPORTED_LIBS ${PDC_COMMON_LIBRARY_NAME} ${PDC_EXPORTED_LIBS})
+
+# # PDC COMMONS SERVER
+# add_library(${PDC_COMMON_SERVER_LIB} ${PDC_LIBTYPE} ${PDC_COMMONS_SERVER_SOURCES} ${PDC_COMMONS_SERVER_HEADERS})
+# if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+#     target_compile_options(${PDC_COMMON_LIBRARY_NAME} PRIVATE ${SUPPRESSED_LIST})
+# endif()
+# target_include_directories(${PDC_COMMON_SERVER_LIB}
+#   PUBLIC  "$<BUILD_INTERFACE:${PDC_COMMONS_INCLUDE_DIRS}>"
+#           $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>
+# )
+# target_link_libraries(${PDC_COMMON_SERVER_LIB} INTERFACE
+#   ${PDC_EXT_LIB_DEPENDENCIES} ${PDC_COMMON_LIBRARY_NAME}
+# )
+
+# set(PDC_EXPORTED_LIBS ${PDC_COMMON_SERVER_LIB} ${PDC_EXPORTED_LIBS})
+
+
+# # PDC COMMONS CLIENT
+
+# add_library(${PDC_COMMON_CLIENT_LIB} ${PDC_LIBTYPE} ${PDC_COMMONS_CLIENT_SOURCES} ${PDC_COMMONS_CLIENT_HEADERS})
+# if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+#     target_compile_options(${PDC_COMMON_LIBRARY_NAME} PRIVATE ${SUPPRESSED_LIST})
+# endif()
+# target_include_directories(${PDC_COMMON_CLIENT_LIB}
+#   PUBLIC  "$<BUILD_INTERFACE:${PDC_COMMONS_INCLUDE_DIRS}>"
+#           $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>
+# )
+# target_link_libraries(${PDC_COMMON_CLIENT_LIB} INTERFACE
+#   ${PDC_EXT_LIB_DEPENDENCIES} ${PDC_COMMON_LIBRARY_NAME}
+# )
+# set(PDC_EXPORTED_LIBS ${PDC_COMMON_CLIENT_LIB} ${PDC_EXPORTED_LIBS})
 
 #-----------------------------------------------------------------------------
 # Specify project header files to be installed
@@ -155,6 +215,24 @@ install(
     headers
 )
 
+# install(
+#   FILES
+#     ${PDC_COMMONS_SERVER_HEADERS}
+#   DESTINATION
+#     ${PDC_INSTALL_INCLUDE_DIR}
+#   COMPONENT
+#     headers
+# )
+
+# install(
+#   FILES
+#     ${PDC_COMMONS_CLIENT_HEADERS}
+#   DESTINATION
+#     ${PDC_INSTALL_INCLUDE_DIR}
+#   COMPONENT
+#     headers
+# )
+
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
@@ -168,6 +246,26 @@ install(
   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
 )
+
+# install(
+#   TARGETS
+#     ${PDC_COMMON_SERVER_LIB} 
+#   EXPORT
+#     ${PDC_EXPORTED_TARGETS}
+#   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
+#   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
+#   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
+# )
+
+# install(
+#   TARGETS
+#     ${PDC_COMMON_CLIENT_LIB} 
+#   EXPORT
+#     ${PDC_EXPORTED_TARGETS}
+#   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
+#   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
+#   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
+# )
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install for import into other projects
@@ -214,3 +312,5 @@ set(PDC_INCLUDES_INSTALL_TIME
 )
 
 set(PDC_COMMONS_LIBRARIES ${PDC_COMMON_LIBRARY_NAME} PARENT_SCOPE)
+# set(PDC_COMMONS_SERVER_LIBRARIES ${PDC_COMMON_SERVER_LIB} PARENT_SCOPE)
+# set(PDC_COMMONS_CLIENT_LIBRARIES ${PDC_COMMON_CLIENT_LIB} PARENT_SCOPE)
