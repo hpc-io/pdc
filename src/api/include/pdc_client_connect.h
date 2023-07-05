@@ -181,11 +181,11 @@ struct client_genetic_lookup_args {
     int64_t int64_value4;
 };
 
-typedef struct dart_perform_one_thread_param_t {
+struct _dart_perform_one_thread_param {
     int                           server_id;
     dart_perform_one_server_in_t *dart_in;
     hashset_t *                   hashset;
-} dart_perform_one_thread_param_t;
+};
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 
@@ -1016,6 +1016,18 @@ perr_t PDC_free_kvtag(pdc_kvtag_t **kvtag);
 perr_t PDC_Client_del_metadata(pdcid_t id, int is_cont);
 
 /**
+ * Return the global dart_g from client
+ *
+ */
+DART *get_dart_g();
+
+/**
+ * To lookup the server just in case.
+ *
+ */
+perr_t server_lookup_connection(int serverId, int retry_times);
+
+/**
  * Return the abstract of the server by server ID
  *
  *
@@ -1063,11 +1075,5 @@ perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *att
  */
 perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
                                            dart_object_ref_type_t ref_type, uint64_t data);
-
-/**
- * Return the global dart_g from client
- *
- */
-DART *get_dart_g();
 
 #endif /* PDC_CLIENT_CONNECT_H */

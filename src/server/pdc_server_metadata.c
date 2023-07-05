@@ -2577,7 +2577,6 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
             ret_value = FAIL;
             out->ret  = -1;
         }
-
     }      // if lookup_value != NULL
     else { // look for containers
         cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
