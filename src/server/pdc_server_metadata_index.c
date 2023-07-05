@@ -293,33 +293,6 @@ metadata_index_create(char *attr_key, char *attr_value, uint64_t obj_locator, in
     return ret_value;
 }
 
-// perr_t
-// PDC_Server_metadata_index_create(metadata_index_create_in_t *in, metadata_index_create_out_t *out)
-// {
-//     perr_t ret_value = FAIL;
-
-//     char *key       = in->key;
-//     char *str_value = in->str_value;
-
-//     uint32_t index_type = in->index_type;
-
-//     int8_t pseudo = in->pseudo;
-
-//     if (pseudo == 1) {
-//         indexed_word_count_g++;
-//         return SUCCEED;
-//     }
-
-//     uint64_t obj_locator = in->obj_id;
-
-//     ret_value = metadata_index_create(key, str_value, obj_locator, index_type);
-
-//     out->ret = 1;
-//     printf("Server index create is called! %s->%s \n", key, str_value);
-//     ret_value = SUCCEED;
-//     FUNC_LEAVE(ret_value);
-// }
-
 /****************************/
 /* Delete index item for KV in DART */
 /****************************/
@@ -411,28 +384,6 @@ metadata_index_delete(char *attr_key, char *attr_value, uint64_t obj_locator, in
     ret_value = SUCCEED;
     return ret_value;
 }
-
-// perr_t
-// PDC_Server_metadata_index_delete(metadata_index_delete_in_t *in, metadata_index_delete_out_t *out)
-// {
-//     perr_t   ret_value  = FAIL;
-//     uint32_t index_type = in->index_type;
-
-//     char * key       = in->key;
-//     char * str_value = in->str_value;
-//     int8_t pseudo    = in->pseudo;
-//     if (pseudo == 1) {
-//         indexed_word_count_g--;
-//         return SUCCEED;
-//     }
-
-//     uint64_t obj_locator = in->obj_id;
-//     ret_value            = metadata_index_delete(key, str_value, obj_locator, index_type);
-//     out->ret             = 1;
-
-//     ret_value = SUCCEED;
-//     FUNC_LEAVE(ret_value);
-// }
 
 /****************************/
 /* DART Get Server Info */
@@ -646,19 +597,6 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     server_request_count_g++;
     return result;
 }
-
-// perr_t
-// PDC_Server_metadata_index_search(metadata_index_search_in_t *in, metadata_index_search_out_t *out,
-//                                  uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
-// {
-//     perr_t result = SUCCEED;
-//     /* Query sample: *type=ap* or *age=0~60 */
-//     uint32_t index_type = in->index_type;
-//     char *   query      = in->query_string;
-//     result              = metadata_index_search(query, index_type, n_obj_ids_ptr, buf_ptrs);
-// done:
-//     return result;
-// }
 
 perr_t
 PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perform_one_server_out_t *out,
