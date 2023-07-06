@@ -108,6 +108,11 @@ set(PROGRAMS
   query_data
   )
 
+if (NOT APPLE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -luuid")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -luuid")
+endif()
+
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
