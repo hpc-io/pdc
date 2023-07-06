@@ -67,6 +67,9 @@ set(PROGRAMS
  kvtag_add_get_scale
 #  kvtag_query
  kvtag_query_scale
+ dart_algo_sim
+ dart_func_test
+ dart_test
 #  obj_transformation
   region_transfer_query
   region_transfer
