@@ -9,6 +9,14 @@ include_directories(
   $ENV{HOME}/include
 )
 
+# *************************************************
+# *  Find UUID library
+# *************************************************
+find_package(UUID REQUIRED)
+if(UUID_FOUND)
+  include_directories(${UUID_INCLUDE_DIRS})
+endif(UUID_FOUND)
+
 set(PROGRAMS
   pdc_init
 #  create_prop
@@ -67,9 +75,6 @@ set(PROGRAMS
  kvtag_add_get_scale
 #  kvtag_query
  kvtag_query_scale
-#  dart_algo_sim
- dart_func_test
- dart_test
 #  obj_transformation
   region_transfer_query
   region_transfer
@@ -108,12 +113,23 @@ set(PROGRAMS
   query_data
   )
 
+set(TEST_EXT_LIB "")
+if(UUID_FOUND)
+set(PROGRAMS $PROGRAMS 
+dart_algo_sim
+dart_func_test
+dart_test
+)
+
+set(TEST_EXT_LIB $TEST_EXT_LIB ${UUID_LIBRARIES})
+endif(UUID_FOUND)
+
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
       target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
   endif()
-  target_link_libraries(${program} pdc pdc_commons)
+  target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
 endforeach(program)
 
 set(SCRIPTS
