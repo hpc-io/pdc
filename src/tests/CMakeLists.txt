@@ -67,7 +67,7 @@ set(PROGRAMS
  kvtag_add_get_scale
 #  kvtag_query
  kvtag_query_scale
- dart_algo_sim
+#  dart_algo_sim
  dart_func_test
  dart_test
 #  obj_transformation
@@ -107,11 +107,6 @@ set(PROGRAMS
   #query_vpic_exyz_preload
   query_data
   )
-
-if (NOT APPLE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -luuid")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -luuid")
-endif()
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
