@@ -114,14 +114,18 @@ set(PROGRAMS
   )
 
 set(TEST_EXT_LIB "")
+set(TEST_EXT_INCLUDE_DIRS "")
 if(UUID_FOUND)
-set(PROGRAMS $PROGRAMS 
-dart_algo_sim
-dart_func_test
-dart_test
-)
+  message(STATUS "UUID library found: ${UUID_LIBRARIES}")
+  message(STATUS "UUID include directory: ${UUID_INCLUDE_DIRS}")
+  set(PROGRAMS $PROGRAMS 
+  dart_algo_sim
+  dart_func_test
+  dart_test
+  )
 
-set(TEST_EXT_LIB $TEST_EXT_LIB ${UUID_LIBRARIES})
+  set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES})
+  set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS})
 endif(UUID_FOUND)
 
 foreach(program ${PROGRAMS})
@@ -130,6 +134,7 @@ foreach(program ${PROGRAMS})
       target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
   endif()
   target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
+  target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
 endforeach(program)
 
 set(SCRIPTS
