@@ -113,7 +113,7 @@ foreach(program ${PROGRAMS})
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
       target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
   endif()
-  target_link_libraries(${program} pdc)
+  target_link_libraries(${program} pdc pdc_commons)
 endforeach(program)
 
 set(SCRIPTS
