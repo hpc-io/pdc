@@ -118,7 +118,7 @@ set(TEST_EXT_INCLUDE_DIRS "")
 if(UUID_FOUND)
   message(STATUS "UUID library found: ${UUID_LIBRARIES}")
   message(STATUS "UUID include directory: ${UUID_INCLUDE_DIRS}")
-  set(PROGRAMS $PROGRAMS 
+  list(APPEND PROGRAMS 
   dart_algo_sim
   dart_func_test
   dart_test
