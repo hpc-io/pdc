@@ -128,6 +128,26 @@ echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/p
 echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 ```
 
+## Install LibUUID (Optional)
+This is optional. If you want to build DART-related test artifacts and run them, you need to install `libuuid` library. 
+
+```bash 
+cd $$WORK_SPACE/source
+wget https://cfhcable.dl.sourceforge.net/project/libuuid/libuuid-1.0.3.tar.gz
+tar -xvf libuuid-1.0.3.tar.gz
+cd libuuid-1.0.3
+export UUID_DIR=$WORK_SPACE/install/libuuid
+./configure --prefix=$UUID_DIR
+make -j 32 && make install
+
+
+export LD_LIBRARY_PATH="$UUID_DIR/lib:$LD_LIBRARY_PATH"
+export PATH="$UUID_DIR/include:$UUID_DIR/lib:$PATH"
+
+echo 'export LD_LIBRARY_PATH=$UUID_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
+echo 'export PATH=$UUID_DIR/include:$UUID_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
+```
+
 ## Compile and Install PDC
 Now, it's time to compile and install PDC.
 
@@ -148,10 +168,6 @@ make -j 32 && make install
 
 Let's run `ctest` now on a compute node:
 
-### On Cori
-```bash
-salloc --nodes 1 --qos interactive --time 01:00:00 --constraint haswell
-```
 ### On Perlmutter
 
 ```bash
@@ -164,7 +180,6 @@ Once you are on the compute node, you can run `ctest`.
 ctest
 ```
 
-Note: On Cori, if you happen to see failures regarding `libibverb` validation, login to one of the compute nodes by running an interactive job and re-compile all PDC's dependencies and PDC itself. Then problem will be solved.
 
 If all the tests pass, you can now specify the environment variables.
 
@@ -205,23 +220,23 @@ Depending on the specific HPC environment where you run `PDC` , the value of `$J
 
 These source code will provide some knowledge of how to use PDC. For more reference, one may check the documentation folder in this repository.
 
-# PDC on Cori
+# PDC on Perlmutter
 
-If you are running `PDC` on Cori supercomputer, here are some tips you would need to follow:
+If you are running `PDC` on **Perlmutter** supercomputer, here are some tips you would need to follow:
 
-* On Cori, it is recommended to use `cc` as the default compiler when compiling PDC and its dependencies. 
-* When preparing compilation for `PDC` using `CMake`, it is suggested to append console argument `-DMPI_RUN_CMD=srun` so that `ctest` can be executed on Cori.
+* On **Perlmutter**, it is recommended to use `cc` as the default compiler when compiling PDC and its dependencies. 
+* When preparing compilation for `PDC` using `CMake`, it is suggested to append console argument `-DMPI_RUN_CMD=srun` so that `ctest` can be executed on **Perlmutter**.
 * Sometimes, it might be helpful to unload `darshan` module before the installation. 
 
-* For opening an interactive job session on Cori, it is recommended to add `--gres=craynetwork:2` option to the `salloc` command:
+* For opening an interactive job session on **Perlmutter**, use the `salloc` command:
     ```bash
-    salloc -C haswell -N 4 -t 01:00:00 -q interactive --gres=craynetwork:2
+    salloc -C haswell -N 4 -t 01:00:00 -q interactive
     ```
-* To launch the PDC server and the client, add `--gres=craynetwork:1` before the executables, for example:
+* To launch the PDC server and the client, for example:
 
   * Run 4 server processes, each on one node in background:
     ```bash
-    srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/pdc_server.exe &
+    srun -N 4 -n  4 -c 2 --mem=25600 --cpu_bind=cores --overlap ./bin/pdc_server.exe &
     ```
 
   * Run 64 client processes that concurrently create 1000 objects in total:
