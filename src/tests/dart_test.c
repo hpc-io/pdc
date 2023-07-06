@@ -59,8 +59,8 @@ gen_random_strings(int count, int maxlen, int alphabet_size)
             int randnum = rand();
             if (randnum < 0)
                 randnum *= -1;
-            char c = (char)((randnum % alphabet_size) + 65);
-            str[i] = c;
+            char chr = (char)((randnum % alphabet_size) + 65);
+            str[i]   = chr;
         }
         str[len - 1] = '\0';
         // printf("generated %s\n", str);
@@ -601,7 +601,7 @@ main(int argc, char **argv)
 
     } // end round loop
 
-done:
+    // done:
 
     if (PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);

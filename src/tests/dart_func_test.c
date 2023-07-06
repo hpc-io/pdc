@@ -96,7 +96,7 @@ main(int argc, char **argv)
 
     // }
 
-done:
+    // done:
 
     if (PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
