@@ -8,14 +8,16 @@
 #include <uuid/uuid.h>
 #include "string_utils.h"
 #include "timer_utils.h"
+#include "dart_core.h"
 
-#define ENABLE_MPI 1
+// #define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
 
 #include "pdc.h"
+#include "pdc_client_connect.h"
 
 int
 main(int argc, char **argv)
@@ -31,7 +33,7 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
     // if (rank == 0) {
-    pdcid_t pdc = PDC_init("pdc");
+    pdcid_t pdc = PDCinit("pdc");
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
@@ -46,6 +48,7 @@ main(int argc, char **argv)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
     int sid = 0;
+    // FIXME: This is a hack to make sure that the server is ready to accept the connection.
     for (sid = 0; sid < size; sid++) {
         server_lookup_connection(sid, 2);
     }
@@ -101,7 +104,7 @@ done:
     if (PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if (PDC_close(pdc) < 0)
+    if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
         // }
 #ifdef ENABLE_MPI

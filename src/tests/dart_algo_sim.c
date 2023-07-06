@@ -8,7 +8,7 @@
 #include <uuid/uuid.h>
 #include "string_utils.h"
 #include "timer_utils.h"
-#include "dart.h"
+#include "dart_core.h"
 
 #define HASH_MD5    0
 #define HASH_MURMUR 1

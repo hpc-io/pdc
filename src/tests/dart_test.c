@@ -9,13 +9,14 @@
 #include "string_utils.h"
 #include "timer_utils.h"
 
-#define ENABLE_MPI 1
+// #define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
 
 #include "pdc.h"
+#include "pdc_client_connect.h"
 
 const int INPUT_RANDOM_STRING = 0;
 const int INPUT_UUID          = 1;
@@ -205,7 +206,7 @@ main(int argc, char **argv)
         println("word_count = %d", word_count);
     }
 
-    pdcid_t pdc = PDC_init("pdc");
+    pdcid_t pdc = PDCinit("pdc");
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
@@ -246,13 +247,13 @@ main(int argc, char **argv)
         for (i = 0; i < word_count; i++) {
             int data = i;
             PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
-                                                (void *)data);
+                                                (uint64_t)data);
         }
 
         for (i = 0; i < word_count; i++) {
             int data = i;
             PDC_Client_delete_obj_ref_from_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
-                                                (void *)data);
+                                                (uint64_t)data);
         }
 
 /* ===============  Insert testing ======================= */
@@ -265,7 +266,7 @@ main(int argc, char **argv)
             timer_start(&detailed_timer);
             int data = i;
             PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
-                                                (void *)data);
+                                                (uint64_t)data);
             timer_pause(&detailed_timer);
             if (round == 1)
                 println("[Client_Side_Insert] Time to insert key %s for both prefix index and suffix index = "
@@ -577,7 +578,7 @@ main(int argc, char **argv)
             timer_start(&detailed_timer);
             int data = i;
             PDC_Client_delete_obj_ref_from_dart(hash_algo, input_word_list[i], input_word_list[i], ref_type,
-                                                (void *)data);
+                                                (uint64_t)data);
             timer_pause(&detailed_timer);
             if (round == 1)
                 println("[Client_Side_Delete] Time to delete key %s for both prefix index and suffix index = "
@@ -608,7 +609,7 @@ done:
     if (PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
 
-    if (PDC_close(pdc) < 0)
+    if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
 
 #ifdef ENABLE_MPI
