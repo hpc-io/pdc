@@ -1448,6 +1448,12 @@ PDC_Client_init()
 
     srand(time(NULL));
 
+    /* Initialize DART space */
+    dart_g                = (DART *)calloc(1, sizeof(DART));
+    int extra_tree_height = 0;
+    dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE, extra_tree_height,
+                    1);
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
