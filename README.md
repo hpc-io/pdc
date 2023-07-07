@@ -230,7 +230,7 @@ If you are running `PDC` on **Perlmutter** supercomputer, here are some tips you
 
 * For opening an interactive job session on **Perlmutter**, use the `salloc` command:
     ```bash
-    salloc -C haswell -N 4 -t 01:00:00 -q interactive
+    salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx
     ```
 * To launch the PDC server and the client, for example:
 
