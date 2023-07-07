@@ -64,6 +64,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #define PDC_SEQ_ID_INIT_VALUE        1000
 #define PDC_UPDATE_CACHE             111
 #define PDC_UPDATE_STORAGE           101
+#define DART_ALPHABET_SIZE           27
 
 #ifndef HOST_NAME_MAX
 #if defined(__APPLE__)
