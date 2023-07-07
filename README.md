@@ -241,7 +241,7 @@ If you are running `PDC` on **Perlmutter** supercomputer, here are some tips you
 
   * Run 64 client processes that concurrently create 1000 objects in total:
     ```bash
-    srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap ./bin/create_obj_scale -r 1000
+    srun -N 4 -n 64 -c 2 --mem=25600 --cpu_bind=cores --overlap ./bin/create_obj_scale -r 1000
     ```
 
 
