@@ -1446,8 +1446,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
     // Pack local region to a contiguous memory buffer
     unit = transfer_request->unit;
 
-    // Convert user buf into a contiguous buffer called new_buf, which is determined by the shape of local
-    // objects.
+    // Convert user buf into a contiguous buffer called , which is determined by the shape of local objects.
     pack_region_buffer(transfer_request->buf, transfer_request->obj_dims, transfer_request->total_data_size,
                        transfer_request->local_region_ndim, transfer_request->local_region_offset,
                        transfer_request->local_region_size, unit, transfer_request->access_type,
