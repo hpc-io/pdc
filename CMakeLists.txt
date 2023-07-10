@@ -62,6 +62,15 @@ set(PDC_PACKAGE_VERSION_MINOR "${PDC_VERSION_PATCH}")
 set(PDC_PACKAGE_STRING "${PDC_PACKAGE_NAME} ${PDC_PACKAGE_VERSION}")
 set(PDC_PACKAGE_TARNAME "${PDC_PACKAGE}")
 
+
+#------------------------------------------------------------------------------
+# Setup CMake Prefix Paths for searching external libraries.
+#------------------------------------------------------------------------------
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
+endif()
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} $ENV{MERCURY_DIR})
+
 #------------------------------------------------------------------------------
 # Setup install and output Directories
 #------------------------------------------------------------------------------
