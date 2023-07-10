@@ -157,6 +157,46 @@ if("${PDC_SOURCE_DIR}" STREQUAL "${PDC_BINARY_DIR}")
 endif()
 
 #------------------------------------------------------------------------------
+# Set whether or not to disable compiler warnings
+#------------------------------------------------------------------------------
+set(SUPPRESSED_LIST "")
+# Disable warnings for unused parameters
+option(PDC_SUPPRESS_UNUSED_ARG "Disable unused argument warnings" ON)
+if(PDC_SUPPRESS_UNUSED_ARG)
+  set(SUPPRESSED_LIST "-Wno-unused-parameter" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for unused variables
+option(PDC_SUPPRESS_UNUSED_VAR "Disable unused variable warnings" ON)
+if(PDC_SUPPRESS_UNUSED_VAR)
+  set(SUPPRESSED_LIST "-Wno-unused-variable" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for unused functions
+option(PDC_SUPPRESS_UNUSED_FUNC "Disable unused function warnings" ON)
+if(PDC_SUPPRESS_UNUSED_FUNC)
+  set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wunused-result
+option(PDC_SUPPRESS_UNUSED_RESULT "Disable unused result warnings" ON)
+if(PDC_SUPPRESS_UNUSED_RESULT)
+  set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wmaybe-uninitialized
+option(PDC_SUPPRESS_MAYBE_UNINIT "Disable maybe-uninitialized warnings" ON)
+if(PDC_SUPPRESS_MAYBE_UNINIT)
+  set(SUPPRESSED_LIST "-Wno-maybe-uninitialized" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wunused-but-set-variable
+option(PDC_SUPPRESS_UNUSED_BUT_SET "Disable unused-but-set-variable warnings" ON)
+if(PDC_SUPPRESS_UNUSED_BUT_SET)
+  set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
+endif()
+
+#------------------------------------------------------------------------------
 # Set a default build type if none was specified
 #------------------------------------------------------------------------------
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)

@@ -94,12 +94,12 @@ main()
 
     kvtag2.name  = "key2int";
     kvtag2.value = (void *)&v2;
-    kvtag1.type  = PDC_INT;
+    kvtag2.type  = PDC_INT;
     kvtag2.size  = sizeof(int);
 
     kvtag3.name  = "key3double";
     kvtag3.value = (void *)&v3;
-    kvtag1.type  = PDC_DOUBLE;
+    kvtag3.type  = PDC_DOUBLE;
     kvtag3.size  = sizeof(double);
 
     if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size) < 0)

@@ -31,6 +31,8 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
     int32_t  batchSize  = (z - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
 
+    printf("numWorkers %d\n", numWorkers);
+
     int32_t w;
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for
@@ -104,6 +106,8 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
     int32_t  numWorkers = omp_get_max_threads();
     int32_t  batchSize  = (z - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
+
+    printf("numWorkers %d\n", numWorkers);
 
     uint16_t compressed = 1;
     TIFF *   tif        = TIFFOpen(fileName, "r");
@@ -321,6 +325,8 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
     int32_t  batchSize  = (y - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
 
+    printf("numWorkers %d\n", numWorkers);
+
     int32_t w;
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for
@@ -402,6 +408,8 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
     uint8_t err    = 0;
     uint8_t errBak = 0;
     char    errString[10000];
+
+    printf("numWorkers %d\n", numWorkers);
 
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for

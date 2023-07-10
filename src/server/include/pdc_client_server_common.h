@@ -57,18 +57,14 @@ hg_thread_mutex_t meta_buf_map_mutex_g;
 hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
 
-#ifndef HOST_NAME_MAX
-#if defined(__APPLE__)
-#define HOST_NAME_MAX 255
-#else
-#define HOST_NAME_MAX 64
-#endif /* __APPLE__ */
-#endif /* HOST_NAME_MAX */
-
 #define PAGE_SIZE                    4096
-#define ADDR_MAX                     512
+#define ADDR_MAX                     1024
+#define NA_STRING_INFO_LEN           ADDR_MAX / 2
+#define HOSTNAME_LEN                 ADDR_MAX / 8
+#define TMP_DIR_STRING_LEN           ADDR_MAX / 2
 #define DIM_MAX                      4
 #define TAG_LEN_MAX                  2048
+#define OBJ_NAME_MAX                 TAG_LEN_MAX / 2
 #define PDC_SERVER_ID_INTERVEL       1000000000ull
 #define PDC_SERVER_MAX_PROC_PER_NODE 32
 #define PDC_SERIALIZE_MAX_SIZE       256
@@ -78,6 +74,16 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #define PDC_SEQ_ID_INIT_VALUE        1000
 #define PDC_UPDATE_CACHE             111
 #define PDC_UPDATE_STORAGE           101
+
+#ifndef HOST_NAME_MAX
+#if defined(__APPLE__)
+#define HOST_NAME_MAX ADDR_MAX / 4
+#define HOSTNAME_LEN  HOST_NAME_MAX
+#else
+#define HOST_NAME_MAX ADDR_MAX / 8
+#define HOSTNAME_LEN  HOST_NAME_MAX
+#endif /* __APPLE__ */
+#endif /* HOST_NAME_MAX */
 
 #define pdc_server_cfg_name_g "server.cfg"
 
@@ -391,8 +397,8 @@ typedef struct data_server_region_unmap_t {
 // For storing metadata
 typedef struct pdc_metadata_t {
     int  user_id; // Both server and client gets it and do security check
-    char app_name[ADDR_MAX];
-    char obj_name[ADDR_MAX];
+    char app_name[OBJ_NAME_MAX];
+    char obj_name[OBJ_NAME_MAX];
     int  time_step;
     // Above four are the unique identifier for objects
 

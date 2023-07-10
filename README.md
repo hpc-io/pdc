@@ -133,13 +133,16 @@ Now, it's time to compile and install PDC.
 
 * One can replace `mpicc` to other available MPI compilers. For example, on Cori, `cc` can be used to replace `mpicc`. 
 * `ctest` contains both sequential and MPI tests for the PDC settings. These can be used to perform regression tests.
+* Make sure MERCURY_HOME is added to CMAKE_PREFIX_PATH or PATH.
+
 
 ```bash
 cd $PDC_SRC_DIR
 git checkout develop
 mkdir build
 cd build
-cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD=srun 
+
+cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_PREFIX_PATH=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD=srun 
 make -j 32 && make install
 ```
 
