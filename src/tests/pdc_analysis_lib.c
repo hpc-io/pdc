@@ -64,7 +64,9 @@ int
 check_mpi_access()
 {
     int initialized = 0;
+#ifdef ENABLE_MPI
     MPI_Initialized(&initialized);
+#endif
     if (initialized) {
         int rank;
         int size;

@@ -4,7 +4,7 @@ on:
   # push:
   #   branches: [ stable ]
   pull_request:
-    branches: [ stable ]
+    branches: [ stable, develop ]
 
   # Allows to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Dependencies
         run: .github/workflows/dependencies-linux.sh

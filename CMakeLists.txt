@@ -1,7 +1,7 @@
 # CMakeLists files in this project can
 # refer to the root source directory of the project as ${PDC_SOURCE_DIR} and
 # to the root binary directory of the project as ${PDC_BINARY_DIR}.
-cmake_minimum_required (VERSION 2.8.11)
+cmake_minimum_required (VERSION 3.0)
 
 # Setup cmake policies.
 foreach(p
@@ -12,6 +12,10 @@ foreach(p
     CMP0025 # CMake 3.0
     CMP0053 # CMake 3.1
     CMP0054 # CMake 3.1
+    CMP0074 # CMake 3.12
+    CMP0075 # CMake 3.12
+    CMP0083 # CMake 3.14
+    CMP0093 # CMake 3.15
   )
   if(POLICY ${p})
     cmake_policy(SET ${p} NEW)
@@ -433,6 +437,8 @@ configure_file(
   ${PDC_BINARY_DIR}/CMakeFiles/pdc-config-version.cmake @ONLY
 )
 
+
+
 install(
   FILES
     ${PDC_BINARY_DIR}/CMakeFiles/pdc-config-version.cmake
@@ -443,9 +449,20 @@ install(
 install(
   DIRECTORY
     ${PDC_BINARY_DIR}/bin
-
   DESTINATION
     ${PDC_INSTALL_DATA_DIR}/test
+  FILES_MATCHING PATTERN "*"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+
+
+install(
+  DIRECTORY
+    ${PDC_SOURCE_DIR}/scripts
+  DESTINATION
+    ${CMAKE_INSTALL_PREFIX}
+  FILES_MATCHING PATTERN "*.sh"
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 
 
