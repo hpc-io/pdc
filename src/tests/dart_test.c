@@ -26,8 +26,14 @@ const int INPUT_WIKI_KEYWORD  = 3;
 void
 print_usage()
 {
-    println("Usage: srun -n <client_num> ./dart_test <input_type> <alphabet_size> <replication_factor> "
-            "<word_count> /path/to/txtfile\n");
+    println("Usage: srun -n <client_num> ./dart_test <alphabet_size> <replication_factor> "
+            "<word_count> /path/to/txtfile <index_type>\n"
+            "alphabet_size: 26 for random string, 37 for uuid, 29 for dictionary, 129 for wiki keyword\n"
+            "replication_factor: 1-5\n"
+            "word_count: The number of words you would like to generate. For txt files, it doesn't matter.\n"
+            "txtfile: /path/to/txtfile, for random string and uuid, just provide random/uuid.\n"
+            "index_type: 1 for full hashing, 2 for initial hashing, 3 for DART\n"
+            "Example: srun -n 4 ./dart_test 0 26 2 2048 random 3\n");
 }
 
 char **
@@ -158,48 +164,43 @@ main(int argc, char **argv)
 
     random_seed(0);
 
-    int INPUT_TYPE = INPUT_UUID;
-
-    INPUT_TYPE             = atoi(argv[1]);
-    int alphabet_size      = atoi(argv[2]);
-    int replication_factor = atoi(argv[3]);
+    int alphabet_size      = atoi(argv[1]);
+    int replication_factor = atoi(argv[2]);
 
     int num_client = size;
 
     char **input_word_list  = NULL;
     int    total_word_count = 2048;
 
-    // total_word_count = atoi(argv[4]);
+    // total_word_count = atoi(argv[3]);
 
     int word_count = total_word_count / size;
 
-    const char *dict_filename = argv[5];
+    const char *dict_filename = argv[4];
 
-    int                    index_type = atoi(argv[6]);
+    int                    index_type = atoi(argv[5]);
     dart_hash_algo_t       hash_algo  = (dart_hash_algo_t)index_type;
     dart_object_ref_type_t ref_type   = REF_PRIMARY_ID;
 
     if (dict_filename == NULL) {
-        printf("Usage: srun -n <client_num> ./dart_test <input_type> <alphabet_size> <replication_factor> "
-               "<word_count> /path/to/txtfile \n");
+        print_usage();
         exit(1);
     }
 
-    if (INPUT_TYPE == INPUT_DICTIONARY) {
-        input_word_list = read_words_from_text(dict_filename, &word_count, &total_word_count, rank);
-        alphabet_size   = 29;
-    }
-    else if (INPUT_TYPE == INPUT_RANDOM_STRING) {
+    if (strcmp(dict_filename, "random") == 0) {
         input_word_list = gen_random_strings(word_count, 16, alphabet_size);
         alphabet_size   = 129;
     }
-    else if (INPUT_TYPE == INPUT_UUID) {
+    else if (strcmp(dict_filename, "uuid") == 0) {
         input_word_list = gen_uuids(word_count);
         alphabet_size   = 37;
     }
-    else if (INPUT_TYPE == INPUT_WIKI_KEYWORD) {
+    else {
         input_word_list = read_words_from_text(dict_filename, &word_count, &total_word_count, rank);
-        alphabet_size   = 129;
+        alphabet_size   = 29;
+        if (indexOfStr(dict_filename, "wiki") != -1) {
+            alphabet_size = 129;
+        }
     }
 
     if (rank == 0) {
