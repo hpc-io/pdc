@@ -1,6 +1,9 @@
 using Distributions
 
-using Distributions
+
+function my_julia_func(value:: Int64)
+    return value + 1
+end
 
 function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int64, distribution::String, s::Float64=1.0)
     if distribution == "uniform"
