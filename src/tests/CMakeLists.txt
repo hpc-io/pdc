@@ -1,3 +1,5 @@
+find_package(Julia REQUIRED)
+
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -7,6 +9,7 @@ include_directories(
   ${PDC_SOURCE_DIR}/src/client_api/include
   $ENV{HOME}/Sandbox/c-blosc/blosc
   $ENV{HOME}/include
+  ${Julia_INCLUDE_DIRS}
 )
 
 # *************************************************
@@ -126,7 +129,7 @@ if(UUID_FOUND)
   )
 
   set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES})
-  set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS})
+  set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS} ${Julia_LIBRARY})
 endif(UUID_FOUND)
 
 foreach(program ${PROGRAMS})
