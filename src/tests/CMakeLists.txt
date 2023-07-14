@@ -120,6 +120,7 @@ if(UUID_FOUND)
   message(STATUS "UUID include directory: ${UUID_INCLUDE_DIRS}")
   list(APPEND PROGRAMS 
   dart_algo_sim
+  dart_attr_dist_test
   dart_func_test
   dart_test
   )
