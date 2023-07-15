@@ -88,12 +88,12 @@ run_jl_get_string_array(const char *mod_name, const char *fun_name, jl_fn_args_t
     jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
     JL_GC_PUSH1(&ret);
     if (jl_typeis(ret, jl_apply_array_type((jl_value_t *)jl_string_type, 1))) {
-
-        size_t length  = jl_array_len(ret);
-        char **strings = malloc(length * sizeof(char *));
+        jl_array_t *ret_array = (jl_array_t *)ret;
+        size_t      length    = jl_array_len(ret);
+        char **     strings   = malloc(length * sizeof(char *));
 
         for (size_t i = 0; i < length; ++i) {
-            jl_value_t *julia_str    = jl_arrayref(ret, i);
+            jl_value_t *julia_str    = jl_arrayref(ret_array, i);
             const char *c_str        = jl_string_ptr(julia_str);
             size_t      c_str_length = jl_string_len(julia_str);
             strings[i]               = malloc((c_str_length + 1) * sizeof(char));
