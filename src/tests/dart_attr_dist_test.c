@@ -24,11 +24,15 @@ main(int argc, char *argv[])
     /* run Julia commands */
     jl_eval_string(include_cmd);
 
-    int64_t *(*incr_jl)(int64_t) =
-        jl_unbox_voidpointer(jl_eval_string("@cfunction(my_julia_func, Vector{Int64}, (Int64,))"));
+    jl_function_t *my_julia_func = jl_get_function(jl_main_module, "my_julia_func");
+    jl_array_t *   y             = (jl_array_t *)jl_call1(func, jl_box_int64(4));
 
-    int64_t *result = incr_jl(4);
-    printf("Result: %ld\n", result[0]);
+    int64_t *data = (int64_t *)jl_array_data(y);
+    // get array length
+    size_t length = jl_array_len(y);
+    for (size_t i = 0; i < length; ++i) {
+        printf("%ld\n", data[i]);
+    }
 
     // Call Julia function
     // jl_value_t *ret = jl_call0(func);
