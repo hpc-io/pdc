@@ -19,7 +19,7 @@ main(int argc, char *argv[])
     args->args         = (jl_value_t **)calloc(args->nargs, sizeof(jl_value_t *));
     args->args[0]      = jl_box_int64(10);
     args->args[1]      = jl_box_int64(1000);
-    args->args[2]      = jl_box_string("exponential");
+    args->args[2]      = jl_cstr_to_string("exponential");
 
     int64_t *arr = NULL;
     size_t   len = 0;
