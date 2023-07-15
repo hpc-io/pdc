@@ -21,8 +21,8 @@ main(int argc, char *argv[])
     /* required: setup the Julia context */
     jl_init();
 
-    jl_value_t * jl_main_module_sym = jl_symbol("Main");
-    jl_module_t *jl_main_module     = (jl_module_t *)jl_module_globalref(jl_main_module_sym);
+    // jl_value_t * jl_main_module_sym = jl_symbol("Main");
+    // jl_module_t *jl_main_module     = (jl_module_t *)jl_module_globalref(jl_main_module_sym);
 
     /* run Julia commands */
     jl_eval_string(include_cmd);
@@ -53,7 +53,7 @@ main(int argc, char *argv[])
     // JL_GC_POP();
 
     /* shutdown the Julia context */
-    jl_module_unref(jl_main_module);
+    // jl_module_unref(jl_main_module);
     jl_atexit_hook(0);
 
     return 0;
