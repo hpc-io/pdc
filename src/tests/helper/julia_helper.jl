@@ -1,8 +1,9 @@
 using Distributions
 
 
-function my_julia_func(value:: Int64)
-    return value + 1
+function my_julia_func(input::Int64)
+    result = [input, input + 1, input + 2, input + 3]
+    return result
 end
 
 function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int64, distribution::String, s::Float64=1.0)
