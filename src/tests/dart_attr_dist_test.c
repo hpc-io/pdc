@@ -5,7 +5,6 @@ JULIA_DEFINE_FAST_TLS
 int
 main(int argc, char *argv[])
 {
-
     /* get julia helper directory */
     const char *julia_helper_dir = getenv("PDC_JULIA_HELPER_DIR");
     /* get julia helper path */
@@ -15,19 +14,18 @@ main(int argc, char *argv[])
     strcat(julia_helper_path, "julia_helper.jl");
     printf("Julia helper path: %s\n", julia_helper_path);
     /* get include command */
-    char include_cmd[strlen(julia_helper_path) + 20];
-    sprintf(include_cmd, "include(\"%s\")", julia_helper_path);
+    char include_cmd[strlen(julia_helper_path) + 30];
+    sprintf(include_cmd, "Base.include(Main, \"%s\")", julia_helper_path);
 
     /* required: setup the Julia context */
     jl_init();
 
-    // jl_value_t * jl_main_module_sym = jl_symbol("Main");
-    // jl_module_t *jl_main_module     = (jl_module_t *)jl_module_globalref(jl_main_module_sym);
-
     /* run Julia commands */
     jl_eval_string(include_cmd);
+    jl_eval_string("using Main.JuliaHelper");
+    jl_module_t *JuliaHelper = (jl_module_t *)jl_eval_string("Main.JuliaHelper");
 
-    jl_function_t *my_julia_func = jl_get_function(jl_main_module, "my_julia_func");
+    jl_function_t *my_julia_func = jl_get_function(JuliaHelper, "my_julia_func");
     jl_array_t *   y             = (jl_array_t *)jl_call1(my_julia_func, jl_box_int64(4));
 
     int64_t *data = (int64_t *)jl_array_data(y);

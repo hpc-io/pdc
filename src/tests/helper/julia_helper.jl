@@ -1,5 +1,10 @@
-using Distributions
+module JuliaHelper
 
+export my_julia_func
+export generate_attribute_occurrences
+export generate_incremental_associations
+
+using Distributions
 
 function my_julia_func(input::Int64)
     result = [input, input + 1, input + 2, input + 3]
@@ -77,3 +82,5 @@ function generate_incremental_associations(total_objects::Int64, total_groups::I
 
     return attribute_objects
 end
+
+end  # module MyModule
