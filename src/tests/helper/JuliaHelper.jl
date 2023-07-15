@@ -14,18 +14,10 @@ end
 function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int64, distribution::String, s::Float64=1.0)
     if distribution == "uniform"
         dist = Multinomial(num_objects, fill(1.0/num_attributes, num_attributes))
-        return Int64.(rand(dist, 1))
+        occurrences = Int64.(rand(dist, 1))
     elseif distribution == "zipf"
         dist = Zipf(s, num_attributes)
         occurrences = Int64.(rand(dist, num_objects))
-        
-        # count the number of occurrences of each attribute
-        attribute_counts = zeros(Int64, num_attributes)
-        for i in 1:num_objects
-            attribute_counts[occurrences[i]] += 1
-        end
-        
-        return attribute_counts
     elseif distribution == "pareto"
         dist = Pareto(s, 1.0)  # Pareto distribution with shape parameter s and scale 1.0
         occurrences = Int64.(round.(occurrences .* num_objects ./ sum(occurrences)))
@@ -34,8 +26,6 @@ function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int6
         # Add or subtract the difference to a random element.
         diff = num_objects - sum(occurrences)
         occurrences[rand(1:num_attributes)] += diff
-        
-        return occurrences
     elseif distribution == "normal"
         dist = Normal(0.0, s)
         occurrences = Int64.(round.(occurrences .* num_objects ./ sum(occurrences)))
@@ -44,8 +34,6 @@ function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int6
         # Add or subtract the difference to a random element.
         diff = num_objects - sum(occurrences)
         occurrences[rand(1:num_attributes)] += diff
-        
-        return occurrences
     elseif distribution == "exponential"
         dist = Exponential(s)
         occurrences = Int64.(round.(occurrences .* num_objects ./ sum(occurrences)))
@@ -54,11 +42,16 @@ function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int6
         # Add or subtract the difference to a random element.
         diff = num_objects - sum(occurrences)
         occurrences[rand(1:num_attributes)] += diff
-        
-        return occurrences
     else
         error("Invalid distribution: " * distribution)
     end
+    # count the number of occurrences of each attribute
+    attribute_counts = zeros(Int64, num_attributes)
+    for i in 1:num_objects
+        attribute_counts[occurrences[i]] += 1
+    end
+    
+    return attribute_counts
 end
 
 
