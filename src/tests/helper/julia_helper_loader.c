@@ -88,10 +88,20 @@ run_jl_get_string_array(const char *mod_name, const char *fun_name, jl_fn_args_t
     jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
     JL_GC_PUSH1(&ret);
     if (jl_typeis(ret, jl_apply_array_type((jl_value_t *)jl_string_type, 1))) {
-        jl_array_t *ret_array = (jl_array_t *)ret;
-        char **     data      = (char **)jl_array_data(ret_array);
-        *arr_ptr              = data;
-        *arr_len              = jl_array_len(ret_array);
+
+        size_t length  = jl_array_len(ret);
+        char **strings = malloc(length * sizeof(char *));
+
+        for (size_t i = 0; i < length; ++i) {
+            jl_value_t *julia_str    = jl_arrayref(ret, i);
+            const char *c_str        = jl_string_ptr(julia_str);
+            size_t      c_str_length = jl_string_len(julia_str);
+            strings[i]               = malloc((c_str_length + 1) * sizeof(char));
+            strncpy(strings[i], c_str, c_str_length);
+            strings[i][c_str_length] = '\0';
+        }
+        *arr_ptr = strings;
+        *arr_len = length;
     }
     else {
         printf("Error: return value is not a string array!\n");
