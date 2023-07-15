@@ -33,7 +33,7 @@ main(int argc, char *argv[])
 
     args->args[0] = jl_box_int64(10);
     args->args[1] = jl_box_int64(100);
-    args->args[2] = jl_cstr_to_string("zipf");
+    args->args[2] = jl_cstr_to_string("pareto");
 
     run_jl_get_int64_array(jl_module_name, "generate_attribute_occurrences", args, &arr, &len);
     // print array.
