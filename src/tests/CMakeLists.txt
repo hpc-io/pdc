@@ -139,7 +139,7 @@ if(UUID_FOUND)
 endif(UUID_FOUND)
 
 foreach(program ${PROGRAMS})
-  add_executable(${program} ${program}.c)
+  add_executable(${program} ${program}.c ${EXTRA_SRC_FILE})
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
       target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
   endif()
