@@ -1,57 +1,35 @@
-#include <julia.h>
+#include "helper/julia_helper_loader.h"
 
+// only define the following once, in an executable (not in a shared library) if you want fast
+// code.
 JULIA_DEFINE_FAST_TLS
 
 int
 main(int argc, char *argv[])
 {
-    /* get julia helper directory */
-    const char *julia_helper_dir = getenv("PDC_JULIA_HELPER_DIR");
-    /* get julia helper path */
-    char *julia_helper_path = malloc(strlen(julia_helper_dir) + strlen("julia_helper.jl") + 2);
-    strcpy(julia_helper_path, julia_helper_dir);
-    strcat(julia_helper_path, "/");
-    strcat(julia_helper_path, "julia_helper.jl");
-    printf("Julia helper path: %s\n", julia_helper_path);
-    /* get include command */
-    char include_cmd[strlen(julia_helper_path) + 30];
-    sprintf(include_cmd, "Base.include(Main, \"%s\")", julia_helper_path);
-
-    /* required: setup the Julia context */
     jl_init();
 
-    /* run Julia commands */
-    jl_eval_string(include_cmd);
-    jl_eval_string("using Main.JuliaHelper");
-    jl_module_t *JuliaHelper = (jl_module_t *)jl_eval_string("Main.JuliaHelper");
+    char *jl_module_name = "JuliaHelper";
+    /* load JuliaHelper module */
+    jl_load_module(jl_module_name);
 
-    jl_function_t *my_julia_func = jl_get_function(JuliaHelper, "my_julia_func");
-    jl_array_t *   y             = (jl_array_t *)jl_call1(my_julia_func, jl_box_int64(4));
+    /* run generate_attribute_occurrences with parameters */
+    jl_fn_args_t *args = (jl_fn_args_t *)calloc(1, sizeof(jl_fn_args_t));
+    args->nargs        = 3;
+    args->args         = (jl_value_t **)calloc(args->nargs, sizeof(jl_value_t *));
+    args->args[0]      = jl_box_int64(10);
+    args->args[1]      = jl_box_int64(1000);
+    args->args[2]      = jl_box_string("exponential");
 
-    int64_t *data = (int64_t *)jl_array_data(y);
+    int64_t *arr = NULL;
+    size_t   len = 0;
+    run_jl_get_int64_array(jl_module_name, "generate_attribute_occurrences", args, &arr, &len);
+
     // get array length
-    size_t length = jl_array_len(y);
-    for (size_t i = 0; i < length; ++i) {
-        printf("%ld\n", data[i]);
+    for (size_t i = 0; i < len; ++i) {
+        printf("%ld\n", arr[i]);
     }
 
-    // Call Julia function
-    // jl_value_t *ret = jl_call0(func);
-
-    // jl_value_t *result = jl_eval_string("generate_attribute_occurrences(10, 1000, \"exponential\", 1.0)");
-
-    // JL_GC_PUSH1(&result);
-    // jl_array_t *result_array = (jl_array_t *)result;
-    // int64_t *   data         = (int64_t *)jl_array_data(result_array);
-    // size_t      length       = jl_array_len(result_array);
-
-    // for (size_t i = 0; i < length; ++i) {
-    //     printf("%ld\n", data[i]);
-    // }
-    // JL_GC_POP();
-
-    /* shutdown the Julia context */
-    // jl_module_unref(jl_main_module);
     jl_atexit_hook(0);
 
     return 0;
