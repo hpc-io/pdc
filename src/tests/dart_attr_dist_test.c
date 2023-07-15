@@ -1,4 +1,4 @@
-#include "helper/julia_helper_loader.h"
+#include "julia_helper_loader.h"
 
 // only define the following once, in an executable (not in a shared library) if you want fast
 // code.
