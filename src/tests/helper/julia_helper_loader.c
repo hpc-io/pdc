@@ -50,7 +50,7 @@ run_jl_get_int64_array(const char *mod_name, const char *fun_name, jl_fn_args_t 
                        size_t *arr_len)
 {
     jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
-    JL_GC_PUSH1(&ret);
+    // JL_GC_PUSH1(&ret);
     if (jl_typeis(ret, jl_apply_array_type((jl_value_t *)jl_int64_type, 1))) {
         jl_array_t *ret_array = (jl_array_t *)ret;
         int64_t *   data      = (int64_t *)jl_array_data(ret_array);
@@ -60,7 +60,7 @@ run_jl_get_int64_array(const char *mod_name, const char *fun_name, jl_fn_args_t 
     else {
         printf("Error: return value is not an int64 array!\n");
     }
-    JL_GC_POP();
+    // JL_GC_POP();
 }
 
 void
@@ -68,7 +68,7 @@ run_jl_get_float64_array(const char *mod_name, const char *fun_name, jl_fn_args_
                          size_t *arr_len)
 {
     jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
-    JL_GC_PUSH1(&ret);
+    // JL_GC_PUSH1(&ret);
     if (jl_typeis(ret, jl_apply_array_type((jl_value_t *)jl_float64_type, 1))) {
         jl_array_t *ret_array = (jl_array_t *)ret;
         double *    data      = (double *)jl_array_data(ret_array);
@@ -78,7 +78,7 @@ run_jl_get_float64_array(const char *mod_name, const char *fun_name, jl_fn_args_
     else {
         printf("Error: return value is not a float64 array!\n");
     }
-    JL_GC_POP();
+    // JL_GC_POP();
 }
 
 void
