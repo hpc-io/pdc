@@ -33,14 +33,8 @@ function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int6
     else
         error("Invalid distribution: " * distribution)
     end
-
-    # count the number of occurrences of each attribute
-    attribute_counts = zeros(Int64, num_attributes)
-    for i in 1:length(occurrences)
-        attribute_counts[occurrences[i]] += 1
-    end
     
-    return attribute_counts
+    return sort(occurrences[:])
 end
 
 
