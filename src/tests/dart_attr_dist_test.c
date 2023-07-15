@@ -25,7 +25,7 @@ main(int argc, char *argv[])
     jl_eval_string(include_cmd);
 
     jl_function_t *my_julia_func = jl_get_function(jl_main_module, "my_julia_func");
-    jl_array_t *   y             = (jl_array_t *)jl_call1(func, jl_box_int64(4));
+    jl_array_t *   y             = (jl_array_t *)jl_call1(my_julia_func, jl_box_int64(4));
 
     int64_t *data = (int64_t *)jl_array_data(y);
     // get array length
