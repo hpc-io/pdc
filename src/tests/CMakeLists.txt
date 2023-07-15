@@ -120,10 +120,21 @@ set(PROGRAMS
 set(TEST_EXT_LIB "")
 set(TEST_EXT_INCLUDE_DIRS "")
 set(EXTRA_SRC_FILE "")
+
+foreach(program ${PROGRAMS})
+  add_executable(${program} ${program}.c)
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+      target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
+  endif()
+  target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
+  target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+endforeach(program)
+
+
 if(UUID_FOUND)
   message(STATUS "UUID library found: ${UUID_LIBRARIES}")
   message(STATUS "UUID include directory: ${UUID_INCLUDE_DIRS}")
-  list(APPEND PROGRAMS 
+  set(ENHANCED_PROGRAMS 
   dart_algo_sim
   dart_attr_dist_test
   dart_func_test
@@ -136,16 +147,17 @@ if(UUID_FOUND)
 
   set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES} ${JULIA_LIBRARIES})
   set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS} ${JULIA_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/helper/include)
+
+  foreach(program ${ENHANCED_PROGRAMS})
+    add_executable(${program} ${program}.c ${EXTRA_SRC_FILE})
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
+    endif()
+    target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
+    target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+  endforeach(program)
 endif(UUID_FOUND)
 
-foreach(program ${PROGRAMS})
-  add_executable(${program} ${program}.c ${EXTRA_SRC_FILE})
-  if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-      target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
-  endif()
-  target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
-  target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
-endforeach(program)
 
 set(SCRIPTS
   run_test.sh
