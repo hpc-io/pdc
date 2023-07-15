@@ -21,9 +21,15 @@ main(int argc, char *argv[])
     args->args[1]      = jl_box_int64(1000);
     args->args[2]      = jl_cstr_to_string("exponential");
 
-    int64_t *arr = NULL;
-    size_t   len = 0;
-    run_jl_get_int64_array(jl_module_name, "generate_attribute_occurrences", args, &arr, &len);
+    int64_t *   arr    = NULL;
+    size_t      len    = 0;
+    jl_value_t *result = run_jl_function(jl_module_name, "generate_attribute_occurrences", args);
+    // transform to int64_t array
+    jl_array_t *ret_array = (jl_array_t *)result;
+    arr                   = (int64_t *)jl_array_data(ret_array);
+    len                   = jl_array_len(ret_array);
+
+    // run_jl_get_int64_array(jl_module_name, "generate_attribute_occurrences", args);
 
     // get array length
     for (size_t i = 0; i < len; ++i) {
