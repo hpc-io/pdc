@@ -6,8 +6,8 @@ export generate_incremental_associations
 
 using Distributions
 
-function my_julia_func(input::Int64)
-    result = [input, input + 1, input + 2, input + 3]
+function my_julia_func(input::Int64, input2::Int64, intput3::Int64)
+    result = [input, input + 1, input2 + 2, intput3 + 3]
     return result
 end
 

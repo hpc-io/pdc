@@ -49,66 +49,61 @@ void
 run_jl_get_int64_array(const char *mod_name, const char *fun_name, jl_fn_args_t *args, int64_t **arr_ptr,
                        size_t *arr_len)
 {
-    // jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
-    // // JL_GC_PUSH1(&ret);
+    jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
+    JL_GC_PUSH1(&ret);
     // if (jl_typeis(ret, jl_apply_array_type((jl_value_t *)jl_int64_type, 1))) {
-    //     jl_array_t *ret_array = (jl_array_t *)ret;
-    //     int64_t *   data      = (int64_t *)jl_array_data(ret_array);
-    //     *arr_ptr              = data;
-    //     *arr_len              = jl_array_len(ret_array);
+    jl_array_t *ret_array = (jl_array_t *)ret;
+    int64_t *   data      = (int64_t *)jl_array_data(ret_array);
+    *arr_ptr              = data;
+    *arr_len              = jl_array_len(ret_array);
     // }
     // else {
     //     printf("Error: return value is not an int64 array!\n");
     // }
-    // // JL_GC_POP();
+    JL_GC_POP();
 }
 
 void
 run_jl_get_float64_array(const char *mod_name, const char *fun_name, jl_fn_args_t *args, double **arr_ptr,
                          size_t *arr_len)
 {
-    // jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
-    // // JL_GC_PUSH1(&ret);
+    jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
+    JL_GC_PUSH1(&ret);
     // if (jl_typeis(ret, jl_apply_array_type((jl_value_t *)jl_float64_type, 1))) {
-    //     jl_array_t *ret_array = (jl_array_t *)ret;
-    //     double *    data      = (double *)jl_array_data(ret_array);
-    //     *arr_ptr              = data;
-    //     *arr_len              = jl_array_len(ret_array);
+    jl_array_t *ret_array = (jl_array_t *)ret;
+    double *    data      = (double *)jl_array_data(ret_array);
+    *arr_ptr              = data;
+    *arr_len              = jl_array_len(ret_array);
     // }
     // else {
     //     printf("Error: return value is not a float64 array!\n");
     // }
-    // // JL_GC_POP();
+    JL_GC_POP();
 }
 
 void
 run_jl_get_string_array(const char *mod_name, const char *fun_name, jl_fn_args_t *args, char ***arr_ptr,
                         size_t *arr_len)
 {
-    // jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
-    // JL_GC_PUSH1(&ret);
-    // if (jl_is_array(ret)) {
-    //     jl_array_t *ret_array = (jl_array_t *)ret;
-    //     size_t      length    = jl_array_len(ret);
-    //     char **     strings   = malloc(length * sizeof(char *));
+    jl_value_t *ret = run_jl_function(mod_name, fun_name, args);
+    JL_GC_PUSH1(&ret);
+    jl_array_t *ret_array = (jl_array_t *)ret;
+    size_t      length    = jl_array_len(ret);
+    char **     strings   = malloc(length * sizeof(char *));
 
-    //     for (size_t i = 0; i < length; ++i) {
-    //         jl_value_t *julia_str = jl_arrayref(ret_array, i);
-    //         if (!jl_is_string(julia_str)) {
-    //             printf("Error: return value is not a string array!\n");
-    //             exit(-1);
-    //         }
-    //         const char *c_str        = jl_string_ptr(julia_str);
-    //         size_t      c_str_length = jl_string_len(julia_str);
-    //         strings[i]               = malloc((c_str_length + 1) * sizeof(char));
-    //         strncpy(strings[i], c_str, c_str_length);
-    //         strings[i][c_str_length] = '\0';
-    //     }
-    //     *arr_ptr = strings;
-    //     *arr_len = length;
-    // }
-    // else {
-    //     printf("Error: return value is not a string array!\n");
-    // }
-    // JL_GC_POP();
+    for (size_t i = 0; i < length; ++i) {
+        jl_value_t *julia_str = jl_arrayref(ret_array, i);
+        // if (!jl_is_string(julia_str)) {
+        //     printf("Error: return value is not a string array!\n");
+        //     exit(-1);
+        // }
+        const char *c_str        = jl_string_ptr(julia_str);
+        size_t      c_str_length = jl_string_len(julia_str);
+        strings[i]               = malloc((c_str_length + 1) * sizeof(char));
+        strncpy(strings[i], c_str, c_str_length);
+        strings[i][c_str_length] = '\0';
+    }
+    *arr_ptr = strings;
+    *arr_len = length;
+    JL_GC_POP();
 }
