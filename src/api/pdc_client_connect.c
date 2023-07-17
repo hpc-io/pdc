@@ -8862,7 +8862,7 @@ perr_t
 PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
                                     dart_object_ref_type_t ref_type, uint64_t data)
 {
-    println("input: attr_key = %s, attr_val = %s", attr_key, attr_val);
+    // println("input: attr_key = %s, attr_val = %s", attr_key, attr_val);
     perr_t                       ret_value = SUCCEED;
     dart_perform_one_server_in_t input_param;
     input_param.op_type      = OP_INSERT;
