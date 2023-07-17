@@ -140,8 +140,8 @@ main(int argc, char *argv[])
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
             }
-            if (rank == 0 && j % total_num_obj / 1000 == 0) {
-                pct+=(j*100)/total_num_obj);
+            if (rank == 0 && j % (attr_2_obj_array[i] / 1000) == 0) {
+                pct += (j * 100) / attr_2_obj_array[i];
                 timer_pause(&timer);
                 printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for ref %llu within  %.4f ms\n", pct, key,
                        value, j, (double)timer_delta_ms(&timer));
