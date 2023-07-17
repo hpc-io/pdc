@@ -1,16 +1,43 @@
 module JuliaHelper
 
-export my_julia_func
+export test_embedded_julia
 export generate_attribute_occurrences
 export generate_incremental_associations
 
 using Distributions
 
-function my_julia_func(input::Int64, input2::Int64, intput3::Int64)
+'''
+    test_embedded_julia(input::Int64, input2::Int64, intput3::Int64)
+
+Test function for embedding Julia in C.
+
+# Arguments
+- `input::Int64`: The first input
+- `input2::Int64`: The second input
+- `intput3::Int64`: The third input
+
+# Returns
+- `result::Vector{Int64}`: A vector containing the inputs plus 1, 2, and 3, respectively.
+'''
+function test_embedded_julia(input::Int64, input2::Int64, intput3::Int64)
     result = [input, input + 1, input2 + 2, intput3 + 3]
     return result
 end
 
+'''
+    generate_attribute_occurrences(num_attributes::Int64, num_objects::Int64, distribution::String, s::Float64=1.0)
+
+Generate an array of the number of objects for each attribute, where the number of objects for each attribute is a random value.
+
+# Arguments
+- `num_attributes::Int64`: The total number of attributes
+- `num_objects::Int64`: The total number of objects
+- `distribution::String`: The distribution to use for generating the number of objects for each attribute. Valid values are "uniform", "pareto", "normal", and "exponential".
+- `s::Float64=1.0`: The shape parameter for the distribution. This parameter is only used for the Pareto, Normal, and Exponential distributions.
+
+# Returns
+- `attribute_objects::Vector{Int64}`: An array of the number of objects for each attribute. The array length is equal to the number of attributes.
+'''
 function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int64, distribution::String, s::Float64=1.0)
     if distribution == "uniform"
         dist = Multinomial(num_objects, fill(1.0/num_attributes, num_attributes))
@@ -37,23 +64,39 @@ function generate_attribute_occurrences(num_attributes::Int64, num_objects::Int6
     return sort(occurrences[:])
 end
 
+'''
+    generate_incremental_associations(num_attributes::Int64, num_objects::Int64, total_groups::Int64)
 
-function generate_incremental_associations(total_objects::Int64, total_groups::Int64, num_attributes::Int64)
+Generate an array of the number of objects for each attribute, where the number of objects for each attribute is an incremental value.
+
+# Arguments
+- `num_attributes::Int64`: The total number of attributes
+- `num_objects::Int64`: The total number of objects
+- `num_obj_groups::Int64`: The total number of object groups
+
+# Returns
+- `attribute_objects::Vector{Int64}`: An array of the number of objects for each attribute. The array length is equal to the number of attributes.
+'''
+function generate_incremental_associations(num_attributes::Int64, num_objects::Int64, num_obj_groups::Int64=0)
+    if num_obj_groups == 0
+        num_obj_groups = num_attributes
+    end
+    
     # Error checking: Ensure that the number of attributes does not exceed the total number of groups
-    if num_attributes > total_groups
+    if num_attributes > num_obj_groups
         error("Number of attributes cannot be greater than the total number of groups")
     end
 
     # Generate an array to store the number of objects for each attribute
     attribute_objects = Vector{Int64}(undef, num_attributes)
-    
-    # Calculate the increment value based on the total number of objects and the number of attributes
-    increment_value = ceil(Int64, total_objects / num_attributes)
+
+    # calculate the number of objects within each group
+    increment_value = ceil(Int64, num_objects / num_obj_groups)
 
     # Assign an incremental number of objects to each attribute
     for i = 1:num_attributes
         # Ensure the number of objects does not exceed the total number of objects
-        attribute_objects[i] = min(i * increment_value, total_objects)
+        attribute_objects[i] = min(i * increment_value, num_objects)
     end
 
     return attribute_objects

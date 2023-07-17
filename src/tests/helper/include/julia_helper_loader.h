@@ -6,6 +6,10 @@
 #include <stdio.h>
 
 typedef struct {
+    char **julia_modules;
+    int    num_modules;
+} jl_module_list_t;
+typedef struct {
     jl_value_t **args;
     int32_t      nargs;
 } jl_fn_args_t;
@@ -19,6 +23,13 @@ typedef struct {
  *
  */
 void jl_load_module(const char *mod_name);
+
+/**
+ * @brief initialize the julia runtime with a list of julia modules
+ *
+ * @param modules the list of modules to load
+ */
+void init_julia(jl_module_list_t *modules);
 
 /**
  * @brief run a julia function with the specified arguments
@@ -65,5 +76,10 @@ void run_jl_get_float64_array(const char *mod_name, const char *fun_name, jl_fn_
  */
 void run_jl_get_string_array(const char *mod_name, const char *fun_name, jl_fn_args_t *args, char ***arr_ptr,
                              size_t *arr_len);
+
+/**
+ * @brief exit the julia runtime
+ */
+void close_julia();
 
 #endif // JULIA_HELPER_LOADER_H
