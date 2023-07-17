@@ -9,13 +9,13 @@ jl_load_module(const char *mod_name)
         // try to get it from PWD
         julia_module_dir = getenv("PWD");
     }
-    printf("[JL_HELPER] Warning: PDC_JULIA_MODULE_DIR is not set, fallback to PWD!\n");
+    printf("[PDC_JL_HELPER] Warning: PDC_JULIA_MODULE_DIR is not set, fallback to PWD!\n");
     if (julia_module_dir == NULL || strlen(julia_module_dir) == 0) {
         // No way to find julia module directory
         printf("Error: Not able to find Julia module directory!\n");
         exit(-1);
     }
-    printf("[JL_HELPER] Julia module directory: %s\n", julia_module_dir);
+    printf("[PDC_JL_HELPER] Julia module directory: %s\n", julia_module_dir);
 
     /* get julia helper path */
     char *julia_module_path = malloc(strlen(julia_module_dir) + strlen(mod_name) + 5);
@@ -23,7 +23,7 @@ jl_load_module(const char *mod_name)
     strcat(julia_module_path, "/");
     strcat(julia_module_path, mod_name);
     strcat(julia_module_path, ".jl");
-    printf("[JL_HELPER] Julia module path: %s\n", julia_module_path);
+    printf("[PDC_JL_HELPER] Julia module path: %s\n", julia_module_path);
     /* get include command */
     char include_cmd[strlen(julia_module_path) + 30];
     sprintf(include_cmd, "Base.include(Main, \"%s\")", julia_module_path);
@@ -34,7 +34,7 @@ jl_load_module(const char *mod_name)
     jl_eval_string(include_cmd);
     jl_eval_string(using_cmd);
 
-    printf("[JL_HELPER] Loaded module %s\n", mod_name);
+    printf("[PDC_JL_HELPER] Loaded module %s\n", mod_name);
 }
 
 void
@@ -57,7 +57,7 @@ run_jl_function(const char *mod_name, const char *fun_name, jl_fn_args_t *args)
     jl_module_t *  JuliaModule = (jl_module_t *)jl_eval_string(module_eval_cmd);
     jl_function_t *jl_func     = jl_get_function(JuliaModule, fun_name);
     jl_value_t *   result      = jl_call(jl_func, args->args, args->nargs);
-    printf("[JL_HELPER] Function called: %s.%s\n", mod_name, fun_name);
+    printf("[PDC_JL_HELPER] Function called: %s.%s\n", mod_name, fun_name);
     return result;
 }
 
