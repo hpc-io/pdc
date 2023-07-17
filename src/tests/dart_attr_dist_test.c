@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 
     int64_t *attr_2_obj_array = NULL;
     size_t   arr_len          = 0;
-    size_t   total_num_obj    = 1000000;
+    size_t   total_num_obj    = 10000;
     size_t   total_num_attr   = 10;
 
     // jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
