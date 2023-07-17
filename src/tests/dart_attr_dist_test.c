@@ -71,7 +71,7 @@ main(int argc, char *argv[])
 
     int64_t *attr_2_obj_array = NULL;
     size_t   arr_len          = 0;
-    size_t   total_num_obj    = 1000000000;
+    size_t   total_num_obj    = 1000000;
     size_t   total_num_attr   = 10;
 
     if (rank == 0) {
@@ -140,7 +140,7 @@ main(int argc, char *argv[])
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
             }
-            if (rank == 0 && j % 10000000 == 0) {
+            if (rank == 0 && j % total_num_obj / 1000 == 0) {
                 pct++;
                 timer_pause(&timer);
                 printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for ref %llu within  %.4f ms\n", pct, key,
