@@ -80,16 +80,9 @@ main(int argc, char *argv[])
         init_julia(&modules);
 
         generate_incremental_associations(10, 1000, 0, &attr_2_obj_array, &arr_len);
-        // print array.
-        for (size_t i = 0; i < len; ++i) {
-            printf("%ld\n", arr[i]);
-        }
 
         // generate_attribute_occurrences(10, 100, "uniform", &attr_2_obj_array, &arr_len);
-        // // print array.
-        // for (size_t i = 0; i < len; ++i) {
-        //     printf("%ld\n", arr[i]);
-        // }
+
         close_julia();
         // broadcast the size from rank 0 to all other processes
         MPI_Bcast(&arr_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
