@@ -34,7 +34,7 @@ generate_attribute_occurrences(int64_t num_attr, int64_t num_obj, const char *di
     args->args[2]      = jl_cstr_to_string(dist);
 
     /* run generate_attribute_occurrences  with parameters */
-    run_jl_get_int64_array(JULIA_HELPER_NAME, "generate_attribute_occurrences", args, &arr, &len);
+    run_jl_get_int64_array(JULIA_HELPER_NAME, "generate_attribute_occurrences", args, arr, len);
     printf("called generate_attribute_occurrences\n");
 }
 
