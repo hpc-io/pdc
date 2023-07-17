@@ -18,7 +18,6 @@ generate_incremental_associations(int64_t num_attr, int64_t num_obj, int64_t num
     args->args[2]      = jl_box_int64(num_groups);
 
     run_jl_get_int64_array(JULIA_HELPER_NAME, "generate_incremental_associations", args, arr, len);
-    printf("called generate_incremental_associations\n");
 }
 
 void
@@ -35,7 +34,6 @@ generate_attribute_occurrences(int64_t num_attr, int64_t num_obj, const char *di
 
     /* run generate_attribute_occurrences  with parameters */
     run_jl_get_int64_array(JULIA_HELPER_NAME, "generate_attribute_occurrences", args, arr, len);
-    printf("called generate_attribute_occurrences\n");
 }
 
 int

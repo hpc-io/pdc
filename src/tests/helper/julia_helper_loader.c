@@ -33,6 +33,8 @@ jl_load_module(const char *mod_name)
 
     jl_eval_string(include_cmd);
     jl_eval_string(using_cmd);
+
+    printf("Loaded module %s\n", mod_name);
 }
 
 void
@@ -54,7 +56,9 @@ run_jl_function(const char *mod_name, const char *fun_name, jl_fn_args_t *args)
     sprintf(module_eval_cmd, "Main.%s", mod_name);
     jl_module_t *  JuliaModule = (jl_module_t *)jl_eval_string(module_eval_cmd);
     jl_function_t *jl_func     = jl_get_function(JuliaModule, fun_name);
-    return jl_call(jl_func, args->args, args->nargs);
+    jl_value_t *   result      = jl_call(jl_func, args->args, args->nargs);
+    printf("called %s.%s\n", mod_name, fun_name);
+    return result;
 }
 
 void
