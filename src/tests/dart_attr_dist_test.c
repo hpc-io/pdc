@@ -74,10 +74,11 @@ main(int argc, char *argv[])
     size_t   total_num_obj    = 1000000;
     size_t   total_num_attr   = 10;
 
+    jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
+    init_julia(&modules);
+
     if (rank == 0) {
         // calling julia helper to get the array.
-        jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
-        init_julia(&modules);
 
         generate_incremental_associations(total_num_attr, total_num_obj, total_num_attr, &attr_2_obj_array,
                                           &arr_len);
@@ -85,7 +86,6 @@ main(int argc, char *argv[])
         // generate_attribute_occurrences(total_num_attr, total_num_obj, "uniform", &attr_2_obj_array,
         // &arr_len);
 
-        close_julia();
         // broadcast the size from rank 0 to all other processes
         MPI_Bcast(&arr_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
     }
@@ -141,7 +141,7 @@ main(int argc, char *argv[])
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
             }
             if (rank == 0 && j % total_num_obj / 1000 == 0) {
-                pct++;
+                pct+=(j*100)/total_num_obj);
                 timer_pause(&timer);
                 printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for ref %llu within  %.4f ms\n", pct, key,
                        value, j, (double)timer_delta_ms(&timer));
@@ -177,6 +177,8 @@ main(int argc, char *argv[])
 
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
+
+    close_julia();
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
