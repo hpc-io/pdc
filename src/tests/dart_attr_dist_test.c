@@ -1,3 +1,23 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <time.h>
+#include <sys/time.h>
+#include <uuid/uuid.h>
+#include "string_utils.h"
+#include "timer_utils.h"
+#include "dart_core.h"
+
+// #define ENABLE_MPI 1
+
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
+#include "pdc.h"
+#include "pdc_client_connect.h"
 #include "julia_helper_loader.h"
 
 #define JULIA_HELPER_NAME "JuliaHelper"
@@ -39,19 +59,70 @@ generate_attribute_occurrences(int64_t num_attr, int64_t num_obj, const char *di
 int
 main(int argc, char *argv[])
 {
+    int rank = 0, size = 1;
+
+#ifdef ENABLE_MPI
+    // println("MPI enabled!\n");
+    fflush(stdout);
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
     jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
     init_julia(&modules);
 
-    int64_t *arr = NULL;
-    size_t   len = 0;
+    pdcid_t pdc = PDCinit("pdc");
 
-    generate_incremental_associations(10, 1000, 0, &arr, &len);
+    pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+    if (cont_prop <= 0)
+        printf("Fail to create container property @ line  %d!\n", __LINE__);
+
+    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    if (cont <= 0)
+        printf("Fail to create container @ line  %d!\n", __LINE__);
+
+    pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    if (obj_prop <= 0)
+        printf("Fail to create object property @ line  %d!\n", __LINE__);
+
+    int sid = 0;
+    // FIXME: This is a hack to make sure that the server is ready to accept the connection. Is this still
+    // needed?
+    for (sid = 0; sid < size; sid++) {
+        server_lookup_connection(sid, 2);
+    }
+
+    dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
+    dart_hash_algo_t       hash_algo = DART_HASH;
+
+    char *   key   = "abcd";
+    char *   value = "1234";
+    uint64_t data  = 12341234;
+    PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, data);
+    println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, data);
+
+    // This is for testing exact search
+    char *     exact_query = "abcd=1234";
+    uint64_t **out1;
+    int        rest_count1 = 0;
+    PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
+
+    println("[Client_Side_Exact] Search '%s' and get %d results : %llu", exact_query, rest_count1,
+            out1[0][0]);
+
+    int64_t *attr_2_obj_array = NULL;
+    size_t   arr_len          = 0;
+    size_t   total_num_obj    = 1000000000;
+    size_t   total_num_attr   = 100;
+
+    generate_incremental_associations(10, 1000, 0, &attr_2_obj_array, &arr_len);
     // print array.
     for (size_t i = 0; i < len; ++i) {
         printf("%ld\n", arr[i]);
     }
 
-    generate_attribute_occurrences(10, 100, "uniform", &arr, &len);
+    generate_attribute_occurrences(10, 100, "uniform", &attr_2_obj_array, &arr_len);
     // print array.
     for (size_t i = 0; i < len; ++i) {
         printf("%ld\n", arr[i]);
