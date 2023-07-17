@@ -69,8 +69,45 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
 
-    jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
-    init_julia(&modules);
+    int64_t *attr_2_obj_array = NULL;
+    size_t   arr_len          = 0;
+    size_t   total_num_obj    = 1000000000;
+    size_t   total_num_attr   = 100;
+
+    if (rank == 0) {
+        // calling julia helper to get the array.
+        jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
+        init_julia(&modules);
+
+        generate_incremental_associations(10, 1000, 0, &attr_2_obj_array, &arr_len);
+        // print array.
+        for (size_t i = 0; i < len; ++i) {
+            printf("%ld\n", arr[i]);
+        }
+
+        // generate_attribute_occurrences(10, 100, "uniform", &attr_2_obj_array, &arr_len);
+        // // print array.
+        // for (size_t i = 0; i < len; ++i) {
+        //     printf("%ld\n", arr[i]);
+        // }
+        close_julia();
+        // broadcast the size from rank 0 to all other processes
+        MPI_Bcast(&arr_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+    }
+    else {
+        // receive the size on all other ranks
+        MPI_Bcast(&arr_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+
+        // allocate memory for the array
+        attr_2_obj_array = (int64_t *)malloc(arr_len * sizeof(int64_t));
+    }
+    // broadcast the array itself
+    MPI_Bcast(attr_2_obj_array, arr_len, MPI_LONG_LONG_INT, 0, MPI_COMM_WORLD);
+
+    // print array.
+    for (size_t i = 0; i < arr_len; ++i) {
+        printf("rank %d: %ld\n", rank, attr_2_obj_array[i]);
+    }
 
     pdcid_t pdc = PDCinit("pdc");
 
@@ -86,48 +123,43 @@ main(int argc, char *argv[])
     if (obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    int sid = 0;
-    // FIXME: This is a hack to make sure that the server is ready to accept the connection. Is this still
-    // needed?
-    for (sid = 0; sid < size; sid++) {
-        server_lookup_connection(sid, 2);
-    }
+    // int sid = 0;
+    // // FIXME: This is a hack to make sure that the server is ready to accept the connection. Is this still
+    // // needed?
+    // for (sid = 0; sid < size; sid++) {
+    //     server_lookup_connection(sid, 2);
+    // }
 
-    dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
-    dart_hash_algo_t       hash_algo = DART_HASH;
+    // dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
+    // dart_hash_algo_t       hash_algo = DART_HASH;
 
-    char *   key   = "abcd";
-    char *   value = "1234";
-    uint64_t data  = 12341234;
-    PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, data);
-    println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, data);
+    // char *   key   = "abcd";
+    // char *   value = "1234";
+    // uint64_t data  = 12341234;
+    // PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, data);
+    // println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, data);
 
-    // This is for testing exact search
-    char *     exact_query = "abcd=1234";
-    uint64_t **out1;
-    int        rest_count1 = 0;
-    PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
+    // // This is for testing exact search
+    // char *     exact_query = "abcd=1234";
+    // uint64_t **out1;
+    // int        rest_count1 = 0;
+    // PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
 
-    println("[Client_Side_Exact] Search '%s' and get %d results : %llu", exact_query, rest_count1,
-            out1[0][0]);
+    // println("[Client_Side_Exact] Search '%s' and get %d results : %llu", exact_query, rest_count1,
+    //         out1[0][0]);
 
-    int64_t *attr_2_obj_array = NULL;
-    size_t   arr_len          = 0;
-    size_t   total_num_obj    = 1000000000;
-    size_t   total_num_attr   = 100;
+    if (PDCcont_close(cont) < 0)
+        printf("fail to close container %lld\n", cont);
 
-    generate_incremental_associations(10, 1000, 0, &attr_2_obj_array, &arr_len);
-    // print array.
-    for (size_t i = 0; i < len; ++i) {
-        printf("%ld\n", arr[i]);
-    }
+    if (PDCprop_close(cont_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
 
-    generate_attribute_occurrences(10, 100, "uniform", &attr_2_obj_array, &arr_len);
-    // print array.
-    for (size_t i = 0; i < len; ++i) {
-        printf("%ld\n", arr[i]);
-    }
+    if (PDCclose(pdc) < 0)
+        printf("fail to close PDC\n");
 
-    close_julia();
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
+
     return 0;
 }
