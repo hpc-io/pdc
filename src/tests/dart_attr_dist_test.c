@@ -122,13 +122,15 @@ main(int argc, char *argv[])
     // FIXME: This is a hack to make sure that the server is ready to accept the connection. Is this still
     // needed?
     for (sid = 0; sid < size; sid++) {
-        server_lookup_connection(sid, 2);
+        // server_lookup_connection(sid, 2);
     }
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
-    int                    i, j;
+    int                    i, j, pct = 0;
 
+    stopwatch_t timer;
+    timer_start(&timer);
     for (i = 0; i < arr_len; i++) {
         char *key   = (char *)malloc(32);
         char *value = (char *)malloc(32);
@@ -138,9 +140,13 @@ main(int argc, char *argv[])
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
             }
-        }
-        if (rank == 0) {
-            println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, j);
+            if (rank == 0 && j % 10000000 == 0) {
+                pct++;
+                timer_pause(&timer);
+                printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for ref %llu within  %.4f ms\n", pct, key,
+                       value, j, (double)timer_delta_ms(&timer));
+                timer_start(&timer);
+            }
         }
     }
 #ifdef ENABLE_MPI
