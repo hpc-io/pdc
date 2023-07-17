@@ -1,5 +1,7 @@
 #include "pdc_server_metadata_index.h"
 
+#define DART_SERVER_DEBUG 0
+
 // DART search
 int64_t   indexed_word_count_g        = 0;
 int64_t   server_request_count_g      = 0;
@@ -286,8 +288,10 @@ metadata_index_create(char *attr_key, char *attr_value, uint64_t obj_locator, in
     create_index_for_attr_name(attr_key, attr_value, (void *)obj_locator);
     // }
     timer_pause(&timer);
-    println("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %d microseconds",
-            pdc_server_rank_g, attr_key, attr_value, timer_delta_us(&timer));
+    if (DART_SERVER_DEBUG) {
+        printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %d microseconds\n",
+               pdc_server_rank_g, attr_key, attr_value, timer_delta_us(&timer));
+    }
     indexed_word_count_g++;
     ret_value = SUCCEED;
     return ret_value;
@@ -378,8 +382,10 @@ metadata_index_delete(char *attr_key, char *attr_value, uint64_t obj_locator, in
     // }
 
     timer_pause(&timer);
-    println("[Server_Side_Delete_%d] Timer to delete a keyword from index = %d microseconds",
-            pdc_server_rank_g, timer_delta_us(&timer));
+    if (DART_SERVER_DEBUG) {
+        printf("[Server_Side_Delete_%d] Timer to delete a keyword %s : %s from index = %d microseconds\n",
+               pdc_server_rank_g, attr_key, attr_value, timer_delta_us(&timer));
+    }
     indexed_word_count_g--;
     ret_value = SUCCEED;
     return ret_value;
@@ -592,8 +598,10 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     }
 
     timer_pause(&index_timer);
-    println("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %ld microseconds",
-            qType_string, pdc_server_rank_g, query, *n_obj_ids_ptr, timer_delta_us(&index_timer));
+    if (DART_SERVER_DEBUG) {
+        printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %ld microseconds\n",
+               qType_string, pdc_server_rank_g, query, *n_obj_ids_ptr, timer_delta_us(&index_timer));
+    }
     server_request_count_g++;
     return result;
 }
