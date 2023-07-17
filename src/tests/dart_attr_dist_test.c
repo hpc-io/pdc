@@ -137,11 +137,15 @@ main(int argc, char *argv[])
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
-                println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, j);
             }
         }
+        if (rank == 0) {
+            println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, j);
+        }
     }
-
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
     for (i = 0; i < arr_len; i++) {
         if (i % size == rank) {
             char *key         = (char *)malloc(32);

@@ -4,6 +4,13 @@
 /**
  * This is a helper library to load Julia modules and run Julia functions from C.
  * It is now used in the PDC C tests. We may consider moving it to PDC core in the future.
+ *
+ * When using this library, please make sure you have the following environment variables set:
+ * export PDC_JULIA_MODULE_DIR=/path/to/julia/modules
+ *
+ * Also, on NERSC machines, please make sure you perform:
+ * module load julia
+ *
  * If you need to add any new functions, please add them to julia_helper.jl and then add the corresponding
  * C function here as the Julia function caller.
  * You may refer to the following link for more information:
