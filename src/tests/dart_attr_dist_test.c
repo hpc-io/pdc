@@ -56,13 +56,22 @@ generate_attribute_occurrences(int64_t num_attr, int64_t num_obj, const char *di
     run_jl_get_int64_array(JULIA_HELPER_NAME, "generate_attribute_occurrences", args, arr, len);
 }
 
+void
+generate_attr_obj_association(int64_t num_attr, int64_t num_obj, int64_t **arr, size_t *len)
+{
+    *arr = (int64_t *)calloc(num_attr, sizeof(int64_t));
+    *len = num_attr;
+    for (int64_t i = 0; i < num_attr; i++) {
+        (*arr)[i] = (num_obj / num_attr) * (i + 1);
+    }
+}
+
 int
 main(int argc, char *argv[])
 {
     int rank = 0, size = 1;
 
 #ifdef ENABLE_MPI
-    // println("MPI enabled!\n");
     fflush(stdout);
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -74,14 +83,16 @@ main(int argc, char *argv[])
     size_t   total_num_obj    = 1000000;
     size_t   total_num_attr   = 10;
 
-    jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
-    init_julia(&modules);
+    // jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
+    // init_julia(&modules);
 
     if (rank == 0) {
         // calling julia helper to get the array.
 
-        generate_incremental_associations(total_num_attr, total_num_obj, total_num_attr, &attr_2_obj_array,
-                                          &arr_len);
+        generate_attr_obj_association(total_num_attr, total_num_obj, &attr_2_obj_array, &arr_len);
+
+        // generate_incremental_associations(total_num_attr, total_num_obj, total_num_attr, &attr_2_obj_array,
+        //                                   &arr_len);
 
         // generate_attribute_occurrences(total_num_attr, total_num_obj, "uniform", &attr_2_obj_array,
         // &arr_len);
@@ -178,7 +189,7 @@ main(int argc, char *argv[])
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
 
-    close_julia();
+        // close_julia();
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
