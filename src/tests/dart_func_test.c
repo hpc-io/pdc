@@ -50,7 +50,7 @@ main(int argc, char **argv)
     int sid = 0;
     // FIXME: This is a hack to make sure that the server is ready to accept the connection.
     for (sid = 0; sid < size; sid++) {
-        // server_lookup_connection(sid, 2);
+        server_lookup_connection(sid, 2);
     }
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
