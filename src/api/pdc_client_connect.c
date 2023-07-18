@@ -7057,7 +7057,8 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
         client_lookup_args->ret = -1;
-        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: %s error with HG_Get_output",pdc_client_mpi_rank_g, __func__);
+        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: %s error with HG_Get_output", pdc_client_mpi_rank_g,
+                    __func__);
     }
     client_lookup_args->ret = output.ret;
     if (output.kvtag.name)
