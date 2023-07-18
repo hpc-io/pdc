@@ -7057,8 +7057,7 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
         client_lookup_args->ret = -1;
-        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output",
-                    pdc_client_mpi_rank_g);
+        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: %s error with HG_Get_output",pdc_client_mpi_rank_g, __func__);
     }
     client_lookup_args->ret = output.ret;
     if (output.kvtag.name)
@@ -7121,13 +7120,13 @@ PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag, int is_cont)
         in.key = tag_name;
     }
     else
-        PGOTO_ERROR(FAIL, "==PDC_Client_get_kvtag(): invalid tag content!");
+        PGOTO_ERROR(FAIL, "PDC_get_kvtag: invalid tag content!");
 
     *kvtag            = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
     lookup_args.kvtag = *kvtag;
     hg_ret            = HG_Forward(metadata_get_kvtag_handle, metadata_get_kvtag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_get_kvtag_metadata_with_name(): Could not start HG_Forward()");
+        PGOTO_ERROR(FAIL, "PDC_get_kvtag: Could not start HG_Forward()");
 
     // Wait for response from server
     work_todo_g = 1;
@@ -7453,6 +7452,7 @@ PDCtag_delete(pdcid_t obj_id, char *tag_name, int is_cont)
         in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
     in.key = tag_name;
 
+    // reuse metadata_add_tag_rpc_cb here since it only checks the return value
     hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb /*reuse*/, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()");
