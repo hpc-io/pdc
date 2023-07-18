@@ -1047,12 +1047,21 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     if (hg_cb_info->ret == HG_SUCCESS) {
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
                        &actual_cnt);
-
-        meta_ptr            = (pdc_metadata_t *)(buf);
-        bulk_args->meta_arr = (pdc_metadata_t **)calloc(sizeof(pdc_metadata_t *), n_meta);
-        for (i = 0; i < n_meta; i++) {
-            bulk_args->meta_arr[i] = meta_ptr;
-            meta_ptr++;
+        if (bulk_args->is_id == 1) {
+            meta_ptr            = (uint64_t *)(buf);
+            bulk_args->meta_arr = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
+            for (i = 0; i < n_meta; i++) {
+                bulk_args->obj_ids[i] = *meta_ptr;
+                meta_ptr++;
+            }
+        }
+        else {
+            meta_ptr            = (pdc_metadata_t *)(buf);
+            bulk_args->meta_arr = (pdc_metadata_t **)calloc(sizeof(pdc_metadata_t *), n_meta);
+            for (i = 0; i < n_meta; i++) {
+                bulk_args->meta_arr[i] = meta_ptr;
+                meta_ptr++;
+            }
         }
     }
 
@@ -8535,8 +8544,13 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     }
     /* printf("Print metadata after PDC_Client_check_bulk()\n"); */
     /* PDC_print_metadata(bulk_args->meta_arr[0]); */
-    client_lookup_args->meta_arr = bulk_args->meta_arr;
-    bulk_checked                 = 1;
+    if (client_lookup_args->is_id == 1) {
+        client_lookup_args->obj_ids = bulk_args->obj_ids;
+    }
+    else {
+        client_lookup_args->meta_arr = bulk_args->meta_arr;
+    }
+    bulk_checked = 1;
 
 done:
     // println("[Client_Side_Bulk]  finish bulk. rank = %d", pdc_client_mpi_rank_g);
@@ -8563,7 +8577,8 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     // timer_start(&timer);
     // perr_t srv_lookup_rst = server_lookup_connection(server_id, 2);
     // timer_pause(&timer);
-    // println("[CLIENT PERFORM ONE SERVER 1] Time to lookup all connections is %ld microseconds for rank %d",
+    // println("[CLIENT PERFORM ONE SERVER 1] Time to lookup all connections is %ld microseconds for rank
+    // %d",
     //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
 
     // if (srv_lookup_rst == FAIL){
@@ -8594,9 +8609,9 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
         HG_Destroy(dart_perform_one_server_handle);
         goto done;
     }
-    // printf("dart_perform_one_server_handle -> ret = %d, dart_in.op_type = %d, key = %s, val=%s\n", hg_ret,
-    // dart_in->op_type, dart_in->attr_key, dart_in->attr_val); if (dart_in->op_type != OP_INSERT &&
-    // dart_in->op_type != OP_DELETE){
+    // printf("dart_perform_one_server_handle -> ret = %d, dart_in.op_type = %d, key = %s, val=%s\n",
+    // hg_ret, dart_in->op_type, dart_in->attr_key, dart_in->attr_val); if (dart_in->op_type != OP_INSERT
+    // && dart_in->op_type != OP_DELETE){
     //     hg_atomic_set32(&bulk_transfer_done_g, 0);
     // }
 
@@ -8651,7 +8666,12 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     int res_id = 0;
     for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
         if (hashset != NULL && (*hashset) != NULL) {
-            hashset_add(*hashset, (void *)((uint64_t *)lookup_args.meta_arr[res_id])[0]);
+            if (lookup_args->is_id == 1) {
+                hashset_add(*hashset, &(lookup_args.obj_ids[res_id]));
+            }
+            else {
+                hashset_add(*hashset, (void *)((pdc_metadata_t *)lookup_args.meta_arr[res_id])[0]);
+            }
         }
     }
     ret_val = lookup_args.n_meta;
@@ -8664,8 +8684,9 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     // printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
     // dart_in->attr_val);
 done:
-    // printf("done->ret_val, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
-    // dart_in->attr_val); println("===================================\n===============================");
+    // printf("done->ret_val, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type,
+    // dart_in->attr_key, dart_in->attr_val);
+    // println("===================================\n===============================");
     return ret_val;
 }
 
