@@ -7409,7 +7409,8 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t
+// Delete a tag specified by a name, and whether it is from a container or an object
+static perr_t
 PDCtag_delete(pdcid_t obj_id, char *tag_name, int is_cont)
 {
     perr_t                         ret_value = SUCCEED;

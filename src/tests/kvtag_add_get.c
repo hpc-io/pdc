@@ -132,7 +132,7 @@ main()
     else
         printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", kvtag3.name, *(double *)value3);
 
-    if (PDCtag_delete(obj1, kvtag1.name) < 0)
+    if (PDCobj_del_tag(obj1, kvtag1.name) < 0)
         printf("fail to delete a kvtag from o1\n");
     else
         printf("successfully deleted a kvtag [%s] from o1\n", kvtag1.name);
