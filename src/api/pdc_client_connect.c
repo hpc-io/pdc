@@ -7060,11 +7060,11 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
         PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output",
                     pdc_client_mpi_rank_g);
     }
-    client_lookup_args->ret          = output.ret;
+    client_lookup_args->ret = output.ret;
     if (output.kvtag.name)
-        client_lookup_args->kvtag->name  = strdup(output.kvtag.name);
-    client_lookup_args->kvtag->size  = output.kvtag.size;
-    client_lookup_args->kvtag->type  = output.kvtag.type;
+        client_lookup_args->kvtag->name = strdup(output.kvtag.name);
+    client_lookup_args->kvtag->size = output.kvtag.size;
+    client_lookup_args->kvtag->type = output.kvtag.type;
     if (output.kvtag.size > 0) {
         client_lookup_args->kvtag->value = malloc(output.kvtag.size);
         memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
@@ -7444,13 +7444,13 @@ PDCtag_delete(pdcid_t obj_id, char *tag_name, int is_cont)
               &metadata_del_kvtag_handle);
 
     // Fill input structure
-    in.obj_id     = meta_id;
+    in.obj_id = meta_id;
 
     if (is_cont)
         in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
     else
         in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
-    in.key        = tag_name;
+    in.key = tag_name;
 
     hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb /*reuse*/, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
@@ -7469,7 +7469,6 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
 
 /* - -------------------------------- */
 /* New Simple Object Access Interface */

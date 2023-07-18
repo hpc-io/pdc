@@ -2778,7 +2778,7 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 #ifdef ENABLE_MULTITHREAD
     int unlocked;
 #endif
-    pdc_hash_table_entry_head *lookup_value;
+    pdc_hash_table_entry_head *  lookup_value;
     pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
