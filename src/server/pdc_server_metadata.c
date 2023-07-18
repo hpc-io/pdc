@@ -2779,6 +2779,7 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
     int unlocked;
 #endif
     pdc_hash_table_entry_head *lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -2798,22 +2799,30 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
-    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
-    if (lookup_value != NULL) {
-        pdc_metadata_t *target;
-        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
-        if (target != NULL) {
-            PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
-            out->ret = 1;
+    // Look cont tags first
+    cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+    if (cont_lookup_value != NULL) {
+        PDC_del_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key);
+        out->ret = 1;
+    }
+    else {
+        lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+        if (lookup_value != NULL) {
+            pdc_metadata_t *target;
+            target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+            if (target != NULL) {
+                PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
+                out->ret = 1;
+            }
+            else {
+                ret_value = FAIL;
+                out->ret  = -1;
+            }
         }
         else {
             ret_value = FAIL;
             out->ret  = -1;
         }
-    }
-    else {
-        ret_value = FAIL;
-        out->ret  = -1;
     }
 
     if (ret_value != SUCCEED) {
