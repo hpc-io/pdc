@@ -2805,13 +2805,13 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
         if (target != NULL) {
             ret_value = PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
-            out->ret = 1;
+            out->ret  = 1;
         }
         else {
             ret_value = FAIL;
             out->ret  = -1;
-            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", 
-                    pdc_server_rank_g, __func__, in->key);
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
             goto done;
         }
     }
@@ -2824,8 +2824,8 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
         else {
             ret_value = FAIL;
             out->ret  = -1;
-            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", 
-                    pdc_server_rank_g, __func__, in->key);
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
             goto done;
         }
     }
@@ -2834,7 +2834,6 @@ done:
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
-
 
 #ifdef ENABLE_TIMING
     // Timing
