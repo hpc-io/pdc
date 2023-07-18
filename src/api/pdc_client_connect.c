@@ -1031,6 +1031,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     uint64_t            buf_sizes[2] = {0, 0};
     uint32_t            actual_cnt;
     pdc_metadata_t *    meta_ptr;
+    uint64_t *          u64_arr_ptr;
 
     FUNC_ENTER(NULL);
 
@@ -1048,11 +1049,11 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
                        &actual_cnt);
         if (bulk_args->is_id == 1) {
-            meta_ptr            = (uint64_t *)(buf);
+            u64_arr_ptr         = (uint64_t *)(buf);
             bulk_args->meta_arr = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
             for (i = 0; i < n_meta; i++) {
-                bulk_args->obj_ids[i] = *meta_ptr;
-                meta_ptr++;
+                bulk_args->obj_ids[i] = *u64_arr_ptr;
+                u64_arr_ptr++;
             }
         }
         else {
