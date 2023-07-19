@@ -2361,21 +2361,22 @@ PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step,
     FUNC_ENTER(NULL);
 
 #ifdef ENABLE_MPI
-    if (pdc_client_mpi_rank_g == 0) {
+    if (pdc_client_mpi_rank_g == 0)
         ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_server_id);
-        if (ret_value != SUCCEED || NULL == *out) {
-            *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
-        }
-    }
-    else
+
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
+
+    if (pdc_client_mpi_rank_g != 0)
         *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
 
     MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_CLIENT_COMM_WORLD_g);
-
     MPI_Bcast(metadata_server_id, 1, MPI_UINT32_T, 0, PDC_CLIENT_COMM_WORLD_g);
 #else
     ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_server_id);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
 #endif
 
 done:
@@ -5606,8 +5607,8 @@ PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_i
 
     MPI_Bcast(cont_meta_id, 1, MPI_LONG_LONG, 0, PDC_CLIENT_COMM_WORLD_g);
 #else
-    printf("==PDC_CLIENT[%d]: Calling MPI collective operation without enabling MPI!\n",
-           pdc_client_mpi_rank_g);
+    PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Calling MPI collective operation without enabling MPI!",
+                pdc_client_mpi_rank_g);
 #endif
 
 done:
