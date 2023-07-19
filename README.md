@@ -14,7 +14,7 @@ If you use PDC in your research, please use the following citations:
 ```
 @misc{byna:2017:pdc,
   title = {Proactive Data Containers (PDC) v0.1},
-  author = {Byna, Suren and Dong, Bin and Tang, Houjun and Koziol, Quincey and Mu, Jingqing and Soumagne, Jerome and Vishwanath, Venkat and Warren, Richard and Tessier, François and USDOE},
+  author = {Byna, Suren and Dong, Bin and Tang, Houjun and Koziol, Quincey and Mu, Jingqing and Soumagne, Jerome and Vishwanath, Venkat and Warren, Richard and Tessier, François},
   url = {https://www.osti.gov/servlets/purl/1772576},
   doi = {10.11578/dc.20210325.1},
   url = {https://www.osti.gov/biblio/1772576},
