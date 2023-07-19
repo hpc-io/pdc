@@ -5,7 +5,7 @@
 ## Proactive Data Containers (PDC)
 Proactive Data Containers (PDC) software provides an object-focused data management API, a runtime system with a set of scalable data object management services, and tools for managing data objects stored in the PDC system. The PDC API allows efficient and transparent data movement in complex memory and storage hierarchy. The PDC runtime system performs data movement asynchronously and provides scalable metadata operations to find and manipulate data objects. PDC revolutionizes how data is managed and accessed by using object-centric abstractions to represent data that moves in the high-performance computing (HPC) memory and storage subsystems. PDC manages extensive metadata to describe data objects to find desired data efficiently as well as to store information in the data objects.
 
-Full documentation of PDC with installation instructions, code examples for using PDC API, and research publications are available at [pdc.readthedocs.io](https://pdc.readthedocs.io/en/code-docs)
+Full documentation of PDC with installation instructions, code examples for using PDC API, and research publications are available at [pdc.readthedocs.io](https://pdc.readthedocs.io)
 
 More information and publications on PDC is available at https://sdm.lbl.gov/pdc
 
