@@ -1685,7 +1685,10 @@ HG_TEST_RPC_CB(container_query, handle)
     HG_Get_input(handle, &in);
 
     PDC_Server_find_container_by_name(in.cont_name, &cont_entry);
-    out.cont_id = cont_entry->cont_id;
+    if (cont_entry)
+        out.cont_id = cont_entry->cont_id;
+    else
+        out.cont_id = 0;
 
     HG_Respond(handle, NULL, NULL, &out);
 

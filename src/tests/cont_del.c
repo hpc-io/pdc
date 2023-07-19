@@ -79,6 +79,11 @@ main(int argc, char **argv)
         printf("successfully close container c1\n");
     }
 
+    printf("trying to open a deleted container, should fail\n");
+    cont = PDCcont_open("VPIC_cont", pdc);
+    if (cont > 0)
+        printf("Error: opened a container that was just deleted @ line  %d!\n", __LINE__);
+
     // close a container property
     if (PDCprop_close(create_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);

@@ -274,6 +274,9 @@ PDCcont_open(const char *cont_name, pdcid_t pdc)
     ret = PDC_Client_query_container_name(cont_name, &cont_meta_id);
     if (ret == FAIL)
         PGOTO_ERROR(0, "query container name failed");
+    if (cont_meta_id == 0)
+        PGOTO_ERROR(0, "query container not found");
+
     cont_id   = PDC_cont_create_local(pdc, cont_name, cont_meta_id);
     ret_value = cont_id;
 
