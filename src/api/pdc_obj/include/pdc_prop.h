@@ -109,16 +109,6 @@ struct pdc_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id);
 perr_t PDCprop_update(pdcid_t obj_id, pdcid_t prop_id);
 
 /**
- * Delete a tag with a specific name and value
- *
- * \param obj_id[IN]            Object ID
- * \param tag_name [IN]         Metadta field name
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCtag_delete(pdcid_t obj_id, char *tag_name);
-
-/**
  * **********
  *
  * \param obj_id[IN]            Object ID

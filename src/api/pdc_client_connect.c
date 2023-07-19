@@ -7058,16 +7058,20 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
         client_lookup_args->ret = -1;
-        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output",
-                    pdc_client_mpi_rank_g);
+        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: %s error with HG_Get_output", pdc_client_mpi_rank_g,
+                    __func__);
     }
-    client_lookup_args->ret          = output.ret;
-    client_lookup_args->kvtag->name  = strdup(output.kvtag.name);
-    client_lookup_args->kvtag->size  = output.kvtag.size;
-    client_lookup_args->kvtag->type  = output.kvtag.type;
-    client_lookup_args->kvtag->value = malloc(output.kvtag.size);
-    memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
-    /* PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag); */
+    client_lookup_args->ret = output.ret;
+    if (output.kvtag.name)
+        client_lookup_args->kvtag->name = strdup(output.kvtag.name);
+    client_lookup_args->kvtag->size = output.kvtag.size;
+    client_lookup_args->kvtag->type = output.kvtag.type;
+    if (output.kvtag.size > 0) {
+        client_lookup_args->kvtag->value = malloc(output.kvtag.size);
+        memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
+    }
+    else
+        client_lookup_args->kvtag->value = NULL;
 
 done:
     fflush(stdout);
@@ -7118,13 +7122,13 @@ PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag, int is_cont)
         in.key = tag_name;
     }
     else
-        PGOTO_ERROR(FAIL, "==PDC_Client_get_kvtag(): invalid tag content!");
+        PGOTO_ERROR(FAIL, "PDC_get_kvtag: invalid tag content!");
 
     *kvtag            = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
     lookup_args.kvtag = *kvtag;
     hg_ret            = HG_Forward(metadata_get_kvtag_handle, metadata_get_kvtag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_get_kvtag_metadata_with_name(): Could not start HG_Forward()");
+        PGOTO_ERROR(FAIL, "PDC_get_kvtag: Could not start HG_Forward()");
 
     // Wait for response from server
     work_todo_g = 1;
@@ -7136,55 +7140,6 @@ PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag, int is_cont)
 done:
     fflush(stdout);
     HG_Destroy(metadata_get_kvtag_handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t
-PDCtag_delete(pdcid_t obj_id, char *tag_name)
-{
-    perr_t                         ret_value = SUCCEED;
-    hg_return_t                    hg_ret    = 0;
-    uint64_t                       meta_id;
-    uint32_t                       server_id;
-    hg_handle_t                    metadata_del_kvtag_handle;
-    metadata_get_kvtag_in_t        in;
-    struct _pdc_obj_info *         obj_prop;
-    struct _pdc_client_lookup_args lookup_args;
-
-    FUNC_ENTER(NULL);
-
-    obj_prop  = PDC_obj_get_info(obj_id);
-    meta_id   = obj_prop->obj_info_pub->meta_id;
-    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
-
-    debug_server_id_count[server_id]++;
-
-    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
-
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_del_kvtag_register_id_g,
-              &metadata_del_kvtag_handle);
-
-    // Fill input structure
-    in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
-    in.key        = tag_name;
-
-    hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb /*reuse*/, &lookup_args, &in);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()");
-
-    // Wait for response from server
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
-
-    if (lookup_args.ret != 1)
-        printf("PDC_CLIENT: del kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
-
-done:
-    fflush(stdout);
-    HG_Destroy(metadata_del_kvtag_handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -7455,6 +7410,69 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+// Delete a tag specified by a name, and whether it is from a container or an object
+static perr_t
+PDCtag_delete(pdcid_t obj_id, char *tag_name, int is_cont)
+{
+    perr_t                         ret_value = SUCCEED;
+    hg_return_t                    hg_ret    = 0;
+    uint64_t                       meta_id;
+    uint32_t                       server_id;
+    hg_handle_t                    metadata_del_kvtag_handle;
+    metadata_get_kvtag_in_t        in;
+    struct _pdc_obj_info *         obj_prop;
+    struct _pdc_cont_info *        cont_prop;
+    struct _pdc_client_lookup_args lookup_args;
+
+    FUNC_ENTER(NULL);
+
+    if (is_cont) {
+        cont_prop = PDC_cont_get_info(obj_id);
+        meta_id   = cont_prop->cont_info_pub->meta_id;
+    }
+    else {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id  = obj_prop->obj_info_pub->meta_id;
+    }
+
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_del_kvtag_register_id_g,
+              &metadata_del_kvtag_handle);
+
+    // Fill input structure
+    in.obj_id = meta_id;
+
+    if (is_cont)
+        in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
+    else
+        in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
+    in.key = tag_name;
+
+    // reuse metadata_add_tag_rpc_cb here since it only checks the return value
+    hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb /*reuse*/, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()");
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1)
+        printf("PDC_CLIENT: del kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    fflush(stdout);
+    HG_Destroy(metadata_del_kvtag_handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
 /* - -------------------------------- */
 /* New Simple Object Access Interface */
 /* - -------------------------------- */
@@ -7484,7 +7502,6 @@ done:
 }
 
 pdcid_t
-
 PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
 {
     pdcid_t  cont_id;
@@ -7634,9 +7651,9 @@ PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_del_tag(cont_id, tag_name);
+    ret_value = PDCtag_delete(cont_id, tag_name, 1);
     if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCobj_del_tag", pdc_client_mpi_rank_g);
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCtag_delete", pdc_client_mpi_rank_g);
 
 done:
     fflush(stdout);
@@ -7832,7 +7849,7 @@ PDCobj_del_tag(pdcid_t obj_id, char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCtag_delete(obj_id, tag_name);
+    ret_value = PDCtag_delete(obj_id, tag_name, 0);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_del_kvtag", pdc_client_mpi_rank_g);
 

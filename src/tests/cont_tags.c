@@ -32,7 +32,6 @@ main(int argc, char **argv)
 {
     pdcid_t pdc, cont_prop, cont, cont2;
     perr_t  ret;
-    int     ret_value = 0;
 
     int rank = 0, size = 1;
 
@@ -58,7 +57,7 @@ main(int argc, char **argv)
     }
     else {
         printf("Fail to create container property @ line  %d!\n", __LINE__);
-        ret_value = 1;
+        return -1;
     }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
@@ -67,7 +66,7 @@ main(int argc, char **argv)
     }
     else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        ret_value = 1;
+        return -1;
     }
 
     cont2 = PDCcont_create("c2", cont_prop);
@@ -76,88 +75,120 @@ main(int argc, char **argv)
     }
     else {
         printf("Fail to create container @ line  %d!\n", __LINE__);
-        ret_value = 1;
+        return -1;
     }
 
     ret = PDCcont_put_tag(cont, "some tag", tag_value, PDC_STRING, strlen(tag_value) + 1);
 
     if (ret != SUCCEED) {
         printf("Put tag failed at container 1\n");
-        ret_value = 1;
+        return -1;
     }
     ret = PDCcont_put_tag(cont, "some tag 2", tag_value2, PDC_STRING, strlen(tag_value2) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at container 1\n");
-        ret_value = 1;
+        return -1;
     }
 
     ret = PDCcont_put_tag(cont2, "some tag", tag_value, PDC_STRING, strlen(tag_value) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at container 2\n");
-        ret_value = 1;
+        return -1;
     }
 
     ret = PDCcont_put_tag(cont2, "some tag 2", tag_value2, PDC_STRING, strlen(tag_value2) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at container 2\n");
-        ret_value = 1;
+        return -1;
     }
 
     ret = PDCcont_get_tag(cont, "some tag", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 1\n");
-        ret_value = 1;
+        return -1;
     }
     if (strcmp(tag_value, tag_value_ret) != 0) {
         printf("Wrong tag value at container 1, expected = [%s], get [%s]\n", tag_value, tag_value_ret);
-        ret_value = 1;
+        return -1;
     }
 
     ret = PDCcont_get_tag(cont, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 1\n");
-        ret_value = 1;
+        return -1;
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
         printf("Wrong tag value at container 1, expected = [%s], get [%s]\n", tag_value2, tag_value_ret);
-        ret_value = 1;
+        return -1;
     }
 
     ret = PDCcont_get_tag(cont2, "some tag", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 2\n");
-        ret_value = 1;
+        return -1;
     }
 
     if (strcmp(tag_value, tag_value_ret) != 0) {
         printf("Wrong tag value at container 2, expected = [%s], get [%s]\n", tag_value, tag_value_ret);
-        ret_value = 1;
+        return -1;
     }
 
     ret = PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 2\n");
-        ret_value = 1;
+        return -1;
     }
 
     if (strcmp(tag_value2, tag_value_ret) != 0) {
         printf("Wrong tag value at container 2, expected = [%s], get [%s]\n", tag_value2, tag_value_ret);
-        ret_value = 1;
+        return -1;
+    }
+
+    ret = PDCcont_del_tag(cont2, "some tag 2");
+    if (ret != SUCCEED) {
+        printf("Delete tag failed at container 2\n");
+        return -1;
+    }
+    else {
+        printf("successfully deleted a tag from container c2\n");
+    }
+
+    ret = PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
+    if (ret != SUCCEED) {
+        printf("Get tag failed at container 2\n");
+        return -1;
+    }
+
+    if (tag_value_ret != NULL || value_size != 0) {
+        printf("Error: got non-empty tag after deletion\n");
+        return -1;
+    }
+    else {
+        printf("verified the tag has been deleted successfully\n");
     }
 
     // close a container
     if (PDCcont_close(cont) < 0) {
         printf("fail to close container c1\n");
-        ret_value = 1;
+        return -1;
     }
     else {
         printf("successfully close container c1\n");
     }
+    // close a container
+    if (PDCcont_close(cont2) < 0) {
+        printf("fail to close container c1\n");
+        return -1;
+    }
+    else {
+        printf("successfully close container c1\n");
+    }
+
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
-        ret_value = 1;
+        return -1;
     }
     else {
         printf("successfully close container property\n");
@@ -165,10 +196,10 @@ main(int argc, char **argv)
     // close pdc
     if (PDCclose(pdc) < 0) {
         printf("fail to close PDC\n");
-        ret_value = 1;
+        return -1;
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return ret_value;
+    return 0;
 }
