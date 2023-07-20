@@ -279,13 +279,15 @@ metadata_index_create(char *attr_key, char *attr_value, uint64_t obj_locator, in
     timer_start(&timer);
 
     // if (index_type == DHT_FULL_HASH) {
-    //     create_hash_table_for_keyword(attr_key, attr_value, strlen(attr_key), (void *)obj_locator);
+    // FIXME: remember to check obj_locator type inside of this function below
+    //     create_hash_table_for_keyword(attr_key, attr_value, strlen(attr_key), (void *)&obj_locator);
     // }
     // else if (index_type == DHT_INITIAL_HASH) {
-    //     create_hash_table_for_keyword(attr_key, attr_value, 1, (void *)obj_locator);
+    // FIXME: remember to check obj_locator type inside of this function below
+    //     create_hash_table_for_keyword(attr_key, attr_value, 1, (void *)&obj_locator);
     // }
     // else if (index_type == DART_HASH) {
-    create_index_for_attr_name(attr_key, attr_value, (void *)obj_locator);
+    create_index_for_attr_name(attr_key, attr_value, (void *)&obj_locator);
     // }
     timer_pause(&timer);
     if (DART_SERVER_DEBUG) {
@@ -507,7 +509,7 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
 }
 
 perr_t
-metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
+metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint64_t **buf_ptrs)
 {
 
     perr_t      result = SUCCEED;
@@ -581,16 +583,13 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
         *n_obj_ids_ptr = (uint64_t)num_ids;
         // *n_obj_ids_ptr = (uint64_t)param->total_count;
 
-        *buf_ptrs = (uint64_t **)calloc(*n_obj_ids_ptr, sizeof(uint64_t *));
-        for (i = 0; i < (*n_obj_ids_ptr); i++) {
-            (*buf_ptrs)[i] = (uint64_t *)calloc(1, sizeof(uint64_t));
-        }
+        *buf_ptrs = (uint64_t *)calloc(*n_obj_ids_ptr, sizeof(uint64_t));
 
         i              = 0;
         size_t itr_idx = 0;
         while (i <= param->out->nitems && itr_idx < param->out->capacity) {
             if (param->out->items[itr_idx] != 0) {
-                ((uint64_t *)(*buf_ptrs)[i])[0] = param->out->items[itr_idx];
+                ((uint64_t *)(*buf_ptrs)[i])[0] = (uint64_t *)(param->out->items[itr_idx]);
                 i++;
             }
             itr_idx++;
@@ -608,7 +607,7 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
 
 perr_t
 PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perform_one_server_out_t *out,
-                                   uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
+                                   uint64_t *n_obj_ids_ptr, uint64_t **buf_ptrs)
 {
     perr_t                 result    = SUCCEED;
     dart_op_type_t         op_type   = in->op_type;

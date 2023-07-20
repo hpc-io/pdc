@@ -1,3 +1,30 @@
+//
+//  * Copyright (c) 2012, Armon Dadgar
+//  * All rights reserved.
+//  *
+//  * Redistribution and use in source and binary forms, with or without
+//  * modification, are permitted provided that the following conditions are met:
+//  *     - Redistributions of source code must retain the above copyright
+//  *       notice, this list of conditions and the following disclaimer.
+//  *     - Redistributions in binary form must reproduce the above copyright
+//  *       notice, this list of conditions and the following disclaimer in the
+//  *       documentation and/or other materials provided with the distribution.
+//  *     - Neither the name of the organization nor the
+//  *       names of its contributors may be used to endorse or promote products
+//  *       derived from this software without specific prior written permission.
+//  *
+//  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//  * DISCLAIMED. IN NO EVENT SHALL ARMON DADGAR BE LIABLE FOR ANY
+//  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+//  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+//  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+//  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+//  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+//  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -75,7 +102,7 @@ destroy_node(art_node *n)
     }
 
     // Handle each node type
-    int i;
+    int i, idx;
     union {
         art_node4 *  p1;
         art_node16 * p2;
@@ -99,8 +126,11 @@ destroy_node(art_node *n)
 
         case NODE48:
             p.p3 = (art_node48 *)n;
-            for (i = 0; i < n->num_children; i++) {
-                destroy_node(p.p3->children[i]);
+            for (i = 0; i < 256; i++) {
+                idx = ((art_node48 *)n)->keys[i];
+                if (!idx)
+                    continue;
+                destroy_node(p.p3->children[idx - 1]);
             }
             break;
 
@@ -595,7 +625,7 @@ prefix_mismatch(const art_node *n, const unsigned char *key, int key_len, int de
 
 static void *
 recursive_insert(art_node *n, art_node **ref, const unsigned char *key, int key_len, void *value, int depth,
-                 int *old)
+                 int *old, int replace)
 {
     // If we are at a NULL node, inject a leaf
     if (!n) {
@@ -611,7 +641,8 @@ recursive_insert(art_node *n, art_node **ref, const unsigned char *key, int key_
         if (!leaf_matches(l, key, key_len, depth)) {
             *old          = 1;
             void *old_val = l->value;
-            l->value      = value;
+            if (replace)
+                l->value = value;
             return old_val;
         }
 
@@ -671,7 +702,7 @@ RECURSE_SEARCH:;
     // Find a child to recurse to
     art_node **child = find_child(n, key[depth]);
     if (child) {
-        return recursive_insert(*child, child, key, key_len, value, depth + 1, old);
+        return recursive_insert(*child, child, key, key_len, value, depth + 1, old, replace);
     }
 
     // No child, node goes within us
@@ -681,19 +712,38 @@ RECURSE_SEARCH:;
 }
 
 /**
- * Inserts a new value into the ART tree
- * @arg t The tree
- * @arg key The key
- * @arg key_len The length of the key
- * @arg value Opaque value.
- * @return NULL if the item was newly inserted, otherwise
+ * inserts a new value into the art tree
+ * @arg t the tree
+ * @arg key the key
+ * @arg key_len the length of the key
+ * @arg value opaque value.
+ * @return null if the item was newly inserted, otherwise
  * the old value pointer is returned.
  */
 void *
 art_insert(art_tree *t, const unsigned char *key, int key_len, void *value)
 {
     int   old_val = 0;
-    void *old     = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val);
+    void *old     = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val, 1);
+    if (!old_val)
+        t->size++;
+    return old;
+}
+
+/**
+ * inserts a new value into the art tree (no replace)
+ * @arg t the tree
+ * @arg key the key
+ * @arg key_len the length of the key
+ * @arg value opaque value.
+ * @return null if the item was newly inserted, otherwise
+ * the old value pointer is returned.
+ */
+void *
+art_insert_no_replace(art_tree *t, const unsigned char *key, int key_len, void *value)
+{
+    int   old_val = 0;
+    void *old     = recursive_insert(t->root, &t->root, key, key_len, value, 0, &old_val, 0);
     if (!old_val)
         t->size++;
     return old;

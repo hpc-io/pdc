@@ -1,3 +1,30 @@
+//
+//  * Copyright (c) 2012, Armon Dadgar
+//  * All rights reserved.
+//  *
+//  * Redistribution and use in source and binary forms, with or without
+//  * modification, are permitted provided that the following conditions are met:
+//  *     - Redistributions of source code must retain the above copyright
+//  *       notice, this list of conditions and the following disclaimer.
+//  *     - Redistributions in binary form must reproduce the above copyright
+//  *       notice, this list of conditions and the following disclaimer in the
+//  *       documentation and/or other materials provided with the distribution.
+//  *     - Neither the name of the organization nor the
+//  *       names of its contributors may be used to endorse or promote products
+//  *       derived from this software without specific prior written permission.
+//  *
+//  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+//  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+//  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+//  * DISCLAIMED. IN NO EVENT SHALL ARMON DADGAR BE LIABLE FOR ANY
+//  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+//  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+//  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+//  * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+//  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+//  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+
 #include <stdint.h>
 #ifndef ART_H
 #define ART_H
@@ -24,12 +51,6 @@ extern "C" {
 #endif
 #endif
 
-#define TYPE_NUMERIC 0
-#define TYPE_DATE    1
-#define TYPE_TIME    2
-#define TYPE_STRING  3
-#define TYPE_CHAR    4
-
 typedef int (*art_callback)(void *data, const unsigned char *key, uint32_t key_len, void *value);
 
 /**
@@ -37,9 +58,9 @@ typedef int (*art_callback)(void *data, const unsigned char *key, uint32_t key_l
  * of all the various node sizes
  */
 typedef struct {
+    uint32_t      partial_len;
     uint8_t       type;
     uint8_t       num_children;
-    uint32_t      partial_len;
     unsigned char partial[MAX_PREFIX_LEN];
 } art_node;
 
@@ -137,15 +158,26 @@ art_size(art_tree *t)
 #endif
 
 /**
- * Inserts a new value into the ART tree
- * @arg t The tree
- * @arg key The key
- * @arg key_len The length of the key
- * @arg value Opaque value.
- * @return NULL if the item was newly inserted, otherwise
+ * inserts a new value into the art tree
+ * @arg t the tree
+ * @arg key the key
+ * @arg key_len the length of the key
+ * @arg value opaque value.
+ * @return null if the item was newly inserted, otherwise
  * the old value pointer is returned.
  */
 void *art_insert(art_tree *t, const unsigned char *key, int key_len, void *value);
+
+/**
+ * inserts a new value into the art tree (not replacing)
+ * @arg t the tree
+ * @arg key the key
+ * @arg key_len the length of the key
+ * @arg value opaque value.
+ * @return null if the item was newly inserted, otherwise
+ * the old value pointer is returned.
+ */
+void *art_insert_no_replace(art_tree *t, const unsigned char *key, int key_len, void *value);
 
 /**
  * Deletes a value from the ART tree

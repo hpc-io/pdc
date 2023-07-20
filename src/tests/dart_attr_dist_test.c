@@ -165,6 +165,7 @@ main(int argc, char *argv[])
 #endif
     for (i = 0; i < arr_len; i++) {
         if (i % size == rank) {
+            timer_start(&timer);
             char *key         = (char *)malloc(32);
             char *value       = (char *)malloc(32);
             char *exact_query = (char *)malloc(32);
@@ -175,8 +176,10 @@ main(int argc, char *argv[])
             int        rest_count1 = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
 
-            println("[Client_Side_Exact] Search '%s' and get %d results : %llu", key, rest_count1,
-                    out1[0][0]);
+            timer_pause(&timer);
+
+            println("[Client_Side_Exact] Search '%s' and get %d results : %llu within %.4f ms\n", key,
+                    rest_count1, out1[0][0], (double)timer_delta_ms(&timer));
         }
     }
 

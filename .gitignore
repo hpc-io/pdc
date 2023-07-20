@@ -10,6 +10,11 @@
 
 src/install
 
+# ignore vscode files
 .vscode
 
+# ignore macos files
+.DS_Store
+
+# ignore build dir
 build
