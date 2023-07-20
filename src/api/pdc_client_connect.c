@@ -8818,8 +8818,9 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     *n_res = set_num_entries(hashset);
     // println("num_ids = %d", num_ids);
     if (*n_res > 0) {
-        *out            = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
-        SetIterator itr = set_iterator(hashset);
+        *out = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+        SetIterator itr;
+        set_iterate(hashset, &itr);
         while (set_iter_has_more(&itr)) {
             uint64_t *id = (uint64_t *)set_iter_next(&itr);
             (*out)[i]    = *id;
