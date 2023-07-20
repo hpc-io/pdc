@@ -83,16 +83,16 @@ typedef void *SetValue;
  */
 
 struct _SetIterator {
-	Set *set;
-	SetEntry *next_entry;
-	unsigned int next_chain;
+    Set *        set;
+    SetEntry *   next_entry;
+    unsigned int next_chain;
 };
 
 /**
  * A null @ref SetValue.
  */
 
-#define SET_NULL ((void *) 0)
+#define SET_NULL ((void *)0)
 
 /**
  * Hash function.  Generates a hash key for values to be stored in a set.
@@ -261,4 +261,3 @@ SetValue set_iter_next(SetIterator *iterator);
 #endif
 
 #endif /* #ifndef PDC_SET_H */
-
