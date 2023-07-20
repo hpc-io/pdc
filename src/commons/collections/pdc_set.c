@@ -20,7 +20,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 #include <string.h>
-#include "set.h"
+#include "pdc_set.h"
 
 /* malloc() / free() testing */
 
