@@ -215,10 +215,12 @@ create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
 
     art_tree *art_value_prefix_tree = (art_tree *)*index;
 
-    int       len        = strlen((const char *)attr_value);
-    hashset_t obj_id_set = (hashset_t)art_search(art_value_prefix_tree, attr_value, len);
+    int  len        = strlen((const char *)attr_value);
+    Set *obj_id_set = (Set *)art_search(art_value_prefix_tree, attr_value, len);
     if (obj_id_set == NULL) {
-        obj_id_set = hashset_create();
+        obj_id_set = set_new(ui64_hash, ui64_equal);
+        set_register_free_function(obj_id_set, free);
+        set_insert(obj_id_set, data);
         art_insert(art_value_prefix_tree, attr_value, len, (void *)obj_id_set);
     }
 
@@ -314,8 +316,8 @@ delete_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
 
     art_tree *art_value_prefix_tree = (art_tree *)*index;
 
-    int       len        = strlen((const char *)attr_value);
-    hashset_t obj_id_set = (hashset_t)art_search(art_value_prefix_tree, attr_value, len);
+    int  len        = strlen((const char *)attr_value);
+    Set *obj_id_set = (Set *)art_search(art_value_prefix_tree, attr_value, len);
     if (obj_id_set == NULL) {
         println("The obj_id_set is NULL, there nothing more to delete.");
         if (art_size(art_value_prefix_tree) == 0) {
@@ -324,10 +326,10 @@ delete_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
         return ret;
     }
 
-    hashset_remove(obj_id_set, data);
-    if (hashset_num_items(obj_id_set) == 0) {
+    set_remove(obj_id_set, data);
+    if (set_num_entries(obj_id_set) == 0) {
         art_delete(art_value_prefix_tree, attr_value, len);
-        hashset_destroy(obj_id_set);
+        set_free(obj_id_set);
     }
     return ret;
 }
@@ -424,16 +426,15 @@ level_two_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
         }
     }
     if (value != NULL) {
-        hashset_t obj_id_set = (hashset_t)value;
-        int       idx        = 0;
-        int       count      = 0;
-        while (count <= obj_id_set->nitems && idx < obj_id_set->capacity) {
-            if (obj_id_set->items[idx] != 0) {
-                hashset_add(param->out, (void *)obj_id_set->items[idx]);
-                param->total_count = param->total_count + 1;
-                count++;
-            }
-            idx++;
+        Set *       obj_id_set = (Set *)value;
+        int         idx        = 0;
+        int         count      = 0;
+        SetIterator value_set_iter;
+        set_iterate(obj_id_set, &value_set_iter);
+        while (set_iter_has_more(&value_set_iter)) {
+            SetValue itemValue = set_iter_next(&value_set_iter);
+            set_insert(param->out, itemValue);
+            ++count;
         }
     }
     // println("Level two finish");
@@ -522,7 +523,8 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
 
     pdc_art_iterator_param_t *param = (pdc_art_iterator_param_t *)calloc(1, sizeof(pdc_art_iterator_param_t));
     param->query_str                = v_query;
-    param->out                      = hashset_create();
+    param->out                      = set_new(ui64_hash, ui64_equal);
+    set_register_free_function(param->out, free);
 
     timer_start(&index_timer);
 
@@ -578,23 +580,16 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
 
     uint32_t i = 0;
 
-    size_t num_ids = hashset_num_items(param->out);
-    if (num_ids > 0) {
-        *n_obj_ids_ptr = (uint64_t)num_ids;
-        // *n_obj_ids_ptr = (uint64_t)param->total_count;
-
-        *buf_ptrs = (uint64_t *)calloc(*n_obj_ids_ptr, sizeof(uint64_t));
-
-        i              = 0;
-        size_t itr_idx = 0;
-        while (i <= param->out->nitems && itr_idx < param->out->capacity) {
-            if (param->out->items[itr_idx] != 0) {
-                ((uint64_t *)(*buf_ptrs)[i])[0] = (uint64_t *)(param->out->items[itr_idx]);
-                i++;
-            }
-            itr_idx++;
-        }
+    *n_obj_ids_ptr = set_num_entries(param->out);
+    *buf_ptrs      = (uint64_t *)calloc(*n_obj_ids_ptr, sizeof(uint64_t));
+    SetIterator rst_iterator;
+    set_iterate(param->out, &rst_iterator);
+    while (set_iter_has_more(&rst_iterator)) {
+        SetValue val   = set_iter_next(&rst_iterator);
+        (*buf_ptrs)[i] = ((uint64_t *)val)[0];
+        i++;
     }
+    set_free(param->out);
 
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {

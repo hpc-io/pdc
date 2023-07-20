@@ -7,7 +7,9 @@
 #include "query_utils.h"
 #include "timer_utils.h"
 #include "art.h"
-#include "hashset.h"
+#include "pdc_set.h"
+#include "pdc_hash.h"
+#include "pdc_compare.h"
 #include "dart_core.h"
 #include "pdc_hash-table.h"
 
@@ -24,11 +26,11 @@ typedef struct {
 } key_index_leaf_content;
 
 typedef struct pdc_art_iterator_param {
-    char *    query_str;
-    char *    level_one_infix;
-    char *    level_two_infix;
-    uint32_t  total_count;
-    hashset_t out;
+    char *   query_str;
+    char *   level_one_infix;
+    char *   level_two_infix;
+    uint32_t total_count;
+    Set *    out;
 } pdc_art_iterator_param_t;
 
 /**
