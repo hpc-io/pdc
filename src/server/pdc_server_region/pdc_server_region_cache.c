@@ -1,9 +1,11 @@
 #include "pdc_server_region_cache.h"
 #include "pdc_timing.h"
 
+#define PDC_SERVER_CACHE
+
 #ifdef PDC_SERVER_CACHE
 
-#define MAX_CACHE_SIZE           34359738368
+#define MAX_CACHE_SIZE           34359738368 / 32
 #define PDC_CACHE_FLUSH_TIME_INT 30
 
 typedef struct pdc_region_cache {
@@ -61,9 +63,16 @@ PDC_region_server_cache_finalize()
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
 #endif
-    pthread_mutex_lock(&pdc_cache_mutex);
-    pdc_recycle_close_flag = 1;
-    pthread_mutex_unlock(&pdc_cache_mutex);
+    int cache_mutex_locked = pthread_mutex_trylock(&pdc_cache_mutex);
+    if (cache_mutex_locked) {
+        pdc_recycle_close_flag = 1;
+        pthread_mutex_unlock(&pdc_cache_mutex);
+    }
+
+    int cache_list_mutex_locked = pthread_mutex_trylock(&pdc_obj_cache_list_mutex);
+    if (cache_list_mutex_locked) {
+        pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+    }
     pthread_join(pdc_recycle_thread, NULL);
 
     PDC_region_cache_flush_all();
@@ -522,7 +531,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
         write_size *= region_info->size[1];
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
-
+    pthread_mutex_lock(&pdc_cache_mutex);
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
 
     obj_cache = NULL;
@@ -576,6 +585,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
                                   region_info->size, region_info->ndim, unit);
     }
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+    pthread_mutex_unlock(&pdc_cache_mutex);
 
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 #ifdef PDC_TIMING
@@ -801,6 +811,7 @@ int
 PDC_region_cache_flush_all()
 {
     pdc_obj_cache *obj_cache_iter, *obj_cache_temp;
+    pthread_mutex_lock(&pdc_cache_mutex);
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
 
     obj_cache_iter = obj_cache_list;
@@ -816,6 +827,7 @@ PDC_region_cache_flush_all()
     }
     obj_cache_list = NULL;
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+    pthread_mutex_unlock(&pdc_cache_mutex);
     return 0;
 }
 
@@ -889,9 +901,11 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
     double start = MPI_Wtime();
 #endif
     // PDC_Server_data_read_from2(obj_id, region_info, buf, unit);
+    pthread_mutex_lock(&pdc_cache_mutex);
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
     PDC_region_fetch(obj_id, obj_ndim, obj_dims, region_info, buf, unit);
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+    pthread_mutex_unlock(&pdc_cache_mutex);
 
 #ifdef PDC_TIMING
     pdc_server_timings->PDCcache_read += MPI_Wtime() - start;
