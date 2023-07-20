@@ -8676,7 +8676,6 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     int res_id = 0;
     for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
         if (lookup_args.is_id == 1) {
-            lookup_args.obj_ids[res_id];
             set_insert(*hashset, (void *)&(lookup_args.obj_ids[res_id]));
         }
         else {
