@@ -220,11 +220,11 @@ create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
     if (obj_id_set == NULL) {
         obj_id_set = set_new(ui64_hash, ui64_equal);
         set_register_free_function(obj_id_set, free);
-        set_insert(obj_id_set, data);
+
         art_insert(art_value_prefix_tree, attr_value, len, (void *)obj_id_set);
     }
 
-    int indexed = hashset_add(obj_id_set, data);
+    int indexed = set_insert(obj_id_set, data);
 
     if (indexed == -1) {
         return FAIL;
@@ -472,8 +472,8 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
             case PATTERN_EXACT:
                 tok = secondary_query;
                 if (leafcnt->extra_prefix_index != NULL) {
-                    hashset_t obj_id_set =
-                        (hashset_t)art_search(leafcnt->extra_prefix_index, (unsigned char *)tok, strlen(tok));
+                    Set *obj_id_set =
+                        (Set *)art_search(leafcnt->extra_prefix_index, (unsigned char *)tok, strlen(tok));
                     if (obj_id_set != NULL) {
                         level_two_art_callback((void *)param, (unsigned char *)tok, strlen(tok),
                                                (void *)obj_id_set);
