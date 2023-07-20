@@ -64,40 +64,36 @@ main(int argc, char **argv)
     println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, data);
 
     // This is for testing exact search
-    char *     exact_query = "abcd=1234";
-    uint64_t **out1;
-    int        rest_count1 = 0;
+    char *    exact_query = "abcd=1234";
+    uint64_t *out1;
+    int       rest_count1 = 0;
     PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
 
-    println("[Client_Side_Exact] Search '%s' and get %d results : %llu", exact_query, rest_count1,
-            out1[0][0]);
+    println("[Client_Side_Exact] Search '%s' and get %d results : %llu", exact_query, rest_count1, out1[0]);
 
     // This function test is for testing the prefix search
-    char *     prefix_query = "ab*=12*";
-    uint64_t **out2;
-    int        rest_count2 = 0;
+    char *    prefix_query = "ab*=12*";
+    uint64_t *out2;
+    int       rest_count2 = 0;
     PDC_Client_search_obj_ref_through_dart(hash_algo, prefix_query, ref_type, &rest_count2, &out2);
 
-    println("[Client_Side_Prefix] Search '%s' and get %d results : %llu", prefix_query, rest_count2,
-            out2[0][0]);
+    println("[Client_Side_Prefix] Search '%s' and get %d results : %llu", prefix_query, rest_count2, out2[0]);
 
     // This function test is for testing the suffix search.
-    char *     suffix_query = "*cd=*34";
-    uint64_t **out3;
-    int        rest_count3 = 0;
+    char *    suffix_query = "*cd=*34";
+    uint64_t *out3;
+    int       rest_count3 = 0;
     PDC_Client_search_obj_ref_through_dart(hash_algo, suffix_query, ref_type, &rest_count3, &out3);
 
-    println("[Client_Side_Suffix] Search '%s' and get %d results : %llu", suffix_query, rest_count3,
-            out3[0][0]);
+    println("[Client_Side_Suffix] Search '%s' and get %d results : %llu", suffix_query, rest_count3, out3[0]);
 
     // This is for testing infix search.
-    char *     infix_query = "*bc*=*23*";
-    uint64_t **out4;
-    int        rest_count4 = 0;
+    char *    infix_query = "*bc*=*23*";
+    uint64_t *out4;
+    int       rest_count4 = 0;
     PDC_Client_search_obj_ref_through_dart(hash_algo, infix_query, ref_type, &rest_count4, &out4);
 
-    println("[Client_Side_Infix] Search '%s' and get %d results : %llu", infix_query, rest_count4,
-            out4[0][0]);
+    println("[Client_Side_Infix] Search '%s' and get %d results : %llu", infix_query, rest_count4, out4[0]);
 
     // }
 

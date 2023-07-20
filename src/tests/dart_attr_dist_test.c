@@ -172,14 +172,14 @@ main(int argc, char *argv[])
             sprintf(key, "k%ld", i);
             sprintf(value, "v%ld", i);
             sprintf(exact_query, "%s=%s", key, value);
-            uint64_t **out1;
-            int        rest_count1 = 0;
+            uint64_t *out1;
+            int       rest_count1 = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
 
             timer_pause(&timer);
 
             println("[Client_Side_Exact] Search '%s' and get %d results : %llu within %.4f ms\n", key,
-                    rest_count1, out1[0][0], (double)timer_delta_ms(&timer));
+                    rest_count1, out1[0], (double)timer_delta_ms(&timer));
         }
     }
 

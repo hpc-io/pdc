@@ -324,8 +324,8 @@ main(int argc, char **argv)
             char *key  = query_input_list[i];
             char  query_str[100];
             sprintf(query_str, "%s=%s", key, key);
-            uint64_t **out;
-            int        rest_count = 0;
+            uint64_t *out;
+            int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);
             timer_pause(&detailed_timer);
             if (round == 1)
@@ -375,8 +375,8 @@ main(int argc, char **argv)
             }
             char query_str[80];
             sprintf(query_str, "%s*=%s*", key, key);
-            uint64_t **out;
-            int        rest_count = 0;
+            uint64_t *out;
+            int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);
             timer_pause(&detailed_timer);
             if (round == 1)
@@ -426,8 +426,8 @@ main(int argc, char **argv)
             }
             char query_str[80];
             sprintf(query_str, "*%s=*%s", key, key);
-            uint64_t **out;
-            int        rest_count = 0;
+            uint64_t *out;
+            int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);
             timer_pause(&detailed_timer);
             if (round == 1)
@@ -480,8 +480,8 @@ main(int argc, char **argv)
             }
             char query_str[80];
             sprintf(query_str, "*%s*=*%s*", key, key);
-            uint64_t **out;
-            int        rest_count = 0;
+            uint64_t *out;
+            int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);
             timer_pause(&detailed_timer);
             if (round == 1)

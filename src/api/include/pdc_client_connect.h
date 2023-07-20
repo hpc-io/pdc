@@ -33,6 +33,9 @@
 #include "mercury_request.h"
 #include "pdc_region.h"
 #include "dart_core.h"
+#include "pdc_set.h"
+#include "pdc_compare.h"
+#include "pdc_hash.h"
 
 extern int                      pdc_server_num_g;
 extern int                      pdc_client_mpi_rank_g;
@@ -183,7 +186,7 @@ struct client_genetic_lookup_args {
 struct _dart_perform_one_thread_param {
     int                           server_id;
     dart_perform_one_server_in_t *dart_in;
-    hashset_t *                   hashset;
+    Set *                         hashset;
 };
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)

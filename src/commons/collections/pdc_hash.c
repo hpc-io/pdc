@@ -15,6 +15,8 @@ int_hash(void *vlocation)
     return (unsigned int)*location;
 }
 
+/* Hash function for a pointer to a uint64_t integer */
+
 unsigned int
 ui64_hash(void *vlocation)
 {

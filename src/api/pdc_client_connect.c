@@ -8452,7 +8452,6 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
 
     // println("[Client_Side_Bulk]  Entering dart_perform_one_server_on_receive_cb. rank = %d",
     // pdc_client_mpi_rank_g);
-    /* printf("Entered metadata_query_bulk_cb()\n"); */
     client_lookup_args = (struct bulk_args_t *)callback_info->arg;
     // (client_lookup_args->n_meta) = (uint32_t *)malloc(sizeof(uint32_t));
     handle = callback_info->info.forward.handle;
@@ -8460,7 +8459,8 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     // Get output from server
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("==PDC_CLIENT[%d]: metadata_query_bulk_cb - error HG_Get_output\n", pdc_client_mpi_rank_g);
+        printf("==PDC_CLIENT[%d]: dart_perform_one_server_on_receive_cb - error HG_Get_output\n",
+               pdc_client_mpi_rank_g);
         // hg_atomic_set32(&bulk_transfer_done_g, 1);
         client_lookup_args->n_meta = 0;
         goto done;
@@ -8508,7 +8508,11 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
         recv_meta = (void *)malloc(sizeof(uint64_t) * n_meta);
     }
     else {
-        recv_meta = (void *)malloc(sizeof(pdc_metadata_t) * n_meta);
+        // throw an error
+        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please check "
+               "client_lookup_args->is_id\n",
+               pdc_client_mpi_rank_g);
+        goto done;
     }
 
     /* Create a new bulk handle to read the data */
@@ -8549,7 +8553,11 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
         client_lookup_args->obj_ids = bulk_args->obj_ids;
     }
     else {
-        client_lookup_args->meta_arr = bulk_args->meta_arr;
+        // throw an error
+        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please check "
+               "client_lookup_args->is_id\n",
+               pdc_client_mpi_rank_g);
+        goto done;
     }
     bulk_checked = 1;
 
@@ -8566,7 +8574,7 @@ done:
 }
 
 int
-dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in, hashset_t *hashset)
+dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in, Set **hashset)
 {
     int                ret_val = 0;
     hg_handle_t        dart_perform_one_server_handle;
@@ -8659,20 +8667,23 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     timer_start(&timer);
 
     if (hashset != NULL && (*hashset) == NULL) {
-        (*hashset) = hashset_create();
+        *hashset = set_new(ui64_hash, ui64_equal);
+        set_register_free_function(*hashset, free);
     }
 
     size_t out_size = 0;
     // println("*(lookup_args.n_meta) = %d", *(lookup_args.n_meta));
     int res_id = 0;
     for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
-        if (hashset != NULL && (*hashset) != NULL) {
-            if (lookup_args.is_id == 1) {
-                hashset_add(*hashset, (void *)&(lookup_args.obj_ids[res_id]));
-            }
-            else {
-                hashset_add(*hashset, (void *)(lookup_args.meta_arr[res_id]));
-            }
+        if (lookup_args.is_id == 1) {
+            lookup_args.obj_ids[res_id];
+            set_insert(*hashset, (void *)&(lookup_args.obj_ids[res_id]));
+        }
+        else {
+            // throw an error
+            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+                   "check client_lookup_args->is_id\n",
+                   pdc_client_mpi_rank_g);
         }
     }
     ret_val = lookup_args.n_meta;
@@ -8695,12 +8706,12 @@ void
 dart_perform_on_one_server_thread(void *thread_param)
 {
     struct _dart_perform_one_thread_param *param = (struct _dart_perform_one_thread_param *)thread_param;
-    dart_perform_on_one_server(param->server_id, param->dart_in, param->hashset);
+    dart_perform_on_one_server(param->server_id, param->dart_in, &(param->hashset));
 }
 
 perr_t
 PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_string,
-                                       dart_object_ref_type_t ref_type, int *n_res, uint64_t ***out)
+                                       dart_object_ref_type_t ref_type, int *n_res, uint64_t **out)
 {
     perr_t ret = FAIL;
 
@@ -8779,8 +8790,9 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     }
 
     // Prepare the hashset for collecting the result if needed.
-    int       i       = 0;
-    hashset_t hashset = hashset_create();
+    int  i       = 0;
+    Set *hashset = set_new(ui64_hash, ui64_equal);
+    set_register_free_function(hashset, free);
 
     for (i = 0; i < num_servers; i++) {
 
@@ -8788,11 +8800,11 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         // struct _dart_perform_one_thread_param *thread_param = (struct _dart_perform_one_thread_param
         // *)calloc(1, sizeof(struct _dart_perform_one_thread_param)); thread_param->server_id = serverId;
         // thread_param->dart_in = &input_param;
-        // thread_param->hashset = &hashset;
+        // thread_param->hashset = hashset;
         // thpool_add_work(query_pool, (void *)dart_perform_on_one_server_thread, (void *)thread_param);
 
         int dart_status = dart_perform_on_one_server(serverId, &input_param, &hashset);
-        if (omit_request == 1 && hashset_num_items(hashset) > 0) {
+        if (omit_request == 1 && set_num_entries(hashset) > 0) {
             break;
         }
 
@@ -8803,25 +8815,15 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // thpool_wait(query_pool);
 
     // Pick deduplicated result.
-    *n_res         = 0;
-    size_t num_ids = hashset_num_items(hashset);
+    *n_res = set_num_entries(hashset);
     // println("num_ids = %d", num_ids);
-    if (num_ids > 0) {
-        // println("num_ids = %d", num_ids);
-        *n_res = (int)num_ids;
-        *out   = (uint64_t **)calloc(*n_res, sizeof(uint64_t *));
-        for (i = 0; i < (*n_res); i++) {
-            (*out)[i] = (uint64_t *)calloc(1, sizeof(uint64_t));
-        }
-
-        i              = 0;
-        size_t itr_idx = 0;
-        while (i < hashset->nitems && itr_idx < hashset->capacity) {
-            if (hashset->items[itr_idx] != 0) {
-                ((*out)[i])[0] = hashset->items[itr_idx];
-                i++;
-            }
-            itr_idx++;
+    if (*n_res > 0) {
+        *out            = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+        SetIterator itr = set_iterator(hashset);
+        while (set_iter_has_more(&itr)) {
+            uint64_t *id = (uint64_t *)set_iter_next(&itr);
+            (*out)[i]    = *id;
+            i++;
         }
     }
     // done:

@@ -6441,41 +6441,9 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
         goto done;
     }
 
-    // FIXME: this may not be necessary. It should be okay to return a 1-D large buffer.
-    // n_buf = *n_obj_ids_ptr;
-
-    // buf_sizes = (size_t *)malloc((n_buf + 1) * sizeof(size_t));
-    // for (i = 0; i < *n_obj_ids_ptr; i++) {
-    //     buf_sizes[i] = sizeof(uint64_t);
-    // }
-
-    // TODO: free buf_sizes
-
-    // Note: it seems Mercury bulk transfer has issues if the total transfer size is less
-    //       than 3862 bytes in Eager Bulk mode, so need to add some padding data
-    /* pdc_metadata_t *padding; */
-    /* if (*n_obj_ids_ptr < 11) { */
-    /*     size_t padding_size; */
-    /*     /1* padding_size = (10 - *n_obj_ids_ptr) * sizeof(uint64_t); *1/ */
-    /*     padding_size = 5000 * sizeof(uint64_t); */
-    /*     padding = malloc(padding_size); */
-    /*     memcpy(padding, buf_ptrs[0], sizeof(uint64_t)); */
-    /*     buf_ptrs[*n_obj_ids_ptr] = padding; */
-    /*     buf_sizes[*n_obj_ids_ptr] = padding_size; */
-    /*     n_buf++; */
-    /* } */
-
-    // Fix when Mercury output in HG_Respond gets too large and cannot be transfered
-    // hg_set_output(): Output size exceeds NA expected message size
-
-    // printf("dart perform one bulk : %d of %ld\n", *n_obj_ids_ptr, ((uint64_t *)buf_ptrs[0])[0]);
-
-    uint64_t *large_serial_obj_id_buf = (uint64_t *)calloc((*n_obj_ids_ptr), sizeof(uint64_t));
-    for (i = 0; i < *n_obj_ids_ptr; i++) {
-        large_serial_obj_id_buf[i] = buf_ptrs[i][0];
-    }
-    buf_sizes[0] = sizeof(uint64_t) * (*n_obj_ids_ptr);
     n_buf        = 1;
+    buf_sizes    = (size_t *)calloc(n_buf, sizeof(size_t));
+    buf_sizes[0] = sizeof(uint64_t) * (*n_obj_ids_ptr);
 
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class_g, n_buf, (void **)buf_ptrs, (const hg_size_t *)buf_sizes,
