@@ -1495,7 +1495,7 @@ perr_t
 PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in   ATTRIBUTE(unused),
                                    dart_perform_one_server_out_t *out ATTRIBUTE(unused),
                                    uint64_t *n_obj_ids_ptr            ATTRIBUTE(unused),
-                                   uint64_t **buf_ptrs                ATTRIBUTE(unused))
+                                   uint64_t ***buf_ptrs               ATTRIBUTE(unused))
 {
     return SUCCEED;
 }
@@ -6415,11 +6415,12 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     dart_perform_one_server_in_t  in;
     dart_perform_one_server_out_t out;
 
-    hg_bulk_t bulk_handle = HG_BULK_NULL;
-    uint64_t *n_obj_ids_ptr, n_buf;
-    uint64_t *buf_ptr;
-    size_t *  buf_sizes;
-    uint32_t  i;
+    hg_bulk_t  bulk_handle = HG_BULK_NULL;
+    uint64_t * n_obj_ids_ptr;
+    uint64_t * n_buf;
+    uint64_t **buf_ptrs;
+    size_t *   buf_sizes;
+    uint32_t   i;
 
     FUNC_ENTER(NULL);
     // Extract input from handle
@@ -6427,26 +6428,26 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
 
     n_obj_ids_ptr = (uint64_t *)calloc(1, sizeof(uint64_t));
 
-    PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, &buf_ptr);
+    PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, &buf_ptrs);
     // printf("perform_server_cb. n_obj_ids_ptr on op_type = %d = %d\n", in.op_type ,*n_obj_ids_ptr);
     out.op_type = in.op_type;
     // printf("out.n_items= %d\n", out.n_items);
     // No result found
     if (*n_obj_ids_ptr == 0) {
-        // *n_obj_ids_ptr = 1;
-        // buf_ptrs[0]= (void*)0;
         out.bulk_handle = HG_BULK_NULL;
         out.ret         = 0;
         // printf("No object ids returned for the query\n");
         ret = HG_Respond(handle, NULL, NULL, &out);
         goto done;
     }
-    n_buf = *n_obj_ids_ptr;
 
-    buf_sizes = (size_t *)malloc((n_buf + 1) * sizeof(size_t));
-    for (i = 0; i < *n_obj_ids_ptr; i++) {
-        buf_sizes[i] = sizeof(uint64_t);
-    }
+    // FIXME: this may not be necessary. It should be okay to return a 1-D large buffer.
+    // n_buf = *n_obj_ids_ptr;
+
+    // buf_sizes = (size_t *)malloc((n_buf + 1) * sizeof(size_t));
+    // for (i = 0; i < *n_obj_ids_ptr; i++) {
+    //     buf_sizes[i] = sizeof(uint64_t);
+    // }
 
     // TODO: free buf_sizes
 
@@ -6469,17 +6470,12 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
 
     // printf("dart perform one bulk : %d of %ld\n", *n_obj_ids_ptr, ((uint64_t *)buf_ptrs[0])[0]);
 
-    uint64_t *large_serial_obj_id_buf;
-    if (*n_obj_ids_ptr > 80) {
-        large_serial_obj_id_buf = (uint64_t *)malloc(sizeof(uint64_t) * (*n_obj_ids_ptr));
-        for (i = 0; i < *n_obj_ids_ptr; i++) {
-            memcpy(&large_serial_obj_id_buf[i], buf_ptrs[i], sizeof(uint64_t));
-        }
-        buf_ptrs[0]  = large_serial_obj_id_buf;
-        buf_sizes[0] = sizeof(uint64_t) * (*n_obj_ids_ptr);
-        n_buf        = 1;
-        // printf("dart perform one bulk (over 80) : %ld\n", buf_ptrs[0][0]);
+    uint64_t *large_serial_obj_id_buf = (uint64_t *)calloc((*n_obj_ids_ptr), sizeof(uint64_t));
+    for (i = 0; i < *n_obj_ids_ptr; i++) {
+        large_serial_obj_id_buf[i] = buf_ptrs[i][0];
     }
+    buf_sizes[0] = sizeof(uint64_t) * (*n_obj_ids_ptr);
+    n_buf        = 1;
 
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class_g, n_buf, (void **)buf_ptrs, (const hg_size_t *)buf_sizes,
