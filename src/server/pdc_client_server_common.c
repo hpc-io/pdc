@@ -6417,7 +6417,7 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
 
     hg_bulk_t  bulk_handle = HG_BULK_NULL;
     uint64_t * n_obj_ids_ptr;
-    uint64_t * n_buf;
+    uint64_t   n_buf;
     uint64_t **buf_ptrs;
     size_t *   buf_sizes;
     uint32_t   i;
