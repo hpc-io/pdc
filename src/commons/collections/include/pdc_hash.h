@@ -4,8 +4,8 @@
  * Hash function for integer, pointer, and string.  See @ref xxx_hash.
  */
 
-#ifndef ALGORITHM_HASH_INT_H
-#define ALGORITHM_HASH_INT_H
+#ifndef PDC_HASH_H
+#define PDC_HASH_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,4 +62,4 @@ unsigned int string_nocase_hash(void *string);
 }
 #endif
 
-#endif /* #ifndef ALGORITHM_HASH_INT_H */
+#endif /* #ifndef PDC_HASH_H */
