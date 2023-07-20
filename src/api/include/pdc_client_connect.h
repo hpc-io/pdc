@@ -1048,7 +1048,7 @@ dart_server dart_retrieve_server_info_cb(uint32_t serverId);
  * \param out      [OUT]    Object IDs
  */
 perr_t PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_string,
-                                              dart_object_ref_type_t ref_type, int *n_res, uint64_t ***out);
+                                              dart_object_ref_type_t ref_type, int *n_res, uint64_t **out);
 
 /**
  * Delete the inverted mapping between value and data.
