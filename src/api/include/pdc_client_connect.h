@@ -33,7 +33,6 @@
 #include "mercury_request.h"
 #include "pdc_region.h"
 #include "dart_core.h"
-#include "hashset.h"
 
 extern int                      pdc_server_num_g;
 extern int                      pdc_client_mpi_rank_g;
