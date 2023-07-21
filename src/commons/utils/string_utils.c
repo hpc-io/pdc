@@ -101,23 +101,37 @@ subrstr(const char *str, int end)
 char *
 substring(const char *str, int start, int end)
 {
-    char *ret    = NULL;
-    int   lenstr = strlen(str);
-    if (str == NULL || lenstr <= 0) {
-        return ret;
-    }
-    if (end < 0) {
-        end = lenstr;
-    }
-    if (start < 0 || end > (lenstr + 1)) {
-        return ret;
+    // Check for invalid parameters
+    if (str == NULL || end < start || start < 0 || end < 0) {
+        return NULL;
     }
 
-    int len = end - start;
-    ret     = (char *)calloc(len, sizeof(char));
-    strncpy(ret, &str[start], len);
-    return ret;
+    // Length of the original string
+    int str_len = strlen(str);
+
+    // Adjust end if it is beyond the length of the string
+    if (end > str_len) {
+        end = str_len;
+    }
+
+    // Calculate the length of the substring
+    int substr_len = end - start;
+
+    // Allocate memory for the new string (including null-terminator)
+    char *substr = (char *)malloc((substr_len + 1) * sizeof(char));
+    if (substr == NULL) { // Check if malloc succeeded
+        return NULL;
+    }
+
+    // Copy the substring into the new string
+    memcpy(substr, &str[start], substr_len);
+
+    // Null-terminate the new string
+    substr[substr_len] = '\0';
+
+    return substr;
 }
+
 int
 indexOfStr(const char *str, char *tok)
 {
@@ -189,11 +203,22 @@ stderr_println(const char *format, ...)
 char *
 reverse_str(char *str)
 {
-    int   len = strlen(str);
-    char *rst = (char *)calloc(len + 1, sizeof(rst));
-    int   i   = 0;
-    for (i = 0; i < len; i++) {
-        rst[len - 1 - i] = str[i];
+    if (str == NULL) {
+        return NULL;
     }
-    return rst;
+
+    int   length   = strlen(str);
+    char *reversed = (char *)malloc(length + 1); // +1 for the null-terminator
+
+    if (reversed == NULL) {
+        return NULL; // Return NULL if memory allocation fails
+    }
+
+    for (int i = 0; i < length; i++) {
+        reversed[i] = str[length - 1 - i];
+    }
+
+    reversed[length] = '\0'; // Null-terminate the new string
+
+    return reversed;
 }
