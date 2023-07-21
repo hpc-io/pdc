@@ -8693,9 +8693,8 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
 
     timer_start(&timer);
 
-    if (hashset != NULL && (*hashset) == NULL) {
-        *hashset = set_new(ui64_hash, ui64_equal);
-        set_register_free_function(*hashset, free);
+    if (hashset == NULL || (*hashset) == NULL) {
+        printf("==PDC_CLIENT[%d] hashset is NULL, search result is not collected.\n", pdc_client_mpi_rank_g);
     }
 
     int res_id = 0;
