@@ -69,7 +69,17 @@ set(PDC_PACKAGE_TARNAME "${PDC_PACKAGE}")
 if(NOT CMAKE_PREFIX_PATH)
   set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
 endif()
-set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} $ENV{MERCURY_DIR})
+
+#------------------------------------------------------------------------------
+#  general cmake flags:
+#    -DCMAKE_INSTALL_PREFIX=/usr/local     -- the prefix for installing
+#    -DCMAKE_BUILD_TYPE=type               -- type can be Debug, Release, ...
+#    -DCMAKE_PREFIX_PATH=/dir              -- external packages
+#
+#     note that CMAKE_PREFIX_PATH can be a list of directories:
+#      -DCMAKE_PREFIX_PATH='/dir1;/dir2;/dir3'
+#------------------------------------------------------------------------------
+
 
 #------------------------------------------------------------------------------
 # Setup install and output Directories
@@ -104,6 +114,19 @@ endif()
 if(NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
+
+#------------------------------------------------------------------------------
+# Setup CMake Prefix Paths for searching external libraries.
+#------------------------------------------------------------------------------
+#     note that CMAKE_PREFIX_PATH can be a list of directories:
+#      -DCMAKE_PREFIX_PATH='/dir1;/dir2;/dir3'
+
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
+endif()
+# MERCURY
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} $ENV{MERCURY_DIR})
+# ANY Future external package goes here...
 
 #------------------------------------------------------------------------------
 # Setup CMake Environment
