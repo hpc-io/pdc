@@ -179,7 +179,7 @@ main(int argc, char *argv[])
             timer_pause(&timer);
 
             println("[Client_Side_Exact] Search '%s' and get %d results : %llu within %.4f ms\n", key,
-                    rest_count1, out1[0], (double)timer_delta_ms(&timer));
+                    rest_count1, out1[rest_count1 - 1], (double)timer_delta_ms(&timer));
         }
     }
 
