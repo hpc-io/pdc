@@ -279,17 +279,19 @@ metadata_index_create(char *attr_key, char *attr_value, uint64_t obj_locator, in
     perr_t      ret_value = FAIL;
     stopwatch_t timer;
     timer_start(&timer);
+    uint64_t *data = (uint64_t *)calloc(1, sizeof(uint64_t));
+    *data          = obj_locator;
 
     // if (index_type == DHT_FULL_HASH) {
     // FIXME: remember to check obj_locator type inside of this function below
-    //     create_hash_table_for_keyword(attr_key, attr_value, strlen(attr_key), (void *)&obj_locator);
+    //     create_hash_table_for_keyword(attr_key, attr_value, strlen(attr_key), (void *)data);
     // }
     // else if (index_type == DHT_INITIAL_HASH) {
     // FIXME: remember to check obj_locator type inside of this function below
-    //     create_hash_table_for_keyword(attr_key, attr_value, 1, (void *)&obj_locator);
+    //     create_hash_table_for_keyword(attr_key, attr_value, 1, (void *)data);
     // }
     // else if (index_type == DART_HASH) {
-    create_index_for_attr_name(attr_key, attr_value, (void *)&obj_locator);
+    create_index_for_attr_name(attr_key, attr_value, (void *)data);
     // }
     timer_pause(&timer);
     if (DART_SERVER_DEBUG) {
@@ -432,7 +434,9 @@ level_two_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
         SetIterator value_set_iter;
         set_iterate(obj_id_set, &value_set_iter);
         while (set_iter_has_more(&value_set_iter)) {
-            SetValue itemValue = set_iter_next(&value_set_iter);
+            uint64_t *item      = (uint64_t *)set_iter_next(&value_set_iter);
+            uint64_t *itemValue = (uint64_t *)calloc(1, sizeof(uint64_t));
+            *itemValue          = *item;
             set_insert(param->out, itemValue);
             ++count;
         }
