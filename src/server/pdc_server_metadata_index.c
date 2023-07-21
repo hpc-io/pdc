@@ -586,13 +586,13 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
 
     *n_obj_ids_ptr = set_num_entries(param->out);
     *buf_ptrs      = (uint64_t **)calloc(1, sizeof(uint64_t *));
-    *buf_ptrs[0]   = (uint64_t *)calloc(*n_obj_ids_ptr, sizeof(uint64_t));
+    (*buf_ptrs)[0] = (uint64_t *)calloc(*n_obj_ids_ptr, sizeof(uint64_t));
 
     SetIterator iter;
     set_iterate(param->out, &iter);
     while (set_iter_has_more(&iter)) {
-        uint64_t *item  = (uint64_t *)set_iter_next(&iter);
-        *buf_ptrs[0][i] = *item;
+        uint64_t *item    = (uint64_t *)set_iter_next(&iter);
+        (*buf_ptrs)[0][i] = *item;
         i++;
     }
     set_free(param->out);
