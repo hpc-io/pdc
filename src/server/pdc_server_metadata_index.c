@@ -512,7 +512,7 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
 }
 
 perr_t
-metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
+metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint64_t **buf_ptrs)
 {
 
     perr_t      result = SUCCEED;
@@ -583,14 +583,13 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     uint32_t i = 0;
 
     *n_obj_ids_ptr = set_num_entries(param->out);
-    *buf_ptrs      = (uint64_t **)calloc(1, sizeof(uint64_t *));
-    (*buf_ptrs)[0] = (uint64_t *)calloc(*n_obj_ids_ptr, sizeof(uint64_t));
+    *buf_ptrs      = (uint64_t *)calloc(*n_obj_ids_ptr, sizeof(uint64_t));
 
     SetIterator iter;
     set_iterate(param->out, &iter);
     while (set_iter_has_more(&iter)) {
-        uint64_t *item    = (uint64_t *)set_iter_next(&iter);
-        (*buf_ptrs)[0][i] = *item;
+        uint64_t *item = (uint64_t *)set_iter_next(&iter);
+        (*buf_ptrs)[i] = *item;
         i++;
     }
     set_free(param->out);
@@ -606,7 +605,7 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
 
 perr_t
 PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perform_one_server_out_t *out,
-                                   uint64_t *n_obj_ids_ptr, uint64_t ***buf_ptrs)
+                                   uint64_t *n_obj_ids_ptr, uint64_t **buf_ptrs)
 {
     perr_t                 result    = SUCCEED;
     dart_op_type_t         op_type   = in->op_type;

@@ -1495,7 +1495,7 @@ perr_t
 PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in   ATTRIBUTE(unused),
                                    dart_perform_one_server_out_t *out ATTRIBUTE(unused),
                                    uint64_t *n_obj_ids_ptr            ATTRIBUTE(unused),
-                                   uint64_t ***buf_ptrs               ATTRIBUTE(unused))
+                                   uint64_t **buf_ptrs                ATTRIBUTE(unused))
 {
     return SUCCEED;
 }
@@ -6430,8 +6430,9 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     HG_Get_input(handle, &in);
 
     n_obj_ids_ptr = (uint64_t *)calloc(1, sizeof(uint64_t));
+    buf_ptrs      = (uint64_t **)calloc(1, sizeof(uint64_t *));
 
-    PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, &buf_ptrs);
+    PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, buf_ptrs);
     // printf("perform_server_cb. n_obj_ids_ptr on op_type = %d = %d\n", in.op_type ,*n_obj_ids_ptr);
     out.op_type = in.op_type;
     // printf("out.n_items= %d\n", out.n_items);
