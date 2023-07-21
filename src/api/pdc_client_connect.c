@@ -1034,7 +1034,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     uint32_t            actual_cnt;
     pdc_metadata_t *    meta_ptr;
     uint64_t *          u64_arr_ptr;
-    unsigned int        bulk_sgnum;
+    uint32_t            bulk_sgnum;
 
     FUNC_ENTER(NULL);
 
@@ -1050,7 +1050,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
     if (hg_cb_info->ret == HG_SUCCESS) {
         if (bulk_args->is_id == 1) {
-            HG_Bulk_get_segment_count(local_bulk_handle, &bulk_sgnum);
+            bulk_sgnum    = HG_Bulk_get_segment_count(local_bulk_handle);
             ids_buf       = (void **)calloc(sizeof(void *), bulk_sgnum);
             ids_buf_sizes = (uint64_t *)calloc(sizeof(uint64_t), bulk_sgnum);
             HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, bulk_sgnum, ids_buf,
