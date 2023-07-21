@@ -1,11 +1,9 @@
 #include "pdc_server_region_cache.h"
 #include "pdc_timing.h"
 
-#define PDC_SERVER_CACHE
-
 #ifdef PDC_SERVER_CACHE
 
-#define MAX_CACHE_SIZE           34359738368 / 32
+#define MAX_CACHE_SIZE           34359738368 / 8
 #define PDC_CACHE_FLUSH_TIME_INT 30
 
 typedef struct pdc_region_cache {
