@@ -8487,8 +8487,8 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     // println("[Client_Side_Bulk]  before determining size. rank = %d", pdc_client_mpi_rank_g);
     if (n_meta == 0) {
         // hg_atomic_set32(&bulk_transfer_done_g, 1);
-        client_lookup_args->meta_arr = NULL;
-        client_lookup_args->n_meta   = 0;
+        client_lookup_args->obj_ids = NULL;
+        client_lookup_args->n_meta  = 0;
         goto done;
     }
 
@@ -8505,7 +8505,8 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     /* printf("nbytes=%u\n", bulk_args->nbytes); */
 
     if (client_lookup_args->is_id == 1) {
-        recv_meta = (void *)malloc(sizeof(uint64_t) * n_meta);
+        recv_meta        = (void *)calloc(n_meta, sizeof(uint64_t));
+        bulk_args->is_id = 1;
     }
     else {
         // throw an error
@@ -8676,7 +8677,7 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     int res_id = 0;
     for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
         if (lookup_args.is_id == 1) {
-            set_insert(*hashset, (void *)&(lookup_args.obj_ids[res_id]));
+            set_insert(*hashset, &(lookup_args.obj_ids[res_id]));
         }
         else {
             // throw an error
