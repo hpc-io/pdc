@@ -8682,17 +8682,19 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
 
     size_t out_size = 0;
     // println("*(lookup_args.n_meta) = %d", *(lookup_args.n_meta));
-    int res_id = 0;
-    for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
-        if (lookup_args.is_id == 1) {
-            set_insert(*hashset, &(lookup_args.obj_ids[res_id]));
+    int       res_id     = 0;
+    uint64_t *obj_id_arr = (uint64_t *)calloc(lookup_args.n_meta, sizeof(uint64_t));
+    memcpy(obj_id_arr, lookup_args.obj_ids, lookup_args.n_meta * sizeof(uint64_t));
+    if (lookup_args.is_id == 1) {
+        for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
+            set_insert(*hashset, &(obj_id_arr[res_id]));
         }
-        else {
-            // throw an error
-            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
-                   "check client_lookup_args->is_id\n",
-                   pdc_client_mpi_rank_g);
-        }
+    }
+    else {
+        // throw an error
+        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+               "check client_lookup_args->is_id\n",
+               pdc_client_mpi_rank_g);
     }
     ret_val = lookup_args.n_meta;
 
@@ -8700,9 +8702,10 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d",
     //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
 
-    // HG_Destroy(dart_perform_one_server_handle);
-    // printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
-    // dart_in->attr_val);
+    HG_Destroy(dart_perform_one_server_handle);
+    free(lookup_args.obj_ids);
+// printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
+// dart_in->attr_val);
 done:
     // printf("done->ret_val, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type,
     // dart_in->attr_key, dart_in->attr_val);

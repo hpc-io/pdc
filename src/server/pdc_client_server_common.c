@@ -6458,6 +6458,9 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     out.ret         = *n_obj_ids_ptr;
     // printf("out.ret = %d\n", out.ret);
 
+    // FIXME: Memory leak? buf_ptrs is not freed
+    // TODO: To confirm how we can know the bulk data has been sent to client completely
+
     // Send bulk handle to client
     /* printf("query_partial_cb(): Sending bulk handle to client\n"); */
     /* fflush(stdout); */

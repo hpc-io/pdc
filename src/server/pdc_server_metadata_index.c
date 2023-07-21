@@ -433,11 +433,12 @@ level_two_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
         int         count      = 0;
         SetIterator value_set_iter;
         set_iterate(obj_id_set, &value_set_iter);
+        unsigned int n_obj_ids = set_num_entries(obj_id_set);
+        uint64_t *   itemValue = (uint64_t *)calloc(n_obj_ids, sizeof(uint64_t));
         while (set_iter_has_more(&value_set_iter)) {
-            uint64_t *item      = (uint64_t *)set_iter_next(&value_set_iter);
-            uint64_t *itemValue = (uint64_t *)calloc(1, sizeof(uint64_t));
-            *itemValue          = *item;
-            set_insert(param->out, itemValue);
+            uint64_t *item   = (uint64_t *)set_iter_next(&value_set_iter);
+            itemValue[count] = *item;
+            set_insert(param->out, &(itemValue[count]));
             ++count;
         }
     }
