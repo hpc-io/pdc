@@ -8680,14 +8680,12 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
         set_register_free_function(*hashset, free);
     }
 
-    size_t out_size = 0;
-    // println("*(lookup_args.n_meta) = %d", *(lookup_args.n_meta));
-    int       res_id     = 0;
-    uint64_t *obj_id_arr = (uint64_t *)calloc(lookup_args.n_meta, sizeof(uint64_t));
-    memcpy(obj_id_arr, lookup_args.obj_ids, lookup_args.n_meta * sizeof(uint64_t));
+    int res_id = 0;
     if (lookup_args.is_id == 1) {
         for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
-            set_insert(*hashset, &(obj_id_arr[res_id]));
+            uint64_t *obj_id = (uint64_t *)calloc(1, sizeof(uint64_t));
+            *obj_id          = lookup_args.obj_ids[res_id];
+            set_insert(*hashset, obj_id);
         }
     }
     else {
@@ -8838,7 +8836,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
             i++;
         }
     }
-    // set_free(hashset);
+    set_free(hashset);
     // done:
     // thpool_destroy(query_pool);
     return ret;
