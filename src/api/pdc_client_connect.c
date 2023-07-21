@@ -1027,11 +1027,14 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     hg_bulk_t           local_bulk_handle;
     uint32_t            i;
     void *              buf = NULL;
+    void **             ids_buf;
     uint32_t            n_meta;
     uint64_t            buf_sizes[2] = {0, 0};
+    uint64_t *          ids_buf_sizes;
     uint32_t            actual_cnt;
     pdc_metadata_t *    meta_ptr;
     uint64_t *          u64_arr_ptr;
+    unsigned int        bulk_sgnum;
 
     FUNC_ENTER(NULL);
 
@@ -1046,10 +1049,13 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     n_meta = bulk_args->n_meta;
 
     if (hg_cb_info->ret == HG_SUCCESS) {
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
-                       &actual_cnt);
         if (bulk_args->is_id == 1) {
-            u64_arr_ptr        = (uint64_t *)(buf);
+            HG_Bulk_get_segment_count(local_bulk_handle, &bulk_sgnum);
+            ids_buf       = (void **)calloc(sizeof(void *), bulk_sgnum);
+            ids_buf_sizes = (uint64_t *)calloc(sizeof(uint64_t), bulk_sgnum);
+            HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, bulk_sgnum, ids_buf,
+                           ids_buf_sizes, &actual_cnt);
+            u64_arr_ptr        = ((uint64_t **)(ids_buf))[0];
             bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
             for (i = 0; i < n_meta; i++) {
                 bulk_args->obj_ids[i] = *u64_arr_ptr;
@@ -1057,6 +1063,8 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
             }
         }
         else {
+            HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
+                           &actual_cnt);
             meta_ptr            = (pdc_metadata_t *)(buf);
             bulk_args->meta_arr = (pdc_metadata_t **)calloc(sizeof(pdc_metadata_t *), n_meta);
             for (i = 0; i < n_meta; i++) {
@@ -8517,8 +8525,8 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     }
 
     /* Create a new bulk handle to read the data */
-    HG_Bulk_create(hg_info->hg_class, 1, &recv_meta, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
-                   &local_bulk_handle);
+    HG_Bulk_create(hg_info->hg_class, 1, (void **)&recv_meta, (hg_size_t *)&bulk_args->nbytes,
+                   HG_BULK_READWRITE, &local_bulk_handle);
 
     // println("[Client_Side_Bulk]  after bulk create. rank = %d", pdc_client_mpi_rank_g);
 
