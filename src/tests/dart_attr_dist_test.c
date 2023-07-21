@@ -145,8 +145,8 @@ main(int argc, char *argv[])
     for (i = 0; i < arr_len; i++) {
         char *key   = (char *)malloc(32);
         char *value = (char *)malloc(32);
-        sprintf(key, "k%ld", i);
-        sprintf(value, "v%ld", i);
+        sprintf(key, "k%ld\0", i);
+        sprintf(value, "v%ld\0", i);
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
@@ -169,8 +169,8 @@ main(int argc, char *argv[])
             char *key         = (char *)malloc(32);
             char *value       = (char *)malloc(32);
             char *exact_query = (char *)malloc(32);
-            sprintf(key, "k%ld", i);
-            sprintf(value, "v%ld", i);
+            sprintf(key, "k%ld\0", i);
+            sprintf(value, "v%ld\0", i);
             sprintf(exact_query, "%s=%s", key, value);
             uint64_t *out1;
             int       rest_count1 = 0;
