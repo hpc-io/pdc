@@ -3,6 +3,7 @@
 //
 
 #include "string_utils.h"
+#include <regex.h>
 
 int
 startsWith(const char *str, const char *pre)
@@ -90,7 +91,7 @@ determine_pattern_type(const char *pattern)
 char *
 substr(const char *str, int start)
 {
-    return substring(str, start, -1);
+    return substring(str, start, strlen(str) + 1);
 }
 char *
 subrstr(const char *str, int end)
@@ -221,4 +222,78 @@ reverse_str(char *str)
     reversed[length] = '\0'; // Null-terminate the new string
 
     return reversed;
+}
+
+int
+split_string(const char *str, const char *delim, char ***result, int *result_len)
+{
+    if (str == NULL || delim == NULL || result == NULL || result_len == NULL) {
+        return -1;
+    }
+
+    regex_t regex;
+    int     reti;
+
+    // Compile regular expression
+    reti = regcomp(&regex, delim, 0);
+    if (reti) {
+        fprintf(stderr, "Could not compile regex\n");
+        return -1;
+    }
+
+    const char *tmp   = str;
+    int         count = 0;
+    regmatch_t  pmatch[1];
+
+    // Count matches
+    while (regexec(&regex, tmp, 1, pmatch, 0) != REG_NOMATCH) {
+        count++;
+        tmp += pmatch[0].rm_eo;
+    }
+
+    *result_len = count + 1;
+    *result     = (char **)malloc((*result_len) * sizeof(char *));
+    if (!*result) {
+        return -1; // Memory allocation failed
+    }
+
+    tmp               = str; // Reset tmp
+    const char *start = str;
+    int         i     = 0;
+
+    while (i < count && regexec(&regex, tmp, 1, pmatch, 0) != REG_NOMATCH) {
+        int len = pmatch[0].rm_so;
+
+        (*result)[i] = (char *)malloc((len + 1) * sizeof(char));
+        if (!(*result)[i]) {
+            for (int j = 0; j < i; j++) {
+                free((*result)[j]);
+            }
+            free(*result);
+            *result = NULL;
+            regfree(&regex);
+            return -1;
+        }
+
+        memcpy((*result)[i], start, len);
+        (*result)[i][len] = '\0';
+
+        tmp += pmatch[0].rm_eo;
+        start = tmp;
+        i++;
+    }
+
+    (*result)[i] = strdup(start);
+    if (!(*result)[i]) {
+        for (int j = 0; j < i; j++) {
+            free((*result)[j]);
+        }
+        free(*result);
+        *result = NULL;
+        regfree(&regex);
+        return -1;
+    }
+
+    regfree(&regex);
+    return *result_len;
 }

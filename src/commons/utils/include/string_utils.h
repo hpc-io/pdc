@@ -31,7 +31,7 @@ typedef struct {
 } string;
 
 /**
- * take the part after start position
+ * take the part starting from the start position
  * you need to free str after use.
  * @param str
  * @param start
@@ -167,5 +167,15 @@ int simple_matches(const char *str, const char *pattern);
  * @note remember to free the reversed string after use.
  */
 char *reverse_str(char *str);
+
+/**
+ * split a string into several parts according to the delimiter.
+ * @param str the string to be split
+ * @param delim the delimiter, which is a regular expression.
+ * @param result the result array
+ * @param result_len the length of the result array
+ * @return the number of parts, if -1, means error.
+ */
+int split_string(const char *str, const char *delim, char ***result, int *result_len);
 
 #endif // PDC_STRING_UTILS_H

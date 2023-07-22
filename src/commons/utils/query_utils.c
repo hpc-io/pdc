@@ -24,7 +24,6 @@ get_key(const char *kv_pair, char delim)
     if (idx < 0) {
         return ret;
     }
-
     return subrstr(kv_pair, idx);
 }
 
@@ -49,8 +48,7 @@ get_value(const char *kv_pair, char delim)
         return ret;
     }
 
-    ret = substr(kv_pair, idx + 1);
-    return ret;
+    return substr(kv_pair, idx + 1);
 }
 
 /**
