@@ -8615,16 +8615,16 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     stopwatch_t timer;
 
     // timer_start(&timer);
-    // perr_t srv_lookup_rst = server_lookup_connection(server_id, 2);
+    perr_t srv_lookup_rst = server_lookup_connection(server_id, 2);
     // timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 1] Time to lookup all connections is %ld microseconds for rank
     // %d",
     //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
 
-    // if (srv_lookup_rst == FAIL){
-    //     println("the server %d cannot be connected. ", server_id);
-    //     goto done;
-    // }
+    if (srv_lookup_rst == FAIL) {
+        println("the server %d cannot be connected. ", server_id);
+        goto done;
+    }
 
     timer_start(&timer);
 
@@ -8649,23 +8649,10 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
         HG_Destroy(dart_perform_one_server_handle);
         goto done;
     }
-    // printf("dart_perform_one_server_handle -> ret = %d, dart_in.op_type = %d, key = %s, val=%s\n",
-    // hg_ret, dart_in->op_type, dart_in->attr_key, dart_in->attr_val); if (dart_in->op_type != OP_INSERT
-    // && dart_in->op_type != OP_DELETE){
-    //     hg_atomic_set32(&bulk_transfer_done_g, 0);
-    // }
 
     // Wait for response from server
     work_todo_g = 1;
     PDC_Client_check_response(&send_context_g);
-
-    // while(1) {
-    //     if (hg_atomic_get32(&dart_response_done_g)){
-    //         break;
-    //     }
-    // }
-    // printf("PDC_Client_check_response -> response Checked, dart_in.op_type = %d, key = %s, val=%s\n",
-    // dart_in->op_type, dart_in->attr_key, dart_in->attr_val);
 
     timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 2] Time to finish an RPC call is %ld microseconds for rank %d",
@@ -8679,17 +8666,9 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
         goto done;
     }
-    // if (lookup_args.ret == 0 ) {
-    //     goto done;
-    // }
     if (lookup_args.n_meta == 0) {
         goto done;
     }
-
-    // We do not have the results ready yet, need to wait.
-    // while (1 && dart_in->op_type != OP_INSERT && dart_in->op_type != OP_DELETE) {
-    //     if (hg_atomic_get32(&bulk_transfer_done_g)) break;
-    // }
 
     timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 3] Time to finish an BULK is %ld microseconds for rank %d",
@@ -8755,27 +8734,30 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     char *         k_query = get_key(query_string, '=');
     char *         v_query = get_value(query_string, '=');
     char *         tok     = NULL;
+    char *         affix   = NULL;
     dart_op_type_t dart_op;
 
     pattern_type_t dart_query_type = determine_pattern_type(k_query);
     switch (dart_query_type) {
         case PATTERN_EXACT:
-            tok     = k_query;
+            tok     = strdup(k_query);
             dart_op = OP_EXACT_QUERY;
             break;
         case PATTERN_PREFIX:
-            tok     = subrstr(k_query, strlen(k_query) - 1);
+            affix   = subrstr(k_query, strlen(k_query) - 1);
+            tok     = strdup(affix);
             dart_op = OP_PREFIX_QUERY;
             break;
         case PATTERN_SUFFIX:
-            tok     = substr(k_query, 1);
-            tok     = reverse_str(tok);
+            affix   = substr(k_query, 1);
+            tok     = reverse_str(affix);
             dart_op = OP_SUFFIX_QUERY;
             break;
         case PATTERN_MIDDLE:
             // tok = (char *)calloc(strlen(k_query)-2, sizeof(char));
             // strncpy(tok, &k_query[1], strlen(k_query)-2);
-            tok     = substring(k_query, 1, strlen(k_query) - 1);
+            affix   = substring(k_query, 1, strlen(k_query) - 1);
+            tok     = strdup(affix);
             dart_op = OP_INFIX_QUERY;
             break;
         default:
@@ -8857,9 +8839,17 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
             i++;
         }
     }
-    // set_free(hashset);
+
     // done:
     // thpool_destroy(query_pool);
+    free(k_query);
+    free(v_query);
+    if (affix != NULL)
+        free(affix);
+    if (tok != NULL)
+        free(tok);
+    set_free(hashset);
+
     return ret;
 }
 
@@ -8882,13 +8872,14 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.obj_server_ref    = data;
     // TODO: see if timestamp can help
     // input_param.timestamp = get_timestamp_us();
-    input_param.timestamp = 1;
+    input_param.timestamp   = 1;
+    char *reversed_attr_val = reverse_str(attr_key);
 
     int r = 0;
     for (r = 0; r < 2; r++) {
         // TODO: we may parallelize this for loop in order to insert both regular key and reversed key
         // at the same time.
-        char *dart_key       = r == 0 ? attr_key : reverse_str(attr_key);
+        char *dart_key       = r == 0 ? attr_key : reversed_attr_val;
         input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
         uint64_t *server_id_arr;
         int       num_servers = 0;
@@ -8911,6 +8902,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         }
     }
     // done:
+    free(reversed_attr_val);
     return ret_value;
 }
 
@@ -8933,13 +8925,14 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.obj_server_ref    = data;
     // TODO: see if timestamp can help
     // input_param.timestamp = get_timestamp_us();
-    input_param.timestamp = 1;
+    input_param.timestamp   = 1;
+    char *reversed_attr_str = reverse_str(attr_key);
 
     int r = 0;
     for (r = 0; r < 2; r++) {
         // TODO: we may parallelize this for loop in order to insert both regular key and reversed key
         // at the same time.
-        char *dart_key       = r == 0 ? attr_key : reverse_str(attr_key);
+        char *dart_key       = r == 0 ? attr_key : reversed_attr_str;
         input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
         uint64_t *server_id_arr;
         int       num_servers = 0;
@@ -8964,6 +8957,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         // printf("r loop at r = %d\n", r);
     }
     // done:
+    free(reversed_attr_str);
     return ret_value;
 }
 
