@@ -8697,11 +8697,12 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
                pdc_client_mpi_rank_g);
     }
     ret_val = lookup_args.n_meta;
-    free(lookup_args.obj_ids);
 
     timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d",
     //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
+    free(lookup_args.obj_ids);
+    HG_Destroy(dart_perform_one_server_handle);
 
 // printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
 // dart_in->attr_val);
@@ -8709,7 +8710,6 @@ done:
     // printf("done->ret_val, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type,
     // dart_in->attr_key, dart_in->attr_val);
     // println("===================================\n===============================");
-    HG_Destroy(dart_perform_one_server_handle);
 
     return ret_val;
 }
