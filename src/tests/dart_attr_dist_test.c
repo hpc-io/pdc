@@ -83,6 +83,13 @@ main(int argc, char *argv[])
     size_t   total_num_obj    = 10000;
     size_t   total_num_attr   = 10;
 
+    char key[32];
+    char value[32];
+    char exact_query[48];
+    char prefix_query[48];
+    char suffix_query[48];
+    char infix_query[48];
+
     // jl_module_list_t modules = {.julia_modules = (char *[]){JULIA_HELPER_NAME}, .num_modules = 1};
     // init_julia(&modules);
 
@@ -143,8 +150,6 @@ main(int argc, char *argv[])
     stopwatch_t timer;
     timer_start(&timer);
     for (i = 0; i < arr_len; i++) {
-        char *key   = (char *)malloc(32);
-        char *value = (char *)malloc(32);
         sprintf(key, "k%ld\0", i);
         sprintf(value, "v%ld\0", i);
         for (j = 0; j < attr_2_obj_array[i]; j++) {
@@ -166,9 +171,6 @@ main(int argc, char *argv[])
     for (i = 0; i < arr_len; i++) {
         if (i % size == rank) {
             timer_start(&timer);
-            char *key         = (char *)malloc(32);
-            char *value       = (char *)malloc(32);
-            char *exact_query = (char *)malloc(32);
             sprintf(key, "k%ld\0", i);
             sprintf(value, "v%ld\0", i);
             sprintf(exact_query, "%s=%s", key, value);
