@@ -194,10 +194,10 @@ main(int argc, char *argv[])
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
 
-        // free attr_2_obj_array
-        // free(attr_2_obj_array);
+    // free attr_2_obj_array
+    free(attr_2_obj_array);
 
-        // close_julia();
+    // close_julia();
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

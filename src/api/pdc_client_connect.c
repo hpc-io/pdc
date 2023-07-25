@@ -8818,7 +8818,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         // thread_param->hashset = hashset;
         // thpool_add_work(query_pool, (void *)dart_perform_on_one_server_thread, (void *)thread_param);
 
-        int dart_status = dart_perform_on_one_server(serverId, &input_param, &hashset);
+        // int dart_status = dart_perform_on_one_server(serverId, &input_param, &hashset);
         if (omit_request == 1 && set_num_entries(hashset) > 0) {
             break;
         }
