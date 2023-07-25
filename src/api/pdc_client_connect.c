@@ -8824,9 +8824,9 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         for (i = 0; i < *n_res; i++) {
             out[0][i] = set_arr[i][0];
         }
-        set_free(hashset);
+        free(set_arr);
     }
-    free(set_arr);
+    set_free(hashset);
 
     // done:
     // thpool_destroy(query_pool);
