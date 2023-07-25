@@ -8580,8 +8580,8 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     /* printf("Print metadata after PDC_Client_check_bulk()\n"); */
     /* PDC_print_metadata(bulk_args->meta_arr[0]); */
     if (client_lookup_args->is_id == 1) {
-        print bulk_args->obj_ids printf(
-            "==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret);
+        // print bulk_args->obj_ids
+        printf("==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret);
         printf("==PDC_CLIENT: Received response from server with bulk handle, n_meta=%d\n",
                client_lookup_args->n_meta);
         printf("==PDC_CLIENT: Received response from server with bulk handle, n_bytes=%d\n",
