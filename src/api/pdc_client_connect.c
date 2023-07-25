@@ -8845,13 +8845,13 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
 
     // done:
     // thpool_destroy(query_pool);
-    free(k_query);
-    free(v_query);
-    if (affix != NULL)
-        free(affix);
-    if (tok != NULL)
-        free(tok);
-    set_free(hashset);
+    // free(k_query);
+    // free(v_query);
+    // if (affix != NULL)
+    //     free(affix);
+    // if (tok != NULL)
+    //     free(tok);
+    // set_free(hashset);
 
     return ret;
 }
