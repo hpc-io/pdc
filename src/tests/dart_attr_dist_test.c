@@ -180,8 +180,8 @@ main(int argc, char *argv[])
 
             timer_pause(&timer);
 
-            println("[Client_Side_Exact] Search '%s' and get %d results : %llu within %.4f ms\n", key,
-                    rest_count1, out1[rest_count1 - 1], (double)timer_delta_ms(&timer));
+            // println("[Client_Side_Exact] Search '%s' and get %d results : %llu within %.4f ms\n", key,
+            //         rest_count1, out1[rest_count1 - 1], (double)timer_delta_ms(&timer));
         }
     }
 
@@ -194,10 +194,10 @@ main(int argc, char *argv[])
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
 
-    // free attr_2_obj_array
-    free(attr_2_obj_array);
+        // free attr_2_obj_array
+        // free(attr_2_obj_array);
 
-    // close_julia();
+        // close_julia();
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
