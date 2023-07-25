@@ -8573,37 +8573,6 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
             break;
         }
     }
-    /* printf("Print metadata after PDC_Client_check_bulk()\n"); */
-    /* PDC_print_metadata(bulk_args->meta_arr[0]); */
-    if (client_lookup_args->is_id == 1) {
-        // print bulk_args->obj_ids
-        printf("==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret);
-        printf("==PDC_CLIENT: Received response from server with bulk handle, n_meta=%d\n",
-               client_lookup_args->n_meta);
-        printf("==PDC_CLIENT: Received response from server with bulk handle, n_bytes=%d\n",
-               client_lookup_args->nbytes);
-        printf("==PDC_CLIENT: Received response from server with bulk handle, obj_ids[0]=%ld\n",
-               client_lookup_args->obj_ids[0]);
-        printf("==PDC_CLIENT: Received response from server with bulk handle, obj_ids[1]=%ld\n",
-               client_lookup_args->obj_ids[1]);
-        fflush(stdout);
-
-        // client_lookup_args->obj_ids = (uint64_t *)malloc(n_meta * sizeof(uint64_t));
-        // client_lookup_args->obj_ids = bulk_args->obj_ids;
-        // // memcpy(client_lookup_args->obj_ids, bulk_args->obj_ids, n_meta * sizeof(uint64_t));
-        // if (hg_atomic_get32(&bulk_transfer_done_g)) {
-        //     hg_atomic_set32(&dart_response_done_g, 1);
-        //     // free(bulk_args->obj_ids);
-        //     // free(bulk_args);
-        // }
-    }
-    else {
-        // throw an error
-        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please check "
-               "client_lookup_args->is_id\n",
-               pdc_client_mpi_rank_g);
-        goto done;
-    }
 
 done:
     // println("[Client_Side_Bulk]  finish bulk. rank = %d", pdc_client_mpi_rank_g);
@@ -8709,7 +8678,6 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d",
     //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
-    // free(lookup_args.obj_ids);
     HG_Destroy(dart_perform_one_server_handle);
 
 // printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
