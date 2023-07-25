@@ -8859,7 +8859,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         free(affix);
     if (tok != NULL)
         free(tok);
-    set_free(hashset);
+    // set_free(hashset);
 
     return ret;
 }
