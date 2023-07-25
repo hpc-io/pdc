@@ -8581,7 +8581,7 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     /* PDC_print_metadata(bulk_args->meta_arr[0]); */
     if (client_lookup_args->is_id == 1) {
         client_lookup_args->obj_ids = (uint64_t *)malloc(n_meta * sizeof(uint64_t));
-        // memcpy(client_lookup_args->obj_ids, bulk_args->obj_ids, n_meta * sizeof(uint64_t));
+        memcpy(client_lookup_args->obj_ids, bulk_args->obj_ids, n_meta * sizeof(uint64_t));
         if (hg_atomic_get32(&bulk_transfer_done_g)) {
             hg_atomic_set32(&dart_response_done_g, 1);
             free(bulk_args->obj_ids);
