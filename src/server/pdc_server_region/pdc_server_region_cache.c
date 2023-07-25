@@ -470,8 +470,8 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
 #ifdef ENABLE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
 #endif
-        printf("==PDC_SERVER[%d]: server cache full %.1f / %.1f MB, will flush to storage\n", 
-                server_rank, total_cache_size/1048576.0, maximum_cache_size/1048576.0);
+        printf("==PDC_SERVER[%d]: server cache full %.1f / %.1f MB, will flush to storage\n", server_rank,
+               total_cache_size / 1048576.0, maximum_cache_size / 1048576.0);
         PDC_region_cache_flush_all();
     }
 
@@ -873,10 +873,9 @@ PDC_region_cache_clock_cycle(void *ptr)
                 gettimeofday(&finish_time, NULL);
                 elapsed_time = finish_time.tv_sec - current_time.tv_sec +
                                (finish_time.tv_usec - current_time.tv_usec) / 1000000.0;
-                fprintf(
-                    stderr,
-                    "==PDC_SERVER[%d]: flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
-                    server_rank, nflush, flush_frequency_s, elapsed_time);
+                fprintf(stderr,
+                        "==PDC_SERVER[%d]: flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
+                        server_rank, nflush, flush_frequency_s, elapsed_time);
             }
             pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
         }
