@@ -171,12 +171,12 @@ main(int argc, char *argv[])
     for (i = 0; i < arr_len; i++) {
         if (i % size == rank) {
             timer_start(&timer);
-            // sprintf(key, "k%ld", i);
-            // sprintf(value, "v%ld", i);
-            // sprintf(exact_query, "%s=%s", key, value);
+            sprintf(key, "k%ld", i);
+            sprintf(value, "v%ld", i);
+            sprintf(exact_query, "%s=%s", key, value);
             uint64_t *out1;
             int       rest_count1 = 0;
-            PDC_Client_search_obj_ref_through_dart(hash_algo, "k5=v5", ref_type, &rest_count1, &out1);
+            PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
 
             timer_pause(&timer);
 
