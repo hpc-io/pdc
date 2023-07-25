@@ -8581,7 +8581,12 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     /* PDC_print_metadata(bulk_args->meta_arr[0]); */
     if (client_lookup_args->is_id == 1) {
         client_lookup_args->obj_ids = (uint64_t *)malloc(n_meta * sizeof(uint64_t));
-        memcpy(client_lookup_args->obj_ids, bulk_args->obj_ids, n_meta * sizeof(uint64_t));
+        // memcpy(client_lookup_args->obj_ids, bulk_args->obj_ids, n_meta * sizeof(uint64_t));
+        if (hg_atomic_get32(&bulk_transfer_done_g)) {
+            hg_atomic_set32(&dart_response_done_g, 1);
+            free(bulk_args->obj_ids);
+            free(bulk_args);
+        }
     }
     else {
         // throw an error
@@ -8596,12 +8601,6 @@ done:
     work_todo_g--;
     HG_Free_output(handle, &output);
     HG_Destroy(handle);
-
-    if (hg_atomic_get32(&bulk_transfer_done_g)) {
-        hg_atomic_set32(&dart_response_done_g, 1);
-        free(bulk_args->obj_ids);
-        free(bulk_args);
-    }
 
     FUNC_LEAVE(ret_value);
 }
@@ -8701,7 +8700,7 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d",
     //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
-    free(lookup_args.obj_ids);
+    // free(lookup_args.obj_ids);
     HG_Destroy(dart_perform_one_server_handle);
 
 // printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
@@ -8818,7 +8817,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         // thread_param->hashset = hashset;
         // thpool_add_work(query_pool, (void *)dart_perform_on_one_server_thread, (void *)thread_param);
 
-        // int dart_status = dart_perform_on_one_server(serverId, &input_param, &hashset);
+        int dart_status = dart_perform_on_one_server(serverId, &input_param, &hashset);
         if (omit_request == 1 && set_num_entries(hashset) > 0) {
             break;
         }
