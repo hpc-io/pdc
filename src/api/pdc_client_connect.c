@@ -8586,6 +8586,7 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
                client_lookup_args->obj_ids[0]);
         printf("==PDC_CLIENT: Received response from server with bulk handle, obj_ids[1]=%ld\n",
                client_lookup_args->obj_ids[1]);
+        fflush(stdout);
 
         // client_lookup_args->obj_ids = (uint64_t *)malloc(n_meta * sizeof(uint64_t));
         // client_lookup_args->obj_ids = bulk_args->obj_ids;
