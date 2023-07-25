@@ -186,7 +186,7 @@ struct client_genetic_lookup_args {
 struct _dart_perform_one_thread_param {
     int                           server_id;
     dart_perform_one_server_in_t *dart_in;
-    uint64 **                     dart_out;
+    uint64_t **                   dart_out;
     size_t *                      dart_out_size;
 };
 

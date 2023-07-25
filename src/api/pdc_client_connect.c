@@ -8640,10 +8640,11 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
 
     timer_start(&timer);
 
-    if (hashset == NULL) {
+    if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
         goto done;
     }
-    if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
+    if (out == NULL || out_size == NULL) {
+        printf("==PDC_CLIENT[%d] out is NULL, search result is not collected.\n", pdc_client_mpi_rank_g);
         goto done;
     }
     if (lookup_args.n_meta == 0) {
@@ -8655,10 +8656,6 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
     //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
 
     timer_start(&timer);
-
-    if (hashset == NULL || (*hashset) == NULL) {
-        printf("==PDC_CLIENT[%d] hashset is NULL, search result is not collected.\n", pdc_client_mpi_rank_g);
-    }
 
     int res_id = 0;
     if (lookup_args.is_id == 1) {
@@ -8827,8 +8824,8 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         for (i = 0; i < *n_res; i++) {
             out[0][i] = set_arr[i][0];
         }
+        set_free(hashset);
     }
-    set_free(hashset);
     free(set_arr);
 
     // done:
@@ -8888,7 +8885,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
 
         for (i = 0; i < num_servers; i++) {
             int serverId    = server_id_arr[i];
-            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL);
+            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL, NULL);
         }
     }
     // done:
@@ -8941,7 +8938,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         int i = 0;
         for (i = 0; i < num_servers; i++) {
             int serverId    = server_id_arr[i];
-            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL);
+            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL, NULL);
             // printf("i loop on server i = %d in r loop of r=%d\n", i, r);
         }
         // printf("r loop at r = %d\n", r);
