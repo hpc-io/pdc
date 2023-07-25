@@ -186,7 +186,8 @@ struct client_genetic_lookup_args {
 struct _dart_perform_one_thread_param {
     int                           server_id;
     dart_perform_one_server_in_t *dart_in;
-    Set *                         hashset;
+    uint64 **                     dart_out;
+    size_t *                      dart_out_size;
 };
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)

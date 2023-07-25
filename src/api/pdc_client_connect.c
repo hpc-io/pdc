@@ -8584,7 +8584,8 @@ done:
 }
 
 int
-dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in, Set **hashset)
+dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in, uint64_t **out,
+                           size_t *out_size)
 {
     int                ret_val = 0;
     hg_handle_t        dart_perform_one_server_handle;
@@ -8661,11 +8662,7 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
 
     int res_id = 0;
     if (lookup_args.is_id == 1) {
-        for (res_id = 0; res_id < lookup_args.n_meta; res_id++) {
-            uint64_t *obj_id = (uint64_t *)calloc(1, sizeof(uint64_t));
-            *obj_id          = lookup_args.obj_ids[res_id];
-            set_insert(*hashset, obj_id);
-        }
+        out[0] = lookup_args.obj_ids;
     }
     else {
         // throw an error
@@ -8673,7 +8670,8 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
                "check client_lookup_args->is_id\n",
                pdc_client_mpi_rank_g);
     }
-    ret_val = lookup_args.n_meta;
+    ret_val   = lookup_args.n_meta;
+    *out_size = lookup_args.n_meta;
 
     timer_pause(&timer);
     // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d",
@@ -8694,7 +8692,7 @@ void
 dart_perform_on_one_server_thread(void *thread_param)
 {
     struct _dart_perform_one_thread_param *param = (struct _dart_perform_one_thread_param *)thread_param;
-    dart_perform_on_one_server(param->server_id, param->dart_in, &(param->hashset));
+    dart_perform_on_one_server(param->server_id, param->dart_in, param->dart_out, param->dart_out_size);
 }
 
 perr_t
@@ -8746,7 +8744,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         return ret;
     }
 
-    *out = NULL;
+    out[0] = NULL;
 
     dart_perform_one_server_in_t input_param;
     input_param.op_type      = dart_query_type;
@@ -8785,19 +8783,25 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     Set *hashset = set_new(ui64_hash, ui64_equal);
     set_register_free_function(hashset, free);
 
+    uint64_t **dart_out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    size_t *   dart_out_size = (size_t *)calloc(num_servers, sizeof(size_t));
+
     for (i = 0; i < num_servers; i++) {
 
         int serverId = server_id_arr[i];
         // struct _dart_perform_one_thread_param *thread_param = (struct _dart_perform_one_thread_param
         // *)calloc(1, sizeof(struct _dart_perform_one_thread_param)); thread_param->server_id = serverId;
         // thread_param->dart_in = &input_param;
-        // thread_param->hashset = hashset;
+        // thread_param->dart_out = &dart_out[i];
+        // thread_param->dart_out_size = &dart_out_size[i];
         // thpool_add_work(query_pool, (void *)dart_perform_on_one_server_thread, (void *)thread_param);
 
-        int dart_status = dart_perform_on_one_server(serverId, &input_param, &hashset);
+        int dart_status = dart_perform_on_one_server(serverId, &input_param, dart_out, dart_out_size);
         if (omit_request == 1 && set_num_entries(hashset) > 0) {
             break;
         }
+        dart_out++;
+        dart_out_size++;
 
         // printf("perform search [ %s ] on server %d from rank %d\n", query_string, serverId,
         // pdc_client_mpi_rank_g);
@@ -8805,20 +8809,27 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // wait for all query to be done.
     // thpool_wait(query_pool);
 
+    // deduplicate the result.
+    for (i = 0; i < num_servers; i++) {
+        int j = 0;
+        for (j = 0; j < dart_out_size[i]; j++) {
+            uint64_t *id = &dart_out[i][j];
+            set_insert(hashset, id);
+        }
+    }
+
     // Pick deduplicated result.
     *n_res = set_num_entries(hashset);
     // println("num_ids = %d", num_ids);
     if (*n_res > 0) {
-        *out = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
-        SetIterator itr;
-        set_iterate(hashset, &itr);
-        i = 0; // NOTICE: when reusing the iterator, we need to reset the index.
-        while (set_iter_has_more(&itr)) {
-            uint64_t *id = (uint64_t *)set_iter_next(&itr);
-            (*out)[i]    = *id;
-            i++;
+        out[0]             = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+        uint64_t **set_arr = (uint64_t **)set_to_array(hashset);
+        for (i = 0; i < *n_res; i++) {
+            out[0][i] = set_arr[i][0];
         }
     }
+    set_free(hashset);
+    free(set_arr);
 
     // done:
     // thpool_destroy(query_pool);
@@ -8828,7 +8839,6 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         free(affix);
     if (tok != NULL)
         free(tok);
-    set_free(hashset);
 
     return ret;
 }
