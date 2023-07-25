@@ -8844,10 +8844,11 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         *out = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
         SetIterator itr;
         set_iterate(hashset, &itr);
+        i = 0;
         while (set_iter_has_more(&itr)) {
             uint64_t *id = (uint64_t *)set_iter_next(&itr);
             println("id = %ld", *id);
-            // (*out)[i]    = *id;
+            (*out)[i] = *id;
             i++;
         }
     }
