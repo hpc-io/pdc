@@ -150,8 +150,8 @@ main(int argc, char *argv[])
     stopwatch_t timer;
     timer_start(&timer);
     for (i = 0; i < arr_len; i++) {
-        sprintf(key, "k%ld\0", i);
-        sprintf(value, "v%ld\0", i);
+        sprintf(key, "k%ld", i);
+        sprintf(value, "v%ld", i);
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
@@ -171,12 +171,12 @@ main(int argc, char *argv[])
     for (i = 0; i < arr_len; i++) {
         if (i % size == rank) {
             timer_start(&timer);
-            sprintf(key, "k%ld\0", i);
-            sprintf(value, "v%ld\0", i);
-            sprintf(exact_query, "%s=%s", key, value);
+            // sprintf(key, "k%ld", i);
+            // sprintf(value, "v%ld", i);
+            // sprintf(exact_query, "%s=%s", key, value);
             uint64_t *out1;
             int       rest_count1 = 0;
-            PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
+            PDC_Client_search_obj_ref_through_dart(hash_algo, "k5=v5", ref_type, &rest_count1, &out1);
 
             timer_pause(&timer);
 
@@ -194,7 +194,10 @@ main(int argc, char *argv[])
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
 
-        // close_julia();
+    // free attr_2_obj_array
+    free(attr_2_obj_array);
+
+    // close_julia();
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
