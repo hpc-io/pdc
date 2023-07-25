@@ -8819,10 +8819,10 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     *n_res = set_num_entries(hashset);
     // println("num_ids = %d", num_ids);
     if (*n_res > 0) {
-        out[0]             = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+        *out               = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
         uint64_t **set_arr = (uint64_t **)set_to_array(hashset);
         for (i = 0; i < *n_res; i++) {
-            out[0][i] = set_arr[i][0];
+            (*out)[i] = set_arr[i][0];
         }
         free(set_arr);
     }
