@@ -8525,17 +8525,13 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     origin_bulk_handle = output.bulk_handle;
     hg_info            = HG_Get_info(handle);
 
-    bulk_args = (struct bulk_args_t *)malloc(sizeof(struct bulk_args_t));
-
-    bulk_args->handle = handle;
-    bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
-    bulk_args->n_meta = client_lookup_args->n_meta;
+    client_lookup_args->handle = handle;
+    client_lookup_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
 
     /* printf("nbytes=%u\n", bulk_args->nbytes); */
 
     if (client_lookup_args->is_id == 1) {
-        recv_meta        = (void *)calloc(n_meta, sizeof(uint64_t));
-        bulk_args->is_id = 1;
+        recv_meta = (void *)calloc(n_meta, sizeof(uint64_t));
     }
     else {
         // throw an error
@@ -8546,15 +8542,15 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     }
 
     /* Create a new bulk handle to read the data */
-    HG_Bulk_create(hg_info->hg_class, 1, (void **)&recv_meta, (hg_size_t *)&bulk_args->nbytes,
+    HG_Bulk_create(hg_info->hg_class, 1, (void **)&recv_meta, (hg_size_t *)&client_lookup_args->nbytes,
                    HG_BULK_READWRITE, &local_bulk_handle);
 
     // println("[Client_Side_Bulk]  after bulk create. rank = %d", pdc_client_mpi_rank_g);
 
     /* Pull bulk data */
-    ret_value =
-        HG_Bulk_transfer(hg_info->context, hg_test_bulk_transfer_cb, bulk_args, HG_BULK_PULL, hg_info->addr,
-                         origin_bulk_handle, 0, local_bulk_handle, 0, bulk_args->nbytes, &hg_bulk_op_id);
+    ret_value = HG_Bulk_transfer(hg_info->context, hg_test_bulk_transfer_cb, client_lookup_args, HG_BULK_PULL,
+                                 hg_info->addr, origin_bulk_handle, 0, local_bulk_handle, 0,
+                                 client_lookup_args->nbytes, &hg_bulk_op_id);
 
     // println("[Client_Side_Bulk]  after bulk transfer. rank = %d", pdc_client_mpi_rank_g);
 
@@ -8591,14 +8587,14 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
         printf("==PDC_CLIENT: Received response from server with bulk handle, obj_ids[1]=%ld\n",
                bulk_args->obj_ids[1]);
 
-        client_lookup_args->obj_ids = (uint64_t *)malloc(n_meta * sizeof(uint64_t));
-        client_lookup_args->obj_ids = bulk_args->obj_ids;
-        // memcpy(client_lookup_args->obj_ids, bulk_args->obj_ids, n_meta * sizeof(uint64_t));
-        if (hg_atomic_get32(&bulk_transfer_done_g)) {
-            hg_atomic_set32(&dart_response_done_g, 1);
-            // free(bulk_args->obj_ids);
-            // free(bulk_args);
-        }
+        // client_lookup_args->obj_ids = (uint64_t *)malloc(n_meta * sizeof(uint64_t));
+        // client_lookup_args->obj_ids = bulk_args->obj_ids;
+        // // memcpy(client_lookup_args->obj_ids, bulk_args->obj_ids, n_meta * sizeof(uint64_t));
+        // if (hg_atomic_get32(&bulk_transfer_done_g)) {
+        //     hg_atomic_set32(&dart_response_done_g, 1);
+        //     // free(bulk_args->obj_ids);
+        //     // free(bulk_args);
+        // }
     }
     else {
         // throw an error
