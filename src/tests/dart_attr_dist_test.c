@@ -149,9 +149,11 @@ main(int argc, char *argv[])
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
             }
-            size_t num_object_per_attr = attr_2_obj_array[i] / 100;
-            if (rank == 0 && j % num_object_per_attr == 0) {
-                pct += 1;
+            size_t num_object_per_pct          = attr_2_obj_array[i] / 100;
+            size_t num_object_per_ton_thousand = attr_2_obj_array[i] / 10000;
+            if (rank == 0 && j % num_object_per_ton_thousand == 0) {
+                if (j % num_object_per_pct == 0)
+                    pct += 1;
                 timer_pause(&timer);
                 printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for ref %llu within  %.4f ms\n", pct, key,
                        value, j, (double)timer_delta_ms(&timer));
