@@ -136,14 +136,6 @@ main(int argc, char *argv[])
     if (obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    // int sid = 0;
-    // // FIXME: This is a hack to make sure that the server is ready to accept the connection. Is this still
-    // // needed?
-
-    // for (sid = 0; sid < size; sid++) {
-    //     server_lookup_connection(sid, 2);
-    // }
-
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
     int                    i, j, pct = 0;
@@ -158,7 +150,7 @@ main(int argc, char *argv[])
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
             }
             size_t num_object_per_attr = attr_2_obj_array[i] / 100;
-            if (rank == 0 && j % (attr_2_obj_array[i] / num_object_per_attr) == 0) {
+            if (rank == 0 && j % num_object_per_attr == 0) {
                 pct += 1;
                 timer_pause(&timer);
                 printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for ref %llu within  %.4f ms\n", pct, key,
