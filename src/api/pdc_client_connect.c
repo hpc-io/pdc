@@ -8780,8 +8780,10 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     Set *hashset = set_new(ui64_hash, ui64_equal);
     set_register_free_function(hashset, free);
 
-    uint64_t **dart_out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
-    size_t *   dart_out_size = (size_t *)calloc(num_servers, sizeof(size_t));
+    uint64_t **dart_out          = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    size_t *   dart_out_size     = (size_t *)calloc(num_servers, sizeof(size_t));
+    uint64_t **dart_out_ptr      = dart_out;
+    size_t *   dart_out_size_ptr = dart_out_size;
 
     for (i = 0; i < num_servers; i++) {
 
@@ -8793,16 +8795,18 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         // thread_param->dart_out_size = &dart_out_size[i];
         // thpool_add_work(query_pool, (void *)dart_perform_on_one_server_thread, (void *)thread_param);
 
-        int dart_status = dart_perform_on_one_server(serverId, &input_param, dart_out, dart_out_size);
+        int dart_status = dart_perform_on_one_server(serverId, &input_param, dart_out_ptr, dart_out_size_ptr);
         if (omit_request == 1 && set_num_entries(hashset) > 0) {
             break;
         }
-        dart_out++;
-        dart_out_size++;
+        dart_out_ptr++;
+        dart_out_size_ptr++;
 
         // printf("perform search [ %s ] on server %d from rank %d\n", query_string, serverId,
         // pdc_client_mpi_rank_g);
     }
+    dart_out_ptr      = NULL;
+    dart_out_size_ptr = NULL;
     // wait for all query to be done.
     // thpool_wait(query_pool);
 
