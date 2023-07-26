@@ -1056,9 +1056,6 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
             HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, bulk_sgnum, ids_buf,
                            ids_buf_sizes, &actual_cnt);
 
-            printf("==PDC_CLIENT[%d]: bulk_sgnum = %d, actual_cnt = %d, ids_buf_sizes[0]=%llu\n",
-                   pdc_client_mpi_rank_g, bulk_sgnum, actual_cnt, ids_buf_sizes[0]);
-
             u64_arr_ptr        = ((uint64_t **)(ids_buf))[0];
             bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
             for (i = 0; i < n_meta; i++) {
