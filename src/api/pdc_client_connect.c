@@ -8814,11 +8814,14 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     for (i = 0; i < num_servers; i++) {
         int j = 0;
         for (j = 0; j < dart_out_size[i]; j++) {
-            // uint64_t *id = &dart_out[i][j];
-            uint64_t id = dart_out[i][j];
-            set_insert(hashset, &id);
+            uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
+            *id          = dart_out[i][j];
+            set_insert(hashset, id);
         }
+        free(dart_out[i]);
     }
+    free(dart_out);
+    free(dart_out_size);
 
     // Pick deduplicated result.
     *n_res = set_num_entries(hashset);
