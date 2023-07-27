@@ -94,12 +94,12 @@ main()
 
     kvtag2.name  = "key2int";
     kvtag2.value = (void *)&v2;
-    kvtag1.type  = PDC_INT;
+    kvtag2.type  = PDC_INT;
     kvtag2.size  = sizeof(int);
 
     kvtag3.name  = "key3double";
     kvtag3.value = (void *)&v3;
-    kvtag1.type  = PDC_DOUBLE;
+    kvtag3.type  = PDC_DOUBLE;
     kvtag3.size  = sizeof(double);
 
     if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size) < 0)
@@ -132,7 +132,7 @@ main()
     else
         printf("successfully retrieved a kvtag [%s] = [%f] from o2\n", kvtag3.name, *(double *)value3);
 
-    if (PDCtag_delete(obj1, kvtag1.name) < 0)
+    if (PDCobj_del_tag(obj1, kvtag1.name) < 0)
         printf("fail to delete a kvtag from o1\n");
     else
         printf("successfully deleted a kvtag [%s] from o1\n", kvtag1.name);

@@ -401,7 +401,7 @@ done:
 void
 PDC_mkdir(const char *dir)
 {
-    char  tmp[ADDR_MAX];
+    char  tmp[TMP_DIR_STRING_LEN];
     char *p = NULL;
 
     FUNC_ENTER(NULL);
@@ -476,8 +476,8 @@ PDC_metadata_init(pdc_metadata_t *a)
     a->ndim               = 0;
     a->data_server_id     = 0;
 
-    memset(a->app_name, 0, sizeof(char) * ADDR_MAX);
-    memset(a->obj_name, 0, sizeof(char) * ADDR_MAX);
+    memset(a->app_name, 0, sizeof(char) * NAME_MAX);
+    memset(a->obj_name, 0, sizeof(char) * NAME_MAX);
     memset(a->tags, 0, sizeof(char) * TAG_LEN_MAX);
     memset(a->data_location, 0, sizeof(char) * ADDR_MAX);
     memset(a->dims, 0, sizeof(uint64_t) * DIM_MAX);
@@ -1685,7 +1685,10 @@ HG_TEST_RPC_CB(container_query, handle)
     HG_Get_input(handle, &in);
 
     PDC_Server_find_container_by_name(in.cont_name, &cont_entry);
-    out.cont_id = cont_entry->cont_id;
+    if (cont_entry)
+        out.cont_id = cont_entry->cont_id;
+    else
+        out.cont_id = 0;
 
     HG_Respond(handle, NULL, NULL, &out);
 
@@ -3096,7 +3099,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
                             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release, "
                                                         "handle) local and remote bulk size does not match");
                         }
@@ -3269,7 +3272,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
                             /* PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release,
                              * handle) local and remote bulk size does not match"); */
                         }

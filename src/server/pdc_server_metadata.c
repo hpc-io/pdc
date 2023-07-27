@@ -2778,7 +2778,8 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 #ifdef ENABLE_MULTITHREAD
     int unlocked;
 #endif
-    pdc_hash_table_entry_head *lookup_value;
+    pdc_hash_table_entry_head *  lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -2794,62 +2795,63 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
-    unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
+    // Look obj tags first
     lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
     if (lookup_value != NULL) {
         pdc_metadata_t *target;
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
         if (target != NULL) {
-            PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
+            ret_value = PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
+            out->ret  = 1;
+        }
+        else {
+            ret_value = FAIL;
+            out->ret  = -1;
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
+            goto done;
+        }
+    }
+    else {
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_del_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key);
             out->ret = 1;
         }
         else {
             ret_value = FAIL;
             out->ret  = -1;
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
+            goto done;
         }
     }
-    else {
-        ret_value = FAIL;
-        out->ret  = -1;
-    }
 
-    if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: %s - error \n", pdc_server_rank_g, __func__);
-        goto done;
-    }
-
+done:
 #ifdef ENABLE_MULTITHREAD
-    // ^ Release hash table lock
     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-    unlocked = 1;
 #endif
 
 #ifdef ENABLE_TIMING
     // Timing
     gettimeofday(&pdc_timer_end, 0);
     ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-#endif
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&pdc_time_mutex_g);
 #endif
 
-#ifdef ENABLE_TIMING
     server_update_time_g += ht_total_sec;
-#endif
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
 #endif
 
-done:
-#ifdef ENABLE_MULTITHREAD
-    if (unlocked == 0)
-        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-#endif
+#endif // End ENABLE_TIMING
+
     fflush(stdout);
 
     FUNC_LEAVE(ret_value);

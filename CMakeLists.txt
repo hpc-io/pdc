@@ -51,6 +51,18 @@ set(PDC_PACKAGE_TARNAME "${PDC_PACKAGE}")
 if(NOT MPI_RUN_CMD)
     set(MPI_RUN_CMD mpiexec)
 endif()
+
+#------------------------------------------------------------------------------
+#  general cmake flags:
+#    -DCMAKE_INSTALL_PREFIX=/usr/local     -- the prefix for installing
+#    -DCMAKE_BUILD_TYPE=type               -- type can be Debug, Release, ...
+#    -DCMAKE_PREFIX_PATH=/dir              -- external packages
+#
+#     note that CMAKE_PREFIX_PATH can be a list of directories:
+#      -DCMAKE_PREFIX_PATH='/dir1;/dir2;/dir3'
+#------------------------------------------------------------------------------
+
+
 #------------------------------------------------------------------------------
 # Setup install and output Directories
 #------------------------------------------------------------------------------
@@ -78,6 +90,19 @@ endif()
 if(NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
+
+#------------------------------------------------------------------------------
+# Setup CMake Prefix Paths for searching external libraries.
+#------------------------------------------------------------------------------
+#     note that CMAKE_PREFIX_PATH can be a list of directories:
+#      -DCMAKE_PREFIX_PATH='/dir1;/dir2;/dir3'
+
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
+endif()
+# MERCURY
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} $ENV{MERCURY_DIR})
+# ANY Future external package goes here...
 
 #------------------------------------------------------------------------------
 # Setup CMake Environment
@@ -129,6 +154,46 @@ if("${PDC_SOURCE_DIR}" STREQUAL "${PDC_BINARY_DIR}")
   message(FATAL_ERROR
     "PDC requires an out of source Build. "
     "Please create a separate binary directory and run CMake there.")
+endif()
+
+#------------------------------------------------------------------------------
+# Set whether or not to disable compiler warnings
+#------------------------------------------------------------------------------
+set(SUPPRESSED_LIST "")
+# Disable warnings for unused parameters
+option(PDC_SUPPRESS_UNUSED_ARG "Disable unused argument warnings" ON)
+if(PDC_SUPPRESS_UNUSED_ARG)
+  set(SUPPRESSED_LIST "-Wno-unused-parameter" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for unused variables
+option(PDC_SUPPRESS_UNUSED_VAR "Disable unused variable warnings" ON)
+if(PDC_SUPPRESS_UNUSED_VAR)
+  set(SUPPRESSED_LIST "-Wno-unused-variable" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for unused functions
+option(PDC_SUPPRESS_UNUSED_FUNC "Disable unused function warnings" ON)
+if(PDC_SUPPRESS_UNUSED_FUNC)
+  set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wunused-result
+option(PDC_SUPPRESS_UNUSED_RESULT "Disable unused result warnings" ON)
+if(PDC_SUPPRESS_UNUSED_RESULT)
+  set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wmaybe-uninitialized
+option(PDC_SUPPRESS_MAYBE_UNINIT "Disable maybe-uninitialized warnings" ON)
+if(PDC_SUPPRESS_MAYBE_UNINIT)
+  set(SUPPRESSED_LIST "-Wno-maybe-uninitialized" ${SUPPRESSED_LIST})
+endif()
+
+# Disable warnings for -Wunused-but-set-variable
+option(PDC_SUPPRESS_UNUSED_BUT_SET "Disable unused-but-set-variable warnings" ON)
+if(PDC_SUPPRESS_UNUSED_BUT_SET)
+  set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
 endif()
 
 #------------------------------------------------------------------------------
