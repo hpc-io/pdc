@@ -6,14 +6,14 @@ MAX_HYPERTHREADING=2
 
 # Designated number of threads per process on each node 
 # (this should be associated with -c option in srun)
-NUM_THREAD_PER_SERVER_PROC=64
-NUM_THREAD_PER_CLIENT_PROC=64
+NUM_THREAD_PER_SERVER_PROC=2
+NUM_THREAD_PER_CLIENT_PROC=2
 
 
 # Designated number of processes for server anc client on each node
 # (this should be associated with -n option in srun)
 NUM_SERVER_PROC_PER_NODE=1
-NUM_CLIENT_PROC_PER_NODE=1
+NUM_CLIENT_PROC_PER_NODE=64
 
 
 MAX_NODE=512
