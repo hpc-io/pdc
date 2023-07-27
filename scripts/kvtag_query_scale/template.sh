@@ -60,7 +60,7 @@ mkdir -p $PDC_TMPDIR
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 SERVER=$EXECPATH/pdc_server.exe
-CLIENT=$TOOLPATH/dart_attr_dist_test
+CLIENT=$TOOLPATH/kvtag_query_scale
 CLOSE=$EXECPATH/close_server
 
 chmod +x $EXECPATH/*
@@ -92,7 +92,7 @@ sleep 5
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 1000 0
 
 echo ""
 echo "================="

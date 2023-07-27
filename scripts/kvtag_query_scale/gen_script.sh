@@ -20,7 +20,7 @@ MAX_NODE=512
 MAX_ATTR=1024
 MAX_ATTRLEN=1000
 
-PROG_BASENAME=dart_attr_dist_test
+PROG_BASENAME=kvtag_query_scale
 
 for (( i = 1; i <= $MAX_NODE; i*=2 )); do
     mkdir -p $i
