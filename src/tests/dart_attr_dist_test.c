@@ -164,8 +164,9 @@ main(int argc, char *argv[])
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
     for (i = 0; i < arr_len; i++) {
-        if (i % size == rank) {
+        if (i % arr_len == rank) {
             timer_start(&timer);
             sprintf(key, "k%ld", i);
             sprintf(value, "v%ld", i);
