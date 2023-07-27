@@ -133,6 +133,7 @@ main(int argc, char *argv[])
     kvtag.type  = PDC_INT;
     kvtag.size  = sizeof(int);
     char value[32];
+    char exact_query[48];
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
