@@ -336,7 +336,7 @@ endif()
 #-----------------------------------------------------------------------------
 # SERVER CACHE option
 #-----------------------------------------------------------------------------
-option(PDC_SERVER_CACHE "Enable timing." OFF)
+option(PDC_SERVER_CACHE "Enable Server Caching." OFF)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
 endif()
