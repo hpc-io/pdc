@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 
     int64_t *attr_2_obj_array = NULL;
     size_t   arr_len          = 0;
-    size_t   total_num_obj    = 1000000000;
+    size_t   total_num_obj    = 1000000;
     size_t   total_num_attr   = 10;
 
     char key[32];
@@ -96,10 +96,10 @@ main(int argc, char *argv[])
     if (rank == 0) {
         // calling julia helper to get the array.
 
-        generate_attr_obj_association(total_num_attr, total_num_obj, &attr_2_obj_array, &arr_len);
+        // generate_attr_obj_association(total_num_attr, total_num_obj, &attr_2_obj_array, &arr_len);
 
-        // generate_incremental_associations(total_num_attr, total_num_obj, total_num_attr, &attr_2_obj_array,
-        //                                   &arr_len);
+        generate_incremental_associations(total_num_attr, total_num_obj, total_num_attr, &attr_2_obj_array,
+                                          &arr_len);
 
         // generate_attribute_occurrences(total_num_attr, total_num_obj, "uniform", &attr_2_obj_array,
         // &arr_len);
