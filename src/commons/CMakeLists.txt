@@ -59,6 +59,8 @@ message(STATUS "PDC_COMMONS_INCLUDE_DIRS: ${PDC_COMMONS_INCLUDE_DIRS}")
 install(
   FILES
     ${CMAKE_BINARY_DIR}/pdc_config.h
+    ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_id_pkg.h
+    ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_malloc.h
   DESTINATION
     ${PDC_INSTALL_INCLUDE_DIR}
   COMPONENT
