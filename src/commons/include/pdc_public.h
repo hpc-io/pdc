@@ -48,7 +48,7 @@ typedef enum { PDC_PERSIST, PDC_TRANSIENT } pdc_lifetime_t;
 
 typedef enum { PDC_SERVER_DEFAULT = 0, PDC_SERVER_PER_CLIENT = 1 } pdc_server_selection_t;
 
-typedef struct pdc_histogram_t { //?????????
+typedef struct pdc_histogram_t {
     pdc_var_type_t dtype;
     int            nbin;
     double         incr;
@@ -58,5 +58,7 @@ typedef struct pdc_histogram_t { //?????????
 
 #define SUCCEED 0
 #define FAIL    (-1)
+
+#define PDC_SIZE_UNLIMITED UINT64_MAX
 
 #endif /* PDC_PUBLIC_H */
