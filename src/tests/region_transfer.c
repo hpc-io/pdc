@@ -57,7 +57,7 @@ main(int argc, char **argv)
 
     int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
     int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-    dims[0]        = BUF_LEN;
+    dims[0]        = PDC_SIZE_UNLIMITED;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
