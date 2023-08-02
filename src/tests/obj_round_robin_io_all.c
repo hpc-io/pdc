@@ -108,7 +108,7 @@ main(int argc, char **argv)
         my_data_size *= dims[i];
     }
 
-    mydata    = (char **)malloc(2 * sizeof(char*));
+    mydata    = (char **)malloc(2 * sizeof(char *));
     mydata[0] = (char *)malloc(my_data_size * type_size);
     mydata[1] = (char *)malloc(my_data_size * type_size);
 
