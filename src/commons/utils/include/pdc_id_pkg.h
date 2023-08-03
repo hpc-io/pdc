@@ -25,7 +25,7 @@
 #ifndef PDC_ID_PKG_H
 #define PDC_ID_PKG_H
 
-#include "pdc_private.h"
+#include "pdc_public.h"
 #include "pdc_linkedlist.h"
 #include "mercury_atomic.h"
 /*
