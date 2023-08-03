@@ -24,7 +24,8 @@
 #ifndef PDC_OBJ_ANALYSIS_H
 #define PDC_OBJ_ANALYSIS_H
 
-#include "pdc_private.h"
+#include "pdc_prop_pkg.h"
+#include "pdc_transforms_pkg.h"
 #include "mercury_proc_string.h"
 #include "mercury_atomic.h"
 #include <dlfcn.h>
