@@ -24,8 +24,7 @@
 
 #ifndef PDC_OBJ_PKG_H
 #define PDC_OBJ_PKG_H
-
-#include "pdc_private.h"
+#include "pdc_public.h"
 
 /****************************/
 /* Library Private Typedefs */
