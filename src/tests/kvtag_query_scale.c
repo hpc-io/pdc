@@ -147,6 +147,12 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
+    // tag-obj map:
+    // 0: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+    // 1: 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+    // 2: 20, 21, 22, 23, 24, 25, 26, 27, 28, 29
+    // 3: 30, 31, 32, 33, 34, 35, 36, 37, 38, 39
+
     for (iter = 0; iter < round; iter++) {
         assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
         v = iter;
@@ -190,9 +196,9 @@ main(int argc, char *argv[])
         if (is_using_dart) {
             sprintf(value, "%ld", v);
             sprintf(exact_query, "%s=%s", kvtag.name, value);
-            uint64_t *out1;
-            int       rest_count1 = 0;
-            PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
+            // uint64_t *out1;
+            // int       rest_count1 = 0;
+            PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &nres, &pdc_ids);
         }
         else {
             if (PDC_Client_query_kvtag_col(&kvtag, &nres, &pdc_ids) < 0) {
@@ -208,7 +214,7 @@ main(int argc, char *argv[])
 #endif
 
         if (my_rank == 0)
-            printf("Total time to query %d objects with tag: %.5e\n", ntotal, total_time);
+            printf("Total time to query %d objects with tag: %.5f\n", ntotal, total_time);
         fflush(stdout);
     }
 
