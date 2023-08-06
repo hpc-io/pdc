@@ -61,7 +61,12 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 void
 print_usage(char *name)
 {
-    printf("%s n_obj n_query is_using_dart\n", name);
+    printf("%s n_obj n_round n_selectivity is_using_dart\n", name);
+    printf("  n_obj: number of objects\n");
+    printf("  n_round: number of rounds, it can be the total number of tags too, as each round will perform "
+           "one query against one tag\n");
+    printf("  n_selectivity: selectivity, on a 100 scale. \n");
+    printf("  is_using_dart: 1 for using dart, 0 for not using dart\n");
 }
 
 int
@@ -70,7 +75,7 @@ main(int argc, char *argv[])
     pdcid_t     pdc, cont_prop, cont, obj_prop;
     pdcid_t *   obj_ids;
     int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
-    int         proc_num, my_rank, i, v, iter, round, is_using_dart;
+    int         proc_num, my_rank, i, v, iter, round, selectivity, is_using_dart;
     char        obj_name[128];
     double      stime, total_time;
     pdc_kvtag_t kvtag;
@@ -90,8 +95,9 @@ main(int argc, char *argv[])
     }
     n_obj         = atoi(argv[1]);
     round         = atoi(argv[2]);
-    is_using_dart = atoi(argv[3]);
-    n_add_tag     = n_obj / 100;
+    selectivity   = atoi(argv[3]);
+    is_using_dart = atoi(argv[4]);
+    n_add_tag     = n_obj * selectivity / 100;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -115,6 +121,7 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
     if (my_rank == 0)
         printf("I will create %d obj\n", my_obj);
+
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
     for (i = 0; i < my_obj; i++) {
         sprintf(obj_name, "obj%d", my_obj_s + i);
@@ -132,6 +139,8 @@ main(int argc, char *argv[])
     kvtag.value = (void *)&v;
     kvtag.type  = PDC_INT;
     kvtag.size  = sizeof(int);
+
+    char key[32];
     char value[32];
     char exact_query[48];
 
@@ -164,8 +173,6 @@ main(int argc, char *argv[])
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-        n_add_tag *= 2;
     }
 
     kvtag.name  = "Group";

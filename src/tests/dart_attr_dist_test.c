@@ -143,8 +143,8 @@ main(int argc, char *argv[])
     stopwatch_t timer;
     timer_start(&timer);
     for (i = 0; i < arr_len; i++) {
-        sprintf(key, "k%ld", i);
-        sprintf(value, "v%ld", i);
+        sprintf(key, "k%ld", i + 12345);
+        sprintf(value, "v%ld", i + 23456);
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
@@ -168,8 +168,8 @@ main(int argc, char *argv[])
     for (i = 0; i < arr_len; i++) {
         if (i % arr_len == rank) {
             timer_start(&timer);
-            sprintf(key, "k%ld", i);
-            sprintf(value, "v%ld", i);
+            sprintf(key, "k%ld", i + 12345);
+            sprintf(value, "v%ld", i + 23456);
             sprintf(exact_query, "%s=%s", key, value);
             uint64_t *out1;
             int       rest_count1 = 0;
