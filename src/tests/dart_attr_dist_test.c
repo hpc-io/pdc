@@ -257,13 +257,13 @@ main(int argc, char *argv[])
 
     for (i = 0; i < arr_len; i++) {
         if (i % arr_len == rank) {
+            uint64_t *out1;
+            int       rest_count1 = 0;
             timer_start(&timer_obj);
             for (k = 0; k < q_repeat_count; k++) {
                 sprintf(key, "k%ld", i + 12345);
                 sprintf(value, "v%ld", i + 23456);
                 sprintf(exact_query, "%s=%s", key, value);
-                uint64_t *out1;
-                int       rest_count1 = 0;
 
                 kvtag.name  = key;
                 kvtag.value = (void *)&val;
@@ -296,13 +296,13 @@ main(int argc, char *argv[])
 
     for (i = 0; i < arr_len; i++) {
         if (i % arr_len == rank) {
+            uint64_t *out1;
+            int       rest_count1 = 0;
             timer_start(&timer_dart);
             for (k = 0; k < q_repeat_count; k++) {
                 sprintf(key, "k%ld", i + 12345);
                 sprintf(value, "v%ld", i + 23456);
                 sprintf(exact_query, "%s=%s", key, value);
-                uint64_t *out1;
-                int       rest_count1 = 0;
 
                 // DART query methods
                 PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
