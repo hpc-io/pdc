@@ -235,10 +235,10 @@ main(int argc, char *argv[])
             uint64_t *out1;
             int       rest_count1 = 0;
 
-            kvtag.name       = key;
-            kvtag.value      = (void *)&val;
-            kvtag.value_size = sizeof(int);
-            kvtag.value_type = PDC_INT;
+            kvtag.name  = key;
+            kvtag.value = (void *)&val;
+            kvtag.size  = sizeof(int);
+            kvtag.type  = PDC_INT;
 
             // naive query methods
             timer_start(&timer_obj);
