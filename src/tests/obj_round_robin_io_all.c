@@ -108,9 +108,9 @@ main(int argc, char **argv)
         my_data_size *= dims[i];
     }
 
-    mydata    = (char **)malloc(size * WRITE_REQ_SIZE);
+    mydata    = (char **)malloc(2 * sizeof(char *));
     mydata[0] = (char *)malloc(my_data_size * type_size);
-    mydata[1] = mydata[0] + my_data_size * type_size;
+    mydata[1] = (char *)malloc(my_data_size * type_size);
 
     offset    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     mysize    = (uint64_t *)malloc(sizeof(uint64_t));
@@ -453,6 +453,8 @@ main(int argc, char **argv)
     free(obj1_list);
     free(obj2_list);
     free(data_read);
+    free(mydata[0]);
+    free(mydata[1]);
     free(mydata);
     free(offset);
     free(mysize);
