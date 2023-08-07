@@ -8783,6 +8783,8 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     size_t *   dart_out_size_ptr = dart_out_size;
 
     for (i = 0; i < num_servers; i++) {
+        printf("perform search [ %s ] on server %d from rank %d\n", query_string, server_id_arr[i],
+               pdc_client_mpi_rank_g);
 
         int serverId = server_id_arr[i];
         // struct _dart_perform_one_thread_param *thread_param = (struct _dart_perform_one_thread_param
@@ -8798,9 +8800,6 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         }
         dart_out_ptr++;
         dart_out_size_ptr++;
-
-        // printf("perform search [ %s ] on server %d from rank %d\n", query_string, serverId,
-        // pdc_client_mpi_rank_g);
     }
     dart_out_ptr      = NULL;
     dart_out_size_ptr = NULL;
