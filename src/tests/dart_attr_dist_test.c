@@ -126,7 +126,7 @@ main(int argc, char *argv[])
     MPI_Bcast(attr_2_obj_array, arr_len, MPI_LONG_LONG_INT, 0, MPI_COMM_WORLD);
 
     // print array.
-    for (size_t i = 0; i < arr_len; ++i) {
+    for (i = 0; i < arr_len; ++i) {
         printf("rank %d: %ld\n", rank, attr_2_obj_array[i]);
     }
 
