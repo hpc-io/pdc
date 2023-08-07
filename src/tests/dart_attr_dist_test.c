@@ -85,6 +85,7 @@ main(int argc, char *argv[])
     pdcid_t *obj_ids;
     int      i, j, k;
     double   stime, total_time;
+    int      val;
 
     char pdc_context_name[40];
     char pdc_container_name[40];
@@ -184,13 +185,14 @@ main(int argc, char *argv[])
 
     for (i = 0; i < arr_len; i++) {
         sprintf(key, "k%ld", i + 12345);
-        sprintf(value, "v%ld", i + 23456);
+        val = i + 23456;
+        sprintf(value, "v%ld", val);
         pct = 0;
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
                 // attach attribute to object
                 timer_start(&timer_obj);
-                if (PDCobj_put_tag(obj_ids[j], key, i + 23456, PDC_INT, sizeof(int)) < 0)
+                if (PDCobj_put_tag(obj_ids[j], key, (void *)&val, PDC_INT, sizeof(int)) < 0)
                     printf("fail to add a kvtag to o%d\n", j);
                 timer_pause(&timer_obj);
                 duration_obj_ms += timer_delta_ms(&timer_obj);
@@ -235,7 +237,7 @@ main(int argc, char *argv[])
             int       rest_count1 = 0;
 
             kvtag.name       = key;
-            kvtag.value      = &(i + 23456);
+            kvtag.value      = (void *)&val;
             kvtag.value_size = sizeof(int);
             kvtag.value_type = PDC_INT;
 
