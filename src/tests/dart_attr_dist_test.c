@@ -82,6 +82,13 @@ main(int argc, char *argv[])
     size_t   arr_len          = 0;
     size_t   total_num_obj    = 1000000;
     size_t   total_num_attr   = 10;
+    pdcid_t *obj_ids;
+    int      i, j, k;
+    double   stime, total_time;
+
+    char pdc_context_name[40];
+    char pdc_container_name[40];
+    char pdc_obj_name[128];
 
     char key[32];
     char value[32];
@@ -122,13 +129,15 @@ main(int argc, char *argv[])
         printf("rank %d: %ld\n", rank, attr_2_obj_array[i]);
     }
 
-    pdcid_t pdc = PDCinit("pdc");
+    sprintf(pdc_context_name, "pdc_%d", rank);
+    pdcid_t pdc = PDCinit(pdc_context_name);
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
-    pdcid_t cont = PDCcont_create("c1", cont_prop);
+    sprintf(pdc_container_name, "c1_%d", rank);
+    pdcid_t cont = PDCcont_create(pdc_container_name, cont_prop);
     if (cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
@@ -136,51 +145,125 @@ main(int argc, char *argv[])
     if (obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
+#endif
+
+    // create enough objects
+    obj_ids = (pdcid_t *)calloc(total_num_obj, sizeof(pdcid_t));
+    for (i = 0; i < total_num_obj; i++) {
+        if (i % size == rank) {
+            sprintf(pdc_obj_name, "obj%d", i);
+            obj_ids[i] = PDCobj_create(cont, pdc_obj_name, obj_prop);
+            if (obj_ids[i] <= 0)
+                printf("Fail to create object @ line  %d!\n", __LINE__);
+        }
+        else {
+            obj_ids[i] = -1;
+        }
+    }
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+    stime      = MPI_Wtime();
+#endif
+
+    if (rank == 0)
+        printf("[Summary] Create %zu objects with %d ranks, time: %.6f\n", total_num_obj, size, total_time);
+
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
     int                    i, j, pct = 0;
 
-    stopwatch_t timer;
-    timer_start(&timer);
+    stopwatch_t timer_obj;
+    stopwatch_t timer_dart;
+    long        duration_obj_ms  = 0.0;
+    long        duration_dart_ms = 0.0;
+
     for (i = 0; i < arr_len; i++) {
         sprintf(key, "k%ld", i + 12345);
         sprintf(value, "v%ld", i + 23456);
+        pct = 0;
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
+                // attach attribute to object
+                timer_start(&timer_obj);
+                if (PDCobj_put_tag(obj_ids[j], key, i + 23456, PDC_INT, sizeof(int)) < 0)
+                    printf("fail to add a kvtag to o%d\n", j);
+                timer_pause(&timer_obj);
+                duration_obj_ms += timer_delta_ms(&timer_obj);
+                // insert object reference into dart
+                timer_start(&timer_dart);
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
+                timer_pause(&timer_dart);
+                duration_dart_ms += timer_delta_ms(&timer_dart);
             }
             size_t num_object_per_pct          = attr_2_obj_array[i] / 100;
             size_t num_object_per_ton_thousand = attr_2_obj_array[i] / 10000;
+            if (j % num_object_per_pct == 0)
+                pct += 1;
             if (rank == 0 && j % num_object_per_ton_thousand == 0) {
-                if (j % num_object_per_pct == 0)
-                    pct += 1;
-                timer_pause(&timer);
-                printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for ref %llu within  %.4f ms\n", pct, key,
-                       value, j, (double)timer_delta_ms(&timer));
-                timer_start(&timer);
+                printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for  %llu objs within  %ld ms, index time "
+                       "%ld ms\n",
+                       pct, key, value, j, duration_obj_ms, duration_dart_ms);
             }
         }
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+    stime      = MPI_Wtime();
 #endif
+    if (rank == 0)
+        printf("[Summary] Inserted %d attributes for  %zu objects with %d ranks, obj time: %.6f, dart time: "
+               "%.6f\n",
+               total_num_attr, total_num_obj, size, duration_obj_ms, duration_dart_ms);
+
+    pdc_kvtag_t kvtag;
+    duration_obj_ms  = 0.0;
+    duration_dart_ms = 0.0;
 
     for (i = 0; i < arr_len; i++) {
         if (i % arr_len == rank) {
-            timer_start(&timer);
+
             sprintf(key, "k%ld", i + 12345);
             sprintf(value, "v%ld", i + 23456);
             sprintf(exact_query, "%s=%s", key, value);
             uint64_t *out1;
             int       rest_count1 = 0;
+
+            kvtag.name       = key;
+            kvtag.value      = &(i + 23456);
+            kvtag.value_size = sizeof(int);
+            kvtag.value_type = PDC_INT;
+
+            // naive query methods
+            timer_start(&timer_obj);
+            PDC_Client_query_kvtag_col(&kvtag, &rest_count1, &out1);
+            timer_pause(&timer_obj);
+            duration_obj_ms += timer_delta_ms(&timer_obj);
+
+            // DART query methods
+            timer_start(&timer_dart);
             PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &rest_count1, &out1);
+            timer_pause(&timer_dart);
+            duration_dart_ms += timer_delta_ms(&timer_dart);
 
-            timer_pause(&timer);
-
-            println("[Client_Side_Exact] Search '%s' and get %d results : %llu within %.4f ms\n", key,
-                    rest_count1, out1[rest_count1 - 1], (double)timer_delta_ms(&timer));
+            println("[Client_Side_Exact] Search '%s' and get %d results : %llu, obj time: %.4f ms, dart "
+                    "time: %.4f ms\n",
+                    key, rest_count1, out1[rest_count1 - 1], duration_obj_ms, duration_dart_ms);
         }
     }
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+#endif
+    if (rank == 0)
+        printf("[Summary] Exact query %d attributes for  %zu objects with %d ranks, obj time: %.6f, dart "
+               "time: %.4f ms\n",
+               total_num_attr, total_num_obj, size, duration_obj_ms, duration_dart_ms);
 
     if (PDCcont_close(cont) < 0)
         printf("fail to close container %lld\n", cont);
