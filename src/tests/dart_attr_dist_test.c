@@ -83,7 +83,7 @@ main(int argc, char *argv[])
     size_t   total_num_obj    = 1000000;
     size_t   total_num_attr   = 10;
     pdcid_t *obj_ids;
-    int      i, j, k;
+    int      i, j, k, pct = 0;
     double   stime, total_time;
     int      val;
 
@@ -176,7 +176,6 @@ main(int argc, char *argv[])
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
-    int                    i, j, pct = 0;
 
     stopwatch_t timer_obj;
     stopwatch_t timer_dart;
