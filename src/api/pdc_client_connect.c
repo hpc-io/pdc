@@ -8782,9 +8782,10 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     uint64_t **dart_out_ptr      = dart_out;
     size_t *   dart_out_size_ptr = dart_out_size;
 
+    printf("perform search [ %s ] on %d servers %d from rank %d\n", query_string, num_servers,
+           pdc_client_mpi_rank_g);
+
     for (i = 0; i < num_servers; i++) {
-        printf("perform search [ %s ] on server %d from rank %d\n", query_string, server_id_arr[i],
-               pdc_client_mpi_rank_g);
 
         int serverId = server_id_arr[i];
         // struct _dart_perform_one_thread_param *thread_param = (struct _dart_perform_one_thread_param
