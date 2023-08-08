@@ -262,8 +262,7 @@ main(int argc, char *argv[])
             timer_start(&timer_obj);
             for (k = 0; k < q_repeat_count; k++) {
                 sprintf(key, "k%ld", i + 12345);
-                sprintf(value, "v%ld", i + 23456);
-                sprintf(exact_query, "%s=%s", key, value);
+                val = i + 23456;
 
                 kvtag.name  = key;
                 kvtag.value = (void *)&val;
@@ -271,7 +270,10 @@ main(int argc, char *argv[])
                 kvtag.type  = PDC_INT;
 
                 // naive query methods
-                PDC_Client_query_kvtag_col(&kvtag, &rest_count1, &out1);
+                if (PDC_Client_query_kvtag_col(&kvtag, &rest_count1, &out1) < 0) {
+                    printf("fail to query kvtag\n");
+                    break;
+                }
             }
             timer_pause(&timer_obj);
             duration_obj_ms += timer_delta_ms(&timer_obj);
