@@ -80,8 +80,8 @@ main(int argc, char *argv[])
 
     int64_t *attr_2_obj_array = NULL;
     size_t   arr_len          = 0;
-    size_t   total_num_obj    = 1000000;
-    size_t   total_num_attr   = 10;
+    size_t   total_num_obj    = atoi(argv[1]);
+    size_t   total_num_attr   = atoi(argv[2]);
     pdcid_t *obj_ids;
     int      i, j, k, pct, q_repeat_count = 100;
     double   stime, total_time;
@@ -277,9 +277,8 @@ main(int argc, char *argv[])
             }
             timer_pause(&timer_obj);
             duration_obj_ms += timer_delta_ms(&timer_obj);
-            println(
-                "[Client_Side_Exact] Search '%s' for %d times and get %d results : %llu, obj time: %.4f ms\n",
-                key, q_repeat_count, rest_count1, out1[rest_count1 - 1], duration_obj_ms);
+            println("[Client_Side_Exact] Search '%s' for %d times and get %d results, obj time: %.4f ms\n",
+                    key, q_repeat_count, rest_count1, duration_obj_ms);
         }
     }
 
@@ -311,9 +310,9 @@ main(int argc, char *argv[])
             }
             timer_pause(&timer_dart);
             duration_dart_ms += timer_delta_ms(&timer_dart);
-            println("[Client_Side_Exact] Search '%s' for %d times and get %d results : %llu, dart "
+            println("[Client_Side_Exact] Search '%s' for %d times and get %d results, dart "
                     "time: %.4f ms\n",
-                    key, q_repeat_count, rest_count1, out1[rest_count1 - 1], duration_dart_ms);
+                    key, q_repeat_count, rest_count1, duration_dart_ms);
         }
     }
 
