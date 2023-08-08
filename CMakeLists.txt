@@ -81,6 +81,9 @@ endif()
 if(NOT PDC_INSTALL_DATA_DIR)
   set(PDC_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
+if(NOT PDC_INSTALL_SHARE_DIR)
+  set(PDC_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/pdc)
+endif()
 
 # Setting this ensures that "make install" will leave rpaths to external
 # libraries intact on "make install". This ensures that one can install a
