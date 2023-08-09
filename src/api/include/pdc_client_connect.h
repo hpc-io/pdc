@@ -617,8 +617,7 @@ perr_t PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids,
-                                  MPI_Comm comm);
+perr_t PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm comm);
 #endif
 
 /**
