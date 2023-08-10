@@ -679,7 +679,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     char **                  buf, **new_buf, *buf_ptr = NULL;
     uint64_t *               start, *end, *new_start, *new_end;
     int                      merged_request_size = 0;
-    int                      server_rank = 0;
+    int                      server_rank         = 0;
     uint64_t                 unit;
     struct pdc_region_info **obj_regions;
 #ifdef PDC_TIMING
@@ -753,7 +753,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     }
 
 #ifdef ENABLE_MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
 #endif
     // Iterate through all cache regions and use POSIX I/O to write them back to file system.
     region_cache_iter = obj_cache->region_cache;
