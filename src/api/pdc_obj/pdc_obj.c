@@ -1241,6 +1241,7 @@ PDCobj_get_info(pdcid_t obj_id)
 
     ret_value = tmp->obj_info_pub;
 
+done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
