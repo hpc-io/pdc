@@ -7369,21 +7369,32 @@ done:
 perr_t
 PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
 {
-    perr_t  ret_value = SUCCEED;
-    int32_t i;
-    int     nmeta = 0;
+    perr_t    ret_value = SUCCEED;
+    int32_t   i;
+    int       nmeta    = 0;
+    uint64_t *temp_ids = NULL;
 
     FUNC_ENTER(NULL);
 
-    *n_res = 0;
+    *n_res   = 0;
+    *pdc_ids = NULL;
+
     for (i = 0; i < pdc_server_num_g; i++) {
-        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, pdc_ids);
+        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, &temp_ids);
         if (ret_value != SUCCEED)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %d",
                         pdc_client_mpi_rank_g, i);
+
+        if (i == 0)
+            *pdc_ids = temp_ids;
+        else {
+            *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
+            memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
+            free(temp_ids);
+        }
     }
 
-    *n_res = nmeta;
+    *n_res = *n_res + nmeta;
 
 done:
     fflush(stdout);
@@ -7426,21 +7437,23 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     FUNC_ENTER(NULL);
 
-    if (pdc_server_num_g > pdc_client_mpi_size_g) {
-        my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
-        my_server_start = pdc_client_mpi_rank_g * my_server_count;
-        my_server_end   = my_server_start + my_server_count;
-        if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
-            my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
-        }
-    }
-    else {
-        my_server_start = pdc_client_mpi_rank_g;
-        my_server_end   = my_server_start + 1;
-        if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
-            my_server_end = 0;
-        }
-    }
+    PDC_assign_server(&my_server_start, &my_server_end, &my_server_count);
+
+    // if (pdc_server_num_g > pdc_client_mpi_size_g) {
+    //     my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
+    //     my_server_start = pdc_client_mpi_rank_g * my_server_count;
+    //     my_server_end   = my_server_start + my_server_count;
+    //     if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
+    //         my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
+    //     }
+    // }
+    // else {
+    //     my_server_start = pdc_client_mpi_rank_g;
+    //     my_server_end   = my_server_start + 1;
+    //     if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
+    //         my_server_end = 0;
+    //     }
+    // }
 
     *n_res   = 0;
     *pdc_ids = NULL;
@@ -7480,21 +7493,23 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     FUNC_ENTER(NULL);
 
-    if (pdc_server_num_g > pdc_client_mpi_size_g) {
-        my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
-        my_server_start = pdc_client_mpi_rank_g * my_server_count;
-        my_server_end   = my_server_start + my_server_count;
-        if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
-            my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
-        }
-    }
-    else {
-        my_server_start = pdc_client_mpi_rank_g;
-        my_server_end   = my_server_start + 1;
-        if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
-            my_server_end = 0;
-        }
-    }
+    PDC_assign_server(&my_server_start, &my_server_end, &my_server_count);
+
+    // if (pdc_server_num_g > pdc_client_mpi_size_g) {
+    //     my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
+    //     my_server_start = pdc_client_mpi_rank_g * my_server_count;
+    //     my_server_end   = my_server_start + my_server_count;
+    //     if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
+    //         my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
+    //     }
+    // }
+    // else {
+    //     my_server_start = pdc_client_mpi_rank_g;
+    //     my_server_end   = my_server_start + 1;
+    //     if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
+    //         my_server_end = 0;
+    //     }
+    // }
 
     *n_res   = 0;
     *pdc_ids = NULL;
