@@ -270,7 +270,7 @@ main(int argc, char *argv[])
                 kvtag.type  = PDC_INT;
 
                 // naive query methods
-                if (PDC_Client_query_kvtag_col(&kvtag, &rest_count1, &out1) < 0) {
+                if (PDC_Client_query_kvtag(&kvtag, &rest_count1, &out1) < 0) {
                     printf("fail to query kvtag\n");
                     break;
                 }

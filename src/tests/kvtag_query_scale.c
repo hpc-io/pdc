@@ -201,7 +201,7 @@ main(int argc, char *argv[])
             PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &nres, &pdc_ids);
         }
         else {
-            if (PDC_Client_query_kvtag_col(&kvtag, &nres, &pdc_ids) < 0) {
+            if (PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids) < 0) {
                 printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                 break;
             }
