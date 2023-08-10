@@ -7402,7 +7402,7 @@ done:
 }
 
 void
-PDC_assign_server(uint32_t *my_server_start, uint32_t *my_server_end, uint32_t *my_server_count)
+PDC_assign_server(int32_t *my_server_start, int32_t *my_server_end, int32_t *my_server_count)
 {
     FUNC_ENTER(NULL);
 
