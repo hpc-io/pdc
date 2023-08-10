@@ -156,6 +156,9 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_obj.h
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_prop.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_cont_pkg.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_obj_pkg.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_prop_pkg.h
   ${PDC_SOURCE_DIR}/src/api/pdc_query/include/pdc_query.h
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/api/pdc_transform/include/pdc_transform.h

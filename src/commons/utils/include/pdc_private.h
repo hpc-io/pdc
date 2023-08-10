@@ -76,18 +76,9 @@ typedef enum {
     PDC_Q_MATCH_GREATER_THAN /* greater than */
 } _pdc_query_op_t;
 
-typedef enum { ROW_major, COL_major } _pdc_major_type_t;
-
-typedef enum { C_lang = 0, FORTRAN_lang, PYTHON_lang, JULIA_lang, N_LANGUAGES } _pdc_analysis_language_t;
-
 /***************************/
 /* Library Private Structs */
 /***************************/
-struct _pdc_class {
-    char *  name;
-    pdcid_t local_id;
-};
-
 #ifdef __cplusplus
 #define ATTRIBUTE(a)
 #else /* __cplusplus */

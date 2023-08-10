@@ -25,7 +25,7 @@
 #ifndef PDC_ID_PKG_H
 #define PDC_ID_PKG_H
 
-#include "pdc_private.h"
+#include "pdc_public.h"
 #include "pdc_linkedlist.h"
 #include "mercury_atomic.h"
 /*
@@ -46,6 +46,11 @@
 
 /* Map an atom to an ID type number */
 #define PDC_TYPE(a) ((PDC_type_t)(((pdcid_t)(a) >> ID_BITS) & TYPE_MASK))
+
+struct _pdc_class {
+    char *  name;
+    pdcid_t local_id;
+};
 
 struct _pdc_id_info {
     pdcid_t           id;      /* ID for this info                 */

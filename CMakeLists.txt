@@ -99,6 +99,9 @@ endif()
 if(NOT PDC_INSTALL_DATA_DIR)
   set(PDC_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
+if(NOT PDC_INSTALL_SHARE_DIR)
+  set(PDC_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/pdc)
+endif()
 
 
 # The purpose of setting CMAKE_INSTALL_RPATH_USE_LINK_PATH to TRUE is to 
@@ -385,7 +388,7 @@ endif()
 #-----------------------------------------------------------------------------
 # SERVER CACHE option
 #-----------------------------------------------------------------------------
-option(PDC_SERVER_CACHE "Enable timing." OFF)
+option(PDC_SERVER_CACHE "Enable Server Caching." OFF)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
 endif()
