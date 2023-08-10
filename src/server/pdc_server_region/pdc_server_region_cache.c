@@ -679,6 +679,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     char **                  buf, **new_buf, *buf_ptr = NULL;
     uint64_t *               start, *end, *new_start, *new_end;
     int                      merged_request_size = 0;
+    int                      server_rank = 0;
     uint64_t                 unit;
     struct pdc_region_info **obj_regions;
 #ifdef PDC_TIMING
@@ -751,6 +752,9 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
         nflush += merged_request_size;
     }
 
+#ifdef ENABLE_MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
     // Iterate through all cache regions and use POSIX I/O to write them back to file system.
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
@@ -763,6 +767,9 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
             write_size *= region_cache_info->size[1];
         if (obj_cache->ndim >= 3)
             write_size *= region_cache_info->size[2];
+
+        printf("==PDC_SERVER[%d]: server flushed %.1f / %.1f MB to storage\n", server_rank,
+               write_size / 1048576.0, total_cache_size / 1048576.0);
 
         total_cache_size -= write_size;
         free(region_cache_info->offset);
