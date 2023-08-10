@@ -191,13 +191,14 @@ main(int argc, char *argv[])
     kvtag.type  = PDC_INT;
     kvtag.size  = sizeof(int);
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
+#endif
+
     for (iter = 0; iter < round; iter++) {
         v = iter;
 
-#ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-        stime = MPI_Wtime();
-#endif
         if (is_using_dart) {
             sprintf(value, "%ld", v);
             sprintf(exact_query, "%s=%s", kvtag.name, value);
@@ -209,18 +210,16 @@ main(int argc, char *argv[])
                 break;
             }
         }
-
-#ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
-        MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-        total_time = MPI_Wtime() - stime;
-#endif
-
-        if (my_rank == 0)
-            printf("Total time to query %d objects with tag: %.5f\n", ntotal, total_time);
-        fflush(stdout);
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+
+    if (my_rank == 0)
+        println("Total time to query %d objects with tag: %.5f", ntotal, total_time);
+#endif
     // close a container
     if (PDCcont_close(cont) < 0)
         printf("fail to close container c1\n");

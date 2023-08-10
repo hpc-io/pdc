@@ -53,23 +53,17 @@ gen_uuids(int count)
 char **
 gen_random_strings(int count, int maxlen, int alphabet_size)
 {
-
     int    c      = 0;
     int    i      = 0;
     char **result = (char **)calloc(count, sizeof(char *));
     for (c = 0; c < count; c++) {
-        // int len = maxlen;//rand()%maxlen;
-        int   len = rand() % maxlen;
-        char *str = (char *)calloc(len, sizeof(len));
-        for (i = 0; i < len - 1; i++) {
-            int randnum = rand();
-            if (randnum < 0)
-                randnum *= -1;
-            char chr = (char)((randnum % alphabet_size) + 65);
+        int   len = (rand() % (maxlen - 1)) + 1; // Ensure at least 1 character
+        char *str = (char *)calloc(len + 1, sizeof(char));
+        for (i = 0; i < len; i++) {
+            char chr = (char)((rand() % alphabet_size) + 65); // ASCII printable characters
             str[i]   = chr;
         }
-        str[len - 1] = '\0';
-        // printf("generated %s\n", str);
+        str[len]  = '\0'; // Null-terminate the string
         result[c] = str;
     }
     return result;

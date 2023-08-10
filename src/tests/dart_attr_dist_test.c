@@ -191,7 +191,6 @@ main(int argc, char *argv[])
                     printf("fail to add a kvtag to o%d\n", j);
                 timer_pause(&timer_obj);
                 duration_obj_ms += (double)timer_delta_ms(&timer_obj);
-                // insert object reference into dart
             }
             size_t num_object_per_pct          = attr_2_obj_array[i] / 100;
             size_t num_object_per_ton_thousand = attr_2_obj_array[i] / 10000;
@@ -224,7 +223,7 @@ main(int argc, char *argv[])
         pct = 0;
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
-                // insert object reference into dart
+                // insert object reference into DART
                 timer_start(&timer_dart);
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
                 timer_pause(&timer_dart);
@@ -289,7 +288,7 @@ main(int argc, char *argv[])
 #endif
 
     if (rank == 0)
-        printf("[Summary] Exact query %d attributes for  %zu objects with %d ranks, obj time: %.6f\n",
+        printf("[Summary] Exact query %d attributes for %zu objects with %d ranks, obj time: %.6f\n",
                total_num_attr, total_num_obj, size, total_time);
     // ========== EXACT QUERY with DART ==========
     duration_obj_ms  = 0.0;
