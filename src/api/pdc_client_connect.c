@@ -7436,7 +7436,8 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
             my_server_end = 0;
         }
     }
-
+    // FIXME: the following code does not try to combine results from all different servers.
+    // TODO: we need to confirm first.
     *n_res = 0;
     for (i = my_server_start; i < my_server_end; i++) {
         if (i >= pdc_server_num_g) {
@@ -8782,7 +8783,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     uint64_t **dart_out_ptr      = dart_out;
     size_t *   dart_out_size_ptr = dart_out_size;
 
-    printf("perform search [ %s ] on %d servers %d from rank %d\n", query_string, num_servers,
+    printf("perform search [ %s ] on %d servers from rank %d\n", query_string, num_servers,
            pdc_client_mpi_rank_g);
 
     for (i = 0; i < num_servers; i++) {
