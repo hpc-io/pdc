@@ -218,7 +218,6 @@ main(int argc, char *argv[])
 
     for (iter = 0; iter < round; iter++) {
         v = iter;
-
         if (is_using_dart) {
             sprintf(value, "%ld", v);
             sprintf(exact_query, "%s=%s", kvtag.name, value);
