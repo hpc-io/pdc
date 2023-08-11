@@ -65,7 +65,7 @@ simple_matches(const char *str, const char *pattern)
             break;
     }
     if (tok != NULL) {
-        // free(tok);
+        free(tok);
     }
     return result;
 }

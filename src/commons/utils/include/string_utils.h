@@ -156,7 +156,7 @@ void stderr_println(const char *format, ...);
  *
  * @param str
  * @param pattern
- * @return
+ * @return 1 if matches, 0 if not.
  */
 int simple_matches(const char *str, const char *pattern);
 

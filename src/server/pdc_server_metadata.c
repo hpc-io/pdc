@@ -1595,26 +1595,34 @@ pbool_t
 _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
 {
     pbool_t ret_value = TRUE;
-
     FUNC_ENTER(NULL);
+    // match attribute name
     if (in->name[0] != ' ') {
-        if (strcmp(in->name, kvtag->name) != 0)
+        int matched = simple_matches(kvtag->name, in->name);
+        if (matched == 0)
             ret_value = FALSE;
     }
-    if (ret_value == TRUE && ((char *)(in->value))[0] != ' ') {
-        if (memcmp(in->value, kvtag->value, in->size) != 0)
-            ret_value = FALSE;
+    // test attribute type
+    if (ret_value == TRUE && in->type == kvtag->type) {
+        if (in->type == PDC_STRING && ((char *)(in->value))[0] != ' ') {
+            char *pattern = (char *)in->value;
+            int   matched = simple_matches(kvtag->value, pattern);
+            if (matched == 0)
+                ret_value = FALSE;
+        }
+        else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
+               // have to support range query.
+            if (memcmp(in->value, kvtag->value, in->size) != 0)
+                ret_value = FALSE;
+        }
     }
-    // TODO: add rule for prefix/suffix/infix matching, and possibly range query
-    // 1. test if in->name contains '*'. If yes, see how to deal with *.
-    // 2. test if in->value contains '*'. If yes, see how to deal with *.
-    // 3. test if in->value is a range query. If yes, see how to deal with range query.
 
     FUNC_LEAVE(ret_value);
 }
 
 perr_t
-PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids)
+PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
+                                  uint32_t *n_meta, uint64_t **obj_ids)
 {
     perr_t                     ret_value = SUCCEED;
     uint32_t                   iter      = 0;

@@ -7199,6 +7199,10 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     void *              buf                = NULL;
     uint32_t            n_meta, actual_cnt;
     uint64_t            buf_sizes[1];
+    uint32_t            bulk_sgnum;
+    uint64_t *          ids_buf_sizes;
+    void **             ids_buf;
+    uint64_t *          u64_arr_ptr;
 
     FUNC_ENTER(NULL);
 
@@ -7207,11 +7211,24 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     n_meta = bulk_args->n_meta;
 
     if (hg_cb_info->ret == HG_SUCCESS) {
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
-                       &actual_cnt);
+        bulk_sgnum    = HG_Bulk_get_segment_count(local_bulk_handle);
+        ids_buf       = (void **)calloc(sizeof(void *), bulk_sgnum);
+        ids_buf_sizes = (uint64_t *)calloc(sizeof(uint64_t), bulk_sgnum);
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, bulk_sgnum, ids_buf,
+                       ids_buf_sizes, &actual_cnt);
 
+        u64_arr_ptr        = ((uint64_t **)(ids_buf))[0];
         bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
-        memcpy(bulk_args->obj_ids, buf, sizeof(uint64_t) * n_meta);
+        for (i = 0; i < n_meta; i++) {
+            bulk_args->obj_ids[i] = *u64_arr_ptr;
+            u64_arr_ptr++;
+        }
+
+        // HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
+        //                &actual_cnt);
+
+        // bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
+        // memcpy(bulk_args->obj_ids, buf, sizeof(uint64_t) * n_meta);
     }
     else
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "==PDC_CLIENT[%d]: Error with bulk handle", pdc_client_mpi_rank_g);
@@ -7390,7 +7407,7 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
         else {
             *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
             memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
-            free(temp_ids);
+            // free(temp_ids);
         }
         *n_res = *n_res + nmeta;
     }
