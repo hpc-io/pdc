@@ -172,8 +172,9 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
+    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
+
     for (iter = 0; iter < round; iter++) {
-        assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
         v = iter;
         sprintf(value, "%d", v);
         if (is_using_dart) {
@@ -194,11 +195,11 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             printf("Rank %d: Added a kvtag to %d objects\n", my_rank, my_add_tag);
         fflush(stdout);
+    }
 
 #ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    }
 
     kvtag.name  = attr_name_per_rank;
     kvtag.value = (void *)&v;
