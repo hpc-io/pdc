@@ -92,7 +92,7 @@ sleep 5
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 1000 0
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 1000 USING_DART
 
 echo ""
 echo "================="
