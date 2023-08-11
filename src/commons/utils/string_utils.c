@@ -8,13 +8,16 @@
 int
 startsWith(const char *str, const char *pre)
 {
-    char *found = strstr(str, pre);
-    return (found && (found - str) == 0);
+    if (str == NULL || pre == NULL)
+        return 0;
+    return strncmp(str, pre, strlen(pre)) == 0;
 }
 
 int
 endsWith(const char *str, const char *suf)
 {
+    if (str == NULL || suf == NULL)
+        return 0;
     size_t lensuf = strlen(suf), lenstr = strlen(str);
     return lenstr < lensuf ? 0 : (strncmp(str + lenstr - lensuf, suf, lensuf) == 0);
 }

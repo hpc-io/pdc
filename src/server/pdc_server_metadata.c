@@ -1597,7 +1597,6 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
     pbool_t ret_value = TRUE;
 
     FUNC_ENTER(NULL);
-
     if (in->name[0] != ' ') {
         if (strcmp(in->name, kvtag->name) != 0)
             ret_value = FALSE;
@@ -1606,6 +1605,10 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
         if (memcmp(in->value, kvtag->value, in->size) != 0)
             ret_value = FALSE;
     }
+    // TODO: add rule for prefix/suffix/infix matching, and possibly range query
+    // 1. test if in->name contains '*'. If yes, see how to deal with *.
+    // 2. test if in->value contains '*'. If yes, see how to deal with *.
+    // 3. test if in->value is a range query. If yes, see how to deal with range query.
 
     FUNC_LEAVE(ret_value);
 }
