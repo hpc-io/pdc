@@ -51,12 +51,12 @@ N_NODE=NODENUM
 NCLIENT=$((NUM_CLIENT_PROC_PER_NODE * N_NODE))
 NSERVER=$((NUM_SERVER_PROC_PER_NODE * N_NODE))
 
-USING_DART=USING_DART
+USE_DART=USING_DART
 
 # clean up the PDC tmp directory
 export PDC_TMPDIR=$SCRATCH/data/pdc/conf
 rm -rf $PDC_TMPDIR/*
-export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE/$USING_DART
+export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE/$USE_DART
 mkdir -p $PDC_TMPDIR
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
@@ -94,7 +94,7 @@ sleep 5
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 1000 $USING_DART
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 1000 $USE_DART
 
 echo ""
 echo "================="
