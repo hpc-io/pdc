@@ -172,12 +172,6 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
-    // tag-obj map:
-    // 0: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-    // 1: 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
-    // 2: 20, 21, 22, 23, 24, 25, 26, 27, 28, 29
-    // 3: 30, 31, 32, 33, 34, 35, 36, 37, 38, 39
-
     for (iter = 0; iter < round; iter++) {
         assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
         v = iter;

@@ -7392,9 +7392,8 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
             memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
             free(temp_ids);
         }
+        *n_res = *n_res + nmeta;
     }
-
-    *n_res = *n_res + nmeta;
 
 done:
     fflush(stdout);
