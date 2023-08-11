@@ -7324,18 +7324,21 @@ done:
 perr_t
 PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
 {
-    perr_t  ret_value = SUCCEED;
-    int32_t i;
-    int     nmeta = 0;
+    perr_t   ret_value = SUCCEED;
+    int      i, nmeta = 0;
+    uint32_t server_id;
 
     FUNC_ENTER(NULL);
 
     *n_res = 0;
     for (i = 0; i < pdc_server_num_g; i++) {
-        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, pdc_ids);
+        // when there are multiple clients issuing different queries concurrently, try to balance the
+        // server workload by having different clients sending queries with a different order
+        server_id = (pdc_client_mpi_rank_g + i) % pdc_server_num_g;
+        ret_value = PDC_Client_query_kvtag_server(server_id, kvtag, &nmeta, pdc_ids);
         if (ret_value != SUCCEED)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %d",
-                        pdc_client_mpi_rank_g, i);
+                        pdc_client_mpi_rank_g, server_id);
     }
 
     *n_res = nmeta;
