@@ -7219,7 +7219,7 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
         u64_arr_ptr        = ((uint64_t **)(ids_buf))[0];
         bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
-        for (inti = 0; i < n_meta; i++) {
+        for (int i = 0; i < n_meta; i++) {
             bulk_args->obj_ids[i] = *u64_arr_ptr;
             u64_arr_ptr++;
         }
