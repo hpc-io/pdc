@@ -7196,8 +7196,8 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     struct bulk_args_t *bulk_args;
     hg_bulk_t           origin_bulk_handle = hg_cb_info->info.bulk.origin_handle;
     hg_bulk_t           local_bulk_handle  = hg_cb_info->info.bulk.local_handle;
-    void *              buf                = NULL;
     uint32_t            n_meta, actual_cnt;
+    void *              buf = NULL;
     uint64_t            buf_sizes[1];
     uint32_t            bulk_sgnum;
     uint64_t *          ids_buf_sizes;
@@ -7219,7 +7219,7 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
         u64_arr_ptr        = ((uint64_t **)(ids_buf))[0];
         bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
-        for (int i = 0; i < n_meta; i++) {
+        for (inti = 0; i < n_meta; i++) {
             bulk_args->obj_ids[i] = *u64_arr_ptr;
             u64_arr_ptr++;
         }
