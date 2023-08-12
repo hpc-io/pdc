@@ -7312,7 +7312,7 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
 
     *n_res = bulk_arg->n_meta;
     if (*n_res > 0)
-        *out   = bulk_arg->obj_ids;
+        *out = bulk_arg->obj_ids;
     free(bulk_arg);
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 
