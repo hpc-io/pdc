@@ -7311,7 +7311,8 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     PDC_Client_check_bulk(send_context_g);
 
     *n_res = bulk_arg->n_meta;
-    *out   = bulk_arg->obj_ids;
+    if (*n_res > 0)
+        *out   = bulk_arg->obj_ids;
     free(bulk_arg);
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 
@@ -7415,7 +7416,8 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         else {
             *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
             memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
-            free(temp_ids);
+            if (temp_ids)
+                free(temp_ids);
         }
         *n_res = *n_res + nmeta;
     }
