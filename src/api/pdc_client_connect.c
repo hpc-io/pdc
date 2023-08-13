@@ -7417,10 +7417,10 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
             free(temp_ids);
     }
     *n_res = *n_res + nmeta;
-}
 
-done : fflush(stdout);
-FUNC_LEAVE(ret_value);
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
 }
 
 void
