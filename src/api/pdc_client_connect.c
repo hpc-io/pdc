@@ -7373,7 +7373,8 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     PDC_Client_check_bulk(send_context_g);
 
     *n_res = bulk_arg->n_meta;
-    *out   = bulk_arg->obj_ids;
+    if (*n_res > 0)
+        *out = bulk_arg->obj_ids;
     free(bulk_arg);
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 
@@ -7390,6 +7391,7 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
     int32_t   i;
     int       nmeta    = 0;
     uint64_t *temp_ids = NULL;
+    uint32_t  server_id;
 
     FUNC_ENTER(NULL);
 
@@ -7397,24 +7399,27 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
     *pdc_ids = NULL;
 
     for (i = 0; i < pdc_server_num_g; i++) {
-        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, &temp_ids);
+        // when there are multiple clients issuing different queries concurrently, try to balance the
+        // server workload by having different clients sending queries with a different order
+        server_id = (pdc_client_mpi_rank_g + i) % pdc_server_num_g;
+        ret_value = PDC_Client_query_kvtag_server(server_id, kvtag, &nmeta, pdc_ids);
         if (ret_value != SUCCEED)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %d",
-                        pdc_client_mpi_rank_g, i);
-
-        if (i == 0)
-            *pdc_ids = temp_ids;
-        else {
-            *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
-            memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
-            // free(temp_ids);
-        }
-        *n_res = *n_res + nmeta;
+                        pdc_client_mpi_rank_g, server_id);
     }
 
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
+    if (i == 0)
+        *pdc_ids = temp_ids;
+    else {
+        *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
+        memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
+        // free(temp_ids);
+    }
+    *n_res = *n_res + nmeta;
+}
+
+done : fflush(stdout);
+FUNC_LEAVE(ret_value);
 }
 
 void
@@ -7486,7 +7491,8 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         else {
             *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
             memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
-            free(temp_ids);
+            if (temp_ids)
+                free(temp_ids);
         }
         *n_res = *n_res + nmeta;
     }
