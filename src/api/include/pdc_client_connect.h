@@ -595,15 +595,30 @@ perr_t PDC_Client_create_cont_id_mpi(const char *cont_name, pdcid_t cont_create_
 perr_t PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids);
 
 /**
- * Client sends query requests to server (used by MPI mode)
+ * Client sends query requests to server (used by MPI mode), each client gets a subset of the
+ * queried results
  *
- * \param kvtag [IN]            *********
- * \param n_res [IN]            **********
- * \param pdc_ids [OUT]         *********
+ * \param kvtag [IN]            kvtag
+ * \param n_res [OUT]           number of hits
+ * \param pdc_ids [OUT]         object ids of hits, unordered
  *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids);
+
+#ifdef ENABLE_MPI
+/**
+ * Client sends query requests to server (used by MPI mode), all clients get the same aggregated
+ * query results, currently assumes MPI_COMM_WORLD
+ *
+ * \param kvtag [IN]            kvtag
+ * \param n_res [OUT]           number of hits
+ * \param pdc_ids [OUT]         object ids of hits, unordered
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm comm);
+#endif
 
 /**
  * Client sends query requests to server (used by MPI mode)
