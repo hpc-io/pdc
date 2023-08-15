@@ -8700,7 +8700,8 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
 
     // loop
     bulk_todo_g = 1;
-    // println("outside bulk callback: bulk_transfer_done_g = %d", hg_atomic_get32(&bulk_transfer_done_g));
+    // println("outside bulk callback: bulk_transfer_done_g = %d",
+    // hg_atomic_get32(&bulk_transfer_done_g));
     hg_atomic_set32(&bulk_transfer_done_g, 0);
     PDC_Client_check_bulk(send_context_g);
     // println("[Client_Side_Bulk]  after check bulk. rank = %d", pdc_client_mpi_rank_g);
