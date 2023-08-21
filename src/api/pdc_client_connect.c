@@ -1468,10 +1468,12 @@ PDC_Client_init()
     srand(time(NULL));
 
     /* Initialize DART space */
-    dart_g                = (DART *)calloc(1, sizeof(DART));
-    int extra_tree_height = 0;
+    dart_g                 = (DART *)calloc(1, sizeof(DART));
+    int extra_tree_height  = 0;
+    int replication_factor = pdc_server_num_g / 10;
+    replication_factor     = replication_factor > 0 ? replication_factor : 1;
     dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE, extra_tree_height,
-                    1);
+                    replication_factor);
 
 done:
     fflush(stdout);
