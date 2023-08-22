@@ -653,7 +653,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
         }
         else if (t_class == H5T_ENUM) {
             /* puts(" 'H5T_ENUM'."); */
-            return PDC_ENUM;
+            return PDC_INT;
         }
         else {
             printf("PDC does not support this data type yet.\n");
