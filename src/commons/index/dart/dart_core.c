@@ -76,10 +76,10 @@ get_base_virtual_node_id_by_string(DART *dart, char *str)
     uint64_t i_t_n;
     int      met_end = 0;
     for (n = 1; n <= dart->dart_tree_height; n++) {
-        if (str[n - 1] == '\0') {
+        if (str[n - 1] == '\0') { // test if the string ends.
             met_end = 1;
         }
-        if (str[n - 1] != '\0' && met_end == 0) {
+        if (str[n - 1] != '\0' && met_end == 0) { // if not, we calculate the character index.
             i_t_n = ((uint64_t)str[n - 1]) % dart->alphabet_size;
         }
         c = (i_t_n) * ((uint64_t)uint32_pow(dart->alphabet_size, dart->dart_tree_height - n));
@@ -551,12 +551,6 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
     if (out == NULL) {
         return 0;
     }
-
-    // char *pad_word = (char *)calloc(dart_g->dart_tree_height+2, sizeof(char));
-    // int fi = 0;
-    // for (fi = 0; fi < dart_g->dart_tree_height; fi++){
-    //     pad_word[fi] = fi > (strlen(key)-1)? key[strlen(key)-1]: key[fi];
-    // }
 
     if (op_type == OP_INSERT) {
         // An INSERT operation happens
