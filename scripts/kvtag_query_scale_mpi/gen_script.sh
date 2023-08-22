@@ -13,7 +13,7 @@ NUM_THREAD_PER_CLIENT_PROC=2
 # Designated number of processes for server anc client on each node
 # (this should be associated with -n option in srun)
 NUM_SERVER_PROC_PER_NODE=1
-NUM_CLIENT_PROC_PER_NODE=127
+NUM_CLIENT_PROC_PER_NODE=120
 
 
 MAX_NODE=512
