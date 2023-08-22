@@ -1082,8 +1082,8 @@ perr_t PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *
  * \param out      [OUT]    Object IDs
  */
 perr_t PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,
-                                                  dart_object_ref_type_t ref_type, int *n_res,
-                                                  uint64_t **out);
+                                                  dart_object_ref_type_t ref_type, int *n_res, uint64_t **out,
+                                                  MPI_Comm comm);
 #endif
 
 /**
