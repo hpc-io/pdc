@@ -167,8 +167,9 @@ static hg_id_t send_data_query_register_id_g;
 static hg_id_t get_sel_data_register_id_g;
 
 // DART index
-static hg_id_t dart_get_server_info_g;
-static hg_id_t dart_perform_one_server_g;
+static hg_id_t  dart_get_server_info_g;
+static hg_id_t  dart_perform_one_server_g;
+static uint64_t dart_client_req_counter_g = 0;
 
 int                        cache_percentage_g       = 0;
 int                        cache_count_g            = 0;
@@ -8987,6 +8988,44 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
 
     return ret;
 }
+
+#ifdef ENABLE_MPI
+perr_t
+PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,
+                                           dart_object_ref_type_t ref_type, int *n_res, uint64_t **out)
+{
+    perr_t ret = FAIL;
+
+    if (n_res == NULL || out == NULL) {
+        return ret;
+    }
+
+    int       n_obj = 0;
+    uint64_t *dart_out;
+
+    if (dart_client_req_counter_g % pdc_client_mpi_size_g == pdc_client_mpi_rank_g) {
+        PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    // broadcast the result to all other ranks
+    // broadcast the number of objects first.
+    MPI_Bcast(&n_obj, 1, MPI_INT, dart_client_req_counter_g % pdc_client_mpi_size_g, MPI_COMM_WORLD);
+    // optionally broadcast the object IDs.
+    if (n_obj > 0) {
+        // for those ranks that are not the root, allocate memory for the object IDs.
+        if (dart_client_req_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
+            dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
+        }
+        MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, dart_client_req_counter_g % pdc_client_mpi_size_g,
+                  MPI_COMM_WORLD);
+    }
+    dart_client_req_counter_g++;
+
+    *n_res = n_obj;
+    *out   = dart_out;
+    return SUCCEED;
+}
+#endif
 
 perr_t
 PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,

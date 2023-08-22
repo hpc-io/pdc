@@ -1054,6 +1054,7 @@ dart_server dart_retrieve_server_info_cb(uint32_t serverId);
 
 /**
  * Search through dart index with key-value pair.
+ * Each calling client will send the request and get the complete result.
  * if the value is not specified, we just retrieve all the indexed data
  * on the secondary index associated with the primary index
  * specified by attr_name;
@@ -1065,6 +1066,25 @@ dart_server dart_retrieve_server_info_cb(uint32_t serverId);
  */
 perr_t PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_string,
                                               dart_object_ref_type_t ref_type, int *n_res, uint64_t **out);
+
+#ifdef ENABLE_MPI
+/**
+ * Search through dart index with key-value pair.
+ * This is an MPI version of the search function. Multiple ranks can call this function, but only one rank
+ * sends the request and gets the result and broadcasts the result to all other ranks.
+ * if the value is not
+ * specified, we just retrieve all the indexed data on the secondary index associated with the primary index
+ * specified by attr_name;
+ *
+ * \param hash_algo     [IN]    name of the hashing algorithm
+ * \param query_string [IN]    Name of the attribute
+ * \param n_res [OUT]   Number of object IDs
+ * \param out      [OUT]    Object IDs
+ */
+perr_t PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,
+                                                  dart_object_ref_type_t ref_type, int *n_res,
+                                                  uint64_t **out);
+#endif
 
 /**
  * Delete the inverted mapping between value and data.

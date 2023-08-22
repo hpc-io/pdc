@@ -112,7 +112,7 @@ main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
 
-    if (argc < 4) {
+    if (argc < 5) {
         if (my_rank == 0)
             print_usage(argv[0]);
         goto done;
@@ -172,14 +172,10 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
-    // tag-obj map:
-    // 0: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-    // 1: 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
-    // 2: 20, 21, 22, 23, 24, 25, 26, 27, 28, 29
-    // 3: 30, 31, 32, 33, 34, 35, 36, 37, 38, 39
+    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
 
+    // This is for adding #rounds tags to the objects.
     for (iter = 0; iter < round; iter++) {
-        assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
         v = iter;
         sprintf(value, "%d", v);
         if (is_using_dart) {
@@ -200,11 +196,11 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             printf("Rank %d: Added a kvtag to %d objects\n", my_rank, my_add_tag);
         fflush(stdout);
+    }
 
 #ifdef ENABLE_MPI
-        MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    }
 
     kvtag.name  = attr_name_per_rank;
     kvtag.value = (void *)&v;
@@ -218,14 +214,13 @@ main(int argc, char *argv[])
 
     for (iter = 0; iter < round; iter++) {
         v = iter;
-
         if (is_using_dart) {
             sprintf(value, "%ld", v);
             sprintf(exact_query, "%s=%s", kvtag.name, value);
-            PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &nres, &pdc_ids);
+            PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, exact_query, ref_type, &nres, &pdc_ids);
         }
         else {
-            if (PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
+            if (PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids) < 0) {
                 printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                 break;
             }
