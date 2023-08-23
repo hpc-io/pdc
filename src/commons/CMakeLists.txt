@@ -18,6 +18,12 @@ if(THREADS_HAVE_PTHREAD_ARG)
   set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
 endif()
 
+# Math library
+
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+  set(PDC_EXT_LIB_DEPENDENCIES ${MATH_LIBRARY} ${PDC_EXT_LIB_DEPENDENCIES}) 
+endif()
 
 # Mercury
 find_package(MERCURY REQUIRED)
