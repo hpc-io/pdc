@@ -7468,79 +7468,6 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     PDC_assign_server(&my_server_start, &my_server_end, &my_server_count);
 
-    // if (pdc_server_num_g > pdc_client_mpi_size_g) {
-    //     my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
-    //     my_server_start = pdc_client_mpi_rank_g * my_server_count;
-    //     my_server_end   = my_server_start + my_server_count;
-    //     if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
-    //         my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
-    //     }
-    // }
-    // else {
-    //     my_server_start = pdc_client_mpi_rank_g;
-    //     my_server_end   = my_server_start + 1;
-    //     if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
-    //         my_server_end = 0;
-    //     }
-    // }
-
-    *n_res   = 0;
-    *pdc_ids = NULL;
-    for (i = my_server_start; i < my_server_end; i++) {
-        if (i >= pdc_server_num_g)
-            break;
-
-        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, &temp_ids);
-        if (ret_value != SUCCEED)
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %u",
-                        pdc_client_mpi_rank_g, i);
-        if (i == my_server_start)
-            *pdc_ids = temp_ids;
-        else {
-            *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
-            memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
-            if (temp_ids)
-                free(temp_ids);
-        }
-        *n_res = *n_res + nmeta;
-    }
-
-done:
-    fflush(stdout);
-    FUNC_LEAVE(ret_value);
-}
-
-#ifdef ENABLE_MPI
-// All clients collectively query all servers, all clients get all results
-perr_t
-PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm comm)
-{
-    perr_t    ret_value = SUCCEED;
-    int32_t   my_server_start, my_server_end, my_server_count;
-    int32_t   i;
-    int       nmeta = 0, *all_nmeta = NULL, ntotal = 0, *disp = NULL;
-    uint64_t *temp_ids = NULL;
-
-    FUNC_ENTER(NULL);
-
-    PDC_assign_server(&my_server_start, &my_server_end, &my_server_count);
-
-    // if (pdc_server_num_g > pdc_client_mpi_size_g) {
-    //     my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
-    //     my_server_start = pdc_client_mpi_rank_g * my_server_count;
-    //     my_server_end   = my_server_start + my_server_count;
-    //     if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
-    //         my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
-    //     }
-    // }
-    // else {
-    //     my_server_start = pdc_client_mpi_rank_g;
-    //     my_server_end   = my_server_start + 1;
-    //     if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
-    //         my_server_end = 0;
-    //     }
-    // }
-
     *n_res   = 0;
     *pdc_ids = NULL;
     for (i = my_server_start; i < my_server_end; i++) {
@@ -7564,34 +7491,50 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         /* printf("==PDC_CLIENT[%d]: server %u returned %d res \n", pdc_client_mpi_rank_g, i, *n_res); */
     }
 
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+#ifdef ENABLE_MPI
+// All clients collectively query all servers, all clients get all results
+perr_t
+PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm comm)
+{
+    perr_t ret_value = SUCCEED;
+    int *  all_nmeta = NULL, ntotal = 0, *disp = NULL, i = 0;
+
+    FUNC_ENTER(NULL);
+    ret_value = PDC_Client_query_kvtag_col(kvtag, n_res, pdc_ids);
+
     if (pdc_client_mpi_size_g == 1)
         goto done;
 
+    // perform all gather to get the complete result.
+    // First, let's get the number of results from each client
     all_nmeta = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
-    disp      = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
     MPI_Allgather(n_res, 1, MPI_INT, all_nmeta, 1, MPI_INT, comm);
+
+    // Now, let's calculate the displacement for each client, and also the total number of results
+    disp   = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
     ntotal = 0;
     for (i = 0; i < pdc_client_mpi_size_g; i++) {
         disp[i] = ntotal;
         ntotal += all_nmeta[i];
-        // if (i == 0)
-        //     disp[i] = 0;
-        // else
-        //     disp[i] = disp[i - 1] + all_nmeta[i];
     }
-
-    /* printf("==PDC_CLIENT[%d]: after allgather \n", pdc_client_mpi_rank_g); */
-
-    temp_ids = (uint64_t *)malloc(ntotal * sizeof(uint64_t));
-    MPI_Allgatherv(pdc_ids, *n_res, MPI_UINT64_T, temp_ids, all_nmeta, disp, MPI_UINT64_T, comm);
-
-    /* printf("==PDC_CLIENT[%d]: after allgatherv\n", pdc_client_mpi_rank_g); */
-
+    // Finally, let's gather all the results. Since each client is getting a partial result which can be of
+    // different size, we need to use MPI_Allgatherv for gathering variable-size arrays from different
+    // clients.
+    uint64_t *all_ids = (uint64_t *)malloc(ntotal * sizeof(uint64_t));
+    MPI_Allgatherv(pdc_ids, *n_res, MPI_UINT64_T, all_ids, all_nmeta, disp, MPI_UINT64_T, comm);
+    // Never forget to free the memory that is no longer used.
     free(all_nmeta);
     free(disp);
     if (*n_res > 0)
         free(*pdc_ids);
-    *pdc_ids = temp_ids;
+
+    // Now, let's return the result to the caller
+    *pdc_ids = all_ids;
     *n_res   = ntotal;
 
 done:
