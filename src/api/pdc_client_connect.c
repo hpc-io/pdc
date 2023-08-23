@@ -7507,7 +7507,7 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     FUNC_ENTER(NULL);
     ret_value = PDC_Client_query_kvtag_col(kvtag, n_res, pdc_ids);
 
-    if (n_res <= 0) {
+    if (*n_res <= 0) {
         *n_res   = 0;
         *pdc_ids = NULL;
         goto done;
