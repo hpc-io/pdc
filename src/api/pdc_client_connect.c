@@ -7517,10 +7517,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         goto done;
 
     // print the pdc ids returned by this client, along with the client id
-    /* printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g); */
-    /* for (i = 0; i < *n_res; i++) */
-    /*     printf("%llu ", (*pdc_ids)[i]); */
-    /* printf("\n"); */
+    printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
+    for (i = 0; i < *n_res; i++)
+        printf("%llu ", (*pdc_ids)[i]);
+    printf("\n");
 
     // perform all gather to get the complete result.
     // First, let's get the number of results from each client
