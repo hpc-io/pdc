@@ -1,6 +1,7 @@
 #!/bin/bash -l
 
 #REGSBATCH -q regular
+#DBGSBATCH -q debug
 #SBATCH -N NODENUM
 #REGSBATCH -t 4:00:00
 #DBGSBATCH -t 0:30:00
