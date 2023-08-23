@@ -174,27 +174,25 @@ main(int argc, char *argv[])
 
     assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
 
-    for (iter = 0; iter < round; iter++) {
-        v = iter;
-        sprintf(value, "%d", v);
-        if (is_using_dart) {
-            for (i = 0; i < my_add_tag; i++) {
+    // This is for adding #rounds tags to the objects.
+    for (i = 0; i < my_add_tag; i++) {
+        for (iter = 0; iter < round; iter++) {
+            v = iter;
+            sprintf(value, "%d", v);
+            if (is_using_dart) {
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, ref_type,
                                                         (uint64_t)obj_ids[i]) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
-        }
-        else {
-            for (i = 0; i < my_add_tag; i++) {
-                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
+            else {
+                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+                }
             }
         }
-
         if (my_rank == 0)
-            printf("Rank %d: Added a kvtag to %d objects\n", my_rank, my_add_tag);
-        fflush(stdout);
+            println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
 
 #ifdef ENABLE_MPI
@@ -228,7 +226,6 @@ main(int argc, char *argv[])
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
 
     if (my_rank == 0)

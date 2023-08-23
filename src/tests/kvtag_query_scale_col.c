@@ -64,7 +64,7 @@ print_usage(char *name)
     printf("%s n_obj n_round n_selectivity is_using_dart\n", name);
     printf("Summary: This test will create n_obj objects, and add n_selectivity tags to each object. Then it "
            "will "
-           "perform n_round point-to-point queries against the tags, each query from each client should get "
+           "perform n_round collective queries against the tags, each query from each client should get "
            "a whole result set.\n");
     printf("Parameters:\n");
     printf("  n_obj: number of objects\n");

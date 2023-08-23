@@ -7507,8 +7507,20 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     FUNC_ENTER(NULL);
     ret_value = PDC_Client_query_kvtag_col(kvtag, n_res, pdc_ids);
 
+    if (n_res <= 0) {
+        *n_res   = 0;
+        *pdc_ids = NULL;
+        goto done;
+    }
+
     if (pdc_client_mpi_size_g == 1)
         goto done;
+
+    // print the pdc ids returned by this client, along with the client id
+    /* printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g); */
+    /* for (i = 0; i < *n_res; i++) */
+    /*     printf("%llu ", (*pdc_ids)[i]); */
+    /* printf("\n"); */
 
     // perform all gather to get the complete result.
     // First, let's get the number of results from each client
@@ -7536,6 +7548,14 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     // Now, let's return the result to the caller
     *pdc_ids = all_ids;
     *n_res   = ntotal;
+
+    // print the pdc ids returned after gathering all the results
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT == GATHERED [%d]: ", pdc_client_mpi_rank_g);
+        for (i = 0; i < *n_res; i++)
+            printf("%llu ", (*pdc_ids)[i]);
+        printf("\n");
+    }
 
 done:
     fflush(stdout);
