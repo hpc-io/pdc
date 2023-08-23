@@ -358,6 +358,23 @@ if(PDC_USE_CRAY_DRC)
 endif()
 
 #-----------------------------------------------------------------------------
+# Julia Support option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_JULIA_SUPPORT "Enable Julia Support." OFF)
+if(PDC_ENABLE_JULIA_SUPPORT)
+  find_package(JULIA REQUIRED)
+  if(JULIA_FOUND)
+    set(PDC_ENABLE_JULIA 1)
+    # include_directories(${JULIA_INCLUDE_DIRS})
+    # set(PDC_EXT_LIB_DEPENDENCIES
+    #   ${PDC_EXT_LIB_DEPENDENCIES}
+    #   ${JULIA_LIBRARIES}
+    # )
+else()
+  message(FATAL_ERROR "Could not find Julia.")
+endif()
+
+#-----------------------------------------------------------------------------
 # MPI option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_MPI "Enable MPI." ON)

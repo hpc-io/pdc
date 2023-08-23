@@ -1,5 +1,3 @@
-find_package(JULIA REQUIRED)
-
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -10,8 +8,14 @@ include_directories(
   ${PDC_SOURCE_DIR}/src/client_api/include
   $ENV{HOME}/Sandbox/c-blosc/blosc
   $ENV{HOME}/include
-  ${JULIA_INCLUDE_DIRS}
 )
+
+# *************************************************
+# Julia Support
+# *************************************************
+if (PDC_ENABLE_JULIA)
+  include_directories(${JULIA_INCLUDE_DIRS})
+endif(PDC_ENABLE_JULIA)
 
 # *************************************************
 # *  Find UUID library
@@ -143,12 +147,21 @@ if(UUID_FOUND)
   dart_test
   )
 
-  list(APPEND EXTRA_SRC_FILE
-    ${CMAKE_CURRENT_SOURCE_DIR}/helper/julia_helper_loader.c
-  )
+  set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES})
+  set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/helper/include)
 
-  set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES} ${JULIA_LIBRARIES})
-  set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS} ${JULIA_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/helper/include)
+  set(EXTRA_SRC_FILE "")
+  if (PDC_ENABLE_JULIA)
+    list(APPEND EXTRA_SRC_FILE
+      ${CMAKE_CURRENT_SOURCE_DIR}/helper/julia_helper_loader.c
+    )
+    list(APPEND TEST_EXT_LIB
+      ${JULIA_LIBRARIES}
+    )
+    list(APPEND TEST_EXT_INCLUDE_DIRS
+      ${JULIA_INCLUDE_DIRS}
+    )
+  endif(PDC_ENABLE_JULIA)
 
   foreach(program ${ENHANCED_PROGRAMS})
     add_executable(${program} ${program}.c ${EXTRA_SRC_FILE})
