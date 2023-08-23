@@ -7538,7 +7538,9 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     // different size, we need to use MPI_Allgatherv for gathering variable-size arrays from different
     // clients.
     uint64_t *all_ids = (uint64_t *)malloc(ntotal * sizeof(uint64_t));
-    MPI_Allgatherv(pdc_ids, *n_res, MPI_UINT64_T, all_ids, all_nmeta, disp, MPI_UINT64_T, comm);
+    MPI_Allgatherv(*pdc_ids, *n_res, MPI_UINT64_T, all_ids, all_nmeta, disp, MPI_UINT64_T, comm);
+    // char *all_data = (char *)malloc(ntotal * sizeof(char));
+    // MPI_Allgatherv(*pdc_ids, send_bytes, MPI_BYTE, all_data, all_nmeta, disp, MPI_BYTE, comm);
     // Never forget to free the memory that is no longer used.
     free(all_nmeta);
     free(disp);
