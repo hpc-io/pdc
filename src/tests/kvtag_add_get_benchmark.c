@@ -383,8 +383,6 @@ main(int argc, char *argv[])
 
         k++;
 
-        k++;
-
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         stime = MPI_Wtime();
