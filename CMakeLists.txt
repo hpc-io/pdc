@@ -370,8 +370,9 @@ if(PDC_ENABLE_JULIA_SUPPORT)
     #   ${PDC_EXT_LIB_DEPENDENCIES}
     #   ${JULIA_LIBRARIES}
     # )
-else()
-  message(FATAL_ERROR "Could not find Julia.")
+  else()
+    message(FATAL_ERROR "Could not find Julia.")
+  endif()
 endif()
 
 #-----------------------------------------------------------------------------
