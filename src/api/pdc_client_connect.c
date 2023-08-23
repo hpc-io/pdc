@@ -7548,7 +7548,7 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
             break;
 
         /* printf("==PDC_CLIENT[%d]: querying server %u\n", pdc_client_mpi_rank_g, i); */
-
+        temp_ids  = NULL;
         ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, &temp_ids);
         if (ret_value != SUCCEED)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error in %s querying server %u", pdc_client_mpi_rank_g,
@@ -7570,12 +7570,14 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     all_nmeta = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
     disp      = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
     MPI_Allgather(n_res, 1, MPI_INT, all_nmeta, 1, MPI_INT, comm);
+    ntotal = 0;
     for (i = 0; i < pdc_client_mpi_size_g; i++) {
+        disp[i] = ntotal;
         ntotal += all_nmeta[i];
-        if (i == 0)
-            disp[i] = 0;
-        else
-            disp[i] = disp[i - 1] + all_nmeta[i];
+        // if (i == 0)
+        //     disp[i] = 0;
+        // else
+        //     disp[i] = disp[i - 1] + all_nmeta[i];
     }
 
     /* printf("==PDC_CLIENT[%d]: after allgather \n", pdc_client_mpi_rank_g); */
