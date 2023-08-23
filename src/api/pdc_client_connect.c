@@ -7505,6 +7505,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     int *  all_nmeta = NULL, ntotal = 0, *disp = NULL, i = 0;
 
     FUNC_ENTER(NULL);
+
+    stopwatch_t timer;
+
+    timer_start(&timer);
     ret_value = PDC_Client_query_kvtag_col(kvtag, n_res, pdc_ids);
 
     if (*n_res <= 0) {
@@ -7523,6 +7527,8 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         printf("%llu ", (*pdc_ids)[i]);
     printf("\n");
     */
+
+    timer_pause(&timer);
 
     // perform all gather to get the complete result.
     // First, let's get the number of results from each client

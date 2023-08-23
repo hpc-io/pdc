@@ -187,65 +187,23 @@ endif()
 # Set whether or not to disable compiler warnings
 #------------------------------------------------------------------------------
 set(SUPPRESSED_LIST "")
-# Disable warnings for unused parameters
-option(PDC_SUPPRESS_UNUSED_ARG "Disable unused argument warnings" ON)
-if(PDC_SUPPRESS_UNUSED_ARG)
-  set(SUPPRESSED_LIST "-Wno-unused-parameter" ${SUPPRESSED_LIST})
-endif()
 
-# Disable warnings for unused variables
-option(PDC_SUPPRESS_UNUSED_VAR "Disable unused variable warnings" ON)
-if(PDC_SUPPRESS_UNUSED_VAR)
-  set(SUPPRESSED_LIST "-Wno-unused-variable" ${SUPPRESSED_LIST})
-endif()
-
-# Disable warnings for unused functions
-option(PDC_SUPPRESS_UNUSED_FUNC "Disable unused function warnings" ON)
-if(PDC_SUPPRESS_UNUSED_FUNC)
-  set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
-endif()
-
-# Disable warnings for -Wunused-result
-option(PDC_SUPPRESS_UNUSED_RESULT "Disable unused result warnings" ON)
-if(PDC_SUPPRESS_UNUSED_RESULT)
-  set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
-endif()
-
-# Disable warnings for -Wmaybe-uninitialized
-option(PDC_SUPPRESS_MAYBE_UNINIT "Disable maybe-uninitialized warnings" ON)
-if(PDC_SUPPRESS_MAYBE_UNINIT)
-  if(NOT APPLE)
+# Disable warnings for potentially ignorable issues
+option(SUPPRESS_IGNORABLE_WARNINGS "Disable warnings for potentially ignorable issues" ON)
+if(SUPPRESS_IGNORABLE_WARNINGS)
+  if(APPLE)
+    set(SUPPRESSED_LIST "-Wno-deprecated-non-prototype" ${SUPPRESSED_LIST})
+  else()
     set(SUPPRESSED_LIST "-Wno-maybe-uninitialized" ${SUPPRESSED_LIST})
   endif()
-endif()
-
-# Disable warnings for -Wunused-but-set-variable
-option(PDC_SUPPRESS_UNUSED_BUT_SET "Disable unused-but-set-variable warnings" ON)
-if(PDC_SUPPRESS_UNUSED_BUT_SET)
-  set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
-endif()
-
-# Disable warnings for -Wsign-compare
-option(PDC_SUPPRESS_SIGN_COMPARE "Disable sign-compare warnings" ON)
-if(PDC_SUPPRESS_SIGN_COMPARE)
   set(SUPPRESSED_LIST "-Wno-sign-compare" ${SUPPRESSED_LIST})
-endif()
-
-# Disable warnings for -Wformat
-option(PDC_SUPPRESS_FORMAT "Disable format warnings" ON)
-if(PDC_SUPPRESS_FORMAT)
   set(SUPPRESSED_LIST "-Wno-format" ${SUPPRESSED_LIST})
-endif()
-
-# Disable warnings for -Wcast-qual
-option(PDC_SUPPRESS_CAST_QUAL "Disable cast-qual warnings" ON)
-if(PDC_SUPPRESS_CAST_QUAL)
   set(SUPPRESSED_LIST "-Wno-cast-qual" ${SUPPRESSED_LIST})
-endif()
-
-# Disable warnings for -Wdeprecated-non-prototype if on Apple
-if(APPLE)
-  set(SUPPRESSED_LIST "-Wno-deprecated-non-prototype" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-parameter" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-variable" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
 endif()
 
 #------------------------------------------------------------------------------
