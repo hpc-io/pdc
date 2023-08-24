@@ -7530,6 +7530,11 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     timer_pause(&timer);
 
+    println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
+    timer_start(&timer);
+
     // perform all gather to get the complete result.
     // First, let's get the number of results from each client
     all_nmeta = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
@@ -7552,6 +7557,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     free(disp);
     if (*n_res > 0)
         free(*pdc_ids);
+
+    timer_pause(&timer);
+    println("==PDC Client[%d]: Time for MPI_Allgather: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
 
     // Now, let's return the result to the caller
     *pdc_ids = all_ids;
@@ -8979,11 +8988,23 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     int       n_obj = 0;
     uint64_t *dart_out;
 
+    stopwatch_t timer;
+
+    timer_start(&timer);
+
     // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number of
     // client ranks.
     if (dart_client_req_counter_g % pdc_client_mpi_size_g == pdc_client_mpi_rank_g) {
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
     }
+
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
+    timer_start(&timer);
+
     // broadcast the result to all other ranks
     // broadcast the number of objects first.
     MPI_Bcast(&n_obj, 1, MPI_INT, dart_client_req_counter_g % pdc_client_mpi_size_g, comm);
@@ -8996,6 +9017,11 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
         MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, dart_client_req_counter_g % pdc_client_mpi_size_g, comm);
     }
     dart_client_req_counter_g++;
+
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Bcast: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
 
     *n_res = n_obj;
     *out   = dart_out;
