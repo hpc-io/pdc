@@ -13,3 +13,5 @@ src/install
 .vscode
 
 build
+
+docs/build
