@@ -185,6 +185,37 @@ PDC's ``ctest`` contains both sequential and parallel/MPI tests, and can be run 
 	If you are using PDC on an HPC system, e.g. Perlmutter@NERSC, ``ctest`` should be run on a compute node, you can submit an interactive job on Perlmutter: ``salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx``
 
 
+Install/Configure Julia Support for PDC
+---------------------------------------
+Currently, in ``src/tests``, we experimentally added support for Julia programming language. With this support, you can either hand over the data to a Julia-based function to process, or you can use the result returned by a Julia-based function in which a complex logic is implemented (such as complex algebra operations or connecting to databases/cloud storages, etc).
+To know how to add a Julia function, please see Developer Notes. 
+
+But before adding any of your function, we need to enable the Julia support first, and here is how:
+
+Prerequisite
+^^^^^^^^^^^^
+
+Make sure you have Julia-lang installed. You can check with your system administrator to see if you already have Julia-lang installed. If not, you can either ask your system administrator to install it for you or you can install it yourself if permitted. On macOS, the best way to install Julia is via `Homebrew https://brew.sh`_. You may also refer to `Julia Download Page https://julialang.org/downloads/`_ for instructions on installing Julia.
+Once you installed Julia, you can set `JULIA_HOME` to be where Julia-lang is installed.
+
+.. code-block:: Bash
+	export JULIA_HOME=/path/to/julia/install/directory
+
+
+Note on perlmutter:
+You can easily perform `module load julia` to load the Julia-lang environment. Then, you can do the following to set `$JULIA_HOME`:
+
+.. code-block:: Bash
+	export JULIA_HOME=$(dirname $(dirname $(which julia)))
+
+
+Enabling Julia Support for PDC Tests
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Once the Prerequisite is satisfied, you can enable Julia support by adding `--DPDC_ENABLE_JULIA_SUPPORT=ON` to your cmake command and re-run it. 
+Then you can compile your PDC project with Julia support. 
+
+Now, see Developer Notes to know how you can add your own Julia functions to enhance your test cases in PDC. 
+
 ---------------------------
 Running PDC
 ---------------------------
