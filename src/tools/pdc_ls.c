@@ -129,7 +129,7 @@ main(int argc, char *argv[])
         DIR *          d;
         struct dirent *dir;
         d = opendir(argv[1]);
-        
+
         if (d) {
             while ((dir = readdir(d)) != NULL) {
                 if (strstr(dir->d_name, "metadata_checkpoint.")) {

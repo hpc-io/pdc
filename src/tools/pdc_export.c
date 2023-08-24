@@ -9,7 +9,6 @@
 #include "hdf5.h"
 #include "pdc_generic.h"
 
-
 // #define ENABLE_MPI 1
 
 #ifdef ENABLE_MPI
