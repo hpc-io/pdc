@@ -202,11 +202,11 @@ Once you installed Julia, you can set `JULIA_HOME` to be where Julia-lang is ins
 	export JULIA_HOME=/path/to/julia/install/directory
 
 
-Note on perlmutter:
-You can easily perform `module load julia` to load the Julia-lang environment. Then, you can do the following to set `$JULIA_HOME`:
+.. note:: Note on perlmutter:
+	You can easily perform `module load julia` to load the Julia-lang environment. Then, you can do the following to set `$JULIA_HOME`:
 
-.. code-block:: Bash
-	export JULIA_HOME=$(dirname $(dirname $(which julia)))
+	.. code-block:: Bash
+		export JULIA_HOME=$(dirname $(dirname $(which julia)))
 
 
 Enabling Julia Support for PDC Tests

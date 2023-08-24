@@ -305,8 +305,10 @@ However, when a new region is written to an object, it is necessary to scan all 
 
 I/O by region will store repeated bytes when write requests contain overlapping parts. In addition, the region update mechanism generates extra I/O operations. This is one of its disadvantages. Optimization for region search (as R trees) in the future can relieve this problem.
 
+
++++++++++++++++++++++++++++++++++++++++++++++
 Julia Support for tests
----------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++
 Currently, we add all Julia helper functions to `src/tests/helper/JuliaHelper.jl`
 
 Once you implement your own Julia function, you can use the bridging functions (named with prefix `run_jl_*`) defined in `src/tests/helper/include/julia_helper_loader.h` to call your Julia functions. If the current bridging functions are not sufficient for interacting with your Julia functions, you can add your own bridging functions in `src/tests/helper/include/julia_helper_loader.h` and implement it in `src/tests/helper/include/julia_helper_loader.c`.
@@ -324,3 +326,5 @@ Remember, you must include all your bridging function calls inside the following
     close_julia();
 
 Also, to make sure your code with Julia function calls doesn't get compiled when Julia support is not there, you can add your new test to the list of `ENHANCED_PROGRAMS` in `src/tests/CMakeLists.txt`.
+
+For more info on embedded Julia support, please visit: `Embedded Julia https://docs.julialang.org/en/v1/manual/embedding/`_.
