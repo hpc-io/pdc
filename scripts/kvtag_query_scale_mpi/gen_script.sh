@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PROJECT_NAME=$1
+
 # Per node configuration of your HPC system. 
 MAX_PYSICAL_CORE=128
 MAX_HYPERTHREADING=2
@@ -36,6 +38,7 @@ for (( i = 1; i <= $MAX_NODE; i*=2 )); do
         sed -i "s/N_CLIENT_PROC/${NUM_CLIENT_PROC_PER_NODE}/g"           $TARGET
         sed -i "s/NTHREAD_PER_SPROC/${NUM_THREAD_PER_SERVER_PROC}/g"           $TARGET
         sed -i "s/NTHREAD_PER_CPROC/${NUM_THREAD_PER_CLIENT_PROC}/g"           $TARGET
+        sed -i "s/PROJNAME/${PROJECT_NAME}/g"           $TARGET
         sed -i "s/USING_DART/${j}/g"           $TARGET
         if [[ "$i" -gt "4" ]]; then
             sed -i "s/REG//g"           $TARGET
