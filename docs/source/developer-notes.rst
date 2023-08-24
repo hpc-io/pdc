@@ -2,30 +2,9 @@
 Developer Notes
 ================================
 
-+++++++++++++++++++++++++++++++++++++++++++++
-How to implement an RPC?
-+++++++++++++++++++++++++++++++++++++++++++++
-
-This section covers how to implement a simple RPC from client to server. If you call an RPC on the client side, the server should be able to get the argument you passed from the client and execute the corresponding server RPC function.
-
-A concrete example is ``PDC_region_transfer_wait_all``. Mercury transfers at the client side are implemented in ``pdc_client_connect.c``. The name of the function we are using in this example is ``transfer_request_wait_all``. For each component mentioned next, replace ``transfer_request_wait_all`` with your function name. This section will not discuss the design of ``transfer_request_wait_all`` but rather point out where the Mercury components are and how they interact.
-
-Firstly, in ``pdc_client_connect.c``, search for ``transfer_request_wait_all_register_id_g``. Create another variable by replacing ``transfer_request_wait_all`` with your function name. Secondly, search for ``client_send_transfer_request_wait_all_rpc_cb``, and do the same text copy and replacement. This is the callback function on the client side when the RPC is finished on the server side. For most cases, this function loads the server return arguments to a structure and returns the values to the client RPC function. There is also some error checking. Then, search for ``PDC_transfer_request_wait_all_register(*hg_class)`` and ``PDC_Client_transfer_request_wait_all``, and do text copy and replacement for both. This function is the entry point of the mercury RPC call. It contains argument loading, which has the variable name ``in``' This RPC creates a mercury bulk transfer inside it. ``HG_Create`` and ``HG_Bulk_create`` are unnecessary if your mercury transfer does not transfer variable-sized data. ``HG_Forward`` has an argument ``client_send_transfer_request_wait_all_rpc_cb``. The return values from the callback function are placed in ``transfer_args``.
-
-In file ``pdc_client_connect.h``, search for ``_pdc_transfer_request_wait_all_args``, do the text copy and replacement. This structure is the structure for returning values from client call back function ``client_send_transfer_request_wait_all_rpc_cb`` to client RPC function ``PDC_Client_transfer_request_wait_all``. For most cases, an error code is sufficient. For other cases, like creating some object IDs, you must define the structure accordingly. Do not forget to load data in ``_pdc_transfer_request_wait_all_args``. Search for ``PDC_Client_transfer_request_wait_all``, and make sure you register your client connect entry function in the same way.
-
-In file ``pdc_server.c``, search for ``PDC_transfer_request_wait_all_register(hg_class_g);``, make a copy, and replace the ``transfer_request_wait_all`` part with your function name (your function name has to be defined and used consistently throughout all these copy and replacement).
-In the file ``pdc_client_server_common.h``, search for ``typedef struct transfer_request_wait_all_in_t``. This is the structure used by a client passing its argument to the server side. You can define whatever you want that is fixed-sized inside this structure. If you have variable-sized data, it can be passed through mercury bulk transfer. The handle is ``hg_bulk_t local_bulk_handle``. ``typedef struct transfer_request_wait_all_out_t`` is the return argument from the server to the client after the server RPC is finished. Next, search for ``hg_proc_transfer_request_wait_all_in_t``. This function defines how arguments are transferred through mercury. 
-Similarly, ``hg_proc_transfer_request_wait_all_in_t`` is the other way around. Next, search for ``struct transfer_request_wait_all_local_bulk_args``. This structure is useful when a bulk transfer is used. Using this function, the server passes its variables from the RPC call to the bulk transfer callback function. Finally, search for ``PDC_transfer_request_wait_all_register``. For all these structures and functions, you should copy and replace ``transfer_request_wait_all`` with your own function name.
-
-In file ``pdc_client_server_common.c``, search for ``PDC_FUNC_DECLARE_REGISTER(transfer_request_wait_all)`` and ``HG_TEST_THREAD_CB(transfer_request_wait_all)``, do text copy and function name replacement. ``pdc_server_region_request_handler.h`` is included directly in ``pdc_client_server_common.c``. The server RPC of ``transfer_request_wait_all`` is implemented in ``pdc_server_region_request_handler.h``. However, it is possible to put it directly in the ``pdc_client_server_common.c``. 
-
-Let us open ``pdc_server_region_request_handler.h``. Search for ``HG_TEST_RPC_CB(transfer_request_wait_all, handle)``. This function is the entry point for the server RPC function call. ``transfer_request_wait_all_in_t`` contains the arguments you loaded previously from the client side. If you want to add more arguments, return to ``pdc_client_server_common.h`` and modify it correctly. ``HG_Bulk_create`` and ``HG_Bulk_transfer`` are the mercury bulk function calls. When the bulk transfer is finished, ``transfer_request_wait_all_bulk_transfer_cb`` is called.
-
-After a walk-through of ``transfer_request_wait_all``, you should have learned where different components of a mercury RPC should be placed and how they interact with each other. You can trace other RPC by searching their function names. If you miss things that are not optional, the program will likely hang there forever or run into segmentation faults.
 
 +++++++++++++++++++++++++++++++++++++++++++++
-PDC Server Metadata Overview
+PDC Server Metadata Management
 +++++++++++++++++++++++++++++++++++++++++++++
 
 PDC metadata servers, a subset of PDC servers, store metadata for PDC classes such as objects and containers. PDC data server, also a subset of PDC servers (potentially overlapping with PDC metadata server), manages data from users. Such management includes server local caching and I/O to the file system. Both PDC metadata and data servers have some local metadata. 
@@ -50,13 +29,13 @@ Metadata Operations at Client Side
 
 In general, PDC object metadata is initialized when an object is created. The metadata stored at the metadata server is permanent. When clients create the objects, a PDC property is used as one of the arguments for the object creation function. Metadata for the object is set by using PDC property APIs. Most of the metadata are not subject to any changes. Currently, we support setting/getting object dimensions using object API. 
 
-+++++++++++++++++++++++++++++++++++++++++++++
+---------------------------------------------
 PDC Metadata Management Strategy
-+++++++++++++++++++++++++++++++++++++++++++++
+---------------------------------------------
 
 This section discusses the metadata management approaches of PDC. First, we briefly summarize how PDC managed metadata in the past. Then, we propose new infrastructures for metadata management.
 
----------------------------------------------
+
 Managing Metadata and Data by the Same Server
 ---------------------------------------------
 
@@ -64,7 +43,7 @@ Historically, a PDC server manages both metadata and data for objects it is resp
 
 However, this design has two potential drawbacks. The first disadvantage is supporting general I/O access. For clients served by different PDC servers, accessing overlapping regions is infeasible. Therefore, this design is specialized in applications with a non-overlapping I/O pattern. The second disadvantage is a lack of dynamic load-balancing mechanisms. For example, some applications use a subset of processes for processing I/O. A subset of servers may stay idle because the clients mapped to them are not sending I/O requests.
 
----------------------------------------------
+
 Separate Metadata Server from Data Server
 ---------------------------------------------
 
@@ -75,54 +54,6 @@ Instead of managing metadata and data server together, we can separate the metad
 This approach's main advantage is that the object regions' assignment to data servers becomes flexible. When an object is created, the name of the object maps to a unique metadata server. In our implementation, we adopt string hash values for object names and modulus operations to achieve this goal. The metadata information will be registered at the metadata server. Later, when other clients open the object, they can use the object's name to locate the same metadata server. 
 
 When a client accesses regions of an object, the metadata server informs the client of the corresponding data servers it should transfer its I/O requests. Metadata servers can map object regions to data servers in a few different methods.
-
----------------------------------------------
-Static Object Region Mappings
----------------------------------------------
-
-A metadata server can partition the object space evenly among all data servers. For high-dimensional objects, it is possible to define block partitioning methods similar to HDF5s's chunking strategies.
-
-The static object region partitioning can theoretically achieve optimal parallel performance for applications with a balanced workload. In addition, static partitioning determines the mapping from object regions to data servers at object create/open time. No additional metadata management is required.
-
----------------------------------------------
-Dynamic Object Region Mappings
----------------------------------------------
-
-For applications that access a subset of regions for different objects, some data servers can stay idle while the rest are busy fetching or storing data for these regions concentrated around coordinates of interest. Dynamic object partitioning allows metadata servers to balance data server workloads in runtime. The mapping from object regions to the data server is determined at the time of starting region transfer request time.
-Partitioning object regions dynamically increases the complexity of metadata management. For example, a read from one client 0 after a write from another client 1 on overlapping regions demands metadata support. Client 0 has to locate the data server to which client 1 writes the region data using information from the metadata server. As a result, metadata servers must maintain up-to-date metadata of the objects they manage. There are a few options we can implement this feature.
-
-*Option 1*: When a client attempts to modify object regions, the client can also send the metadata of this transfer request to the metadata server. Consequently, the metadata server serving for the modified objects always has the most up-to-date metadata.  
-
-Advantage: No need to perform communications between the servers (current strategy)
-Disadvantage: The metadata server can be a bottleneck because the number of clients accessing the server may scale up quickly.
-
-*Option 2*: When a data server receives region transfer requests from any client, the data server forwards the corresponding metadata to the metadata server of the object.
-
-Advantage: The number of servers is less than the number of clients, so we are reducing the chance of communication contention
-Disadvantage: Server-to-server RPC infrastructures need to be put in place.
-
-*Option 3*: Similar to Option 2, but the data server will modify a metadata file. Later, a metadata server always checks the metadata file for metadata information updates.
-
-Advantage: No communications are required if a metadata file is used.
-Disadvantage: Reading metadata files may take some time. If multiple servers are modifying the same metadata file, how should we proceed?
-
-The following table summarizes the communication of the three mapping methods from clients to types of PDC servers when different PDC functions are called.
-
-+-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
-|                               | Static Object Mapping                       | Dynamic Object Mapping & Static Region Mapping    | Dynamic Object Mapping & Dynamic Region Mapping   |
-+===============================+=============================================+===================================================+===================================================+
-| ``PDC_obj_create``            | Client - Metadata Server                    | Client - Metadata Server                          | Client - Metadata Server                          |
-+-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
-| ``PDC_obj_open``              | Client - Metadata Server                    | Client - Metadata Server                          | Client - Metadata Server                          |
-+-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
-| ``PDC_region_transfer_start`` | Client - Data Server                        | Client - Data Server                              | Client - Data Server                              |
-+-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
-| ``PDC_region_transfer_start`` | Client - Data Server                        | Client - Data Server                              | Client - Metadata Server (Option 1)               |
-+-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
-| ``PDC_region_transfer_start`` | Client - Data Server                        | Client - Data Server                              | Data Server - Metadata Server (Option 2)          |
-+-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
-| ``PDC_region_transfer_wait``  | Data Server - Client (PDC_READ)             | Data Server - Client (PDC_READ)                   | Data Server - Client (PDC_READ)                   |
-+-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
 
 ---------------------------------------------
 PDC Metadata Management Implementation
@@ -191,9 +122,89 @@ There are four categories of metadata to be checkpointed. One category is concat
 Region metadata checkpoint is placed at the end of the server checkpoint file, right after the last byte of data server region. Function ``transfer_request_metadata_query_checkpoint(char **checkpoint, uint64_t *checkpoint_size)`` in  ``pdc_server_region_transfer_metadata_query.c`` file handles the wrapping of region metadata.
 
 ---------------------------------------------
-Region Transfer Request at Client
+Metadata Search and Its Implementation
 ---------------------------------------------
 
+For Metadata search, we current provide brute-force approaches and index-facilitated approaches. 
+For either of these approaches, we consider two types of communication model : point-to-point and collective. 
+
+Point-to-point communication model is for distributed applications where each single client may not follow the exact same workflows, and the timing for them to trigger a metadata search function call can be really random. In this case, each client contacts one or more metadata servers and get the complete result.
+Collective communication model applies when a typical application is running. In such an application, each rank follows the exact same workflow and they may trigger a metadata search function call at the same time and the metadata search requests are sent from these clients collectively. In this case, each rank contacts one metadata server and retrieves partial result. Then these clients have to communicate with each other to get the complete result.
+
+Brute-force Approach
+---------------------------------------------
+
+For brute-force approach, here are the APIs you can call for different communication models:
+    * PDC_Client_query_kvtag (point-to-point)
+    * PDC_Client_query_kvtag_mpi (collective)
+
+Index-facilitated Approach
+---------------------------------------------
+
+For index-facilitated approach, here are the APIs you can call for different communication models:
+    * PDC_Client_search_obj_ref_through_dart (point-to-point)
+    * PDC_Client_search_obj_ref_through_dart_mpi (collective)
+
+Before using these APIs, you need to create your index first, so please remember to call `PDC_Client_insert_obj_ref_into_dart` right after a successful function call of `PDCobj_put_tag`.
+
++++++++++++++++++++++++++++++++++++++++++++++
+Object and Region Management
++++++++++++++++++++++++++++++++++++++++++++++
+
+This section discusses how PDC manages objects and regions. 
+
+---------------------------------------------
+Static Object Region Mappings
+---------------------------------------------
+
+A metadata server can partition the object space evenly among all data servers. For high-dimensional objects, it is possible to define block partitioning methods similar to HDF5s's chunking strategies.
+
+The static object region partitioning can theoretically achieve optimal parallel performance for applications with a balanced workload. In addition, static partitioning determines the mapping from object regions to data servers at object create/open time. No additional metadata management is required.
+
+---------------------------------------------
+Dynamic Object Region Mappings
+---------------------------------------------
+
+For applications that access a subset of regions for different objects, some data servers can stay idle while the rest are busy fetching or storing data for these regions concentrated around coordinates of interest. Dynamic object partitioning allows metadata servers to balance data server workloads in runtime. The mapping from object regions to the data server is determined at the time of starting region transfer request time.
+Partitioning object regions dynamically increases the complexity of metadata management. For example, a read from one client 0 after a write from another client 1 on overlapping regions demands metadata support. Client 0 has to locate the data server to which client 1 writes the region data using information from the metadata server. As a result, metadata servers must maintain up-to-date metadata of the objects they manage. There are a few options we can implement this feature.
+
+*Option 1*: When a client attempts to modify object regions, the client can also send the metadata of this transfer request to the metadata server. Consequently, the metadata server serving for the modified objects always has the most up-to-date metadata.  
+
+Advantage: No need to perform communications between the servers (current strategy)
+Disadvantage: The metadata server can be a bottleneck because the number of clients accessing the server may scale up quickly.
+
+*Option 2*: When a data server receives region transfer requests from any client, the data server forwards the corresponding metadata to the metadata server of the object.
+
+Advantage: The number of servers is less than the number of clients, so we are reducing the chance of communication contention
+Disadvantage: Server-to-server RPC infrastructures need to be put in place.
+
+*Option 3*: Similar to Option 2, but the data server will modify a metadata file. Later, a metadata server always checks the metadata file for metadata information updates.
+
+Advantage: No communications are required if a metadata file is used.
+Disadvantage: Reading metadata files may take some time. If multiple servers are modifying the same metadata file, how should we proceed?
+
+The following table summarizes the communication of the three mapping methods from clients to types of PDC servers when different PDC functions are called.
+
++-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
+|                               | Static Object Mapping                       | Dynamic Object Mapping & Static Region Mapping    | Dynamic Object Mapping & Dynamic Region Mapping   |
++===============================+=============================================+===================================================+===================================================+
+| ``PDC_obj_create``            | Client - Metadata Server                    | Client - Metadata Server                          | Client - Metadata Server                          |
++-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
+| ``PDC_obj_open``              | Client - Metadata Server                    | Client - Metadata Server                          | Client - Metadata Server                          |
++-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
+| ``PDC_region_transfer_start`` | Client - Data Server                        | Client - Data Server                              | Client - Data Server                              |
++-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
+| ``PDC_region_transfer_start`` | Client - Data Server                        | Client - Data Server                              | Client - Metadata Server (Option 1)               |
++-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
+| ``PDC_region_transfer_start`` | Client - Data Server                        | Client - Data Server                              | Data Server - Metadata Server (Option 2)          |
++-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
+| ``PDC_region_transfer_wait``  | Data Server - Client (PDC_READ)             | Data Server - Client (PDC_READ)                   | Data Server - Client (PDC_READ)                   |
++-------------------------------+---------------------------------------------+---------------------------------------------------+---------------------------------------------------+
+
+
+---------------------------------------------
+Region Transfer Request at Client
+---------------------------------------------
 !!!!!
 
 This section describes how the region transfer request module in PDC works. The region transfer request module is the core of PDC I/O. From the client's point of view, some data is written to regions of objects through transfer request APIs. PDC region transfer request module arranges how data is transferred from clients to servers and how data is stored at servers. 
@@ -305,10 +316,68 @@ However, when a new region is written to an object, it is necessary to scan all 
 
 I/O by region will store repeated bytes when write requests contain overlapping parts. In addition, the region update mechanism generates extra I/O operations. This is one of its disadvantages. Optimization for region search (as R trees) in the future can relieve this problem.
 
++++++++++++++++++++++++++++++++++++++++++++++
+Contributing to PDC project
++++++++++++++++++++++++++++++++++++++++++++++
 
-+++++++++++++++++++++++++++++++++++++++++++++
+In this section, we will offer you some helpful technical guidance on how to contribute to the PDC project. These 'HowTos' will help you when implementing new features or fixing bugs.
+
+
+---------------------------------------------
+How to set up code formatter for PDC on Mac?
+---------------------------------------------
+
+1. PDC project uses clang-format v10 for code formatting and style check.
+    1. However, on MacOS, the only available clang-format versions are v8 and v11 if you try to install it via Homebrew. 
+    2. To install v10, you need to download it from: https://releases.llvm.org/download.html (https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/llvm-project-10.0.1.tar.xz) 
+    3. Then follow instruction here to install clang-format: https://clang.llvm.org/get_started.html. I would suggest you do the following (suppose if you already have homebrew installed)
+    
+    .. code-block:: Bash
+        cd $LLVM_SRC_ROOT
+        mkdir build
+        cd build
+        cmake -G 'Unix Makefiles' -DCMAKE_INSTALL_PREFIX=/opt/llvm/v10 -DCMAKE_BUILD_TYPE=RelWithDebInfo -DLLVM_ENABLE_PROJECTS=clang ../llvm
+        make -j 128 
+        sudo make install
+        sudo ln -s /opt/llvm/v10/bin/clang-format /opt/homebrew/bin/clang-format-v10
+    
+    
+    1. To format all your source code, do the following
+    
+    .. code-block:: Bash
+        cd pdc
+        clang-format-v10 -i -style=file src/*
+        find src -iname *.h -o -iname *.c | xargs clang-format-v10 -i -style=file
+    
+    
+    1. You can also configure clang-format to be your default C/C++ formatting tool in VSCode, and the automatic code formatter is really convenient to use. 
+
+---------------------------------------------
+How to implement an RPC?
+---------------------------------------------
+
+This section covers how to implement a simple RPC from client to server. If you call an RPC on the client side, the server should be able to get the argument you passed from the client and execute the corresponding server RPC function.
+
+A concrete example is ``PDC_region_transfer_wait_all``. Mercury transfers at the client side are implemented in ``pdc_client_connect.c``. The name of the function we are using in this example is ``transfer_request_wait_all``. For each component mentioned next, replace ``transfer_request_wait_all`` with your function name. This section will not discuss the design of ``transfer_request_wait_all`` but rather point out where the Mercury components are and how they interact.
+
+Firstly, in ``pdc_client_connect.c``, search for ``transfer_request_wait_all_register_id_g``. Create another variable by replacing ``transfer_request_wait_all`` with your function name. Secondly, search for ``client_send_transfer_request_wait_all_rpc_cb``, and do the same text copy and replacement. This is the callback function on the client side when the RPC is finished on the server side. For most cases, this function loads the server return arguments to a structure and returns the values to the client RPC function. There is also some error checking. Then, search for ``PDC_transfer_request_wait_all_register(*hg_class)`` and ``PDC_Client_transfer_request_wait_all``, and do text copy and replacement for both. This function is the entry point of the mercury RPC call. It contains argument loading, which has the variable name ``in``' This RPC creates a mercury bulk transfer inside it. ``HG_Create`` and ``HG_Bulk_create`` are unnecessary if your mercury transfer does not transfer variable-sized data. ``HG_Forward`` has an argument ``client_send_transfer_request_wait_all_rpc_cb``. The return values from the callback function are placed in ``transfer_args``.
+
+In file ``pdc_client_connect.h``, search for ``_pdc_transfer_request_wait_all_args``, do the text copy and replacement. This structure is the structure for returning values from client call back function ``client_send_transfer_request_wait_all_rpc_cb`` to client RPC function ``PDC_Client_transfer_request_wait_all``. For most cases, an error code is sufficient. For other cases, like creating some object IDs, you must define the structure accordingly. Do not forget to load data in ``_pdc_transfer_request_wait_all_args``. Search for ``PDC_Client_transfer_request_wait_all``, and make sure you register your client connect entry function in the same way.
+
+In file ``pdc_server.c``, search for ``PDC_transfer_request_wait_all_register(hg_class_g);``, make a copy, and replace the ``transfer_request_wait_all`` part with your function name (your function name has to be defined and used consistently throughout all these copy and replacement).
+In the file ``pdc_client_server_common.h``, search for ``typedef struct transfer_request_wait_all_in_t``. This is the structure used by a client passing its argument to the server side. You can define whatever you want that is fixed-sized inside this structure. If you have variable-sized data, it can be passed through mercury bulk transfer. The handle is ``hg_bulk_t local_bulk_handle``. ``typedef struct transfer_request_wait_all_out_t`` is the return argument from the server to the client after the server RPC is finished. Next, search for ``hg_proc_transfer_request_wait_all_in_t``. This function defines how arguments are transferred through mercury. 
+Similarly, ``hg_proc_transfer_request_wait_all_in_t`` is the other way around. Next, search for ``struct transfer_request_wait_all_local_bulk_args``. This structure is useful when a bulk transfer is used. Using this function, the server passes its variables from the RPC call to the bulk transfer callback function. Finally, search for ``PDC_transfer_request_wait_all_register``. For all these structures and functions, you should copy and replace ``transfer_request_wait_all`` with your own function name.
+
+In file ``pdc_client_server_common.c``, search for ``PDC_FUNC_DECLARE_REGISTER(transfer_request_wait_all)`` and ``HG_TEST_THREAD_CB(transfer_request_wait_all)``, do text copy and function name replacement. ``pdc_server_region_request_handler.h`` is included directly in ``pdc_client_server_common.c``. The server RPC of ``transfer_request_wait_all`` is implemented in ``pdc_server_region_request_handler.h``. However, it is possible to put it directly in the ``pdc_client_server_common.c``. 
+
+Let us open ``pdc_server_region_request_handler.h``. Search for ``HG_TEST_RPC_CB(transfer_request_wait_all, handle)``. This function is the entry point for the server RPC function call. ``transfer_request_wait_all_in_t`` contains the arguments you loaded previously from the client side. If you want to add more arguments, return to ``pdc_client_server_common.h`` and modify it correctly. ``HG_Bulk_create`` and ``HG_Bulk_transfer`` are the mercury bulk function calls. When the bulk transfer is finished, ``transfer_request_wait_all_bulk_transfer_cb`` is called.
+
+After a walk-through of ``transfer_request_wait_all``, you should have learned where different components of a mercury RPC should be placed and how they interact with each other. You can trace other RPC by searching their function names. If you miss things that are not optional, the program will likely hang there forever or run into segmentation faults.
+
+
+---------------------------------------------
 Julia Support for tests
-+++++++++++++++++++++++++++++++++++++++++++++
+---------------------------------------------
 Currently, we add all Julia helper functions to `src/tests/helper/JuliaHelper.jl`
 
 Once you implement your own Julia function, you can use the bridging functions (named with prefix `run_jl_*`) defined in `src/tests/helper/include/julia_helper_loader.h` to call your Julia functions. If the current bridging functions are not sufficient for interacting with your Julia functions, you can add your own bridging functions in `src/tests/helper/include/julia_helper_loader.h` and implement it in `src/tests/helper/include/julia_helper_loader.c`.
