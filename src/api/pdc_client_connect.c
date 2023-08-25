@@ -9014,6 +9014,14 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     // broadcast the result to all other ranks
     // broadcast the number of objects first.
     MPI_Bcast(&n_obj, 1, MPI_INT, dart_client_req_counter_g % pdc_client_mpi_size_g, comm);
+
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Bcast on n_obj: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
+    timer_start(&timer);
+
     // optionally broadcast the object IDs.
     if (n_obj > 0) {
         // for those ranks that are not the root, allocate memory for the object IDs.
@@ -9026,7 +9034,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     timer_pause(&timer);
 
-    println("==PDC Client[%d]: Time for MPI_Bcast: %.4f ms", pdc_client_mpi_rank_g,
+    println("==PDC Client[%d]: Time for MPI_Bcast on dart_out: %.4f ms", pdc_client_mpi_rank_g,
             timer_delta_us(&timer) / 1000.0);
 
     *n_res = n_obj;
