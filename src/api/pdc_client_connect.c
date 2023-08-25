@@ -7510,6 +7510,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     timer_start(&timer);
     ret_value = PDC_Client_query_kvtag_col(kvtag, n_res, pdc_ids);
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
 
     if (*n_res <= 0) {
         *n_res   = 0;
@@ -7527,17 +7531,16 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     printf("\n");
     */
 
-    timer_pause(&timer);
-
-    println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
-            timer_delta_us(&timer) / 1000.0);
-
-    timer_start(&timer);
-
     // perform all gather to get the complete result.
     // First, let's get the number of results from each client
     all_nmeta = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
+
+    timer_start(&timer);
     MPI_Allgather(n_res, 1, MPI_INT, all_nmeta, 1, MPI_INT, comm);
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Allgather on all_nmeta: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
 
     // Now, let's calculate the displacement for each client, and also the total number of results
     disp   = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
@@ -7547,26 +7550,23 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         ntotal += all_nmeta[i];
     }
 
-    timer_pause(&timer);
-
-    println("==PDC Client[%d]: Time for MPI_Allgather on all_nmeta: %.4f ms", pdc_client_mpi_rank_g,
-            timer_delta_us(&timer) / 1000.0);
-
-    timer_start(&timer);
     // Finally, let's gather all the results. Since each client is getting a partial result which can be of
     // different size, we need to use MPI_Allgatherv for gathering variable-size arrays from different
     // clients.
     uint64_t *all_ids = (uint64_t *)malloc(ntotal * sizeof(uint64_t));
+
+    timer_start(&timer);
     MPI_Allgatherv(*pdc_ids, *n_res, MPI_UINT64_T, all_ids, all_nmeta, disp, MPI_UINT64_T, comm);
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Allgatherv on all_ids: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
     // Never forget to free the memory that is no longer used.
     free(all_nmeta);
     free(disp);
     if (*n_res > 0)
         free(*pdc_ids);
-
-    timer_pause(&timer);
-    println("==PDC Client[%d]: Time for MPI_Allgatherv on all_ids: %.4f ms", pdc_client_mpi_rank_g,
-            timer_delta_us(&timer) / 1000.0);
 
     // Now, let's return the result to the caller
     *pdc_ids = all_ids;
