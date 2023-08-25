@@ -7513,8 +7513,7 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     if (*n_res <= 0) {
         *n_res   = 0;
-        *pdc_ids = NULL;
-        goto done;
+        *pdc_ids = (uint64_t *)malloc(0);
     }
 
     if (pdc_client_mpi_size_g == 1)
