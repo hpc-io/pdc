@@ -5102,19 +5102,18 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 
         if (overlap_offset) {
             if (region_info->ndim == 1) {
-                // 1D can overwrite data in region directly
                 pos = (overlap_offset[0] - overlap_region->start[0]) * unit;
-                if ((ssize_t)pos > request_bytes) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
-                           pdc_server_rank_g, pos, request_bytes, __LINE__);
-                    ret_value = -1;
-                    goto done;
-                }
+                /* if ((ssize_t)pos > request_bytes) { */
+                /*     printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n", */
+                /*            pdc_server_rank_g, pos, request_bytes, __LINE__); */
+                /*     ret_value = -1; */
+                /*     goto done; */
+                /* } */
 #ifdef PDC_TIMING
                 start_posix = MPI_Wtime();
 #endif
-                printf("POSIX read from file offset %lu, region start = %lu, region size = %lu\n",
-                       overlap_region->offset, overlap_region->start[0], overlap_region->count[0]);
+                /* printf("POSIX read from file offset %lu, region start = %lu, region size = %lu\n", */
+                /*        overlap_region->offset, overlap_region->start[0], overlap_region->count[0]); */
                 if (pread(region->fd, buf + (overlap_offset[0] - region_info->offset[0]) * unit,
                           overlap_size[0] * unit,
                           overlap_region->offset + pos) != (ssize_t)(overlap_size[0] * unit)) {
