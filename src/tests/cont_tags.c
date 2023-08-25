@@ -154,6 +154,10 @@ main(int argc, char **argv)
         printf("successfully deleted a tag from container c2\n");
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     ret = PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at container 2\n");
