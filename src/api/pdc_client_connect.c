@@ -7547,6 +7547,13 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         disp[i] = ntotal;
         ntotal += all_nmeta[i];
     }
+
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Allgather on all_nmeta: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
+    timer_start(&timer);
     // Finally, let's gather all the results. Since each client is getting a partial result which can be of
     // different size, we need to use MPI_Allgatherv for gathering variable-size arrays from different
     // clients.
@@ -7559,7 +7566,7 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         free(*pdc_ids);
 
     timer_pause(&timer);
-    println("==PDC Client[%d]: Time for MPI_Allgather: %.4f ms", pdc_client_mpi_rank_g,
+    println("==PDC Client[%d]: Time for MPI_Allgatherv on all_ids: %.4f ms", pdc_client_mpi_rank_g,
             timer_delta_us(&timer) / 1000.0);
 
     // Now, let's return the result to the caller
