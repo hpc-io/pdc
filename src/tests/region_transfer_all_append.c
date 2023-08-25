@@ -78,8 +78,8 @@ main(int argc, char **argv)
     }
 
     if (rank == 0)
-        printf("testing region_transfer_all_append, start_method = %d, wait_method = %d\n", 
-                start_method, wait_method);
+        printf("testing region_transfer_all_append, start_method = %d, wait_method = %d\n", start_method,
+               wait_method);
 
     dims[0] = BUF_LEN;
 
