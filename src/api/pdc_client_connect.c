@@ -9022,14 +9022,12 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     timer_start(&timer);
 
-    // optionally broadcast the object IDs.
-    if (n_obj > 0) {
-        // for those ranks that are not the root, allocate memory for the object IDs.
-        if (dart_client_req_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
-            dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
-        }
-        MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, dart_client_req_counter_g % pdc_client_mpi_size_g, comm);
+    // for those ranks that are not the root, allocate memory for the object IDs.
+    if (dart_client_req_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
+        dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
     }
+    MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, dart_client_req_counter_g % pdc_client_mpi_size_g, comm);
+
     dart_client_req_counter_g++;
 
     timer_pause(&timer);
