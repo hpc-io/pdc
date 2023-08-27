@@ -4695,7 +4695,7 @@ PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
     while (write_size > max_write_size) {
         ret = write(fd, buf, max_write_size);
         if (ret < 0 || ret != (ssize_t)max_write_size) {
-            printf("==PDC_SERVER[%d]: in-loop: write %d failed, ret = %ld, max_write_size = %lu\n",
+            printf("==PDC_SERVER[%d]: in-loop: write %d failed, ret = %ld, max_write_size = %llu\n",
                    pdc_server_rank_g, fd, ret, max_write_size);
             ret_value = FAIL;
             goto done;
@@ -4707,7 +4707,7 @@ PDC_Server_posix_write(int fd, void *buf, uint64_t write_size)
 
     ret = write(fd, buf, write_size);
     if (ret < 0 || ret != (ssize_t)write_size) {
-        printf("==PDC_SERVER[%d]: write %d failed, not all data written %lu/%lu\n", pdc_server_rank_g, fd,
+        printf("==PDC_SERVER[%d]: write %d failed, not all data written %llu/%llu\n", pdc_server_rank_g, fd,
                write_bytes, write_size);
         ret_value = FAIL;
         goto done;
@@ -4790,7 +4790,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // 1D can overwrite data in region directly
                 pos = (overlap_offset[0] - overlap_region->start[0]) * unit;
                 if (pos > write_size) {
-                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %lu / %ld! @ line %d\n",
+                    printf("==PDC_SERVER[%d]: Error with buf pos calculation %llu / %llu! @ line %d\n",
                            pdc_server_rank_g, pos, write_size, __LINE__);
                     ret_value = -1;
                     goto done;

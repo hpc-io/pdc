@@ -1,4 +1,4 @@
- #------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Include source and build directories
 #------------------------------------------------------------------------------
 set(LOCAL_INCLUDE_DIR
@@ -39,7 +39,6 @@ include_directories(
 # Mercury
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
-  message(STATUS "mercury dir ${MERCURY_DIR}")
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
     ${PDC_EXT_INCLUDE_DEPENDENCIES}
     )
@@ -223,6 +222,7 @@ EXPORT (
     ${PDC_EXPORTED_LIBS}
   FILE
     ${PDC_EXPORTED_TARGETS}.cmake
+  APPEND
 )
 endif()
 
