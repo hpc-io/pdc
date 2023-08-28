@@ -163,7 +163,7 @@ main(int argc, char **argv)
     offset[0]       = rank * my_data_size;
     local_offset[0] = 0;
     mysize[0]       = my_data_size;
-    printf("rank %d offset = %lu, length = %lu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
+    printf("rank %d offset = %llu, length = %llu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
 
     local_region  = PDCregion_create(ndim, local_offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);
@@ -220,7 +220,7 @@ main(int argc, char **argv)
     offset[0]       = rank * my_data_size;
     local_offset[0] = 0;
     mysize[0]       = my_data_size;
-    printf("rank %d offset = %lu, length = %lu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
+    printf("rank %d offset = %llu, length = %llu, unit size = %ld\n", rank, offset[0], mysize[0], type_size);
 
     local_region  = PDCregion_create(ndim, local_offset, mysize);
     global_region = PDCregion_create(ndim, offset, mysize);

@@ -95,7 +95,7 @@ main(int argc, char **argv)
         sleeptime    = atoi(argv[3]);
     }
     if (rank == 0)
-        printf("Writing %" PRIu64 " number of particles for %ld steps with %d clients.\n", numparticles,
+        printf("Writing %" PRIu64 " number of particles for %llu steps with %d clients.\n", numparticles,
                steps, size);
 
     dims[0] = numparticles;
@@ -199,7 +199,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
         if (rank == 0) {
-            printf("\n#Step  %lu\n", i);
+            printf("\n#Step  %llu\n", i);
         }
 #endif
         PDCprop_set_obj_time_step(obj_prop_xx, i);
@@ -504,7 +504,7 @@ main(int argc, char **argv)
         if (i != steps - 1) {
             sleep(sleeptime);
             if (rank == 0) {
-                printf("Sleep time: %ld.00\n", sleeptime);
+                printf("Sleep time: %llu.00\n", sleeptime);
             }
         }
     } // End for steps

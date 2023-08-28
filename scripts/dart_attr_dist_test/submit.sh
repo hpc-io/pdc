@@ -7,22 +7,24 @@ MAX_PROC=512
 MAX_ATTR=1024
 MAX_ATTRLEN=1000
 
+PROG_BASENAME=llsm_importer
+
 curdir=$(pwd)
 
 first_submit=1
 
 for (( i = 1; i <= $MAX_PROC; i*=2 )); do
     mkdir -p $i
-    JOBNAME=kvtag_scale_${i}
+    JOBNAME=${PROG_BASENAME}_${i}
     TARGET=./$i/JOBNAME.sh
 
-    njob=`squeue -u $USER | grep kvtag_scale | wc -l`
+    njob=`squeue -u $USER | grep ${PROG_BASENAME} | wc -l`
     echo $njob
     while [ $njob -ge 4 ]
     do
         sleeptime=$[ ( $RANDOM % 1000 )  ]
         sleep $sleeptime
-        njob=`squeue -u $USER | grep kvtag_scale | wc -l`
+        njob=`squeue -u $USER | grep ${PROG_BASENAME} | wc -l`
         echo $njob
     done
 

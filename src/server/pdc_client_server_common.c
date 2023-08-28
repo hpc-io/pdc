@@ -1485,6 +1485,21 @@ PDC_Server_recv_get_sel_data(const struct hg_cb_info *callback_info ATTRIBUTE(un
 {
     return HG_SUCCESS;
 }
+perr_t
+PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in   ATTRIBUTE(unused),
+                                dart_get_server_info_out_t *out ATTRIBUTE(unused))
+{
+    return SUCCEED;
+}
+perr_t
+PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in   ATTRIBUTE(unused),
+                                   dart_perform_one_server_out_t *out ATTRIBUTE(unused),
+                                   uint64_t *n_obj_ids_ptr            ATTRIBUTE(unused),
+                                   uint64_t **buf_ptrs                ATTRIBUTE(unused))
+{
+    return SUCCEED;
+}
+
 #else
 hg_return_t
 PDC_Client_work_done_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
@@ -3099,7 +3114,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
+                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
                             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release, "
                                                         "handle) local and remote bulk size does not match");
                         }
@@ -3272,7 +3287,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %lu, remote %lu\n", size, size2);
+                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
                             /* PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release,
                              * handle) local and remote bulk size does not match"); */
                         }
@@ -6369,6 +6384,103 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+/* static hg_return_t */
+/* dart_get_server_info_cb(hg_handle_t handle) */
+HG_TEST_RPC_CB(dart_get_server_info, handle)
+{
+    hg_return_t                ret = HG_SUCCESS;
+    dart_get_server_info_in_t  in;
+    dart_get_server_info_out_t out;
+
+    FUNC_ENTER(NULL);
+    // Extract input from handle
+    HG_Get_input(handle, &in);
+    // retrieve server info from desigated server
+    PDC_Server_dart_get_server_info(&in, &out);
+
+    // Send response to client
+    HG_Respond(handle, NULL, NULL, &out);
+    /* printf("==PDC_SERVER: dart_get_server_info_cb(): returned %llu\n", out.indexed_word_count); */
+    // Free input
+    HG_Free_input(handle, &in);
+    // Free handle
+    HG_Destroy(handle);
+
+    return ret;
+}
+
+/* static hg_return_t */
+// dart_perform_one_server_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(dart_perform_one_server, handle)
+{
+    hg_return_t                   ret    = HG_SUCCESS;
+    hg_return_t                   hg_ret = HG_SUCCESS;
+    dart_perform_one_server_in_t  in;
+    dart_perform_one_server_out_t out;
+
+    hg_bulk_t  bulk_handle = HG_BULK_NULL;
+    uint64_t * n_obj_ids_ptr;
+    uint64_t   n_buf;
+    uint64_t **buf_ptrs;
+    size_t *   buf_sizes;
+    uint32_t   i;
+
+    FUNC_ENTER(NULL);
+    // Extract input from handle
+    HG_Get_input(handle, &in);
+
+    n_obj_ids_ptr = (uint64_t *)calloc(1, sizeof(uint64_t));
+    buf_ptrs      = (uint64_t **)calloc(1, sizeof(uint64_t *));
+
+    PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, buf_ptrs);
+    // printf("perform_server_cb. n_obj_ids_ptr on op_type = %d = %d\n", in.op_type ,*n_obj_ids_ptr);
+    out.op_type = in.op_type;
+    // printf("out.n_items= %d\n", out.n_items);
+    // No result found
+    if (*n_obj_ids_ptr == 0) {
+        out.bulk_handle = HG_BULK_NULL;
+        out.ret         = 0;
+        // printf("No object ids returned for the query\n");
+        ret = HG_Respond(handle, NULL, NULL, &out);
+        goto done;
+    }
+
+    n_buf        = 1;
+    buf_sizes    = (size_t *)calloc(n_buf, sizeof(size_t));
+    buf_sizes[0] = sizeof(uint64_t) * (*n_obj_ids_ptr);
+
+    // Create bulk handle
+    hg_ret = HG_Bulk_create(hg_class_g, n_buf, (void **)buf_ptrs, (const hg_size_t *)buf_sizes,
+                            HG_BULK_READ_ONLY, &bulk_handle);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "Could not create bulk data handle\n");
+        return EXIT_FAILURE;
+    }
+
+    // Fill bulk handle and return number of metadata that satisfy the query
+    out.bulk_handle = bulk_handle;
+    out.ret         = *n_obj_ids_ptr;
+    // printf("out.ret = %d\n", out.ret);
+
+    // FIXME: Memory leak? buf_ptrs is not freed
+    // TODO: To confirm how we can know the bulk data has been sent to client completely
+
+    // Send bulk handle to client
+    /* printf("query_partial_cb(): Sending bulk handle to client\n"); */
+    /* fflush(stdout); */
+    /* HG_Respond(handle, PDC_server_bulk_respond_cb, NULL, &out); */
+    ret = HG_Respond(handle, NULL, NULL, &out);
+
+done:
+    /* printf("==PDC_SERVER: metadata_index_search_cb(): returned %llu\n", out.ret); */
+    // Free input
+    HG_Free_input(handle, &in);
+    // Free handle
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret);
+}
+
 HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
 HG_TEST_THREAD_CB(gen_cont_id)
@@ -6433,26 +6545,6 @@ HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
 HG_TEST_THREAD_CB(get_sel_data_rpc)
 HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
-
-#define PDC_FUNC_DECLARE_REGISTER(x)                                                                         \
-    hg_id_t PDC_##x##_register(hg_class_t *hg_class)                                                         \
-    {                                                                                                        \
-        hg_id_t ret_value;                                                                                   \
-        FUNC_ENTER(NULL);                                                                                    \
-        ret_value = MERCURY_REGISTER(hg_class, #x, x##_in_t, x##_out_t, x##_cb);                             \
-        FUNC_LEAVE(ret_value);                                                                               \
-        return ret_value;                                                                                    \
-    }
-
-#define PDC_FUNC_DECLARE_REGISTER_IN_OUT(x, y, z)                                                            \
-    hg_id_t PDC_##x##_register(hg_class_t *hg_class)                                                         \
-    {                                                                                                        \
-        hg_id_t ret_value;                                                                                   \
-        FUNC_ENTER(NULL);                                                                                    \
-        ret_value = MERCURY_REGISTER(hg_class, #x, y, z, x##_cb);                                            \
-        FUNC_LEAVE(ret_value);                                                                               \
-        return ret_value;                                                                                    \
-    }
 
 PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
 PDC_FUNC_DECLARE_REGISTER(gen_cont_id)
@@ -6521,6 +6613,9 @@ PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_nhits, send_nhits_t, pdc_int_ret_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_bulk_rpc, bulk_rpc_in_t, pdc_int_ret_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(get_sel_data_rpc, get_sel_data_rpc_in_t, pdc_int_ret_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(send_read_sel_obj_id_rpc, get_sel_data_rpc_in_t, pdc_int_ret_t)
+// DART Index
+PDC_FUNC_DECLARE_REGISTER(dart_get_server_info)
+PDC_FUNC_DECLARE_REGISTER(dart_perform_one_server)
 
 /*
  * Check if two 1D segments overlaps

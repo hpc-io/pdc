@@ -18,6 +18,9 @@
 /* Define if you want to enable profiling */
 #cmakedefine ENABLE_PROFILING
 
+/* Define if you want to enable Julia */
+#cmakedefine PDC_ENABLE_JULIA
+
 /* Define if you want to enable multithread */
 #cmakedefine ENABLE_MULTITHREAD
 

@@ -7,6 +7,7 @@ if(PDC_ENABLE_FASTBIT)
 endif()
 
 include_directories(
+  ${PDC_COMMON_INCLUDE_DIRS}
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
@@ -37,6 +38,7 @@ endif()
 
 add_executable(pdc_server.exe
                pdc_server.c
+               pdc_server_metadata_index.c
                pdc_server_metadata.c
                pdc_client_server_common.c
                dablooms/pdc_dablooms.c
