@@ -9,6 +9,8 @@ stages:
 
 perlmutter-build:
     stage: build
+    when: manual
+    allow_failure: false
     tags:
         - perlmutter
     variables:
