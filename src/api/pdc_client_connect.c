@@ -7543,20 +7543,20 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     int      rank_got_result = query_sent == 1 ? 1 : MPI_UNDEFINED;
     MPI_Comm sub_comm;
     MPI_Comm_split(comm, rank_got_result, pdc_client_mpi_rank_g, &sub_comm);
-    int new_rank, new_size;
-    MPI_Comm_rank(new_comm, &new_rank);
-    MPI_Comm_size(new_comm, &new_size);
-    printf("World rank %d is rank %d in the new communicator of size %d\n", pdc_client_mpi_rank_g, new_rank,
-           new_size);
+    int sub_comm_rank, sub_comm_size;
+    MPI_Comm_rank(sub_comm, &sub_comm_rank);
+    MPI_Comm_size(sub_comm, &sub_comm_size);
+    printf("World rank %d is rank %d in the new communicator of size %d\n", pdc_client_mpi_rank_g,
+           sub_comm_rank, sub_comm_size);
 
-    all_nmeta = (int *)malloc(new_size * sizeof(int));
+    all_nmeta = (int *)calloc(pdc_client_mpi_size_g, sizeof(int));
 
-    if (new_comm != MPI_COMM_NULL) {
+    if (sub_comm != MPI_COMM_NULL) {
         timer_start(&timer);
-        MPI_Allgather(n_res, 1, MPI_INT, all_nmeta, 1, MPI_INT, new_comm);
+        MPI_Allgather(n_res, 1, MPI_INT, all_nmeta, 1, MPI_INT, sub_comm);
         timer_pause(&timer);
-        println("==PDC Client[%d]: Time for MPI_Allgather for Syncing ID count: %.4f ms",
-                pdc_client_mpi_rank_g, timer_delta_us(&timer) / 1000.0);
+        println("==PDC Client[%d - %d]: Time for MPI_Allgather for Syncing ID count: %.4f ms",
+                pdc_client_mpi_rank_g, sub_comm_rank, timer_delta_us(&timer) / 1000.0);
     }
 
     // Now, let's calculate the displacement for each client, and also the total number of results
@@ -7564,7 +7564,8 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     ntotal = 0;
     for (i = 0; i < pdc_client_mpi_size_g; i++) {
         disp[i] = ntotal;
-        ntotal += ((i < new_size) ? all_nmeta[i] : 0);
+        // FIXME: the first few elements of this array can be 0 for those ranks that are not colored as 1.
+        ntotal += all_nmeta[i];
     }
 
     // Finally, let's gather all the results. Since each client is getting a partial result which can be of
