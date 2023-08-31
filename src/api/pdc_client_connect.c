@@ -7568,7 +7568,6 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         sub_n_obj_arr = (int *)malloc(sub_n_obj_len * sizeof(int));
     }
     MPI_Barrier(comm);
-    println("==PDC Client[%d - %d]: sub_n_obj_len : %d", pdc_client_mpi_rank_g, sub_comm_rank, sub_n_obj_len);
     MPI_Bcast(sub_n_obj_arr, sub_n_obj_len, MPI_INT, pdc_client_mpi_rank_g, comm);
     timer_pause(&timer);
     println("==PDC Client[%d - %d]: Time for MPI_Allgather for Syncing ID count: %.4f ms",
