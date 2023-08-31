@@ -167,14 +167,15 @@ static hg_id_t send_data_query_register_id_g;
 static hg_id_t get_sel_data_register_id_g;
 
 // DART index
-static hg_id_t  dart_get_server_info_g;
-static hg_id_t  dart_perform_one_server_g;
-static uint64_t dart_client_req_counter_g = 0;
+static hg_id_t dart_get_server_info_g;
+static hg_id_t dart_perform_one_server_g;
 
 int                        cache_percentage_g       = 0;
 int                        cache_count_g            = 0;
 int                        cache_total_g            = 0;
 pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
+
+static uint64_t object_selection_query_counter_g = 0;
 
 /*
  *
@@ -7535,38 +7536,62 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     */
 
     // perform all gather to get the complete result.
-    // First, let's get the number of results from each client
-    // since not all ranks are participating in the query, we need to limit the MPI communication to those
+    // First, let's get the number of results from each client.
+
+    // Since not all ranks are participating in the query, we need to limit the MPI communication to those
     // ranks only. This can help reduce the communication overhead, especially when the number of ranks is
     // far larger than the number of servers.
 
-    int      rank_got_result = query_sent == 1 ? 1 : MPI_UNDEFINED;
+    int      sub_comm_color = query_sent == 1 ? 1 : 0;
     MPI_Comm sub_comm;
-    MPI_Comm_split(comm, rank_got_result, pdc_client_mpi_rank_g, &sub_comm);
+    MPI_Comm_split(comm, sub_comm_color, pdc_client_mpi_rank_g, &sub_comm);
     int sub_comm_rank, sub_comm_size;
     MPI_Comm_rank(sub_comm, &sub_comm_rank);
     MPI_Comm_size(sub_comm, &sub_comm_size);
-    printf("World rank %d is rank %d in the new communicator of size %d\n", pdc_client_mpi_rank_g,
-           sub_comm_rank, sub_comm_size);
+    println("World rank %d is rank %d in the new communicator of size %d", pdc_client_mpi_rank_g,
+            sub_comm_rank, sub_comm_size);
 
-    all_nmeta = (int *)calloc(pdc_client_mpi_size_g, sizeof(int));
+    int *sub_n_obj_arr, sub_n_obj_len, n_sent_ranks;
 
-    if (sub_comm != MPI_COMM_NULL) {
-        timer_start(&timer);
-        MPI_Allgather(n_res, 1, MPI_INT, all_nmeta, 1, MPI_INT, sub_comm);
-        timer_pause(&timer);
-        println("==PDC Client[%d - %d]: Time for MPI_Allgather for Syncing ID count: %.4f ms",
-                pdc_client_mpi_rank_g, sub_comm_rank, timer_delta_us(&timer) / 1000.0);
+    timer_start(&timer);
+    if (sub_comm_color == 1) {
+        n_sent_ranks  = sub_comm_rank;
+        sub_n_obj_len = n_sent_ranks + 1;
+        sub_n_obj_arr = (int *)malloc(sub_n_obj_len, sizeof(int));
+        MPI_Allgather(n_res, 1, MPI_INT, sub_n_obj_arr, 1, MPI_INT, sub_comm);
+        sub_n_obj[sub_n_obj_len - 1] = n_sent_ranks;
     }
+    else {
+        n_sent_ranks  = pdc_client_mpi_rank_g - sub_comm_size;
+        sub_n_obj_len = n_sent_ranks + 1;
+        sub_n_obj_arr = (int *)malloc(sub_n_obj_len, sizeof(int));
+    }
+    MPI_Barrier(comm);
+    MPI_Bcast(sub_n_obj_arr, sub_n_obj_len, MPI_INT, pdc_client_mpi_rank_g, comm);
+    timer_pause(&timer);
+    println("==PDC Client[%d - %d]: Time for MPI_Allgather for Syncing ID count: %.4f ms",
+            pdc_client_mpi_rank_g, sub_comm_rank, timer_delta_us(&timer) / 1000.0);
 
-    // Now, let's calculate the displacement for each client, and also the total number of results
-    disp   = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
-    ntotal = 0;
+    if (sub_comm_color == 0 && sub_n_obj_arr[sub_n_obj_len - 1] != n_sent_ranks)
+        PGOTO_ERROR(FAIL, "==PDC Client[%d / %d]: ERROR with n_sent_ranks", pdc_client_mpi_rank_g,
+                    sub_comm_rank);
+
+    // Okay, now each rank of the WORLD_COMM knows about the number of results from the clients who sent
+    // queries.
+    // Let's calculate the total number of results, and the displacement for each client.
+
+    timer_start(&timer);
+    all_nmeta = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
+    disp      = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
+    ntotal    = 0;
     for (i = 0; i < pdc_client_mpi_size_g; i++) {
-        disp[i] = ntotal;
-        // FIXME: the first few elements of this array can be 0 for those ranks that are not colored as 1.
+        all_nmeta[i] = (i < n_sent_ranks) ? sub_n_obj_arr[i] : 0;
+        disp[i]      = ntotal;
         ntotal += all_nmeta[i];
     }
+    timer_pause(&timer);
+    println("==PDC Client[%d - %d]: Time for Calculating ntotal and displacement: %.4f ms",
+            pdc_client_mpi_rank_g, sub_comm_rank, timer_delta_us(&timer) / 1000.0);
 
     // Finally, let's gather all the results. Since each client is getting a partial result which can be of
     // different size, we need to use MPI_Allgatherv for gathering variable-size arrays from different
@@ -9016,7 +9041,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number of
     // client ranks.
-    if (dart_client_req_counter_g % pdc_client_mpi_size_g == pdc_client_mpi_rank_g) {
+    if (object_selection_query_counter_g % pdc_client_mpi_size_g == pdc_client_mpi_rank_g) {
         timer_start(&timer);
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
         timer_pause(&timer);
@@ -9028,23 +9053,23 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     // broadcast the result to all other ranks
     // broadcast the number of objects first.
     timer_start(&timer);
-    MPI_Bcast(&n_obj, 1, MPI_INT, dart_client_req_counter_g % pdc_client_mpi_size_g, comm);
+    MPI_Bcast(&n_obj, 1, MPI_INT, object_selection_query_counter_g % pdc_client_mpi_size_g, comm);
     timer_pause(&timer);
 
     println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID count: %.4f ms", pdc_client_mpi_rank_g,
             timer_delta_us(&timer) / 1000.0);
 
     // for those ranks that are not the root, allocate memory for the object IDs.
-    if (dart_client_req_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
+    if (object_selection_query_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
         dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
     }
     timer_start(&timer);
-    MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, dart_client_req_counter_g % pdc_client_mpi_size_g, comm);
+    MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, object_selection_query_counter_g % pdc_client_mpi_size_g, comm);
     timer_pause(&timer);
 
     println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID array: %.4f ms", pdc_client_mpi_rank_g,
             timer_delta_us(&timer) / 1000.0);
-    dart_client_req_counter_g++;
+    object_selection_query_counter_g++;
 
     *n_res = n_obj;
     *out   = dart_out;
