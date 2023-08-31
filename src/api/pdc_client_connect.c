@@ -7538,9 +7538,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     // perform all gather to get the complete result.
     // First, let's get the number of results from each client.
 
-    // Since not all ranks are participating in the query, we need to limit the MPI communication to those
-    // ranks only. This can help reduce the communication overhead, especially when the number of ranks is
-    // far larger than the number of servers.
+    // In the case where the total number of clients is far larger than the total number of servers, say 20x
+    // larger, since not all ranks are participating in the query, we need to limit the MPI communication to
+    // those ranks only. This can help reduce the communication overhead, especially when the number of ranks
+    // is far larger than the number of servers.
 
     int      sub_comm_color = query_sent == 1 ? 1 : 0;
     MPI_Comm sub_comm;
@@ -7567,6 +7568,7 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         sub_n_obj_arr = (int *)malloc(sub_n_obj_len * sizeof(int));
     }
     MPI_Barrier(comm);
+    println("==PDC Client[%d - %d]: sub_n_obj_len : %d", pdc_client_mpi_rank_g, sub_comm_rank, sub_n_obj_len);
     MPI_Bcast(sub_n_obj_arr, sub_n_obj_len, MPI_INT, pdc_client_mpi_rank_g, comm);
     timer_pause(&timer);
     println("==PDC Client[%d - %d]: Time for MPI_Allgather for Syncing ID count: %.4f ms",
