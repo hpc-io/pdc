@@ -7556,7 +7556,7 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     timer_start(&timer);
     if (sub_comm_color == 1) {
-        n_sent_ranks  = sub_comm_rank;
+        n_sent_ranks  = sub_comm_size;
         sub_n_obj_len = n_sent_ranks + 1;
         sub_n_obj_arr = (int *)malloc(sub_n_obj_len * sizeof(int));
         MPI_Allgather(n_res, 1, MPI_INT, sub_n_obj_arr, 1, MPI_INT, sub_comm);
