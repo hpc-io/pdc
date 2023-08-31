@@ -430,6 +430,8 @@ endif()
 option(PDC_SERVER_CACHE "Enable server data caching with pthread." OFF)
 if(PDC_SERVER_CACHE)
     set(PDC_SERVER_CACHE 1)
+    set(PDC_SERVER_CACHE_MAX_GB 3 CACHE INT "Maximum region server cache size in GB.")
+    set(PDC_SERVER_CACHE_FLUSH_TIME 30 CACHE INT "Region server cache flush time interval in seconds.")
 endif()
 
 # Not used
