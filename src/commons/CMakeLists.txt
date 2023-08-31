@@ -3,7 +3,8 @@
 #------------------------------------------------------------------------------
 
 set(PDC_COMMON_LIBRARY_NAME pdc_commons CACHE INTERNAL "")
-
+set(PDC_COMMON_SERVER_LIB pdc_commons_server CACHE INTERNAL "")
+set(PDC_COMMON_CLIENT_LIB pdc_commons_client CACHE INTERNAL "")
 #------------------------------------------------------------------------------
 # External dependencies
 #------------------------------------------------------------------------------
@@ -17,9 +18,15 @@ if(THREADS_HAVE_PTHREAD_ARG)
   set_property(TARGET ${PDC_COMMON_LIBRARY_NAME} PROPERTY INTERFACE_COMPILE_OPTIONS "-pthread")
 endif()
 
+# Math library
+
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+  set(PDC_EXT_LIB_DEPENDENCIES ${MATH_LIBRARY} ${PDC_EXT_LIB_DEPENDENCIES}) 
+endif()
 
 # Mercury
-find_package(MERCURY CONFIG REQUIRED)
+find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIRS}
     ${PDC_EXT_INCLUDE_DEPENDENCIES}
@@ -35,6 +42,9 @@ include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
 
 # Get a list of all directories that contain header files
 file(GLOB_RECURSE LOCAL_INCLUDE_DIRS "*.h")
+
+# Remove specified directories from the list
+# list(FILTER LOCAL_INCLUDE_DIRS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/comm")
 
 # Remove the /filename.h at the end of each directory
 list(TRANSFORM LOCAL_INCLUDE_DIRS REPLACE "/[^/]*$" "")
@@ -54,7 +64,9 @@ include_directories(
   ${PDC_COMMONS_INCLUDE_DIRS}
 )
 
-message(STATUS "PDC_COMMONS_INCLUDE_DIRS: ${PDC_COMMONS_INCLUDE_DIRS}")
+message(STATUS "===MERCURY_INCLUDE_DIRS: ${MERCURY_INCLUDE_DIRS}")
+message(STATUS "===PDC_EXT_INCLUDE_DEPENDENCIES: ${PDC_EXT_INCLUDE_DEPENDENCIES}")
+message(STATUS "===PDC_COMMONS_INCLUDE_DIRS: ${PDC_COMMONS_INCLUDE_DIRS}")
 
 install(
   FILES
@@ -92,6 +104,8 @@ endif()
 file(GLOB_RECURSE PDC_COMMONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
+# list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
+# list(FILTER PDC_COMMONS_HEADERS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
 
 #------------------------------------------------------------------------------
 # Libraries

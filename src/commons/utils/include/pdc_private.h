@@ -28,6 +28,22 @@
 #include "pdc_config.h"
 #include "pdc_public.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+#include "mercury.h"
+#include "mercury_macros.h"
+#include "mercury_proc_string.h"
+#include "mercury_list.h"
+#include "mercury_config.h"
+#include "mercury_thread_pool.h"
+#include "mercury_atomic.h"
+
+#ifdef ENABLE_MULTITHREAD
+#include "mercury_thread_pool.h"
+#include "mercury_thread_condition.h"
+#include "mercury_thread_mutex.h"
+#endif
+
 // #include <sys/time.h>			/* gettimeofday() */
 
 /****************************/
@@ -189,5 +205,61 @@ extern pbool_t err_occurred;
         return;                                                                                              \
     } while (0)
 #endif
+
+#if defined(IS_PDC_SERVER) && defined(ENABLE_MULTITHREAD)
+
+// Macros for multi-thread callback, grabbed from Mercury/Testing/mercury_rpc_cb.c
+#define HG_TEST_RPC_CB(func_name, handle) static hg_return_t func_name##_thread_cb(hg_handle_t handle)
+
+/* Assuming func_name_cb is defined, calling HG_TEST_THREAD_CB(func_name)
+ * will define func_name_thread and func_name_thread_cb that can be used
+ * to execute RPC callback from a thread
+ */
+#define HG_TEST_THREAD_CB(func_name)                                                                         \
+    static HG_INLINE HG_THREAD_RETURN_TYPE func_name##_thread(void *arg)                                     \
+    {                                                                                                        \
+        hg_handle_t     handle     = (hg_handle_t)arg;                                                       \
+        hg_thread_ret_t thread_ret = (hg_thread_ret_t)0;                                                     \
+                                                                                                             \
+        func_name##_thread_cb(handle);                                                                       \
+                                                                                                             \
+        return thread_ret;                                                                                   \
+    }                                                                                                        \
+    hg_return_t func_name##_cb(hg_handle_t handle)                                                           \
+    {                                                                                                        \
+        struct hg_thread_work *work = HG_Get_data(handle);                                                   \
+        hg_return_t            ret  = HG_SUCCESS;                                                            \
+                                                                                                             \
+        work->func = func_name##_thread;                                                                     \
+        work->args = handle;                                                                                 \
+        hg_thread_pool_post(hg_test_thread_pool_g, work);                                                    \
+                                                                                                             \
+        return ret;                                                                                          \
+    }
+#else
+#define HG_TEST_RPC_CB(func_name, handle) hg_return_t func_name##_cb(hg_handle_t handle)
+#define HG_TEST_THREAD_CB(func_name)
+
+#endif // End of ENABLE_MULTITHREAD
+
+#define PDC_FUNC_DECLARE_REGISTER(x)                                                                         \
+    hg_id_t PDC_##x##_register(hg_class_t *hg_class)                                                         \
+    {                                                                                                        \
+        hg_id_t ret_value;                                                                                   \
+        FUNC_ENTER(NULL);                                                                                    \
+        ret_value = MERCURY_REGISTER(hg_class, #x, x##_in_t, x##_out_t, x##_cb);                             \
+        FUNC_LEAVE(ret_value);                                                                               \
+        return ret_value;                                                                                    \
+    }
+
+#define PDC_FUNC_DECLARE_REGISTER_IN_OUT(x, y, z)                                                            \
+    hg_id_t PDC_##x##_register(hg_class_t *hg_class)                                                         \
+    {                                                                                                        \
+        hg_id_t ret_value;                                                                                   \
+        FUNC_ENTER(NULL);                                                                                    \
+        ret_value = MERCURY_REGISTER(hg_class, #x, y, z, x##_cb);                                            \
+        FUNC_LEAVE(ret_value);                                                                               \
+        return ret_value;                                                                                    \
+    }
 
 #endif /* PDC_PRIVATE_H */

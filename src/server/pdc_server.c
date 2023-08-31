@@ -905,6 +905,9 @@ drc_access_again:
 
     n_metadata_g = 0;
 
+    // Initialize DART
+    PDC_Server_dart_init();
+
     // PDC transfer_request infrastructures
     PDC_server_transfer_request_init();
 #ifdef PDC_SERVER_CACHE
@@ -1952,6 +1955,10 @@ PDC_Server_mercury_register()
     PDC_transform_region_release_register(hg_class_g);
     PDC_region_transform_release_register(hg_class_g);
     PDC_region_analysis_release_register(hg_class_g);
+
+    // DART Index
+    PDC_dart_get_server_info_register(hg_class_g);
+    PDC_dart_perform_one_server_register(hg_class_g);
 
     // Server to client RPC
     server_lookup_client_register_id_g = PDC_server_lookup_client_register(hg_class_g);
