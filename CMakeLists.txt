@@ -505,6 +505,11 @@ if(NOT PDC_EXTERNALLY_CONFIGURED AND BUILD_TESTING)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
 endif()
 
+option(BUILD_TOOLS "Build Tools." OFF)
+if(BUILD_TOOLS)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tools)
+endif()
+
 #-----------------------------------------------------------------------------
 # Build doxygen documentation.
 #-----------------------------------------------------------------------------
@@ -562,6 +567,17 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 
+if(BUILD_TOOLS)
+ install(
+ FILES
+    ${PDC_BINARY_DIR}/bin/pdc_ls
+    ${PDC_BINARY_DIR}/bin/pdc_export
+    ${PDC_BINARY_DIR}/bin/pdc_import
+  DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/bin
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+endif()
 
 install(
   DIRECTORY
