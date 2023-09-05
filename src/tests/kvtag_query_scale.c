@@ -121,7 +121,7 @@ main(int argc, char *argv[])
     round         = atoi(argv[2]);
     selectivity   = atoi(argv[3]);
     is_using_dart = atoi(argv[4]);
-    query_type    = atoi(argv[5]); 
+    query_type    = atoi(argv[5]);
     n_add_tag     = n_obj * selectivity / 100;
 
     // create a pdc
