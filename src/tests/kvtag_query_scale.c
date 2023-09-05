@@ -99,7 +99,7 @@ main(int argc, char *argv[])
     pdcid_t     pdc, cont_prop, cont, obj_prop;
     pdcid_t *   obj_ids;
     int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
-    int         proc_num, my_rank, i, v, iter, round, selectivity, is_using_dart;
+    int         proc_num, my_rank, i, v, iter, round, selectivity, is_using_dart, query_type;
     char        obj_name[128];
     double      stime, total_time;
     pdc_kvtag_t kvtag;
@@ -112,7 +112,7 @@ main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
 
-    if (argc < 5) {
+    if (argc < 6) {
         if (my_rank == 0)
             print_usage(argv[0]);
         goto done;
@@ -121,6 +121,7 @@ main(int argc, char *argv[])
     round         = atoi(argv[2]);
     selectivity   = atoi(argv[3]);
     is_using_dart = atoi(argv[4]);
+    query_type    = atoi(argv[5]); 
     n_add_tag     = n_obj * selectivity / 100;
 
     // create a pdc
