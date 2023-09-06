@@ -317,7 +317,10 @@ gen_random_strings(int count, int minlen, int maxlen, int alphabet_size)
         len       = len < minlen ? minlen : len; // Ensure at least minlen character
         char *str = (char *)calloc(len + 1, sizeof(char));
         for (i = 0; i < len; i++) {
-            char chr = VISIBLE_ALPHABET[rand() % abc_size];
+            int randnum = rand();
+            if (randnum < 0)
+                randnum *= -1;
+            char chr = VISIBLE_ALPHABET[randnum % abc_size];
             str[i]   = chr;
         }
         str[len]  = '\0'; // Null-terminate the string

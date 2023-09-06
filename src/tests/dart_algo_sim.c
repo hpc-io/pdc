@@ -268,8 +268,8 @@ gen_uuids(int count, int prefix_len, insert_key_cb insert_cb, search_key_cb sear
 }
 
 char **
-gen_random_strings(int count, int maxlen, int alphabet_size, int prefix_len, insert_key_cb insert_cb,
-                   search_key_cb search_cb)
+gen_random_strings_with_cb(int count, int minlen, int maxlen, int alphabet_size, int prefix_len,
+                           insert_key_cb insert_cb, search_key_cb search_cb)
 {
 
     int    c      = 0;
@@ -277,16 +277,16 @@ gen_random_strings(int count, int maxlen, int alphabet_size, int prefix_len, ins
     char **result = (char **)calloc(count, sizeof(char *));
     for (c = 0; c < count; c++) {
         // int len = maxlen;//rand()%maxlen;
-        int   len = rand() % maxlen;
-        char *str = (char *)calloc(len, sizeof(len));
-        for (i = 0; i < len - 1; i++) {
+        int len   = (rand() % maxlen) + 1;
+        len       = len < minlen ? minlen : len;
+        char *str = (char *)calloc(len + 1, sizeof(len));
+        for (i = 0; i < len; i++) {
             int randnum = rand();
             if (randnum < 0)
                 randnum *= -1;
-            char c = (char)((randnum % alphabet_size) + 65);
-            str[i] = c;
+            char chr = (char)((randnum % alphabet_size) + 65);
+            str[i]   = chr;
         }
-        str[len - 1] = '\0';
         // printf("generated %s\n", str);
         result[c] = str;
         if (insert_cb != NULL && search_cb != NULL) {
@@ -422,8 +422,8 @@ main(int argc, char **argv)
         alphabet_size = 129;
         dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
                         replication_factor);
-        gen_random_strings(word_count, 16, alphabet_size, prefix_len, keyword_insert[hashalgo],
-                           keyword_search[hashalgo]);
+        gen_random_strings_with_cb(word_count, 16, alphabet_size, prefix_len, keyword_insert[hashalgo],
+                                   keyword_search[hashalgo]);
     }
     else if (INPUT_TYPE == INPUT_UUID) {
         alphabet_size = 37;
