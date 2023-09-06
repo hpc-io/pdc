@@ -76,6 +76,56 @@ print_usage(char *name)
     printf("  comm_type: 0 for point-to-point, 1 for collective\n");
 }
 
+perr_t
+prepare_container(pdcid_t *pdc, pdcid_t *cont_prop, pdcid_t *cont, pdcid_t *obj_prop)
+{
+    perr_t ret_value = FAIL;
+    // create a pdc
+    *pdc = PDCinit("pdc");
+
+    // create a container property
+    *cont_prop = PDCprop_create(PDC_CONT_CREATE, *pdc);
+    if (*cont_prop <= 0) {
+        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        goto done;
+    }
+    // create a container
+    *cont = PDCcont_create("c1", *cont_prop);
+    if (*cont <= 0) {
+        printf("Fail to create container @ line  %d!\n", __LINE__);
+        goto done;
+    }
+
+    // create an object property
+    *obj_prop = PDCprop_create(PDC_OBJ_CREATE, *pdc);
+    if (*obj_prop <= 0) {
+        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        goto done;
+    }
+
+    ret_value = SUCCEED;
+done:
+    return ret_value;
+}
+
+perr_t
+creating_objects(pdcid_t **obj_ids, int my_obj, int my_obj_s, pdcid_t cont, pdcid_t obj_prop)
+{
+    perr_t ret_value = FAIL;
+    *obj_ids         = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
+    for (i = 0; i < my_obj; i++) {
+        sprintf(obj_name, "obj%d", my_obj_s + i);
+        obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
+        if (obj_ids[i] <= 0) {
+            printf("Fail to create object @ line  %d!\n", __LINE__);
+            goto done;
+        }
+    }
+    ret_value = SUCCEED;
+done:
+    return ret_value;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -109,41 +159,22 @@ main(int argc, char *argv[])
     comm_type = atoi(argv[6]);     // 0 for point-to-point, 1 for collective
     n_add_tag = n_obj * selectivity / 100;
 
-    // create a pdc
-    pdc = PDCinit("pdc");
-
-    // create a container property
-    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
-
-    // create a container
-    cont = PDCcont_create("c1", cont_prop);
-    if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
-
-    // create an object property
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
-
+    // prepare container
+    if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop) < 0) {
+        println("fail to prepare container @ line %d", __LINE__);
+        goto done;
+    }
     // Create a number of objects, add at least one tag to that object
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
-    if (my_rank == 0)
-        printf("I will create %d obj\n", my_obj);
-
-    obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
-    for (i = 0; i < my_obj; i++) {
-        sprintf(obj_name, "obj%d", my_obj_s + i);
-        obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
-        if (obj_ids[i] <= 0)
-            printf("Fail to create object @ line  %d!\n", __LINE__);
+    if (my_rank == 0) {
+        println("I will create %d obj", my_obj);
     }
-
-    if (my_rank == 0)
-        printf("Created %d objects\n", n_obj);
-    fflush(stdout);
-
+    // creating objects
+    creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop);
+    if (my_rank == 0) {
+        println("Created %d objects", n_obj);
+    }
+    // prepare tags to be added.
     char *attr_name_per_rank = gen_random_strings(1, 6, 8, 26)[0];
     // Add tags
     kvtag.name  = attr_name_per_rank;
@@ -184,7 +215,7 @@ main(int argc, char *argv[])
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
+    // TODO: adjust query strings based on query type.
     kvtag.name  = attr_name_per_rank;
     kvtag.value = (void *)&v;
     kvtag.type  = PDC_INT;
