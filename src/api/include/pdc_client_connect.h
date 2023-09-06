@@ -33,6 +33,7 @@
 #include "mercury_request.h"
 #include "pdc_region.h"
 #include "dart_core.h"
+#include "query_utils.h"
 #include "pdc_set.h"
 #include "pdc_compare.h"
 #include "pdc_hash.h"

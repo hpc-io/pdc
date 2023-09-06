@@ -30,21 +30,6 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-typedef struct query_gen_input {
-    pdc_kvtag_t *base_tag;
-    int          key_query_type;
-    int          value_query_type;
-    int          range_lo;
-    int          range_hi;
-} query_gen_input_t;
-
-typedef struct query_gen_output {
-    char * key_query;
-    size_t key_query_len;
-    char * value_query;
-    size_t value_query_len;
-} query_gen_output_t;
-
 int
 assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {
@@ -89,127 +74,6 @@ print_usage(char *name)
     printf("  is_using_dart: 1 for using dart, 0 for not using dart\n");
     printf("  query_type: 0 for exact, 1 for prefix, 2 for suffix, 3 for infix\n");
     printf("  comm_type: 0 for point-to-point, 1 for collective\n");
-}
-
-void
-gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
-{
-    char * key_ptr       = NULL;
-    size_t key_ptr_len   = 0;
-    char * value_ptr     = NULL;
-    size_t value_ptr_len = 0;
-    size_t affix_len     = 4;
-
-    if (input->key_query_type == 0) { // exact
-        key_ptr_len = strlen(input->base_tag->name);
-        key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        strcpy(key_ptr, input->base_tag->name);
-    }
-    else if (input->key_query_type == 1) { // prefix
-        key_ptr_len = affix_len + 1;
-        key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        strncpy(key_ptr, input->base_tag->name, affix_len);
-        key_ptr[affix_len - 1] = '*';
-    }
-    else if (input->key_query_type == 2) { // suffix
-        key_ptr_len = affix_len + 1;
-        key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        key_ptr[0]  = '*';
-        key_ptr     = key_ptr + 1;
-        strncpy(key_ptr, input->base_tag->name, affix_len);
-    }
-    else if (input->key_query_type == 3) { // infix
-        key_ptr_len            = affix_len + 2;
-        key_ptr                = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        key_ptr[0]             = '*';
-        key_ptr[affix_len - 1] = '*';
-        key_ptr                = key_ptr + 1;
-        strncpy(key_ptr, input->base_tag->name, affix_len);
-    }
-    else {
-        printf("Invalid key query type!\n");
-        return;
-    }
-
-    if (input->base_tag->type == PDC_STRING) {
-        if (input->value_query_type == 0) {
-            value_ptr_len = strlen((char *)input->base_tag->value);
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            strcpy(value_ptr, (char *)input->base_tag->value);
-        }
-        else if (input->value_query_type == 1) {
-            value_ptr_len = affix_len + 1;
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            strncpy(value_ptr, (char *)input->base_tag->value, affix_len);
-            value_ptr[affix_len - 1] = '*';
-        }
-        else if (input->value_query_type == 2) {
-            value_ptr_len = affix_len + 1;
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            value_ptr[0]  = '*';
-            value_ptr     = value_ptr + 1;
-            strncpy(value_ptr, (char *)input->base_tag->value, affix_len);
-        }
-        else if (input->value_query_type == 3) {
-            value_ptr_len            = affix_len + 2;
-            value_ptr                = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            value_ptr[0]             = '*';
-            value_ptr[affix_len - 1] = '*';
-            value_ptr                = value_ptr + 1;
-            strncpy(value_ptr, (char *)input->base_tag->value, affix_len);
-        }
-        else {
-            printf("Invalid value query type for string tag!\n");
-            return;
-        }
-    }
-    else if (input->base_tag->type == PDC_INT) {
-        if (input->value_query_type == 4) {
-            value_ptr_len = snprintf(NULL, 0, "%d", ((int *)input->base_tag->value)[0]);
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            snprintf(value_ptr, value_ptr_len + 1, "%d", ((int *)input->base_tag->value)[0]);
-        }
-        else if (input->value_query_type == 5) {
-            size_t lo_len = snprintf(NULL, 0, "%d", input->range_lo);
-            size_t hi_len = snprintf(NULL, 0, "%d", input->range_hi);
-            value_ptr_len = lo_len + hi_len + 1;
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            snprintf(value_ptr, value_ptr_len + 1, "%d~%d", input->range_lo, input->range_hi);
-        }
-        else {
-            printf("Invalid value query type for integer!\n");
-            return;
-        }
-    }
-    else {
-        printf("Invalid tag type!\n");
-        return;
-    }
-
-    output->key_query       = key_ptr;
-    output->key_query_len   = key_ptr_len;
-    output->value_query     = value_ptr;
-    output->value_query_len = value_ptr_len;
-}
-
-char **
-gen_random_strings(int count, int maxlen, int alphabet_size)
-{
-    int    c      = 0;
-    int    i      = 0;
-    char **result = (char **)calloc(count, sizeof(char *));
-    for (c = 0; c < count; c++) {
-        int len   = rand() % maxlen;
-        len       = len < 6 ? 6 : len; // Ensure at least 6 character
-        char *str = (char *)calloc(len + 1, sizeof(char));
-        for (i = 0; i < len; i++) {
-            char chr = (char)((rand() % alphabet_size) + 65); // ASCII printable characters
-            str[i]   = chr;
-        }
-        str[len]  = '\0'; // Null-terminate the string
-        result[c] = str;
-    }
-    return result;
 }
 
 int
@@ -280,7 +144,7 @@ main(int argc, char *argv[])
         printf("Created %d objects\n", n_obj);
     fflush(stdout);
 
-    char *attr_name_per_rank = gen_random_strings(1, 8, 26)[0];
+    char *attr_name_per_rank = gen_random_strings(1, 6, 8, 26)[0];
     // Add tags
     kvtag.name  = attr_name_per_rank;
     kvtag.value = (void *)&v;

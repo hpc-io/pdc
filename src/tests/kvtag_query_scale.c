@@ -74,25 +74,6 @@ print_usage(char *name)
     printf("  is_using_dart: 1 for using dart, 0 for not using dart\n");
 }
 
-char **
-gen_random_strings(int count, int maxlen, int alphabet_size)
-{
-    int    c      = 0;
-    int    i      = 0;
-    char **result = (char **)calloc(count, sizeof(char *));
-    for (c = 0; c < count; c++) {
-        int   len = (rand() % (maxlen - 1)) + 1; // Ensure at least 1 character
-        char *str = (char *)calloc(len + 1, sizeof(char));
-        for (i = 0; i < len; i++) {
-            char chr = (char)((rand() % alphabet_size) + 65); // ASCII printable characters
-            str[i]   = chr;
-        }
-        str[len]  = '\0'; // Null-terminate the string
-        result[c] = str;
-    }
-    return result;
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -159,7 +140,7 @@ main(int argc, char *argv[])
         printf("Created %d objects\n", n_obj);
     fflush(stdout);
 
-    char *attr_name_per_rank = gen_random_strings(1, 8, 26)[0];
+    char *attr_name_per_rank = gen_random_strings(1, 6, 8, 26)[0];
     // Add tags
     kvtag.name  = attr_name_per_rank;
     kvtag.value = (void *)&v;

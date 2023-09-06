@@ -300,3 +300,25 @@ split_string(const char *str, const char *delim, char ***result, int *result_len
     regfree(&regex);
     return *result_len;
 }
+
+char **
+gen_random_strings(int count, int minlen, int maxlen, int alphabet_size)
+{
+    int    c        = 0;
+    int    i        = 0;
+    char **result   = (char **)calloc(count, sizeof(char *));
+    int    abc_size = alphabet_size > strlen(VISIBLE_ALPHABET) ? strlen(VISIBLE_ALPHABET) : alphabet_size;
+    abc_size        = abc_size < 1 ? 26 : abc_size; // the minimum alphabet size is 26
+    for (c = 0; c < count; c++) {
+        int len   = (rand() % maxlen) + 1;
+        len       = len < minlen ? minlen : len; // Ensure at least minlen character
+        char *str = (char *)calloc(len + 1, sizeof(char));
+        for (i = 0; i < len; i++) {
+            char chr = VISIBLE_ALPHABET[rand() % abc_size];
+            str[i]   = chr;
+        }
+        str[len]  = '\0'; // Null-terminate the string
+        result[c] = str;
+    }
+    return result;
+}

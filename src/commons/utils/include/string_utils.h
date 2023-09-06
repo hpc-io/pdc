@@ -25,6 +25,9 @@
 
 typedef enum { PATTERN_EXACT = 2, PATTERN_PREFIX = 3, PATTERN_SUFFIX = 4, PATTERN_MIDDLE = 5 } pattern_type_t;
 
+const char *VISIBLE_ALPHABET =
+    "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 typedef struct {
     char * start;
     size_t length;
@@ -177,5 +180,20 @@ char *reverse_str(char *str);
  * @return the number of parts, if -1, means error.
  */
 int split_string(const char *str, const char *delim, char ***result, int *result_len);
+
+/**
+ * Generate given number of random strings with given length.
+ * You may need to seed the random number generator before calling this function.
+ * The minimum size of alphabet is 26, accordingly, that alphabet will be [a-z].
+ * If you would like to have [a-z0-9] , alphabet_size should be 36.
+ * If you would like to have [a-z0-9!@#$%^&*()-_=+[]{}|;:'",.<>?/`~], alphabet_size should be 67.
+ * If you would like to have [a-z0-9!@#$%^&*()-_=+[]{}|;:'",.<>?/`~A-Z], alphabet_size should be 93.
+ * @param count the number of strings to be generated
+ * @param minlen the minimum length of the string
+ * @param maxlen the maximum length of the string
+ * @param alphabet_size the size of the alphabet
+ * @return an array of strings
+ */
+char **gen_random_strings(int count, int minlen, int maxlen, int alphabet_size);
 
 #endif // PDC_STRING_UTILS_H
