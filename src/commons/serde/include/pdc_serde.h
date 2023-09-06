@@ -139,17 +139,22 @@ static inline PDC_SERDE_Value *
 PDC_SERDE_VALUE(void *data, pdc_c_var_type_t pdc_type, pdc_c_var_class_t pdc_class, size_t size)
 {
     PDC_SERDE_Value *pdc_value  = (PDC_SERDE_Value *)malloc(sizeof(PDC_SERDE_Value));
-    size_t           value_size = 0;
+    size_t           value_size = size;
     if (pdc_class == PDC_CLS_STRUCT) {
         // TODO: we need to check if data is a valid PDC_SERDE_SerializedData structure.
         PDC_SERDE_SerializedData *struct_data = (PDC_SERDE_SerializedData *)data;
-        size                                  = struct_data->totalSize;
+        value_size                            = struct_data->totalSize;
+        pdc_value->data                       = data;
+    }
+    else if (pdc_class <= PDC_CLS_ARRAY) {
+        value_size      = (size_t)get_size_by_class_n_type(data, size, pdc_class, pdc_type);
+        pdc_value->data = malloc(value_size);
+        memcpy(pdc_value->data, data, value_size);
     }
     else {
-        value_size = (size_t)get_size_by_class_n_type(data, size, pdc_class, pdc_type);
+        printf("Error: unsupported class %d\n", pdc_class);
+        return NULL;
     }
-    pdc_value->data = malloc(value_size);
-    memcpy(pdc_value->data, data, value_size);
     pdc_value->pdc_class = pdc_class;
     pdc_value->pdc_type  = pdc_type;
     pdc_value->size      = value_size;

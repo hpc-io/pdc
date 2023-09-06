@@ -102,7 +102,10 @@ endif()
 
 # Collect all source files
 file(GLOB_RECURSE PDC_COMMONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
+list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/*_test.c")
 file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+
+file(GLOB_RECURSE PDC_COMMONS_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*_test.c)
 
 # list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
 # list(FILTER PDC_COMMONS_HEADERS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
@@ -129,6 +132,18 @@ target_link_libraries(${PDC_COMMON_LIBRARY_NAME} INTERFACE
 )
 
 set(PDC_EXPORTED_LIBS ${PDC_COMMON_LIBRARY_NAME} ${PDC_EXPORTED_LIBS})
+
+#------------------------------------------------------------------------------
+# Tests
+#------------------------------------------------------------------------------
+
+# for each test source in $PDC_COMMONS_TEST_SRC, create an executable and link with PDC_COMMON_LIBRARY_NAME
+foreach(_test_src ${PDC_COMMONS_TEST_SRC})
+  get_filename_component(_test_name ${_test_src} NAME_WE)
+  add_executable(${_test_name} ${_test_src})
+  target_link_libraries(${_test_name} ${PDC_COMMON_LIBRARY_NAME})
+  # add_test(${_test_name} ${_test_name})
+endforeach()
 
 #-----------------------------------------------------------------------------
 # Specify project header files to be installed
