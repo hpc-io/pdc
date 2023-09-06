@@ -194,34 +194,26 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #endif
-
+    perr_t ret_value;
     for (iter = 0; iter < round; iter++) {
         v = iter;
         if (is_using_dart) {
             sprintf(value, "%ld", v);
             sprintf(query_string, "%s=%s", kvtag.name, value);
-            if (comm_type == 0) {
-                PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &nres, &pdc_ids,
-                                                       MPI_COMM_WORLD);
-            }
-            else {
-                PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, ref_type, &nres, &pdc_ids,
-                                                           MPI_COMM_WORLD);
-            }
+            ret_value = (comm_type == 0)
+                            ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &nres,
+                                                                     &pdc_ids, MPI_COMM_WORLD)
+                            : PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, ref_type,
+                                                                         &nres, &pdc_ids, MPI_COMM_WORLD);
         }
-
         else {
-            int kvtag_query_return;
-            if (comm_type == 0) {
-                kvtag_query_return = PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD)
-            }
-            else {
-                kvtag_query_return = PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD)
-            }
-            if (kvtag_query_return < 0) {
-                printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
-                break;
-            }
+            ret_value = (comm_type == 0)
+                            ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD)
+                            : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
+        }
+        if (ret_value < 0) {
+            printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
+            break;
         }
     }
 
