@@ -5,6 +5,9 @@
 #include "string_utils.h"
 #include <regex.h>
 
+const char *VISIBLE_ALPHABET =
+    "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 int
 startsWith(const char *str, const char *pre)
 {

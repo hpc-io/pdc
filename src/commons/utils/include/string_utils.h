@@ -25,9 +25,6 @@
 
 typedef enum { PATTERN_EXACT = 2, PATTERN_PREFIX = 3, PATTERN_SUFFIX = 4, PATTERN_MIDDLE = 5 } pattern_type_t;
 
-const char *VISIBLE_ALPHABET =
-    "abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}|;:'\",.<>?/`~ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
 typedef struct {
     char * start;
     size_t length;
