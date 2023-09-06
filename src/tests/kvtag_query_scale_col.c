@@ -200,11 +200,25 @@ main(int argc, char *argv[])
         if (is_using_dart) {
             sprintf(value, "%ld", v);
             sprintf(query_string, "%s=%s", kvtag.name, value);
-            PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, ref_type, &nres, &pdc_ids,
+            if (comm_type == 0) {
+                PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &nres, &pdc_ids,
                                                        MPI_COMM_WORLD);
+            }
+            else {
+                PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, ref_type, &nres, &pdc_ids,
+                                                           MPI_COMM_WORLD);
+            }
         }
+
         else {
-            if (PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
+            int kvtag_query_return;
+            if (comm_type == 0) {
+                kvtag_query_return = PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD)
+            }
+            else {
+                kvtag_query_return = PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD)
+            }
+            if (kvtag_query_return < 0) {
                 printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                 break;
             }
