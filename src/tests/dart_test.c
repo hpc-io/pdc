@@ -51,25 +51,6 @@ gen_uuids(int count)
 }
 
 char **
-gen_random_strings(int count, int maxlen, int alphabet_size)
-{
-    int    c      = 0;
-    int    i      = 0;
-    char **result = (char **)calloc(count, sizeof(char *));
-    for (c = 0; c < count; c++) {
-        int   len = (rand() % (maxlen - 1)) + 1; // Ensure at least 1 character
-        char *str = (char *)calloc(len + 1, sizeof(char));
-        for (i = 0; i < len; i++) {
-            char chr = (char)((rand() % alphabet_size) + 65); // ASCII printable characters
-            str[i]   = chr;
-        }
-        str[len]  = '\0'; // Null-terminate the string
-        result[c] = str;
-    }
-    return result;
-}
-
-char **
 read_words_from_text(const char *fileName, int *word_count, int *total_word_count, int mpi_rank)
 {
 
@@ -182,7 +163,7 @@ main(int argc, char **argv)
     }
 
     if (strcmp(dict_filename, "random") == 0) {
-        input_word_list = gen_random_strings(word_count, 16, alphabet_size);
+        input_word_list = gen_random_strings(word_count, 6, 16, alphabet_size);
         alphabet_size   = 129;
     }
     else if (strcmp(dict_filename, "uuid") == 0) {
