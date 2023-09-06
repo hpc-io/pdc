@@ -283,8 +283,8 @@ gen_random_strings(int count, int maxlen, int alphabet_size, int prefix_len, ins
             int randnum = rand();
             if (randnum < 0)
                 randnum *= -1;
-            char chr = (char)((randnum % alphabet_size) + 65);
-            str[i]   = chr;
+            char c = (char)((randnum % alphabet_size) + 65);
+            str[i] = c;
         }
         str[len - 1] = '\0';
         // printf("generated %s\n", str);
@@ -362,15 +362,28 @@ int
 main(int argc, char **argv)
 {
 
-    int server_num = atoi(argv[1]);
-    int al_size    = atoi(argv[2]);
-    int rep_fct    = atoi(argv[3]);
+    if (argc < 9) {
+        print_usage();
+        exit(1);
+    }
 
-    // int round = 1;
-    // for (;round < 1024; round++) {
+    int   hashalgo    = atoi(argv[1]);
+    int   num_server  = atoi(argv[2]);
+    int   INPUT_TYPE  = atoi(argv[3]);
+    char *txtFilePath = argv[4];
 
-    int num_server = server_num;
-    int i          = 0;
+    int alphabet_size, replication_factor, word_count, prefix_len;
+
+    alphabet_size      = atoi(argv[5]);
+    replication_factor = atoi(argv[6]);
+
+    word_count             = atoi(argv[7]);
+    prefix_len             = atoi(argv[8]);
+    char **input_word_list = NULL;
+    int *  req_count       = NULL;
+
+    int i = 0;
+
     // Init all servers
     all_servers = (dart_server *)malloc(num_server * sizeof(dart_server));
     for (i = 0; i < num_server; i++) {
@@ -378,49 +391,54 @@ main(int argc, char **argv)
         all_servers[i].indexed_word_count = 0;
         all_servers[i].request_count      = 0;
     }
-
-    int alphabet_size = al_size;
-
-    dart_space_init(&dart_g, num_server, num_server, alphabet_size, 0, rep_fct);
-
-    char *    key     = "abcabc";
-    char *    rev_key = reverse_str(key);
-    int       arr_len = 0;
-    uint64_t *server_id;
-    for (i = 0; i < 2; i++) {
-        char *token = i == 0 ? key : rev_key;
-        arr_len     = DART_hash(&dart_g, token, OP_INSERT, virtual_dart_retrieve_server_info_cb, &server_id);
-        int replica = 0;
-        for (replica = 0; replica < arr_len; replica++) {
-            all_servers[server_id[replica]].indexed_word_count =
-                all_servers[server_id[replica]].indexed_word_count + 1;
-            printf("insert server id = %d for key %s\n", server_id[replica], token);
-        }
+    int   extra_tree_height = 0;
+    char *algo_name         = "";
+    if (hashalgo == HASH_MD5) {
+        algo_name = "MD5";
+    }
+    else if (hashalgo == HASH_MURMUR) {
+        algo_name = "MURMUR";
+    }
+    else if (hashalgo == HASH_DART) {
+        algo_name = "DART";
     }
 
-    arr_len = DART_hash(&dart_g, "abcabc", OP_EXACT_QUERY, NULL, &server_id);
-    if (arr_len != 2)
-        for (i = 0; i < arr_len; i++) { // Perhaps we can use openmp for this loop?
-            all_servers[server_id[i]].request_count = all_servers[server_id[i]].request_count + 1;
-            printf("exact search server id = %d\n", server_id[i]);
-        }
+    println("HASH = %s", algo_name);
 
-    arr_len = DART_hash(&dart_g, "abc", OP_PREFIX_QUERY, NULL, &server_id);
-    for (i = 0; i < arr_len; i++) { // Perhaps we can use openmp for this loop?
-        all_servers[server_id[i]].request_count = all_servers[server_id[i]].request_count + 1;
-        printf("prefix search server id = %d\n", server_id[i]);
+    void (*keyword_insert[])(char *, int) = {DHT_INITIAL_keyword_insert, DHT_FULL_keyword_insert,
+                                             dart_keyword_insert};
+    int (*keyword_search[])(char *, int)  = {DHT_INITIAL_keyword_search, DHT_FULL_keyword_search,
+                                            dart_keyword_search};
+
+    if (INPUT_TYPE == INPUT_DICTIONARY) {
+        // Init dart space.
+        alphabet_size = 29;
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
+                        replication_factor);
+        read_words_from_text(txtFilePath, &word_count, &req_count, prefix_len, keyword_insert[hashalgo],
+                             keyword_search[hashalgo]);
+    }
+    else if (INPUT_TYPE == INPUT_RANDOM_STRING) {
+        alphabet_size = 129;
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
+                        replication_factor);
+        gen_random_strings(word_count, 16, alphabet_size, prefix_len, keyword_insert[hashalgo],
+                           keyword_search[hashalgo]);
+    }
+    else if (INPUT_TYPE == INPUT_UUID) {
+        alphabet_size = 37;
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
+                        replication_factor);
+        gen_uuids(word_count, prefix_len, keyword_insert[hashalgo], keyword_search[hashalgo]);
+    }
+    else if (INPUT_TYPE == INPUT_WIKI_KEYWORD) {
+        alphabet_size = 129;
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
+                        replication_factor);
+        read_words_from_text(txtFilePath, &word_count, &req_count, prefix_len, keyword_insert[hashalgo],
+                             keyword_search[hashalgo]);
     }
 
-    arr_len = DART_hash(&dart_g, "cba", OP_SUFFIX_QUERY, NULL, &server_id);
-    for (i = 0; i < arr_len; i++) { // Perhaps we can use openmp for this loop?
-        all_servers[server_id[i]].request_count = all_servers[server_id[i]].request_count + 1;
-        printf("suffix search server id = %d\n", server_id[i]);
-    }
-
-    arr_len = DART_hash(&dart_g, "bc", OP_INFIX_QUERY, NULL, &server_id);
-    for (i = 0; i < arr_len; i++) { // Perhaps we can use openmp for this loop?
-        all_servers[server_id[i]].request_count = all_servers[server_id[i]].request_count + 1;
-        printf("infix search server id = %d\n", server_id[i]);
-    }
-    // }
+    get_key_distribution(num_server, algo_name);
+    get_request_distribution(num_server, algo_name);
 }
