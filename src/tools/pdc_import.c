@@ -485,6 +485,7 @@ do_dset(hid_t did, char *name, char *app_name)
     PDCprop_set_obj_app_name(obj_prop_g, app_name);
 
     pdcid_t obj_id = PDCobj_open(ds_name, pdc_id_g);
+    // FIXME: where is the declaration of 'check'?
     if (check > 0) {
         if (!overwrite) {
             return;
