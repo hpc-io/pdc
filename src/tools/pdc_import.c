@@ -108,6 +108,7 @@ add_tag(char *str)
     }
 
     str_len = strlen(str);
+    // FIXME: shall we copy str_len + 1?
     strncpy(tags_ptr_g, str, str_len);
 
     tag_size_g += str_len;
@@ -381,8 +382,8 @@ scan_group(hid_t gid, int level, char *app_name)
                 // create container - check if container exists first
                 //  create a container
                 create_cont = 1;
-                for (int i = 0; i < container_names->length; i++) {
-                    if (strcmp(container_names->items[i], group_name) == 0) {
+                for (int ctn = 0; ctn < container_names->length; ctn++) {
+                    if (strcmp(container_names->items[ctn], group_name) == 0) {
                         create_cont = 0;
                         break;
                     }
@@ -428,7 +429,7 @@ do_dset(hid_t did, char *name, char *app_name)
     char *                 obj_name;
     int                    name_len, i;
     hsize_t                ndim, dims[10];
-    uint64_t               offset[10], size[10];
+    uint64_t               region_offset[10], region_size[10];
     void *                 buf;
     struct pdc_region_info obj_region;
 
@@ -547,12 +548,12 @@ do_dset(hid_t did, char *name, char *app_name)
     // pdc_metadata_t *meta = NULL;
     obj_region.ndim = ndim;
     for (i = 0; i < ndim; i++) {
-        offset[i] = 0;
-        size[i]   = dims[i];
+        region_offset[i] = 0;
+        region_size[i]   = dims[i];
     }
-    size[0] *= dtype_size;
-    obj_region.offset = offset;
-    obj_region.size   = size;
+    region_size[0] *= dtype_size;
+    obj_region.offset = region_offset;
+    obj_region.size   = region_size;
 
     if (ndset_g == 1)
         clock_gettime(CLOCK_MONOTONIC, &write_timer_start_g);
@@ -563,8 +564,8 @@ do_dset(hid_t did, char *name, char *app_name)
     /* else */
     /*     PDC_Client_write(meta, &obj_region, buf); */
 
-    pdcid_t local_region     = PDCregion_create(ndim, offset, size);
-    pdcid_t remote_region    = PDCregion_create(ndim, offset, size);
+    pdcid_t local_region     = PDCregion_create(ndim, region_offset, region_size);
+    pdcid_t remote_region    = PDCregion_create(ndim, region_offset, region_size);
     pdcid_t transfer_request = PDCregion_transfer_create(buf, PDC_WRITE, obj_id, local_region, remote_region);
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
