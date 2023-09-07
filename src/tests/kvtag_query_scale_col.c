@@ -116,8 +116,8 @@ creating_objects(pdcid_t **obj_ids, int my_obj, int my_obj_s, pdcid_t cont, pdci
     *obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
     for (int i = 0; i < my_obj; i++) {
         sprintf(obj_name, "obj%d", my_obj_s + i);
-        obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
-        if (obj_ids[i] <= 0) {
+        *obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
+        if (*obj_ids[i] <= 0) {
             printf("Fail to create object @ line  %d!\n", __LINE__);
             goto done;
         }
@@ -233,13 +233,13 @@ main(int argc, char *argv[])
             sprintf(query_string, "%s=%s", kvtag.name, value);
             ret_value = (comm_type == 0)
                             ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &nres,
-                                                                     &pdc_ids, MPI_COMM_WORLD)
+                                                                     &pdc_ids)
                             : PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, ref_type,
                                                                          &nres, &pdc_ids, MPI_COMM_WORLD);
         }
         else {
             ret_value = (comm_type == 0)
-                            ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD)
+                            ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                             : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
         }
         if (ret_value < 0) {
