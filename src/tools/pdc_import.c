@@ -605,7 +605,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
     hsize_t     dims[8], ndim;
     char *      mem_name;
     char *      attr_string[100], new_string[TAG_LEN_MAX], tmp_str[TAG_LEN_MAX];
-    hsize_t     size, attr_len;
+    hsize_t     attr_size, attr_len;
     hid_t       mem_type;
     hid_t       atype, aspace, naive_type;
     H5T_class_t t_class, compound_class;
@@ -614,11 +614,11 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
         /* puts("   Invalid datatype.\n"); */
     }
     else {
-        size = H5Tget_size(tid);
-        /* printf("    Datasize %3d, type", size); */
+        attr_size = H5Tget_size(tid);
+        /* printf("    Datasize %3d, type", attr_size); */
         /*
          * Each class has specific properties that can be
-         * retrieved, e.g., size, byte order, exponent, etc.
+         * retrieved, e.g., attr_size, byte order, exponent, etc.
          */
         if (t_class == H5T_INTEGER) {
             /* puts(" 'H5T_INTEGER'."); */
@@ -641,7 +641,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
         }
         else if (t_class == H5T_ARRAY) {
             if (is_compound == 0) {
-                tag_size_g += size;
+                tag_size_g += attr_size;
             }
             ndim = H5Tget_array_ndims(tid);
             H5Tget_array_dims2(tid, dims);
@@ -661,6 +661,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
             return PDC_UNKNOWN;
         }
     }
+    return PDC_UNKNOWN;
 }
 
 /*
