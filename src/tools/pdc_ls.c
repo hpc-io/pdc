@@ -803,7 +803,8 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         fp = stdout;
     }
     if (list_names) {
-        cJSON *all_names_json = cJSON_CreateStringArray(obj_names->items, obj_names->length);
+        cJSON *all_names_json =
+            cJSON_CreateStringArray((const char *const *strings)obj_names->items, obj_names->length);
         cJSON_AddItemToObject(output, "all_obj_names", all_names_json);
     }
     if (list_ids) {
