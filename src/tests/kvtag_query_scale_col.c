@@ -112,8 +112,9 @@ perr_t
 creating_objects(pdcid_t **obj_ids, int my_obj, int my_obj_s, pdcid_t cont, pdcid_t obj_prop)
 {
     perr_t ret_value = FAIL;
-    *obj_ids         = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
-    for (i = 0; i < my_obj; i++) {
+    char   obj_name[128];
+    *obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
+    for (int i = 0; i < my_obj; i++) {
         sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0) {
@@ -133,7 +134,6 @@ main(int argc, char *argv[])
     pdcid_t *   obj_ids;
     int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
     int         proc_num, my_rank, i, v, iter, round, selectivity, is_using_dart, query_type, comm_type;
-    char        obj_name[128];
     double      stime, total_time;
     pdc_kvtag_t kvtag;
     uint64_t *  pdc_ids;

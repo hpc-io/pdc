@@ -242,7 +242,7 @@ pdc_serde_deserialize(void *buffer)
         printf("Error: data offset does not match the expected offset.\n");
         return NULL;
     }
-    // offset += sizeof(size_t);
+    offset += sizeof(size_t);
     if (offset != headerSize + sizeof(size_t) * 6 + dataSize) {
         printf("Error: total size does not match the expected size.\n");
         return NULL;
