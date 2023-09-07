@@ -108,7 +108,7 @@ add_tag(char *str)
     }
 
     str_len = strlen(str);
-    // FIXME: shall we copy str_len + 1?
+    // FIXME: shall we copy str_len + 1 or just str_len?
     strncpy(tags_ptr_g, str, str_len);
 
     tag_size_g += str_len;
