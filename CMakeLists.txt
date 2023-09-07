@@ -367,8 +367,8 @@ endif()
 option(PDC_SERVER_CACHE "Enable Server Caching." OFF)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
-  set(PDC_SERVER_CACHE_MAX_GB 3 PARENT_SCOPE)
-  set(PDC_SERVER_CACHE_FLUSH_TIME 30 PARENT_SCOPE)
+  set(PDC_SERVER_CACHE_MAX_GB "3" CACHE STRING "Max GB for server cache")
+  set(PDC_SERVER_CACHE_FLUSH_TIME "30" CACHE STRING "Flush time for server cache")
 endif()
 
 
