@@ -367,8 +367,8 @@ endif()
 option(PDC_SERVER_CACHE "Enable Server Caching." OFF)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
-  set(PDC_SERVER_CACHE_MAX_GB "3" INT "Maximum region server cache size in GB.")
-  set(PDC_SERVER_CACHE_FLUSH_TIME "30" INT "Region server cache flush time interval in seconds.")
+  set(PDC_SERVER_CACHE_MAX_GB 3)
+  set(PDC_SERVER_CACHE_FLUSH_TIME 30)
 endif()
 
 
