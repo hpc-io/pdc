@@ -24,7 +24,7 @@ for (( i = $MIN_PROC; i <= $MAX_PROC; i*=2 )); do
     echo $njob
     while [ $njob -ge 4 ]
     do
-        sleeptime=$[ ( $RANDOM % 1000 )  ]
+        sleeptime=$[ ( $RANDOM % 5 )  ]
         sleep $sleeptime
         njob=`squeue -u $USER | grep ${PROG_BASENAME} | wc -l`
         echo $njob
