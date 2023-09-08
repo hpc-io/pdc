@@ -2,7 +2,7 @@ name: NERSC
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
 
 jobs:
   synchronize:
