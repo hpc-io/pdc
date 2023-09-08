@@ -9,12 +9,16 @@ curdir=$(pwd)
 
 first_submit=1
 
+q=$1
+c=$2
+
 for (( i = $MIN_PROC; i <= $MAX_PROC; i*=2 )); do
-    JOBNAME=${PROG_BASENAME}_${i}
+    
     cd $curdir/$i
 
     for (( j = 0; j < 2; j+=1)); do
-        TARGET=$JOBNAME.sbatch.${j}
+        JOBNAME=${PROG_BASENAME}_${i}_${j}_${q}_${c}
+        TARGET=$JOBNAME.sbatch
 
         njob=`squeue -u $USER | grep ${PROG_BASENAME} | wc -l`
         echo $njob
