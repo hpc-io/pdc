@@ -30,7 +30,7 @@ for (( i = 1; i <= $MAX_NODE; i*=2 )); do
         for (( q = 0; q < 4; q+=1 )); do
             for (( c = 0; c < 2; c+=1 )); do
                 JOBNAME=${PROG_BASENAME}_${i}_${j}_${q}_${c}
-                TARGET=./$i/$JOBNAME.sbatch.${j}
+                TARGET=./$i/$JOBNAME.sbatch
                 cp template.sh $TARGET
                 sed -i "s/JOBNAME/${JOBNAME}/g"           $TARGET
                 sed -i "s/NODENUM/${i}/g"           $TARGET
