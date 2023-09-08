@@ -12,6 +12,12 @@
 /* Define if you want to enable server cache */
 #cmakedefine PDC_SERVER_CACHE
 
+/* Define the max region cache size in GB */
+#cmakedefine PDC_SERVER_CACHE_MAX_GB @PDC_SERVER_CACHE_MAX_GB@
+
+/* Define region cache flush time interval */
+#cmakedefine PDC_SERVER_CACHE_FLUSH_TIME @PDC_SERVER_CACHE_FLUSH_TIME@
+
 /* Define if you want to enable checkpoint */
 #cmakedefine PDC_ENABLE_CHECKPOINT
 

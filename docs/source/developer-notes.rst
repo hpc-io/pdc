@@ -125,16 +125,16 @@ Region metadata checkpoint is placed at the end of the server checkpoint file, r
 Metadata Search and Its Implementation
 ---------------------------------------------
 
-For Metadata search, we current provide brute-force approaches and index-facilitated approaches. 
+For Metadata search, we current provide no-index approaches and index-facilitated approaches. 
 For either of these approaches, we consider two types of communication model : point-to-point and collective. 
 
 Point-to-point communication model is for distributed applications where each single client may not follow the exact same workflows, and the timing for them to trigger a metadata search function call can be really random. In this case, each client contacts one or more metadata servers and get the complete result.
 Collective communication model applies when a typical application is running. In such an application, each rank follows the exact same workflow and they may trigger a metadata search function call at the same time and the metadata search requests are sent from these clients collectively. In this case, each rank contacts one metadata server and retrieves partial result. Then these clients have to communicate with each other to get the complete result.
 
-Brute-force Approach
+No-index Approach
 ---------------------------------------------
 
-For brute-force approach, here are the APIs you can call for different communication models:
+For No-index approach, here are the APIs you can call for different communication models:
     * PDC_Client_query_kvtag (point-to-point)
     * PDC_Client_query_kvtag_mpi (collective)
 
