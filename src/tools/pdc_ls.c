@@ -141,9 +141,10 @@ main(int argc, char *argv[])
             while ((dir = readdir(d)) != NULL) {    //for 'things' in the directory
 ///// have question about what these compiled files do in the project and why they had to be moved in the first place
                 if (!isDir(dir)) {    //if it's directory
-                    if (strstr(dir->d_name, ".")){
+                    if (strstr(dir->d_name, ".")){    // ignore parent and current directories
                         break;
                     }
+                    // appends path together
                     char tmp[1024];
                     sprintf(tmp, "%s/%s", argv[1], dir->d_name);
                     DIR * d1 = opendir(tmp);
