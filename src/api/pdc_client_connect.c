@@ -9066,7 +9066,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     MPI_Barrier(comm);
     stime = MPI_Wtime();
 
-    if (object_selection_query_counter_g % sub_comm_size == sub_comm_rank) {
+    if (pdc_client_mpi_rank_g == 0) {
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
     }
 
@@ -9079,11 +9079,10 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     // broadcast the result to all other ranks
     // broadcast the number of objects first.
     // let's first perform BCAST within the first n ranks where n is the number of servers.
-    MPI_Barrier(comm);
     stime = MPI_Wtime();
 
     if (sub_comm_color == 1) {
-        MPI_Bcast(&n_obj, 1, MPI_INT, object_selection_query_counter_g % sub_comm_size, sub_comm);
+        MPI_Bcast(&n_obj, 1, MPI_INT, 0, sub_comm);
     }
     // now, all the n sender ranks has the result. Let's broadcast the result to all other ranks.
     // suppose number of servers is 16, then the groups can be
