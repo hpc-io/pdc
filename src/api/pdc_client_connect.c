@@ -9044,7 +9044,17 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number of
     // client ranks.
-    if (object_selection_query_counter_g % pdc_client_mpi_size_g == pdc_client_mpi_rank_g) {
+    // let's select n ranks to be the sender ranks, where n is the number of servers.
+    int      sub_comm_color = pdc_client_mpi_rank_g % pdc_server_num_g == 0 ? 1 : 0;
+    MPI_Comm sub_comm;
+    MPI_Comm_split(comm, sub_comm_color, pdc_client_mpi_rank_g, &sub_comm);
+    int sub_comm_rank, sub_comm_size;
+    MPI_Comm_rank(sub_comm, &sub_comm_rank);
+    MPI_Comm_size(sub_comm, &sub_comm_size);
+    println("World rank %d is rank %d in the 'sub_comm' of size %d", pdc_client_mpi_rank_g, sub_comm_rank,
+            sub_comm_size);
+
+    if (object_selection_query_counter_g % sub_comm_size == sub_comm_rank) {
         timer_start(&timer);
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
         timer_pause(&timer);
@@ -9055,13 +9065,35 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     // broadcast the result to all other ranks
     // broadcast the number of objects first.
+    // let's first perform BCAST within the first n ranks where n is the number of servers.
     timer_start(&timer);
-    MPI_Bcast(&n_obj, 1, MPI_INT, object_selection_query_counter_g % pdc_client_mpi_size_g, comm);
+    if (sub_comm_color == 1) {
+        MPI_Bcast(&n_obj, 1, MPI_INT, object_selection_query_counter_g % sub_comm_size, sub_comm);
+    }
+    MPI_Barrier(comm);
+    // now, all the n sender ranks has the result. Let's broadcast the result to all other ranks.
+    // suppose number of servers is 16, then the groups can be
+    // 0-15, 16-31, 32-47, 48-63, ...
+    // rank/16 = 0, 1, 2, 3, ...,
+    // this means we can divide all client ranks into rank/#server groups.
+    // within each group, we can perform a BCAST, using the first rank as the root.
+    int      group_color = pdc_client_mpi_rank_g / pdc_server_num_g;
+    MPI_Comm group_comm;
+    MPI_Comm_split(comm, group_color, pdc_client_mpi_rank_g, &group_comm);
+    int group_rank, group_size;
+    MPI_Comm_rank(group_comm, &group_rank);
+    MPI_Comm_size(group_comm, &group_size);
+    println("World rank %d is rank %d in the 'group_comm' of size %d", pdc_client_mpi_rank_g, group_rank,
+            group_size);
+
+    MPI_Bcast(&n_obj, 1, MPI_INT, 0, group_comm);
     timer_pause(&timer);
 
     println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID count: %.4f ms", pdc_client_mpi_rank_g,
             timer_delta_us(&timer) / 1000.0);
 
+    // Okay, now each rank of the WORLD_COMM knows about the number of results from the sender ranks.
+    // Let's perform BCAST for the array data.
     // for those ranks that are not the root, allocate memory for the object IDs.
     if (object_selection_query_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
         dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
