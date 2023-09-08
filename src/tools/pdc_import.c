@@ -453,13 +453,12 @@ do_dset(hid_t did, char *name, char *app_name)
     PDCprop_set_obj_app_name(obj_prop_g, app_name);
 
     pdcid_t obj_id = PDCobj_open(ds_name, pdc_id_g);
-    // FIXME: where is the declaration of 'check'?
-    if (check > 0) {
-        if (!overwrite) {
-            return;
-        }
+
+    if (!overwrite) {
+        return;
     }
     else {
+        // FIXME: should open the object here instead of creating a new one.
         obj_id = PDCobj_create(cont_id_g, ds_name, obj_prop_g);
     }
     if (obj_id <= 0) {
