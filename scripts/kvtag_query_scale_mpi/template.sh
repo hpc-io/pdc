@@ -57,8 +57,8 @@ COM_TYPE=COMMUNICATION_TYPE
 
 # clean up the PDC tmp directory
 export PDC_TMPDIR=$SCRATCH/data/pdc/conf
-rm -rf $PDC_TMPDIR/*
 export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE/$USE_DART/$Q_TYPE/$COM_TYPE
+rm -rf $PDC_TMPDIR/*
 mkdir -p $PDC_TMPDIR
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
