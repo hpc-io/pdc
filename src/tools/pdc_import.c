@@ -88,36 +88,6 @@ struct ArrayList *container_names;
 int               overwrite = 0;
 
 int
-add_tag(char *str)
-{
-    int str_len = 0;
-    if (NULL == str || NULL == tags_ptr_g) {
-        fprintf(stderr, "%s - input str is NULL!", __func__);
-        return 0;
-    }
-    else if (tag_size_g + str_len >= MAX_TAG_SIZE) {
-        fprintf(stderr, "%s - tags_ptr_g overflow!", __func__);
-        return 0;
-    }
-
-    // Remove the trailing ','
-    if (*str == '}' || *str == ')' || *str == ']') {
-        if (*(--tags_ptr_g) != ',') {
-            tags_ptr_g++;
-        }
-    }
-
-    str_len = strlen(str);
-    // FIXME: shall we copy str_len + 1 or just str_len?
-    strncpy(tags_ptr_g, str, str_len);
-
-    tag_size_g += str_len;
-    tags_ptr_g += str_len;
-
-    return str_len;
-}
-
-int
 main(int argc, char **argv)
 {
 #ifdef ENABLE_MPI
@@ -445,7 +415,6 @@ do_dset(hid_t did, char *name, char *app_name)
     H5Iget_name(did, ds_name, TAG_LEN_MAX);
     memset(dset_name_g, 0, TAG_LEN_MAX);
     strcpy(dset_name_g, ds_name);
-    /* add_tag(ds_name); */
 
     // dset_name_g has the full path to the dataset, e.g. /group/subgroup/dset_name
     // substract the actual dset name with following
@@ -465,7 +434,6 @@ do_dset(hid_t did, char *name, char *app_name)
      */
     sid = H5Dget_space(did); /* the dimensions of the dataset (not shown) */
     tid = H5Dget_type(did);
-    /* add_tag(",DT:"); */
 
     pdcid_t cur_obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
@@ -499,8 +467,6 @@ do_dset(hid_t did, char *name, char *app_name)
     }
 
     do_dtype(tid, did, 0);
-
-    add_tag(",");
 
     ndset_g++;
     /* if (ndset_g > 10) { */
