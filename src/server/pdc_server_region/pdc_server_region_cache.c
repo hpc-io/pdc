@@ -3,10 +3,19 @@
 
 #ifdef PDC_SERVER_CACHE
 
-#define MAX_CACHE_SIZE           34359738368
-#define PDC_CACHE_FLUSH_TIME_INT 30
+#ifdef PDC_SERVER_CACHE_MAX_SIZE
+#define MAX_CACHE_SIZE PDC_SERVER_CACHE_MAX_GB * 1024 * 1024 * 1024
+else
+#define MAX_CACHE_SIZE 34359738368
+#endif
 
-typedef struct pdc_region_cache {
+#ifdef PDC_SERVER_CACHE_FLUSH_TIME
+#define PDC_CACHE_FLUSH_TIME_INT PDC_SERVER_CACHE_FLUSH_TIME
+#else
+#define PDC_CACHE_FLUSH_TIME_INT 30
+#endif
+
+    typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
     struct pdc_region_cache *next;
 } pdc_region_cache;

@@ -55,6 +55,8 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
 
+target_compile_definitions(pdc_server.exe PUBLIC PDC_SERVER_CACHE_MAX_GB=3 PDC_SERVER_CACHE_FLUSH_TIME=30)
+
 if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(pdc_server.exe PRIVATE ${SUPPRESSED_LIST})
 endif()
