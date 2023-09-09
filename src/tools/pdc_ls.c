@@ -114,7 +114,9 @@ int    pdc_server_rank_g = 0;
 int    pdc_server_size_g = 1;
 double total_mem_usage_g = 0.0;
 
-int isDir(const char* fileName) {
+int
+isDir(const char *fileName)
+{
     struct stat path;
     stat(fileName, &path);
     return S_ISREG(path.st_mode);
@@ -138,86 +140,87 @@ main(int argc, char *argv[])
         d = opendir(argv[1]);
 
         if (d) {
-            while ((dir = readdir(d)) != NULL) {    //for 'things' in the directory
-///// have question about what these compiled files do in the project and why they had to be moved in the first place
-                if (!isDir(dir)) {    //if it's directory
-                    if (strstr(dir->d_name, ".")){    // ignore parent and current directories
+            while ((dir = readdir(d)) != NULL) { // for 'things' in the directory
+                ///// have question about what these compiled files do in the project and why they had to be
+                ///moved in the first place
+                if (!isDir(dir)) {                  // if it's directory
+                    if (strstr(dir->d_name, ".")) { // ignore parent and current directories
                         break;
                     }
                     // appends path together
                     char tmp[1024];
                     sprintf(tmp, "%s/%s", argv[1], dir->d_name);
-                    DIR * d1 = opendir(tmp);
+                    DIR *d1 = opendir(tmp);
                     printf("%s\n", tmp);
-                    
-                    while ((direc = readdir(d1)) != NULL) { //go into it and go for checkpoint files again
+
+                    while ((direc = readdir(d1)) != NULL) { // go into it and go for checkpoint files again
                         if (strstr(direc->d_name, "metadata_checkpoint.")) {
                             // printf("getting checkpoints\n");
                             char  last = argv[1][strlen(argv[1]) - 1];
                             char *full_path;
-                           if (last == '/') {
-                               full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 1));
-                               strcpy(full_path, argv[1]);
-                               strcat(full_path, dir->d_name);
-                           }
-                           else {
-                               full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 2));
-                               strcpy(full_path, argv[1]);
-                               strcat(full_path, "/");
-                               strcat(full_path, dir->d_name);
-                           }
-                           if (head == NULL) {
-                               FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
-                               new_node->file_name    = full_path;
-                               new_node->next         = NULL;
-                               head                   = new_node;
-                               cur_node               = new_node;
-                           }
-                           else {
-                               FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
-                               new_node->file_name    = full_path;
-                               new_node->next         = NULL;
-                               cur_node->next         = new_node;
-                               cur_node               = new_node;
-                           }
-                       } 
-                   }
-                   closedir(d1);
-               }
-           }    
-/////
-                if (strstr(dir->d_name, "metadata_checkpoint.")) {
-                    printf("%s\n", dir->d_name);
-                    char  last = argv[1][strlen(argv[1]) - 1];
-                    char *full_path;
-                    if (last == '/') {
-                        full_path =
-                            (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 1));
-                        strcpy(full_path, argv[1]);
-                        strcat(full_path, dir->d_name);
+                            if (last == '/') {
+                                full_path = (char *)malloc(sizeof(char) *
+                                                           (strlen(argv[1]) + strlen(dir->d_name) + 1));
+                                strcpy(full_path, argv[1]);
+                                strcat(full_path, dir->d_name);
+                            }
+                            else {
+                                full_path = (char *)malloc(sizeof(char) *
+                                                           (strlen(argv[1]) + strlen(dir->d_name) + 2));
+                                strcpy(full_path, argv[1]);
+                                strcat(full_path, "/");
+                                strcat(full_path, dir->d_name);
+                            }
+                            if (head == NULL) {
+                                FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
+                                new_node->file_name    = full_path;
+                                new_node->next         = NULL;
+                                head                   = new_node;
+                                cur_node               = new_node;
+                            }
+                            else {
+                                FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
+                                new_node->file_name    = full_path;
+                                new_node->next         = NULL;
+                                cur_node->next         = new_node;
+                                cur_node               = new_node;
+                            }
+                        }
                     }
-                    else {
-                        full_path =
-                            (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 2));
-                        strcpy(full_path, argv[1]);
-                        strcat(full_path, "/");
-                        strcat(full_path, dir->d_name);
-                    }
-                    if (head == NULL) {
-                        FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
-                        new_node->file_name    = full_path;
-                        new_node->next         = NULL;
-                        head                   = new_node;
-                        cur_node               = new_node;
-                    }
-                    else {
-                        FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
-                        new_node->file_name    = full_path;
-                        new_node->next         = NULL;
-                        cur_node->next         = new_node;
-                        cur_node               = new_node;
-                    }
-                }  
+                    closedir(d1);
+                }
+            }
+            /////
+            if (strstr(dir->d_name, "metadata_checkpoint.")) {
+                printf("%s\n", dir->d_name);
+                char  last = argv[1][strlen(argv[1]) - 1];
+                char *full_path;
+                if (last == '/') {
+                    full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 1));
+                    strcpy(full_path, argv[1]);
+                    strcat(full_path, dir->d_name);
+                }
+                else {
+                    full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 2));
+                    strcpy(full_path, argv[1]);
+                    strcat(full_path, "/");
+                    strcat(full_path, dir->d_name);
+                }
+                if (head == NULL) {
+                    FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
+                    new_node->file_name    = full_path;
+                    new_node->next         = NULL;
+                    head                   = new_node;
+                    cur_node               = new_node;
+                }
+                else {
+                    FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
+                    new_node->file_name    = full_path;
+                    new_node->next         = NULL;
+                    cur_node->next         = new_node;
+                    cur_node               = new_node;
+                }
+            }
             closedir(d);
         }
         else {
