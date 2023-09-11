@@ -9074,7 +9074,6 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
     }
 
-    MPI_Barrier(comm);
     duration = MPI_Wtime() - stime;
     if (sub_comm_rank == 0) {
         println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
@@ -9083,6 +9082,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     // broadcast the result to all other ranks
     // broadcast the number of objects first.
     // let's first perform BCAST within the first n ranks where n is the number of servers.
+    MPI_Barrier(comm);
     stime = MPI_Wtime();
 
     if (sub_comm_color == 1) {
