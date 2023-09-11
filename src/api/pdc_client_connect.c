@@ -8889,6 +8889,9 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         return ret;
     }
 
+    stopwatch_t timer;
+    timer_start(&timer);
+
     // threadpool query_pool = get_dart_temp_thpool(dart_g->num_server);
 
     // TODO: a function called "determine_query_type"
@@ -8972,9 +8975,6 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     uint64_t **dart_out_ptr      = dart_out;
     size_t *   dart_out_size_ptr = dart_out_size;
 
-    printf("perform search [ %s ] on %d servers from rank %d\n", query_string, num_servers,
-           pdc_client_mpi_rank_g);
-
     for (i = 0; i < num_servers; i++) {
 
         int serverId = server_id_arr[i];
@@ -9031,6 +9031,10 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         free(affix);
     if (tok != NULL)
         free(tok);
+
+    timer_pause(&timer);
+    printf("perform search [ %s ] on %d servers from rank %d, duration: %.4f ms\n", query_string, num_servers,
+           pdc_client_mpi_rank_g, timer_delta_us(&timer) / 1000.0);
 
     return ret;
 }

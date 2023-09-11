@@ -153,7 +153,7 @@ main(int argc, char *argv[])
     n_obj         = atoi(argv[1]);
     round         = atoi(argv[2]);
     selectivity   = atoi(argv[3]);
-    is_using_dart = atoi(argv[4]);
+    is_using_dart = atoi(argv[4]); // 0 for no index, 1 for using dart.
     query_type    = atoi(argv[5]); // 0 for exact, 1 for prefix, 2 for suffix, 3 for infix,
                                    // 4 for num_exact, 5 for num_range
     comm_type = atoi(argv[6]);     // 0 for point-to-point, 1 for collective
