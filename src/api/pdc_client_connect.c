@@ -9075,7 +9075,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     }
 
     duration = MPI_Wtime() - stime;
-    if (sub_comm_rank == 0) {
+    if (pdc_client_mpi_rank_g == 0) {
         println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
                 duration * 1000.0);
     }
