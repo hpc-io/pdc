@@ -518,10 +518,10 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
             out[0]        = (uint64_t *)calloc(2, sizeof(uint64_t));
             int rst_size  = 1;
             out[0][0]     = base_replicas[rep_index];
-            if (base_replicas[rep_index] != alter_replicas[rep_index]) {
-                rst_size  = 2;
-                out[0][1] = alter_replicas[rep_index];
-            }
+            // if (base_replicas[rep_index] != alter_replicas[rep_index]) {
+            rst_size  = 2;
+            out[0][1] = alter_replicas[rep_index];
+            // }
             return rst_size;
         }
     }
