@@ -34,68 +34,92 @@ virtual_dart_retrieve_server_info_cb(uint32_t server_id)
     return all_servers[server_id];
 }
 
-// void md5_keyword_insert(char *key, int prefix_len){
-//     if (key==NULL) return;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = md5_hash(len, key);
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].indexed_word_count=all_servers[server_id].indexed_word_count+1;
+// void
+// md5_keyword_insert(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return;
+//     int      len                              = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                          = md5_hash(len, key);
+//     uint32_t server_id                        = hashVal % dart_g.num_server;
+//     all_servers[server_id].indexed_word_count = all_servers[server_id].indexed_word_count + 1;
 // }
 
-// int md5_keyword_search(char *key, int prefix_len){
-//     if (key==NULL) return 0;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = md5_hash(len, key);
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].request_count=all_servers[server_id].request_count+1;
+// int
+// md5_keyword_search(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return 0;
+//     int      len                         = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                     = md5_hash(len, key);
+//     uint32_t server_id                   = hashVal % dart_g.num_server;
+//     all_servers[server_id].request_count = all_servers[server_id].request_count + 1;
 // }
 
-// void murmurhash_keyword_insert(char *key, int prefix_len){
-//     if (key==NULL) return ;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = murmur3_32(key, len, 1);
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].indexed_word_count=all_servers[server_id].indexed_word_count+1;
+// void
+// murmurhash_keyword_insert(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return;
+//     int      len                              = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                          = murmur3_32(key, len, 1);
+//     uint32_t server_id                        = hashVal % dart_g.num_server;
+//     all_servers[server_id].indexed_word_count = all_servers[server_id].indexed_word_count + 1;
 // }
 
-// int murmurhash_keyword_search(char *key, int prefix_len){
-//     if (key==NULL) return 0;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = murmur3_32(key, len, 1);
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].request_count=all_servers[server_id].request_count+1;
+// int
+// murmurhash_keyword_search(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return 0;
+//     int      len                         = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                     = murmur3_32(key, len, 1);
+//     uint32_t server_id                   = hashVal % dart_g.num_server;
+//     all_servers[server_id].request_count = all_servers[server_id].request_count + 1;
 // }
 
-// int djb2_hash_keyword_insert(char *key, int prefix_len){
-//     if (key==NULL) return ;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = djb2_hash(key, len);
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].indexed_word_count=all_servers[server_id].indexed_word_count+1;
+// int
+// djb2_hash_keyword_insert(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return;
+//     int      len                              = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                          = djb2_hash(key, len);
+//     uint32_t server_id                        = hashVal % dart_g.num_server;
+//     all_servers[server_id].indexed_word_count = all_servers[server_id].indexed_word_count + 1;
 // }
 
-// int djb2_hash_keyword_search(char *key, int prefix_len){
-//     if (key==NULL) return 0;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = djb2_hash(key, len);
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].request_count=all_servers[server_id].request_count+1;
+// int
+// djb2_hash_keyword_search(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return 0;
+//     int      len                         = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                     = djb2_hash(key, len);
+//     uint32_t server_id                   = hashVal % dart_g.num_server;
+//     all_servers[server_id].request_count = all_servers[server_id].request_count + 1;
 // }
 
-// int djb2_hash_keyword_insert_full(char *key, int prefix_len){
-//     if (key==NULL) return ;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = djb2_hash(key, strlen(key));
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].indexed_word_count=all_servers[server_id].indexed_word_count+1;
+// int
+// djb2_hash_keyword_insert_full(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return;
+//     int      len                              = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                          = djb2_hash(key, strlen(key));
+//     uint32_t server_id                        = hashVal % dart_g.num_server;
+//     all_servers[server_id].indexed_word_count = all_servers[server_id].indexed_word_count + 1;
 // }
 
-// int djb2_hash_keyword_search_full(char *key, int prefix_len){
-//     if (key==NULL) return 0;
-//     int len = prefix_len==0?strlen(key):prefix_len;
-//     uint32_t hashVal = djb2_hash(key, strlen(key));
-//     uint32_t server_id = hashVal % dart_g.num_server;
-//     all_servers[server_id].request_count=all_servers[server_id].request_count+1;
+// int
+// djb2_hash_keyword_search_full(char *key, int prefix_len)
+// {
+//     if (key == NULL)
+//         return 0;
+//     int      len                         = prefix_len == 0 ? strlen(key) : prefix_len;
+//     uint32_t hashVal                     = djb2_hash(key, strlen(key));
+//     uint32_t server_id                   = hashVal % dart_g.num_server;
+//     all_servers[server_id].request_count = all_servers[server_id].request_count + 1;
 // }
 
 void
