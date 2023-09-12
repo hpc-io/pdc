@@ -1,6 +1,6 @@
 #include "pdc_server_metadata_index.h"
 
-#define DART_SERVER_DEBUG 0
+#define DART_SERVER_DEBUG 1
 
 // DART search
 int64_t   indexed_word_count_g        = 0;
