@@ -176,15 +176,6 @@ main(int argc, char *argv[])
     }
     // prepare tags to be added.
     char *attr_name_per_rank = gen_random_strings(1, 6, 8, 26)[0];
-    // Add tags
-    kvtag.name  = attr_name_per_rank;
-    kvtag.value = (void *)&v;
-    kvtag.type  = PDC_INT;
-    kvtag.size  = sizeof(int);
-
-    char key[32];
-    char value[32];
-    char query_string[48];
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
@@ -194,8 +185,11 @@ main(int argc, char *argv[])
     // This is for adding #rounds tags to the objects.
     for (i = 0; i < my_add_tag; i++) {
         for (iter = 0; iter < round; iter++) {
-            v = iter;
-            sprintf(value, "%d", v);
+            sprintf(value, "%d", iter);
+            kvtag.name  = attr_name_per_rank;
+            kvtag.value = (void *)value;
+            kvtag.type  = PDC_STRING;
+            kvtag.size  = (strlen(value) + 1) * sizeof(char);
             if (is_using_dart) {
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, ref_type,
                                                         (uint64_t)obj_ids[i]) < 0) {
@@ -211,34 +205,40 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-    // TODO: adjust query strings based on query type.
-    kvtag.name  = attr_name_per_rank;
-    kvtag.value = (void *)&v;
-    kvtag.type  = PDC_INT;
-    kvtag.size  = sizeof(int);
-
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #endif
     perr_t ret_value;
     for (iter = 0; iter < round; iter++) {
-        v = iter;
+        char value[32];
+        sprintf(value, "%ld", iter);
+        kvtag.name  = attr_name_per_rank;
+        kvtag.value = (void *)value;
+        kvtag.type  = PDC_STRING;
+        kvtag.size  = (strlen(value) + 1) * sizeof(char);
+
+        query_gen_input_t  input;
+        query_gen_output_t output;
+        input.base_tag         = &kvtag;
+        input.key_query_type   = query_type;
+        input.value_query_type = query_type;
+        input.affix_len        = 4;
+
+        gen_query_key_value(&input, &output);
+
         if (is_using_dart) {
-            sprintf(value, "%ld", v);
-            sprintf(query_string, "%s=%s", kvtag.name, value);
-            ret_value = (comm_type == 0)
+            char *query_string = gen_query_str(&output);
+            ret_value          = (comm_type == 0)
                             ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &nres,
                                                                      &pdc_ids)
                             : PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, ref_type,
                                                                          &nres, &pdc_ids, MPI_COMM_WORLD);
         }
         else {
-            ret_value = (comm_type == 0)
+            kvtag->name  = output.key_query;
+            kvtag->value = output.value_query;
+            ret_value    = (comm_type == 0)
                             ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                             : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
         }

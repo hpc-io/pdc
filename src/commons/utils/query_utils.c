@@ -10,7 +10,7 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
     size_t key_ptr_len   = 0;
     char * value_ptr     = NULL;
     size_t value_ptr_len = 0;
-    size_t affix_len     = 4;
+    size_t affix_len     = input->affix_len == 0 ? 4 : input->affix_len;
 
     if (input->key_query_type == 0) { // exact
         key_ptr_len = strlen(input->base_tag->name);
@@ -21,22 +21,20 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
         key_ptr_len = affix_len + 1;
         key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
         strncpy(key_ptr, input->base_tag->name, affix_len);
-        key_ptr[affix_len - 1] = '*';
+        key_ptr[key_ptr_len - 1] = '*';
     }
     else if (input->key_query_type == 2) { // suffix
         key_ptr_len = affix_len + 1;
         key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
         key_ptr[0]  = '*';
-        key_ptr     = key_ptr + 1;
-        strncpy(key_ptr, input->base_tag->name, affix_len);
+        strncpy(key_ptr + 1, input->base_tag->name, affix_len);
     }
     else if (input->key_query_type == 3) { // infix
-        key_ptr_len            = affix_len + 2;
-        key_ptr                = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        key_ptr[0]             = '*';
-        key_ptr[affix_len - 1] = '*';
-        key_ptr                = key_ptr + 1;
-        strncpy(key_ptr, input->base_tag->name, affix_len);
+        key_ptr_len              = affix_len + 2;
+        key_ptr                  = (char *)calloc(key_ptr_len + 1, sizeof(char));
+        key_ptr[0]               = '*';
+        key_ptr[key_ptr_len - 1] = '*';
+        strncpy(key_ptr + 1, input->base_tag->name, affix_len);
     }
     else {
         printf("Invalid key query type!\n");
@@ -53,22 +51,20 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
             value_ptr_len = affix_len + 1;
             value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
             strncpy(value_ptr, (char *)input->base_tag->value, affix_len);
-            value_ptr[affix_len - 1] = '*';
+            value_ptr[value_ptr_len - 1] = '*';
         }
         else if (input->value_query_type == 2) {
             value_ptr_len = affix_len + 1;
             value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
             value_ptr[0]  = '*';
-            value_ptr     = value_ptr + 1;
-            strncpy(value_ptr, (char *)input->base_tag->value, affix_len);
+            strncpy(value_ptr + 1, (char *)input->base_tag->value, affix_len);
         }
         else if (input->value_query_type == 3) {
-            value_ptr_len            = affix_len + 2;
-            value_ptr                = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            value_ptr[0]             = '*';
-            value_ptr[affix_len - 1] = '*';
-            value_ptr                = value_ptr + 1;
-            strncpy(value_ptr, (char *)input->base_tag->value, affix_len);
+            value_ptr_len                = affix_len + 2;
+            value_ptr                    = (char *)calloc(value_ptr_len + 1, sizeof(char));
+            value_ptr[0]                 = '*';
+            value_ptr[value_ptr_len - 1] = '*';
+            strncpy(value_ptr + 1, (char *)input->base_tag->value, affix_len);
         }
         else {
             printf("Invalid value query type for string tag!\n");
@@ -102,6 +98,28 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
     output->key_query_len   = key_ptr_len;
     output->value_query     = value_ptr;
     output->value_query_len = value_ptr_len;
+}
+
+char *
+gen_query_str(query_gen_output_t *query_gen_output)
+{
+    char *final_query_str =
+        (char *)calloc(query_gen_output->key_query_len + query_gen_output->value_query_len + 2, sizeof(char));
+    strcat(final_query_str, query_gen_output->key_query);
+    strcat(final_query_str, "=");
+    strcat(final_query_str, query_gen_output->value_query);
+    return final_query_str;
+}
+
+void
+free_query_output(query_gen_output_t *output)
+{
+    if (output->key_query != NULL) {
+        free(output->key_query);
+    }
+    if (output->value_query != NULL) {
+        free(output->value_query);
+    }
 }
 
 /**
