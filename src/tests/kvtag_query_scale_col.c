@@ -185,6 +185,7 @@ main(int argc, char *argv[])
     // This is for adding #rounds tags to the objects.
     for (i = 0; i < my_add_tag; i++) {
         for (iter = 0; iter < round; iter++) {
+            char value[32];
             sprintf(value, "%d", iter);
             kvtag.name  = attr_name_per_rank;
             kvtag.value = (void *)value;
