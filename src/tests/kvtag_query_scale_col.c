@@ -237,9 +237,9 @@ main(int argc, char *argv[])
                                                                          &nres, &pdc_ids, MPI_COMM_WORLD);
         }
         else {
-            kvtag->name  = output.key_query;
-            kvtag->value = output.value_query;
-            ret_value    = (comm_type == 0)
+            kvtag.name  = output.key_query;
+            kvtag.value = output.value_query;
+            ret_value   = (comm_type == 0)
                             ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                             : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
         }
