@@ -9,6 +9,6 @@ jobs:
     runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
-      - name: Synchronize NERSC CI
+      - name: Synchronize NERSC CI (test)
         run: |
           curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.NERSC_GITLAB_TOKEN }}" "${{ secrets.NERSC_GITLAB_URL }}"
