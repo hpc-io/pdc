@@ -204,6 +204,8 @@ if(SUPPRESS_IGNORABLE_WARNINGS)
   set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
   set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
   set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
+
+  add_compile_options(${SUPPRESSED_LIST})
 endif()
 
 #------------------------------------------------------------------------------
