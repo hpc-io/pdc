@@ -50,21 +50,21 @@ void timer_unpause(stopwatch_t *t);
  *
  * @note (1/1000000 seconds)
  */
-suseconds_t timer_delta_us(stopwatch_t *t);
+double timer_delta_us(stopwatch_t *t);
 
 /** Returns the time difference in miliseconds.
  *
  * @note (1/1000 seconds)
  */
-long timer_delta_ms(stopwatch_t *t);
+double timer_delta_ms(stopwatch_t *t);
 
 /** Returns the time difference in seconds. */
-long timer_delta_s(stopwatch_t *t);
+double timer_delta_s(stopwatch_t *t);
 
 /** Returns the time difference in minutes (60 seconds). */
-long timer_delta_m(stopwatch_t *t);
+double timer_delta_m(stopwatch_t *t);
 
 /** Returns the time difference in hours (3600 seconds). */
-long timer_delta_h(stopwatch_t *t);
+double timer_delta_h(stopwatch_t *t);
 
 #endif /* TIMER_UTILS_H_DEFINED */

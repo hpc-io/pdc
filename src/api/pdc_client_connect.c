@@ -8577,34 +8577,12 @@ client_dart_get_server_info_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
-perr_t
-server_lookup_connection(int serverId, int retry_times)
-{
-    int    n_retry = 0;
-    perr_t rst     = SUCCEED;
-    while (pdc_server_info_g[serverId].addr_valid != 1) {
-        if (n_retry > retry_times)
-            break;
-        if (PDC_Client_lookup_server(serverId, 0) == SUCCEED) {
-            rst = SUCCEED;
-            break;
-        }
-        else {
-            rst = FAIL;
-            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server, retry = %d\n", pdc_client_mpi_rank_g,
-                   n_retry);
-        }
-        n_retry++;
-    }
-    return rst;
-}
-
 dart_server
 dart_retrieve_server_info_cb(uint32_t serverId)
 {
     dart_server ret;
 
-    perr_t srv_lookup_rst = server_lookup_connection((int)serverId, 2);
+    perr_t srv_lookup_rst = PDC_Client_try_lookup_server(serverId, 0);
     if (srv_lookup_rst == FAIL) {
         println("the server %d cannot be connected. ", serverId);
         goto done;
@@ -8629,8 +8607,8 @@ dart_retrieve_server_info_cb(uint32_t serverId)
 
     // Wait for response from server
     work_todo_g = 1;
-
     PDC_Client_check_response(&send_context_g);
+
     ret.id                 = serverId;
     ret.indexed_word_count = lookup_args.int64_value1;
     ret.request_count      = lookup_args.int64_value2;
@@ -8770,62 +8748,44 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-int
-dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in, uint64_t **out,
-                           size_t *out_size)
+uint64_t
+dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_server_in_t *dart_in,
+                        uint64_t ***out, uint64_t **out_size)
 {
-    int                ret_val = 0;
+    uint64_t           ret_val = 0;
     hg_handle_t        dart_perform_one_server_handle;
-    struct bulk_args_t lookup_args;
+    struct bulk_args_t lookup_args[num_servers];
     hg_return_t        hg_ret;
 
     stopwatch_t timer;
 
-    // timer_start(&timer);
-    perr_t srv_lookup_rst = server_lookup_connection(server_id, 2);
-    // timer_pause(&timer);
-    // println("[CLIENT PERFORM ONE SERVER 1] Time to lookup all connections is %ld microseconds for rank
-    // %d",
-    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
-
-    if (srv_lookup_rst == FAIL) {
-        println("the server %d cannot be connected. ", server_id);
-        goto done;
-    }
-
     timer_start(&timer);
 
-    hg_atomic_set32(&bulk_transfer_done_g, 0);
-    hg_atomic_set32(&dart_response_done_g, 0);
+    for (int i = 0; i < num_servers; i++) {
+        int server_id = server_ids[i];
+        if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+            PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, dart_perform_one_server_g,
-              &dart_perform_one_server_handle);
-    if (dart_perform_one_server_handle == NULL) {
-        printf("==CLIENT[%d]: Error with dart_perform_on_one_server\n", pdc_client_mpi_rank_g);
-        goto done;
+        hg_atomic_set32(&bulk_transfer_done_g, 0);
+        hg_atomic_set32(&dart_response_done_g, 0);
+
+        HG_Create(send_context_g, pdc_server_info_g[server_id].addr, dart_perform_one_server_g,
+                  &dart_perform_one_server_handle);
+        if (dart_perform_one_server_handle == NULL) {
+            printf("==CLIENT[%d]: Error with dart_perform_on_servers\n", pdc_client_mpi_rank_g);
+            goto done;
+        }
+        lookup_args[i].is_id   = 1;
+        lookup_args[i].op_type = dart_in->op_type;
+        hg_ret = HG_Forward(dart_perform_one_server_handle, dart_perform_one_server_on_receive_cb,
+                            &(lookup_args[i]), dart_in);
+
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "dart_perform_on_servers(): Could not start HG_Forward()");
     }
-    lookup_args.is_id   = 1;
-    lookup_args.op_type = dart_in->op_type;
-    // printf("SEND dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
-    // dart_in->attr_val);
-    hg_ret = HG_Forward(dart_perform_one_server_handle, dart_perform_one_server_on_receive_cb, &lookup_args,
-                        dart_in);
-
-    if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "dart_perform_on_one_server(): Could not start HG_Forward()\n");
-        HG_Destroy(dart_perform_one_server_handle);
-        goto done;
-    }
-
     // Wait for response from server
-    work_todo_g = 1;
+    work_todo_g = num_servers;
     PDC_Client_check_response(&send_context_g);
-
-    timer_pause(&timer);
-    // println("[CLIENT PERFORM ONE SERVER 2] Time to finish an RPC call is %ld microseconds for rank %d",
-    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
-
-    timer_start(&timer);
 
     if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
         goto done;
@@ -8838,45 +8798,37 @@ dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
         goto done;
     }
 
-    timer_pause(&timer);
-    // println("[CLIENT PERFORM ONE SERVER 3] Time to finish an BULK is %ld microseconds for rank %d",
-    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
-
-    timer_start(&timer);
-
-    int res_id = 0;
-    if (lookup_args.is_id == 1) {
-        out[0] = lookup_args.obj_ids;
+    uint64_t total_n_meta = 0;
+    *out                  = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    *out_size             = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
+    for (int i = 0; i < num_servers; i++) {
+        if (lookup_args[i].n_meta == 0) {
+            continue;
+        }
+        if (lookup_args[i].is_id == 1) {
+            total_n_meta += lookup_args[i].n_meta;
+            (*out_size)[i] = lookup_args[i].n_meta;
+            (*out)[i]      = (uint64_t *)calloc(lookup_args[i].n_meta, sizeof(uint64_t));
+            for (int j = 0; j < lookup_args[i].n_meta; j++) {
+                (*out)[i][j] = lookup_args[i].obj_ids[j];
+            }
+        }
+        else {
+            // throw an error
+            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+                   "check client_lookup_args->is_id\n",
+                   pdc_client_mpi_rank_g);
+        }
     }
-    else {
-        // throw an error
-        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
-               "check client_lookup_args->is_id\n",
-               pdc_client_mpi_rank_g);
-    }
-    ret_val   = lookup_args.n_meta;
-    *out_size = lookup_args.n_meta;
+    ret_val = total_n_meta;
 
     timer_pause(&timer);
-    // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d",
-    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
+    println("[CLIENT %d] (dart_perform_on_servers) Collect result from %d servers and get %d results, time : "
+            "%.4f ms.",
+            pdc_client_mpi_rank_g, num_servers, total_n_meta, timer_delta_ms(&timer));
     HG_Destroy(dart_perform_one_server_handle);
-
-// printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
-// dart_in->attr_val);
 done:
-    // printf("done->ret_val, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type,
-    // dart_in->attr_key, dart_in->attr_val);
-    // println("===================================\n===============================");
-
     return ret_val;
-}
-
-void
-dart_perform_on_one_server_thread(void *thread_param)
-{
-    struct _dart_perform_one_thread_param *param = (struct _dart_perform_one_thread_param *)thread_param;
-    dart_perform_on_one_server(param->server_id, param->dart_in, param->dart_out, param->dart_out_size);
 }
 
 perr_t
@@ -8970,32 +8922,11 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     Set *hashset = set_new(ui64_hash, ui64_equal);
     set_register_free_function(hashset, free);
 
-    uint64_t **dart_out          = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
-    size_t *   dart_out_size     = (size_t *)calloc(num_servers, sizeof(size_t));
-    uint64_t **dart_out_ptr      = dart_out;
-    size_t *   dart_out_size_ptr = dart_out_size;
+    uint64_t **dart_out      = NULL;
+    size_t *   dart_out_size = NULL;
 
-    for (i = 0; i < num_servers; i++) {
-
-        int serverId = server_id_arr[i];
-        // struct _dart_perform_one_thread_param *thread_param = (struct _dart_perform_one_thread_param
-        // *)calloc(1, sizeof(struct _dart_perform_one_thread_param)); thread_param->server_id = serverId;
-        // thread_param->dart_in = &input_param;
-        // thread_param->dart_out = &dart_out[i];
-        // thread_param->dart_out_size = &dart_out_size[i];
-        // thpool_add_work(query_pool, (void *)dart_perform_on_one_server_thread, (void *)thread_param);
-
-        int dart_status = dart_perform_on_one_server(serverId, &input_param, dart_out_ptr, dart_out_size_ptr);
-        if (omit_request == 1 && set_num_entries(hashset) > 0) {
-            break;
-        }
-        dart_out_ptr++;
-        dart_out_size_ptr++;
-    }
-    dart_out_ptr      = NULL;
-    dart_out_size_ptr = NULL;
-    // wait for all query to be done.
-    // thpool_wait(query_pool);
+    uint64_t total_count =
+        dart_perform_on_servers(server_id_arr, num_servers, &input_param, &dart_out, &dart_out_size);
 
     // deduplicate the result.
     for (i = 0; i < num_servers; i++) {
@@ -9179,12 +9110,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
             num_servers = DHT_hash(dart_g, 1, dart_key, OP_DELETE, &server_id_arr);
         }
 
-        int i = 0;
-
-        for (i = 0; i < num_servers; i++) {
-            int serverId    = server_id_arr[i];
-            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL, NULL);
-        }
+        dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
     }
     // done:
     free(reversed_attr_val);
@@ -9233,12 +9159,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
             num_servers = DHT_hash(dart_g, 1, dart_key, OP_INSERT, &server_id_arr);
         }
 
-        int i = 0;
-        for (i = 0; i < num_servers; i++) {
-            int serverId    = server_id_arr[i];
-            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL, NULL);
-            // printf("i loop on server i = %d in r loop of r=%d\n", i, r);
-        }
+        dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
         // printf("r loop at r = %d\n", r);
     }
     // done:

@@ -45,7 +45,7 @@ timer_unpause(stopwatch_t *t)
     t->paused     = false;
 }
 
-suseconds_t
+double
 timer_delta_us(stopwatch_t *t)
 {
     if (t->running)
@@ -55,29 +55,29 @@ timer_delta_us(stopwatch_t *t)
         return t->pause_mark;
 
     // Will never actually get here
-    return (t->pause_mark) - (t->start_mark);
+    return (double)((t->pause_mark) - (t->start_mark));
 }
 
-long
+double
 timer_delta_ms(stopwatch_t *t)
 {
-    return (timer_delta_us(t) / 1000);
+    return (timer_delta_us(t) / 1000.0);
 }
 
-long
+double
 timer_delta_s(stopwatch_t *t)
 {
-    return (timer_delta_us(t) / 1000000);
+    return (timer_delta_ms(t) / 1000.0);
 }
 
-long
+double
 timer_delta_m(stopwatch_t *t)
 {
-    return (timer_delta_s(t) / 60);
+    return (timer_delta_s(t) / 60.0);
 }
 
-long
+double
 timer_delta_h(stopwatch_t *t)
 {
-    return (timer_delta_m(t) / 60);
+    return (timer_delta_m(t) / 60.0);
 }
