@@ -2,13 +2,23 @@ name: NERSC
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
+    branches: [ stable, develop ]
+
+env:
+  PR_NUMBER: ${{ github.event.number }}
 
 jobs:
-  synchronize:
+  sync-with-nersc:
     runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
-      - name: Synchronize NERSC CI
+      - name: Setup git
         run: |
-          curl --request POST --header "PRIVATE-TOKEN: ${{ secrets.NERSC_GITLAB_TOKEN }}" "${{ secrets.NERSC_GITLAB_URL }}"
+          git config --global user.name "PDC BOT"
+          git config --global user.email "pdc@example.com"
+      - name: Create PR branch
+        run: |
+          git remote add gitlab https://${NERSC_GITLAB_TOKEN_NAME}:${NERSC_GITLAB_TOKEN}@${NERSC_GITLAB_URL}
+          git branch -m PR-${PR_NUMBER}
+          git push
