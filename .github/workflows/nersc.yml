@@ -21,6 +21,9 @@ jobs:
     
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
       - name: Setup git
         run: |
           git config --global user.name "PDC BOT"
