@@ -610,8 +610,7 @@ DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, int **out)
         }
         ret_value = dart_g->num_server;
     }
-    *out  = (int *)calloc(ret_value, sizeof(int));
-    int i = 0;
+    *out = (int *)calloc(ret_value, sizeof(int));
     for (i = 0; i < ret_value; i++) {
         (*out)[i] = (int)temp_out[i];
     }
