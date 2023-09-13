@@ -8759,6 +8759,11 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
 
     FUNC_ENTER(NULL);
 
+    if (out == NULL || out_size == NULL) {
+        printf("==PDC_CLIENT[%d] out is NULL, search result is not collected.\n", pdc_client_mpi_rank_g);
+        goto done;
+    }
+
     stopwatch_t timer;
 
     timer_start(&timer);
@@ -8790,13 +8795,6 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
     PDC_Client_check_response(&send_context_g);
 
     if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
-        goto done;
-    }
-    if (out == NULL || out_size == NULL) {
-        printf("==PDC_CLIENT[%d] out is NULL, search result is not collected.\n", pdc_client_mpi_rank_g);
-        goto done;
-    }
-    if (lookup_args.n_meta == 0) {
         goto done;
     }
 
