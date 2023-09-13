@@ -127,9 +127,9 @@ DHT_INITIAL_keyword_insert(char *key, int prefix_len)
 {
     if (key == NULL)
         return;
-    uint64_t *server_id;
-    int       arr_len = DHT_hash(&dart_g, 1, key, OP_INSERT, &server_id);
-    int       replica = 0;
+    int *server_id;
+    int  arr_len = DHT_hash(&dart_g, 1, key, OP_INSERT, &server_id);
+    int  replica = 0;
     for (replica = 0; replica < arr_len; replica++) {
         all_servers[server_id[replica]].indexed_word_count =
             all_servers[server_id[replica]].indexed_word_count + 1;
@@ -141,9 +141,9 @@ DHT_INITIAL_keyword_search(char *key, int prefix_len)
 {
     if (key == NULL)
         return 0;
-    uint64_t *server_id;
-    int       arr_len = DHT_hash(&dart_g, 1, key, OP_INSERT, &server_id);
-    int       i       = 0;
+    int *server_id;
+    int  arr_len = DHT_hash(&dart_g, 1, key, OP_INSERT, &server_id);
+    int  i       = 0;
     for (i = 0; i < arr_len; i++) { // Perhaps we can use openmp for this loop?
         all_servers[server_id[i]].request_count = all_servers[server_id[i]].request_count + 1;
     }
@@ -155,9 +155,9 @@ DHT_FULL_keyword_insert(char *key, int prefix_len)
 {
     if (key == NULL)
         return;
-    uint64_t *server_id;
-    int       arr_len = DHT_hash(&dart_g, strlen(key), key, OP_INSERT, &server_id);
-    int       replica = 0;
+    int *server_id;
+    int  arr_len = DHT_hash(&dart_g, strlen(key), key, OP_INSERT, &server_id);
+    int  replica = 0;
     for (replica = 0; replica < arr_len; replica++) {
         all_servers[server_id[replica]].indexed_word_count =
             all_servers[server_id[replica]].indexed_word_count + 1;
@@ -169,9 +169,9 @@ DHT_FULL_keyword_search(char *key, int prefix_len)
 {
     if (key == NULL)
         return 0;
-    uint64_t *server_id;
-    int       arr_len = DHT_hash(&dart_g, strlen(key), key, OP_INSERT, &server_id);
-    int       i       = 0;
+    int *server_id;
+    int  arr_len = DHT_hash(&dart_g, strlen(key), key, OP_INSERT, &server_id);
+    int  i       = 0;
     for (i = 0; i < arr_len; i++) { // Perhaps we can use openmp for this loop?
         all_servers[server_id[i]].request_count = all_servers[server_id[i]].request_count + 1;
     }
@@ -183,9 +183,9 @@ dart_keyword_insert(char *key, int prefix_len)
 {
     if (key == NULL)
         return;
-    uint64_t *server_id;
-    int       arr_len = DART_hash(&dart_g, key, OP_INSERT, virtual_dart_retrieve_server_info_cb, &server_id);
-    int       replica = 0;
+    int *server_id;
+    int  arr_len = DART_hash(&dart_g, key, OP_INSERT, virtual_dart_retrieve_server_info_cb, &server_id);
+    int  replica = 0;
     for (replica = 0; replica < arr_len; replica++) {
         all_servers[server_id[replica]].indexed_word_count =
             all_servers[server_id[replica]].indexed_word_count + 1;
@@ -197,9 +197,9 @@ dart_keyword_search(char *key, int prefix_len)
 {
     if (key == NULL)
         return 0;
-    uint64_t *server_id;
-    int arr_len = DART_hash(&dart_g, key, OP_EXACT_QUERY, virtual_dart_retrieve_server_info_cb, &server_id);
-    int i       = 0;
+    int *server_id;
+    int  arr_len = DART_hash(&dart_g, key, OP_EXACT_QUERY, virtual_dart_retrieve_server_info_cb, &server_id);
+    int  i       = 0;
     for (i = 0; i < arr_len; i++) { // Perhaps we can use openmp for this loop?
         all_servers[server_id[i]].request_count = all_servers[server_id[i]].request_count + 1;
     }
