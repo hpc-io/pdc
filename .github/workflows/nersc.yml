@@ -12,12 +12,18 @@ jobs:
   sync-with-nersc:
     runs-on: ubuntu-20.04
     timeout-minutes: 5
+    
     steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: false
+
       - name: Setup git
         run: |
           git config --global user.name "PDC BOT"
           git config --global user.email "pdc@example.com"
-      - name: Create PR branch
+    
+      - name: Create PR branch (new)
         run: |
           git remote add gitlab https://${NERSC_GITLAB_TOKEN_NAME}:${NERSC_GITLAB_TOKEN}@${NERSC_GITLAB_URL}
           git branch -m PR-${PR_NUMBER}
