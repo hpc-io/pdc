@@ -8752,10 +8752,12 @@ uint64_t
 dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_server_in_t *dart_in,
                         uint64_t ***out, uint64_t **out_size)
 {
-    uint64_t           ret_val = 0;
+    uint64_t           ret_value = 0;
     hg_handle_t        dart_perform_one_server_handle;
     struct bulk_args_t lookup_args[num_servers];
     hg_return_t        hg_ret;
+
+    FUNC_ENTER(NULL);
 
     stopwatch_t timer;
 
@@ -8820,7 +8822,7 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
                    pdc_client_mpi_rank_g);
         }
     }
-    ret_val = total_n_meta;
+    ret_value = total_n_meta;
 
     timer_pause(&timer);
     println("[CLIENT %d] (dart_perform_on_servers) Collect result from %d servers and get %d results, time : "
@@ -8828,7 +8830,7 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
             pdc_client_mpi_rank_g, num_servers, total_n_meta, timer_delta_ms(&timer));
     HG_Destroy(dart_perform_one_server_handle);
 done:
-    return ret_val;
+    FUNC_LEAVE(ret_value);
 }
 
 perr_t
