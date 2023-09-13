@@ -1029,12 +1029,6 @@ perr_t PDC_Client_del_metadata(pdcid_t id, int is_cont);
 DART *get_dart_g();
 
 /**
- * To lookup the server just in case.
- *
- */
-perr_t server_lookup_connection(int serverId, int retry_times);
-
-/**
  * Return the abstract of the server by server ID
  *
  *
