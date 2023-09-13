@@ -199,12 +199,6 @@ main(int argc, char **argv)
     DART *dart_g               = get_dart_g();
     dart_g->replication_factor = replication_factor;
 
-    int sid = 0;
-    for (sid = 0; sid < dart_g->num_server; sid++) {
-        server_lookup_connection(sid, 2);
-    }
-    // return 0;
-
     int round = 0;
     for (round = 0; round < 2; round++) {
         stopwatch_t timer;
