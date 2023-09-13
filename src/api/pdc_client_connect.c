@@ -8896,8 +8896,8 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    uint64_t *server_id_arr;
-    int       num_servers = 0;
+    int *server_id_arr;
+    int  num_servers = 0;
 
     if (hash_algo == DART_HASH) {
         num_servers = DART_hash(dart_g, tok, dart_op, NULL, &server_id_arr);
@@ -9097,8 +9097,8 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         // at the same time.
         char *dart_key       = r == 0 ? attr_key : reversed_attr_val;
         input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
-        uint64_t *server_id_arr;
-        int       num_servers = 0;
+        int *server_id_arr;
+        int  num_servers = 0;
 
         if (hash_algo == DART_HASH) {
             num_servers = DART_hash(dart_g, dart_key, OP_DELETE, NULL, &server_id_arr);
@@ -9145,8 +9145,8 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         // at the same time.
         char *dart_key       = r == 0 ? attr_key : reversed_attr_str;
         input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
-        uint64_t *server_id_arr;
-        int       num_servers = 0;
+        int *server_id_arr;
+        int  num_servers = 0;
 
         if (hash_algo == DART_HASH) {
             num_servers =

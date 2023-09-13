@@ -534,32 +534,45 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
  *  The return value is the length of valid elements in the array.
  *  A for loop can use the return value as the upper bound to iterate all elements in the array.
  *
- * \param dart_g        [IN]        Pointer of Global state of DART
- * \param key           [IN]        The given key.
- * \param op_type       [IN]        Give the operation type.
- * \param get_server_cb [IN]        The callback function for getting the statistical information of a server.
- * Signature: dart_server (*get_server_info_callback)(uint32_t server_id) \param out           [IN/OUT]    The
- * pointer of the server ID array. To accelerate, we require caller function to pass an ID array of length M
- * into this function, where M is the number of total physical servers. Then, this function will fill up this
- * array. \return              [OUT]       The valid length of the server ID array.
+ * @param dart_g        [IN]        Pointer of Global state of DART
+ * @param key           [IN]        The given key.
+ * @param op_type       [IN]        Give the operation type.
+ * @param get_server_cb [IN]        The callback function for getting the statistical information of a server.
+ *                                  Signature: dart_server (*get_server_info_callback)(uint32_t server_id)
+ * @param out           [IN/OUT]    The pointer of the server ID array. To accelerate, we require caller
+ *                                  function to pass an ID array of length M into this function, where M is
+ *                                  the number of total physical servers. Then, this function will fill up
+ *                                  this array.
+ * @return              [OUT]       The valid length of the server ID array.
  *
  */
 int
-DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callback get_server_cb,
-          uint64_t **out)
+DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callback get_server_cb, int **out)
 {
+    int ret_value = 0;
+
     if (out == NULL) {
-        return 0;
+        return ret_value;
     }
+
+    uint64_t *temp_out = NULL;
 
     if (op_type == OP_INSERT) {
         // An INSERT operation happens
-        return get_server_ids_for_insert(dart_g, key, get_server_cb, out);
+        ret_value = get_server_ids_for_insert(dart_g, key, get_server_cb, &temp_out);
     }
     else {
         // A query operation happens
-        return get_server_ids_for_query(dart_g, key, op_type, out);
+        ret_value = get_server_ids_for_query(dart_g, key, op_type, &temp_out);
     }
+    *out  = (int *)calloc(ret_value, sizeof(int));
+    int i = 0;
+    for (i = 0; i < ret_value; i++) {
+        (*out)[i] = (int)temp_out[i];
+    }
+    if (temp_out != NULL)
+        free(temp_out);
+    return ret_value;
 }
 
 /**
@@ -567,33 +580,42 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
  *
  */
 int
-DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, uint64_t **out)
+DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, int **out)
 {
-    uint64_t hashVal   = djb2_hash(key, (int)len);
-    uint64_t server_id = hashVal % (dart_g->num_server);
-    int      i         = 0;
-    out[0]             = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
+    uint64_t  hashVal   = djb2_hash(key, (int)len);
+    uint64_t  server_id = hashVal % (dart_g->num_server);
+    int       i         = 0;
+    uint64_t *temp_out  = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
+    int       ret_value = 0;
+
     if (op_type == OP_INSERT || op_type == OP_EXACT_QUERY || op_type == OP_DELETE) {
-        out[0][0] = server_id;
-        return 1;
+        temp_out[0] = server_id;
+        ret_value   = 1;
     }
     else if (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY) {
         if (len > 1) { // FULL STRING HASHING
             for (i = 0; i < dart_g->num_server; i++) {
-                out[0][i] = i;
+                temp_out[i] = i;
             }
-            return dart_g->num_server;
+            ret_value = dart_g->num_server;
         }
         else { // For Initial Hashing.
-            out[0][0] = server_id;
-            return 1;
+            temp_out[0] = server_id;
+            ret_value   = 1;
         }
     }
     else if (op_type == OP_INFIX_QUERY) {
         for (i = 0; i < dart_g->num_server; i++) {
-            out[0][i] = i;
+            temp_out[i] = i;
         }
-        return dart_g->num_server;
+        ret_value = dart_g->num_server;
     }
-    return 0;
+    *out  = (int *)calloc(ret_value, sizeof(int));
+    int i = 0;
+    for (i = 0; i < ret_value; i++) {
+        (*out)[i] = (int)temp_out[i];
+    }
+    if (temp_out != NULL)
+        free(temp_out);
+    return ret_value;
 }

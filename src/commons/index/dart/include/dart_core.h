@@ -169,7 +169,7 @@ int get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t is_prefix
  *
  */
 int DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callback get_server_cb,
-              uint64_t **out);
+              int **out);
 
 /**
  * This function performs DHT hashing, solely for comparison purpose.
@@ -177,6 +177,6 @@ int DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_c
  * out will take an array of the IDs of all servers which should be accessed
  * return value is the length of the array.
  */
-int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, uint64_t **out);
+int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, int **out);
 
 #endif // DART_H

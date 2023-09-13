@@ -36,12 +36,12 @@ main(int argc, char *argv[])
         "num_server: %d, num_client: %d, alphabet_size: %d, extra_tree_height: %d, replication_factor: %d",
         num_server, num_client, alphabet_size, extra_tree_height, replication_factor);
     println("DART: num_vnode: %lu", dart.num_vnode);
-    uint64_t *out;
-    int       array_len = DART_hash(&dart, query_str, OP_INSERT, NULL, &out);
+    int *out;
+    int  array_len = DART_hash(&dart, query_str, OP_INSERT, NULL, &out);
     // print out in the same line
     printf("server ids for insert: ");
     for (int i = 0; i < array_len; i++) {
-        printf("%llu ", out[i]);
+        printf("%d ", out[i]);
     }
     printf("\n");
 
@@ -50,7 +50,7 @@ main(int argc, char *argv[])
     array_len = DART_hash(&dart, query_str, OP_EXACT_QUERY, NULL, &out);
     printf("server ids for search: ");
     for (int i = 0; i < array_len; i++) {
-        printf("%llu ", out[i]);
+        printf("%d ", out[i]);
     }
     printf("\n");
     return 0;
