@@ -7554,8 +7554,8 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     int sub_comm_rank, sub_comm_size;
     MPI_Comm_rank(sub_comm, &sub_comm_rank);
     MPI_Comm_size(sub_comm, &sub_comm_size);
-    println("World rank %d is rank %d in the new communicator of size %d", pdc_client_mpi_rank_g,
-            sub_comm_rank, sub_comm_size);
+    // println("World rank %d is rank %d in the new communicator of size %d", pdc_client_mpi_rank_g,
+    //         sub_comm_rank, sub_comm_size);
 
     int *sub_n_obj_arr, sub_n_obj_len, n_sent_ranks;
 
@@ -8990,8 +8990,8 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     int sub_comm_rank, sub_comm_size;
     MPI_Comm_rank(sub_comm, &sub_comm_rank);
     MPI_Comm_size(sub_comm, &sub_comm_size);
-    println("World rank %d is rank %d in the 'sub_comm' of size %d", pdc_client_mpi_rank_g, sub_comm_rank,
-            sub_comm_size);
+    // println("World rank %d is rank %d in the 'sub_comm' of size %d", pdc_client_mpi_rank_g, sub_comm_rank,
+    //         sub_comm_size);
 
     MPI_Barrier(comm);
     stime = MPI_Wtime();
@@ -9026,8 +9026,8 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     int group_rank, group_size;
     MPI_Comm_rank(group_comm, &group_rank);
     MPI_Comm_size(group_comm, &group_size);
-    println("World rank %d is rank %d in the 'group_comm' of size %d", pdc_client_mpi_rank_g, group_rank,
-            group_size);
+    // println("World rank %d is rank %d in the 'group_comm' of size %d", pdc_client_mpi_rank_g, group_rank,
+    //         group_size);
 
     MPI_Bcast(&n_obj, 1, MPI_INT, 0, group_comm);
 
