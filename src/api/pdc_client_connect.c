@@ -255,7 +255,7 @@ PDC_Client_check_response(hg_context_t **hg_context)
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
-        if (hg_atomic_get32(atomic_work_todo_g) <= 0)
+        if (hg_atomic_get32(&atomic_work_todo_g) <= 0)
             break;
 
         hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
