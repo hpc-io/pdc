@@ -8769,6 +8769,7 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
         return FAIL;
     }
     hg_atomic_incr32(&atomic_work_todo_g);
+    return SUCCEED;
 }
 
 void
