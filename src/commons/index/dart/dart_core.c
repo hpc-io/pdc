@@ -448,18 +448,20 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
     if (op_type == OP_INSERT) {
         return 0;
     } // For INSERT operation ,we return nothing here.
+
     // We first eliminate possibility of INFIX query.
-    if (op_type == OP_INFIX_QUERY) {
-        out[0] = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
-        int i  = 0;
-        for (i = 0; i < dart_g->num_server; i++) {
-            out[0][i] = i;
-        }
-        return dart_g->num_server;
-    }
+    // NOTE: we already use the suffix-tree mode, so, no need to do the following.
+    // if (op_type == OP_INFIX_QUERY) {
+    //     out[0] = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
+    //     int i  = 0;
+    //     for (i = 0; i < dart_g->num_server; i++) {
+    //         out[0][i] = i;
+    //     }
+    //     return dart_g->num_server;
+    // }
     // for prefix/suffix query, we only perform query broadcast if the prefix/suffix is a short one.
     if (strlen(token) < dart_g->dart_tree_height &&
-        (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY)) {
+        (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY || op_type == OP_INFIX_QUERY)) {
 
         // TODO: currently broadcast request to all virtual nodes in one region.
         // TODO: we have to consider if we can reduce the number of nodes we need to
