@@ -8809,7 +8809,7 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
     hg_handle_t **     dart_request_handle_matrix;
     struct bulk_args_t lookup_args[num_servers];
     int                num_requests      = 0;
-    char *             original_attr_key = dart_in->attr_key;
+    char *             original_attr_key = (char *)dart_in->attr_key;
     int                sub_loop_count    = 1;
 
     FUNC_ENTER(NULL);
@@ -8883,9 +8883,6 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     stopwatch_t timer;
     timer_start(&timer);
 
-    // threadpool query_pool = get_dart_temp_thpool(dart_g->num_server);
-
-    // TODO: a function called "determine_query_type"
     char *         k_query = get_key(query_string, '=');
     char *         v_query = get_value(query_string, '=');
     char *         tok     = NULL;

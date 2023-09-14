@@ -1150,15 +1150,15 @@ typedef struct {
 
 /* Define dart_perform_one_server_in_t */
 typedef struct {
-    int8_t   op_type;
-    int8_t   hash_algo;
-    char *   attr_key;
-    char *   attr_val;
-    int8_t   obj_ref_type;
-    uint64_t obj_primary_ref;
-    uint64_t obj_secondary_ref;
-    uint64_t obj_server_ref;
-    int64_t  timestamp;
+    int8_t            op_type;
+    int8_t            hash_algo;
+    hg_const_string_t attr_key;
+    hg_const_string_t attr_val;
+    int8_t            obj_ref_type;
+    uint64_t          obj_primary_ref;
+    uint64_t          obj_secondary_ref;
+    uint64_t          obj_server_ref;
+    int64_t           timestamp;
 } dart_perform_one_server_in_t;
 
 /* Define dart_perform_one_server_out_t */
@@ -3836,12 +3836,12 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->attr_key);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_key);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_string_t(proc, &struct_data->attr_val);
+    ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_val);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
