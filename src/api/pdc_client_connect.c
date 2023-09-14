@@ -9121,18 +9121,17 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    input_param.attr_key = attr_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
     int *server_id_arr;
     int  num_servers = 0;
 
     if (hash_algo == DART_HASH) {
-        num_servers = DART_hash(dart_g, dart_key, OP_DELETE, NULL, &server_id_arr);
+        num_servers = DART_hash(dart_g, attr_key, OP_DELETE, NULL, &server_id_arr);
     }
     else if (hash_algo == DHT_FULL_HASH) {
-        num_servers = DHT_hash(dart_g, strlen(dart_key), dart_key, OP_DELETE, &server_id_arr);
+        num_servers = DHT_hash(dart_g, strlen(attr_key), attr_key, OP_DELETE, &server_id_arr);
     }
     else if (hash_algo == DHT_INITIAL_HASH) {
-        num_servers = DHT_hash(dart_g, 1, dart_key, OP_DELETE, &server_id_arr);
+        num_servers = DHT_hash(dart_g, 1, attr_key, OP_DELETE, &server_id_arr);
     }
 
     dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
@@ -9162,18 +9161,17 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    input_param.attr_key = attr_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
     int *server_id_arr;
     int  num_servers = 0;
 
     if (hash_algo == DART_HASH) {
-        num_servers = DART_hash(dart_g, dart_key, OP_INSERT, dart_retrieve_server_info_cb, &server_id_arr);
+        num_servers = DART_hash(dart_g, attr_key, OP_INSERT, dart_retrieve_server_info_cb, &server_id_arr);
     }
     else if (hash_algo == DHT_FULL_HASH) {
-        num_servers = DHT_hash(dart_g, strlen(dart_key), dart_key, OP_INSERT, &server_id_arr);
+        num_servers = DHT_hash(dart_g, strlen(attr_key), attr_key, OP_INSERT, &server_id_arr);
     }
     else if (hash_algo == DHT_INITIAL_HASH) {
-        num_servers = DHT_hash(dart_g, 1, dart_key, OP_INSERT, &server_id_arr);
+        num_servers = DHT_hash(dart_g, 1, attr_key, OP_INSERT, &server_id_arr);
     }
 
     dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
