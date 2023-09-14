@@ -14,7 +14,6 @@ curdir=$(pwd)
 first_submit=1
 
 
-
 for (( i = 1; i <= $MAX_PROC; i*=2 )); do
     mkdir -p $i
     JOBNAME=${PROG_BASENAME}_${i}
