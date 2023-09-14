@@ -27,8 +27,8 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_transforms_common.h"
 
-static hg_context_t *     send_context_g = NULL;
-static hg_atomic_int32_t *atomic_work_todo_g == NULL;
+static hg_context_t *     send_context_g     = NULL;
+static hg_atomic_int32_t *atomic_work_todo_g = NULL;
 
 /* Forward References:: */
 // Analysis and Transformations
