@@ -46,6 +46,7 @@ typedef struct {
     uint32_t    num_server;
     uint64_t    num_vnode;
     dart_vnode *vnodes;
+    int         suffix_tree_mode;
 } DART;
 
 typedef struct {

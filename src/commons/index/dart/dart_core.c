@@ -36,6 +36,7 @@ dart_space_init(DART *dart, int num_client, int num_server, int alphabet_size, i
     dart->num_vnode          = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
     dart->replication_factor = replication_factor;
     dart_thpool_g            = thpool_init(num_server);
+    dart->suffix_tree_mode   = 1;
 }
 /**
  * A utility function for dummies.
@@ -450,15 +451,17 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
     } // For INSERT operation ,we return nothing here.
 
     // We first eliminate possibility of INFIX query.
-    // NOTE: we already use the suffix-tree mode, so, no need to do the following.
-    // if (op_type == OP_INFIX_QUERY) {
-    //     out[0] = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
-    //     int i  = 0;
-    //     for (i = 0; i < dart_g->num_server; i++) {
-    //         out[0][i] = i;
-    //     }
-    //     return dart_g->num_server;
-    // }
+    // if suffix_tree_mode is 1, we bypass this step.
+    if (dart_g->suffix_tree_mode == 0) {
+        if (op_type == OP_INFIX_QUERY) {
+            out[0] = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
+            int i  = 0;
+            for (i = 0; i < dart_g->num_server; i++) {
+                out[0][i] = i;
+            }
+            return dart_g->num_server;
+        }
+    }
     // for prefix/suffix query, we only perform query broadcast if the prefix/suffix is a short one.
     if (strlen(token) < dart_g->dart_tree_height &&
         (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY || op_type == OP_INFIX_QUERY)) {
