@@ -8781,7 +8781,7 @@ _aggregate_dart_results_from_all_servers(dart_perform_one_server_in_t *dart_in,
     if (dart_in->op_type != OP_INSERT &&
         dart_in->op_type != OP_DELETE) { // note that sub_loop_count is 1 for queries.
         if (lookup_args[srv_idx].n_meta == 0) {
-            continue;
+            return;
         }
         if (lookup_args[srv_idx].is_id == 1) {
             *total_n_meta += lookup_args[srv_idx].n_meta;
@@ -8796,6 +8796,7 @@ _aggregate_dart_results_from_all_servers(dart_perform_one_server_in_t *dart_in,
             printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
                    "check client_lookup_args->is_id\n",
                    pdc_client_mpi_rank_g);
+            return;
         }
     }
 }
