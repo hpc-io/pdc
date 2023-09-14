@@ -9138,7 +9138,6 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
 
     // done:
-    free(reversed_attr_val);
     return ret_value;
 }
 
@@ -9181,7 +9180,6 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // printf("r loop at r = %d\n", r);
 
     // done:
-    free(reversed_attr_str);
     return ret_value;
 }
 
