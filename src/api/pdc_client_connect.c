@@ -8754,6 +8754,7 @@ perr_t
 _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
                                  struct bulk_args_t lookup_args, hg_handle_t *handle)
 {
+    hg_return_t hg_ret;
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, dart_perform_one_server_g, handle);
     if (handle == NULL) {
         printf("==CLIENT[%d]: Error with _dart_send_request_to_one_server\n", pdc_client_mpi_rank_g);
@@ -8767,6 +8768,7 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
                pdc_client_mpi_rank_g);
         return FAIL;
     }
+    hg_atomic_incr32(&atomic_work_todo_g);
 }
 
 uint64_t
@@ -8776,7 +8778,9 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
     uint64_t           ret_value = 0;
     hg_handle_t **     dart_request_handle_matrix;
     struct bulk_args_t lookup_args[num_servers];
-    hg_return_t        hg_ret;
+    int                num_requests      = 0;
+    char *             original_attr_key = dart_in->attr_key;
+    int                sub_loop_count    = 1;
 
     FUNC_ENTER(NULL);
 
@@ -8796,62 +8800,57 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
         lookup_args[i].is_id   = 1;
         lookup_args[i].op_type = dart_in->op_type;
 
-        // for insert and delete operations, permutate all suffixes of attr_key and perform [INSERT/DELETE]
-        // for query operations, just send the original dart_in to the server
-        if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
-            char *attr_key                = dart_in->attr_key;
-            int   ak_len                  = strlen(attr_key);
-            dart_request_handle_matrix[i] = (hg_handle_t *)calloc(ak_len, sizeof(hg_handle_t));
-            for (int j = 0; j < ak_len; j++) {
-                char *attr_key_suffix = substring(attr_key, j, ak_len);
-                if (attr_key_suffix == NULL) {
-                    printf("==PDC_CLIENT[%d]: ERROR with substring, skip\n", pdc_client_mpi_rank_g);
+        sub_loop_count =
+            (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) ? strlen(original_attr_key) : 1;
+        dart_request_handle_matrix[i] = (hg_handle_t *)calloc(sub_loop_count, sizeof(hg_handle_t));
+
+        for (int j = 0; j < sub_loop_count; j++) {
+            dart_in->attr_key = (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE)
+                                    ? substring(dart_in->attr_key, j, original_attr_key)
+                                    : dart_in->attr_key;
+            _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i],
+                                             &(dart_request_handle_matrix[i][j]));
+        }
+    }
+
+    // check response and release request handle
+    *out_size = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
+    *out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    for (int i = 0; i < num_servers; i++) {
+        for (int j = 0; j < sub_loop_count; j++) {
+            // Wait for response from server
+            PDC_Client_check_response(&send_context_g);
+            // process result if possible
+            if (dart_in->op_type != OP_INSERT &&
+                dart_in->op_type != OP_DELETE) { // note that sub_loop_count is 1 for queries.
+                if (lookup_args[i].n_meta == 0) {
                     continue;
                 }
-                dart_in->attr_key = attr_key_suffix;
-                _dart_send_request_to_one_server(server_id, dart_in, &(dart_request_handle_matrix[i][j]));
+                if (lookup_args[i].is_id == 1) {
+                    total_n_meta += lookup_args[i].n_meta;
+                    (*out_size)[i] = lookup_args[i].n_meta;
+                    (*out)[i]      = (uint64_t *)calloc(lookup_args[i].n_meta, sizeof(uint64_t));
+                    for (int k = 0; k < lookup_args[i].n_meta; k++) {
+                        (*out)[i][k] = lookup_args[i].obj_ids[k];
+                    }
+                }
+                else {
+                    // throw an error
+                    printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+                           "check client_lookup_args->is_id\n",
+                           pdc_client_mpi_rank_g);
+                }
             }
+            HG_Destroy(dart_request_handle_matrix[i][j]);
         }
-        else {
-        }
+        free(dart_request_handle_matrix[i]);
     }
-    // Wait for response from server
-    hg_atomic_set32(&atomic_work_todo_g, num_servers);
-    PDC_Client_check_response(&send_context_g);
-
-    if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
-        goto done;
-    }
-
-    uint64_t total_n_meta = 0;
-    *out                  = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
-    *out_size             = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
-    for (int i = 0; i < num_servers; i++) {
-        if (lookup_args[i].n_meta == 0) {
-            continue;
-        }
-        if (lookup_args[i].is_id == 1) {
-            total_n_meta += lookup_args[i].n_meta;
-            (*out_size)[i] = lookup_args[i].n_meta;
-            (*out)[i]      = (uint64_t *)calloc(lookup_args[i].n_meta, sizeof(uint64_t));
-            for (int j = 0; j < lookup_args[i].n_meta; j++) {
-                (*out)[i][j] = lookup_args[i].obj_ids[j];
-            }
-        }
-        else {
-            // throw an error
-            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
-                   "check client_lookup_args->is_id\n",
-                   pdc_client_mpi_rank_g);
-        }
-    }
-    ret_value = total_n_meta;
+    free(dart_request_handle_matrix);
 
     timer_pause(&timer);
     println("[CLIENT %d] (dart_perform_on_servers) Collect result from %d servers and get %d results, time : "
             "%.4f ms.",
             pdc_client_mpi_rank_g, num_servers, total_n_meta, timer_delta_ms(&timer));
-    HG_Destroy(dart_perform_one_server_handle);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -8891,7 +8890,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
             break;
         case PATTERN_SUFFIX:
             affix   = substr(k_query, 1);
-            tok     = reverse_str(affix);
+            tok     = strdup(affix);
             dart_op = OP_SUFFIX_QUERY;
             break;
         case PATTERN_MIDDLE:
@@ -8958,7 +8957,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         int j = 0;
         for (j = 0; j < dart_out_size[i]; j++) {
             uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
-            *id          = dart_out[i][j];
+            id[0]        = dart_out[i][j];
             set_insert(hashset, id);
         }
         free(dart_out[i]);
@@ -9011,16 +9010,16 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     uint64_t *dart_out;
     double    stime = 0.0, duration = 0.0;
 
-    // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number of
-    // client ranks.
-    // let's select n ranks to be the sender ranks, where n is the number of servers.
+    // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number
+    // of client ranks. let's select n ranks to be the sender ranks, where n is the number of servers.
     int      sub_comm_color = pdc_client_mpi_rank_g % pdc_server_num_g == 0 ? 1 : 0;
     MPI_Comm sub_comm;
     MPI_Comm_split(comm, sub_comm_color, pdc_client_mpi_rank_g, &sub_comm);
     int sub_comm_rank, sub_comm_size;
     MPI_Comm_rank(sub_comm, &sub_comm_rank);
     MPI_Comm_size(sub_comm, &sub_comm_size);
-    // println("World rank %d is rank %d in the 'sub_comm' of size %d", pdc_client_mpi_rank_g, sub_comm_rank,
+    // println("World rank %d is rank %d in the 'sub_comm' of size %d", pdc_client_mpi_rank_g,
+    // sub_comm_rank,
     //         sub_comm_size);
 
     MPI_Barrier(comm);
@@ -9056,7 +9055,8 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     int group_rank, group_size;
     MPI_Comm_rank(group_comm, &group_rank);
     MPI_Comm_size(group_comm, &group_size);
-    // println("World rank %d is rank %d in the 'group_comm' of size %d", pdc_client_mpi_rank_g, group_rank,
+    // println("World rank %d is rank %d in the 'group_comm' of size %d", pdc_client_mpi_rank_g,
+    // group_rank,
     //         group_size);
 
     MPI_Bcast(&n_obj, 1, MPI_INT, 0, group_comm);
