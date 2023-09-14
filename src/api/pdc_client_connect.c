@@ -8773,8 +8773,31 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
 }
 
 void
-_aggregate_result()
+_aggregate_dart_results_from_all_servers(dart_perform_one_server_in_t *dart_in,
+                                         struct bulk_args_t *lookup_args, uint64_t ***out,
+                                         uint64_t **out_size, int srv_idx, uint32_t *total_n_meta)
 {
+    // aggregate result only for query operations
+    if (dart_in->op_type != OP_INSERT &&
+        dart_in->op_type != OP_DELETE) { // note that sub_loop_count is 1 for queries.
+        if (lookup_args[srv_idx].n_meta == 0) {
+            continue;
+        }
+        if (lookup_args[srv_idx].is_id == 1) {
+            *total_n_meta += lookup_args[srv_idx].n_meta;
+            (*out_size)[srv_idx] = lookup_args[srv_idx].n_meta;
+            (*out)[srv_idx]      = (uint64_t *)calloc(lookup_args[srv_idx].n_meta, sizeof(uint64_t));
+            for (int k = 0; k < lookup_args[srv_idx].n_meta; k++) {
+                (*out)[srv_idx][k] = lookup_args[srv_idx].obj_ids[k];
+            }
+        }
+        else {
+            // throw an error
+            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+                   "check client_lookup_args->is_id\n",
+                   pdc_client_mpi_rank_g);
+        }
+    }
 }
 
 uint64_t
@@ -8827,27 +8850,9 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
         for (int j = 0; j < sub_loop_count; j++) {
             // Wait for response from server
             PDC_Client_check_response(&send_context_g);
-            // process result if possible
-            if (dart_in->op_type != OP_INSERT &&
-                dart_in->op_type != OP_DELETE) { // note that sub_loop_count is 1 for queries.
-                if (lookup_args[i].n_meta == 0) {
-                    continue;
-                }
-                if (lookup_args[i].is_id == 1) {
-                    total_n_meta += lookup_args[i].n_meta;
-                    (*out_size)[i] = lookup_args[i].n_meta;
-                    (*out)[i]      = (uint64_t *)calloc(lookup_args[i].n_meta, sizeof(uint64_t));
-                    for (int k = 0; k < lookup_args[i].n_meta; k++) {
-                        (*out)[i][k] = lookup_args[i].obj_ids[k];
-                    }
-                }
-                else {
-                    // throw an error
-                    printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
-                           "check client_lookup_args->is_id\n",
-                           pdc_client_mpi_rank_g);
-                }
-            }
+            // aggregate results
+            _aggregate_dart_results_from_all_servers(dart_in, lookup_args, out, out_size, i, &total_n_meta);
+            // release request handle
             HG_Destroy(dart_request_handle_matrix[i][j]);
         }
         free(dart_request_handle_matrix[i]);
