@@ -8845,8 +8845,10 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
 
     // check response and release request handle
     uint32_t total_n_meta = 0;
-    *out_size             = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
-    *out                  = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    if (dart_in->op_type != OP_INSERT && dart_in->op_type != OP_DELETE) {
+        *out_size = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
+        *out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    }
     for (int i = 0; i < num_servers; i++) {
         for (int j = 0; j < sub_loop_count; j++) {
             // Wait for response from server
