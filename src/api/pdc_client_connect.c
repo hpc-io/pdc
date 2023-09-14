@@ -8771,6 +8771,11 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
     hg_atomic_incr32(&atomic_work_todo_g);
 }
 
+void
+_aggregate_result()
+{
+}
+
 uint64_t
 dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_server_in_t *dart_in,
                         uint64_t ***out, uint64_t **out_size)
@@ -8806,7 +8811,7 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
 
         for (int j = 0; j < sub_loop_count; j++) {
             dart_in->attr_key = (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE)
-                                    ? substring(dart_in->attr_key, j, original_attr_key)
+                                    ? substring(dart_in->attr_key, j, strlen(original_attr_key))
                                     : dart_in->attr_key;
             _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i],
                                              &(dart_request_handle_matrix[i][j]));
@@ -8814,8 +8819,9 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
     }
 
     // check response and release request handle
-    *out_size = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
-    *out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    uint32_t total_n_meta = 0;
+    *out_size             = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
+    *out                  = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
     for (int i = 0; i < num_servers; i++) {
         for (int j = 0; j < sub_loop_count; j++) {
             // Wait for response from server
@@ -9115,8 +9121,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    char *dart_key       = r == 0 ? attr_key : reversed_attr_val;
-    input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
+    input_param.attr_key = attr_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
     int *server_id_arr;
     int  num_servers = 0;
 
@@ -9158,8 +9163,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    char *dart_key       = r == 0 ? attr_key : reversed_attr_str;
-    input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
+    input_param.attr_key = attr_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
     int *server_id_arr;
     int  num_servers = 0;
 
