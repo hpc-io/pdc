@@ -1662,7 +1662,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                             *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
                         }
                         (*obj_ids)[iter++] = elt->obj_id;
-                        break;
+                        break; // FIXME: shall we break here? or continue to check other kvtags?
                     }
 
                 } // End for each kvtag
