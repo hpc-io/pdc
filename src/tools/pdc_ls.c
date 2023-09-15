@@ -142,7 +142,7 @@ main(int argc, char *argv[])
         if (d) {
             while ((dir = readdir(d)) != NULL) { // for 'things' in the directory
                 ///// have question about what these compiled files do in the project and why they had to be
-                ///moved in the first place
+                /// moved in the first place
                 if (!isDir(dir)) {                  // if it's directory
                     if (strstr(dir->d_name, ".")) { // ignore parent and current directories
                         break;
