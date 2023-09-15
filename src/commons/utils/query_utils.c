@@ -3,6 +3,50 @@
 //
 #include "query_utils.h"
 
+_gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **out_str)
+{
+
+    size_t token_len = strlen(token_str);
+    if (token_len <= affix_len) {
+        *out_str = (char *)calloc(affix_len + 3, sizeof(char));
+    }
+    else {
+        *out_str = (char *)calloc(token_len + 3, sizeof(char));
+    }
+    strncpy(*out_str, token_str, token_len);
+
+    if (affix_type == 0) { // exact
+        // nothing to do here.
+    }
+    else if (affix_type == 1) { // prefix
+        // "hello" -> "hell*" or "hell" -> "hell*"
+        (*out_str)[affix_len]     = '*';
+        (*out_str)[affix_len + 1] = '\0';
+    }
+    else if (affix_type == 2) { // suffix
+        // "hello" -> '*ello' or 'hell' -> '*hell'
+        for (int k = affix_len; k > 0; k--) {
+            (*out_str)[k] = (*out_str)[k - 1];
+        }
+        (*out_str)[0]             = '*';
+        (*out_str)[affix_len + 1] = '\0';
+    }
+    else if (affix_type == 3) { // infix
+        // "hello" -> '*ello*' or 'hell' -> '*hell*'
+        for (int k = affix_len; k > 0; k--) {
+            (*out_str)[k] = (*out_str)[k - 1];
+        }
+        (*out_str)[0]             = '*';
+        (*out_str)[affix_len + 1] = '*';
+        (*out_str)[affix_len + 2] = '\0';
+    }
+    else {
+        printf("Invalid affix type!\n");
+        return 0;
+    }
+    return strlen(*out_str);
+}
+
 void
 gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
 {
@@ -10,64 +54,35 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
     size_t key_ptr_len   = 0;
     char * value_ptr     = NULL;
     size_t value_ptr_len = 0;
-    size_t affix_len     = input->affix_len == 0 ? 4 : input->affix_len;
+    // check base_tag->name length
+    if (strlen(input->base_tag->name) < 3) {
+        char *new_tag_name = (char *)calloc(4, sizeof(char));
+        memset(new_tag_name, input->base_tag->name[0], 3);
+        input->base_tag->name = new_tag_name;
+        input->affix_len      = 1;
+    }
+    // check base_tag->value length if it is a string
+    if (input->base_tag->type == PDC_STRING && strlen((char *)input->base_tag->value) < 3) {
+        char *new_tag_value = (char *)calloc(4, sizeof(char));
+        memset(new_tag_value, ((char *)input->base_tag->value)[0], 3);
+        input->base_tag->value = (void *)new_tag_value;
+        input->affix_len       = 1;
+    }
+    size_t affix_len = input->affix_len;
 
-    if (input->key_query_type == 0) { // exact
-        key_ptr_len = strlen(input->base_tag->name);
-        key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        strcpy(key_ptr, input->base_tag->name);
-    }
-    else if (input->key_query_type == 1) { // prefix
-        key_ptr_len = affix_len + 1;
-        key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        strncpy(key_ptr, input->base_tag->name, affix_len);
-        key_ptr[key_ptr_len - 1] = '*';
-    }
-    else if (input->key_query_type == 2) { // suffix
-        key_ptr_len = affix_len + 1;
-        key_ptr     = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        key_ptr[0]  = '*';
-        strncpy(key_ptr + 1, input->base_tag->name, affix_len);
-    }
-    else if (input->key_query_type == 3) { // infix
-        key_ptr_len              = affix_len + 2;
-        key_ptr                  = (char *)calloc(key_ptr_len + 1, sizeof(char));
-        key_ptr[0]               = '*';
-        key_ptr[key_ptr_len - 1] = '*';
-        strncpy(key_ptr + 1, input->base_tag->name, affix_len);
-    }
-    else {
-        printf("Invalid key query type!\n");
+    // "hello"
+    key_ptr_len = _gen_affix_for_token(input->base_tag->name, input->key_query_type, affix_len, &key_ptr);
+    if (key_ptr_len == 0) {
+        printf("Failed to generate key query!\n");
         return;
     }
 
+    // process value in base_tag
     if (input->base_tag->type == PDC_STRING) {
-        if (input->value_query_type == 0) {
-            value_ptr_len = strlen((char *)input->base_tag->value);
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            strcpy(value_ptr, (char *)input->base_tag->value);
-        }
-        else if (input->value_query_type == 1) {
-            value_ptr_len = affix_len + 1;
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            strncpy(value_ptr, (char *)input->base_tag->value, affix_len);
-            value_ptr[value_ptr_len - 1] = '*';
-        }
-        else if (input->value_query_type == 2) {
-            value_ptr_len = affix_len + 1;
-            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            value_ptr[0]  = '*';
-            strncpy(value_ptr + 1, (char *)input->base_tag->value, affix_len);
-        }
-        else if (input->value_query_type == 3) {
-            value_ptr_len                = affix_len + 2;
-            value_ptr                    = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            value_ptr[0]                 = '*';
-            value_ptr[value_ptr_len - 1] = '*';
-            strncpy(value_ptr + 1, (char *)input->base_tag->value, affix_len);
-        }
-        else {
-            printf("Invalid value query type for string tag!\n");
+        value_ptr_len = _gen_affix_for_token((char *)input->base_tag->value, input->value_query_type,
+                                             affix_len, &value_ptr);
+        if (value_ptr_len == 0) {
+            printf("Failed to generate value query!\n");
             return;
         }
     }

@@ -175,7 +175,9 @@ main(int argc, char *argv[])
     println("Client %d created %d objects", my_rank, n_obj);
 
     // prepare tags to be added.
-    char *attr_name_per_rank = gen_random_strings(1, 6, 8, 26)[0];
+    char **random_strings             = gen_random_strings(2, 8, 8, 26);
+    char * attr_name_per_rank         = random_strings[0];
+    char * attr_value_prefix_per_rank = random_strings[1];
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
@@ -186,7 +188,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_add_tag; i++) {
         for (iter = 0; iter < round; iter++) {
             char value[32];
-            sprintf(value, "%d", iter);
+            snprintf(value, 31, "%s%d", attr_value_prefix_per_rank, iter);
             kvtag.name  = attr_name_per_rank;
             kvtag.value = (void *)value;
             kvtag.type  = PDC_STRING;
