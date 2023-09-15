@@ -208,57 +208,76 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
+
+    for (is_using_dart = 0; is_using_dart < 2; is_using_dart++) {
+        for (comm_type = 0; comm_type < 2; comm_type++) {
+            for (query_type = 0; query_type < 4; query_type++) {
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
+                MPI_Barrier(MPI_COMM_WORLD);
+                stime = MPI_Wtime();
 #endif
-    perr_t ret_value;
-    for (iter = 0; iter < round; iter++) {
-        char value[32];
-        snprintf(value, 31, "%s%d", attr_value_prefix_per_rank, iter);
-        kvtag.name  = attr_name_per_rank;
-        kvtag.value = (void *)value;
-        kvtag.type  = PDC_STRING;
-        kvtag.size  = (strlen(value) + 1) * sizeof(char);
+                perr_t ret_value;
+                for (iter = 0; iter < round; iter++) {
+                    char value[32];
+                    snprintf(value, 31, "%s%d", attr_value_prefix_per_rank, iter);
+                    kvtag.name  = attr_name_per_rank;
+                    kvtag.value = (void *)value;
+                    kvtag.type  = PDC_STRING;
+                    kvtag.size  = (strlen(value) + 1) * sizeof(char);
 
-        query_gen_input_t  input;
-        query_gen_output_t output;
-        input.base_tag         = &kvtag;
-        input.key_query_type   = query_type;
-        input.value_query_type = query_type;
-        input.affix_len        = 4;
+                    query_gen_input_t  input;
+                    query_gen_output_t output;
+                    input.base_tag         = &kvtag;
+                    input.key_query_type   = query_type;
+                    input.value_query_type = query_type;
+                    input.affix_len        = 4;
 
-        gen_query_key_value(&input, &output);
+                    gen_query_key_value(&input, &output);
 
-        if (is_using_dart) {
-            char *query_string = gen_query_str(&output);
-            ret_value          = (comm_type == 0)
-                            ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &nres,
-                                                                     &pdc_ids)
-                            : PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, ref_type,
-                                                                         &nres, &pdc_ids, MPI_COMM_WORLD);
-        }
-        else {
-            kvtag.name  = output.key_query;
-            kvtag.value = output.value_query;
-            ret_value   = (comm_type == 0)
-                            ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
-                            : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
-        }
-        if (ret_value < 0) {
-            printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
-            break;
+                    if (is_using_dart) {
+                        char *query_string = gen_query_str(&output);
+                        ret_value =
+                            (comm_type == 0)
+                                ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type,
+                                                                         &nres, &pdc_ids)
+                                : PDC_Client_search_obj_ref_through_dart_mpi(
+                                      hash_algo, query_string, ref_type, &nres, &pdc_ids, MPI_COMM_WORLD);
+                    }
+                    else {
+                        kvtag.name  = output.key_query;
+                        kvtag.value = output.value_query;
+                        ret_value   = (comm_type == 0)
+                                        ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
+                                        : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
+                    }
+                    if (ret_value < 0) {
+                        printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
+                        break;
+                    }
+                }
+
+#ifdef ENABLE_MPI
+                MPI_Barrier(MPI_COMM_WORLD);
+                MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+                total_time = MPI_Wtime() - stime;
+
+                if (my_rank == 0) {
+                    char *query_type_str = 'EXACT';
+                    if (query_type == 1)
+                        query_type_str = 'PREFIX';
+                    else if (query_type == 2)
+                        query_type_str = 'SUFFIX';
+                    else if (query_type == 3)
+                        query_type_str = 'INFIX';
+                    println("[%s Client %s Query with%sINDEX] %d results, time: %.5fms",
+                            comm_type == 0 ? "Single" : "Multi", query_type_str,
+                            is_using_dart == 0 ? " NO " : " DART ", ntotal, total_time * 1000.0);
+                }
+#endif
+            }
         }
     }
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-    total_time = MPI_Wtime() - stime;
-
-    if (my_rank == 0)
-        println("Total time to query %d objects with tag: %.5f", ntotal, total_time);
-#endif
     // close a container
     if (PDCcont_close(cont) < 0)
         printf("fail to close container c1\n");
