@@ -7530,12 +7530,13 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         *n_res   = 0;
         *pdc_ids = (uint64_t *)malloc(0);
     }
-
-    // print the pdc ids returned by this client, along with the client id
-    printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
-    for (i = 0; i < *n_res; i++)
-        printf("%llu ", (*pdc_ids)[i]);
-    printf("\n");
+    else {
+        // print the pdc ids returned by this client, along with the client id
+        printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
+        for (i = 0; i < *n_res; i++)
+            printf("%llu ", (*pdc_ids)[i]);
+        printf("\n");
+    }
 
     if (pdc_client_mpi_size_g == 1) {
         goto done;

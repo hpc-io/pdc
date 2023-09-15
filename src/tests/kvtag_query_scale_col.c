@@ -215,7 +215,7 @@ main(int argc, char *argv[])
     perr_t ret_value;
     for (iter = 0; iter < round; iter++) {
         char value[32];
-        sprintf(value, "%ld", iter);
+        snprintf(value, 31, "%s%d", attr_value_prefix_per_rank, iter);
         kvtag.name  = attr_name_per_rank;
         kvtag.value = (void *)value;
         kvtag.type  = PDC_STRING;
