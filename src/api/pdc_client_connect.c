@@ -8810,7 +8810,7 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
     hg_handle_t **     dart_request_handle_matrix;
     struct bulk_args_t lookup_args[num_servers];
     int                num_requests      = 0;
-    char *             original_attr_key = (char *)dart_in->attr_key;
+    char *             original_attr_key = strdup(dart_in->attr_key);
     int                sub_loop_count    = 1;
 
     FUNC_ENTER(NULL);
@@ -8837,7 +8837,7 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
 
         for (int j = 0; j < sub_loop_count; j++) {
             dart_in->attr_key = (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE)
-                                    ? substring(dart_in->attr_key, j, strlen(original_attr_key))
+                                    ? substring(original_attr_key, j, strlen(original_attr_key))
                                     : dart_in->attr_key;
             _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i],
                                              &(dart_request_handle_matrix[i][j]));
