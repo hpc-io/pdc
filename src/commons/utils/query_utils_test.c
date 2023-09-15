@@ -13,6 +13,7 @@ print_query_output(query_gen_output_t *output)
 int
 main(int argc, char *argv[])
 {
+    int          affix_length = atoi(argv[1]);
     pdc_kvtag_t *base_string_tag;
     base_string_tag        = (pdc_kvtag_t *)calloc(1, sizeof(pdc_kvtag_t));
     base_string_tag->name  = "testname";
@@ -27,7 +28,7 @@ main(int argc, char *argv[])
         input.base_tag         = base_string_tag;
         input.key_query_type   = key_query_type;
         input.value_query_type = value_query_type;
-        input.affix_len        = 3;
+        input.affix_len        = affix_length;
         gen_query_key_value(&input, &output);
         print_query_output(&output);
         free_query_output(&output);
