@@ -9,7 +9,7 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
 
     size_t token_len = (strlen(token_str) <= affix_len) ? affix_len : strlen(token_str);
     *out_str         = (char *)calloc(token_len + 3, sizeof(char));
-    strncpy(*out_str, token_str, token_len + 1);
+    strncpy(*out_str, affix_type <= 1 ? token_str : token_str + (token_len - affix_len), token_len + 1);
 
     if (affix_type == 0) { // exact
         // nothing to do here.
