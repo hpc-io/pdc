@@ -8761,6 +8761,7 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
         return FAIL;
     }
 
+    println("dart_in->attr_key: %s", dart_in->attr_key);
     hg_ret = HG_Forward(*handle, dart_perform_one_server_on_receive_cb, &lookup_args, dart_in);
 
     if (hg_ret != HG_SUCCESS) {
