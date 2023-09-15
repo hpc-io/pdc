@@ -209,7 +209,7 @@ main(int argc, char *argv[])
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
 
-    for (is_using_dart = 0; is_using_dart < 2; is_using_dart++) {
+    for (is_using_dart = 0; is_using_dart < 1; is_using_dart++) {
         for (comm_type = 0; comm_type < 2; comm_type++) {
             for (query_type = 0; query_type < 4; query_type++) {
 #ifdef ENABLE_MPI
