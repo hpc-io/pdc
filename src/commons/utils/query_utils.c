@@ -3,6 +3,7 @@
 //
 #include "query_utils.h"
 
+int
 _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **out_str)
 {
 
