@@ -262,13 +262,13 @@ main(int argc, char *argv[])
                 total_time = MPI_Wtime() - stime;
 
                 if (my_rank == 0) {
-                    char *query_type_str = 'EXACT';
+                    char *query_type_str = "EXACT";
                     if (query_type == 1)
-                        query_type_str = 'PREFIX';
+                        query_type_str = "PREFIX";
                     else if (query_type == 2)
-                        query_type_str = 'SUFFIX';
+                        query_type_str = "SUFFIX";
                     else if (query_type == 3)
-                        query_type_str = 'INFIX';
+                        query_type_str = "INFIX";
                     println("[%s Client %s Query with%sINDEX] %d results, time: %.5fms",
                             comm_type == 0 ? "Single" : "Multi", query_type_str,
                             is_using_dart == 0 ? " NO " : " DART ", ntotal, total_time * 1000.0);
