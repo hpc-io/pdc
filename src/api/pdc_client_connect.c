@@ -7628,14 +7628,13 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     *n_res   = ntotal;
 
     // print the pdc ids returned after gathering all the results
-    /*
+
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT == GATHERED [%d]: ", pdc_client_mpi_rank_g);
         for (i = 0; i < *n_res; i++)
             printf("%llu ", (*pdc_ids)[i]);
         printf("\n");
     }
-    */
 
 done:
     object_selection_query_counter_g++;
