@@ -22,7 +22,7 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
     }
     else if (affix_type == 2) { // suffix
         // "hello" -> '*ello' or 'hell' -> '*hell'
-        for (int k = token_len; k > (token_len - affix_len); k--) {
+        for (int k = affix_len; k > 0; k--) {
             (*out_str)[k] = (*out_str)[k - 1];
         }
         (*out_str)[0]             = '*';
@@ -30,7 +30,7 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
     }
     else if (affix_type == 3) { // infix
         // "hello" -> '*ello*' or 'hell' -> '*hell*'
-        for (int k = token_len; k > (token_len - affix_len); k--) {
+        for (int k = affix_len; k > 0; k--) {
             (*out_str)[k] = (*out_str)[k - 1];
         }
         (*out_str)[0]             = '*';
