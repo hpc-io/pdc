@@ -525,6 +525,8 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     char *k_query = get_key(query, '=');
     char *v_query = get_value(query, '=');
 
+    println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", pdc_server_rank_g, k_query, v_query);
+
     pdc_art_iterator_param_t *param = (pdc_art_iterator_param_t *)calloc(1, sizeof(pdc_art_iterator_param_t));
     param->query_str                = v_query;
     param->out                      = set_new(ui64_hash, ui64_equal);
@@ -566,7 +568,7 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
             case PATTERN_SUFFIX:
                 qType_string = "Suffix";
                 tok          = substr(k_query, 1);
-                tok          = reverse_str(tok);
+                // tok          = reverse_str(tok);
                 art_iter_prefix((art_tree *)art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
                                 level_one_art_callback, param);
                 break;

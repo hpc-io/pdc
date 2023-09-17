@@ -188,7 +188,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_add_tag; i++) {
         for (iter = 0; iter < round; iter++) {
             char value[32];
-            snprintf(value, 31, "%s%d", attr_value_prefix_per_rank, iter);
+            snprintf(value, 31, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
             kvtag.name  = attr_name_per_rank;
             kvtag.value = (void *)value;
             kvtag.type  = PDC_STRING;
@@ -219,7 +219,7 @@ main(int argc, char *argv[])
                 perr_t ret_value;
                 for (iter = 0; iter < round; iter++) {
                     char value[32];
-                    snprintf(value, 31, "%s%d", attr_value_prefix_per_rank, iter);
+                    snprintf(value, 31, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
                     kvtag.name  = attr_name_per_rank;
                     kvtag.value = (void *)value;
                     kvtag.type  = PDC_STRING;
