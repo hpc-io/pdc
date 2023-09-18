@@ -7532,10 +7532,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     }
     else {
         // print the pdc ids returned by this client, along with the client id
-        printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
-        for (i = 0; i < *n_res; i++)
-            printf("%llu ", (*pdc_ids)[i]);
-        printf("\n");
+        //printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
+        //for (i = 0; i < *n_res; i++)
+        //    printf("%llu ", (*pdc_ids)[i]);
+        //printf("\n");
     }
 
     if (pdc_client_mpi_size_g == 1) {
@@ -7631,10 +7631,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     // print the pdc ids returned after gathering all the results
 
     if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT == GATHERED [%d]: ", pdc_client_mpi_rank_g);
-        for (i = 0; i < *n_res; i++)
-            printf("%llu ", (*pdc_ids)[i]);
-        printf("\n");
+        //printf("==PDC_CLIENT == GATHERED [%d]: ", pdc_client_mpi_rank_g);
+        //for (i = 0; i < *n_res; i++)
+        //    printf("%llu ", (*pdc_ids)[i]);
+        //printf("\n");
     }
 
 done:
