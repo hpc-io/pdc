@@ -1653,7 +1653,8 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                 DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
                 {
                     if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
-                        // println("==PDC_SERVER: Found matching kvtag for object %s on condition in->key: %s, "
+                        // println("==PDC_SERVER: Found matching kvtag for object %s on condition in->key: %s,
+                        // "
                         //        "in->value: %s, tag->key: %s, tag->value: %s",
                         //        elt->obj_name, in->name, in->value, (char *)kvtag_list_elt->kvtag->name,
                         //        (char *)kvtag_list_elt->kvtag->value);
