@@ -320,6 +320,14 @@ if(PDC_USE_CRAY_DRC)
 endif()
 
 #-----------------------------------------------------------------------------
+# DART Suffix Tree mode
+#-----------------------------------------------------------------------------
+option(PDC_DART_SUFFIX_TREE_MODE "Enable DART Suffix Tree mode." ON)
+if(PDC_DART_SUFFIX_TREE_MODE)
+  set(PDC_DART_SFX_TREE 1)
+endif()
+
+#-----------------------------------------------------------------------------
 # Julia Support option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_JULIA_SUPPORT "Enable Julia Support." OFF)
@@ -454,6 +462,7 @@ if(PDC_ENABLE_FASTBIT)
     find_library(FASTBIT fastbit)
     set(ENABLE_FASTBIT 1)
 endif()
+
 
 #------------------------------------------------------------------------------
 # Data type

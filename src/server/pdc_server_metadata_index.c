@@ -2,6 +2,8 @@
 
 #define DART_SERVER_DEBUG 1
 
+#define PDC_DART_SFX_TREE
+
 // DART search
 int64_t   indexed_word_count_g        = 0;
 int64_t   server_request_count_g      = 0;
@@ -240,36 +242,54 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
     int                     len          = strlen(attr_name);
     key_index_leaf_content *leaf_content = NULL;
     art_tree *              nm_trie      = NULL;
+    unsigned char *         nm_key       = NULL;
 
-    // int rr = 0;
-    // for (rr = 0; rr < 2; rr++){
-    unsigned char *nm_key           = (unsigned char *)attr_name;
-    nm_trie                         = art_key_prefix_tree_g;
-    key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
-    if (leafcnt == NULL) {
-        leafcnt                     = (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
-        leafcnt->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
-        leafcnt->extra_suffix_index = (art_tree *)calloc(1, sizeof(art_tree));
-        leafcnt->extra_range_index  = (art_tree *)calloc(1, sizeof(art_tree));
-        leafcnt->extra_infix_index  = (art_tree *)calloc(1, sizeof(art_tree));
-        art_tree_init((art_tree *)leafcnt->extra_prefix_index);
-        art_tree_init((art_tree *)leafcnt->extra_suffix_index);
-        art_tree_init((art_tree *)leafcnt->extra_range_index);
-        art_tree_init((art_tree *)leafcnt->extra_infix_index);
-        art_insert(nm_trie, nm_key, len, leafcnt);
-    }
+#ifndef PDC_DART_SFX_TREE
+    int rr = 0;
+    for (rr = 0; rr < 2; rr++) {
+        nm_key  = (rr == 1) ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
+        nm_trie = (rr == 1) ? art_key_suffix_tree_g : art_key_prefix_tree_g;
+#else
+    int sub_loop_count = strlen(attr_name);
+    nm_trie            = art_key_prefix_tree_g;
+    for (int j = 0; j < sub_loop_count; j++) {
+        nm_key         = (unsigned char *)substring(attr_name, j, strlen(attr_name));
+#endif
+        key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
+        if (leafcnt == NULL) {
+            leafcnt                     = (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
+            leafcnt->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
+            art_tree_init((art_tree *)leafcnt->extra_prefix_index);
+#ifndef PDC_DART_SFX_TREE
+            // we only enable suffix index when suffix tree mode is off.
+            leafcnt->extra_suffix_index = (art_tree *)calloc(1, sizeof(art_tree));
+            art_tree_init((art_tree *)leafcnt->extra_suffix_index);
+#endif
+            // TODO: build local index for range query.
+            leafcnt->extra_range_index = (art_tree *)calloc(1, sizeof(art_tree));
+            art_tree_init((art_tree *)leafcnt->extra_range_index);
 
-    art_tree *secondary_trie = NULL;
-    int       r              = 0;
-    for (r = 0; r < 2; r++) {
-        unsigned char *val_key =
-            (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
-        secondary_trie =
-            (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index) : (art_tree *)(leafcnt->extra_prefix_index));
-        create_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
-    }
-    // TODO: build local index for infix and range.
-    // }
+            art_insert(nm_trie, nm_key, len, leafcnt);
+        }
+
+        art_tree *secondary_trie = NULL;
+
+#ifndef PDC_DART_SFX_TREE
+        int r = 0;
+        for (r = 0; r < 2; r++) {
+            unsigned char *val_key =
+                (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
+            secondary_trie = (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index)
+                                     : (art_tree *)(leafcnt->extra_prefix_index));
+
+#else
+        secondary_trie = (art_tree *)(leafcnt->extra_prefix_index);
+        for (int jj = 0; jj < strlen(attr_value); jj++) {
+            unsigned char *val_key = (unsigned char *)substring(attr_value, jj, strlen(attr_value));
+#endif
+            create_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
+        } // this matches with the 'r' loop or 'jj' loop
+    }     // this matches with the 'rr' loop or 'j' loop
     return nm_trie;
 }
 
@@ -343,32 +363,46 @@ delete_index_for_attr_name(char *attr_name, char *attr_value, void *data)
     int                     len          = strlen(attr_name);
     key_index_leaf_content *leaf_content = NULL;
     art_tree *              nm_trie      = NULL;
+    unsigned char *         nm_key       = NULL;
 
-    // int rr = 0;
-    // for (rr = 0; rr < 2; rr++){
-    unsigned char *nm_key           = (unsigned char *)attr_name;
-    nm_trie                         = art_key_prefix_tree_g;
-    key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
-    if (leafcnt == NULL) {
-        art_delete(nm_trie, nm_key, len);
-    }
-    else {
-        art_tree *secondary_trie = NULL;
-        int       r              = 0;
-        for (r = 0; r < 2; r++) {
-            unsigned char *val_key =
-                (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
-            secondary_trie = (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index)
-                                     : (art_tree *)(leafcnt->extra_prefix_index));
-            delete_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
-        }
-        if (leafcnt->extra_suffix_index == NULL && leafcnt->extra_prefix_index == NULL) {
+#ifndef PDC_DART_SFX_TREE
+    int rr = 0;
+    for (rr = 0; rr < 2; rr++) {
+        nm_key  = rr == 1 ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
+        nm_trie = rr == 1 ? art_key_suffix_tree_g : art_key_prefix_tree_g;
+#else
+    int sub_loop_count = strlen(attr_name);
+    nm_trie            = art_key_prefix_tree_g;
+    for (int j = 0; j < sub_loop_count; j++) {
+        nm_key = (unsigned char *)substring(attr_name, j, strlen(attr_name));
+#endif
+        key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
+        if (leafcnt == NULL) {
             art_delete(nm_trie, nm_key, len);
-            leafcnt = NULL;
         }
-    }
-    // TODO: build local index for infix and range.
-    // }
+        else {
+            art_tree *secondary_trie = NULL;
+#ifndef PDC_DART_SFX_TREE
+            int r = 0;
+            for (r = 0; r < 2; r++) {
+                unsigned char *val_key =
+                    (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
+                secondary_trie = (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index)
+                                         : (art_tree *)(leafcnt->extra_prefix_index));
+#else
+            secondary_trie = (art_tree *)(leafcnt->extra_prefix_index);
+            for (int jj = 0; jj < strlen(); jj++) {
+                unsigned char *val_key = (unsigned char *)substring(attr_value, jj, strlen(attr_value));
+#endif
+                delete_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
+            }
+            if (leafcnt->extra_suffix_index == NULL && leafcnt->extra_prefix_index == NULL) {
+                art_delete(nm_trie, nm_key, len);
+                leafcnt = NULL;
+            }
+            // TODO: deal with index for range query.
+        } // this matches with the 'r' loop or 'jj' loop
+    }     // this matches with the 'rr' loop or 'j' loop
 }
 
 perr_t
@@ -492,18 +526,38 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
                 }
                 break;
             case PATTERN_SUFFIX:
-                tok = substr(secondary_query, 1);
-                tok = reverse_str(tok);
-                if (leafcnt->extra_suffix_index != NULL) {
-                    art_iter_prefix((art_tree *)leafcnt->extra_suffix_index, (unsigned char *)tok,
-                                    strlen(tok), level_two_art_callback, param);
+                tok                      = substr(secondary_query, 1);
+                art_tree *secondary_trie = NULL;
+#ifndef PDC_DART_SFX_TREE
+                tok            = reverse_str(tok);
+                secondary_trie = (art_tree *)leafcnt->extra_suffix_index;
+#else
+                secondary_trie         = (art_tree *)leafcnt->extra_prefix_index;
+#endif
+                if (secondary_trie != NULL) {
+#ifndef PDC_DART_SFX_TREE
+                    art_iter_prefix(secondary_trie, (unsigned char *)tok, strlen(tok), level_two_art_callback,
+                                    param);
+#else
+                    Set *obj_id_set = (Set *)art_search(secondary_trie, (unsigned char *)tok, strlen(tok));
+                    if (obj_id_set != NULL) {
+                        level_two_art_callback((void *)param, (unsigned char *)tok, strlen(tok),
+                                               (void *)obj_id_set);
+                    }
+#endif
                 }
                 break;
             case PATTERN_MIDDLE:
-                tok                    = substring(secondary_query, 1, strlen(secondary_query) - 1);
-                param->level_two_infix = tok;
-                if (leafcnt->extra_prefix_index != NULL) {
-                    art_iter(leafcnt->extra_prefix_index, level_two_art_callback, param);
+                tok                      = substring(secondary_query, 1, strlen(secondary_query) - 1);
+                param->level_two_infix   = tok;
+                art_tree *secondary_trie = (art_tree *)leafcnt->extra_prefix_index;
+                if (secondary_trie != NULL) {
+#ifndef PDC_DART_SFX_TREE
+                    art_iter(secondary_trie, level_two_art_callback, param);
+#else
+                    art_iter_prefix(secondary_trie, (unsigned char *)tok, strlen(tok), level_two_art_callback,
+                                    param);
+#endif
                 }
                 break;
             default:
@@ -568,15 +622,28 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
             case PATTERN_SUFFIX:
                 qType_string = "Suffix";
                 tok          = substr(k_query, 1);
-                // tok          = reverse_str(tok);
-                art_iter_prefix((art_tree *)art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
+#ifndef PDC_DART_SFX_TREE
+                tok = reverse_str(tok);
+                art_iter_prefix((art_tree *)art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                                 level_one_art_callback, param);
+#else
+                key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(
+                    art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok));
+                if (leafcnt != NULL) {
+                    level_one_art_callback((void *)param, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
+                }
+#endif
                 break;
             case PATTERN_MIDDLE:
                 qType_string           = "Infix";
                 tok                    = substring(k_query, 1, strlen(k_query) - 1);
                 param->level_one_infix = tok;
+#ifndef PDC_DART_SFX_TREE
                 art_iter(art_key_prefix_tree_g, level_one_art_callback, param);
+#else
+                art_iter_prefix(art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
+                                level_one_art_callback, param);
+#endif
                 break;
             default:
                 break;

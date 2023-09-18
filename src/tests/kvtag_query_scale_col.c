@@ -210,13 +210,15 @@ main(int argc, char *argv[])
     }
 
     for (is_using_dart = 0; is_using_dart < 1; is_using_dart++) {
-        for (comm_type = 0; comm_type < 2; comm_type++) {
+        for (comm_type = 1; comm_type >= 0; comm_type--) {
             for (query_type = 0; query_type < 4; query_type++) {
 #ifdef ENABLE_MPI
                 MPI_Barrier(MPI_COMM_WORLD);
                 stime = MPI_Wtime();
 #endif
                 perr_t ret_value;
+                if (comm_type == 0)
+                    round = 1;
                 for (iter = 0; iter < round; iter++) {
                     char value[32];
                     snprintf(value, 31, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
@@ -269,9 +271,9 @@ main(int argc, char *argv[])
                         query_type_str = "SUFFIX";
                     else if (query_type == 3)
                         query_type_str = "INFIX";
-                    println("[%s Client %s Query with%sINDEX] %d results, time: %.5fms",
+                    println("[%s Client %s Query with%sINDEX] %d rounds with %d results/round, time: %.5fms",
                             comm_type == 0 ? "Single" : "Multi", query_type_str,
-                            is_using_dart == 0 ? " NO " : " DART ", ntotal, total_time * 1000.0);
+                            is_using_dart == 0 ? " NO " : " DART ", round, ntotal, total_time * 1000.0);
                 }
 #endif
             }

@@ -7482,11 +7482,13 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         /* printf("==PDC_CLIENT[%d]: querying server %u\n", pdc_client_mpi_rank_g, i); */
         temp_ids  = NULL;
         ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, &temp_ids);
-        if (ret_value != SUCCEED)
+        if (ret_value != SUCCEED) {
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error in %s querying server %u", pdc_client_mpi_rank_g,
                         __func__, i);
-        if (i == my_server_start)
+        }
+        if (i == my_server_start) {
             *pdc_ids = temp_ids;
+        }
         else if (nmeta > 0) {
             *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
             memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
@@ -7532,10 +7534,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     }
     else {
         // print the pdc ids returned by this client, along with the client id
-        printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
-        for (i = 0; i < *n_res; i++)
-            printf("%llu ", (*pdc_ids)[i]);
-        printf("\n");
+        // printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
+        // for (i = 0; i < *n_res; i++)
+        //     printf("%llu ", (*pdc_ids)[i]);
+        // printf("\n");
     }
 
     if (pdc_client_mpi_size_g == 1) {
@@ -7631,10 +7633,10 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     // print the pdc ids returned after gathering all the results
 
     if (pdc_client_mpi_rank_g == 0) {
-        printf("==PDC_CLIENT == GATHERED [%d]: ", pdc_client_mpi_rank_g);
-        for (i = 0; i < *n_res; i++)
-            printf("%llu ", (*pdc_ids)[i]);
-        printf("\n");
+        // printf("==PDC_CLIENT == GATHERED [%d]: ", pdc_client_mpi_rank_g);
+        // for (i = 0; i < *n_res; i++)
+        //     printf("%llu ", (*pdc_ids)[i]);
+        // printf("\n");
     }
 
 done:
@@ -8829,8 +8831,14 @@ dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_serve
         lookup_args[i].is_id   = 1;
         lookup_args[i].op_type = dart_in->op_type;
 
-        sub_loop_count =
-            (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) ? strlen(original_attr_key) : 1;
+        sub_loop_count = (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) ?
+#ifndef PDC_DART_SFX_TREE
+                                                                                          1
+#else
+                                                                                          strlen(
+                                                                                              original_attr_key)
+#endif
+                                                                                          : 1;
         dart_request_handle_matrix[i] = (hg_handle_t *)calloc(sub_loop_count, sizeof(hg_handle_t));
 
         for (int j = 0; j < sub_loop_count; j++) {
@@ -8900,8 +8908,12 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
             dart_op = OP_PREFIX_QUERY;
             break;
         case PATTERN_SUFFIX:
-            affix   = substr(k_query, 1);
-            tok     = strdup(affix);
+            affix = substr(k_query, 1);
+#ifndef PDC_DART_SFX_TREE
+            tok = reverse_str(affix);
+#else
+            tok = strdup(affix);
+#endif
             dart_op = OP_SUFFIX_QUERY;
             break;
         case PATTERN_MIDDLE:
@@ -9126,21 +9138,33 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    int *server_id_arr;
-    int  num_servers = 0;
+    char *dart_key       = strdup(attr_key);
+    input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
+#ifndef PDC_DART_SFX_TREE
+    int r = 0;
+    for (r = 0; r < 2; r++) {
+        input_param.attr_key = r == 0 ? dart_key : reverse_str(attr_key);
+#endif
+        int *server_id_arr;
+        int  num_servers = 0;
 
-    if (hash_algo == DART_HASH) {
-        num_servers = DART_hash(dart_g, attr_key, OP_DELETE, NULL, &server_id_arr);
-    }
-    else if (hash_algo == DHT_FULL_HASH) {
-        num_servers = DHT_hash(dart_g, strlen(attr_key), attr_key, OP_DELETE, &server_id_arr);
-    }
-    else if (hash_algo == DHT_INITIAL_HASH) {
-        num_servers = DHT_hash(dart_g, 1, attr_key, OP_DELETE, &server_id_arr);
-    }
+        if (hash_algo == DART_HASH) {
+            num_servers = DART_hash(dart_g, input_param.attr_key, OP_DELETE, NULL, &server_id_arr);
+        }
+        else if (hash_algo == DHT_FULL_HASH) {
+            num_servers = DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_DELETE,
+                                   &server_id_arr);
+        }
+        else if (hash_algo == DHT_INITIAL_HASH) {
+            num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_DELETE, &server_id_arr);
+        }
 
-    dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
-
+        dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
+#ifndef PDC_DART_SFX_TREE
+        // printf("r loop at r = %d\n", r);
+    }
+#endif
+    free(dart_key);
     // done:
     return ret_value;
 }
@@ -9166,22 +9190,35 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    int *server_id_arr;
-    int  num_servers = 0;
+    char *dart_key       = strdup(attr_key);
+    input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
+#ifndef PDC_DART_SFX_TREE
+    int r = 0;
+    for (r = 0; r < 2; r++) {
+        input_param.attr_key = r == 0 ? dart_key : reverse_str(attr_key);
+#endif
+        uint64_t *server_id_arr;
+        int       num_servers = 0;
 
-    if (hash_algo == DART_HASH) {
-        num_servers = DART_hash(dart_g, attr_key, OP_INSERT, dart_retrieve_server_info_cb, &server_id_arr);
-    }
-    else if (hash_algo == DHT_FULL_HASH) {
-        num_servers = DHT_hash(dart_g, strlen(attr_key), attr_key, OP_INSERT, &server_id_arr);
-    }
-    else if (hash_algo == DHT_INITIAL_HASH) {
-        num_servers = DHT_hash(dart_g, 1, attr_key, OP_INSERT, &server_id_arr);
-    }
+        if (hash_algo == DART_HASH) {
+            num_servers = DART_hash(dart_g, input_param.attr_key, OP_INSERT, dart_retrieve_server_info_cb,
+                                    &server_id_arr);
+        }
+        else if (hash_algo == DHT_FULL_HASH) {
+            num_servers = DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_INSERT,
+                                   &server_id_arr);
+        }
+        else if (hash_algo == DHT_INITIAL_HASH) {
+            num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_INSERT, &server_id_arr);
+        }
 
-    dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
-    // printf("r loop at r = %d\n", r);
+        dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
 
+#ifndef PDC_DART_SFX_TREE
+        // printf("r loop at r = %d\n", r);
+    }
+#endif
+    free(dart_key);
     // done:
     return ret_value;
 }
