@@ -60,6 +60,11 @@ typedef struct {
     int64_t  request_count;
 } dart_server;
 
+typedef struct {
+    uint32_t server_id;
+    char *   key;
+} index_hash_result_t;
+
 // Defining a function pointer by which the server load information can be retrieved.
 // The returning data type should be dart_server, which is a struct.
 // The parameter should be a uint32_t.
@@ -170,7 +175,7 @@ int get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t is_prefix
  *
  */
 int DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callback get_server_cb,
-              int **out);
+              index_hash_result_t **out);
 
 /**
  * This function performs DHT hashing, solely for comparison purpose.
@@ -178,6 +183,6 @@ int DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_c
  * out will take an array of the IDs of all servers which should be accessed
  * return value is the length of the array.
  */
-int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, int **out);
+int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, index_hash_result_t **out);
 
 #endif // DART_H

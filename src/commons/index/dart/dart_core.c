@@ -552,7 +552,8 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
  *
  */
 int
-DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callback get_server_cb, int **out)
+DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callback get_server_cb,
+          index_hash_result_t **out)
 {
     int ret_value = 0;
 
@@ -585,41 +586,50 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
  *
  */
 int
-DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, int **out)
+DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, index_hash_result_t **out)
 {
-    uint64_t  hashVal   = djb2_hash(key, (int)len);
-    uint64_t  server_id = hashVal % (dart_g->num_server);
-    int       i         = 0;
-    uint64_t *temp_out  = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
-    int       ret_value = 0;
+    if (out == NULL) {
+        return 0;
+    }
+    uint64_t hashVal   = djb2_hash(key, (int)len);
+    uint64_t server_id = hashVal % (dart_g->num_server);
+    int      i         = 0;
+    *out               = NULL;
 
-    if (op_type == OP_INSERT || op_type == OP_EXACT_QUERY || op_type == OP_DELETE) {
-        temp_out[0] = server_id;
-        ret_value   = 1;
+    int ret_value    = 0;
+    int is_full_scan = 0;
+    if (op_type == OP_INSERT || op_type == OP_DELETE) {
+        is_full_scan = 0;
+    }
+    else if (op_type == OP_EXACT_QUERY) {
+        is_full_scan = 0;
     }
     else if (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY) {
-        if (len > 1) { // FULL STRING HASHING
-            for (i = 0; i < dart_g->num_server; i++) {
-                temp_out[i] = i;
-            }
-            ret_value = dart_g->num_server;
+        if (len > 1) {
+            is_full_scan = 1;
         }
-        else { // For Initial Hashing.
-            temp_out[0] = server_id;
-            ret_value   = 1;
+        else {
+            is_full_scan = 0;
         }
     }
     else if (op_type == OP_INFIX_QUERY) {
-        for (i = 0; i < dart_g->num_server; i++) {
-            temp_out[i] = i;
-        }
+        is_full_scan = 1;
+    }
+
+    // according to different scan type, we return different results.
+    if (is_full_scan) {
         ret_value = dart_g->num_server;
+        *out      = (index_hash_result_t *)calloc(ret_value, sizeof(index_hash_result_t));
+        for (i = 0; i < dart_g->num_server; i++) {
+            (*out)[i].server_id = i;
+            (*out)[i].key       = key;
+        }
     }
-    *out = (int *)calloc(ret_value, sizeof(int));
-    for (i = 0; i < ret_value; i++) {
-        (*out)[i] = (int)temp_out[i];
+    else {
+        ret_value           = 1;
+        *out                = (index_hash_result_t *)calloc(ret_value, sizeof(index_hash_result_t));
+        (*out)[0].server_id = server_id;
+        (*out)[0].key       = key;
     }
-    if (temp_out != NULL)
-        free(temp_out);
     return ret_value;
 }
