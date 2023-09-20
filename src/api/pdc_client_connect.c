@@ -8803,18 +8803,16 @@ uint64_t
 dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
                         dart_perform_one_server_in_t *dart_in, uint64_t ***out, uint64_t **out_size)
 {
-    uint64_t           ret_value = 0;
-    hg_handle_t *      dart_request_handles;
     struct bulk_args_t lookup_args[num_servers];
-    int                num_requests = 0;
-    uint32_t           total_n_meta = 0;
+    uint64_t           ret_value            = 0;
+    hg_handle_t *      dart_request_handles = (hg_handle_t *)calloc(num_servers, sizeof(hg_handle_t));
+    int                num_requests         = 0;
+    uint32_t           total_n_meta         = 0;
+    dart_op_type_t     op_type              = dart_in->op_type;
 
     FUNC_ENTER(NULL);
 
-    dart_request_handles = (hg_handle_t *)calloc(num_servers, sizeof(hg_handle_t));
-
     stopwatch_t timer;
-
     timer_start(&timer);
 
     for (int i = 0; i < num_servers; i++) {
@@ -8826,9 +8824,9 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         hg_atomic_set32(&dart_response_done_g, 0);
 
         lookup_args[i].is_id   = 1;
-        lookup_args[i].op_type = dart_in->op_type;
+        lookup_args[i].op_type = op_type;
 
-        if (is_index_write_op(dart_in->op_type)) {
+        if (is_index_write_op(op_type)) {
             dart_in->attr_key = hash_result[i].key;
         }
 
@@ -8836,7 +8834,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         num_requests++;
     }
     // check response and release request handle
-    if (!is_index_write_op(dart_in->op_type)) {
+    if (!is_index_write_op(op_type)) {
         *out_size = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
         *out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
     }
@@ -8845,14 +8843,13 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         // Wait for response from server
         PDC_Client_check_response(&send_context_g);
         // aggregate results when executing queries.
-        if (!is_index_write_op(dart_in->op_type)) {
+        if (!is_index_write_op(op_type)) {
             _aggregate_dart_results_from_all_servers(dart_in, lookup_args, out, out_size, i, &total_n_meta);
         }
         // release request handle
         HG_Destroy(dart_request_handles[i]);
     }
     free(dart_request_handles);
-
     timer_pause(&timer);
     println("[CLIENT %d] (dart_perform_on_servers) Collect result from %d servers and get %d results, time : "
             "%.4f ms.",
