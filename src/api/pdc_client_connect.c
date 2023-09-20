@@ -8851,9 +8851,10 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     }
     free(dart_request_handles);
     timer_pause(&timer);
-    println("[CLIENT %d] (dart_perform_on_servers) Collect result from %d servers and get %d results, time : "
+    println("[CLIENT %d] (dart_perform_on_servers) %s from %d servers and get %d results, time : "
             "%.4f ms.",
-            pdc_client_mpi_rank_g, num_servers, total_n_meta, timer_delta_ms(&timer));
+            pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
+            num_servers, total_n_meta, timer_delta_ms(&timer));
 done:
     FUNC_LEAVE(ret_value);
 }
