@@ -8774,34 +8774,37 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
 }
 
 void
-_aggregate_dart_results_from_all_servers(dart_perform_one_server_in_t *dart_in,
-                                         struct bulk_args_t *lookup_args, uint64_t ***out,
-                                         uint64_t **out_size, int resp_idx, uint32_t *total_n_meta)
+_aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *output_set, int num_requests)
 {
-    // aggregate result only for query operations
-    if (lookup_args[resp_idx].n_meta == 0) {
-        return;
-    }
-    if (lookup_args[resp_idx].is_id == 1) {
-        *total_n_meta += lookup_args[resp_idx].n_meta;
-        (*out_size)[resp_idx] = lookup_args[resp_idx].n_meta;
-        (*out)[resp_idx]      = (uint64_t *)calloc(lookup_args[resp_idx].n_meta, sizeof(uint64_t));
-        for (int k = 0; k < lookup_args[resp_idx].n_meta; k++) {
-            (*out)[resp_idx][k] = lookup_args[resp_idx].obj_ids[k];
+    int total_num_results = 0;
+    for (int i = 0; i < num_requests; i++) {
+        // aggregate result only for query operations
+        if (lookup_args[i].n_meta == 0) {
+            continue;
+        }
+        if (lookup_args[i].is_id == 1) {
+            int n_meta = lookup_args[i].n_meta;
+            for (int k = 0; k < n_meta; k++) {
+                uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
+                *id          = lookup_args[i].obj_ids[k];
+                set_insert(output_set, id);
+            }
+            *total_num_results += n_meta;
+        }
+        else {
+            // throw an error
+            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+                   "check client_lookup_args->is_id\n",
+                   pdc_client_mpi_rank_g);
+            continue;
         }
     }
-    else {
-        // throw an error
-        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
-               "check client_lookup_args->is_id\n",
-               pdc_client_mpi_rank_g);
-        return;
-    }
+    return total_num_results;
 }
 
 uint64_t
 dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
-                        dart_perform_one_server_in_t *dart_in, uint64_t ***out, uint64_t **out_size)
+                        dart_perform_one_server_in_t *dart_in, Set *output_set)
 {
     struct bulk_args_t lookup_args[num_servers];
     uint64_t           ret_value            = 0;
@@ -8814,7 +8817,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
 
     stopwatch_t timer;
     timer_start(&timer);
-
+    // send the requests to the required servers.
     for (int i = 0; i < num_servers; i++) {
         int server_id = hash_result[i].server_id;
         if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
@@ -8833,25 +8836,20 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i], &(dart_request_handles[i]));
         num_requests++;
     }
-    // check response and release request handle
-    if (!is_index_write_op(op_type)) {
-        *out_size = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
-        *out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
-    }
+    // waiting for response and get the results if any.
     for (int i = 0; i < num_servers; i++) {
-
         // Wait for response from server
         PDC_Client_check_response(&send_context_g);
-        // aggregate results when executing queries.
-        if (!is_index_write_op(op_type)) {
-            _aggregate_dart_results_from_all_servers(dart_in, lookup_args, out, out_size, i, &total_n_meta);
-        }
         // release request handle
         HG_Destroy(dart_request_handles[i]);
     }
     free(dart_request_handles);
+    // aggregate results when executing queries.
+    if ((!is_index_write_op(op_type)) && output_set != NULL) {
+        total_n_meta = _aggregate_dart_results_from_all_servers(lookup_args, output_set, num_requests);
+    }
     timer_pause(&timer);
-    println("[CLIENT %d] (dart_perform_on_servers) %s from %d servers and get %d results, time : "
+    println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
             "%.4f ms.",
             pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
             num_servers, total_n_meta, timer_delta_ms(&timer));
@@ -8938,29 +8936,28 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         num_servers = DHT_hash(dart_g, 1, tok, dart_op, &hash_result);
     }
 
-    // Prepare the hashset for collecting the result if needed.
+    // Prepare the hashset for collecting deduplicated result if needed.
     int  i       = 0;
-    Set *hashset = set_new(ui64_hash, ui64_equal);
-    set_register_free_function(hashset, free);
-
-    uint64_t **dart_out      = NULL;
-    size_t *   dart_out_size = NULL;
-
-    uint64_t total_count =
-        dart_perform_on_servers(hash_result, num_servers, &input_param, &dart_out, &dart_out_size);
-
-    // deduplicate the result.
-    for (i = 0; i < num_servers; i++) {
-        int j = 0;
-        for (j = 0; j < dart_out_size[i]; j++) {
-            uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
-            id[0]        = dart_out[i][j];
-            set_insert(hashset, id);
-        }
-        free(dart_out[i]);
+    Set *hashset = NULL;
+    if (!is_index_write_op(dart_query_type)) {
+        hashset = set_new(ui64_hash, ui64_equal);
+        set_register_free_function(hashset, free);
     }
-    free(dart_out);
-    free(dart_out_size);
+
+    uint64_t total_count = dart_perform_on_servers(hash_result, num_servers, &input_param, hashset);
+
+    // // deduplicate the result.
+    // for (i = 0; i < num_servers; i++) {
+    //     int j = 0;
+    //     for (j = 0; j < dart_out_size[i]; j++) {
+    //         uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
+    //         id[0]        = dart_out[i][j];
+    //         set_insert(hashset, id);
+    //     }
+    //     free(dart_out[i]);
+    // }
+    // free(dart_out);
+    // free(dart_out_size);
 
     // Pick deduplicated result.
     *n_res = set_num_entries(hashset);
