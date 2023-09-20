@@ -451,20 +451,24 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
     } // For INSERT operation ,we return nothing here.
 
     // We first eliminate possibility of INFIX query.
-    // if suffix_tree_mode is 1, we bypass this step.
-    if (dart_g->suffix_tree_mode == 0) {
-        if (op_type == OP_INFIX_QUERY) {
-            out[0] = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
-            int i  = 0;
-            for (i = 0; i < dart_g->num_server; i++) {
-                out[0][i] = i;
-            }
-            return dart_g->num_server;
+    // Note: if suffix tree mode is ON, we don't have to search all servers.
+#ifndef PDC_DART_SFX_TREE
+    if (op_type == OP_INFIX_QUERY) {
+        out[0] = (uint64_t *)calloc(dart_g->num_server, sizeof(uint64_t));
+        int i  = 0;
+        for (i = 0; i < dart_g->num_server; i++) {
+            out[0][i] = i;
         }
+        return dart_g->num_server;
     }
-    // for prefix/suffix query, we only perform query broadcast if the prefix/suffix is a short one.
-    if (strlen(token) < dart_g->dart_tree_height &&
-        (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY || op_type == OP_INFIX_QUERY)) {
+#endif
+    // for prefix/suffix query, we seek for proper parent region and only perform query broadcast for that
+    // region. if suffix tree mode is ON, we include infix case in this branch as well.
+    if (strlen(token) < dart_g->dart_tree_height && (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY
+#ifdef PDC_DART_SFX_TREE
+                                                     || op_type == OP_INFIX_QUERY
+#endif
+                                                     )) {
 
         // TODO: currently broadcast request to all virtual nodes in one region.
         // TODO: we have to consider if we can reduce the number of nodes we need to
@@ -486,10 +490,16 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
         return num_srvs;
     }
     else {
-        // For exact search or prefix/suffix search, when the given token length is large enough,
-        // we consider a different query procedure.
-        // in this case, there is no difference between a long prefix/suffix and an exact query
-        // against a long keyword.
+        // this branch handles the following cases:
+        // 1. exact search: the logic is pretty much the same as insert operation,
+        //    the only difference is to reserve two servers for query.
+        // 2. prefix/suffix/infix(with suffix tree mode on) with sufficiently long token,
+        //    this is pretty much the same with exact queries.
+        // 3. delete operation: we need to delete all replicas,
+        //    including base replicas and alternative replicas.
+        // Explanation: For exact search or prefix/suffix search, when the given token length is large enough,
+        // we consider a different query procedure. in this case, there is no difference between a long
+        // prefix/suffix/infix and an exact query against a long keyword.
 
         uint64_t base_virtual_node_id = get_base_virtual_node_id_by_string(dart_g, token);
         // For insert operations, we only return the reconciled virtual node.
@@ -523,10 +533,10 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
             out[0]        = (uint64_t *)calloc(2, sizeof(uint64_t));
             int rst_size  = 1;
             out[0][0]     = base_replicas[rep_index];
-            // if (base_replicas[rep_index] != alter_replicas[rep_index]) {
-            rst_size  = 2;
-            out[0][1] = alter_replicas[rep_index];
-            // }
+            if (base_replicas[rep_index] != alter_replicas[rep_index]) {
+                rst_size  = 2;
+                out[0][1] = alter_replicas[rep_index];
+            }
             return rst_size;
         }
     }
@@ -540,7 +550,7 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
  *  A for loop can use the return value as the upper bound to iterate all elements in the array.
  *
  * @param dart_g        [IN]        Pointer of Global state of DART
- * @param key           [IN]        The given key.
+ * @param key           [IN]        The given key. For queries, it is already a bare keyword without '*'.
  * @param op_type       [IN]        Give the operation type.
  * @param get_server_cb [IN]        The callback function for getting the statistical information of a server.
  *                                  Signature: dart_server (*get_server_info_callback)(uint32_t server_id)
@@ -561,23 +571,56 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
         return ret_value;
     }
 
-    uint64_t *temp_out = NULL;
+    uint64_t *temp_out    = NULL;
+    int       tmp_out_len = 0;
+    char *    tok         = NULL;
+    *out                  = NULL;
 
-    if (op_type == OP_INSERT) {
-        // An INSERT operation happens
-        ret_value = get_server_ids_for_insert(dart_g, key, get_server_cb, &temp_out);
+    // regardless of suffix tree mode, we only need to get the DART hash result for one time.
+    int loop_count = 1;
+    if (op_type == OP_INSERT || op_type == OP_DELETE) {
+#ifdef PDC_DART_SFX_TREE
+        // suffix tree mode is ON, we can iterate all suffixes for insert/delete operations.
+        // if there are all N suffixes, we need to get the DART hash results for N times,
+        // and each time we get the result for a single suffix.
+        loop_count = strlen(key);
+#else
+        // suffix tree mode is OFF, we iterate the original string and its reverse. (2 iterations)
+        loop_count = 2;
+#endif
     }
-    else {
-        // A query operation happens
-        ret_value = get_server_ids_for_query(dart_g, key, op_type, &temp_out);
+    int iter = 0;
+    for (iter = 0; iter < loop_count; iter++) {
+#ifdef PDC_DART_SFX_TREE
+        tok = substring(key, iter, strlen(key));
+#else
+        tok        = iter == 0 ? strdup(key) : reverse_str(key);
+#endif
+        /* ************ [START] CORE DART HASH FOR EVERY SINGLE TOKEN ************** */
+        if (op_type == OP_INSERT) {
+            // An INSERT operation happens
+            tmp_out_len = get_server_ids_for_insert(dart_g, tok, get_server_cb, &temp_out);
+        }
+        else {
+            // A query operation happens
+            tmp_out_len = get_server_ids_for_query(dart_g, tok, op_type, &temp_out);
+        }
+        /* ************ [END] CORE DART HASH FOR EVERY SINGLE TOKEN ************** */
+        // now we have the result of DART hash, we need to merge it with the previous results.
+        ret_value += tmp_out_len;
+        if (*out == NULL) {
+            *out = (index_hash_result_t *)calloc(ret_value, sizeof(index_hash_result_t));
+        }
+        else {
+            *out = (index_hash_result_t *)realloc(*out, ret_value * sizeof(index_hash_result_t));
+        }
+        for (int j = 0; j < tmp_out_len; j++) {
+            (*out)[ret_value - tmp_out_len + j].server_id = temp_out[j];
+            (*out)[ret_value - tmp_out_len + j].key       = tok;
+        }
+        if (temp_out != NULL)
+            free(temp_out);
     }
-    *out  = (int *)calloc(ret_value, sizeof(int));
-    int i = 0;
-    for (i = 0; i < ret_value; i++) {
-        (*out)[i] = (int)temp_out[i];
-    }
-    if (temp_out != NULL)
-        free(temp_out);
     return ret_value;
 }
 

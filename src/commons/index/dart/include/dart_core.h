@@ -165,7 +165,7 @@ int get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t is_prefix
  *  A for loop can use the return value as the upper bound to iterate all elements in the array.
  *
  * \param dart_g        [IN]        Pointer of Global state of DART
- * \param key           [IN]        The given key.
+ * \param key           [IN]        The given key. For queries, it is already a bare keyword without '*'.
  * \param op_type       [IN]        Give the operation type.
  * \param get_server_cb [IN]        The callback function for getting the statistical information of a server.
  * Signature: dart_server (*get_server_info_callback)(uint32_t server_id) \param out           [IN/OUT]    The
