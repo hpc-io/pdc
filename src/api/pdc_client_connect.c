@@ -269,7 +269,7 @@ PDC_Client_check_response(hg_context_t **hg_context)
 perr_t
 PDC_setnx_app_lock()
 {
-    char *app_lock_name = (char *)calloc(ADDR_MAX, size(char));
+    char *app_lock_name = (char *)calloc(ADDR_MAX, sizeof(char));
     sprintf(app_lock_name, "%s/%s.%d", pdc_client_tmp_dir_g, pdc_app_lock_name_g, pdc_client_mpi_rank_g);
     if (access(app_lock_name, F_OK) != -1) {
         printf("==PDC_CLIENT[%d]: App lock file %s exists, another group of client is running\n",
@@ -294,7 +294,7 @@ PDC_setnx_app_lock()
 perr_t
 PDC_rm_app_lock()
 {
-    char *app_lock_name = (char *)calloc(ADDR_MAX, size(char));
+    char *app_lock_name = (char *)calloc(ADDR_MAX, sizeof(char));
     sprintf(app_lock_name, "%s/%s.%d", pdc_client_tmp_dir_g, pdc_app_lock_name_g, pdc_client_mpi_rank_g);
     if (remove(app_lock_name) == 0) {
         printf("Successfully deleted the file: %s\n", app_lock_name);
