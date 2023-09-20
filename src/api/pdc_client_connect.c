@@ -8773,7 +8773,7 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
     return SUCCEED;
 }
 
-void
+int
 _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *output_set, int num_requests)
 {
     int total_num_results = 0;
@@ -8789,7 +8789,7 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
                 *id          = lookup_args[i].obj_ids[k];
                 set_insert(output_set, id);
             }
-            *total_num_results += n_meta;
+            total_num_results += n_meta;
         }
         else {
             // throw an error
@@ -9121,7 +9121,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         num_servers = DHT_hash(dart_g, 1, attr_key, OP_DELETE, &hash_result);
     }
 
-    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL, NULL);
+    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL);
 
     // done:
     return ret_value;
@@ -9160,7 +9160,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         num_servers = DHT_hash(dart_g, 1, attr_key, OP_INSERT, &hash_result);
     }
 
-    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL, NULL);
+    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL);
 
     // done:
     return ret_value;
