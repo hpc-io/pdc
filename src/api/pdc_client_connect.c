@@ -9119,14 +9119,13 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     int                  num_servers = 0;
     index_hash_result_t *hash_result;
     if (hash_algo == DART_HASH) {
-        num_servers = DART_hash(dart_g, input_param.attr_key, OP_DELETE, NULL, &hash_result);
+        num_servers = DART_hash(dart_g, attr_key, OP_DELETE, NULL, &hash_result);
     }
     else if (hash_algo == DHT_FULL_HASH) {
-        num_servers =
-            DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_DELETE, &hash_result);
+        num_servers = DHT_hash(dart_g, strlen(attr_key), attr_key, OP_DELETE, &hash_result);
     }
     else if (hash_algo == DHT_INITIAL_HASH) {
-        num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_DELETE, &hash_result);
+        num_servers = DHT_hash(dart_g, 1, attr_key, OP_DELETE, &hash_result);
     }
 
     dart_perform_on_servers(hash_result, num_servers, &input_param, NULL, NULL);
@@ -9159,15 +9158,13 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     int                  num_servers = 0;
     index_hash_result_t *hash_result;
     if (hash_algo == DART_HASH) {
-        num_servers =
-            DART_hash(dart_g, input_param.attr_key, OP_INSERT, dart_retrieve_server_info_cb, &hash_result);
+        num_servers = DART_hash(dart_g, attr_key, OP_INSERT, dart_retrieve_server_info_cb, &hash_result);
     }
     else if (hash_algo == DHT_FULL_HASH) {
-        num_servers =
-            DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_INSERT, &hash_result);
+        num_servers = DHT_hash(dart_g, strlen(attr_key), attr_key, OP_INSERT, &hash_result);
     }
     else if (hash_algo == DHT_INITIAL_HASH) {
-        num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_INSERT, &hash_result);
+        num_servers = DHT_hash(dart_g, 1, attr_key, OP_INSERT, &hash_result);
     }
 
     dart_perform_on_servers(hash_result, num_servers, &input_param, NULL, NULL);
