@@ -8850,8 +8850,6 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         }
         // release request handle
         HG_Destroy(dart_request_handles[i]);
-
-        free(dart_request_handles[i]);
     }
     free(dart_request_handles);
 
