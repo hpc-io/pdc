@@ -8939,7 +8939,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // Prepare the hashset for collecting deduplicated result if needed.
     int  i       = 0;
     Set *hashset = NULL;
-    if (!is_index_write_op(dart_query_type)) {
+    if (!is_index_write_op(input_param.op_type)) {
         hashset = set_new(ui64_hash, ui64_equal);
         set_register_free_function(hashset, free);
     }
