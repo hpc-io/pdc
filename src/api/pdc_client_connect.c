@@ -8972,7 +8972,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         }
         free(set_arr);
     }
-    set_free(hashset);
+    set_free(result_set);
 
     // done:
     // thpool_destroy(query_pool);
