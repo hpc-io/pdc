@@ -9116,6 +9116,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
+    int                  num_servers = 0;
     index_hash_result_t *hash_result;
     if (hash_algo == DART_HASH) {
         num_servers = DART_hash(dart_g, input_param.attr_key, OP_DELETE, NULL, &hash_result);
@@ -9155,6 +9156,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
+    int                  num_servers = 0;
     index_hash_result_t *hash_result;
     if (hash_algo == DART_HASH) {
         num_servers =

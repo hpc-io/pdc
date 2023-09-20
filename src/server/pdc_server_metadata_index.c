@@ -606,8 +606,8 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
             case PATTERN_EXACT:
                 qType_string = "Exact";
                 tok          = k_query;
-                leaf_cnt = (key_index_leaf_content *)art_search(art_key_prefix_tree_g, (unsigned char *)tok,
-                                                                strlen(tok));
+                leafcnt = (key_index_leaf_content *)art_search(art_key_prefix_tree_g, (unsigned char *)tok,
+                                                               strlen(tok));
                 if (leafcnt != NULL) {
                     level_one_art_callback((void *)param, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
                 }
