@@ -185,4 +185,13 @@ int DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_c
  */
 int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, index_hash_result_t **out);
 
+/**
+ * This is a quick function to test if the operation type any type of operation that will write to the index.
+ * These operations currently include: insert, delete.
+ *
+ * @param op_type [IN] The operation type.
+ * @return 1 if the operation type is for index write operations, 0 otherwise.
+ */
+int is_index_write_op(dart_op_type_t op_type);
+
 #endif // DART_H

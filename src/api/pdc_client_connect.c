@@ -8776,98 +8776,84 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
 void
 _aggregate_dart_results_from_all_servers(dart_perform_one_server_in_t *dart_in,
                                          struct bulk_args_t *lookup_args, uint64_t ***out,
-                                         uint64_t **out_size, int srv_idx, uint32_t *total_n_meta)
+                                         uint64_t **out_size, int resp_idx, uint32_t *total_n_meta)
 {
     // aggregate result only for query operations
-    if (dart_in->op_type != OP_INSERT &&
-        dart_in->op_type != OP_DELETE) { // note that sub_loop_count is 1 for queries.
-        if (lookup_args[srv_idx].n_meta == 0) {
-            return;
+    if (lookup_args[resp_idx].n_meta == 0) {
+        return;
+    }
+    if (lookup_args[resp_idx].is_id == 1) {
+        *total_n_meta += lookup_args[resp_idx].n_meta;
+        (*out_size)[resp_idx] = lookup_args[resp_idx].n_meta;
+        (*out)[resp_idx]      = (uint64_t *)calloc(lookup_args[resp_idx].n_meta, sizeof(uint64_t));
+        for (int k = 0; k < lookup_args[resp_idx].n_meta; k++) {
+            (*out)[resp_idx][k] = lookup_args[resp_idx].obj_ids[k];
         }
-        if (lookup_args[srv_idx].is_id == 1) {
-            *total_n_meta += lookup_args[srv_idx].n_meta;
-            (*out_size)[srv_idx] = lookup_args[srv_idx].n_meta;
-            (*out)[srv_idx]      = (uint64_t *)calloc(lookup_args[srv_idx].n_meta, sizeof(uint64_t));
-            for (int k = 0; k < lookup_args[srv_idx].n_meta; k++) {
-                (*out)[srv_idx][k] = lookup_args[srv_idx].obj_ids[k];
-            }
-        }
-        else {
-            // throw an error
-            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
-                   "check client_lookup_args->is_id\n",
-                   pdc_client_mpi_rank_g);
-            return;
-        }
+    }
+    else {
+        // throw an error
+        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+               "check client_lookup_args->is_id\n",
+               pdc_client_mpi_rank_g);
+        return;
     }
 }
 
 uint64_t
-dart_perform_on_servers(int *server_ids, int num_servers, dart_perform_one_server_in_t *dart_in,
-                        uint64_t ***out, uint64_t **out_size)
+dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
+                        dart_perform_one_server_in_t *dart_in, uint64_t ***out, uint64_t **out_size)
 {
     uint64_t           ret_value = 0;
-    hg_handle_t **     dart_request_handle_matrix;
+    hg_handle_t *      dart_request_handles;
     struct bulk_args_t lookup_args[num_servers];
-    int                num_requests      = 0;
-    char *             original_attr_key = strdup(dart_in->attr_key);
-    int                sub_loop_count    = 1;
+    int                num_requests = 0;
+    uint32_t           total_n_meta = 0;
 
     FUNC_ENTER(NULL);
 
-    dart_request_handle_matrix = (hg_handle_t **)calloc(num_servers, sizeof(hg_handle_t *));
+    dart_request_handles = (hg_handle_t *)calloc(num_servers, sizeof(hg_handle_t));
 
     stopwatch_t timer;
 
     timer_start(&timer);
 
     for (int i = 0; i < num_servers; i++) {
-        int server_id = server_ids[i];
+        int server_id = hash_result[i].server_id;
         if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
         hg_atomic_set32(&bulk_transfer_done_g, 0);
         hg_atomic_set32(&dart_response_done_g, 0);
+
         lookup_args[i].is_id   = 1;
         lookup_args[i].op_type = dart_in->op_type;
 
-        sub_loop_count = (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) ?
-#ifndef PDC_DART_SFX_TREE
-                                                                                          1
-#else
-                                                                                          strlen(
-                                                                                              original_attr_key)
-#endif
-                                                                                          : 1;
-        dart_request_handle_matrix[i] = (hg_handle_t *)calloc(sub_loop_count, sizeof(hg_handle_t));
-
-        for (int j = 0; j < sub_loop_count; j++) {
-            dart_in->attr_key = (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE)
-                                    ? substring(original_attr_key, j, strlen(original_attr_key))
-                                    : dart_in->attr_key;
-            _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i],
-                                             &(dart_request_handle_matrix[i][j]));
+        if (is_index_write_op(dart_in->op_type)) {
+            dart_in->attr_key = hash_result[i].key;
         }
-    }
 
+        _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i], &(dart_request_handles[i]));
+        num_requests++;
+    }
     // check response and release request handle
-    uint32_t total_n_meta = 0;
-    if (dart_in->op_type != OP_INSERT && dart_in->op_type != OP_DELETE) {
+    if (!is_index_write_op(dart_in->op_type)) {
         *out_size = (uint64_t *)calloc(num_servers, sizeof(uint64_t));
         *out      = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
     }
     for (int i = 0; i < num_servers; i++) {
-        for (int j = 0; j < sub_loop_count; j++) {
-            // Wait for response from server
-            PDC_Client_check_response(&send_context_g);
-            // aggregate results
+
+        // Wait for response from server
+        PDC_Client_check_response(&send_context_g);
+        // aggregate results when executing queries.
+        if (!is_index_write_op(dart_in->op_type)) {
             _aggregate_dart_results_from_all_servers(dart_in, lookup_args, out, out_size, i, &total_n_meta);
-            // release request handle
-            HG_Destroy(dart_request_handle_matrix[i][j]);
         }
-        free(dart_request_handle_matrix[i]);
+        // release request handle
+        HG_Destroy(dart_request_handles[i]);
+
+        free(dart_request_handles[i]);
     }
-    free(dart_request_handle_matrix);
+    free(dart_request_handles);
 
     timer_pause(&timer);
     println("[CLIENT %d] (dart_perform_on_servers) Collect result from %d servers and get %d results, time : "
@@ -8943,25 +8929,17 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    int *server_id_arr;
-    int  num_servers = 0;
+    index_hash_result_t *hash_result = NULL;
+    int                  num_servers = 0;
 
     if (hash_algo == DART_HASH) {
-        num_servers = DART_hash(dart_g, tok, dart_op, NULL, &server_id_arr);
+        num_servers = DART_hash(dart_g, tok, dart_op, NULL, &hash_result);
     }
     else if (hash_algo == DHT_FULL_HASH) {
-        num_servers = DHT_hash(dart_g, strlen(tok), tok, dart_op, &server_id_arr);
+        num_servers = DHT_hash(dart_g, strlen(tok), tok, dart_op, &hash_result);
     }
     else if (hash_algo == DHT_INITIAL_HASH) {
-        num_servers = DHT_hash(dart_g, 1, tok, dart_op, &server_id_arr);
-    }
-
-    // Determine whether we should omit some requests:
-    int omit_request = 0;
-    if (dart_query_type == PATTERN_PREFIX || dart_query_type == PATTERN_SUFFIX) {
-        if (strlen(tok) >= dart_g->dart_tree_height && num_servers == 2) {
-            omit_request = 1;
-        }
+        num_servers = DHT_hash(dart_g, 1, tok, dart_op, &hash_result);
     }
 
     // Prepare the hashset for collecting the result if needed.
@@ -8973,7 +8951,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     size_t *   dart_out_size = NULL;
 
     uint64_t total_count =
-        dart_perform_on_servers(server_id_arr, num_servers, &input_param, &dart_out, &dart_out_size);
+        dart_perform_on_servers(hash_result, num_servers, &input_param, &dart_out, &dart_out_size);
 
     // deduplicate the result.
     for (i = 0; i < num_servers; i++) {
@@ -9138,33 +9116,20 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    char *dart_key       = strdup(attr_key);
-    input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
-#ifndef PDC_DART_SFX_TREE
-    int r = 0;
-    for (r = 0; r < 2; r++) {
-        input_param.attr_key = r == 0 ? dart_key : reverse_str(attr_key);
-#endif
-        int *server_id_arr;
-        int  num_servers = 0;
-
-        if (hash_algo == DART_HASH) {
-            num_servers = DART_hash(dart_g, input_param.attr_key, OP_DELETE, NULL, &server_id_arr);
-        }
-        else if (hash_algo == DHT_FULL_HASH) {
-            num_servers = DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_DELETE,
-                                   &server_id_arr);
-        }
-        else if (hash_algo == DHT_INITIAL_HASH) {
-            num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_DELETE, &server_id_arr);
-        }
-
-        dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
-#ifndef PDC_DART_SFX_TREE
-        // printf("r loop at r = %d\n", r);
+    index_hash_result_t *hash_result;
+    if (hash_algo == DART_HASH) {
+        num_servers = DART_hash(dart_g, input_param.attr_key, OP_DELETE, NULL, &hash_result);
     }
-#endif
-    free(dart_key);
+    else if (hash_algo == DHT_FULL_HASH) {
+        num_servers =
+            DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_DELETE, &hash_result);
+    }
+    else if (hash_algo == DHT_INITIAL_HASH) {
+        num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_DELETE, &hash_result);
+    }
+
+    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL, NULL);
+
     // done:
     return ret_value;
 }
@@ -9190,35 +9155,21 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     // input_param.timestamp = get_timestamp_us();
     input_param.timestamp = 1;
 
-    char *dart_key       = strdup(attr_key);
-    input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
-#ifndef PDC_DART_SFX_TREE
-    int r = 0;
-    for (r = 0; r < 2; r++) {
-        input_param.attr_key = r == 0 ? dart_key : reverse_str(attr_key);
-#endif
-        uint64_t *server_id_arr;
-        int       num_servers = 0;
-
-        if (hash_algo == DART_HASH) {
-            num_servers = DART_hash(dart_g, input_param.attr_key, OP_INSERT, dart_retrieve_server_info_cb,
-                                    &server_id_arr);
-        }
-        else if (hash_algo == DHT_FULL_HASH) {
-            num_servers = DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_INSERT,
-                                   &server_id_arr);
-        }
-        else if (hash_algo == DHT_INITIAL_HASH) {
-            num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_INSERT, &server_id_arr);
-        }
-
-        dart_perform_on_servers(server_id_arr, num_servers, &input_param, NULL, NULL);
-
-#ifndef PDC_DART_SFX_TREE
-        // printf("r loop at r = %d\n", r);
+    index_hash_result_t *hash_result;
+    if (hash_algo == DART_HASH) {
+        num_servers =
+            DART_hash(dart_g, input_param.attr_key, OP_INSERT, dart_retrieve_server_info_cb, &hash_result);
     }
-#endif
-    free(dart_key);
+    else if (hash_algo == DHT_FULL_HASH) {
+        num_servers =
+            DHT_hash(dart_g, strlen(input_param.attr_key), input_param.attr_key, OP_INSERT, &hash_result);
+    }
+    else if (hash_algo == DHT_INITIAL_HASH) {
+        num_servers = DHT_hash(dart_g, 1, input_param.attr_key, OP_INSERT, &hash_result);
+    }
+
+    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL, NULL);
+
     // done:
     return ret_value;
 }

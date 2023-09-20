@@ -17,6 +17,12 @@ get_dart_thpool_g()
     return dart_thpool_g;
 }
 
+int
+is_index_write_op(dart_op_type_t op_type)
+{
+    return (op_type == OP_INSERT || op_type == OP_DELETE);
+}
+
 void
 dart_space_init(DART *dart, int num_client, int num_server, int alphabet_size, int extra_tree_height,
                 int replication_factor)
@@ -578,7 +584,7 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
 
     // regardless of suffix tree mode, we only need to get the DART hash result for one time.
     int loop_count = 1;
-    if (op_type == OP_INSERT || op_type == OP_DELETE) {
+    if (is_index_write_op(op_type)) {
 #ifdef PDC_DART_SFX_TREE
         // suffix tree mode is ON, we can iterate all suffixes for insert/delete operations.
         // if there are all N suffixes, we need to get the DART hash results for N times,
@@ -641,7 +647,7 @@ DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, index_hash
 
     int ret_value    = 0;
     int is_full_scan = 0;
-    if (op_type == OP_INSERT || op_type == OP_DELETE) {
+    if (is_index_write_op(op_type)) {
         is_full_scan = 0;
     }
     else if (op_type == OP_EXACT_QUERY) {
