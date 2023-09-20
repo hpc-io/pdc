@@ -2,8 +2,6 @@
 
 #define DART_SERVER_DEBUG 1
 
-#define PDC_DART_SFX_TREE
-
 // DART search
 int64_t   indexed_word_count_g        = 0;
 int64_t   server_request_count_g      = 0;
@@ -391,7 +389,7 @@ delete_index_for_attr_name(char *attr_name, char *attr_value, void *data)
                                          : (art_tree *)(leafcnt->extra_prefix_index));
 #else
             secondary_trie = (art_tree *)(leafcnt->extra_prefix_index);
-            for (int jj = 0; jj < strlen(); jj++) {
+            for (int jj = 0; jj < strlen(attr_value); jj++) {
                 unsigned char *val_key = (unsigned char *)substring(attr_value, jj, strlen(attr_value));
 #endif
                 delete_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
@@ -548,9 +546,9 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
                 }
                 break;
             case PATTERN_MIDDLE:
-                tok                      = substring(secondary_query, 1, strlen(secondary_query) - 1);
-                param->level_two_infix   = tok;
-                art_tree *secondary_trie = (art_tree *)leafcnt->extra_prefix_index;
+                tok                    = substring(secondary_query, 1, strlen(secondary_query) - 1);
+                param->level_two_infix = tok;
+                secondary_trie         = (art_tree *)leafcnt->extra_prefix_index;
                 if (secondary_trie != NULL) {
 #ifndef PDC_DART_SFX_TREE
                     art_iter(secondary_trie, level_two_art_callback, param);
@@ -598,17 +596,18 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     else {
         char *tok;
         // println("k_query %s, v_query %s", k_query, v_query);
-        pattern_type_t level_one_ptn_type = determine_pattern_type(k_query);
+        pattern_type_t          level_one_ptn_type = determine_pattern_type(k_query);
+        key_index_leaf_content *leafcnt            = NULL;
         // if (index_type == DHT_FULL_HASH || index_type == DHT_INITIAL_HASH) {
         //     search_through_hash_table(k_query, index_type, level_one_ptn_type, param);
         // }
         // else {
         switch (level_one_ptn_type) {
             case PATTERN_EXACT:
-                qType_string                    = "Exact";
-                tok                             = k_query;
-                key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(
-                    art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok));
+                qType_string = "Exact";
+                tok          = k_query;
+                leaf_cnt = (key_index_leaf_content *)art_search(art_key_prefix_tree_g, (unsigned char *)tok,
+                                                                strlen(tok));
                 if (leafcnt != NULL) {
                     level_one_art_callback((void *)param, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
                 }
@@ -627,8 +626,8 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
                 art_iter_prefix((art_tree *)art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                                 level_one_art_callback, param);
 #else
-                key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(
-                    art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok));
+                leafcnt = (key_index_leaf_content *)art_search(art_key_prefix_tree_g, (unsigned char *)tok,
+                                                               strlen(tok));
                 if (leafcnt != NULL) {
                     level_one_art_callback((void *)param, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
                 }
