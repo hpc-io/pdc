@@ -8841,7 +8841,9 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         // Wait for response from server
         PDC_Client_check_response(&send_context_g);
         // release request handle
-        HG_Destroy(dart_request_handles[i]);
+        if (dart_request_handles[i] != NULL) {
+            HG_Destroy(dart_request_handles[i]);
+        }
     }
     free(dart_request_handles);
     // aggregate results when executing queries.
@@ -8937,14 +8939,14 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     }
 
     // Prepare the hashset for collecting deduplicated result if needed.
-    int  i       = 0;
-    Set *hashset = NULL;
+    int  i          = 0;
+    Set *result_set = NULL;
     if (!is_index_write_op(input_param.op_type)) {
-        hashset = set_new(ui64_hash, ui64_equal);
-        set_register_free_function(hashset, free);
+        result_set = set_new(ui64_hash, ui64_equal);
+        set_register_free_function(result_set, free);
     }
 
-    uint64_t total_count = dart_perform_on_servers(hash_result, num_servers, &input_param, hashset);
+    uint64_t total_count = dart_perform_on_servers(hash_result, num_servers, &input_param, result_set);
 
     // // deduplicate the result.
     // for (i = 0; i < num_servers; i++) {
