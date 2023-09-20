@@ -77,6 +77,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif /* HOST_NAME_MAX */
 
 #define pdc_server_cfg_name_g "server.cfg"
+#define pdc_app_lock_name_g   "pdc_app.lck"
 
 #define ADD_OBJ 1
 #define DEL_OBJ 2

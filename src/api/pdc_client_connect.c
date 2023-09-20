@@ -267,6 +267,43 @@ PDC_Client_check_response(hg_context_t **hg_context)
 }
 
 perr_t
+PDC_setnx_app_lock()
+{
+    char *app_lock_name = (char *)calloc(ADDR_MAX, size(char));
+    sprintf(app_lock_name, "%s/%s.%d", pdc_client_tmp_dir_g, pdc_app_lock_name_g, pdc_client_mpi_rank_g);
+    if (access(app_lock_name, F_OK) != -1) {
+        printf("==PDC_CLIENT[%d]: App lock file %s exists, another group of client is running\n",
+               pdc_client_mpi_rank_g, app_lock_name);
+        return FAIL;
+    }
+    else {
+        printf("==PDC_CLIENT[%d]: App lock file %s does not exist, creating it\n", pdc_client_mpi_rank_g,
+               app_lock_name);
+        FILE *file;
+        file = fopen(app_lock_name, "a");
+        if (file == NULL) {
+            printf("==PDC_CLIENT[%d]: Error opening file %s\n", pdc_client_mpi_rank_g, app_lock_name);
+            return FAIL;
+        }
+        fprintf(file, "rank/size: %d/%d\n", pdc_client_mpi_rank_g, pdc_client_mpi_size_g);
+        fclose(file);
+    }
+    return SUCCEED;
+}
+
+perr_t
+PDC_rm_app_lock()
+{
+    char *app_lock_name = (char *)calloc(ADDR_MAX, size(char));
+    sprintf(app_lock_name, "%s/%s.%d", pdc_client_tmp_dir_g, pdc_app_lock_name_g, pdc_client_mpi_rank_g);
+    if (remove(app_lock_name) == 0) {
+        printf("Successfully deleted the file: %s\n", app_lock_name);
+        return SUCCEED;
+    }
+    return FAIL;
+}
+
+perr_t
 PDC_Client_read_server_addr_from_file()
 {
     perr_t ret_value = SUCCEED;

@@ -169,6 +169,10 @@ main(int argc, char *argv[])
 
     println("Client %d will create %d obj", my_rank, my_obj);
 
+    int locked = PDC_setnx_app_lock();
+    if (locked == 0) {
+        goto query_start;
+    }
     // creating objects
     creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop, my_rank);
 
@@ -208,7 +212,7 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
-
+query_start:
     for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
 #ifdef ENABLE_MPI
@@ -302,6 +306,6 @@ done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-
+    PDC_rm_app_lock();
     return 0;
 }
