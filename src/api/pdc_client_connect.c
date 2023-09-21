@@ -8778,7 +8778,7 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     // println("[Client_Side_Bulk]  after check bulk. rank = %d", pdc_client_mpi_rank_g);
 
     while (1) {
-        if (hg_atomic_get32(&(lookup_args[i].bulk_done_flag)) == 1) {
+        if (hg_atomic_get32(&(client_lookup_args.bulk_done_flag)) == 1) {
             break;
         }
     }
