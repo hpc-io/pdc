@@ -6,6 +6,8 @@
 void
 test_PDC_Server_dart_perform_one_server()
 {
+
+    PDC_Server_dart_init();
     dart_perform_one_server_in_t  input;
     dart_perform_one_server_out_t output;
     uint64_t                      n_obj_ids = 0;
