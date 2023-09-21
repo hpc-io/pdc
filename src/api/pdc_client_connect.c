@@ -8849,12 +8849,12 @@ uint64_t
 dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
                         dart_perform_one_server_in_t *dart_in, Set *output_set)
 {
-    struct bulk_args_t lookup_args[num_servers];
-    uint64_t           ret_value            = 0;
-    hg_handle_t *      dart_request_handles = (hg_handle_t *)calloc(num_servers, sizeof(hg_handle_t));
-    int                num_requests         = 0;
-    uint32_t           total_n_meta         = 0;
-    dart_op_type_t     op_type              = dart_in->op_type;
+    struct bulk_args_t *lookup_args = (struct bulk_args_t *)calloc(num_servers, sizeof(struct bulk_args_t));
+    uint64_t            ret_value   = 0;
+    hg_handle_t *       dart_request_handles = (hg_handle_t *)calloc(num_servers, sizeof(hg_handle_t));
+    int                 num_requests         = 0;
+    uint32_t            total_n_meta         = 0;
+    dart_op_type_t      op_type              = dart_in->op_type;
 
     FUNC_ENTER(NULL);
 
