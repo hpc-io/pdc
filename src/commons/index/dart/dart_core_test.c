@@ -40,7 +40,7 @@ main(int argc, char *argv[])
     index_hash_result_t *out;
     int                  array_len = DART_hash(&dart, query_str, OP_INSERT, NULL, &out);
     // print out in the same line
-    printf("server ids for insert: \n{");
+    printf("server ids for insert (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
         printf("  %d : %s,\n", out[i].server_id, out[i].key);
     }
@@ -49,7 +49,7 @@ main(int argc, char *argv[])
     free(out);
 
     array_len = DART_hash(&dart, query_str, OP_EXACT_QUERY, NULL, &out);
-    printf("server ids for search: \n{");
+    printf("server ids for search (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
         printf("  %d : %s,\n", out[i].server_id, out[i].key);
     }
