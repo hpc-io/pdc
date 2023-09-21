@@ -52,24 +52,27 @@ test_PDC_Server_dart_perform_one_server()
     input.attr_key = "key000*=val000*";
     // input.attr_val = "val000*";
     assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCESS);
+    printf("Prefix Query Successful! ");
     assert(n_obj_ids == 2);
-    printf("Prefix Query Successful! result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
+    printf(" result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
 
     // Test Suffix query
     input.op_type  = OP_SUFFIX_QUERY;
     input.attr_key = "*000key=*000val";
     // input.attr_val = "*000val";
     assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCESS);
+    printf("Suffix Query Successful! ");
     assert(n_obj_ids == 2);
-    printf("Suffix Query Successful! result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
+    printf(" result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
 
     // Test Infix query
     input.op_type  = OP_INFIX_QUERY;
     input.attr_key = "*000*=*000*";
     // input.attr_val = "*000*";
     assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCESS);
+    printf("Infix Query Successful! ");
     assert(n_obj_ids == 3);
-    printf("Infix Query Successful! result: %llu, %llu, %llu\n", buf_ptr[0], buf_ptr[1], buf_ptr[2]);
+    printf(" result: %llu, %llu, %llu\n", buf_ptr[0], buf_ptr[1], buf_ptr[2]);
 }
 
 int
