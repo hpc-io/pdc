@@ -1,6 +1,6 @@
 #include "pdc_server_metadata_index.h"
 
-#define DART_SERVER_DEBUG 1
+#define DART_SERVER_DEBUG 0
 
 // DART search
 int64_t   indexed_word_count_g        = 0;
@@ -579,7 +579,10 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     char *k_query = get_key(query, '=');
     char *v_query = get_value(query, '=');
 
-    println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", pdc_server_rank_g, k_query, v_query);
+    if (DART_SERVER_DEBUG) {
+        println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", pdc_server_rank_g, k_query,
+                v_query);
+    }
 
     pdc_art_iterator_param_t *param = (pdc_art_iterator_param_t *)calloc(1, sizeof(pdc_art_iterator_param_t));
     param->query_str                = v_query;
@@ -591,7 +594,9 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     char *qType_string = "Exact";
 
     if (NULL == kdelim_ptr) {
-        println("[Server_Side_Query_%d]query string '%s' is not valid.", pdc_server_rank_g, query);
+        if (DART_SERVER_DEBUG) {
+            println("[Server_Side_Query_%d]query string '%s' is not valid.", pdc_server_rank_g, query);
+        }
         *n_obj_ids_ptr = 0;
         return result;
     }
