@@ -1120,18 +1120,18 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         }
     }
 
-    hg_atomic_decr32(&bulk_todo_g);
-    // checking the following flag will make all bulk transfers globally sequential.
-    hg_atomic_cas32(&bulk_transfer_done_g, 0, 1);
-    // checking the following flag will make sure the current bulk transfer is done.
-    hg_atomic_cas32(&(bulk_args->bulk_done_flag), 0, 1);
-
     // Free block handle
     ret_value = HG_Bulk_free(local_bulk_handle);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not free HG bulk handle");
 
 done:
+    hg_atomic_decr32(&bulk_todo_g);
+    // checking the following flag will make all bulk transfers globally sequential.
+    hg_atomic_cas32(&bulk_transfer_done_g, 0, 1);
+    // checking the following flag will make sure the current bulk transfer is done.
+    hg_atomic_cas32(&(bulk_args->bulk_done_flag), 0, 1);
+
     fflush(stdout);
     // free(bulk_args);
 
@@ -7288,9 +7288,6 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     else
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "==PDC_CLIENT[%d]: Error with bulk handle", pdc_client_mpi_rank_g);
 
-    hg_atomic_decr32(&bulk_todo_g);
-    hg_atomic_cas32(&bulk_transfer_done_g, 0, 1);
-
     // Free local bulk handle
     ret_value = HG_Bulk_free(local_bulk_handle);
     if (ret_value != HG_SUCCESS)
@@ -7301,6 +7298,8 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
         PGOTO_ERROR(ret_value, "Could not free HG bulk handle");
 
 done:
+    hg_atomic_decr32(&bulk_todo_g);
+    hg_atomic_cas32(&bulk_transfer_done_g, 0, 1);
     fflush(stdout);
     HG_Destroy(bulk_args->handle);
 
@@ -7332,7 +7331,7 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
 
     if (output.bulk_handle == HG_BULK_NULL || output.ret == 0) {
         hg_atomic_decr32(&bulk_todo_g);
-        hg_atomic_decr32(&atomic_work_todo_g);
+        // hg_atomic_decr32(&atomic_work_todo_g);
         bulk_arg->n_meta  = 0;
         bulk_arg->obj_ids = NULL;
         HG_Free_output(handle, &output);
