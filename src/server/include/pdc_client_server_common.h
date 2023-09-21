@@ -3928,21 +3928,22 @@ hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
 /* Library Private Structs */
 /***************************/
 struct bulk_args_t {
-    int              cnt;
-    int              op;
-    uint64_t         cont_id;
-    hg_handle_t      handle;
-    hg_bulk_t        bulk_handle;
-    size_t           nbytes;
-    int              origin;
-    size_t           ret;
-    pdc_metadata_t **meta_arr;
-    uint32_t         n_meta;
-    uint64_t         obj_id;
-    uint64_t *       obj_ids;
-    int              client_seq_id;
-    int              is_id; // if is_id == true, then use uint64_t; otherwise, pdc_metadata_t
-    int8_t           op_type;
+    int               cnt;
+    int               op;
+    uint64_t          cont_id;
+    hg_handle_t       handle;
+    hg_bulk_t         bulk_handle;
+    size_t            nbytes;
+    int               origin;
+    size_t            ret;
+    pdc_metadata_t ** meta_arr;
+    uint32_t          n_meta;
+    uint64_t          obj_id;
+    uint64_t *        obj_ids;
+    int               client_seq_id;
+    int               is_id; // if is_id == true, then use uint64_t; otherwise, pdc_metadata_t
+    int8_t            op_type;
+    hg_atomic_int32_t bulk_done_flag;
 
     int query_id;
 

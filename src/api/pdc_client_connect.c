@@ -99,15 +99,23 @@ int    nfopen_g       = 0;
 int    nread_bb_g     = 0;
 double read_bb_size_g = 0.0;
 
-static int               mercury_has_init_g = 0;
-static hg_class_t *      send_class_g       = NULL;
-static hg_context_t *    send_context_g     = NULL;
-int                      query_id_g         = 0;
+static int           mercury_has_init_g = 0;
+static hg_class_t *  send_class_g       = NULL;
+static hg_context_t *send_context_g     = NULL;
+int                  query_id_g         = 0;
+
+// flags for RPC request and Bulk transfer.
+// When a work is put in the queue, increase todo_g by 1
+// When a work is done and popped from the queue, decrease (todo_g) by 1.
 static hg_atomic_int32_t atomic_work_todo_g;
+hg_atomic_int32_t        bulk_todo_g;
+// When a work is initialized, set done_g flag to 0.
+// When a work is done, set done_g flag to 1 using atomic cas operation.
+static hg_atomic_int32_t response_done_g;
+hg_atomic_int32_t        bulk_transfer_done_g;
 
 // global variables for DART
 static DART *                 dart_g;
-hg_atomic_int32_t             dart_response_done_g;
 static dart_hash_algo_t       dart_hash_algo_g    = DART_HASH;
 static dart_object_ref_type_t dart_obj_ref_type_g = REF_PRIMARY_ID;
 
@@ -141,10 +149,8 @@ static hg_id_t server_checkpoint_rpc_register_id_g;
 static hg_id_t send_shm_register_id_g;
 
 // bulk
-static hg_id_t    query_partial_register_id_g;
-static hg_id_t    query_kvtag_register_id_g;
-static int        bulk_todo_g = 0;
-hg_atomic_int32_t bulk_transfer_done_g;
+static hg_id_t query_partial_register_id_g;
+static hg_id_t query_kvtag_register_id_g;
 
 static hg_id_t transfer_request_register_id_g;
 static hg_id_t transfer_request_all_register_id_g;
@@ -1114,8 +1120,11 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
         }
     }
 
-    bulk_todo_g--;
-    hg_atomic_set32(&bulk_transfer_done_g, 1);
+    hg_atomic_decr32(&bulk_todo_g);
+    // checking the following flag will make all bulk transfers globally sequential.
+    hg_atomic_cas32(&bulk_transfer_done_g, 0, 1);
+    // checking the following flag will make sure the current bulk transfer is done.
+    hg_atomic_cas32(&(bulk_args->bulk_done_flag), 0, 1);
 
     // Free block handle
     ret_value = HG_Bulk_free(local_bulk_handle);
@@ -1148,7 +1157,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
         /* Do not try to make progress anymore if we're done */
-        if (bulk_todo_g <= 0)
+        if (hg_atomic_get32(&bulk_todo_g) <= 0)
             break;
         hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
 
@@ -1498,6 +1507,9 @@ PDC_Client_init()
         }
 
         hg_atomic_init32(&atomic_work_todo_g, 0);
+        hg_atomic_init32(&response_done_g, 0);
+        hg_atomic_init32(&bulk_todo_g, 0);
+        hg_atomic_init32(&bulk_transfer_done_g, 0);
         mercury_has_init_g = 1;
     }
 
@@ -1649,7 +1661,7 @@ metadata_query_bulk_cb(const struct hg_cb_info *callback_info)
         PGOTO_ERROR(ret_value, "Could not read bulk data");
 
     // loop
-    bulk_todo_g = 1;
+    hg_atomic_incr32(&bulk_todo_g);
     PDC_Client_check_bulk(send_context_g);
 
     client_lookup_args->meta_arr = bulk_args->meta_arr;
@@ -7276,8 +7288,8 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     else
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "==PDC_CLIENT[%d]: Error with bulk handle", pdc_client_mpi_rank_g);
 
-    bulk_todo_g--;
-    hg_atomic_set32(&bulk_transfer_done_g, 1);
+    hg_atomic_decr32(&bulk_todo_g);
+    hg_atomic_cas32(&bulk_transfer_done_g, 0, 1);
 
     // Free local bulk handle
     ret_value = HG_Bulk_free(local_bulk_handle);
@@ -7319,7 +7331,7 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error HG_Get_output", pdc_client_mpi_rank_g);
 
     if (output.bulk_handle == HG_BULK_NULL || output.ret == 0) {
-        bulk_todo_g = 0;
+        hg_atomic_decr32(&bulk_todo_g);
         hg_atomic_decr32(&atomic_work_todo_g);
         bulk_arg->n_meta  = 0;
         bulk_arg->obj_ids = NULL;
@@ -7412,7 +7424,7 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     hg_atomic_set32(&bulk_transfer_done_g, 0);
 
     // Wait for response from server
-    bulk_todo_g = 1;
+    hg_atomic_incr32(&bulk_todo_g);
     PDC_Client_check_bulk(send_context_g);
 
     *n_res = bulk_arg->n_meta;
@@ -8693,7 +8705,6 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     if (ret_value != HG_SUCCESS) {
         printf("==PDC_CLIENT[%d]: dart_perform_one_server_on_receive_cb - error HG_Get_output\n",
                pdc_client_mpi_rank_g);
-        // hg_atomic_set32(&bulk_transfer_done_g, 1);
         client_lookup_args->n_meta = 0;
         goto done;
     }
@@ -8703,7 +8714,6 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
 
     if (ret_value == HG_SUCCESS && output.has_bulk == 0) {
         // printf("=== NO Bulk data should be taken care of.  \n");
-        // hg_atomic_set32(&bulk_transfer_done_g, 1);
         client_lookup_args->n_meta = 0;
         goto done;
     }
@@ -8718,7 +8728,6 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
 
     // println("[Client_Side_Bulk]  before determining size. rank = %d", pdc_client_mpi_rank_g);
     if (n_meta == 0) {
-        // hg_atomic_set32(&bulk_transfer_done_g, 1);
         client_lookup_args->obj_ids = NULL;
         client_lookup_args->n_meta  = 0;
         goto done;
@@ -8759,24 +8768,20 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
 
     if (ret_value != HG_SUCCESS) {
         fprintf(stderr, "Could not read bulk data\n");
-        hg_atomic_set32(&bulk_transfer_done_g, 1);
         client_lookup_args->n_meta = 0;
         goto done;
     }
 
+    // hg_atomic_set32(&bulk_transfer_done_g, 0);
     // loop
-    bulk_todo_g = 1;
-    // println("outside bulk callback: bulk_transfer_done_g = %d",
-    // hg_atomic_get32(&bulk_transfer_done_g));
-    hg_atomic_set32(&bulk_transfer_done_g, 0);
     PDC_Client_check_bulk(send_context_g);
     // println("[Client_Side_Bulk]  after check bulk. rank = %d", pdc_client_mpi_rank_g);
 
-    while (1) {
-        if (hg_atomic_get32(&bulk_transfer_done_g)) {
-            break;
-        }
-    }
+    // while (1) {
+    //     if (hg_atomic_get32(&bulk_transfer_done_g)) {
+    //         break;
+    //     }
+    // }
 
 done:
     // println("[Client_Side_Bulk]  finish bulk. rank = %d", pdc_client_mpi_rank_g);
@@ -8816,6 +8821,11 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
 {
     int total_num_results = 0;
     for (int i = 0; i < num_requests; i++) {
+        while (1) {
+            if (hg_atomic_get32(&(lookup_args[i].bulk_done_flag)) == 1) {
+                break;
+            }
+        }
         // aggregate result only for query operations
         if (lookup_args[i].n_meta == 0) {
             continue;
@@ -8861,14 +8871,15 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
-        hg_atomic_set32(&bulk_transfer_done_g, 0);
-        hg_atomic_set32(&dart_response_done_g, 0);
-
         lookup_args[i].is_id   = 1;
         lookup_args[i].op_type = op_type;
 
         if (is_index_write_op(op_type)) {
             dart_in->attr_key = hash_result[i].key;
+        }
+        else {
+            hg_atomic_init32(&(lookup_args[i].bulk_done_flag), 0);
+            hg_atomic_incr32(&bulk_todo_g);
         }
 
         _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i], &(dart_request_handles[i]));
@@ -8879,14 +8890,12 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         // Wait for response from server
         PDC_Client_check_response(&send_context_g);
         // release request handle
-        if (dart_request_handles[i] != NULL) {
-            HG_Destroy(dart_request_handles[i]);
-        }
+        HG_Destroy(dart_request_handles[i]);
     }
     free(dart_request_handles);
     // aggregate results when executing queries.
     if ((!is_index_write_op(op_type)) && output_set != NULL) {
-        total_n_meta = _aggregate_dart_results_from_all_servers(lookup_args, output_set, num_requests);
+        total_n_meta = _aggregate_dart_results_from_all_servers(lookup_args, output_set, num_servers);
     }
     timer_pause(&timer);
     println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
