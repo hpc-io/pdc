@@ -38,6 +38,7 @@ endif()
 
 
 add_library(pdc_server_lib
+               pdc_server.c
                pdc_server_metadata_index.c
                pdc_server_metadata.c
                pdc_client_server_common.c
@@ -62,7 +63,7 @@ else()
 endif()
 
 add_executable(pdc_server.exe
-               pdc_server.c
+               pdc_server_main.c
 )
 target_link_libraries(pdc_server.exe pdc_server_lib)
 
