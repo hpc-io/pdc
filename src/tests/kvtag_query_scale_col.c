@@ -211,6 +211,7 @@ main(int argc, char *argv[])
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
 
+    round *= 100;
     round++; // add one more round to bypass the warm-up round
     for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
