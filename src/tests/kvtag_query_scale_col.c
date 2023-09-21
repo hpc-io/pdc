@@ -276,7 +276,7 @@ main(int argc, char *argv[])
                     query_type_str = "INFIX";
                 println("[%s Client %s Query with%sINDEX] %d rounds with %d results/round, time: %.5fms",
                         comm_type == 0 ? "Single" : "Multi", query_type_str,
-                        is_using_dart == 0 ? " NO " : " DART ", round, ntotal, total_time * 1000.0);
+                        is_using_dart == 0 ? " NO " : " DART ", round - 1, ntotal, total_time * 1000.0);
             }
 #endif
         }
