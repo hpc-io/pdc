@@ -36,8 +36,8 @@ if(PDC_ENABLE_TIMING)
     add_definitions(-DPDC_TIMING=1)
 endif()
 
-add_executable(pdc_server.exe
-               pdc_server.c
+
+add_library(pdc_server_lib
                pdc_server_metadata_index.c
                pdc_server_metadata.c
                pdc_client_server_common.c
@@ -54,12 +54,24 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transforms_common.c
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
+if(PDC_ENABLE_FASTBIT)
+    message(STATUS "Enabled fastbit")
+    target_link_libraries(pdc_server_lib mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
+else()
+    target_link_libraries(pdc_server_lib mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
+endif()
 
-#install(
-#  TARGETS
-#    pdc_server.exe
-#  DESTINATION ${PDC_INSTALL_BIN_DIR}
-#)
+add_executable(pdc_server.exe
+               pdc_server.c
+)
+target_link_libraries(pdc_server.exe pdc_server_lib)
+
+
+add_executable(pdc_server_metadata_index_test
+               pdc_server_metadata_index_test.c
+)
+target_link_libraries(pdc_server_metadata_index_test pdc_server_lib)
+
 
 if(NOT ${PDC_INSTALL_BIN_DIR} MATCHES ${PROJECT_BINARY_DIR}/bin)
 install(
@@ -69,11 +81,6 @@ install(
 )
 endif()
 
-if(PDC_ENABLE_FASTBIT)
-    message(STATUS "Enabled fastbit")
-    target_link_libraries(pdc_server.exe mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
-else()
-    target_link_libraries(pdc_server.exe mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
-endif()
+
 
 
