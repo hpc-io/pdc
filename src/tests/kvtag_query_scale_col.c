@@ -211,16 +211,19 @@ main(int argc, char *argv[])
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
 
+    round++; // add one more round to bypass the warm-up round
     for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
-#ifdef ENABLE_MPI
-            MPI_Barrier(MPI_COMM_WORLD);
-            stime = MPI_Wtime();
-#endif
             perr_t ret_value;
             if (comm_type == 0)
-                round = 1;
+                round = 2;
             for (iter = 0; iter < round; iter++) {
+#ifdef ENABLE_MPI
+                if (round == 1) {
+                    MPI_Barrier(MPI_COMM_WORLD);
+                    stime = MPI_Wtime();
+                }
+#endif
                 char value[32];
                 snprintf(value, 31, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
                 kvtag.name  = attr_name_per_rank;
