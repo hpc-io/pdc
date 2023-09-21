@@ -8777,11 +8777,11 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
     PDC_Client_check_bulk(send_context_g);
     // println("[Client_Side_Bulk]  after check bulk. rank = %d", pdc_client_mpi_rank_g);
 
-    // while (1) {
-    //     if (hg_atomic_get32(&bulk_transfer_done_g)) {
-    //         break;
-    //     }
-    // }
+    while (1) {
+        if (hg_atomic_get32(&(lookup_args[i].bulk_done_flag)) == 1) {
+            break;
+        }
+    }
 
 done:
     // println("[Client_Side_Bulk]  finish bulk. rank = %d", pdc_client_mpi_rank_g);
@@ -8821,11 +8821,6 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
 {
     int total_num_results = 0;
     for (int i = 0; i < num_requests; i++) {
-        while (1) {
-            if (hg_atomic_get32(&(lookup_args[i].bulk_done_flag)) == 1) {
-                break;
-            }
-        }
         // aggregate result only for query operations
         if (lookup_args[i].n_meta == 0) {
             continue;
