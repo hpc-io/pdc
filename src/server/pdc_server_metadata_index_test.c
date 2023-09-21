@@ -42,7 +42,7 @@ test_PDC_Server_dart_perform_one_server()
     input.attr_val        = "000val";
     input.obj_primary_ref = 30000;
     for (int i = 0; i < strlen("000key"); i++) {
-        input.attr_key = substring("key", i, strlen("000key"));
+        input.attr_key = substring("000key", i, strlen("000key"));
         assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
         printf("Index Insertion Successful!\n");
     }
