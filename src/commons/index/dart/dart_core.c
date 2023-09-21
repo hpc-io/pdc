@@ -468,11 +468,14 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
         return dart_g->num_server;
     }
 #endif
+
     // for prefix/suffix query, we seek for proper parent region and only perform query broadcast for that
-    // region. if suffix tree mode is ON, we include infix case in this branch as well.
-    if (strlen(token) < dart_g->dart_tree_height && (op_type == OP_PREFIX_QUERY || op_type == OP_SUFFIX_QUERY
+    // region. when suffix tree mode is ON: suffix query == exact query, infix query == prefix query.
+    if (strlen(token) < dart_g->dart_tree_height && (op_type == OP_PREFIX_QUERY
 #ifdef PDC_DART_SFX_TREE
                                                      || op_type == OP_INFIX_QUERY
+#else
+                                                     || op_type == OP_SUFFIX_QUERY
 #endif
                                                      )) {
 
@@ -497,9 +500,12 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
     }
     else {
         // this branch handles the following cases:
-        // 1. exact search: the logic is pretty much the same as insert operation,
+        // 1. exact search (suffix tree mode can be either ON or OFF):
+        //    the logic is pretty much the same as insert operation,
         //    the only difference is to reserve two servers for query.
-        // 2. prefix/suffix/infix(with suffix tree mode on) with sufficiently long token,
+        // 2. suffix search with insufficient token length (in suffix tree mode),
+        //    this is treated as an exact query.
+        // 2. prefix/infix (suffix tree mode can be ON or OFF) with sufficiently long token,
         //    this is pretty much the same with exact queries.
         // 3. delete operation: we need to delete all replicas,
         //    including base replicas and alternative replicas.
