@@ -248,13 +248,13 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
         nm_key  = (rr == 1) ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
         nm_trie = (rr == 1) ? art_key_suffix_tree_g : art_key_prefix_tree_g;
 #else
-    int sub_loop_count = 1 // should be 'len', but we already iterate all suffixes at client side;
-        nm_trie        = art_key_prefix_tree_g;
+    int sub_loop_count = 1; // should be 'len', but we already iterate all suffixes at client side
+    nm_trie            = art_key_prefix_tree_g;
     for (int j = 0; j < sub_loop_count; j++) {
         nm_key         = (unsigned char *)substring(attr_name, j, len);
 #endif
         key_index_leaf_content *leafcnt =
-            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen(nm_key));
+            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen((const char *)nm_key));
         if (leafcnt == NULL) {
             leafcnt                     = (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
             leafcnt->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
@@ -268,7 +268,7 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
             leafcnt->extra_range_index = (art_tree *)calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)leafcnt->extra_range_index);
 
-            art_insert(nm_trie, nm_key, strlen(nm_key), leafcnt);
+            art_insert(nm_trie, nm_key, strlen((const char *)nm_key), leafcnt);
         }
 
         art_tree *secondary_trie = NULL;
@@ -376,9 +376,9 @@ delete_index_for_attr_name(char *attr_name, char *attr_value, void *data)
         nm_key = (unsigned char *)substring(attr_name, j, len);
 #endif
         key_index_leaf_content *leafcnt =
-            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen(nm_key));
+            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen((const char *)nm_key));
         if (leafcnt == NULL) {
-            art_delete(nm_trie, nm_key, strlen(nm_key));
+            art_delete(nm_trie, nm_key, strlen((const char *)nm_key));
         }
         else {
             art_tree *secondary_trie = NULL;
