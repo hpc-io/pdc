@@ -8771,6 +8771,9 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
+    hg_atomic_init32(&(client_lookup_args->bulk_done_flag), 0);
+    hg_atomic_incr32(&bulk_todo_g);
+
     // hg_atomic_set32(&bulk_transfer_done_g, 0);
     // loop
     PDC_Client_check_bulk(send_context_g);
@@ -8863,10 +8866,6 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
 
         if (is_index_write_op(op_type)) {
             dart_in->attr_key = hash_result[i].key;
-        }
-        else {
-            hg_atomic_init32(&(lookup_args[i].bulk_done_flag), 0);
-            hg_atomic_incr32(&bulk_todo_g);
         }
 
         _dart_send_request_to_one_server(server_id, dart_in, &(lookup_args[i]), &(dart_request_handles[i]));
