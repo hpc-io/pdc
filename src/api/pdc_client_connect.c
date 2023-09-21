@@ -7687,6 +7687,8 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         // printf("\n");
     }
 
+    MPI_Comm_free(&sub_comm);
+
 done:
     object_selection_query_counter_g++;
     fflush(stdout);
@@ -9118,6 +9120,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
                 duration * 1000.0);
     }
 
+    MPI_Comm_free(&sub_comm);
     object_selection_query_counter_g++;
 
     *n_res = n_obj;
