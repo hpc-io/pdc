@@ -49,10 +49,38 @@ main(int argc, char *argv[])
     free(out);
 
     array_len = DART_hash(&dart, query_str, OP_EXACT_QUERY, NULL, &out);
-    printf("server ids for search (%d): \n{", array_len);
+    printf("server ids for exact search (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
         printf("  %d : %s,\n", out[i].server_id, out[i].key);
     }
     printf("\n}\n");
+
+    free(out);
+
+    array_len = DART_hash(&dart, substring(query_str, 0, strlen(query_str) - 3), OP_PREFIX_QUERY, NULL, &out);
+    printf("server ids for prefix search (%d): \n{", array_len);
+    for (int i = 0; i < array_len; i++) {
+        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+    }
+    printf("\n}\n");
+
+    free(out);
+
+    array_len = DART_hash(&dart, substring(query_str, 3, strlen(query_str)), OP_SUFFIX_QUERY, NULL, &out);
+    printf("server ids for suffix search (%d): \n{", array_len);
+    for (int i = 0; i < array_len; i++) {
+        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+    }
+    printf("\n}\n");
+
+    free(out);
+
+    array_len = DART_hash(&dart, substring(query_str, 2, strlen(query_str) - 2), OP_INFIX_QUERY, NULL, &out);
+    printf("server ids for infix search (%d): \n{", array_len);
+    for (int i = 0; i < array_len; i++) {
+        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+    }
+    printf("\n}\n");
+
     return 0;
 }
