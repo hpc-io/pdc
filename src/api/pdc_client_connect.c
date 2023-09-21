@@ -9023,7 +9023,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     printf("perform search [ %s ] on %d servers from rank %d, duration: %.4f ms\n", query_string, num_servers,
            pdc_client_mpi_rank_g, timer_delta_us(&timer) / 1000.0);
 
-    return ret;
+    return ret_value;
 }
 
 #ifdef ENABLE_MPI
@@ -9123,7 +9123,6 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     *n_res = n_obj;
     *out   = dart_out;
-done:
     return ret_value;
 }
 #endif
