@@ -8897,10 +8897,10 @@ perr_t
 PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_string,
                                        dart_object_ref_type_t ref_type, int *n_res, uint64_t **out)
 {
-    perr_t ret = FAIL;
+    perr_t ret_value = SUCCEED;
 
     if (n_res == NULL || out == NULL) {
-        return ret;
+        return ret_value;
     }
 
     stopwatch_t timer;
@@ -8943,7 +8943,9 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
             break;
     }
     if (tok == NULL) {
-        return ret;
+        printf("==PDC_CLIENT[%d]: Error with tok\n", pdc_client_mpi_rank_g);
+        ret_value = FAIL;
+        return ret_value;
     }
 
     out[0] = NULL;
@@ -9030,10 +9032,11 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
                                            dart_object_ref_type_t ref_type, int *n_res, uint64_t **out,
                                            MPI_Comm comm)
 {
-    perr_t ret = FAIL;
+    perr_t ret_value = SUCCEED;
 
     if (n_res == NULL || out == NULL) {
-        return ret;
+        ret_value = FAIL;
+        return ret_value;
     }
 
     int       n_obj = 0;
@@ -9120,7 +9123,8 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     *n_res = n_obj;
     *out   = dart_out;
-    return SUCCEED;
+done:
+    return ret_value;
 }
 #endif
 
