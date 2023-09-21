@@ -18,27 +18,34 @@ test_PDC_Server_dart_perform_one_server()
 
     // Test Insert Index
     input.op_type         = OP_INSERT;
-    input.attr_key        = "key000key";
     input.attr_val        = "val000val";
     input.obj_primary_ref = 10000;
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-    printf("Index Insertion Successful!\n");
+
+    for (int i = 0; i < strlen("key000key"); i++) {
+        input.attr_key = substring("key000key", i, strlen("key000key"));
+        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        printf("Index Insertion Successful!\n");
+    }
 
     // Test Insert Index
     input.op_type         = OP_INSERT;
-    input.attr_key        = "key000";
     input.attr_val        = "val000";
     input.obj_primary_ref = 20000;
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-    printf("Index Insertion Successful!\n");
+    for (int i = 0; i < strlen("key000"); i++) {
+        input.attr_key = substring("key000", i, strlen("key000"));
+        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        printf("Index Insertion Successful!\n");
+    }
 
     // Test Insert Index
     input.op_type         = OP_INSERT;
-    input.attr_key        = "000key";
     input.attr_val        = "000val";
     input.obj_primary_ref = 30000;
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-    printf("Index Insertion Successful!\n");
+    for (int i = 0; i < strlen("000key"); i++) {
+        input.attr_key = substring("key", i, strlen("000key"));
+        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        printf("Index Insertion Successful!\n");
+    }
 
     // Test Exact query
     input.op_type  = OP_EXACT_QUERY;
