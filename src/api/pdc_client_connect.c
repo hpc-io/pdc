@@ -8782,8 +8782,9 @@ done:
     // println("[Client_Side_Bulk]  finish bulk. rank = %d", pdc_client_mpi_rank_g);
     hg_atomic_decr32(&atomic_work_todo_g);
     HG_Free_output(handle, &output);
-    HG_Destroy(handle);
-
+    // we don't have to destroy the handle here. There will be a loop in the request
+    // initiator function to clean up resources.
+    // HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
