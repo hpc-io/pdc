@@ -18,14 +18,21 @@
 #include <stdio.h>
 #include <sys/time.h> /* gettimeofday() */
 #include <stdbool.h>  /* bool */
+#include <stdint.h>   /* int64_t */
 
 typedef struct stopwatch_t {
-    suseconds_t start_mark; /* Timer start point */
-    suseconds_t pause_mark; /* In case we pause the timer */
-    bool        running;    /* Is it running? */
-    bool        paused;     /* Is it paused? */
+    int64_t start_mark; /* Timer start point */
+    int64_t pause_mark; /* In case we pause the timer */
+    bool    running;    /* Is it running? */
+    bool    paused;     /* Is it paused? */
 
 } stopwatch_t;
+
+int64_t timer_us_timestamp();
+
+int64_t timer_ms_timestamp();
+
+int64_t timer_s_timestamp();
 
 /** Starts the timer.
  *

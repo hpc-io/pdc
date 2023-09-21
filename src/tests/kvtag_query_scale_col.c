@@ -27,6 +27,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
+#include <inttypes.h>
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
@@ -111,11 +112,12 @@ done:
 perr_t
 creating_objects(pdcid_t **obj_ids, int my_obj, int my_obj_s, pdcid_t cont, pdcid_t obj_prop, int my_rank)
 {
-    perr_t ret_value = FAIL;
-    char   obj_name[128];
-    *obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
+    perr_t  ret_value = FAIL;
+    char    obj_name[128];
+    int64_t timestamp = get_timestamp_ms();
+    *obj_ids          = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
     for (int i = 0; i < my_obj; i++) {
-        sprintf(obj_name, "obj%d", my_obj_s + i);
+        sprintf(obj_name, "obj%" PRId64 "", (int64_t)(my_obj_s + i + timestamp));
         (*obj_ids)[i] = PDCobj_create(cont, obj_name, obj_prop);
         if ((*obj_ids)[i] <= 0) {
             printf("[Client %d] Fail to create object @ line  %d!\n", my_rank, __LINE__);
@@ -169,14 +171,12 @@ main(int argc, char *argv[])
 
     println("Client %d will create %d obj", my_rank, my_obj);
 
-    int locked = PDC_setnx_app_lock();
-    if (locked == 0) {
-        goto query_start;
-    }
     // creating objects
     creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop, my_rank);
 
     println("Client %d created %d objects", my_rank, n_obj);
+
+    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
 
     // prepare tags to be added.
     char **random_strings             = gen_random_strings(2, 8, 8, 26);
@@ -185,8 +185,6 @@ main(int argc, char *argv[])
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
-
-    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
 
     // This is for adding #rounds tags to the objects.
     for (i = 0; i < my_add_tag; i++) {
@@ -212,7 +210,7 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
-query_start:
+
     for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
 #ifdef ENABLE_MPI
@@ -306,6 +304,6 @@ done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    PDC_rm_app_lock();
+
     return 0;
 }
