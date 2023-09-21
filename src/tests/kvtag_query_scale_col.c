@@ -219,7 +219,7 @@ main(int argc, char *argv[])
                 round = 2;
             for (iter = 0; iter < round; iter++) {
 #ifdef ENABLE_MPI
-                if (round == 1) {
+                if (iter == 1) {
                     MPI_Barrier(MPI_COMM_WORLD);
                     stime = MPI_Wtime();
                 }
@@ -274,7 +274,7 @@ main(int argc, char *argv[])
                     query_type_str = "SUFFIX";
                 else if (query_type == 3)
                     query_type_str = "INFIX";
-                println("[%s Client %s Query with%sINDEX] %d rounds with %d results/round, time: %.5fms",
+                println("[%s Client %s Query with%sINDEX] %d rounds with %d results/round, time: %.5f ms",
                         comm_type == 0 ? "Single" : "Multi", query_type_str,
                         is_using_dart == 0 ? " NO " : " DART ", round - 1, ntotal, total_time * 1000.0);
             }
