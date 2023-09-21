@@ -248,12 +248,13 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
         nm_key  = (rr == 1) ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
         nm_trie = (rr == 1) ? art_key_suffix_tree_g : art_key_prefix_tree_g;
 #else
-    int sub_loop_count = strlen(attr_name);
-    nm_trie            = art_key_prefix_tree_g;
+    int sub_loop_count = 1 // should be 'len', but we already iterate all suffixes at client side;
+        nm_trie        = art_key_prefix_tree_g;
     for (int j = 0; j < sub_loop_count; j++) {
-        nm_key         = (unsigned char *)substring(attr_name, j, strlen(attr_name));
+        nm_key         = (unsigned char *)substring(attr_name, j, len);
 #endif
-        key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
+        key_index_leaf_content *leafcnt =
+            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen(nm_key));
         if (leafcnt == NULL) {
             leafcnt                     = (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
             leafcnt->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
@@ -267,7 +268,7 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
             leafcnt->extra_range_index = (art_tree *)calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)leafcnt->extra_range_index);
 
-            art_insert(nm_trie, nm_key, len, leafcnt);
+            art_insert(nm_trie, nm_key, strlen(nm_key), leafcnt);
         }
 
         art_tree *secondary_trie = NULL;
@@ -369,24 +370,25 @@ delete_index_for_attr_name(char *attr_name, char *attr_value, void *data)
         nm_key  = rr == 1 ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
         nm_trie = rr == 1 ? art_key_suffix_tree_g : art_key_prefix_tree_g;
 #else
-    int sub_loop_count = strlen(attr_name);
+    int sub_loop_count = 1; // should be 'len', but we already iterate all suffixes at client side;
     nm_trie            = art_key_prefix_tree_g;
     for (int j = 0; j < sub_loop_count; j++) {
-        nm_key = (unsigned char *)substring(attr_name, j, strlen(attr_name));
+        nm_key = (unsigned char *)substring(attr_name, j, len);
 #endif
-        key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
+        key_index_leaf_content *leafcnt =
+            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen(nm_key));
         if (leafcnt == NULL) {
-            art_delete(nm_trie, nm_key, len);
+            art_delete(nm_trie, nm_key, strlen(nm_key));
         }
         else {
             art_tree *secondary_trie = NULL;
 #ifndef PDC_DART_SFX_TREE
             int r = 0;
             for (r = 0; r < 2; r++) {
-                unsigned char *val_key =
-                    (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
                 secondary_trie = (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index)
                                          : (art_tree *)(leafcnt->extra_prefix_index));
+                unsigned char *val_key =
+                    (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
 #else
             secondary_trie = (art_tree *)(leafcnt->extra_prefix_index);
             for (int jj = 0; jj < strlen(attr_value); jj++) {
