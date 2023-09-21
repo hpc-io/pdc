@@ -19,7 +19,7 @@ test_PDC_Server_dart_perform_one_server()
     input.attr_key        = "key000key";
     input.attr_val        = "val000val";
     input.obj_primary_ref = 10000;
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCESS);
+    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
     printf("Index Insertion Successful!\n");
 
     // Test Insert Index
@@ -27,7 +27,7 @@ test_PDC_Server_dart_perform_one_server()
     input.attr_key        = "key000";
     input.attr_val        = "val000";
     input.obj_primary_ref = 20000;
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCESS);
+    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
     printf("Index Insertion Successful!\n");
 
     // Test Insert Index
@@ -35,14 +35,14 @@ test_PDC_Server_dart_perform_one_server()
     input.attr_key        = "000key";
     input.attr_val        = "000val";
     input.obj_primary_ref = 30000;
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCESS);
+    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
     printf("Index Insertion Successful!\n");
 
     // Test Exact query
     input.op_type  = OP_EXACT_QUERY;
     input.attr_key = "key000key=val000val";
     // input.attr_val = "val000val";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCESS);
+    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
     assert(n_obj_ids == 1);
     assert(buf_ptr[0] == 10000);
     printf("Exact Query Successful!\n");
@@ -51,7 +51,7 @@ test_PDC_Server_dart_perform_one_server()
     input.op_type  = OP_PREFIX_QUERY;
     input.attr_key = "key000*=val000*";
     // input.attr_val = "val000*";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCESS);
+    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
     printf("Prefix Query Successful! ");
     assert(n_obj_ids == 2);
     printf(" result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
@@ -60,7 +60,7 @@ test_PDC_Server_dart_perform_one_server()
     input.op_type  = OP_SUFFIX_QUERY;
     input.attr_key = "*000key=*000val";
     // input.attr_val = "*000val";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCESS);
+    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
     printf("Suffix Query Successful! ");
     assert(n_obj_ids == 2);
     printf(" result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
@@ -69,7 +69,7 @@ test_PDC_Server_dart_perform_one_server()
     input.op_type  = OP_INFIX_QUERY;
     input.attr_key = "*000*=*000*";
     // input.attr_val = "*000*";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCESS);
+    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
     printf("Infix Query Successful! ");
     assert(n_obj_ids == 3);
     printf(" result: %llu, %llu, %llu\n", buf_ptr[0], buf_ptr[1], buf_ptr[2]);
