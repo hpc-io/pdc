@@ -325,6 +325,7 @@ endif()
 option(PDC_DART_SUFFIX_TREE_MODE "Enable DART Suffix Tree mode." ON)
 if(PDC_DART_SUFFIX_TREE_MODE)
   set(PDC_DART_SFX_TREE 1)
+  add_compile_definitions(PDC_DART_SFX_TREE=${PDC_DART_SFX_TREE})
 endif()
 
 #-----------------------------------------------------------------------------
