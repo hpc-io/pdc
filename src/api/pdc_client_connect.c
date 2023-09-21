@@ -8795,7 +8795,7 @@ done:
 
 perr_t
 _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *dart_in,
-                                 struct bulk_args_t lookup_args, hg_handle_t *handle)
+                                 struct bulk_args_t *lookup_args_ptr, hg_handle_t *handle)
 {
     hg_return_t hg_ret;
     HG_Create(send_context_g, pdc_server_info_g[server_id].addr, dart_perform_one_server_g, handle);
@@ -8805,7 +8805,7 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
     }
 
     // println("dart_in->attr_key: %s", dart_in->attr_key);
-    hg_ret = HG_Forward(*handle, dart_perform_one_server_on_receive_cb, &lookup_args, dart_in);
+    hg_ret = HG_Forward(*handle, dart_perform_one_server_on_receive_cb, lookup_args_ptr, dart_in);
 
     if (hg_ret != HG_SUCCESS) {
         printf("==CLIENT[%d]: _dart_send_request_to_one_server(): Could not start HG_Forward()\n",
@@ -8833,13 +8833,6 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
                 set_insert(output_set, id);
             }
             total_num_results += n_meta;
-        }
-        else {
-            // throw an error
-            printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
-                   "check client_lookup_args->is_id\n",
-                   pdc_client_mpi_rank_g);
-            continue;
         }
     }
     return total_num_results;
@@ -8877,7 +8870,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
             hg_atomic_incr32(&bulk_todo_g);
         }
 
-        _dart_send_request_to_one_server(server_id, dart_in, lookup_args[i], &(dart_request_handles[i]));
+        _dart_send_request_to_one_server(server_id, dart_in, &(lookup_args[i]), &(dart_request_handles[i]));
         num_requests++;
     }
     // waiting for response and get the results if any.
