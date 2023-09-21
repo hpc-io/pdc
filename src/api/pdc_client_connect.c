@@ -9121,6 +9121,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     }
 
     MPI_Comm_free(&sub_comm);
+    MPI_Comm_free(&group_comm);
     object_selection_query_counter_g++;
 
     *n_res = n_obj;
