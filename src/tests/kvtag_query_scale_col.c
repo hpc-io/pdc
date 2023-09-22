@@ -215,8 +215,8 @@ main(int argc, char *argv[])
     for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
             perr_t ret_value;
-            // if (comm_type == 0)
-            //     round = 1;
+            if (comm_type == 0)
+                round = 1;
             int round_total = 0;
             for (iter = -1; iter < round; iter++) { // -1 is for warm up
 #ifdef ENABLE_MPI
