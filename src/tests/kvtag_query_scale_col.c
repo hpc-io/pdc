@@ -212,7 +212,7 @@ main(int argc, char *argv[])
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
 
-    for (comm_type = 1; comm_type >= 0; comm_type--) {
+    for (comm_type = 0; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
             perr_t ret_value;
             if (comm_type == 0 && is_using_dart == 0)
