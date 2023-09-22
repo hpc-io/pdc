@@ -1654,10 +1654,8 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                 DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
                 {
 #ifdef PDC_DEBUG_OUTPUT
-                    printf("==PDC_SERVER: Matching kvtag [\"%s\":\"%s\"] of object %s on condition in->key:
-                           "
-                           "%s, "
-                           "in->value: %s ",
+                    printf("==PDC_SERVER: Matching kvtag [\"%s\":\"%s\"] of object %s on condition in->key: "
+                           "%s, in->value: %s ",
                            (char *)kvtag_list_elt->kvtag->name, (char *)kvtag_list_elt->kvtag->value,
                            elt->obj_name, in->name, in->value);
 #endif
