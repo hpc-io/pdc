@@ -7617,14 +7617,14 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     if (sub_comm_color == 1) {
         n_sent_ranks  = sub_comm_size;
         sub_n_obj_len = n_sent_ranks + 1;
-        sub_n_obj_arr = (int *)malloc(sub_n_obj_len * sizeof(int));
+        sub_n_obj_arr = (int *)calloc(sub_n_obj_len, sizeof(int));
         MPI_Allgather(n_res, 1, MPI_INT, sub_n_obj_arr, 1, MPI_INT, sub_comm);
         sub_n_obj_arr[sub_n_obj_len - 1] = n_sent_ranks;
     }
     else {
         n_sent_ranks  = pdc_client_mpi_rank_g - sub_comm_size;
         sub_n_obj_len = n_sent_ranks + 1;
-        sub_n_obj_arr = (int *)malloc(sub_n_obj_len * sizeof(int));
+        sub_n_obj_arr = (int *)calloc(sub_n_obj_len, sizeof(int));
     }
 
     MPI_Barrier(comm);
@@ -7647,11 +7647,11 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     MPI_Barrier(comm);
     stime = MPI_Wtime();
 
-    all_nmeta = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
-    disp      = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
+    all_nmeta = (int *)calloc(pdc_client_mpi_size_g, sizeof(int));
+    disp      = (int *)calloc(pdc_client_mpi_size_g, sizeof(int));
     ntotal    = 0;
     for (i = 0; i < pdc_client_mpi_size_g; i++) {
-        all_nmeta[i] = (i < n_sent_ranks) ? sub_n_obj_arr[i] : 0;
+        all_nmeta[i] = sub_n_obj_arr[i];
         disp[i]      = ntotal;
         ntotal += all_nmeta[i];
     }
