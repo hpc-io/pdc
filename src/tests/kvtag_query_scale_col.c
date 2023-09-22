@@ -174,7 +174,8 @@ main(int argc, char *argv[])
     // creating objects
     creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop, my_rank);
 
-    println("Client %d created %d objects", my_rank, n_obj);
+    if (my_rank == 0)
+        println("All clients created %d objects", n_obj);
 
     assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
 
@@ -264,7 +265,7 @@ main(int argc, char *argv[])
 
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            MPI_Reduce(&round_total, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+            // MPI_Reduce(&round_total, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
             total_time = MPI_Wtime() - stime;
 
             if (my_rank == 0) {
@@ -277,7 +278,7 @@ main(int argc, char *argv[])
                     query_type_str = "INFIX";
                 println("[%s Client %s Query with%sINDEX] %d rounds with %d results, time: %.5f ms",
                         comm_type == 0 ? "Single" : "Multi", query_type_str,
-                        is_using_dart == 0 ? " NO " : " DART ", round, ntotal, total_time * 1000.0);
+                        is_using_dart == 0 ? " NO " : " DART ", round, round_total, total_time * 1000.0);
             }
 #endif
         }
