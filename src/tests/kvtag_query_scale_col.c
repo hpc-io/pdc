@@ -217,7 +217,7 @@ main(int argc, char *argv[])
             // if (comm_type == 0)
             //     round = 1;
             int round_total = 0;
-            for (iter = -1; iter < round; iter++) {
+            for (iter = -1; iter < round; iter++) { // -1 is for warm up
 #ifdef ENABLE_MPI
                 if (iter == 0) {
                     MPI_Barrier(MPI_COMM_WORLD);

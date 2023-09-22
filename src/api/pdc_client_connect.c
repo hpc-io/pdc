@@ -9027,6 +9027,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     return ret_value;
 }
 
+#define ENABLE_MPI
 #ifdef ENABLE_MPI
 perr_t
 PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,
@@ -9046,21 +9047,29 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number
     // of client ranks. let's select n ranks to be the sender ranks, where n is the number of servers.
-    int      sub_comm_color = pdc_client_mpi_rank_g % pdc_server_num_g == 0 ? 1 : 0;
-    MPI_Comm sub_comm;
-    MPI_Comm_split(comm, sub_comm_color, pdc_client_mpi_rank_g, &sub_comm);
-    int sub_comm_rank, sub_comm_size;
-    MPI_Comm_rank(sub_comm, &sub_comm_rank);
-    MPI_Comm_size(sub_comm, &sub_comm_size);
-    // println("World rank %d is rank %d in the 'sub_comm' of size %d", pdc_client_mpi_rank_g,
-    // sub_comm_rank,
-    //         sub_comm_size);
+    int      group_head_comm_color = pdc_client_mpi_rank_g % pdc_server_num_g == 0 ? 1 : 0;
+    MPI_Comm group_head_comm;
+    MPI_Comm_split(comm, group_head_comm_color, pdc_client_mpi_rank_g, &group_head_comm);
+    int group_head_comm_rank, group_head_comm_size;
+    MPI_Comm_rank(group_head_comm, &group_head_comm_rank);
+    MPI_Comm_size(group_head_comm, &group_head_comm_size);
+    // println("World rank %d is rank %d in the 'group_head_comm' of size %d", pdc_client_mpi_rank_g,
+    // group_head_comm_rank,
+    //         group_head_comm_size);
 
     MPI_Barrier(comm);
     stime = MPI_Wtime();
 
-    if (pdc_client_mpi_rank_g == 0) {
+    int  query_sent = 0;
+    int *count_data = (int *)calloc(2, sizeof(int));
+
+    if (group_head_comm_color == 1 &&
+        object_selection_query_counter_g % group_head_comm_size == group_head_comm_rank) {
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
+        count_data[0] = n_obj;
+        count_data[1] =
+            pdc_client_mpi_rank_g; // note down the root rank for BCAST array data among WORLD_COMM
+        query_sent = 1;
     }
 
     duration = MPI_Wtime() - stime;
@@ -9074,8 +9083,9 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     MPI_Barrier(comm);
     stime = MPI_Wtime();
 
-    if (sub_comm_color == 1) {
-        MPI_Bcast(&n_obj, 1, MPI_INT, 0, sub_comm);
+    if (group_head_comm_color == 1) {
+        MPI_Bcast(count_data, 2, MPI_INT, object_selection_query_counter_g % group_head_comm_size,
+                  group_head_comm);
     }
     // now, all the n sender ranks has the result. Let's broadcast the result to all other ranks.
     // suppose number of servers is 16, then the groups can be
@@ -9093,7 +9103,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     // group_rank,
     //         group_size);
 
-    MPI_Bcast(&n_obj, 1, MPI_INT, 0, group_comm);
+    MPI_Bcast(count_data, 2, MPI_INT, 0, group_comm);
 
     MPI_Barrier(comm);
     duration = MPI_Wtime() - stime;
@@ -9103,16 +9113,16 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
                 duration * 1000.0);
     }
 
-    // Okay, now each rank of the WORLD_COMM knows about the number of results from the sender ranks.
-    // Let's perform BCAST for the array data.
-    // for those ranks that are not the root, allocate memory for the object IDs.
-    if (object_selection_query_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
+    // Okay, now each rank of the WORLD_COMM knows about the number of results from the sender ranks, and the
+    // root for WORLD_COMM. Let's perform BCAST for the array data. for those ranks that are not the root,
+    // allocate memory for the object IDs.
+    if (query_sent == 0) {
         dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
     }
 
     MPI_Barrier(comm);
     stime = MPI_Wtime();
-    MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, object_selection_query_counter_g % pdc_client_mpi_size_g, comm);
+    MPI_Bcast(dart_out, count_data[0], MPI_UINT64_T, count_data[1], comm);
     duration = MPI_Wtime() - stime;
 
     if (pdc_client_mpi_rank_g == 0) {
@@ -9120,7 +9130,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
                 duration * 1000.0);
     }
 
-    MPI_Comm_free(&sub_comm);
+    MPI_Comm_free(&group_head_comm);
     MPI_Comm_free(&group_comm);
     object_selection_query_counter_g++;
 
