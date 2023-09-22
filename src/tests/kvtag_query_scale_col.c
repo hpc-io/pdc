@@ -211,16 +211,15 @@ main(int argc, char *argv[])
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
 
-    round *= 100;
-    round++; // add one more round to bypass the warm-up round
     for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
             perr_t ret_value;
-            if (comm_type == 0)
-                round = 2;
-            for (iter = 0; iter < round; iter++) {
+            // if (comm_type == 0)
+            //     round = 1;
+            int round_total = 0;
+            for (iter = -1; iter < round; iter++) {
 #ifdef ENABLE_MPI
-                if (iter == 1) {
+                if (iter == 0) {
                     MPI_Barrier(MPI_COMM_WORLD);
                     stime = MPI_Wtime();
                 }
@@ -260,11 +259,12 @@ main(int argc, char *argv[])
                     printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                     break;
                 }
+                round_total += nres;
             }
 
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
-            MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+            MPI_Reduce(&round_total, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
             total_time = MPI_Wtime() - stime;
 
             if (my_rank == 0) {
@@ -275,9 +275,9 @@ main(int argc, char *argv[])
                     query_type_str = "SUFFIX";
                 else if (query_type == 3)
                     query_type_str = "INFIX";
-                println("[%s Client %s Query with%sINDEX] %d rounds with %d results/round, time: %.5f ms",
+                println("[%s Client %s Query with%sINDEX] %d rounds with %d results, time: %.5f ms",
                         comm_type == 0 ? "Single" : "Multi", query_type_str,
-                        is_using_dart == 0 ? " NO " : " DART ", round - 1, ntotal, total_time * 1000.0);
+                        is_using_dart == 0 ? " NO " : " DART ", round, ntotal, total_time * 1000.0);
             }
 #endif
         }
