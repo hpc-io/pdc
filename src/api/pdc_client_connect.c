@@ -8791,9 +8791,9 @@ done:
     // println("[Client_Side_Bulk]  finish bulk. rank = %d", pdc_client_mpi_rank_g);
     hg_atomic_decr32(&atomic_work_todo_g);
     HG_Free_output(handle, &output);
-    // we don't have to destroy the handle here. There will be a loop in the request
-    // initiator function to clean up resources.
-    // HG_Destroy(handle);
+    // we destroy the handle here. There will be no need to clean it up in the loop from the request
+    // initiator function
+    HG_Destroy(handle);
     FUNC_LEAVE(ret_value);
 }
 
@@ -8877,10 +8877,8 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     for (int i = 0; i < num_servers; i++) {
         // Wait for response from server
         PDC_Client_check_response(&send_context_g);
-        // release request handle
-        HG_Destroy(dart_request_handles[i]);
     }
-    free(dart_request_handles);
+
     // aggregate results when executing queries.
     if ((!is_index_write_op(op_type)) && output_set != NULL) {
         total_n_meta = _aggregate_dart_results_from_all_servers(lookup_args, output_set, num_servers);
@@ -8890,6 +8888,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     //         "%.4f ms.",
     //         pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
     //         num_servers, total_n_meta, timer_delta_ms(&timer));
+    free(dart_request_handles);
 done:
     FUNC_LEAVE(ret_value);
 }

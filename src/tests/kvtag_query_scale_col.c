@@ -190,10 +190,10 @@ main(int argc, char *argv[])
     // This is for adding #rounds tags to the objects.
     for (i = 0; i < my_add_tag; i++) {
         for (iter = 0; iter < round; iter++) {
-            char value[32];
-            snprintf(value, 31, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
+            char value[64];
+            snprintf(value, 63, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
             kvtag.name  = attr_name_per_rank;
-            kvtag.value = (void *)value;
+            kvtag.value = (void *)strdup(value);
             kvtag.type  = PDC_STRING;
             kvtag.size  = (strlen(value) + 1) * sizeof(char);
             if (is_using_dart) {
@@ -216,7 +216,7 @@ main(int argc, char *argv[])
         for (query_type = 0; query_type < 4; query_type++) {
             perr_t ret_value;
             if (comm_type == 0)
-                round = 1;
+                round = 2;
             int round_total = 0;
             for (iter = -1; iter < round; iter++) { // -1 is for warm up
 #ifdef ENABLE_MPI
@@ -225,8 +225,8 @@ main(int argc, char *argv[])
                     stime = MPI_Wtime();
                 }
 #endif
-                char value[32];
-                snprintf(value, 31, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
+                char value[64];
+                snprintf(value, 63, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
                 kvtag.name  = attr_name_per_rank;
                 kvtag.value = (void *)value;
                 kvtag.type  = PDC_STRING;
