@@ -1652,18 +1652,21 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
             {
                 DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
                 {
+                    printf("==PDC_SERVER: Matching kvtag for object %s on condition in->key: %s, "
+                           "in->value: %s ",
+                           elt->obj_name, in->name, in->value);
                     if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
-                        // println("==PDC_SERVER: Found matching kvtag for object %s on condition in->key: %s,
-                        // "
-                        //        "in->value: %s, tag->key: %s, tag->value: %s",
-                        //        elt->obj_name, in->name, in->value, (char *)kvtag_list_elt->kvtag->name,
-                        //        (char *)kvtag_list_elt->kvtag->value);
+                        println("[Found]tag->key: %s, tag->value: %s", (char *)kvtag_list_elt->kvtag->name,
+                                (char *)kvtag_list_elt->kvtag->value);
                         if (iter >= alloc_size) {
                             alloc_size *= 2;
                             *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
                         }
                         (*obj_ids)[iter++] = elt->obj_id;
                         // break; // FIXME: shall we break here? or continue to check other kvtags?
+                    }
+                    else {
+                        println("[NOT FOUND]");
                     }
 
                 } // End for each kvtag
