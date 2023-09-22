@@ -9027,7 +9027,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     return ret_value;
 }
 
-#define ENABLE_MPI
+// #define ENABLE_MPI
 #ifdef ENABLE_MPI
 perr_t
 PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,

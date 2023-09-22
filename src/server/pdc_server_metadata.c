@@ -1637,7 +1637,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     FUNC_ENTER(NULL);
 
     *n_meta = 0;
-    // TODO: free obj_ids
+
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
 
     if (metadata_hash_table_g != NULL) {
@@ -1663,7 +1663,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                             *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
                         }
                         (*obj_ids)[iter++] = elt->obj_id;
-                        break; // FIXME: shall we break here? or continue to check other kvtags?
+                        // break; // FIXME: shall we break here? or continue to check other kvtags?
                     }
 
                 } // End for each kvtag
