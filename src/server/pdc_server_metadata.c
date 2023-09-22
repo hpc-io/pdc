@@ -1597,24 +1597,24 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
     pbool_t ret_value = TRUE;
     FUNC_ENTER(NULL);
     // match attribute name
-    if (in->name[0] != ' ') {
-        int matched = simple_matches(kvtag->name, in->name);
-        if (matched == 0)
-            ret_value = FALSE;
+    if (!simple_matches(kvtag->name, in->name)) {
+        return FALSE;
     }
+
     // test attribute type
-    if (ret_value == TRUE && in->type == kvtag->type) {
-        if (in->type == PDC_STRING && ((char *)(in->value))[0] != ' ') {
-            char *pattern = (char *)in->value;
-            int   matched = simple_matches(kvtag->value, pattern);
-            if (matched == 0)
-                ret_value = FALSE;
+    if (in->type != kvtag->type) {
+        return FALSE;
+    }
+    if (in->type == PDC_STRING) {
+        char *pattern = (char *)in->value;
+        if (!simple_matches(kvtag->value, pattern)) {
+            return FALSE;
         }
-        else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
-               // have to support range query.
-            if (memcmp(in->value, kvtag->value, in->size) != 0)
-                ret_value = FALSE;
-        }
+    }
+    else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
+           // have to support range query.
+        if (memcmp(in->value, kvtag->value, in->size) != 0)
+            return FALSE;
     }
 
     FUNC_LEAVE(ret_value);
