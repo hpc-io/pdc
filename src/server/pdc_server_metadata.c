@@ -1602,21 +1602,21 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
     }
 
     // test attribute type
-    // if (in->type != kvtag->type) {
-    //     return FALSE;
-    // }
-    // if (in->type == PDC_STRING) {
-    // FIXME: need to address kvtag->type serialization problem.
-    char *pattern = (char *)in->value;
-    if (!simple_matches(kvtag->value, pattern)) {
+    if (in->type != kvtag->type) {
         return FALSE;
     }
-    // }
-    // else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
-    //        // have to support range query.
-    //     if (memcmp(in->value, kvtag->value, in->size) != 0)
-    //         return FALSE;
-    // }
+    if (in->type == (int8_t)PDC_STRING) {
+        // FIXME: need to address kvtag->type serialization problem.
+        char *pattern = (char *)in->value;
+        if (!simple_matches(kvtag->value, pattern)) {
+            return FALSE;
+        }
+    }
+    else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
+           // have to support range query.
+        if (memcmp(in->value, kvtag->value, in->size) != 0)
+            return FALSE;
+    }
 
     FUNC_LEAVE(ret_value);
 }

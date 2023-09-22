@@ -46,10 +46,10 @@ typedef pdc_c_var_type_t pdc_var_type_t;
 
 // FIXME: common data structure should be defined in a group of common header files.
 typedef struct pdc_kvtag_t {
-    char *         name;
-    uint32_t       size;
-    pdc_var_type_t type;
-    void *         value;
+    char *   name;
+    uint32_t size;
+    int8_t   type;
+    void *   value;
 } pdc_kvtag_t;
 
 typedef enum { PDC_PERSIST, PDC_TRANSIENT } pdc_lifetime_t;
