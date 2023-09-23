@@ -169,7 +169,9 @@ main(int argc, char *argv[])
     // Create a number of objects, add at least one tag to that object
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
 
-    println("Client %d will create %d obj", my_rank, my_obj);
+    if (my_rank == 0) {
+        println("Each client will create about %d obj", my_obj);
+    }
 
     // creating objects
     creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop, my_rank);
