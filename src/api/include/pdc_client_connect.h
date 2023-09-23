@@ -315,23 +315,6 @@ perr_t PDC_Client_region_release(pdcid_t remote_obj_id, struct _pdc_obj_info *ob
 perr_t PDC_Client_init();
 
 /**
- * This is the functions for creating an App lock on disk, indicating that certain PDC operation has been
- * executed and should be skipped next time.
- *
- * \return -1 on failure, meaning that the lock file already exists, no lock creation was performed.
- *          0 on success, meaning that the lock file is just created.
- */
-perr_t PDC_setnx_app_lock();
-
-/**
- * This is a function that removes the App lock on disk. Usually called when the PDC operation is done.
- *
- * \return -1 on failure, meaning that the lock file was failed to be removed.
- *          0 on success, meaning that the lock file is just removed.
- */
-perr_t PDC_rm_app_lock();
-
-/**
  * PDC client finalization
  *
  * \return Non-negative on success/Negative on failure

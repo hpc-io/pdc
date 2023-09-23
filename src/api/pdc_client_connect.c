@@ -273,43 +273,6 @@ PDC_Client_check_response(hg_context_t **hg_context)
 }
 
 perr_t
-PDC_setnx_app_lock()
-{
-    char *app_lock_name = (char *)calloc(ADDR_MAX, sizeof(char));
-    sprintf(app_lock_name, "%s/%s.%d", pdc_client_tmp_dir_g, pdc_app_lock_name_g, pdc_client_mpi_rank_g);
-    if (access(app_lock_name, F_OK) != -1) {
-        printf("==PDC_CLIENT[%d]: App lock file %s exists, another group of client is running\n",
-               pdc_client_mpi_rank_g, app_lock_name);
-        return FAIL;
-    }
-    else {
-        printf("==PDC_CLIENT[%d]: App lock file %s does not exist, creating it\n", pdc_client_mpi_rank_g,
-               app_lock_name);
-        FILE *file;
-        file = fopen(app_lock_name, "a");
-        if (file == NULL) {
-            printf("==PDC_CLIENT[%d]: Error opening file %s\n", pdc_client_mpi_rank_g, app_lock_name);
-            return FAIL;
-        }
-        fprintf(file, "rank/size: %d/%d\n", pdc_client_mpi_rank_g, pdc_client_mpi_size_g);
-        fclose(file);
-    }
-    return SUCCEED;
-}
-
-perr_t
-PDC_rm_app_lock()
-{
-    char *app_lock_name = (char *)calloc(ADDR_MAX, sizeof(char));
-    sprintf(app_lock_name, "%s/%s.%d", pdc_client_tmp_dir_g, pdc_app_lock_name_g, pdc_client_mpi_rank_g);
-    if (remove(app_lock_name) == 0) {
-        printf("Successfully deleted the file: %s\n", app_lock_name);
-        return SUCCEED;
-    }
-    return FAIL;
-}
-
-perr_t
 PDC_Client_read_server_addr_from_file()
 {
     perr_t ret_value = SUCCEED;
@@ -1518,15 +1481,17 @@ PDC_Client_init()
                pdc_client_tmp_dir_g, pdc_nclient_per_server_g);
     }
 
-    srand(time(NULL));
+    if (mercury_has_init_g) {
+        srand(time(NULL));
 
-    /* Initialize DART space */
-    dart_g                 = (DART *)calloc(1, sizeof(DART));
-    int extra_tree_height  = 0;
-    int replication_factor = pdc_server_num_g / 10;
-    replication_factor     = replication_factor > 0 ? replication_factor : 1;
-    dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE, extra_tree_height,
-                    replication_factor);
+        /* Initialize DART space */
+        dart_g                 = (DART *)calloc(1, sizeof(DART));
+        int extra_tree_height  = 0;
+        int replication_factor = pdc_server_num_g / 10;
+        replication_factor     = replication_factor > 0 ? replication_factor : 1;
+        dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE,
+                        extra_tree_height, replication_factor);
+    }
 
 done:
     fflush(stdout);
@@ -8817,6 +8782,12 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
         return FAIL;
     }
     hg_atomic_incr32(&atomic_work_todo_g);
+
+    // waiting for response and get the results if any.
+    // Wait for response from server
+    // hg_atomic_cas32(&atomic_work_todo_g, 0, num_requests);
+    PDC_Client_check_response(&send_context_g); // This will block until all requests are done.
+
     return SUCCEED;
 }
 
@@ -8874,10 +8845,6 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
 
         num_requests++;
     }
-    // waiting for response and get the results if any.
-    // Wait for response from server
-    hg_atomic_set32(&atomic_work_todo_g, num_requests);
-    PDC_Client_check_response(&send_context_g); // This will block until all requests are done.
 
     // aggregate results when executing queries.
     if ((!is_index_write_op(op_type)) && output_set != NULL) {
