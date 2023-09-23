@@ -8871,13 +8871,16 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         }
 
         _dart_send_request_to_one_server(server_id, dart_in, &(lookup_args[i]), &(dart_request_handles[i]));
-        num_requests++;
-    }
-    // waiting for response and get the results if any.
-    for (int i = 0; i < num_servers; i++) {
+
         // Wait for response from server
         PDC_Client_check_response(&send_context_g);
+        num_requests++;
     }
+    // // waiting for response and get the results if any.
+    // for (int i = 0; i < num_servers; i++) {
+    //     // Wait for response from server
+    //     PDC_Client_check_response(&send_context_g);
+    // }
 
     // aggregate results when executing queries.
     if ((!is_index_write_op(op_type)) && output_set != NULL) {
