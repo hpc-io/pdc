@@ -8991,7 +8991,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     timer_pause(&timer);
     printf("perform search [ %s ] on %d servers from rank %d, total_count %" PRIu64
            ", n_res %d, duration: %.4f ms\n",
-           query_string, num_servers, pdc_client_mpi_rank_g, total_count, n_res,
+           query_string, num_servers, pdc_client_mpi_rank_g, total_count, *n_res,
            timer_delta_ms(&timer) / 1000.0);
 
     return ret_value;
