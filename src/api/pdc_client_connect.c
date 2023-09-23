@@ -8849,6 +8849,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     // aggregate results when executing queries.
     if ((!is_index_write_op(op_type)) && output_set != NULL) {
         total_n_meta = _aggregate_dart_results_from_all_servers(lookup_args, output_set, num_servers);
+        ret_value    = total_n_meta;
     }
     timer_pause(&timer);
     // println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
@@ -8988,9 +8989,9 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         free(tok);
 
     timer_pause(&timer);
-    // printf("perform search [ %s ] on %d servers from rank %d, duration: %.4f ms\n", query_string,
-    // num_servers,
-    //        pdc_client_mpi_rank_g, timer_delta_us(&timer) / 1000.0);
+    printf("perform search [ %s ] on %d servers from rank %d, total_count %" PRIu64
+           ", n_res %d, duration: %.4f ms\n",
+           query_string, num_servers, pdc_client_mpi_rank_g, total_count, n_res, (&timer) / 1000.0);
 
     return ret_value;
 }
