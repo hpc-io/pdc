@@ -8832,9 +8832,9 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
         if (lookup_args[i].is_id == 1) {
             int n_meta = lookup_args[i].n_meta;
             for (int k = 0; k < n_meta; k++) {
-                // uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
-                // *id          = lookup_args[i].obj_ids[k];
-                // set_insert(output_set, id);
+                uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
+                *id          = lookup_args[i].obj_ids[k];
+                set_insert(output_set, id);
             }
             total_num_results += n_meta;
         }
@@ -9001,17 +9001,17 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // free(dart_out_size);
 
     // Pick deduplicated result.
-    // *n_res = set_num_entries(result_set);
-    // println("num_ids = %d", num_ids);
-    // if (*n_res > 0) {
-    //     *out               = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
-    //     uint64_t **set_arr = (uint64_t **)set_to_array(result_set);
-    //     for (i = 0; i < *n_res; i++) {
-    //         (*out)[i] = set_arr[i][0];
-    //     }
-    //     free(set_arr);
-    // }
-    // set_free(result_set);
+    *n_res = set_num_entries(result_set);
+    println("num_ids = %d", num_ids);
+    if (*n_res > 0) {
+        *out               = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+        uint64_t **set_arr = (uint64_t **)set_to_array(result_set);
+        for (i = 0; i < *n_res; i++) {
+            (*out)[i] = set_arr[i][0];
+        }
+        free(set_arr);
+    }
+    set_free(result_set);
 
     *n_res = total_count;
 
