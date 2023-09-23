@@ -9002,7 +9002,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
 
     // Pick deduplicated result.
     *n_res = set_num_entries(result_set);
-    println("num_ids = %d", num_ids);
+    // println("num_ids = %d", num_ids);
     if (*n_res > 0) {
         *out               = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
         uint64_t **set_arr = (uint64_t **)set_to_array(result_set);
