@@ -211,6 +211,9 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     for (comm_type = 0; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
