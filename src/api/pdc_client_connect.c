@@ -8876,6 +8876,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     }
     // waiting for response and get the results if any.
     // Wait for response from server
+    hg_atomic_set32(&atomic_work_todo_g, num_requests);
     PDC_Client_check_response(&send_context_g); // This will block until all requests are done.
 
     // aggregate results when executing queries.
