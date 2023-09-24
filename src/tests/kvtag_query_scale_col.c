@@ -211,7 +211,7 @@ main(int argc, char *argv[])
             }
         }
         if (my_rank == 0)
-            println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
+            println("Rank %d: Added %d kvtag to the %d / %d th object\n", my_rank, round, i, my_add_tag);
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);

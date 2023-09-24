@@ -8855,7 +8855,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     //         "%.4f ms.",
     //         pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
     //         num_servers, total_n_meta, timer_delta_ms(&timer));
-    free(dart_request_handles);
+    // free(dart_request_handles);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -8973,19 +8973,17 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         for (i = 0; i < *n_res; i++) {
             (*out)[i] = set_arr[i][0];
         }
-        free(set_arr);
+        // free(set_arr);
     }
-    set_free(result_set);
-
-    // *n_res = total_count;
+    // set_free(result_set);
 
     // done:
-    free(k_query);
-    free(v_query);
-    if (affix != NULL)
-        free(affix);
-    if (tok != NULL)
-        free(tok);
+    // free(k_query);
+    // free(v_query);
+    // if (affix != NULL)
+    // free(affix);
+    // if (tok != NULL)
+    // free(tok);
 
     timer_pause(&timer);
     printf("perform search [ %s ] on %d servers from rank %d, total_count %" PRIu64
@@ -8996,7 +8994,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     return ret_value;
 }
 
-// #define ENABLE_MPI
+#define ENABLE_MPI
 #ifdef ENABLE_MPI
 perr_t
 PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,
