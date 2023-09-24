@@ -8775,14 +8775,13 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
 
     // println("dart_in->attr_key: %s", dart_in->attr_key);
     hg_ret = HG_Forward(*handle, dart_perform_one_server_on_receive_cb, lookup_args_ptr, dart_in);
-
+    hg_atomic_incr32(&atomic_work_todo_g);
     if (hg_ret != HG_SUCCESS) {
         printf("==CLIENT[%d]: _dart_send_request_to_one_server(): Could not start HG_Forward()\n",
                pdc_client_mpi_rank_g);
+        hg_atomic_decr32(&atomic_work_todo_g);
         return FAIL;
     }
-    hg_atomic_incr32(&atomic_work_todo_g);
-
     // waiting for response and get the results if any.
     // Wait for response from server
     // hg_atomic_cas32(&atomic_work_todo_g, 0, num_requests);
