@@ -217,7 +217,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    for (comm_type = 1; comm_type >= 0; comm_type--) {
+    for (comm_type = 0; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
             perr_t ret_value;
             if (comm_type == 0 && is_using_dart == 0)
