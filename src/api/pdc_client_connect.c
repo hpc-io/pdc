@@ -8866,17 +8866,17 @@ get_first_sender(int *first_sender_global_rank, int *num_groups, int *sender_gro
 {
     if (pdc_client_mpi_size_g >= pdc_server_num_g) {
         *sender_group_size        = pdc_server_num_g;
-        *num_groups               = pdc_client_mpi_size_g / sender_group_size;
-        *rank_in_group            = object_selection_query_counter_g % sender_group_size;
+        *num_groups               = pdc_client_mpi_size_g / (*sender_group_size);
+        *rank_in_group            = object_selection_query_counter_g % (*sender_group_size);
         *sender_group_id          = 0;
-        *first_sender_global_rank = rank_in_group;
+        *first_sender_global_rank = (*rank_in_group);
         *prefer_custom_exchange   = 1;
     }
     else {
         *num_groups               = 1;
         *first_sender_global_rank = object_selection_query_counter_g % pdc_client_mpi_size_g;
         *sender_group_id          = 0;
-        *rank_in_group            = first_sender_global_rank;
+        *rank_in_group            = (*first_sender_global_rank);
         *sender_group_size        = pdc_client_mpi_size_g;
         *prefer_custom_exchange   = 0;
     }
@@ -9006,8 +9006,6 @@ _customized_all_gather_result(int query_sent, int *n_res, uint64_t **pdc_ids, MP
     MPI_Comm_size(sub_comm, &sub_comm_size);
     // println("World rank %d is rank %d in the new communicator of size %d", pdc_client_mpi_rank_g,
     //         sub_comm_rank, sub_comm_size);
-
-    int *sub_n_obj_arr, sub_n_obj_len, n_sent_ranks;
 
     int  n_sent_ranks  = sub_comm_color == 1 ? sub_comm_size : pdc_client_mpi_size_g - sub_comm_size;
     int  sub_n_obj_len = n_sent_ranks + 1; // the last element is the first rank who sent the query.
@@ -9176,7 +9174,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     // made with the total number of client ranks. let's select n ranks to be the
     // sender ranks, where n is the number of servers.
     MPI_Comm group0_comm;
-    MPI_Comm_split(comm, group0_comm_color, pdc_client_mpi_rank_g, &group0_comm);
+    MPI_Comm_split(world_comm, group0_comm_color, pdc_client_mpi_rank_g, &group0_comm);
     int group0_comm_rank, group0_comm_size;
     MPI_Comm_rank(group0_comm, &group0_comm_rank);
     MPI_Comm_size(group0_comm, &group0_comm_size);
@@ -9184,7 +9182,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     // group0_comm_rank,
     //         group0_comm_size);
 
-    MPI_Barrier(comm);
+    MPI_Barrier(world_comm);
     stime = MPI_Wtime();
 
     // broadcast result size among group0_comm
@@ -9212,7 +9210,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     // broadcast the result to all other ranks
     // broadcast the number of objects first.
     // let's first perform BCAST within the first n ranks where n is the number of servers.
-    MPI_Barrier(comm);
+    MPI_Barrier(world_comm);
     stime = MPI_Wtime();
 
     if (group_head_comm_color == 1) {
@@ -9237,7 +9235,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
 
     MPI_Bcast(count_data, 2, MPI_INT, 0, group_comm);
 
-    MPI_Barrier(comm);
+    MPI_Barrier(world_comm);
     duration = MPI_Wtime() - stime;
 
     if (pdc_client_mpi_rank_g == 0) {
@@ -9252,7 +9250,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
         dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
     }
 
-    MPI_Bcast(dart_out, count_data[0], MPI_UINT64_T, count_data[1], comm);
+    MPI_Bcast(dart_out, count_data[0], MPI_UINT64_T, count_data[1], world_comm);
 
     MPI_Comm_free(&group_head_comm);
     MPI_Comm_free(&group_comm);
