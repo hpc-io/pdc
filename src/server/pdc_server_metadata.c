@@ -2575,31 +2575,53 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
-    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
-    if (lookup_value != NULL) {
-        pdc_metadata_t *target;
-        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
-        if (target != NULL) {
-            PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
-            out->ret = 1;
-        } // if (lookup_value != NULL)
-        else {
-            // Object not found
+    if (use_rocksdb_g == 1) {
+        out->ret = -1;
+#ifdef ENABLE_ROCKSDB
+        rocksdb_writeoptions_t *writeoptions     = rocksdb_writeoptions_create();
+        char rocksdb_key[1024] = {0};
+        sprintf(rocksdb_key, "%lu_%s", obj_id, in->kvtag.name);
+        char *err = NULL;
+        /* printf("Put %s, vsize %lu\n", rocksdb_key, in->kvtag.size); */
+        rocksdb_put(rocksdb_g, writeoptions, rocksdb_key, strlen(rocksdb_key) + 1, in->kvtag.value,
+                    in->kvtag.size, &err);
+        if (err != NULL) {
+            printf("==PDC_SERVER[%d]: error with rocksdb_put %s, [%s]!\n", pdc_server_rank_g, in->kvtag.name,
+                   err);
             ret_value = FAIL;
-            out->ret  = -1;
         }
-    }      // if lookup_value != NULL
-    else { // look for containers
-        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
-        if (cont_lookup_value != NULL) {
-            PDC_add_kvtag_to_list(&cont_lookup_value->kvtag_list_head, &in->kvtag);
-            out->ret = 1;
-        }
-        else {
-            printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g, obj_id);
-            ret_value = FAIL;
-            out->ret  = -1;
-        }
+        out->ret = 1;
+#else
+        printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+#endif
+    }
+    else {
+	lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+	if (lookup_value != NULL) {
+	    pdc_metadata_t *target;
+	    target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+	    if (target != NULL) {
+		PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
+		out->ret = 1;
+	    } // if (lookup_value != NULL)
+	    else {
+		// Object not found
+		ret_value = FAIL;
+		out->ret  = -1;
+	    }
+	}      // if lookup_value != NULL
+	else { // look for containers
+	    cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+	    if (cont_lookup_value != NULL) {
+		PDC_add_kvtag_to_list(&cont_lookup_value->kvtag_list_head, &in->kvtag);
+		out->ret = 1;
+	    }
+	    else {
+		printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g, obj_id);
+		ret_value = FAIL;
+		out->ret  = -1;
+	    }
+	}
     }
 
 #ifdef ENABLE_MULTITHREAD
@@ -2689,30 +2711,53 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
-    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
-    if (lookup_value != NULL) {
-        pdc_metadata_t *target;
-        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
-        if (target != NULL) {
-            PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
-            out->ret = 1;
-        }
-        else {
+    if (use_rocksdb_g == 1) {
+        out->ret         = -1;
+#ifdef ENABLE_ROCKSDB
+        rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
+        char rocksdb_key[1024] = {0};
+        sprintf(rocksdb_key, "%lu_%s", obj_id, in->key);
+        char * err = NULL;
+        size_t len;
+        char * value = rocksdb_get(rocksdb_g, readoptions, rocksdb_key, strlen(rocksdb_key) + 1, &len, &err);
+        if (value == NULL) {
+            printf("==PDC_SERVER[%d]: error with rocksdb_get %s, [%s]!\n", pdc_server_rank_g, in->key, err);
             ret_value = FAIL;
-            out->ret  = -1;
         }
+        out->kvtag.name  = in->key;
+        out->kvtag.size  = len;
+        out->kvtag.value = value;
+        out->ret         = 1;
+#else
+        printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+#endif
     }
     else {
+	lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+	if (lookup_value != NULL) {
+	    pdc_metadata_t *target;
+	    target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+	    if (target != NULL) {
+		PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
+		out->ret = 1;
+	    }
+	    else {
+		ret_value = FAIL;
+		out->ret  = -1;
+	    }
+	}
+	else {
 
-        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
-        if (cont_lookup_value != NULL) {
-            PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
-            out->ret = 1;
-        }
-        else {
-            ret_value = FAIL;
-            out->ret  = -1;
-        }
+	    cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+	    if (cont_lookup_value != NULL) {
+		PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
+		out->ret = 1;
+	    }
+	    else {
+		ret_value = FAIL;
+		out->ret  = -1;
+	    }
+	}
     }
 
     if (ret_value != SUCCEED) {

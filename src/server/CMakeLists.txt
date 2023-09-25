@@ -6,6 +6,14 @@ if(PDC_ENABLE_FASTBIT)
     find_library(FASTBIT_LIBRARY fastbit $ENV{HOME}/cori/fastbit-2.0.3/install)
 endif()
 
+if(PDC_ENABLE_ROCKSDB)
+    add_definitions(-DENABLE_ROCKSDB=1)
+    find_path(ROCKSDB_INCLUDE_DIR include/db.h)
+    find_library(ROCKSDB_LIBRARY rocksdb /global/cfs/cdirs/m2621/perlmutter/rocksdb/build.8.5.3/install/lib64)
+    # find_library(BZ2_LIBRARY bz2 /global/cfs/cdirs/m1248/pdc/rocksdb/)
+    # find_library(LZ4_LIBRARY lz4 /global/cfs/cdirs/m1248/pdc/rocksdb/)
+endif()
+
 include_directories(
   ${PDC_COMMON_INCLUDE_DIRS}
   ${PDC_INCLUDES_BUILD_TIME}
@@ -28,6 +36,7 @@ include_directories(
   ${PDC_SOURCE_DIR}/src/utils/include
   ${MERCURY_INCLUDE_DIR}
   ${FASTBIT_INCLUDE_DIR}
+  ${ROCKSDB_INCLUDE_DIR}
 )
 
 add_definitions( -DIS_PDC_SERVER=1 )
@@ -78,6 +87,11 @@ endif()
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
     target_link_libraries(pdc_server.exe mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
+elseif(PDC_ENABLE_ROCKSDB)
+    message(STATUS "Enabled RocksDB")
+    target_link_libraries(pdc_server.exe mercury ${PDC_COMMONS_LIBRARIES} ${ROCKSDB_LIBRARY} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
+    # target_link_libraries(pdc_server.exe ${BZ2_LIBRARY})
+    # target_link_libraries(pdc_server.exe ${LZ4_LIBRARY})
 else()
     target_link_libraries(pdc_server.exe mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
 endif()

@@ -49,6 +49,12 @@
 #include "iapi.h"
 #endif
 
+#ifdef ENABLE_ROCKSDB
+#include "rocksdb/c.h"
+extern rocksdb_t *rocksdb_g;
+extern int use_rocksdb_g;
+#endif
+
 #ifdef ENABLE_MULTITHREAD
 // Mercury multithread
 #include "mercury_thread.h"

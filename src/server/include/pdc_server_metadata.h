@@ -60,6 +60,7 @@ extern pdc_remote_server_info_t *pdc_remote_server_info_g;
 extern double                    total_mem_usage_g;
 extern int                       is_hash_table_init_g;
 extern int                       is_restart_g;
+extern int                       use_rocksdb_g;
 
 /****************************/
 /* Library Private Typedefs */
