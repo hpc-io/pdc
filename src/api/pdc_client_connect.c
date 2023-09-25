@@ -8953,7 +8953,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-void *
+void
 _standard_all_gather_result(int query_sent, int *n_res, uint64_t **pdc_ids, MPI_Comm world_comm)
 {
     int    i = 0, ntotal = 0, *disp = NULL;
