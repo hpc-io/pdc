@@ -209,6 +209,8 @@ main(int argc, char *argv[])
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
+            free(kvtag.name);
+            free(kvtag.value);
         }
         if (my_rank == 0)
             println("Rank %d: Added %d kvtag to the %d / %d th object\n", my_rank, round, i, my_add_tag);
@@ -235,8 +237,8 @@ main(int argc, char *argv[])
                 snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, my_rank, my_rank, iter);
                 snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, my_rank, my_rank, iter);
 
-                kvtag.name  = attr_name;
-                kvtag.value = (void *)tag_value;
+                kvtag.name  = strdup(attr_name);
+                kvtag.value = (void *)strdup(tag_value);
                 kvtag.type  = PDC_STRING;
                 kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
 
@@ -269,6 +271,10 @@ main(int argc, char *argv[])
                     break;
                 }
                 round_total += nres;
+                free(kvtag.name);
+                free(kvtag.value);
+                free(output.key_query);
+                free(output.value_query);
             }
 
 #ifdef ENABLE_MPI
