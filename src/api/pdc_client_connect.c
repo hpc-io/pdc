@@ -7427,13 +7427,13 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %d",
                         pdc_client_mpi_rank_g, i);
         }
-        if (i == 0)
+        if (i == my_server_start) {
             *pdc_ids = temp_ids;
-        else {
+        }
+        else if (nmeta > 0) {
             *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
             memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
-            if (temp_ids)
-                free(temp_ids);
+            free(temp_ids);
         }
         *n_res = *n_res + nmeta;
     }
