@@ -8977,11 +8977,11 @@ _standard_all_gather_result(int query_sent, int *n_res, uint64_t **pdc_ids, MPI_
         ntotal += all_nmeta_array[i];
     }
 
-    // Finally, let's gather all the results. Since each client is getting a partial result which can be of
-    // different size, we need to use MPI_Allgatherv for gathering variable-size arrays from different
-    // clients.
     uint64_t *all_ids = (uint64_t *)malloc(ntotal * sizeof(uint64_t));
     MPI_Allgatherv(*pdc_ids, *n_res, MPI_UINT64_T, all_ids, all_nmeta_array, disp, MPI_UINT64_T, world_comm);
+
+    *n_res   = ntotal;
+    *pdc_ids = all_ids;
 }
 
 void
@@ -9024,7 +9024,7 @@ _customized_all_gather_result(int query_sent, int *n_res, uint64_t **pdc_ids, MP
 
     MPI_Barrier(world_comm);
     // FIXME: check root for MPI_Bcast accociated with the World_comm.
-    int root = sub_n_obj_arr[sub_n_obj_len - 1] + object_selection_query_counter_g % n_sent_ranks;
+    int root = sub_n_obj_arr[sub_n_obj_len - 1];
     MPI_Bcast(sub_n_obj_arr, sub_n_obj_len, MPI_INT, root, world_comm);
     // now all ranks in the world_comm should know about the number of results from each rank who sent the
     // query.
@@ -9114,12 +9114,6 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
                 pdc_client_mpi_rank_g, duration * 1000.0);
     }
 
-    // Never forget to free the memory that is no longer used.
-    free(all_nmeta);
-    free(disp);
-    if (*n_res > 0)
-        free(*pdc_ids);
-
     // print the pdc ids returned after gathering all the results
 
     if (pdc_client_mpi_rank_g == 0) {
@@ -9137,8 +9131,20 @@ done:
 void
 _standard_bcast_result(int root, int *n_res, uint64_t **out, MPI_Comm world_comm)
 {
+
+    double stime = 0.0, duration = 0.0;
+
+    stime = MPI_Wtime();
     // broadcast n_res to all other ranks from root
     MPI_Bcast(n_res, 1, MPI_INT, root, world_comm);
+
+    MPI_Barrier(world_comm);
+    duration = MPI_Wtime() - stime;
+
+    if (pdc_client_mpi_rank_g == 0) {
+        println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID count: %.4f ms", pdc_client_mpi_rank_g,
+                duration * 1000.0);
+    }
 
     if (pdc_client_mpi_rank_g != root) {
         *out = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
@@ -9152,9 +9158,23 @@ void
 _customized_bcast_result(int first_sender_global_rank, int num_groups, int sender_group_id, int rank_in_group,
                          int sender_group_size, int *n_res, uint64_t **out, MPI_Comm world_comm)
 {
-    // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number
-    // of client ranks. let's select n ranks to be the sender ranks, where n is the number of servers.
-    int      group0_comm_color = pdc_client_mpi_rank_g < pdc_server_num_g ? 1 : 0;
+    double stime = 0.0, duration = 0.0;
+    int    group_head_comm_color;
+
+    // FIXME: needs to be examined and fixed.
+
+    if (num_groups > 1) {
+        group_head_comm_color = pdc_client_mpi_rank_g % sender_group_size == rank_in_group;
+    }
+    else {
+        group_head_comm_color = pdc_client_mpi_rank_g % sender_group_size == rank_in_group;
+    }
+    group_head_comm_color = pdc_client_mpi_rank_g >= (sender_group_id * sender_group_size) &&
+                            pdc_client_mpi_rank_g < ((sender_group_id + 1) * sender_group_size);
+
+    // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are
+    // made with the total number of client ranks. let's select n ranks to be the
+    // sender ranks, where n is the number of servers.
     MPI_Comm group0_comm;
     MPI_Comm_split(comm, group0_comm_color, pdc_client_mpi_rank_g, &group0_comm);
     int group0_comm_rank, group0_comm_size;
@@ -9166,6 +9186,11 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
 
     MPI_Barrier(comm);
     stime = MPI_Wtime();
+
+    // broadcast result size among group0_comm
+    if (group0_comm_color == 1) {
+        MPI_Bcast(n_res, 1, MPI_INT, rank_in_group, group0_comm);
+    }
 
     int  query_sent = 0;
     int *count_data = (int *)calloc(2, sizeof(int));
@@ -9227,15 +9252,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
         dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
     }
 
-    MPI_Barrier(comm);
-    stime = MPI_Wtime();
     MPI_Bcast(dart_out, count_data[0], MPI_UINT64_T, count_data[1], comm);
-    duration = MPI_Wtime() - stime;
-
-    if (pdc_client_mpi_rank_g == 0) {
-        println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID array: %.4f ms", pdc_client_mpi_rank_g,
-                duration * 1000.0);
-    }
 
     MPI_Comm_free(&group_head_comm);
     MPI_Comm_free(&group_comm);
@@ -9259,6 +9276,9 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     uint64_t *dart_out;
     double    stime = 0.0, duration = 0.0;
 
+    MPI_Barrier(comm);
+    stime = MPI_Wtime();
+
     // Let's calcualte an approprate root.
     int first_sender_global_rank, num_groups, sender_group_id, rank_in_group, sender_group_size,
         prefer_custom_exchange;
@@ -9271,8 +9291,21 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
     }
 
+    duration = MPI_Wtime() - stime;
+    if (pdc_client_mpi_rank_g == 0) {
+        println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
+                duration * 1000.0);
+    }
+
     // Now, let's broadcast the result to all other ranks.
     _standard_bcast_result(first_sender_global_rank, &n_obj, &dart_out, world_comm);
+
+    duration = MPI_Wtime() - stime;
+
+    if (pdc_client_mpi_rank_g == 0) {
+        println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID array: %.4f ms", pdc_client_mpi_rank_g,
+                duration * 1000.0);
+    }
 
     *n_res = n_obj;
     *out   = dart_out;
