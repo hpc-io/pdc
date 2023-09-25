@@ -9140,6 +9140,10 @@ _standard_bcast_result(int root, int *n_res, uint64_t **out, MPI_Comm world_comm
     // broadcast n_res to all other ranks from root
     MPI_Bcast(n_res, 1, MPI_INT, root, world_comm);
 
+    if (pdc_client_mpi_rank_g != root) {
+        *out = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+    }
+
     // broadcast the result to all other ranks
     MPI_Bcast(*out, *n_res, MPI_UINT64_T, root, world_comm);
 }
