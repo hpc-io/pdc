@@ -181,11 +181,6 @@ main(int argc, char *argv[])
 
     assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
 
-    // prepare tags to be added.
-    char **random_strings             = gen_random_strings(2, 8, 8, 26);
-    char * attr_name_per_rank         = random_strings[0];
-    char * attr_value_prefix_per_rank = random_strings[1];
-
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
@@ -195,14 +190,16 @@ main(int argc, char *argv[])
     // value.
     for (i = 0; i < my_add_tag; i++) {
         for (iter = 0; iter < round; iter++) {
-            char value[64];
-            snprintf(value, 63, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
-            kvtag.name  = attr_name_per_rank;
-            kvtag.value = (void *)strdup(value);
+            char attr_name[64];
+            char tag_value[64];
+            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, my_rank, my_rank, iter);
+            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, my_rank, my_rank, iter);
+            kvtag.name  = strdup(attr_name);
+            kvtag.value = (void *)strdup(tag_value);
             kvtag.type  = PDC_STRING;
-            kvtag.size  = (strlen(value) + 1) * sizeof(char);
+            kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
-                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, ref_type,
+                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, ref_type,
                                                         (uint64_t)obj_ids[i]) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
@@ -233,12 +230,15 @@ main(int argc, char *argv[])
                     stime = MPI_Wtime();
                 }
 #endif
-                char value[64];
-                snprintf(value, 63, "%d%s%d", iter, attr_value_prefix_per_rank, iter);
-                kvtag.name  = attr_name_per_rank;
-                kvtag.value = (void *)value;
+                char attr_name[64];
+                char tag_value[64];
+                snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, my_rank, my_rank, iter);
+                snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, my_rank, my_rank, iter);
+
+                kvtag.name  = attr_name;
+                kvtag.value = (void *)tag_value;
                 kvtag.type  = PDC_STRING;
-                kvtag.size  = (strlen(value) + 1) * sizeof(char);
+                kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
 
                 query_gen_input_t  input;
                 query_gen_output_t output;
