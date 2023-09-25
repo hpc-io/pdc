@@ -9021,7 +9021,7 @@ _customized_all_gather_result(int query_sent, int *n_res, uint64_t **pdc_ids, MP
     }
 
     MPI_Barrier(world_comm);
-    // FIXME: check root for MPI_Bcast accociated with the World_comm.
+    // FIXME: check root for MPI_Bcast accociated with the world_comm.
     int root = sub_n_obj_arr[sub_n_obj_len - 1];
     MPI_Bcast(sub_n_obj_arr, sub_n_obj_len, MPI_INT, root, world_comm);
     // now all ranks in the world_comm should know about the number of results from each rank who sent the
@@ -9159,68 +9159,38 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     double stime = 0.0, duration = 0.0;
     int    group_head_comm_color;
 
+    stime = MPI_Wtime();
+
     // FIXME: needs to be examined and fixed.
 
     if (num_groups > 1) {
         group_head_comm_color = pdc_client_mpi_rank_g % sender_group_size == rank_in_group;
     }
     else {
-        group_head_comm_color = pdc_client_mpi_rank_g % sender_group_size == rank_in_group;
+        group_head_comm_color = 0;
     }
-    group_head_comm_color = pdc_client_mpi_rank_g >= (sender_group_id * sender_group_size) &&
-                            pdc_client_mpi_rank_g < ((sender_group_id + 1) * sender_group_size);
 
     // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are
     // made with the total number of client ranks. let's select n ranks to be the
     // sender ranks, where n is the number of servers.
-    MPI_Comm group0_comm;
-    MPI_Comm_split(world_comm, group0_comm_color, pdc_client_mpi_rank_g, &group0_comm);
-    int group0_comm_rank, group0_comm_size;
-    MPI_Comm_rank(group0_comm, &group0_comm_rank);
-    MPI_Comm_size(group0_comm, &group0_comm_size);
-    // println("World rank %d is rank %d in the 'group0_comm' of size %d", pdc_client_mpi_rank_g,
-    // group0_comm_rank,
-    //         group0_comm_size);
+    MPI_Comm group_head_comm;
+    MPI_Comm_split(world_comm, group_head_comm_color, pdc_client_mpi_rank_g, &group_head_comm);
+    int group_head_comm_rank, group_head_comm_size;
+    MPI_Comm_rank(group_head_comm, &group_head_comm_rank);
+    MPI_Comm_size(group_head_comm, &group_head_comm_size);
+    // println("World rank %d is rank %d in the 'group_head_comm' of size %d", pdc_client_mpi_rank_g,
+    // group_head_comm_rank,
+    //         group_head_comm_size);
 
-    MPI_Barrier(world_comm);
-    stime = MPI_Wtime();
-
-    // broadcast result size among group0_comm
-    if (group0_comm_color == 1) {
-        MPI_Bcast(n_res, 1, MPI_INT, rank_in_group, group0_comm);
-    }
-
-    int  query_sent = 0;
-    int *count_data = (int *)calloc(2, sizeof(int));
-
-    if (group_head_comm_color == 1 &&
-        object_selection_query_counter_g % group_head_comm_size == group_head_comm_rank) {
-        PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
-        count_data[0] = n_obj;
-        count_data[1] =
-            pdc_client_mpi_rank_g; // note down the root rank for BCAST array data among WORLD_COMM
-        query_sent = 1;
-    }
-
-    duration = MPI_Wtime() - stime;
-    if (pdc_client_mpi_rank_g == 0) {
-        println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
-                duration * 1000.0);
-    }
-    // broadcast the result to all other ranks
-    // broadcast the number of objects first.
-    // let's first perform BCAST within the first n ranks where n is the number of servers.
-    MPI_Barrier(world_comm);
-    stime = MPI_Wtime();
-
+    // broadcast result size among group_head_comm
     if (group_head_comm_color == 1) {
-        MPI_Bcast(count_data, 2, MPI_INT, object_selection_query_counter_g % group_head_comm_size,
-                  group_head_comm);
+        MPI_Bcast(n_res, 1, MPI_INT, rank_in_group, group_head_comm);
     }
+
     // now, all the n sender ranks has the result. Let's broadcast the result to all other ranks.
     // suppose number of servers is 16, then the groups can be
-    // 0-15, 16-31, 32-47, 48-63, ...
-    // rank/16 = 0, 1, 2, 3, ...,
+    // 0-15, 16-31, 32-47, 48-63, 64-68...
+    // rank/16 = 0, 1, 2, 3(including 48-63 and 64-68), ...,
     // this means we can divide all client ranks into rank/#server groups.
     // within each group, we can perform a BCAST, using the first rank as the root.
     int      group_color = pdc_client_mpi_rank_g / pdc_server_num_g;
@@ -9233,7 +9203,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     // group_rank,
     //         group_size);
 
-    MPI_Bcast(count_data, 2, MPI_INT, 0, group_comm);
+    MPI_Bcast(n_res, 1, MPI_INT, rank_in_group, group_comm);
 
     MPI_Barrier(world_comm);
     duration = MPI_Wtime() - stime;
@@ -9247,10 +9217,10 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     // root for WORLD_COMM. Let's perform BCAST for the array data. for those ranks that are not the root,
     // allocate memory for the object IDs.
     if (query_sent == 0) {
-        dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
+        *out = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
     }
 
-    MPI_Bcast(dart_out, count_data[0], MPI_UINT64_T, count_data[1], world_comm);
+    MPI_Bcast(*out, count_data[0], MPI_UINT64_T, first_sender_global_rank, world_comm);
 
     MPI_Comm_free(&group_head_comm);
     MPI_Comm_free(&group_comm);
