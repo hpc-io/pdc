@@ -9137,6 +9137,11 @@ done:
 void
 _standard_bcast_result(int root, int *n_res, uint64_t **out, MPI_Comm world_comm)
 {
+    // broadcast n_res to all other ranks from root
+    MPI_Bcast(n_res, 1, MPI_INT, root, world_comm);
+
+    // broadcast the result to all other ranks
+    MPI_Bcast(*out, *n_res, MPI_UINT64_T, root, world_comm);
 }
 
 void
@@ -9235,7 +9240,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
 perr_t
 PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,
                                            dart_object_ref_type_t ref_type, int *n_res, uint64_t **out,
-                                           MPI_Comm comm)
+                                           MPI_Comm world_comm)
 {
     int local_increment = 1;
     MPI_Scan(&local_increment, &object_selection_query_counter_g, 1, MPI_INT, MPI_SUM, world_comm);
@@ -9261,6 +9266,9 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     if (pdc_client_mpi_rank_g == first_sender_global_rank) {
         PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
     }
+
+    // Now, let's broadcast the result to all other ranks.
+    _standard_bcast_result(first_sender_global_rank, &n_obj, &dart_out, world_comm);
 
     *n_res = n_obj;
     *out   = dart_out;

@@ -190,6 +190,9 @@ main(int argc, char *argv[])
     dart_hash_algo_t       hash_algo = DART_HASH;
 
     // This is for adding #rounds tags to the objects.
+    // Each rank will add #rounds tags to #my_add_tag objects.
+    // For each object managed by the same rank, all its 100 tags will share the same name, but different
+    // value.
     for (i = 0; i < my_add_tag; i++) {
         for (iter = 0; iter < round; iter++) {
             char value[64];
