@@ -210,8 +210,11 @@ main(int argc, char *argv[])
             // free(kvtag.name);
             // free(kvtag.value);
         }
-        if (my_rank == 0)
-            println("Rank %d: Added %d kvtag to the %d / %d th object\n", my_rank, round, i + 1, my_obj);
+        if (my_rank == 0) {
+            println("Rank %d: Added %d kvtag to the %d / %d th object, I'm applying selectivity %d to %d "
+                    "objects.\n",
+                    my_rank, round, i + 1, my_obj_after_selectivity, selectivity, my_obj);
+        }
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
