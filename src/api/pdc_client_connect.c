@@ -9195,7 +9195,7 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     // within each group, we can perform a BCAST, using the first rank as the root.
     int      group_color = pdc_client_mpi_rank_g / pdc_server_num_g;
     MPI_Comm group_comm;
-    MPI_Comm_split(comm, group_color, pdc_client_mpi_rank_g, &group_comm);
+    MPI_Comm_split(world_comm, group_color, pdc_client_mpi_rank_g, &group_comm);
     int group_rank, group_size;
     MPI_Comm_rank(group_comm, &group_rank);
     MPI_Comm_size(group_comm, &group_size);
@@ -9216,11 +9216,11 @@ _customized_bcast_result(int first_sender_global_rank, int num_groups, int sende
     // Okay, now each rank of the WORLD_COMM knows about the number of results from the sender ranks, and the
     // root for WORLD_COMM. Let's perform BCAST for the array data. for those ranks that are not the root,
     // allocate memory for the object IDs.
-    if (query_sent == 0) {
+    if (*out == NULL) {
         *out = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
     }
 
-    MPI_Bcast(*out, count_data[0], MPI_UINT64_T, first_sender_global_rank, world_comm);
+    MPI_Bcast(*out, *n_res, MPI_UINT64_T, first_sender_global_rank, world_comm);
 
     MPI_Comm_free(&group_head_comm);
     MPI_Comm_free(&group_comm);
@@ -9244,7 +9244,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     uint64_t *dart_out;
     double    stime = 0.0, duration = 0.0;
 
-    MPI_Barrier(comm);
+    MPI_Barrier(world_comm);
     stime = MPI_Wtime();
 
     // Let's calcualte an approprate root.
@@ -9264,6 +9264,9 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
         println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
                 duration * 1000.0);
     }
+
+    MPI_Barrier(world_comm);
+    stime = MPI_Wtime();
 
     // Now, let's broadcast the result to all other ranks.
     _standard_bcast_result(first_sender_global_rank, &n_obj, &dart_out, world_comm);
