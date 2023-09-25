@@ -134,7 +134,7 @@ main(int argc, char *argv[])
 {
     pdcid_t     pdc, cont_prop, cont, obj_prop;
     pdcid_t *   obj_ids;
-    int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
+    int         n_obj, my_obj, my_obj_s;
     int         proc_num, my_rank, i, v, iter, round, selectivity, is_using_dart, query_type, comm_type;
     double      stime, total_time;
     pdc_kvtag_t kvtag;
@@ -179,8 +179,6 @@ main(int argc, char *argv[])
     if (my_rank == 0)
         println("All clients created %d objects", n_obj);
 
-    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
-
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
@@ -188,7 +186,7 @@ main(int argc, char *argv[])
     // Each rank will add #rounds tags to #my_add_tag objects.
     // For each object managed by the same rank, all its 100 tags will share the same name, but different
     // value.
-    for (i = 0; i < my_add_tag; i++) {
+    for (i = 0; i < my_obj; i++) {
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
             char tag_value[64];
@@ -213,7 +211,7 @@ main(int argc, char *argv[])
             // free(kvtag.value);
         }
         if (my_rank == 0)
-            println("Rank %d: Added %d kvtag to the %d / %d th object\n", my_rank, round, i, my_add_tag);
+            println("Rank %d: Added %d kvtag to the %d / %d th object\n", my_rank, round, i + 1, my_obj);
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
