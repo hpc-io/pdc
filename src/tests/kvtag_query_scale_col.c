@@ -159,7 +159,6 @@ main(int argc, char *argv[])
     query_type    = atoi(argv[5]); // 0 for exact, 1 for prefix, 2 for suffix, 3 for infix,
                                    // 4 for num_exact, 5 for num_range
     comm_type = atoi(argv[6]);     // 0 for point-to-point, 1 for collective
-    n_add_tag = n_obj * selectivity / 100;
 
     // prepare container
     if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, my_rank) < 0) {
@@ -183,10 +182,11 @@ main(int argc, char *argv[])
     dart_hash_algo_t       hash_algo = DART_HASH;
 
     // This is for adding #rounds tags to the objects.
-    // Each rank will add #rounds tags to #my_add_tag objects.
-    // For each object managed by the same rank, all its 100 tags will share the same name, but different
-    // value.
-    for (i = 0; i < my_obj; i++) {
+    // Each rank will add #rounds tags to #my_obj objects.
+    // With the selectivity, we should be able to control how many objects will be attached with the #round
+    // tags. So that, each of these #round tags can roughly the same selectivity.
+    int my_obj_after_selectivity = my_obj * selectivity / 100;
+    for (i = 0; i < my_obj_after_selectivity; i++) {
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
             char tag_value[64];
