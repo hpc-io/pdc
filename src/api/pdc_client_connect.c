@@ -7432,7 +7432,7 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
         }
         else if (nmeta > 0) {
             *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
-            memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
+            memcpy(*pdc_ids + (*n_res), temp_ids, nmeta * sizeof(uint64_t));
             free(temp_ids);
         }
         *n_res = *n_res + nmeta;
@@ -8940,7 +8940,7 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         }
         else if (nmeta > 0) {
             *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
-            memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
+            memcpy(*pdc_ids + (*n_res), temp_ids, nmeta * sizeof(uint64_t));
             free(temp_ids);
         }
         *n_res = *n_res + nmeta;
