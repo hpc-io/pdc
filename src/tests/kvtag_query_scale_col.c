@@ -190,8 +190,8 @@ main(int argc, char *argv[])
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
             char tag_value[64];
-            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, my_rank, my_rank, iter);
-            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, my_rank, my_rank, iter);
+            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
+            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
             kvtag.name  = strdup(attr_name);
             kvtag.value = (void *)strdup(tag_value);
             kvtag.type  = PDC_STRING;
@@ -238,8 +238,8 @@ main(int argc, char *argv[])
 #endif
                 char attr_name[64];
                 char tag_value[64];
-                snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, my_rank, my_rank, iter);
-                snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, my_rank, my_rank, iter);
+                snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
+                snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
 
                 kvtag.name  = strdup(attr_name);
                 kvtag.value = (void *)strdup(tag_value);
