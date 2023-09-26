@@ -9136,7 +9136,6 @@ _standard_bcast_result(int root, int *n_res, uint64_t **out, MPI_Comm world_comm
     // broadcast n_res to all other ranks from root
     MPI_Bcast(n_res, 1, MPI_INT, root, world_comm);
 
-    MPI_Barrier(world_comm);
     duration = MPI_Wtime() - stime;
 
     if (pdc_client_mpi_rank_g == 0) {
@@ -9244,15 +9243,20 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     uint64_t *dart_out;
     double    stime = 0.0, duration = 0.0;
 
-    MPI_Barrier(world_comm);
-    stime = MPI_Wtime();
-
     // Let's calcualte an approprate root.
+    // FIXME: needs to be examined and fixed. Currently, first_sender_global_rank is different in different
+    // ranks. this is not correct.
     int first_sender_global_rank, num_groups, sender_group_id, rank_in_group, sender_group_size,
         prefer_custom_exchange;
 
     get_first_sender(&first_sender_global_rank, &num_groups, &sender_group_id, &rank_in_group,
                      &sender_group_size, &prefer_custom_exchange);
+
+    // broadcast first_sender_global_rank to all other ranks
+    MPI_Bcast(&first_sender_global_rank, 1, MPI_INT, 0, world_comm);
+
+    MPI_Barrier(world_comm);
+    stime = MPI_Wtime();
 
     // let the root send the query
     if (pdc_client_mpi_rank_g == first_sender_global_rank) {
@@ -9260,7 +9264,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     }
 
     duration = MPI_Wtime() - stime;
-    if (pdc_client_mpi_rank_g == 0) {
+    if (pdc_client_mpi_rank_g == first_sender_global_rank) {
         println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
                 duration * 1000.0);
     }
@@ -9273,7 +9277,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
     duration = MPI_Wtime() - stime;
 
-    if (pdc_client_mpi_rank_g == 0) {
+    if (pdc_client_mpi_rank_g == first_sender_global_rank) {
         println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID array: %.4f ms", pdc_client_mpi_rank_g,
                 duration * 1000.0);
     }
