@@ -8732,19 +8732,6 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
 
     uint64_t total_count = dart_perform_on_servers(hash_result, num_servers, &input_param, result_set);
 
-    // // deduplicate the result.
-    // for (i = 0; i < num_servers; i++) {
-    //     int j = 0;
-    //     for (j = 0; j < dart_out_size[i]; j++) {
-    //         uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
-    //         id[0]        = dart_out[i][j];
-    //         set_insert(hashset, id);
-    //     }
-    //     free(dart_out[i]);
-    // }
-    // free(dart_out);
-    // free(dart_out_size);
-
     // Pick deduplicated result.
     *n_res = set_num_entries(result_set);
     // println("num_ids = %d", num_ids);
@@ -9111,6 +9098,28 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
         println("==PDC Client[%d]: Time for MPI_Allgatherv for Syncing ID array: %.4f ms",
                 pdc_client_mpi_rank_g, duration * 1000.0);
     }
+
+    // deducplicating result with a Set.
+    Set *result_set = set_new(ui64_hash, ui64_equal);
+    set_register_free_function(result_set, free);
+    for (i = 0; i < *n_res; i++) {
+        uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
+        *id          = (*pdc_ids)[i];
+        set_insert(result_set, id);
+    }
+    free(*pdc_ids);
+    // Pick deduplicated result.
+    *n_res = set_num_entries(result_set);
+    // println("num_ids = %d", num_ids);
+    if (*n_res > 0) {
+        *pdc_ids           = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+        uint64_t **set_arr = (uint64_t **)set_to_array(result_set);
+        for (i = 0; i < *n_res; i++) {
+            (*pdc_ids)[i] = set_arr[i][0];
+        }
+        free(set_arr);
+    }
+    set_free(result_set);
 
     // print the pdc ids returned after gathering all the results
 
