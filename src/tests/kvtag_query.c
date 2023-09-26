@@ -223,7 +223,8 @@ main(int argc, char *argv[])
 #endif
         }
         else {
-            /* println("Rank %d: round %d, query kvtag [%s] [%d]\n", my_rank, round, kvtag.name, *((int*)kvtag.value)); */
+            /* println("Rank %d: round %d, query kvtag [%s] [%d]\n", my_rank, round, kvtag.name,
+             * *((int*)kvtag.value)); */
 #ifdef ENABLE_MPI
             if (PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
 #else

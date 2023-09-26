@@ -1643,23 +1643,23 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     if (use_rocksdb_g == 1) {
         // RocksDB backend
 #ifdef ENABLE_ROCKSDB
-        const char* rocksdb_key;
-        pdc_kvtag_t tmp;
-        uint64_t obj_id;
-        char name[TAG_LEN_MAX];
-        size_t len;
-        int dtype;
-        rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
-        rocksdb_iterator_t* rocksdb_iter = rocksdb_create_iterator(rocksdb_g, readoptions);
+        const char *           rocksdb_key;
+        pdc_kvtag_t            tmp;
+        uint64_t               obj_id;
+        char                   name[TAG_LEN_MAX];
+        size_t                 len;
+        int                    dtype;
+        rocksdb_readoptions_t *readoptions  = rocksdb_readoptions_create();
+        rocksdb_iterator_t *   rocksdb_iter = rocksdb_create_iterator(rocksdb_g, readoptions);
         rocksdb_iter_seek_to_first(rocksdb_iter);
         while (rocksdb_iter_valid(rocksdb_iter)) {
             rocksdb_key = rocksdb_iter_key(rocksdb_iter, &len);
             /* sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name); */
             sscanf(rocksdb_key, "%lu`%s", &obj_id, name);
-            tmp.name = name;
-            tmp.value = (void*)rocksdb_iter_value(rocksdb_iter, &len);
-            tmp.size = len;
-            tmp.type = in->type;
+            tmp.name  = name;
+            tmp.value = (void *)rocksdb_iter_value(rocksdb_iter, &len);
+            tmp.size  = len;
+            tmp.type  = in->type;
 
             if (_is_matching_kvtag(in, &tmp) == TRUE) {
                 if (iter >= alloc_size) {
@@ -1669,7 +1669,8 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                 (*obj_ids)[iter++] = obj_id;
             }
 
-            /* printf("==PDC_SERVER[%d]: rocksdb iter [%s] [%d], len %d\n", pdc_server_rank_g, tmp.name, *((int*)tmp.value), tmp.size); */
+            /* printf("==PDC_SERVER[%d]: rocksdb iter [%s] [%d], len %d\n", pdc_server_rank_g, tmp.name,
+             * *((int*)tmp.value), tmp.size); */
             rocksdb_iter_next(rocksdb_iter);
         }
 
@@ -2626,8 +2627,8 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     if (use_rocksdb_g == 1) {
         out->ret = -1;
 #ifdef ENABLE_ROCKSDB
-        rocksdb_writeoptions_t *writeoptions     = rocksdb_writeoptions_create();
-        char rocksdb_key[TAG_LEN_MAX] = {0};
+        rocksdb_writeoptions_t *writeoptions             = rocksdb_writeoptions_create();
+        char                    rocksdb_key[TAG_LEN_MAX] = {0};
         sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name);
         char *err = NULL;
         // Debug
@@ -2764,8 +2765,8 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     if (use_rocksdb_g == 1) {
         out->ret = -1;
 #ifdef ENABLE_ROCKSDB
-        rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
-        char rocksdb_key[TAG_LEN_MAX] = {0};
+        rocksdb_readoptions_t *readoptions              = rocksdb_readoptions_create();
+        char                   rocksdb_key[TAG_LEN_MAX] = {0};
         sprintf(rocksdb_key, "%lu`%s", obj_id, in->key);
         char * err = NULL;
         size_t len;
