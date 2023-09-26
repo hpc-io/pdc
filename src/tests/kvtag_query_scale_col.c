@@ -223,7 +223,7 @@ main(int argc, char *argv[])
     // For the queries, we issue #round queries.
     // The selectivity of each exact query should be #selectivity / 100 * #n_obj.
     // Namely, if you have 1M objects, selectivity is 10, then each query should return 100K objects.
-    for (comm_type = 0; comm_type >= 0; comm_type--) {
+    for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
             perr_t ret_value;
             if (comm_type == 0 && is_using_dart == 0)
