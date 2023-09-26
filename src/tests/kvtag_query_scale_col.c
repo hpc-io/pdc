@@ -207,8 +207,8 @@ main(int argc, char *argv[])
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
-            // free(kvtag.name);
-            // free(kvtag.value);
+            free(kvtag.name);
+            free(kvtag.value);
         }
         if (my_rank == 0) {
             println("Rank %d: Added %d kvtag to the %d / %d th object, I'm applying selectivity %d to %d "
@@ -275,10 +275,8 @@ main(int argc, char *argv[])
                     break;
                 }
                 round_total += nres;
-                // free(kvtag.name);
-                // free(kvtag.value);
-                // free(output.key_query);
-                // free(output.value_query);
+                free(kvtag.name);
+                free(kvtag.value);
             }
 
 #ifdef ENABLE_MPI
