@@ -1632,7 +1632,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     HashTableIterator          hash_table_iter;
     int                        n_entry, is_name_match, is_value_match;
     HashTablePair              pair;
-    uint32_t                   alloc_size = 100;
+    uint32_t                   alloc_size = 128;
 
     FUNC_ENTER(NULL);
 
@@ -1640,36 +1640,84 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     // TODO: free obj_ids
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
 
-    if (metadata_hash_table_g != NULL) {
+    if (use_rocksdb_g == 1) {
+        // RocksDB backend
+#ifdef ENABLE_ROCKSDB
+        const char* rocksdb_key;
+        pdc_kvtag_t tmp;
+        uint64_t obj_id;
+        char name[TAG_LEN_MAX];
+        size_t len;
+        int dtype;
+        rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
+        rocksdb_iterator_t* rocksdb_iter = rocksdb_create_iterator(rocksdb_g, readoptions);
+        rocksdb_iter_seek_to_first(rocksdb_iter);
+        while (rocksdb_iter_valid(rocksdb_iter)) {
+            rocksdb_key = rocksdb_iter_key(rocksdb_iter, &len);
+            /* sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name); */
+            sscanf(rocksdb_key, "%lu`%s", &obj_id, name);
+            tmp.name = name;
+            tmp.value = (void*)rocksdb_iter_value(rocksdb_iter, &len);
+            tmp.size = len;
+            tmp.type = in->type;
 
-        n_entry = hash_table_num_entries(metadata_hash_table_g);
-        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+            if (_is_matching_kvtag(in, &tmp) == TRUE) {
+                if (iter >= alloc_size) {
+                    alloc_size *= 2;
+                    *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
+                }
+                (*obj_ids)[iter++] = obj_id;
+            }
 
-        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
-            pair = hash_table_iter_next(&hash_table_iter);
-            head = pair.value;
-            DL_FOREACH(head->metadata, elt)
-            {
-                DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
-                {
-                    if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
-                        if (iter >= alloc_size) {
-                            alloc_size *= 2;
-                            *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
-                        }
-                        (*obj_ids)[iter++] = elt->obj_id;
-                        break;
-                    }
+            /* printf("==PDC_SERVER[%d]: rocksdb iter [%s] [%d], len %d\n", pdc_server_rank_g, tmp.name, *((int*)tmp.value), tmp.size); */
+            rocksdb_iter_next(rocksdb_iter);
+        }
 
-                } // End for each kvtag
-            }     // End for each metadata
-        }         // End while
         *n_meta = iter;
-    } // if (metadata_hash_table_g != NULL)
+        // Debug
+        /* printf("==PDC_SERVER[%d]: rocksdb found %d objids \n", pdc_server_rank_g, iter); */
+
+        if (rocksdb_iter)
+            rocksdb_iter_destroy(rocksdb_iter);
+#else
+        printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+#endif
+    }
     else {
-        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
-        ret_value = FAIL;
-        goto done;
+        // SoMeta backend
+        if (metadata_hash_table_g != NULL) {
+
+            n_entry = hash_table_num_entries(metadata_hash_table_g);
+            hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+            while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+                pair = hash_table_iter_next(&hash_table_iter);
+                head = pair.value;
+                DL_FOREACH(head->metadata, elt)
+                {
+                    DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
+                    {
+                        if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
+                            if (iter >= alloc_size) {
+                                alloc_size *= 2;
+                                *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
+                            }
+                            (*obj_ids)[iter++] = elt->obj_id;
+                            break;
+                        }
+
+                    } // End for each kvtag
+                }     // End for each metadata
+            }         // End while
+            *n_meta = iter;
+            // Debug
+            printf("==PDC_SERVER[%d]: found %d objids \n", pdc_server_rank_g, iter);
+        } // if (metadata_hash_table_g != NULL)
+        else {
+            printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
+            ret_value = FAIL;
+            goto done;
+        }
     }
 
 done:
@@ -2578,11 +2626,12 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     if (use_rocksdb_g == 1) {
         out->ret = -1;
 #ifdef ENABLE_ROCKSDB
-        rocksdb_writeoptions_t *writeoptions      = rocksdb_writeoptions_create();
-        char                    rocksdb_key[1024] = {0};
-        sprintf(rocksdb_key, "%lu_%s", obj_id, in->kvtag.name);
+        rocksdb_writeoptions_t *writeoptions     = rocksdb_writeoptions_create();
+        char rocksdb_key[TAG_LEN_MAX] = {0};
+        sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name);
         char *err = NULL;
-        /* printf("Put %s, vsize %lu\n", rocksdb_key, in->kvtag.size); */
+        // Debug
+        /* printf("Put [%s] [%d], len%lu\n", in->kvtag.name, *((int*)in->kvtag.value), in->kvtag.size); */
         rocksdb_put(rocksdb_g, writeoptions, rocksdb_key, strlen(rocksdb_key) + 1, in->kvtag.value,
                     in->kvtag.size, &err);
         if (err != NULL) {
@@ -2715,9 +2764,9 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     if (use_rocksdb_g == 1) {
         out->ret = -1;
 #ifdef ENABLE_ROCKSDB
-        rocksdb_readoptions_t *readoptions       = rocksdb_readoptions_create();
-        char                   rocksdb_key[1024] = {0};
-        sprintf(rocksdb_key, "%lu_%s", obj_id, in->key);
+        rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
+        char rocksdb_key[TAG_LEN_MAX] = {0};
+        sprintf(rocksdb_key, "%lu`%s", obj_id, in->key);
         char * err = NULL;
         size_t len;
         char * value = rocksdb_get(rocksdb_g, readoptions, rocksdb_key, strlen(rocksdb_key) + 1, &len, &err);

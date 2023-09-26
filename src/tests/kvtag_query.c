@@ -24,7 +24,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <inttypes.h>
 #include <string.h>
 #include <getopt.h>
 #include <time.h>
@@ -32,160 +31,233 @@
 #include "pdc_client_connect.h"
 
 int
-main()
+assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {
+    if (rank > size || my_count == NULL || my_start == NULL) {
+        printf("assign_work_to_rank(): Error with input!\n");
+        return -1;
+    }
+    if (nwork < size) {
+        if (rank < nwork)
+            *my_count = 1;
+        else
+            *my_count = 0;
+        (*my_start) = rank * (*my_count);
+    }
+    else {
+        (*my_count) = nwork / size;
+        (*my_start) = rank * (*my_count);
 
-    int         i;
-    pdcid_t     pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
-    uint64_t *  obj_ids = NULL, *obj_ids1 = NULL, *obj_ids2 = NULL;
-    int         nobj;
-    pdc_kvtag_t kvtag1, kvtag2, kvtag3;
-    char *      v1 = "value1";
-    int         v2 = 2;
-    double      v3 = 3.45;
+        // Last few ranks may have extra work
+        if (rank >= size - nwork % size) {
+            (*my_count)++;
+            (*my_start) += (rank - (size - nwork % size));
+        }
+    }
+
+    return 1;
+}
+
+void
+print_usage(char *name)
+{
+    printf("%s n_obj n_round n_selectivity is_using_dart\n", name);
+    printf("Summary: This test will create n_obj objects, and add n_selectivity tags to each object. Then it "
+           "will "
+           "perform n_round collective queries against the tags, each query from each client should get "
+           "a whole result set.\n");
+    printf("Parameters:\n");
+    printf("  n_obj: number of objects\n");
+    printf("  n_round: number of rounds, it can be the total number of tags too, as each round will perform "
+           "one query against one tag\n");
+    printf("  n_selectivity: selectivity, on a 100 scale. \n");
+    printf("  is_using_dart: 1 for using dart, 0 for not using dart\n");
+}
+
+char **
+gen_random_strings(int count, int maxlen, int alphabet_size)
+{
+    int    c      = 0;
+    int    i      = 0;
+    char **result = (char **)calloc(count, sizeof(char *));
+    for (c = 0; c < count; c++) {
+        int   len = (rand() % (maxlen - 1)) + 1; // Ensure at least 1 character
+        char *str = (char *)calloc(len + 1, sizeof(char));
+        for (i = 0; i < len; i++) {
+            char chr = (char)((rand() % alphabet_size) + 65); // ASCII printable characters
+            str[i]   = chr;
+        }
+        str[len]  = '\0'; // Null-terminate the string
+        result[c] = str;
+    }
+    return result;
+}
+
+int
+main(int argc, char *argv[])
+{
+    pdcid_t     pdc, cont_prop, cont, obj_prop;
+    pdcid_t *   obj_ids;
+    int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
+    int         proc_num = 1, my_rank = 0, i, v, iter, round, selectivity, is_using_dart;
+    char        obj_name[128];
+    double      stime, total_time;
+    pdc_kvtag_t kvtag;
+    uint64_t *  pdc_ids;
+    int         nres, ntotal;
+
+#ifdef ENABLE_MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#endif
+
+    if (argc < 5) {
+        if (my_rank == 0)
+            print_usage(argv[0]);
+        goto done;
+    }
+    n_obj         = atoi(argv[1]);
+    round         = atoi(argv[2]);
+    selectivity   = atoi(argv[3]);
+    is_using_dart = atoi(argv[4]);
+    n_add_tag     = n_obj * selectivity / 100;
 
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    if (cont_prop > 0)
-        printf("Create a container property\n");
-    else
+    if (cont_prop <= 0)
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
-    if (cont > 0)
-        printf("Create a container c1\n");
-    else
+    if (cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
     // create an object property
-    obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if (obj_prop1 > 0)
-        printf("Create an object property\n");
-    else
+    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    if (obj_prop <= 0)
         printf("Fail to create object property @ line  %d!\n", __LINE__);
 
-    obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
-    if (obj_prop2 > 0)
-        printf("Create an object property\n");
-    else
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+    // Create a number of objects, add at least one tag to that object
+    assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
+    if (my_rank == 0)
+        printf("I will create %d obj\n", my_obj);
 
-    // create first object
-    obj1 = PDCobj_create(cont, "o1", obj_prop1);
-    if (obj1 > 0)
-        printf("Create an object o1\n");
-    else
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-
-    // create second object
-    obj2 = PDCobj_create(cont, "o2", obj_prop2);
-    if (obj2 > 0)
-        printf("Create an object o2\n");
-    else
-        printf("Fail to create object @ line  %d!\n", __LINE__);
-
-    kvtag1.name  = "key1string";
-    kvtag1.value = (void *)v1;
-    kvtag1.type  = PDC_STRING;
-    kvtag1.size  = strlen(v1) + 1;
-
-    kvtag2.name  = "key2int";
-    kvtag2.value = (void *)&v2;
-    kvtag2.type  = PDC_INT;
-    kvtag2.size  = sizeof(int);
-
-    kvtag3.name  = "key3double";
-    kvtag3.value = (void *)&v3;
-    kvtag3.type  = PDC_DOUBLE;
-    kvtag3.size  = sizeof(double);
-
-    if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size) < 0)
-        printf("fail to add a kvtag to o1\n");
-    else
-        printf("successfully added a kvtag to o1\n");
-
-    if (PDCobj_put_tag(obj1, kvtag2.name, kvtag2.value, kvtag2.type, kvtag2.size) < 0)
-        printf("fail to add a kvtag to o1\n");
-    else
-        printf("successfully added a kvtag to o1\n");
-
-    if (PDCobj_put_tag(obj2, kvtag2.name, kvtag2.value, kvtag2.type, kvtag2.size) < 0)
-        printf("fail to add a kvtag to o2\n");
-    else
-        printf("successfully added a kvtag to o2\n");
-
-    if (PDCobj_put_tag(obj2, kvtag3.name, kvtag3.value, kvtag3.type, kvtag3.size) < 0)
-        printf("fail to add a kvtag to o2\n");
-    else
-        printf("successfully added a kvtag to o2\n");
-
-    if (PDC_Client_query_kvtag(&kvtag1, &nobj, &obj_ids) < 0)
-        printf("fail to query a kvtag\n");
-    else {
-        printf("successfully queried a tag, nres=%d\n", nobj);
-        for (i = 0; i < nobj; i++)
-            printf("%" PRIu64 ", ", obj_ids[i]);
-        printf("\n\n");
+    obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
+    for (i = 0; i < my_obj; i++) {
+        sprintf(obj_name, "obj%d", my_obj_s + i);
+        obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
+        if (obj_ids[i] <= 0)
+            printf("Fail to create object @ line  %d!\n", __LINE__);
     }
-    if (obj_ids != NULL)
-        free(obj_ids);
 
-    if (PDC_Client_query_kvtag(&kvtag3, &nobj, &obj_ids2) < 0)
-        printf("fail to query a kvtag\n");
-    else {
-        printf("successfully queried a tag, nres=%d\n", nobj);
-        for (i = 0; i < nobj; i++)
-            printf("%" PRIu64 ", ", obj_ids2[i]);
-        printf("\n\n");
+    if (my_rank == 0)
+        printf("Created %d objects\n", n_obj);
+    fflush(stdout);
+
+    char *attr_name_per_rank = gen_random_strings(1, 8, 26)[0];
+    // Add tags
+    kvtag.name  = attr_name_per_rank;
+    kvtag.value = (void *)&v;
+    kvtag.type  = PDC_INT;
+    kvtag.size  = sizeof(int);
+
+    char key[32];
+    char value[32];
+    char exact_query[48];
+
+    dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
+    dart_hash_algo_t       hash_algo = DART_HASH;
+
+    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
+
+    // This is for adding #rounds tags to the objects.
+    for (i = 0; i < my_add_tag; i++) {
+        for (iter = 0; iter < round; iter++) {
+            v = iter;
+            sprintf(value, "%d", v);
+            if (is_using_dart) {
+                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, ref_type,
+                                                        (uint64_t)obj_ids[i]) < 0) {
+                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+                }
+            }
+            else {
+                /* println("Rank %d: [%s] [%d], len %d\n", my_rank, kvtag.name, v, kvtag.size); */
+                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
+                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+                }
+            }
+        }
+        if (my_rank == 0)
+            println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
     }
-    if (obj_ids2 != NULL)
-        free(obj_ids2);
 
-    if (PDC_Client_query_kvtag(&kvtag2, &nobj, &obj_ids1) < 0)
-        printf("fail to query a kvtag\n");
-    else {
-        printf("successfully queried a tag, nres=%d\n", nobj);
-        for (i = 0; i < nobj; i++)
-            printf("%" PRIu64 ", ", obj_ids1[i]);
-        printf("\n\n");
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    kvtag.name  = attr_name_per_rank;
+    kvtag.value = (void *)&v;
+    kvtag.type  = PDC_INT;
+    kvtag.size  = sizeof(int);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
+#endif
+
+    for (iter = 0; iter < round; iter++) {
+        v = iter;
+        if (is_using_dart) {
+            sprintf(value, "%ld", v);
+            sprintf(exact_query, "%s=%s", kvtag.name, value);
+#ifdef ENABLE_MPI
+            PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, exact_query, ref_type, &nres, &pdc_ids,
+                                                       MPI_COMM_WORLD);
+#else
+            PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &nres, &pdc_ids);
+#endif
+        }
+        else {
+            /* println("Rank %d: round %d, query kvtag [%s] [%d]\n", my_rank, round, kvtag.name, *((int*)kvtag.value)); */
+#ifdef ENABLE_MPI
+            if (PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
+#else
+            if (PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids) < 0) {
+#endif
+                printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
+                break;
+            }
+        }
     }
-    if (obj_ids1 != NULL)
-        free(obj_ids1);
 
-    // close first object
-    if (PDCobj_close(obj1) < 0)
-        printf("fail to close object o1\n");
-    else
-        printf("successfully close object o1\n");
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
 
-    // close second object
-    if (PDCobj_close(obj2) < 0)
-        printf("fail to close object o2\n");
-    else
-        printf("successfully close object o2\n");
-
+    if (my_rank == 0)
+        println("Total time to query %d objects with tag: %.5f", ntotal, total_time);
+#else
+    println("Query found %d objects", nres);
+#endif
     // close a container
     if (PDCcont_close(cont) < 0)
         printf("fail to close container c1\n");
     else
         printf("successfully close container c1\n");
 
+    // close an object property
+    if (PDCprop_close(obj_prop) < 0)
+        printf("Fail to close property @ line %d\n", __LINE__);
+    else
+        printf("successfully close object property\n");
+
     // close a container property
-    if (PDCprop_close(obj_prop1) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        printf("successfully close object property\n");
-
-    if (PDCprop_close(obj_prop2) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        printf("successfully close object property\n");
-
     if (PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
     else
@@ -194,6 +266,10 @@ main()
     // close pdc
     if (PDCclose(pdc) < 0)
         printf("fail to close PDC\n");
+done:
+#ifdef ENABLE_MPI
+    MPI_Finalize();
+#endif
 
     return 0;
 }
