@@ -8,6 +8,9 @@ insert_kv_to_index(char *key, char *value, uint64_t obj_id)
 {
     dart_perform_one_server_in_t  input;
     dart_perform_one_server_out_t output;
+
+    input.obj_ref_type = REF_PRIMARY_ID;
+    input.hash_algo    = DART_HASH;
     // Test Insert Index
     input.op_type         = OP_INSERT;
     input.attr_val        = value;
@@ -42,14 +45,6 @@ test_PDC_Server_dart_perform_one_server()
 {
 
     PDC_Server_dart_init();
-    dart_perform_one_server_in_t  input;
-    dart_perform_one_server_out_t output;
-    uint64_t                      n_obj_ids = 0;
-    uint64_t *                    buf_ptr   = NULL;
-
-    input.obj_ref_type = REF_PRIMARY_ID;
-    input.hash_algo    = DART_HASH;
-
     insert_kv_to_index("key000key", "val000val", 10000);
     insert_kv_to_index("key000", "val000", 20000);
     insert_kv_to_index("000key", "000val", 30000);
