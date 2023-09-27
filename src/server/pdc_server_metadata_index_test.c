@@ -37,7 +37,7 @@ query_result_from_kvtag(char *key_value_query, int8_t op_type)
     for (int i = 0; i < n_obj_ids; i++) {
         printf("%llu, ", buf_ptr[i]);
     }
-    printf("\n");
+    printf("\n\n");
 }
 
 void
