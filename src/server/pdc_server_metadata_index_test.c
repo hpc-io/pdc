@@ -33,7 +33,7 @@ query_result_from_kvtag(char *key_value_query, int8_t op_type)
     input.op_type                           = op_type;
     input.attr_key                          = key_value_query;
     assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
-    printf("Query Successful! Result: ");
+    printf("Query Successful! %d Results: ", n_obj_ids);
     for (int i = 0; i < n_obj_ids; i++) {
         printf("%llu, ", buf_ptr[i]);
     }
