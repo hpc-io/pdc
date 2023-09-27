@@ -45,6 +45,17 @@ test_PDC_Server_dart_perform_one_server()
 {
 
     PDC_Server_dart_init();
+
+    char *key = (char *)calloc(100, sizeof(char));
+    char *val = (char *)calloc(100, sizeof(char));
+
+    for (int i = 0; i < 100; i++) {
+        sprintf(key, "key%03d", i);
+        sprintf(val, "val%03d", i);
+        printf("Inserting %s, %s\n", key, val);
+        insert_kv_to_index(key, val, i);
+    }
+
     insert_kv_to_index("key000key", "val000val", 10000);
     insert_kv_to_index("key000", "val000", 20000);
     insert_kv_to_index("000key", "000val", 30000);
