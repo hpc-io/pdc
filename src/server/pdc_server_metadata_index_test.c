@@ -57,6 +57,7 @@ test_PDC_Server_dart_perform_one_server()
     }
 
     insert_kv_to_index("0key", "0val", 20000);
+    insert_kv_to_index("key000key", "val000val", 30000);
 
     query_result_from_kvtag("key000key=val000val", OP_EXACT_QUERY);
     query_result_from_kvtag("0key=0val", OP_EXACT_QUERY);
