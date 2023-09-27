@@ -6,6 +6,8 @@
 void
 insert_kv_to_index(char *key, char *value, uint64_t obj_id)
 {
+    dart_perform_one_server_in_t  input;
+    dart_perform_one_server_out_t output;
     // Test Insert Index
     input.op_type         = OP_INSERT;
     input.attr_val        = value;
