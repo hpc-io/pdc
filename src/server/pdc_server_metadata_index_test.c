@@ -19,7 +19,7 @@ insert_kv_to_index(char *key, char *value, uint64_t obj_id)
     for (int i = 0; i < strlen(key); i++) {
         input.attr_key = substring(key, i, strlen(key));
         assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-        printf("Index Insertion Successful!\n");
+        // printf("Index Insertion Successful!\n");
     }
 }
 
@@ -53,7 +53,7 @@ test_PDC_Server_dart_perform_one_server()
         sprintf(key, "key%03dkey", i);
         sprintf(val, "val%03dval", i);
         printf("Inserting %s, %s\n", key, val);
-        insert_kv_to_index(key, val, i);
+        insert_kv_to_index(key, val, 10000 + i);
     }
 
     query_result_from_kvtag("key000key=val000val", OP_EXACT_QUERY);
