@@ -50,15 +50,11 @@ test_PDC_Server_dart_perform_one_server()
     char *val = (char *)calloc(100, sizeof(char));
 
     for (int i = 0; i < 100; i++) {
-        sprintf(key, "key%03d", i);
-        sprintf(val, "val%03d", i);
+        sprintf(key, "key%03dkey", i);
+        sprintf(val, "val%03dval", i);
         printf("Inserting %s, %s\n", key, val);
         insert_kv_to_index(key, val, i);
     }
-
-    insert_kv_to_index("key000key", "val000val", 10000);
-    insert_kv_to_index("key000", "val000", 20000);
-    insert_kv_to_index("000key", "000val", 30000);
 
     query_result_from_kvtag("key000key=val000val", OP_EXACT_QUERY);
     query_result_from_kvtag("key000*=val000*", OP_PREFIX_QUERY);
