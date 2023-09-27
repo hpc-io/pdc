@@ -220,9 +220,8 @@ create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
     if (obj_id_set == NULL) {
         obj_id_set = set_new(ui64_hash, ui64_equal);
         set_register_free_function(obj_id_set, free);
-
-        art_insert(art_value_prefix_tree, attr_value, len, (void *)obj_id_set);
     }
+    art_insert(art_value_prefix_tree, attr_value, len, (void *)obj_id_set);
 
     int indexed = set_insert(obj_id_set, data);
 
@@ -267,9 +266,8 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
             // TODO: build local index for range query.
             leafcnt->extra_range_index = (art_tree *)calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)leafcnt->extra_range_index);
-
-            art_insert(nm_trie, nm_key, strlen((const char *)nm_key), leafcnt);
         }
+        art_insert(nm_trie, nm_key, strlen((const char *)nm_key), leafcnt);
 
         art_tree *secondary_trie = NULL;
 
