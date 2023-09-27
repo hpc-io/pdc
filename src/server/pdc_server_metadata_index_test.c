@@ -57,9 +57,9 @@ test_PDC_Server_dart_perform_one_server()
     }
 
     query_result_from_kvtag("key000key=val000val", OP_EXACT_QUERY);
-    query_result_from_kvtag("key*=val*", OP_PREFIX_QUERY);
-    query_result_from_kvtag("*key=*val", OP_SUFFIX_QUERY);
-    query_result_from_kvtag("*0*=*0*", OP_INFIX_QUERY);
+    query_result_from_kvtag("key01*=val01*", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*3key=*3val", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*9*=*9*", OP_INFIX_QUERY);
 }
 
 int
