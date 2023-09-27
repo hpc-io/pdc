@@ -8844,7 +8844,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
 
 /******************** Collective Object Selection Query Starts *******************************/
 
-#define ENABLE_MPI
+// #define ENABLE_MPI
 #ifdef ENABLE_MPI
 
 void

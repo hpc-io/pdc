@@ -204,6 +204,8 @@ PDC_Server_dart_init()
 /* Create index item for KV in DART */
 /****************************/
 
+// #define PDC_DART_SFX_TREE
+
 perr_t
 create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void *data)
 {
