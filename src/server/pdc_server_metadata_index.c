@@ -691,7 +691,7 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     char *                 attr_val  = (char *)in->attr_val;
     dart_object_ref_type_t ref_type  = in->obj_ref_type;
 
-    uint64_t obj_locator = 0;
+    uint64_t obj_locator = in->obj_primary_ref;
     if (ref_type == REF_PRIMARY_ID) {
         obj_locator = in->obj_primary_ref;
     }
