@@ -4,84 +4,66 @@
 #include "pdc_server_metadata_index.h"
 
 void
-test_PDC_Server_dart_perform_one_server()
+insert_kv_to_index(char *key, char *value, uint64_t obj_id)
 {
+    dart_perform_one_server_in_t  input;
+    dart_perform_one_server_out_t output;
 
-    PDC_Server_dart_init();
+    input.obj_ref_type = REF_PRIMARY_ID;
+    input.hash_algo    = DART_HASH;
+    // Test Insert Index
+    input.op_type         = OP_INSERT;
+    input.attr_val        = value;
+    input.obj_primary_ref = obj_id;
+
+    for (int i = 0; i < strlen(key); i++) {
+        input.attr_key = substring(key, i, strlen(key));
+        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        // printf("Index Insertion Successful!\n");
+    }
+}
+
+void
+query_result_from_kvtag(char *key_value_query, int8_t op_type)
+{
     dart_perform_one_server_in_t  input;
     dart_perform_one_server_out_t output;
     uint64_t                      n_obj_ids = 0;
     uint64_t *                    buf_ptr   = NULL;
+    input.op_type                           = op_type;
+    input.attr_key                          = key_value_query;
+    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
+    printf("Query Successful! %d Results: ", n_obj_ids);
+    for (int i = 0; i < n_obj_ids; i++) {
+        printf("%llu, ", buf_ptr[i]);
+    }
+    printf("\n\n");
+}
 
-    input.obj_ref_type = REF_PRIMARY_ID;
-    input.hash_algo    = DART_HASH;
+void
+test_PDC_Server_dart_perform_one_server()
+{
 
-    // Test Insert Index
-    input.op_type         = OP_INSERT;
-    input.attr_val        = "val000val";
-    input.obj_primary_ref = 10000;
+    PDC_Server_dart_init();
 
-    for (int i = 0; i < strlen("key000key"); i++) {
-        input.attr_key = substring("key000key", i, strlen("key000key"));
-        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-        printf("Index Insertion Successful!\n");
+    char *key = (char *)calloc(100, sizeof(char));
+    char *val = (char *)calloc(100, sizeof(char));
+
+    for (int i = 0; i < 100; i++) {
+        sprintf(key, "key%03dkey", i);
+        sprintf(val, "val%03dval", i);
+        printf("Inserting %s, %s\n", key, val);
+        insert_kv_to_index(key, val, 10000 + i);
     }
 
-    // Test Insert Index
-    input.op_type         = OP_INSERT;
-    input.attr_val        = "val000";
-    input.obj_primary_ref = 20000;
-    for (int i = 0; i < strlen("key000"); i++) {
-        input.attr_key = substring("key000", i, strlen("key000"));
-        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-        printf("Index Insertion Successful!\n");
-    }
+    insert_kv_to_index("0key", "0val", 20000);
+    insert_kv_to_index("key000key", "val000val", 30000);
 
-    // Test Insert Index
-    input.op_type         = OP_INSERT;
-    input.attr_val        = "000val";
-    input.obj_primary_ref = 30000;
-    for (int i = 0; i < strlen("000key"); i++) {
-        input.attr_key = substring("000key", i, strlen("000key"));
-        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-        printf("Index Insertion Successful!\n");
-    }
-
-    // Test Exact query
-    input.op_type  = OP_EXACT_QUERY;
-    input.attr_key = "key000key=val000val";
-    // input.attr_val = "val000val";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
-    assert(n_obj_ids == 1);
-    assert(buf_ptr[0] == 10000);
-    printf("Exact Query Successful!\n");
-
-    // Test Prefix query
-    input.op_type  = OP_PREFIX_QUERY;
-    input.attr_key = "key000*=val000*";
-    // input.attr_val = "val000*";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
-    printf("Prefix Query Successful! ");
-    assert(n_obj_ids == 2);
-    printf(" result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
-
-    // Test Suffix query
-    input.op_type  = OP_SUFFIX_QUERY;
-    input.attr_key = "*000key=*000val";
-    // input.attr_val = "*000val";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
-    printf("Suffix Query Successful! ");
-    assert(n_obj_ids == 2);
-    printf(" result: %llu, %llu\n", buf_ptr[0], buf_ptr[1]);
-
-    // Test Infix query
-    input.op_type  = OP_INFIX_QUERY;
-    input.attr_key = "*000*=*000*";
-    // input.attr_val = "*000*";
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
-    printf("Infix Query Successful! ");
-    assert(n_obj_ids == 3);
-    printf(" result: %llu, %llu, %llu\n", buf_ptr[0], buf_ptr[1], buf_ptr[2]);
+    query_result_from_kvtag("key000key=val000val", OP_EXACT_QUERY);
+    query_result_from_kvtag("0key=0val", OP_EXACT_QUERY);
+    query_result_from_kvtag("key01*=val01*", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*3key=*3val", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*9*=*9*", OP_INFIX_QUERY);
 }
 
 int
