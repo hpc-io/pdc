@@ -181,6 +181,9 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
+
     // This is for adding #rounds tags to the objects.
     // Each rank will add #rounds tags to #my_obj objects.
     // With the selectivity, we should be able to control how many objects will be attached with the #round
@@ -216,6 +219,15 @@ main(int argc, char *argv[])
                     my_rank, round, i + 1, my_obj_after_selectivity, selectivity, my_obj);
         }
     }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+
+    if (my_rank == 0) {
+        println("Rank %d: Added %d kvtag to %d objects, time: %.5f ms", my_rank, round, my_obj,
+                total_time * 1000.0);
+    }
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -298,6 +310,34 @@ main(int argc, char *argv[])
             }
 #endif
         }
+    }
+
+    // delete all tags
+    MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
+
+    int my_obj_after_selectivity = my_obj * selectivity / 100;
+    for (i = 0; i < my_obj_after_selectivity; i++) {
+        for (iter = 0; iter < round; iter++) {
+            char attr_name[64];
+            char tag_value[64];
+            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
+            kvtag.name = strdup(attr_name);
+            if (is_using_dart) {
+                PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, ref_type, (uint64_t)obj_ids[i]);
+            }
+            else {
+                PDCobj_del_tag(obj_ids[i], kvtag.name);
+            }
+            free(kvtag.name);
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+    if (my_rank == 0) {
+        println("Rank %d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank, round, my_obj,
+                total_time * 1000.0);
     }
 
     // close a container
