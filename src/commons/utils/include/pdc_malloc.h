@@ -40,7 +40,7 @@ void *PDC_malloc(size_t size);
 /**
  * allocate memory and add size to specified memory size pointer
  */
-void *PDC_malloc_add(size_t size, size_t *mem_usage_ptr);
+void *PDC_malloc_addsize(size_t size, size_t *mem_usage_ptr);
 
 /**
  * allocate memory and set to zero
@@ -52,7 +52,7 @@ void *PDC_calloc(size_t size);
 /**
  * allocate zero-filled memory and add size to specified memory size pointer
  */
-void *PDC_calloc_add(size_t size, size_t *mem_usage_ptr);
+void *PDC_calloc_addsize(size_t size, size_t *mem_usage_ptr);
 
 /**
  * adjust the size of the memory block pointed to by ptr
@@ -62,7 +62,7 @@ void *PDC_realloc(void *ptr, size_t size, size_t old_size);
 /**
  * realloc memory and add size to specified memory size pointer
  */
-void *PDC_realloc_add(void *ptr, size_t size, size_t old_size, size_t *mem_usage_ptr);
+void *PDC_realloc_addsize(void *ptr, size_t size, size_t old_size, size_t *mem_usage_ptr);
 
 /**
  * free allocated memory
@@ -76,8 +76,8 @@ void *PDC_free(void *mem);
  */
 size_t PDC_get_global_mem_usage();
 
-#define PDC_MALLOC(t) (t *)PDC_malloc(sizeof(t))
-#define PDC_CALLOC(t) (t *)PDC_calloc(sizeof(t))
+#define PDC_MALLOC(t)    (t *)PDC_malloc(sizeof(t))
+#define PDC_CALLOC(c, t) (t *)PDC_calloc(c, sizeof(t))
 
 #define PDC_FREE(t, obj) (t *)(intptr_t) PDC_free(obj)
 

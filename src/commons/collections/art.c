@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include "art.h"
+#include "pdc_malloc.h"
 
 #ifdef __i386__
 #include <emmintrin.h>

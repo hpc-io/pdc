@@ -38,6 +38,9 @@ endif()
 # Project Name : PDC, Programming Language : C
 project(PDC C)
 
+# include CheckSymbolExists module
+include(CheckSymbolExists)
+
 # CMake will search for any header files under the project root directory.
 include_directories(
   ${PROJECT_SOURCE_DIR}
@@ -464,6 +467,13 @@ if(PDC_ENABLE_FASTBIT)
     set(ENABLE_FASTBIT 1)
 endif()
 
+#-----------------------------------------------------------------------------
+# Check availability of symbols
+#-----------------------------------------------------------------------------
+check_symbol_exists(malloc_usable_size "malloc.h" HAVE_MALLOC_USABLE_SIZE)
+if(HAVE_MALLOC_USABLE_SIZE)
+  add_definitions(-DHAVE_MALLOC_USABLE_SIZE)
+endif()
 
 #------------------------------------------------------------------------------
 # Data type

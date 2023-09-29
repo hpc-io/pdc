@@ -27,6 +27,12 @@
 #include "pdc_malloc.h"
 #include "pdc_private.h"
 
+#ifdef HAVE_MALLOC_USABLE_SIZE
+#include <malloc.h>
+#else
+// alternative header files for malloc_usable_size or similar functions.
+#endif
+
 size_t PDC_mem_usage_g;
 
 void *
@@ -50,7 +56,7 @@ PDC_malloc(size_t size)
 }
 
 void *
-PDC_malloc_add(size_t size, size_t *mem_usage_ptr)
+PDC_malloc_addsize(size_t size, size_t *mem_usage_ptr)
 {
     void *ret_value = PDC_malloc(size);
     if (ret_value && mem_usage_ptr)
@@ -59,16 +65,17 @@ PDC_malloc_add(size_t size, size_t *mem_usage_ptr)
 }
 
 void *
-PDC_calloc(size_t size)
+PDC_calloc(size_t count, size_t size)
 {
     void *ret_value;
 
     FUNC_ENTER(NULL);
 
+    assert(count);
     assert(size);
 
-    if (size)
-        ret_value = calloc(1, size);
+    if (count && size)
+        ret_value = calloc(count, size);
     else
         ret_value = NULL;
 
@@ -79,23 +86,23 @@ PDC_calloc(size_t size)
 }
 
 void *
-PDC_calloc_add(size_t size, size_t *mem_usage_ptr)
+PDC_calloc_addsize(size_t count, size_t size, size_t *mem_usage_ptr)
 {
-    void *ret_value = PDC_calloc(size);
+    void *ret_value = PDC_calloc(count, size);
     if (ret_value && mem_usage_ptr)
         *mem_usage_ptr += size;
     return ret_value;
 }
 
 void *
-PDC_realloc(void *ptr, size_t size, size_t old_size)
+PDC_realloc_knowing_oldsize(void *ptr, size_t size, size_t old_size)
 {
     void *ret_value;
 
     FUNC_ENTER(NULL);
 
     assert(size);
-
+    size_t _old_size = old_size;
     if (size)
         ret_value = realloc(ptr, size);
     else
@@ -103,8 +110,8 @@ PDC_realloc(void *ptr, size_t size, size_t old_size)
 
     if (ret_value) {
         PDC_mem_usage_g += size;
-        if (old_size) {
-            PDC_mem_usage_g -= old_size;
+        if (_old_size) {
+            PDC_mem_usage_g -= _old_size;
         }
     }
 
@@ -112,28 +119,70 @@ PDC_realloc(void *ptr, size_t size, size_t old_size)
 }
 
 void *
-PDC_realloc_add(void *ptr, size_t size, size_t old_size, size_t *mem_usage_ptr)
+PDC_realloc(void *ptr, size_t size)
 {
-    void *ret_value = PDC_realloc(ptr, size, old_size);
+    size_t _old_size = 0;
+#ifdef HAVE_MALLOC_USABLE_SIZE
+    _old_size = malloc_usable_size(ptr);
+#endif
+    return PDC_realloc_knowing_oldsize(ptr, size, _old_size);
+}
+
+void *
+PDC_realloc_addsize_knowing_oldsize(void *ptr, size_t size, size_t old_size, size_t *mem_usage_ptr)
+{
+    size_t _old_size = old_size;
+    void * ret_value = PDC_realloc_knowing_oldsize(ptr, size, _old_size);
     if (ret_value && mem_usage_ptr) {
         *mem_usage_ptr += size;
-        if (old_size) {
-            *mem_usage_ptr -= old_size;
+        if (_old_size) {
+            *mem_usage_ptr -= _old_size;
         }
     }
     return ret_value;
 }
 
 void *
-PDC_free(void *mem)
+PDC_realloc_addsize(void *ptr, size_t size, size_t *mem_usage_ptr)
 {
+    size_t _old_size = 0;
+#ifdef HAVE_MALLOC_USABLE_SIZE
+    _old_size = malloc_usable_size(ptr);
+#endif
+    return PDC_realloc_addsize_knowing_oldsize(ptr, size, _old_size, mem_usage_ptr);
+}
+
+void *
+PDC_free_knowing_old_size(void *mem, size_t old_size)
+{
+    size_t _old_size = old_size;
+
     void *ret_value = NULL;
 
     FUNC_ENTER(NULL);
 
     if (mem) {
         free(mem);
+        if (_old_size) {
+            PDC_mem_usage_g -= _old_size;
+        }
     }
 
     FUNC_LEAVE(ret_value);
+}
+
+void *
+PDC_free(void *mem)
+{
+    size_t _old_size = 0;
+#ifdef HAVE_MALLOC_USABLE_SIZE
+    _old_size = malloc_usable_size(mem);
+#endif
+    return PDC_free_knowing_old_size(mem, _old_size);
+}
+
+size_t
+PDC_get_global_mem_usage()
+{
+    return PDC_mem_usage_g;
 }
