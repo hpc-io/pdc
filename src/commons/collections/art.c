@@ -58,16 +58,16 @@ alloc_node(uint8_t type)
     art_node *n;
     switch (type) {
         case NODE4:
-            n = (art_node *)calloc(1, sizeof(art_node4));
+            n = (art_node *)PDC_calloc(1, sizeof(art_node4));
             break;
         case NODE16:
-            n = (art_node *)calloc(1, sizeof(art_node16));
+            n = (art_node *)PDC_calloc(1, sizeof(art_node16));
             break;
         case NODE48:
-            n = (art_node *)calloc(1, sizeof(art_node48));
+            n = (art_node *)PDC_calloc(1, sizeof(art_node48));
             break;
         case NODE256:
-            n = (art_node *)calloc(1, sizeof(art_node256));
+            n = (art_node *)PDC_calloc(1, sizeof(art_node256));
             break;
         default:
             abort();
@@ -422,7 +422,7 @@ art_maximum(art_tree *t)
 static art_leaf *
 make_leaf(const unsigned char *key, int key_len, void *value)
 {
-    art_leaf *l = (art_leaf *)calloc(1, sizeof(art_leaf) + key_len);
+    art_leaf *l = (art_leaf *)PDC_calloc(1, sizeof(art_leaf) + key_len);
     l->value    = value;
     l->key_len  = key_len;
     memcpy(l->key, key, key_len);

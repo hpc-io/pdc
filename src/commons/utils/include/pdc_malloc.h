@@ -47,12 +47,12 @@ void *PDC_malloc_addsize(size_t size, size_t *mem_usage_ptr);
  *
  * \param size [IN]             Size of the struct to be calloced
  */
-void *PDC_calloc(size_t size);
+void *PDC_calloc(size_t count, size_t size);
 
 /**
  * allocate zero-filled memory and add size to specified memory size pointer
  */
-void *PDC_calloc_addsize(size_t size, size_t *mem_usage_ptr);
+void *PDC_calloc_addsize(size_t count, size_t size, size_t *mem_usage_ptr);
 
 /**
  * adjust the size of the memory block pointed to by ptr

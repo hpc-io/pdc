@@ -211,7 +211,7 @@ create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
 {
     perr_t ret = SUCCEED;
     if (*index == NULL) {
-        *index = (art_tree *)calloc(1, sizeof(art_tree));
+        *index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
         art_tree_init(*index);
     }
 
@@ -257,16 +257,16 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
         key_index_leaf_content *leafcnt =
             (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen((const char *)nm_key));
         if (leafcnt == NULL) {
-            leafcnt                     = (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
-            leafcnt->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
+            leafcnt = (key_index_leaf_content *)PDC_calloc(1, sizeof(key_index_leaf_content));
+            leafcnt->extra_prefix_index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)leafcnt->extra_prefix_index);
 #ifndef PDC_DART_SFX_TREE
             // we only enable suffix index when suffix tree mode is off.
-            leafcnt->extra_suffix_index = (art_tree *)calloc(1, sizeof(art_tree));
+            leafcnt->extra_suffix_index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)leafcnt->extra_suffix_index);
 #endif
             // TODO: build local index for range query.
-            leafcnt->extra_range_index = (art_tree *)calloc(1, sizeof(art_tree));
+            leafcnt->extra_range_index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)leafcnt->extra_range_index);
         }
         art_insert(nm_trie, nm_key, strlen((const char *)nm_key), leafcnt);

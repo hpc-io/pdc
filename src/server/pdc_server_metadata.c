@@ -2549,7 +2549,7 @@ PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *tag)
     FUNC_ENTER(NULL);
 
     PDC_kvtag_dup(tag, &newtag);
-    new_list_item        = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
+    new_list_item        = PDC_CALLOC(1, sizeof(pdc_kvtag_list_t));
     new_list_item->kvtag = newtag;
     DL_APPEND(*list_head, new_list_item);
 
