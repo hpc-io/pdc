@@ -31,25 +31,50 @@
 /* Library-private Function Prototypes */
 /***************************************/
 /**
- * Create an object
+ * allocate memory
  *
  * \param size [IN]             Size of the struct to be malloced
  */
 void *PDC_malloc(size_t size);
 
 /**
- * Create an object
+ * allocate memory and add size to specified memory size pointer
+ */
+void *PDC_malloc_add(size_t size, size_t *mem_usage_ptr);
+
+/**
+ * allocate memory and set to zero
  *
  * \param size [IN]             Size of the struct to be calloced
  */
 void *PDC_calloc(size_t size);
 
 /**
- * Create an object
+ * allocate zero-filled memory and add size to specified memory size pointer
+ */
+void *PDC_calloc_add(size_t size, size_t *mem_usage_ptr);
+
+/**
+ * adjust the size of the memory block pointed to by ptr
+ */
+void *PDC_realloc(void *ptr, size_t size, size_t old_size);
+
+/**
+ * realloc memory and add size to specified memory size pointer
+ */
+void *PDC_realloc_add(void *ptr, size_t size, size_t old_size, size_t *mem_usage_ptr);
+
+/**
+ * free allocated memory
  *
  * \param mem [IN]              Starting address of memory
  */
 void *PDC_free(void *mem);
+
+/**
+ * Get total memory usage from the global variable
+ */
+size_t PDC_get_global_mem_usage();
 
 #define PDC_MALLOC(t) (t *)PDC_malloc(sizeof(t))
 #define PDC_CALLOC(t) (t *)PDC_calloc(sizeof(t))
