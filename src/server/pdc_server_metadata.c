@@ -49,6 +49,7 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
 #include "mercury_hash_table.h"
+#include "pdc_malloc.h"
 
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_NEW    new_counting_bloom
@@ -1217,7 +1218,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    metadata = (pdc_metadata_t *)malloc(sizeof(pdc_metadata_t));
+    metadata = (pdc_metadata_t *)PDC_malloc(sizeof(pdc_metadata_t));
     if (metadata == NULL) {
         printf("Cannot allocate pdc_metadata_t!\n");
         goto done;
@@ -1252,7 +1253,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     strcpy(metadata->tags, in->data.tags);
     strcpy(metadata->data_location, in->data.data_location);
 
-    hash_key = (uint32_t *)malloc(sizeof(uint32_t));
+    hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
         printf("Cannot allocate hash_key!\n");
         goto done;
@@ -1301,7 +1302,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             fflush(stdout);
 
             pdc_hash_table_entry_head *entry =
-                (pdc_hash_table_entry_head *)malloc(sizeof(pdc_hash_table_entry_head));
+                (pdc_hash_table_entry_head *)PDC_malloc(sizeof(pdc_hash_table_entry_head));
             entry->bloom    = NULL;
             entry->metadata = NULL;
             entry->n_obj    = 0;
@@ -2225,7 +2226,7 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
         // Check if need to allocate space
         if (cont_entry->n_allocated == 0) {
             cont_entry->n_allocated = PDC_ALLOC_BASE_NUM;
-            cont_entry->obj_ids     = (uint64_t *)calloc(sizeof(uint64_t), PDC_ALLOC_BASE_NUM);
+            cont_entry->obj_ids     = (uint64_t *)PDC_calloc(sizeof(uint64_t), PDC_ALLOC_BASE_NUM);
             total_mem_usage_g += sizeof(uint64_t) * cont_entry->n_allocated;
         }
         else if (cont_entry->n_allocated < cont_entry->n_obj + n_obj) {
@@ -2239,7 +2240,7 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
                        cont_entry->n_allocated, realloc_size / sizeof(uint64_t));
             }
 
-            cont_entry->obj_ids = (uint64_t *)realloc(cont_entry->obj_ids, realloc_size);
+            cont_entry->obj_ids = (uint64_t *)PDC_realloc(cont_entry->obj_ids, realloc_size);
             if (NULL == cont_entry->obj_ids) {
                 printf("==PDC_SERVER[%d]: %s - ERROR with realloc!\n", pdc_server_rank_g, __func__);
                 ret_value = FAIL;

@@ -4546,7 +4546,14 @@ HG_TEST_RPC_CB(query_partial, handle)
 
     n_meta_ptr = (uint32_t *)malloc(sizeof(uint32_t));
 
+    stopwatch_t server_timer;
+    timer_start(&server_timer);
+
     PDC_Server_get_partial_query_result(&in, n_meta_ptr, &buf_ptrs);
+
+    timer_pause(&server_timer);
+    out.server_time_elapsed       = (int64_t)timer_delta_us(&server_timer);
+    out.server_memory_consumption = (int64_t)PDC_get_global_mem_usage();
 
     // No result found
     if (*n_meta_ptr == 0) {
@@ -4636,7 +4643,8 @@ HG_TEST_RPC_CB(query_kvtag, handle)
     ret_value = PDC_Server_get_kvtag_query_result(&in, &nmeta, &buf_ptr);
 
     timer_pause(&server_timer);
-    out.server_time_elapsed = (int64_t)timer_delta_us(&server_timer);
+    out.server_time_elapsed       = (int64_t)timer_delta_us(&server_timer);
+    out.server_memory_consumption = (int64_t)PDC_get_global_mem_usage();
 
     if (ret_value != SUCCEED || nmeta == 0) {
         out.bulk_handle = HG_BULK_NULL;
@@ -6445,7 +6453,9 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, buf_ptrs);
 
     timer_pause(&server_timer);
-    out.server_time_elapsed = (int64_t)timer_delta_us(&server_timer);
+    out.server_time_elapsed       = (int64_t)timer_delta_us(&server_timer);
+    out.server_memory_consumption = (int64_t)PDC_get_global_mem_usage();
+
     // printf("perform_server_cb. n_obj_ids_ptr on op_type = %d = %d\n", in.op_type ,*n_obj_ids_ptr);
     out.op_type = in.op_type;
     // printf("out.n_items= %d\n", out.n_items);

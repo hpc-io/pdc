@@ -71,6 +71,9 @@ pdc_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
 int                    pdc_client_mpi_rank_g  = 0;
 int                    pdc_client_mpi_size_g  = 1;
 
+// FIXME: this is a temporary solution for printing out debug info, like memory usage.
+int memory_debug_g = 0; // when it is no longer 0, stop printing debug info.
+
 #ifdef ENABLE_MPI
 MPI_Comm PDC_SAME_NODE_COMM_g;
 MPI_Comm PDC_CLIENT_COMM_WORLD_g;
@@ -7294,7 +7297,8 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error HG_Get_output", pdc_client_mpi_rank_g);
 
-    bulk_arg->server_time_elapsed = output.server_time_elapsed;
+    bulk_arg->server_time_elapsed       = output.server_time_elapsed;
+    bulk_arg->server_memory_consumption = output.server_memory_consumption;
 
     if (output.bulk_handle == HG_BULK_NULL || output.ret == 0) {
         hg_atomic_decr32(&bulk_todo_g);
@@ -7393,8 +7397,12 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     hg_atomic_incr32(&bulk_todo_g);
     PDC_Client_check_bulk(send_context_g);
 
-    printf("==PDC_CLIENT[%d]: PDC_Client_query_kvtag_server: server_time_elapsed %" PRId64 "\n",
-           pdc_client_mpi_rank_g, bulk_arg->server_time_elapsed);
+    if (memory_debug_g == 0) {
+        printf("==PDC_CLIENT[%d]: PDC_Client_query_kvtag_server on server %d: server_time_elapsed %" PRId64
+               ", server memory consumption: %" PRId64 "\n",
+               pdc_client_mpi_rank_g, server_id, bulk_arg->server_time_elapsed,
+               bulk_arg->server_memory_consumption);
+    }
 
     *n_res = bulk_arg->n_meta;
     if (*n_res > 0)
@@ -7443,6 +7451,7 @@ PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
         *n_res = *n_res + nmeta;
     }
 done:
+    memory_debug_g = 1;
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -8461,7 +8470,8 @@ dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
         goto done;
     }
 
-    client_lookup_args->server_time_elapsed = output.server_time_elapsed;
+    client_lookup_args->server_time_elapsed       = output.server_time_elapsed;
+    client_lookup_args->server_memory_consumption = output.server_memory_consumption;
     // printf("lookup_args.op_type = %d and output.op_type = %d\n", client_lookup_args->op_type,
     // output.op_type);
 
@@ -8642,10 +8652,17 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     for (int i = 0; i < num_servers; i++) {
         total_server_elapsed += lookup_args[i].server_time_elapsed;
     }
-    println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
-            "%.4f ms. server_time_elapsed: %" PRId64 "",
-            pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
-            num_servers, total_n_meta, timer_delta_ms(&timer), total_server_elapsed);
+    if (!is_index_write_op(op_type)) {
+        println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
+                "%.4f ms. server_time_elapsed: %" PRId64 "",
+                pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
+                num_servers, total_n_meta, timer_delta_ms(&timer), total_server_elapsed);
+        if (memory_debug_g == 0) {
+            for (int i = 0; i < num_servers; i++) {
+                println("[SERVER %d] memory_usage: %" PRId64 "", i, lookup_args[i].server_memory_consumption);
+            }
+        }
+    }
     // free(dart_request_handles);
 done:
     FUNC_LEAVE(ret_value);
@@ -8768,7 +8785,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     //        ", n_res %d, duration: %.4f ms\n",
     //        query_string, num_servers, pdc_client_mpi_rank_g, total_count, *n_res,
     //        timer_delta_ms(&timer) / 1000.0);
-
+    memory_debug_g = 1;
     return ret_value;
 }
 
@@ -8946,6 +8963,7 @@ PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
     }
 
 done:
+    memory_debug_g = 1;
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }

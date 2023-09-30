@@ -614,6 +614,7 @@ typedef struct {
 typedef struct {
     int32_t   ret;
     int64_t   server_time_elapsed;
+    int64_t   server_memory_consumption;
     hg_bulk_t bulk_handle;
 } metadata_query_transfer_out_t;
 
@@ -1174,6 +1175,7 @@ typedef struct {
     int64_t   n_items;
     int64_t   timestamp;
     int64_t   server_time_elapsed;
+    int64_t   server_memory_consumption;
 } dart_perform_one_server_out_t;
 
 /*****************************************/
@@ -1592,6 +1594,11 @@ hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int64_t(proc, &struct_data->server_time_elapsed);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->server_memory_consumption);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -3933,6 +3940,11 @@ hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    ret = hg_proc_int64_t(proc, &struct_data->server_memory_consumption);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     return ret;
 }
 
@@ -3957,6 +3969,7 @@ struct bulk_args_t {
     int8_t            op_type;
     hg_atomic_int32_t bulk_done_flag;
     int64_t           server_time_elapsed;
+    int64_t           server_memory_consumption;
 
     int query_id;
 

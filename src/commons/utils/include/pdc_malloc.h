@@ -57,12 +57,12 @@ void *PDC_calloc_addsize(size_t count, size_t size, size_t *mem_usage_ptr);
 /**
  * adjust the size of the memory block pointed to by ptr
  */
-void *PDC_realloc(void *ptr, size_t size, size_t old_size);
+void *PDC_realloc(void *ptr, size_t size);
 
 /**
  * realloc memory and add size to specified memory size pointer
  */
-void *PDC_realloc_addsize(void *ptr, size_t size, size_t old_size, size_t *mem_usage_ptr);
+void *PDC_realloc_addsize(void *ptr, size_t size, size_t *mem_usage_ptr);
 
 /**
  * free allocated memory
