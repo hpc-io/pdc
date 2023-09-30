@@ -8308,6 +8308,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+void
 report_avg_server_profiling_rst()
 {
     for (int i = 0; i < pdc_server_num_g; i++) {
@@ -8674,7 +8675,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
             int srv_id = lookup_args[i].server_id;
             server_time_total_g[srv_id] += lookup_args[i].server_time_elapsed;
             server_call_count_g[srv_id] += 1;
-            server_memory_total_g[srv_id] = lookup_args[i].server_memory_consumption;
+            server_mem_usage_g[srv_id] = lookup_args[i].server_memory_consumption;
         }
         // println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
         //         "%.4f ms. server_time_elapsed: %.4f ms",

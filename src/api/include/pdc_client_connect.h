@@ -1100,6 +1100,6 @@ perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *att
 /**
  * Report the average profiling time of the server if the info is available.
  */
-report_avg_server_profiling_rst();
+void report_avg_server_profiling_rst();
 
 #endif /* PDC_CLIENT_CONNECT_H */
