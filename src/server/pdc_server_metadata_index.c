@@ -332,7 +332,7 @@ delete_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
 {
     perr_t ret = SUCCEED;
     if (*index == NULL) {
-        println("The value prefix tree is NULL, there is nothing to delete.");
+        // println("The value prefix tree is NULL, there is nothing to delete.");
         return ret;
     }
 
@@ -341,7 +341,7 @@ delete_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
     int  len        = strlen((const char *)attr_value);
     Set *obj_id_set = (Set *)art_search(art_value_prefix_tree, attr_value, len);
     if (obj_id_set == NULL) {
-        println("The obj_id_set is NULL, there nothing more to delete.");
+        // println("The obj_id_set is NULL, there nothing more to delete.");
         if (art_size(art_value_prefix_tree) == 0) {
             art_tree_destroy(*index);
         }
