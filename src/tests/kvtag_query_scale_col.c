@@ -224,7 +224,7 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 
     if (my_rank == 0) {
-        println("Rank %d: Added %d kvtag to %d objects, time: %.5f ms", my_rank, round, my_obj,
+        println("[TAG Creation] Rank %d: Added %d kvtag to %d objects, time: %.5f ms", my_rank, round, my_obj,
                 total_time * 1000.0);
     }
 
@@ -346,8 +346,8 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
     if (my_rank == 0) {
-        println("Rank %d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank, round, my_obj,
-                total_time * 1000.0);
+        println("[TAG Deletion] Rank %d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank, round,
+                my_obj, total_time * 1000.0);
     }
 
     // close a container
