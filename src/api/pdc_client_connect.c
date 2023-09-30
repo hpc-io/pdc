@@ -7406,8 +7406,8 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     PDC_Client_check_bulk(send_context_g);
 
     server_call_count_g[server_id]++;
-    server_time_elapsed_g[server_id] += bulk_arg->server_time_elapsed;
-    server_memory_consumption_g[server_id] = bulk_arg->server_memory_consumption;
+    server_time_total_g[server_id] += bulk_arg->server_time_elapsed;
+    server_mem_usage_g[server_id] = bulk_arg->server_memory_consumption;
 
     *n_res = bulk_arg->n_meta;
     if (*n_res > 0)
@@ -8313,7 +8313,7 @@ report_avg_server_profiling_rst()
 {
     for (int i = 0; i < pdc_server_num_g; i++) {
 
-        double avg_srv_time = if (server_call_count_g[i] > 0)
+        double avg_srv_time = server_call_count_g[i] > 0
                                   ? (double)(server_time_total_g[i]) / (double)(server_call_count_g[i])
                                   : 0.0;
         double srv_mem_usage = server_mem_usage_g[i] / 1024.0 / 1024.0;
