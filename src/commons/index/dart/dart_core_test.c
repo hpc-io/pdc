@@ -13,14 +13,20 @@ virtual_dart_retrieve_server_info_cb(uint32_t server_id)
 int
 main(int argc, char *argv[])
 {
+
+    if (argc != 4) {
+        printf("Usage: %s <query_str> <num_server> <replication_factor>\n", argv[0]);
+        return 1;
+    }
+
     DART  dart;
     char *query_str          = argv[1];
     int   num_server         = atoi(argv[2]);
     int   num_client         = num_server * 120;
     int   alphabet_size      = 27;
     int   extra_tree_height  = 0;
-    int   replication_factor = num_server / 10;
-    replication_factor       = replication_factor == 0 ? 1 : replication_factor;
+    int   replication_factor = atoi(argv[3]);
+    replication_factor       = replication_factor == 0 ? num_server / 10 : replication_factor;
 
     // Init all servers
     all_servers = (dart_server *)malloc(num_server * sizeof(dart_server));
