@@ -7398,9 +7398,9 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     PDC_Client_check_bulk(send_context_g);
 
     if (memory_debug_g == 0) {
-        printf("==PDC_CLIENT[%d]: PDC_Client_query_kvtag_server on server %d: server_time_elapsed %" PRId64
-               ", server memory consumption: %" PRId64 "\n",
-               pdc_client_mpi_rank_g, server_id, bulk_arg->server_time_elapsed,
+        printf("==PDC_CLIENT[%d]: PDC_Client_query_kvtag_server on server %d: server_time_elapsed %.4f, "
+               "server memory consumption: %" PRId64 "\n",
+               pdc_client_mpi_rank_g, server_id, (double)bulk_arg->server_time_elapsed,
                bulk_arg->server_memory_consumption);
     }
 
@@ -8648,13 +8648,13 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         ret_value    = total_n_meta;
     }
     timer_pause(&timer);
-    int64_t total_server_elapsed = 0;
+    double total_server_elapsed = 0;
     for (int i = 0; i < num_servers; i++) {
-        total_server_elapsed += lookup_args[i].server_time_elapsed;
+        total_server_elapsed += (double)(lookup_args[i].server_time_elapsed);
     }
     if (!is_index_write_op(op_type)) {
         println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
-                "%.4f ms. server_time_elapsed: %" PRId64 "",
+                "%.4f ms. server_time_elapsed: %.4f us",
                 pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
                 num_servers, total_n_meta, timer_delta_ms(&timer), total_server_elapsed);
         if (memory_debug_g == 0) {
