@@ -312,6 +312,11 @@ main(int argc, char *argv[])
         }
     }
 
+    if (my_rank == 0) {
+        println("Rank %d: All queries are done.", my_rank);
+        report_avg_server_profiling_rst();
+    }
+
     // delete all tags
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();

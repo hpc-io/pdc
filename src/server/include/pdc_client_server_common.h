@@ -3968,6 +3968,7 @@ struct bulk_args_t {
     int               is_id; // if is_id == true, then use uint64_t; otherwise, pdc_metadata_t
     int8_t            op_type;
     hg_atomic_int32_t bulk_done_flag;
+    int               server_id;
     int64_t           server_time_elapsed;
     int64_t           server_memory_consumption;
 

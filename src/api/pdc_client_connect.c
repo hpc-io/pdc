@@ -74,6 +74,10 @@ int                    pdc_client_mpi_size_g  = 1;
 // FIXME: this is a temporary solution for printing out debug info, like memory usage.
 int memory_debug_g = 0; // when it is no longer 0, stop printing debug info.
 
+int64_t *server_time_total_g;
+int64_t *server_call_count_g;
+int64_t *server_mem_usage_g;
+
 #ifdef ENABLE_MPI
 MPI_Comm PDC_SAME_NODE_COMM_g;
 MPI_Comm PDC_CLIENT_COMM_WORLD_g;
@@ -1494,6 +1498,10 @@ PDC_Client_init()
         replication_factor     = replication_factor > 0 ? replication_factor : 1;
         dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE,
                         extra_tree_height, replication_factor);
+
+        server_time_total_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
+        server_call_count_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
+        server_mem_usage_g  = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
     }
 
 done:
@@ -7397,12 +7405,9 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     hg_atomic_incr32(&bulk_todo_g);
     PDC_Client_check_bulk(send_context_g);
 
-    if (memory_debug_g == 0) {
-        printf("==PDC_CLIENT[%d]: PDC_Client_query_kvtag_server on server %d: server_time_elapsed %.4f ms, "
-               "server memory consumption: %" PRId64 "\n",
-               pdc_client_mpi_rank_g, server_id, (double)(bulk_arg->server_time_elapsed / 1000.0),
-               bulk_arg->server_memory_consumption);
-    }
+    server_call_count_g[server_id]++;
+    server_time_elapsed_g[server_id] += bulk_arg->server_time_elapsed;
+    server_memory_consumption_g[server_id] = bulk_arg->server_memory_consumption;
 
     *n_res = bulk_arg->n_meta;
     if (*n_res > 0)
@@ -8303,6 +8308,19 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+report_avg_server_profiling_rst()
+{
+    for (int i = 0; i < pdc_server_num_g; i++) {
+
+        double avg_srv_time = if (server_call_count_g[i] > 0)
+                                  ? (double)(server_time_total_g[i]) / (double)(server_call_count_g[i])
+                                  : 0.0;
+        double srv_mem_usage = server_mem_usage_g[i] / 1024.0 / 1024.0;
+        printf("==PDC_CLIENT[%d]: server %d, avg profiling time: %.4f, memory usage: %.4f MB\n",
+               pdc_client_mpi_rank_g, i, avg_srv_time, srv_mem_usage);
+    }
+}
+
 /******************** METADATA INDEX BEGINS *******************************/
 
 // metadata_index_create callback
@@ -8570,6 +8588,8 @@ _dart_send_request_to_one_server(int server_id, dart_perform_one_server_in_t *da
         return FAIL;
     }
 
+    lookup_args_ptr->server_id = server_id;
+
     // println("dart_in->attr_key: %s", dart_in->attr_key);
     hg_ret = HG_Forward(*handle, dart_perform_one_server_on_receive_cb, lookup_args_ptr, dart_in);
     hg_atomic_incr32(&atomic_work_todo_g);
@@ -8648,20 +8668,24 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         ret_value    = total_n_meta;
     }
     timer_pause(&timer);
-    double total_server_elapsed = 0;
-    for (int i = 0; i < num_servers; i++) {
-        total_server_elapsed += (double)(lookup_args[i].server_time_elapsed);
-    }
+
     if (!is_index_write_op(op_type)) {
-        println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
-                "%.4f ms. server_time_elapsed: %.4f ms",
-                pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
-                num_servers, total_n_meta, timer_delta_ms(&timer), total_server_elapsed / 1000.0);
-        if (memory_debug_g == 0) {
-            for (int i = 0; i < num_servers; i++) {
-                println("[SERVER %d] memory_usage: %" PRId64 "", i, lookup_args[i].server_memory_consumption);
-            }
+        for (int i = 0; i < num_servers; i++) {
+            int srv_id = lookup_args[i].server_id;
+            server_time_total_g[srv_id] += lookup_args[i].server_time_elapsed;
+            server_call_count_g[srv_id] += 1;
+            server_memory_total_g[srv_id] = lookup_args[i].server_memory_consumption;
         }
+        // println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
+        //         "%.4f ms. server_time_elapsed: %.4f ms",
+        //         pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
+        //         num_servers, total_n_meta, timer_delta_ms(&timer), total_server_elapsed / 1000.0);
+        // if (memory_debug_g == 0) {
+        //     for (int i = 0; i < num_servers; i++) {
+        //         println("[SERVER %d] memory_usage: %" PRId64 "", i,
+        //         lookup_args[i].server_memory_consumption);
+        //     }
+        // }
     }
     // free(dart_request_handles);
 done:
