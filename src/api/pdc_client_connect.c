@@ -8317,8 +8317,8 @@ report_avg_server_profiling_rst()
                                   ? (double)(server_time_total_g[i]) / (double)(server_call_count_g[i])
                                   : 0.0;
         double srv_mem_usage = server_mem_usage_g[i] / 1024.0 / 1024.0;
-        printf("==PDC_CLIENT[%d]: server %d, avg profiling time: %.4f, memory usage: %.4f MB\n",
-               pdc_client_mpi_rank_g, i, avg_srv_time, srv_mem_usage);
+        printf("==PDC_CLIENT[%d]: server %d, avg profiling time: %.4f ms, memory usage: %.4f MB\n",
+               pdc_client_mpi_rank_g, i, avg_srv_time / 1000.0, srv_mem_usage);
     }
 }
 

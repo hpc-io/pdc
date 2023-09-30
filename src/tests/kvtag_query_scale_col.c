@@ -351,26 +351,41 @@ main(int argc, char *argv[])
     }
 
     // close a container
-    if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
-    else
-        printf("successfully close container c1\n");
+    if (PDCcont_close(cont) < 0) {
+        if (my_rank == 0) {
+            printf("fail to close container c1\n");
+        }
+    }
+    else {
+        if (my_rank == 0)
+            printf("successfully close container c1\n");
+    }
 
     // close an object property
-    if (PDCprop_close(obj_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        printf("successfully close object property\n");
+    if (PDCprop_close(obj_prop) < 0) {
+        if (my_rank == 0)
+            printf("Fail to close property @ line %d\n", __LINE__);
+    }
+    else {
+        if (my_rank == 0)
+            printf("successfully close object property\n");
+    }
 
     // close a container property
-    if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        printf("successfully close container property\n");
+    if (PDCprop_close(cont_prop) < 0) {
+        if (my_rank == 0)
+            printf("Fail to close property @ line %d\n", __LINE__);
+    }
+    else {
+        if (my_rank == 0)
+            printf("successfully close container property\n");
+    }
 
     // close pdc
-    if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+    if (PDCclose(pdc) < 0) {
+        if (my_rank == 0)
+            printf("fail to close PDC\n");
+    }
 done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
