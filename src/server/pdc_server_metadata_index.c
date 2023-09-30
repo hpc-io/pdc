@@ -411,6 +411,8 @@ metadata_index_delete(char *attr_key, char *attr_value, uint64_t obj_locator, in
     perr_t      ret_value = FAIL;
     stopwatch_t timer;
     timer_start(&timer);
+    uint64_t *data = (uint64_t *)calloc(1, sizeof(uint64_t));
+    *data          = obj_locator;
 
     // if (index_type == DHT_FULL_HASH) {
     //     delete_hash_table_for_keyword(attr_key, strlen(attr_key), (void *)obj_locator);
@@ -419,7 +421,7 @@ metadata_index_delete(char *attr_key, char *attr_value, uint64_t obj_locator, in
     //     delete_hash_table_for_keyword(attr_key, 1, (void *)obj_locator);
     // }
     // else if (index_type == DART_HASH) {
-    delete_index_for_attr_name(attr_key, attr_value, (void *)obj_locator);
+    delete_index_for_attr_name(attr_key, attr_value, (void *)data);
     // }
 
     timer_pause(&timer);
