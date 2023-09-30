@@ -316,7 +316,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
-    int my_obj_after_selectivity = my_obj * selectivity / 100;
+    my_obj_after_selectivity = my_obj * selectivity / 100;
     for (i = 0; i < my_obj_after_selectivity; i++) {
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
