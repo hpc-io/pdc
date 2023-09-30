@@ -322,9 +322,14 @@ main(int argc, char *argv[])
             char attr_name[64];
             char tag_value[64];
             snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
-            kvtag.name = strdup(attr_name);
+            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
+            kvtag.name  = strdup(attr_name);
+            kvtag.value = (void *)strdup(tag_value);
+            kvtag.type  = PDC_STRING;
+            kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
-                PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, ref_type, (uint64_t)obj_ids[i]);
+                PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, ref_type,
+                                                    (uint64_t)obj_ids[i]);
             }
             else {
                 PDCobj_del_tag(obj_ids[i], kvtag.name);
