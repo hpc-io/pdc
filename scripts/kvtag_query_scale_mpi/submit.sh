@@ -16,21 +16,21 @@ fi
 
 # test if $1 is a single digit number between 0 and 1 (inclusive)
 re='^[0-1]$'
-if [[ "$1" =~ $re ]]; then
+if ! [[ "$1" =~ $re ]]; then
     echo "Error: i_type should be a single digit number between 0 and 1 (inclusive), 0 means not using index, 1 means using index"
     exit 1
 fi
 
 # test if $2 is a single digit number between 0 and 3 (inclusive)
 re='^[0-3]$'
-if [[ "$2" =~ $re ]]; then
+if ! [[ "$2" =~ $re ]]; then
     echo "Error: q_type should be a single digit number between 0 and 3 (inclusive), 0: exact query, 1: prefix query, 2: suffix query, 3: infix query"
     exit 1
 fi
 
 # test if $3 is a single digit number between 0 and 1 (inclusive)
 re='^[0-1]$'
-if [[ "$3" =~ $re ]]; then
+if ! [[ "$3" =~ $re ]]; then
     echo "Error: c_type should be a single digit number between 0 and 1 (inclusive), 0 means using non-collective mode, 1 means using collective mode"
     exit 1
 fi
