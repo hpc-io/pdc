@@ -1495,7 +1495,7 @@ PDC_Client_init()
         dart_g                 = (DART *)calloc(1, sizeof(DART));
         int extra_tree_height  = 0;
         int replication_factor = pdc_server_num_g / 10;
-        replication_factor     = replication_factor > 0 ? replication_factor : 1;
+        replication_factor     = replication_factor > 0 ? replication_factor : 2;
         dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE,
                         extra_tree_height, replication_factor);
 
@@ -8631,7 +8631,7 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
 }
 
 uint64_t
-dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
+dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
                         dart_perform_one_server_in_t *dart_in, Set *output_set)
 {
     struct bulk_args_t *lookup_args = (struct bulk_args_t *)calloc(num_servers, sizeof(struct bulk_args_t));
@@ -8647,7 +8647,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
     timer_start(&timer);
     // send the requests to the required servers.
     for (int i = 0; i < num_servers; i++) {
-        int server_id = hash_result[i].server_id;
+        int server_id = (*hash_result)[i].server_id;
         if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
 
@@ -8655,7 +8655,7 @@ dart_perform_on_servers(index_hash_result_t *hash_result, int num_servers,
         lookup_args[i].op_type = op_type;
 
         if (is_index_write_op(op_type)) {
-            dart_in->attr_key = hash_result[i].key;
+            dart_in->attr_key = strdup((*hash_result)[i].key);
         }
 
         _dart_send_request_to_one_server(server_id, dart_in, &(lookup_args[i]), &(dart_request_handles[i]));
@@ -8782,7 +8782,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
         set_register_free_function(result_set, free);
     }
 
-    uint64_t total_count = dart_perform_on_servers(hash_result, num_servers, &input_param, result_set);
+    uint64_t total_count = dart_perform_on_servers(&hash_result, num_servers, &input_param, result_set);
 
     // Pick deduplicated result.
     *n_res = set_num_entries(result_set);
@@ -8836,7 +8836,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.timestamp = 1;
 
     int                  num_servers = 0;
-    index_hash_result_t *hash_result;
+    index_hash_result_t *hash_result = NULL;
     if (hash_algo == DART_HASH) {
         num_servers = DART_hash(dart_g, attr_key, OP_DELETE, NULL, &hash_result);
     }
@@ -8847,7 +8847,7 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         num_servers = DHT_hash(dart_g, 1, attr_key, OP_DELETE, &hash_result);
     }
 
-    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL);
+    dart_perform_on_servers(&hash_result, num_servers, &input_param, NULL);
 
     // done:
     return ret_value;
@@ -8875,7 +8875,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.timestamp = 1;
 
     int                  num_servers = 0;
-    index_hash_result_t *hash_result;
+    index_hash_result_t *hash_result = NULL;
     if (hash_algo == DART_HASH) {
         num_servers = DART_hash(dart_g, attr_key, OP_INSERT, dart_retrieve_server_info_cb, &hash_result);
     }
@@ -8886,7 +8886,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
         num_servers = DHT_hash(dart_g, 1, attr_key, OP_INSERT, &hash_result);
     }
 
-    dart_perform_on_servers(hash_result, num_servers, &input_param, NULL);
+    dart_perform_on_servers(&hash_result, num_servers, &input_param, NULL);
 
     // done:
     return ret_value;
