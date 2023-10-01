@@ -249,7 +249,7 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
         nm_key  = (rr == 1) ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
         nm_trie = (rr == 1) ? art_key_suffix_tree_g : art_key_prefix_tree_g;
 #else
-    int sub_loop_count = 1; // should be 'len', but we already iterate all suffixes at client side
+    int sub_loop_count = len; // should be 'len', but we already iterate all suffixes at client side
     nm_trie            = art_key_prefix_tree_g;
     for (int j = 0; j < sub_loop_count; j++) {
         nm_key         = (unsigned char *)substring(attr_name, j, len);
@@ -284,8 +284,9 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
 
 #else
         secondary_trie = (art_tree *)(leafcnt->extra_prefix_index);
-        for (int jj = 0; jj < strlen(attr_value); jj++) {
-            unsigned char *val_key = (unsigned char *)substring(attr_value, jj, strlen(attr_value));
+        int val_len    = strlen(attr_value);
+        for (int jj = 0; jj < val_len; jj++) {
+            unsigned char *val_key = (unsigned char *)substring(attr_value, jj, val_len);
 #endif
             create_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
         } // this matches with the 'r' loop or 'jj' loop
@@ -554,11 +555,11 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
                 }
                 break;
             case PATTERN_MIDDLE:
-                tok                    = substring(secondary_query, 1, strlen(secondary_query) - 1);
-                param->level_two_infix = tok;
-                secondary_trie         = (art_tree *)leafcnt->extra_prefix_index;
+                tok            = substring(secondary_query, 1, strlen(secondary_query) - 1);
+                secondary_trie = (art_tree *)leafcnt->extra_prefix_index;
                 if (secondary_trie != NULL) {
 #ifndef PDC_DART_SFX_TREE
+                    param->level_two_infix = tok;
                     art_iter(secondary_trie, level_two_art_callback, param);
 #else
                     art_iter_prefix(secondary_trie, (unsigned char *)tok, strlen(tok), level_two_art_callback,
@@ -591,6 +592,8 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     }
 
     pdc_art_iterator_param_t *param = (pdc_art_iterator_param_t *)calloc(1, sizeof(pdc_art_iterator_param_t));
+    param->level_one_infix          = NULL;
+    param->level_two_infix          = NULL;
     param->query_str                = v_query;
     param->out                      = set_new(ui64_hash, ui64_equal);
     set_register_free_function(param->out, free);
@@ -647,10 +650,10 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
 #endif
                 break;
             case PATTERN_MIDDLE:
-                qType_string           = "Infix";
-                tok                    = substring(k_query, 1, strlen(k_query) - 1);
-                param->level_one_infix = tok;
+                qType_string = "Infix";
+                tok          = substring(k_query, 1, strlen(k_query) - 1);
 #ifndef PDC_DART_SFX_TREE
+                param->level_one_infix = tok;
                 art_iter(art_key_prefix_tree_g, level_one_art_callback, param);
 #else
                 art_iter_prefix(art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
