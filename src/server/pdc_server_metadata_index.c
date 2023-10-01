@@ -268,8 +268,9 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
             // TODO: build local index for range query.
             leafcnt->extra_range_index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)leafcnt->extra_range_index);
+
+            art_insert(nm_trie, nm_key, strlen((const char *)nm_key), leafcnt);
         }
-        art_insert(nm_trie, nm_key, strlen((const char *)nm_key), leafcnt);
 
         art_tree *secondary_trie = NULL;
 
