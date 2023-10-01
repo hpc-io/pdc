@@ -349,7 +349,10 @@ delete_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
         return ret;
     }
 
-    set_remove(obj_id_set, data);
+    if (set_query(obj_id_set, data) != 0) {
+        set_remove(obj_id_set, data);
+    }
+
     if (set_num_entries(obj_id_set) == 0) {
         art_delete(art_value_prefix_tree, attr_value, len);
         set_free(obj_id_set);
