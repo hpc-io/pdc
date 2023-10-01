@@ -37,6 +37,11 @@ MAX_HYPERTHREADING=2
 NUM_THREAD_PER_SERVER_PROC=2
 NUM_THREAD_PER_CLIENT_PROC=2
 
+# test if $2 is a string starting with a letter, and followed by a 4-digit number
+re='^[a-zA-Z][0-9]{4}$'
+if ! [[ $2 =~ $re ]] ; then
+    echo "Error: proj_name should be a string starting with a letter, and followed by a 4-digit number, e.g. m2021" >&2; exit 1
+fi
 
 PROJECT_NAME=$2
 

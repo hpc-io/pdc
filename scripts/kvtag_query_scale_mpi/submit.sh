@@ -9,6 +9,30 @@ curdir=$(pwd)
 
 first_submit=1
 
+if [[ "$#" -ne 3 ]]; then
+    echo "Usage: $0 <i_type> <q_type> <c_type>"
+    exit 1
+fi
+
+# test if $1 is a single digit number between 0 and 1 (inclusive)
+if [[ "$1" =~ ^[0-1]$ ]]; then
+    echo "Error: i_type should be a single digit number between 0 and 1 (inclusive), 0 means not using index, 1 means using index"
+    exit 1
+fi
+
+# test if $2 is a single digit number between 0 and 3 (inclusive)
+if [[ "$2" =~ ^[0-3]$ ]]; then
+    echo "Error: q_type should be a single digit number between 0 and 3 (inclusive), 0: exact query, 1: prefix query, 2: suffix query, 3: infix query"
+    exit 1
+fi
+
+# test if $3 is a single digit number between 0 and 1 (inclusive)
+if [[ "$3" =~ ^[0-1]$ ]]; then
+    echo "Error: c_type should be a single digit number between 0 and 1 (inclusive), 0 means using non-collective mode, 1 means using collective mode"
+    exit 1
+fi
+
+
 i_type=$1
 q_type=$2
 c_type=$3

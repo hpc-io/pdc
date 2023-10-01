@@ -5,6 +5,12 @@ if [[ "$#" -ne 1 ]]; then
     exit 1
 fi
 
+# test if $1 is a single digit number between 0 and 1 (inclusive)
+if [[ "$1" =~ ^[0-1]$ ]]; then
+    echo "Error: clean_dir should be a single digit number between 0 and 1 (inclusive). 1 means clean the directories named with numbers, 0 means clean the sbatch script only."
+    exit 1
+fi
+
 CLEAN_DIR=$1
 MAX_NODE=512
 
