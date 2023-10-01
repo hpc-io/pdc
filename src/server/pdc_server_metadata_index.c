@@ -222,8 +222,8 @@ create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
     if (obj_id_set == NULL) {
         obj_id_set = set_new(ui64_hash, ui64_equal);
         set_register_free_function(obj_id_set, free);
+        art_insert(art_value_prefix_tree, attr_value, len, (void *)obj_id_set);
     }
-    art_insert(art_value_prefix_tree, attr_value, len, (void *)obj_id_set);
 
     int indexed = set_insert(obj_id_set, data);
 
