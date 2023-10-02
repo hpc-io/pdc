@@ -2296,8 +2296,15 @@ main(int argc, char *argv[])
 
 done:
 #ifdef ENABLE_ROCKSDB
-    if (use_rocksdb_g)
+    if (use_rocksdb_g) {
+        char rocksdb_fname[ADDR_MAX];
+        struct stat st;
+        snprintf(rocksdb_fname, ADDR_MAX, "/tmp/PDC_rocksdb_%d", pdc_server_rank_g);
+        stat(rocksdb_fname, &st);
+        printf("==PDC_SERVER[%d]: RocksDB file size %lu\n", pdc_server_rank_g, st.st_size);
+
         rocksdb_close(rocksdb_g);
+    }
 #endif
 
 #ifdef PDC_TIMING
