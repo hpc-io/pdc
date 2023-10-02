@@ -452,8 +452,12 @@ PDC_Server_rm_config_file()
         goto done;
     }
 
-    snprintf(config_fname, ADDR_MAX, "/tmp/PDC_rocksdb_%d", pdc_server_rank_g);
-    remove_directory(config_fname);
+#ifdef ENABLE_ROCKSDB
+    if (use_rocksdb_g) {
+        snprintf(config_fname, ADDR_MAX, "/tmp/PDC_rocksdb_%d", pdc_server_rank_g);
+        remove_directory(config_fname);
+    }
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
