@@ -33,6 +33,7 @@
 
 #include "pdc_utlist.h"
 #include "pdc_id_pkg.h"
+#include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_cont.h"
@@ -44,6 +45,11 @@
 
 #include "mercury.h"
 #include "mercury_macros.h"
+
+#include "string_utils.h"
+#include "dart_core.h"
+#include "timer_utils.h"
+#include "query_utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -99,6 +105,13 @@ static hg_context_t *send_context_g     = NULL;
 static int           work_todo_g        = 0;
 int                  query_id_g         = 0;
 
+// global variables for DART
+static DART *                 dart_g;
+hg_atomic_int32_t             dart_response_done_g;
+static dart_hash_algo_t       dart_hash_algo_g    = DART_HASH;
+static dart_object_ref_type_t dart_obj_ref_type_g = REF_PRIMARY_ID;
+
+// global variables for Mercury RPC registration
 static hg_id_t client_test_connect_register_id_g;
 static hg_id_t gen_obj_register_id_g;
 static hg_id_t gen_cont_register_id_g;
@@ -153,10 +166,16 @@ static hg_id_t send_region_storage_meta_shm_bulk_rpc_register_id_g;
 static hg_id_t send_data_query_register_id_g;
 static hg_id_t get_sel_data_register_id_g;
 
+// DART index
+static hg_id_t dart_get_server_info_g;
+static hg_id_t dart_perform_one_server_g;
+
 int                        cache_percentage_g       = 0;
 int                        cache_count_g            = 0;
 int                        cache_total_g            = 0;
 pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
+
+static uint64_t object_selection_query_counter_g = 0;
 
 /*
  *
@@ -1010,10 +1029,14 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     hg_bulk_t           local_bulk_handle;
     uint32_t            i;
     void *              buf = NULL;
+    void **             ids_buf;
     uint32_t            n_meta;
     uint64_t            buf_sizes[2] = {0, 0};
+    uint64_t *          ids_buf_sizes;
     uint32_t            actual_cnt;
     pdc_metadata_t *    meta_ptr;
+    uint64_t *          u64_arr_ptr;
+    uint32_t            bulk_sgnum;
 
     FUNC_ENTER(NULL);
 
@@ -1028,14 +1051,29 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     n_meta = bulk_args->n_meta;
 
     if (hg_cb_info->ret == HG_SUCCESS) {
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
-                       &actual_cnt);
+        if (bulk_args->is_id == 1) {
+            bulk_sgnum    = HG_Bulk_get_segment_count(local_bulk_handle);
+            ids_buf       = (void **)calloc(sizeof(void *), bulk_sgnum);
+            ids_buf_sizes = (uint64_t *)calloc(sizeof(uint64_t), bulk_sgnum);
+            HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, bulk_sgnum, ids_buf,
+                           ids_buf_sizes, &actual_cnt);
 
-        meta_ptr            = (pdc_metadata_t *)(buf);
-        bulk_args->meta_arr = (pdc_metadata_t **)calloc(sizeof(pdc_metadata_t *), n_meta);
-        for (i = 0; i < n_meta; i++) {
-            bulk_args->meta_arr[i] = meta_ptr;
-            meta_ptr++;
+            u64_arr_ptr        = ((uint64_t **)(ids_buf))[0];
+            bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
+            for (i = 0; i < n_meta; i++) {
+                bulk_args->obj_ids[i] = *u64_arr_ptr;
+                u64_arr_ptr++;
+            }
+        }
+        else {
+            HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
+                           &actual_cnt);
+            meta_ptr            = (pdc_metadata_t *)(buf);
+            bulk_args->meta_arr = (pdc_metadata_t **)calloc(sizeof(pdc_metadata_t *), n_meta);
+            for (i = 0; i < n_meta; i++) {
+                bulk_args->meta_arr[i] = meta_ptr;
+                meta_ptr++;
+            }
         }
     }
 
@@ -1049,7 +1087,7 @@ hg_test_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
 
 done:
     fflush(stdout);
-    free(bulk_args);
+    // free(bulk_args);
 
     FUNC_LEAVE(ret_value);
 }
@@ -1125,8 +1163,8 @@ perr_t
 PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int port)
 {
     perr_t ret_value = SUCCEED;
-    char   na_info_string[PATH_MAX];
-    char   hostname[ADDR_MAX];
+    char   na_info_string[NA_STRING_INFO_LEN];
+    char   hostname[HOSTNAME_LEN];
     int    local_server_id;
     /* Set the default mercury transport
      * but enable overriding that to any of:
@@ -1280,6 +1318,10 @@ drc_access_again:
     send_data_query_register_id_g = PDC_send_data_query_rpc_register(*hg_class);
     get_sel_data_register_id_g    = PDC_get_sel_data_rpc_register(*hg_class);
 
+    // DART Index
+    dart_get_server_info_g    = PDC_dart_get_server_info_register(*hg_class);
+    dart_perform_one_server_g = PDC_dart_perform_one_server_register(*hg_class);
+
 #ifdef ENABLE_MULTITHREAD
     /* Mutex initialization for the client versions of these... */
     /* The Server versions gets initialized in pdc_server.c */
@@ -1426,6 +1468,14 @@ PDC_Client_init()
     }
 
     srand(time(NULL));
+
+    /* Initialize DART space */
+    dart_g                 = (DART *)calloc(1, sizeof(DART));
+    int extra_tree_height  = 0;
+    int replication_factor = pdc_server_num_g / 10;
+    replication_factor     = replication_factor > 0 ? replication_factor : 1;
+    dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE, extra_tree_height,
+                    replication_factor);
 
 done:
     fflush(stdout);
@@ -2360,21 +2410,22 @@ PDC_Client_query_metadata_name_timestep_agg(const char *obj_name, int time_step,
     FUNC_ENTER(NULL);
 
 #ifdef ENABLE_MPI
-    if (pdc_client_mpi_rank_g == 0) {
+    if (pdc_client_mpi_rank_g == 0)
         ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_server_id);
-        if (ret_value != SUCCEED || NULL == *out) {
-            *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
-        }
-    }
-    else
+
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
+
+    if (pdc_client_mpi_rank_g != 0)
         *out = (pdc_metadata_t *)calloc(1, sizeof(pdc_metadata_t));
 
     MPI_Bcast(*out, sizeof(pdc_metadata_t), MPI_CHAR, 0, PDC_CLIENT_COMM_WORLD_g);
-
     MPI_Bcast(metadata_server_id, 1, MPI_UINT32_T, 0, PDC_CLIENT_COMM_WORLD_g);
 #else
     ret_value = PDC_Client_query_metadata_name_timestep(obj_name, time_step, out, metadata_server_id);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - ERROR with query [%s]", pdc_client_mpi_rank_g, obj_name);
 #endif
 
 done:
@@ -5605,8 +5656,8 @@ PDC_Client_query_container_name_col(const char *cont_name, uint64_t *cont_meta_i
 
     MPI_Bcast(cont_meta_id, 1, MPI_LONG_LONG, 0, PDC_CLIENT_COMM_WORLD_g);
 #else
-    printf("==PDC_CLIENT[%d]: Calling MPI collective operation without enabling MPI!\n",
-           pdc_client_mpi_rank_g);
+    PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Calling MPI collective operation without enabling MPI!",
+                pdc_client_mpi_rank_g);
 #endif
 
 done:
@@ -7018,6 +7069,7 @@ PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
     if (kvtag != NULL && kvtag != NULL && kvtag->size != 0) {
         in.kvtag.name  = kvtag->name;
         in.kvtag.value = kvtag->value;
+        in.kvtag.type  = kvtag->type;
         in.kvtag.size  = kvtag->size;
     }
     else
@@ -7055,15 +7107,20 @@ metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
         client_lookup_args->ret = -1;
-        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output",
-                    pdc_client_mpi_rank_g);
+        PGOTO_ERROR(ret_value, "==PDC_CLIENT[%d]: %s error with HG_Get_output", pdc_client_mpi_rank_g,
+                    __func__);
     }
-    client_lookup_args->ret          = output.ret;
-    client_lookup_args->kvtag->name  = strdup(output.kvtag.name);
-    client_lookup_args->kvtag->size  = output.kvtag.size;
-    client_lookup_args->kvtag->value = malloc(output.kvtag.size);
-    memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
-    /* PDC_kvtag_dup(&(output.kvtag), &client_lookup_args->kvtag); */
+    client_lookup_args->ret = output.ret;
+    if (output.kvtag.name)
+        client_lookup_args->kvtag->name = strdup(output.kvtag.name);
+    client_lookup_args->kvtag->size = output.kvtag.size;
+    client_lookup_args->kvtag->type = output.kvtag.type;
+    if (output.kvtag.size > 0) {
+        client_lookup_args->kvtag->value = malloc(output.kvtag.size);
+        memcpy(client_lookup_args->kvtag->value, output.kvtag.value, output.kvtag.size);
+    }
+    else
+        client_lookup_args->kvtag->value = NULL;
 
 done:
     fflush(stdout);
@@ -7114,13 +7171,13 @@ PDC_get_kvtag(pdcid_t obj_id, char *tag_name, pdc_kvtag_t **kvtag, int is_cont)
         in.key = tag_name;
     }
     else
-        PGOTO_ERROR(FAIL, "==PDC_Client_get_kvtag(): invalid tag content!");
+        PGOTO_ERROR(FAIL, "PDC_get_kvtag: invalid tag content!");
 
     *kvtag            = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
     lookup_args.kvtag = *kvtag;
     hg_ret            = HG_Forward(metadata_get_kvtag_handle, metadata_get_kvtag_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_get_kvtag_metadata_with_name(): Could not start HG_Forward()");
+        PGOTO_ERROR(FAIL, "PDC_get_kvtag: Could not start HG_Forward()");
 
     // Wait for response from server
     work_todo_g = 1;
@@ -7136,55 +7193,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-perr_t
-PDCtag_delete(pdcid_t obj_id, char *tag_name)
-{
-    perr_t                         ret_value = SUCCEED;
-    hg_return_t                    hg_ret    = 0;
-    uint64_t                       meta_id;
-    uint32_t                       server_id;
-    hg_handle_t                    metadata_del_kvtag_handle;
-    metadata_get_kvtag_in_t        in;
-    struct _pdc_obj_info *         obj_prop;
-    struct _pdc_client_lookup_args lookup_args;
-
-    FUNC_ENTER(NULL);
-
-    obj_prop  = PDC_obj_get_info(obj_id);
-    meta_id   = obj_prop->obj_info_pub->meta_id;
-    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
-
-    debug_server_id_count[server_id]++;
-
-    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
-
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_del_kvtag_register_id_g,
-              &metadata_del_kvtag_handle);
-
-    // Fill input structure
-    in.obj_id     = meta_id;
-    in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
-    in.key        = tag_name;
-
-    hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb /*reuse*/, &lookup_args, &in);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()");
-
-    // Wait for response from server
-    work_todo_g = 1;
-    PDC_Client_check_response(&send_context_g);
-
-    if (lookup_args.ret != 1)
-        printf("PDC_CLIENT: del kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
-
-done:
-    fflush(stdout);
-    HG_Destroy(metadata_del_kvtag_handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
 static hg_return_t
 kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -7192,9 +7200,13 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     struct bulk_args_t *bulk_args;
     hg_bulk_t           origin_bulk_handle = hg_cb_info->info.bulk.origin_handle;
     hg_bulk_t           local_bulk_handle  = hg_cb_info->info.bulk.local_handle;
-    void *              buf                = NULL;
     uint32_t            n_meta, actual_cnt;
+    void *              buf = NULL;
     uint64_t            buf_sizes[1];
+    uint32_t            bulk_sgnum;
+    uint64_t *          ids_buf_sizes;
+    void **             ids_buf;
+    uint64_t *          u64_arr_ptr;
 
     FUNC_ENTER(NULL);
 
@@ -7203,11 +7215,24 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
     n_meta = bulk_args->n_meta;
 
     if (hg_cb_info->ret == HG_SUCCESS) {
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
-                       &actual_cnt);
+        bulk_sgnum    = HG_Bulk_get_segment_count(local_bulk_handle);
+        ids_buf       = (void **)calloc(sizeof(void *), bulk_sgnum);
+        ids_buf_sizes = (uint64_t *)calloc(sizeof(uint64_t), bulk_sgnum);
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, bulk_sgnum, ids_buf,
+                       ids_buf_sizes, &actual_cnt);
 
+        u64_arr_ptr        = ((uint64_t **)(ids_buf))[0];
         bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
-        memcpy(bulk_args->obj_ids, buf, sizeof(uint64_t) * n_meta);
+        for (int i = 0; i < n_meta; i++) {
+            bulk_args->obj_ids[i] = *u64_arr_ptr;
+            u64_arr_ptr++;
+        }
+
+        // HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, &buf, buf_sizes,
+        //                &actual_cnt);
+
+        // bulk_args->obj_ids = (uint64_t *)calloc(sizeof(uint64_t), n_meta);
+        // memcpy(bulk_args->obj_ids, buf, sizeof(uint64_t) * n_meta);
     }
     else
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "==PDC_CLIENT[%d]: Error with bulk handle", pdc_client_mpi_rank_g);
@@ -7305,8 +7330,12 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
 
     FUNC_ENTER(NULL);
 
-    if (kvtag == NULL || n_res == NULL || out == NULL)
-        PGOTO_ERROR(FAIL, "==CLIENT[%d]: input is NULL!", pdc_client_mpi_rank_g);
+    if (kvtag == NULL)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: %s - kvtag is NULL!", pdc_client_mpi_rank_g, __func__);
+    if (n_res == NULL)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: %s - n_res is NULL!", pdc_client_mpi_rank_g, __func__);
+    if (out == NULL)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: %s - out is NULL!", pdc_client_mpi_rank_g, __func__);
 
     if (kvtag->name == NULL)
         in.name = " ";
@@ -7315,10 +7344,12 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
 
     if (kvtag->value == NULL) {
         in.value = " ";
+        in.type  = PDC_STRING;
         in.size  = 1;
     }
     else {
         in.value = kvtag->value;
+        in.type  = kvtag->type;
         in.size  = kvtag->size;
     }
 
@@ -7346,7 +7377,8 @@ PDC_Client_query_kvtag_server(uint32_t server_id, const pdc_kvtag_t *kvtag, int 
     PDC_Client_check_bulk(send_context_g);
 
     *n_res = bulk_arg->n_meta;
-    *out   = bulk_arg->obj_ids;
+    if (*n_res > 0)
+        *out = bulk_arg->obj_ids;
     free(bulk_arg);
     // TODO: need to be careful when freeing the lookup_args, as it include the results returned to user
 
@@ -7359,21 +7391,40 @@ done:
 perr_t
 PDC_Client_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
 {
-    perr_t  ret_value = SUCCEED;
-    int32_t i;
-    int     nmeta = 0;
+    perr_t    ret_value = SUCCEED;
+    int32_t   i;
+    int       nmeta    = 0;
+    uint64_t *temp_ids = NULL;
+    uint32_t  server_id;
 
     FUNC_ENTER(NULL);
 
-    *n_res = 0;
+    *n_res   = 0;
+    *pdc_ids = NULL;
+
     for (i = 0; i < pdc_server_num_g; i++) {
-        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, pdc_ids);
-        if (ret_value != SUCCEED)
+        // when there are multiple clients issuing different queries concurrently, try to balance the
+        // server workload by having different clients sending queries with a different order
+        server_id = (pdc_client_mpi_rank_g + i) % pdc_server_num_g;
+        // ret_value = PDC_Client_query_kvtag_server(server_id, kvtag, &nmeta, &temp_ids);
+        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, &temp_ids);
+        if (ret_value != SUCCEED) {
+            // PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %d",
+            // pdc_client_mpi_rank_g, server_id);
             PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %d",
                         pdc_client_mpi_rank_g, i);
+        }
     }
 
-    *n_res = nmeta;
+    if (i == 0)
+        *pdc_ids = temp_ids;
+    else {
+        *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
+        memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
+        if (temp_ids)
+            free(temp_ids);
+    }
+    *n_res = *n_res + nmeta;
 
 done:
     fflush(stdout);
@@ -7381,7 +7432,7 @@ done:
 }
 
 void
-PDC_assign_server(uint32_t *my_server_start, uint32_t *my_server_end, uint32_t *my_server_count)
+PDC_assign_server(int32_t *my_server_start, int32_t *my_server_end, int32_t *my_server_count)
 {
     FUNC_ENTER(NULL);
 
@@ -7404,48 +7455,245 @@ PDC_assign_server(uint32_t *my_server_start, uint32_t *my_server_end, uint32_t *
     FUNC_LEAVE_VOID;
 }
 
-// All clients collectively query all servers
+// All clients collectively query all servers, each client gets partial results
 perr_t
-PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
+PDC_Client_query_kvtag_col(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, int *query_sent)
 {
-    perr_t  ret_value = SUCCEED;
-    int32_t my_server_start, my_server_end, my_server_count;
-    int32_t i;
-    int     nmeta = 0;
+    perr_t    ret_value = SUCCEED;
+    int32_t   my_server_start, my_server_end, my_server_count;
+    int32_t   i;
+    int       nmeta    = 0;
+    uint64_t *temp_ids = NULL;
 
     FUNC_ENTER(NULL);
 
-    if (pdc_server_num_g > pdc_client_mpi_size_g) {
-        my_server_count = pdc_server_num_g / pdc_client_mpi_size_g;
-        my_server_start = pdc_client_mpi_rank_g * my_server_count;
-        my_server_end   = my_server_start + my_server_count;
-        if (pdc_client_mpi_rank_g == pdc_client_mpi_size_g - 1) {
-            my_server_end += pdc_server_num_g % pdc_client_mpi_size_g;
-        }
-    }
-    else {
-        my_server_start = pdc_client_mpi_rank_g;
-        my_server_end   = my_server_start + 1;
-        if (pdc_client_mpi_rank_g >= pdc_server_num_g) {
-            my_server_end = 0;
-        }
-    }
+    PDC_assign_server(&my_server_start, &my_server_end, &my_server_count);
 
-    *n_res = 0;
+    *n_res      = 0;
+    *pdc_ids    = NULL;
+    *query_sent = 1;
     for (i = my_server_start; i < my_server_end; i++) {
         if (i >= pdc_server_num_g) {
+            *query_sent = 0;
             break;
         }
-        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, pdc_ids);
+        /* printf("==PDC_CLIENT[%d]: querying server %u\n", pdc_client_mpi_rank_g, i); */
+        temp_ids  = NULL;
+        ret_value = PDC_Client_query_kvtag_server((uint32_t)i, kvtag, &nmeta, &temp_ids);
         if (ret_value != SUCCEED)
-            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDC_Client_query_kvtag_server to server %u",
-                        pdc_client_mpi_rank_g, i);
+            PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error in %s querying server %u", pdc_client_mpi_rank_g,
+                        __func__, i);
+        if (i == my_server_start)
+            *pdc_ids = temp_ids;
+        else if (nmeta > 0) {
+            *pdc_ids = (uint64_t *)realloc(*pdc_ids, sizeof(uint64_t) * (*n_res + nmeta));
+            memcpy(*pdc_ids + (*n_res) * sizeof(uint64_t), temp_ids, nmeta * sizeof(uint64_t));
+            free(temp_ids);
+        }
+        *n_res = *n_res + nmeta;
+        /* printf("==PDC_CLIENT[%d]: server %u returned %d res \n", pdc_client_mpi_rank_g, i, *n_res); */
+        *query_sent = 1;
     }
-
-    *n_res = nmeta;
 
 done:
     fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+
+#ifdef ENABLE_MPI
+// All clients collectively query all servers, all clients get all results
+perr_t
+PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm comm)
+{
+    perr_t ret_value = SUCCEED;
+    int *  all_nmeta = NULL, ntotal = 0, *disp = NULL, i = 0, query_sent = 0;
+
+    FUNC_ENTER(NULL);
+
+    stopwatch_t timer;
+
+    timer_start(&timer);
+    ret_value = PDC_Client_query_kvtag_col(kvtag, n_res, pdc_ids, &query_sent);
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
+    if (*n_res <= 0) {
+        *n_res   = 0;
+        *pdc_ids = (uint64_t *)malloc(0);
+    }
+
+    if (pdc_client_mpi_size_g == 1)
+        goto done;
+
+    // print the pdc ids returned by this client, along with the client id
+    /*
+    printf("==PDC_CLIENT == COLLECTIVE [%d]: ", pdc_client_mpi_rank_g);
+    for (i = 0; i < *n_res; i++)
+        printf("%llu ", (*pdc_ids)[i]);
+    printf("\n");
+    */
+
+    // perform all gather to get the complete result.
+    // First, let's get the number of results from each client.
+
+    // In the case where the total number of clients is far larger than the total number of servers, say 20x
+    // larger, since not all ranks are participating in the query, we need to limit the MPI communication to
+    // those ranks only. This can help reduce the communication overhead, especially when the number of ranks
+    // is far larger than the number of servers.
+
+    int      sub_comm_color = query_sent == 1 ? 1 : 0;
+    MPI_Comm sub_comm;
+    MPI_Comm_split(comm, sub_comm_color, pdc_client_mpi_rank_g, &sub_comm);
+    int sub_comm_rank, sub_comm_size;
+    MPI_Comm_rank(sub_comm, &sub_comm_rank);
+    MPI_Comm_size(sub_comm, &sub_comm_size);
+    println("World rank %d is rank %d in the new communicator of size %d", pdc_client_mpi_rank_g,
+            sub_comm_rank, sub_comm_size);
+
+    int *sub_n_obj_arr, sub_n_obj_len, n_sent_ranks;
+
+    timer_start(&timer);
+    if (sub_comm_color == 1) {
+        n_sent_ranks  = sub_comm_size;
+        sub_n_obj_len = n_sent_ranks + 1;
+        sub_n_obj_arr = (int *)malloc(sub_n_obj_len * sizeof(int));
+        MPI_Allgather(n_res, 1, MPI_INT, sub_n_obj_arr, 1, MPI_INT, sub_comm);
+        sub_n_obj_arr[sub_n_obj_len - 1] = n_sent_ranks;
+    }
+    else {
+        n_sent_ranks  = pdc_client_mpi_rank_g - sub_comm_size;
+        sub_n_obj_len = n_sent_ranks + 1;
+        sub_n_obj_arr = (int *)malloc(sub_n_obj_len * sizeof(int));
+    }
+    MPI_Barrier(comm);
+    MPI_Bcast(sub_n_obj_arr, sub_n_obj_len, MPI_INT, object_selection_query_counter_g % n_sent_ranks, comm);
+    timer_pause(&timer);
+    println("==PDC Client[%d - %d]: Time for MPI_Allgather for Syncing ID count: %.4f ms",
+            pdc_client_mpi_rank_g, sub_comm_rank, timer_delta_us(&timer) / 1000.0);
+
+    if (sub_comm_color == 0 && sub_n_obj_arr[sub_n_obj_len - 1] != n_sent_ranks)
+        PGOTO_ERROR(FAIL, "==PDC Client[%d / %d]: ERROR with n_sent_ranks", pdc_client_mpi_rank_g,
+                    sub_comm_rank);
+
+    // Okay, now each rank of the WORLD_COMM knows about the number of results from the clients who sent
+    // queries.
+    // Let's calculate the total number of results, and the displacement for each client.
+
+    timer_start(&timer);
+    all_nmeta = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
+    disp      = (int *)malloc(pdc_client_mpi_size_g * sizeof(int));
+    ntotal    = 0;
+    for (i = 0; i < pdc_client_mpi_size_g; i++) {
+        all_nmeta[i] = (i < n_sent_ranks) ? sub_n_obj_arr[i] : 0;
+        disp[i]      = ntotal;
+        ntotal += all_nmeta[i];
+    }
+    timer_pause(&timer);
+    println("==PDC Client[%d - %d]: Time for Calculating ntotal and displacement: %.4f ms",
+            pdc_client_mpi_rank_g, sub_comm_rank, timer_delta_us(&timer) / 1000.0);
+
+    // Finally, let's gather all the results. Since each client is getting a partial result which can be of
+    // different size, we need to use MPI_Allgatherv for gathering variable-size arrays from different
+    // clients.
+    uint64_t *all_ids = (uint64_t *)malloc(ntotal * sizeof(uint64_t));
+
+    timer_start(&timer);
+    MPI_Allgatherv(*pdc_ids, *n_res, MPI_UINT64_T, all_ids, all_nmeta, disp, MPI_UINT64_T, comm);
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Allgatherv for Syncing ID array: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
+    // Never forget to free the memory that is no longer used.
+    free(all_nmeta);
+    free(disp);
+    if (*n_res > 0)
+        free(*pdc_ids);
+
+    // Now, let's return the result to the caller
+    *pdc_ids = all_ids;
+    *n_res   = ntotal;
+
+    object_selection_query_counter_g++;
+
+    // print the pdc ids returned after gathering all the results
+    /*
+    if (pdc_client_mpi_rank_g == 0) {
+        printf("==PDC_CLIENT == GATHERED [%d]: ", pdc_client_mpi_rank_g);
+        for (i = 0; i < *n_res; i++)
+            printf("%llu ", (*pdc_ids)[i]);
+        printf("\n");
+    }
+    */
+
+done:
+    fflush(stdout);
+    FUNC_LEAVE(ret_value);
+}
+#endif
+
+// Delete a tag specified by a name, and whether it is from a container or an object
+static perr_t
+PDCtag_delete(pdcid_t obj_id, char *tag_name, int is_cont)
+{
+    perr_t                         ret_value = SUCCEED;
+    hg_return_t                    hg_ret    = 0;
+    uint64_t                       meta_id;
+    uint32_t                       server_id;
+    hg_handle_t                    metadata_del_kvtag_handle;
+    metadata_get_kvtag_in_t        in;
+    struct _pdc_obj_info *         obj_prop;
+    struct _pdc_cont_info *        cont_prop;
+    struct _pdc_client_lookup_args lookup_args;
+
+    FUNC_ENTER(NULL);
+
+    if (is_cont) {
+        cont_prop = PDC_cont_get_info(obj_id);
+        meta_id   = cont_prop->cont_info_pub->meta_id;
+    }
+    else {
+        obj_prop = PDC_obj_get_info(obj_id);
+        meta_id  = obj_prop->obj_info_pub->meta_id;
+    }
+
+    server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_del_kvtag_register_id_g,
+              &metadata_del_kvtag_handle);
+
+    // Fill input structure
+    in.obj_id = meta_id;
+
+    if (is_cont)
+        in.hash_value = PDC_get_hash_by_name(cont_prop->cont_info_pub->name);
+    else
+        in.hash_value = PDC_get_hash_by_name(obj_prop->obj_info_pub->name);
+    in.key = tag_name;
+
+    // reuse metadata_add_tag_rpc_cb here since it only checks the return value
+    hg_ret = HG_Forward(metadata_del_kvtag_handle, metadata_add_tag_rpc_cb /*reuse*/, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "PDC_Client_del_kvtag_metadata_with_name(): Could not start HG_Forward()");
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1)
+        printf("PDC_CLIENT: del kvtag NOT successful ... ret_value = %d\n", lookup_args.ret);
+
+done:
+    fflush(stdout);
+    HG_Destroy(metadata_del_kvtag_handle);
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -7478,7 +7726,6 @@ done:
 }
 
 pdcid_t
-
 PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
 {
     pdcid_t  cont_id;
@@ -7576,7 +7823,8 @@ PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused
 }
 
 perr_t
-PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size)
+PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, pdc_var_type_t value_type,
+                psize_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -7585,6 +7833,7 @@ PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_
 
     kvtag.name  = tag_name;
     kvtag.value = (void *)tag_value;
+    kvtag.type  = value_type;
     kvtag.size  = (uint64_t)value_size;
 
     ret_value = PDC_add_kvtag(cont_id, &kvtag, 1);
@@ -7598,7 +7847,8 @@ done:
 }
 
 perr_t
-PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size)
+PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+                psize_t *value_size)
 {
     perr_t       ret_value = SUCCEED;
     pdc_kvtag_t *kvtag     = NULL;
@@ -7610,6 +7860,7 @@ PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *valu
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
 
     *tag_value  = kvtag->value;
+    *value_type = kvtag->type;
     *value_size = kvtag->size;
 
 done:
@@ -7624,9 +7875,9 @@ PDCcont_del_tag(pdcid_t cont_id, char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCobj_del_tag(cont_id, tag_name);
+    ret_value = PDCtag_delete(cont_id, tag_name, 1);
     if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCobj_del_tag", pdc_client_mpi_rank_g);
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: error with PDCtag_delete", pdc_client_mpi_rank_g);
 
 done:
     fflush(stdout);
@@ -7772,7 +8023,7 @@ done:
 }
 
 perr_t
-PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
+PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, pdc_var_type_t value_type, psize_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
@@ -7781,6 +8032,7 @@ PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_si
 
     kvtag.name  = tag_name;
     kvtag.value = (void *)tag_value;
+    kvtag.type  = value_type;
     kvtag.size  = (uint64_t)value_size;
 
     ret_value = PDC_add_kvtag(obj_id, &kvtag, 0);
@@ -7793,7 +8045,8 @@ done:
 }
 
 perr_t
-PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_size)
+PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+               psize_t *value_size)
 {
     perr_t       ret_value = SUCCEED;
     pdc_kvtag_t *kvtag     = NULL;
@@ -7805,6 +8058,7 @@ PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, psize_t *value_
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_get_kvtag", pdc_client_mpi_rank_g);
 
     *tag_value  = kvtag->value;
+    *value_type = kvtag->type;
     *value_size = kvtag->size;
 
 done:
@@ -7819,7 +8073,7 @@ PDCobj_del_tag(pdcid_t obj_id, char *tag_name)
 
     FUNC_ENTER(NULL);
 
-    ret_value = PDCtag_delete(obj_id, tag_name);
+    ret_value = PDCtag_delete(obj_id, tag_name, 0);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: Error with PDC_del_kvtag", pdc_client_mpi_rank_g);
 
@@ -8226,3 +8480,712 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+
+/******************** METADATA INDEX BEGINS *******************************/
+
+// metadata_index_create callback
+// static hg_return_t
+// client_metadata_index_create_cb(const struct hg_cb_info *callback_info)
+// {
+//     hg_return_t ret_value = HG_SUCCESS;
+//     hg_handle_t handle;
+//     struct client_lookup_args *client_lookup_args;
+
+//     metadata_index_create_out_t output;
+
+//     FUNC_ENTER(NULL);
+
+//     /* printf("Entered client_rpc_cb()"); */
+//     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+//     handle = callback_info->info.forward.handle;
+
+//     /* Get output from server*/
+//     ret_value = HG_Get_output(handle, &output);
+//     /* printf("Return value=%llu\n", output.ret); */
+//     client_lookup_args->obj_id = output.ret;
+
+//     work_todo_g--;
+
+// done:
+//     HG_Destroy(handle);
+//     FUNC_LEAVE(ret_value);
+// }
+
+// metadata_index_delete callback
+// static hg_return_t
+// client_metadata_index_delete_cb(const struct hg_cb_info *callback_info)
+// {
+//     hg_return_t ret_value = HG_SUCCESS;
+//     hg_handle_t handle;
+//     struct client_lookup_args *client_lookup_args;
+
+//     metadata_index_delete_out_t output;
+
+//     FUNC_ENTER(NULL);
+
+//     /* printf("Entered client_rpc_cb()"); */
+//     client_lookup_args = (struct client_lookup_args*) callback_info->arg;
+//     handle = callback_info->info.forward.handle;
+
+//     /* Get output from server*/
+//     ret_value = HG_Get_output(handle, &output);
+//     /* printf("Return value=%llu\n", output.ret); */
+//     client_lookup_args->obj_id = output.ret;
+
+//     work_todo_g--;
+
+// done:
+//     HG_Destroy(handle);
+//     FUNC_LEAVE(ret_value);
+// }
+
+// get_server_info_callback
+static hg_return_t
+client_dart_get_server_info_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t                        ret_value = HG_SUCCESS;
+    hg_handle_t                        handle;
+    struct client_genetic_lookup_args *client_lookup_args;
+
+    dart_get_server_info_out_t output;
+
+    FUNC_ENTER(NULL);
+
+    /* printf("Entered client_rpc_cb()"); */
+    client_lookup_args = (struct client_genetic_lookup_args *)callback_info->arg;
+    handle             = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    ret_value = HG_Get_output(handle, &output);
+    /* printf("Return value=%llu\n", output.ret); */
+    client_lookup_args->int64_value1 = output.indexed_word_count;
+    client_lookup_args->int64_value2 = output.request_count;
+
+    work_todo_g--;
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+server_lookup_connection(int serverId, int retry_times)
+{
+    int    n_retry = 0;
+    perr_t rst     = SUCCEED;
+    while (pdc_server_info_g[serverId].addr_valid != 1) {
+        if (n_retry > retry_times)
+            break;
+        if (PDC_Client_lookup_server(serverId, 0) == SUCCEED) {
+            rst = SUCCEED;
+            break;
+        }
+        else {
+            rst = FAIL;
+            printf("==CLIENT[%d]: ERROR with PDC_Client_lookup_server, retry = %d\n", pdc_client_mpi_rank_g,
+                   n_retry);
+        }
+        n_retry++;
+    }
+    return rst;
+}
+
+dart_server
+dart_retrieve_server_info_cb(uint32_t serverId)
+{
+    dart_server ret;
+
+    perr_t srv_lookup_rst = server_lookup_connection((int)serverId, 2);
+    if (srv_lookup_rst == FAIL) {
+        println("the server %d cannot be connected. ", serverId);
+        goto done;
+    }
+
+    // Mercury comm here.
+    hg_handle_t dart_get_server_info_handle;
+    HG_Create(send_context_g, pdc_server_info_g[serverId].addr, dart_get_server_info_g,
+              &dart_get_server_info_handle);
+    dart_get_server_info_in_t in;
+    in.serverId = serverId;
+    struct client_genetic_lookup_args lookup_args;
+    hg_return_t                       hg_ret =
+        HG_Forward(dart_get_server_info_handle, client_dart_get_server_info_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr,
+                "dart_get_server_info_g(): Could not start HG_Forward() on serverId = %ld with host = %s\n",
+                serverId, pdc_server_info_g[serverId].addr_string);
+        HG_Destroy(dart_get_server_info_handle);
+        return ret;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+
+    PDC_Client_check_response(&send_context_g);
+    ret.id                 = serverId;
+    ret.indexed_word_count = lookup_args.int64_value1;
+    ret.request_count      = lookup_args.int64_value2;
+done:
+    HG_Destroy(dart_get_server_info_handle);
+
+    return ret;
+}
+
+DART *
+get_dart_g()
+{
+    return dart_g;
+}
+
+// Bulk
+static hg_return_t
+dart_perform_one_server_on_receive_cb(const struct hg_cb_info *callback_info)
+{
+    hg_return_t                   ret_value;
+    struct bulk_args_t *          client_lookup_args;
+    hg_handle_t                   handle;
+    dart_perform_one_server_out_t output;
+    uint32_t                      n_meta;
+    hg_op_id_t                    hg_bulk_op_id;
+
+    hg_bulk_t             local_bulk_handle  = HG_BULK_NULL;
+    hg_bulk_t             origin_bulk_handle = HG_BULK_NULL;
+    const struct hg_info *hg_info            = NULL;
+    struct bulk_args_t *  bulk_args;
+    void *                recv_meta;
+
+    FUNC_ENTER(NULL);
+
+    // println("[Client_Side_Bulk]  Entering dart_perform_one_server_on_receive_cb. rank = %d",
+    // pdc_client_mpi_rank_g);
+    client_lookup_args = (struct bulk_args_t *)callback_info->arg;
+    // (client_lookup_args->n_meta) = (uint32_t *)malloc(sizeof(uint32_t));
+    handle = callback_info->info.forward.handle;
+    // println("[Client_Side_Bulk]  before get output. rank = %d", pdc_client_mpi_rank_g);
+    // Get output from server
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        printf("==PDC_CLIENT[%d]: dart_perform_one_server_on_receive_cb - error HG_Get_output\n",
+               pdc_client_mpi_rank_g);
+        // hg_atomic_set32(&bulk_transfer_done_g, 1);
+        client_lookup_args->n_meta = 0;
+        goto done;
+    }
+
+    // printf("lookup_args.op_type = %d and output.op_type = %d\n", client_lookup_args->op_type,
+    // output.op_type);
+
+    if (ret_value == HG_SUCCESS && output.has_bulk == 0) {
+        // printf("=== NO Bulk data should be taken care of.  \n");
+        // hg_atomic_set32(&bulk_transfer_done_g, 1);
+        client_lookup_args->n_meta = 0;
+        goto done;
+    }
+
+    // println("[Client_Side_Bulk]  before copy n_meta. rank = %d", pdc_client_mpi_rank_g);
+    // printf("==PDC_CLIENT: Received response from server with bulk handle, n_buf=%d\n", output.ret);
+    n_meta = output.n_items;
+
+    client_lookup_args->n_meta = n_meta;
+
+    // printf("*(client_lookup_args->n_meta) = %ld\n", *(client_lookup_args->n_meta));
+
+    // println("[Client_Side_Bulk]  before determining size. rank = %d", pdc_client_mpi_rank_g);
+    if (n_meta == 0) {
+        // hg_atomic_set32(&bulk_transfer_done_g, 1);
+        client_lookup_args->obj_ids = NULL;
+        client_lookup_args->n_meta  = 0;
+        goto done;
+    }
+
+    // Prepare to receive BULK data.
+    origin_bulk_handle = output.bulk_handle;
+    hg_info            = HG_Get_info(handle);
+
+    client_lookup_args->handle = handle;
+    client_lookup_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
+
+    /* printf("nbytes=%u\n", bulk_args->nbytes); */
+
+    if (client_lookup_args->is_id == 1) {
+        recv_meta = (void *)calloc(n_meta, sizeof(uint64_t));
+    }
+    else {
+        // throw an error
+        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please check "
+               "client_lookup_args->is_id\n",
+               pdc_client_mpi_rank_g);
+        goto done;
+    }
+
+    /* Create a new bulk handle to read the data */
+    HG_Bulk_create(hg_info->hg_class, 1, (void **)&recv_meta, (hg_size_t *)&client_lookup_args->nbytes,
+                   HG_BULK_READWRITE, &local_bulk_handle);
+
+    // println("[Client_Side_Bulk]  after bulk create. rank = %d", pdc_client_mpi_rank_g);
+
+    /* Pull bulk data */
+    ret_value = HG_Bulk_transfer(hg_info->context, hg_test_bulk_transfer_cb, client_lookup_args, HG_BULK_PULL,
+                                 hg_info->addr, origin_bulk_handle, 0, local_bulk_handle, 0,
+                                 client_lookup_args->nbytes, &hg_bulk_op_id);
+
+    // println("[Client_Side_Bulk]  after bulk transfer. rank = %d", pdc_client_mpi_rank_g);
+
+    if (ret_value != HG_SUCCESS) {
+        fprintf(stderr, "Could not read bulk data\n");
+        hg_atomic_set32(&bulk_transfer_done_g, 1);
+        client_lookup_args->n_meta = 0;
+        goto done;
+    }
+
+    // loop
+    bulk_todo_g = 1;
+    // println("outside bulk callback: bulk_transfer_done_g = %d",
+    // hg_atomic_get32(&bulk_transfer_done_g));
+    hg_atomic_set32(&bulk_transfer_done_g, 0);
+    PDC_Client_check_bulk(send_context_g);
+    // println("[Client_Side_Bulk]  after check bulk. rank = %d", pdc_client_mpi_rank_g);
+
+    while (1) {
+        if (hg_atomic_get32(&bulk_transfer_done_g)) {
+            break;
+        }
+    }
+
+done:
+    // println("[Client_Side_Bulk]  finish bulk. rank = %d", pdc_client_mpi_rank_g);
+    work_todo_g--;
+    HG_Free_output(handle, &output);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+int
+dart_perform_on_one_server(int server_id, dart_perform_one_server_in_t *dart_in, uint64_t **out,
+                           size_t *out_size)
+{
+    int                ret_val = 0;
+    hg_handle_t        dart_perform_one_server_handle;
+    struct bulk_args_t lookup_args;
+    hg_return_t        hg_ret;
+
+    stopwatch_t timer;
+
+    // timer_start(&timer);
+    perr_t srv_lookup_rst = server_lookup_connection(server_id, 2);
+    // timer_pause(&timer);
+    // println("[CLIENT PERFORM ONE SERVER 1] Time to lookup all connections is %ld microseconds for rank
+    // %d",
+    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
+
+    if (srv_lookup_rst == FAIL) {
+        println("the server %d cannot be connected. ", server_id);
+        goto done;
+    }
+
+    timer_start(&timer);
+
+    hg_atomic_set32(&bulk_transfer_done_g, 0);
+    hg_atomic_set32(&dart_response_done_g, 0);
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, dart_perform_one_server_g,
+              &dart_perform_one_server_handle);
+    if (dart_perform_one_server_handle == NULL) {
+        printf("==CLIENT[%d]: Error with dart_perform_on_one_server\n", pdc_client_mpi_rank_g);
+        goto done;
+    }
+    lookup_args.is_id   = 1;
+    lookup_args.op_type = dart_in->op_type;
+    // printf("SEND dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
+    // dart_in->attr_val);
+    hg_ret = HG_Forward(dart_perform_one_server_handle, dart_perform_one_server_on_receive_cb, &lookup_args,
+                        dart_in);
+
+    if (hg_ret != HG_SUCCESS) {
+        fprintf(stderr, "dart_perform_on_one_server(): Could not start HG_Forward()\n");
+        HG_Destroy(dart_perform_one_server_handle);
+        goto done;
+    }
+
+    // Wait for response from server
+    work_todo_g = 1;
+    PDC_Client_check_response(&send_context_g);
+
+    timer_pause(&timer);
+    // println("[CLIENT PERFORM ONE SERVER 2] Time to finish an RPC call is %ld microseconds for rank %d",
+    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
+
+    timer_start(&timer);
+
+    if (dart_in->op_type == OP_INSERT || dart_in->op_type == OP_DELETE) {
+        goto done;
+    }
+    if (out == NULL || out_size == NULL) {
+        printf("==PDC_CLIENT[%d] out is NULL, search result is not collected.\n", pdc_client_mpi_rank_g);
+        goto done;
+    }
+    if (lookup_args.n_meta == 0) {
+        goto done;
+    }
+
+    timer_pause(&timer);
+    // println("[CLIENT PERFORM ONE SERVER 3] Time to finish an BULK is %ld microseconds for rank %d",
+    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
+
+    timer_start(&timer);
+
+    int res_id = 0;
+    if (lookup_args.is_id == 1) {
+        out[0] = lookup_args.obj_ids;
+    }
+    else {
+        // throw an error
+        printf("==PDC_CLIENT[%d]: ERROR - DART queries can only retrieve object IDs. Please "
+               "check client_lookup_args->is_id\n",
+               pdc_client_mpi_rank_g);
+    }
+    ret_val   = lookup_args.n_meta;
+    *out_size = lookup_args.n_meta;
+
+    timer_pause(&timer);
+    // println("[CLIENT PERFORM ONE SERVER 4] Time to collect result is %ld microseconds for rank %d",
+    //     timer_delta_us(&timer), pdc_client_mpi_rank_g);
+    HG_Destroy(dart_perform_one_server_handle);
+
+// printf("HG_Destroy, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type, dart_in->attr_key,
+// dart_in->attr_val);
+done:
+    // printf("done->ret_val, dart_in.op_type = %d, key = %s, val=%s\n", dart_in->op_type,
+    // dart_in->attr_key, dart_in->attr_val);
+    // println("===================================\n===============================");
+
+    return ret_val;
+}
+
+void
+dart_perform_on_one_server_thread(void *thread_param)
+{
+    struct _dart_perform_one_thread_param *param = (struct _dart_perform_one_thread_param *)thread_param;
+    dart_perform_on_one_server(param->server_id, param->dart_in, param->dart_out, param->dart_out_size);
+}
+
+perr_t
+PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_string,
+                                       dart_object_ref_type_t ref_type, int *n_res, uint64_t **out)
+{
+    perr_t ret = FAIL;
+
+    if (n_res == NULL || out == NULL) {
+        return ret;
+    }
+
+    // threadpool query_pool = get_dart_temp_thpool(dart_g->num_server);
+
+    // TODO: a function called "determine_query_type"
+    char *         k_query = get_key(query_string, '=');
+    char *         v_query = get_value(query_string, '=');
+    char *         tok     = NULL;
+    char *         affix   = NULL;
+    dart_op_type_t dart_op;
+
+    pattern_type_t dart_query_type = determine_pattern_type(k_query);
+    switch (dart_query_type) {
+        case PATTERN_EXACT:
+            tok     = strdup(k_query);
+            dart_op = OP_EXACT_QUERY;
+            break;
+        case PATTERN_PREFIX:
+            affix   = subrstr(k_query, strlen(k_query) - 1);
+            tok     = strdup(affix);
+            dart_op = OP_PREFIX_QUERY;
+            break;
+        case PATTERN_SUFFIX:
+            affix   = substr(k_query, 1);
+            tok     = reverse_str(affix);
+            dart_op = OP_SUFFIX_QUERY;
+            break;
+        case PATTERN_MIDDLE:
+            // tok = (char *)calloc(strlen(k_query)-2, sizeof(char));
+            // strncpy(tok, &k_query[1], strlen(k_query)-2);
+            affix   = substring(k_query, 1, strlen(k_query) - 1);
+            tok     = strdup(affix);
+            dart_op = OP_INFIX_QUERY;
+            break;
+        default:
+            break;
+    }
+    if (tok == NULL) {
+        return ret;
+    }
+
+    out[0] = NULL;
+
+    dart_perform_one_server_in_t input_param;
+    input_param.op_type      = dart_query_type;
+    input_param.hash_algo    = hash_algo;
+    input_param.attr_key     = query_string;
+    input_param.attr_val     = v_query;
+    input_param.obj_ref_type = ref_type;
+
+    // TODO: see if timestamp can help
+    // input_param.timestamp = get_timestamp_us();
+    input_param.timestamp = 1;
+
+    uint64_t *server_id_arr;
+    int       num_servers = 0;
+
+    if (hash_algo == DART_HASH) {
+        num_servers = DART_hash(dart_g, tok, dart_op, NULL, &server_id_arr);
+    }
+    else if (hash_algo == DHT_FULL_HASH) {
+        num_servers = DHT_hash(dart_g, strlen(tok), tok, dart_op, &server_id_arr);
+    }
+    else if (hash_algo == DHT_INITIAL_HASH) {
+        num_servers = DHT_hash(dart_g, 1, tok, dart_op, &server_id_arr);
+    }
+
+    // Determine whether we should omit some requests:
+    int omit_request = 0;
+    if (dart_query_type == PATTERN_PREFIX || dart_query_type == PATTERN_SUFFIX) {
+        if (strlen(tok) >= dart_g->dart_tree_height && num_servers == 2) {
+            omit_request = 1;
+        }
+    }
+
+    // Prepare the hashset for collecting the result if needed.
+    int  i       = 0;
+    Set *hashset = set_new(ui64_hash, ui64_equal);
+    set_register_free_function(hashset, free);
+
+    uint64_t **dart_out          = (uint64_t **)calloc(num_servers, sizeof(uint64_t *));
+    size_t *   dart_out_size     = (size_t *)calloc(num_servers, sizeof(size_t));
+    uint64_t **dart_out_ptr      = dart_out;
+    size_t *   dart_out_size_ptr = dart_out_size;
+
+    printf("perform search [ %s ] on %d servers from rank %d\n", query_string, num_servers,
+           pdc_client_mpi_rank_g);
+
+    for (i = 0; i < num_servers; i++) {
+
+        int serverId = server_id_arr[i];
+        // struct _dart_perform_one_thread_param *thread_param = (struct _dart_perform_one_thread_param
+        // *)calloc(1, sizeof(struct _dart_perform_one_thread_param)); thread_param->server_id = serverId;
+        // thread_param->dart_in = &input_param;
+        // thread_param->dart_out = &dart_out[i];
+        // thread_param->dart_out_size = &dart_out_size[i];
+        // thpool_add_work(query_pool, (void *)dart_perform_on_one_server_thread, (void *)thread_param);
+
+        int dart_status = dart_perform_on_one_server(serverId, &input_param, dart_out_ptr, dart_out_size_ptr);
+        if (omit_request == 1 && set_num_entries(hashset) > 0) {
+            break;
+        }
+        dart_out_ptr++;
+        dart_out_size_ptr++;
+    }
+    dart_out_ptr      = NULL;
+    dart_out_size_ptr = NULL;
+    // wait for all query to be done.
+    // thpool_wait(query_pool);
+
+    // deduplicate the result.
+    for (i = 0; i < num_servers; i++) {
+        int j = 0;
+        for (j = 0; j < dart_out_size[i]; j++) {
+            uint64_t *id = (uint64_t *)malloc(sizeof(uint64_t));
+            *id          = dart_out[i][j];
+            set_insert(hashset, id);
+        }
+        free(dart_out[i]);
+    }
+    free(dart_out);
+    free(dart_out_size);
+
+    // Pick deduplicated result.
+    *n_res = set_num_entries(hashset);
+    // println("num_ids = %d", num_ids);
+    if (*n_res > 0) {
+        *out               = (uint64_t *)calloc(*n_res, sizeof(uint64_t));
+        uint64_t **set_arr = (uint64_t **)set_to_array(hashset);
+        for (i = 0; i < *n_res; i++) {
+            (*out)[i] = set_arr[i][0];
+        }
+        free(set_arr);
+    }
+    set_free(hashset);
+
+    // done:
+    // thpool_destroy(query_pool);
+    free(k_query);
+    free(v_query);
+    if (affix != NULL)
+        free(affix);
+    if (tok != NULL)
+        free(tok);
+
+    return ret;
+}
+
+#ifdef ENABLE_MPI
+perr_t
+PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *query_string,
+                                           dart_object_ref_type_t ref_type, int *n_res, uint64_t **out,
+                                           MPI_Comm comm)
+{
+    perr_t ret = FAIL;
+
+    if (n_res == NULL || out == NULL) {
+        return ret;
+    }
+
+    int       n_obj = 0;
+    uint64_t *dart_out;
+
+    stopwatch_t timer;
+
+    // Note: we should set comm to be MPI_COMM_WORLD since all assumptions are made with the total number of
+    // client ranks.
+    if (object_selection_query_counter_g % pdc_client_mpi_size_g == pdc_client_mpi_rank_g) {
+        timer_start(&timer);
+        PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, &n_obj, &dart_out);
+        timer_pause(&timer);
+
+        println("==PDC Client[%d]: Time for C/S communication: %.4f ms", pdc_client_mpi_rank_g,
+                timer_delta_us(&timer) / 1000.0);
+    }
+
+    // broadcast the result to all other ranks
+    // broadcast the number of objects first.
+    timer_start(&timer);
+    MPI_Bcast(&n_obj, 1, MPI_INT, object_selection_query_counter_g % pdc_client_mpi_size_g, comm);
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID count: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+
+    // for those ranks that are not the root, allocate memory for the object IDs.
+    if (object_selection_query_counter_g % pdc_client_mpi_size_g != pdc_client_mpi_rank_g) {
+        dart_out = (uint64_t *)calloc(n_obj, sizeof(uint64_t));
+    }
+    timer_start(&timer);
+    MPI_Bcast(dart_out, n_obj, MPI_UINT64_T, object_selection_query_counter_g % pdc_client_mpi_size_g, comm);
+    timer_pause(&timer);
+
+    println("==PDC Client[%d]: Time for MPI_Bcast for Syncing ID array: %.4f ms", pdc_client_mpi_rank_g,
+            timer_delta_us(&timer) / 1000.0);
+    object_selection_query_counter_g++;
+
+    *n_res = n_obj;
+    *out   = dart_out;
+    return SUCCEED;
+}
+#endif
+
+perr_t
+PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+                                    dart_object_ref_type_t ref_type, uint64_t data)
+{
+
+    perr_t                       ret_value = SUCCEED;
+    dart_perform_one_server_in_t input_param;
+    input_param.op_type      = OP_DELETE;
+    input_param.hash_algo    = hash_algo;
+    input_param.attr_key     = attr_key;
+    input_param.attr_val     = attr_val;
+    input_param.obj_ref_type = ref_type;
+    // FIXME: temporarily ugly implementation here, some assignment can be ignored
+    // and save some bytes for data transfer.
+    input_param.obj_primary_ref   = data;
+    input_param.obj_secondary_ref = data;
+    input_param.obj_server_ref    = data;
+    // TODO: see if timestamp can help
+    // input_param.timestamp = get_timestamp_us();
+    input_param.timestamp   = 1;
+    char *reversed_attr_val = reverse_str(attr_key);
+
+    int r = 0;
+    for (r = 0; r < 2; r++) {
+        // TODO: we may parallelize this for loop in order to insert both regular key and reversed key
+        // at the same time.
+        char *dart_key       = r == 0 ? attr_key : reversed_attr_val;
+        input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
+        uint64_t *server_id_arr;
+        int       num_servers = 0;
+
+        if (hash_algo == DART_HASH) {
+            num_servers = DART_hash(dart_g, dart_key, OP_DELETE, NULL, &server_id_arr);
+        }
+        else if (hash_algo == DHT_FULL_HASH) {
+            num_servers = DHT_hash(dart_g, strlen(dart_key), dart_key, OP_DELETE, &server_id_arr);
+        }
+        else if (hash_algo == DHT_INITIAL_HASH) {
+            num_servers = DHT_hash(dart_g, 1, dart_key, OP_DELETE, &server_id_arr);
+        }
+
+        int i = 0;
+
+        for (i = 0; i < num_servers; i++) {
+            int serverId    = server_id_arr[i];
+            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL, NULL);
+        }
+    }
+    // done:
+    free(reversed_attr_val);
+    return ret_value;
+}
+
+perr_t
+PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+                                    dart_object_ref_type_t ref_type, uint64_t data)
+{
+    // println("input: attr_key = %s, attr_val = %s", attr_key, attr_val);
+    perr_t                       ret_value = SUCCEED;
+    dart_perform_one_server_in_t input_param;
+    input_param.op_type      = OP_INSERT;
+    input_param.hash_algo    = hash_algo;
+    input_param.attr_key     = attr_key;
+    input_param.attr_val     = attr_val;
+    input_param.obj_ref_type = ref_type;
+    // FIXME: temporarily ugly implementation here, some assignment can be ignored
+    // and save some bytes for data transfer.
+    input_param.obj_primary_ref   = data;
+    input_param.obj_secondary_ref = data;
+    input_param.obj_server_ref    = data;
+    // TODO: see if timestamp can help
+    // input_param.timestamp = get_timestamp_us();
+    input_param.timestamp   = 1;
+    char *reversed_attr_str = reverse_str(attr_key);
+
+    int r = 0;
+    for (r = 0; r < 2; r++) {
+        // TODO: we may parallelize this for loop in order to insert both regular key and reversed key
+        // at the same time.
+        char *dart_key       = r == 0 ? attr_key : reversed_attr_str;
+        input_param.attr_key = dart_key; // DON'T NEVER IGNORE THIS LINE, OTHERWISE SUFFIX SEARCH WILL FAIL.
+        uint64_t *server_id_arr;
+        int       num_servers = 0;
+
+        if (hash_algo == DART_HASH) {
+            num_servers =
+                DART_hash(dart_g, dart_key, OP_INSERT, dart_retrieve_server_info_cb, &server_id_arr);
+        }
+        else if (hash_algo == DHT_FULL_HASH) {
+            num_servers = DHT_hash(dart_g, strlen(dart_key), dart_key, OP_INSERT, &server_id_arr);
+        }
+        else if (hash_algo == DHT_INITIAL_HASH) {
+            num_servers = DHT_hash(dart_g, 1, dart_key, OP_INSERT, &server_id_arr);
+        }
+
+        int i = 0;
+        for (i = 0; i < num_servers; i++) {
+            int serverId    = server_id_arr[i];
+            int dart_status = dart_perform_on_one_server(serverId, &input_param, NULL, NULL);
+            // printf("i loop on server i = %d in r loop of r=%d\n", i, r);
+        }
+        // printf("r loop at r = %d\n", r);
+    }
+    // done:
+    free(reversed_attr_str);
+    return ret_value;
+}
+
+/******************** METADATA INDEX ENDS *******************************/

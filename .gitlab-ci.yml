@@ -9,6 +9,8 @@ stages:
 
 perlmutter-build:
     stage: build
+    when: manual
+    allow_failure: false
     tags:
         - perlmutter
     variables:
@@ -30,6 +32,8 @@ perlmutter-build:
 
 perlmutter-parallel-pdc:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
     tags:
@@ -48,6 +52,8 @@ perlmutter-parallel-pdc:
 
 perlmutter-parallel-obj:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -67,6 +73,8 @@ perlmutter-parallel-obj:
 
 perlmutter-parallel-cont:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -86,6 +94,8 @@ perlmutter-parallel-cont:
 
 perlmutter-parallel-prop:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -105,6 +115,8 @@ perlmutter-parallel-prop:
 
 perlmutter-parallel-region:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -124,6 +136,8 @@ perlmutter-parallel-region:
 
 perlmutter-parallel-region-all:
     stage: test
+    rules:
+    - if: '$METRICS == null'
     needs:
         - perlmutter-build
         - perlmutter-parallel-pdc
@@ -143,6 +157,8 @@ perlmutter-parallel-region-all:
 
 perlmutter-metrics:
     stage: metrics
+    rules:
+        - if: '$METRICS == "true"'
     needs:
         - perlmutter-build
     tags:

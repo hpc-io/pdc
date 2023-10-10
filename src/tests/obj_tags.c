@@ -42,9 +42,10 @@ main(int argc, char **argv)
     dims[0] = 64;
     dims[1] = 3;
     dims[2] = 4;
-    char    tag_value[128], tag_value2[128], *tag_value_ret;
-    char    cont_name[128], obj_name1[128], obj_name2[128];
-    psize_t value_size;
+    char           tag_value[128], tag_value2[128], *tag_value_ret;
+    char           cont_name[128], obj_name1[128], obj_name2[128];
+    pdc_var_type_t value_type;
+    psize_t        value_size;
 
     strcpy(tag_value, "some tag value");
     strcpy(tag_value2, "some tag value 2 is longer");
@@ -119,30 +120,30 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCobj_put_tag(obj1, "some tag", tag_value, strlen(tag_value) + 1);
+    ret = PDCobj_put_tag(obj1, "some tag", tag_value, PDC_STRING, strlen(tag_value) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
     }
-    ret = PDCobj_put_tag(obj1, "some tag 2", tag_value2, strlen(tag_value2) + 1);
+    ret = PDCobj_put_tag(obj1, "some tag 2", tag_value2, PDC_STRING, strlen(tag_value2) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at object 1\n");
         ret_value = 1;
     }
 
-    ret = PDCobj_put_tag(obj2, "some tag", tag_value, strlen(tag_value) + 1);
+    ret = PDCobj_put_tag(obj2, "some tag", tag_value, PDC_STRING, strlen(tag_value) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at object 2\n");
         ret_value = 1;
     }
 
-    ret = PDCobj_put_tag(obj2, "some tag 2", tag_value2, strlen(tag_value2) + 1);
+    ret = PDCobj_put_tag(obj2, "some tag 2", tag_value2, PDC_STRING, strlen(tag_value2) + 1);
     if (ret != SUCCEED) {
         printf("Put tag failed at object 2\n");
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj1, "some tag", (void **)&tag_value_ret, &value_size);
+    ret = PDCobj_get_tag(obj1, "some tag", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at object 1\n");
         ret_value = 1;
@@ -153,7 +154,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj1, "some tag 2", (void **)&tag_value_ret, &value_size);
+    ret = PDCobj_get_tag(obj1, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at object 1\n");
         ret_value = 1;
@@ -164,7 +165,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj2, "some tag", (void **)&tag_value_ret, &value_size);
+    ret = PDCobj_get_tag(obj2, "some tag", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at object 2\n");
         ret_value = 1;
@@ -175,7 +176,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
-    ret = PDCobj_get_tag(obj2, "some tag 2", (void **)&tag_value_ret, &value_size);
+    ret = PDCobj_get_tag(obj2, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size);
     if (ret != SUCCEED) {
         printf("Get tag failed at object 2\n");
         ret_value = 1;

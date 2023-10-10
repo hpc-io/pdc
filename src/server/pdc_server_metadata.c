@@ -48,6 +48,7 @@
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
+#include "mercury_hash_table.h"
 
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_NEW    new_counting_bloom
@@ -1526,6 +1527,7 @@ is_metadata_satisfy_constraint(pdc_metadata_t *metadata, metadata_query_transfer
     }
     // TODO: Currently only supports searching with one tag
     if (strcmp(constraints->tags, " ") != 0 && strstr(metadata->tags, constraints->tags) == NULL) {
+
         ret_value = -1;
         goto done;
     }
@@ -1589,8 +1591,38 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+pbool_t
+_is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
+{
+    pbool_t ret_value = TRUE;
+    FUNC_ENTER(NULL);
+    // match attribute name
+    if (in->name[0] != ' ') {
+        int matched = simple_matches(kvtag->name, in->name);
+        if (matched == 0)
+            ret_value = FALSE;
+    }
+    // test attribute type
+    if (ret_value == TRUE && in->type == kvtag->type) {
+        if (in->type == PDC_STRING && ((char *)(in->value))[0] != ' ') {
+            char *pattern = (char *)in->value;
+            int   matched = simple_matches(kvtag->value, pattern);
+            if (matched == 0)
+                ret_value = FALSE;
+        }
+        else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
+               // have to support range query.
+            if (memcmp(in->value, kvtag->value, in->size) != 0)
+                ret_value = FALSE;
+        }
+    }
+
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t
-PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids)
+PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
+                                  uint32_t *n_meta, uint64_t **obj_ids)
 {
     perr_t                     ret_value = SUCCEED;
     uint32_t                   iter      = 0;
@@ -1620,27 +1652,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **
             {
                 DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
                 {
-                    is_name_match  = 0;
-                    is_value_match = 0;
-                    if (in->name[0] != ' ') {
-                        if (strcmp(in->name, kvtag_list_elt->kvtag->name) == 0)
-                            is_name_match = 1;
-                        else
-                            continue;
-                    }
-                    else
-                        is_name_match = 1;
-
-                    if (((char *)(in->value))[0] != ' ') {
-                        if (memcmp(in->value, kvtag_list_elt->kvtag->value, in->size) == 0)
-                            is_value_match = 1;
-                        else
-                            continue;
-                    }
-                    else
-                        is_value_match = 1;
-
-                    if (is_name_match == 1 && is_value_match == 1) {
+                    if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
                         if (iter >= alloc_size) {
                             alloc_size *= 2;
                             *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
@@ -2576,7 +2588,6 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
             ret_value = FAIL;
             out->ret  = -1;
         }
-
     }      // if lookup_value != NULL
     else { // look for containers
         cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
@@ -2778,7 +2789,8 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 #ifdef ENABLE_MULTITHREAD
     int unlocked;
 #endif
-    pdc_hash_table_entry_head *lookup_value;
+    pdc_hash_table_entry_head *  lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -2794,62 +2806,63 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
-    unlocked = 0;
     hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
+    // Look obj tags first
     lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
     if (lookup_value != NULL) {
         pdc_metadata_t *target;
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
         if (target != NULL) {
-            PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
+            ret_value = PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
+            out->ret  = 1;
+        }
+        else {
+            ret_value = FAIL;
+            out->ret  = -1;
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
+            goto done;
+        }
+    }
+    else {
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_del_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key);
             out->ret = 1;
         }
         else {
             ret_value = FAIL;
             out->ret  = -1;
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
+            goto done;
         }
     }
-    else {
-        ret_value = FAIL;
-        out->ret  = -1;
-    }
 
-    if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: %s - error \n", pdc_server_rank_g, __func__);
-        goto done;
-    }
-
+done:
 #ifdef ENABLE_MULTITHREAD
-    // ^ Release hash table lock
     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-    unlocked = 1;
 #endif
 
 #ifdef ENABLE_TIMING
     // Timing
     gettimeofday(&pdc_timer_end, 0);
     ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-#endif
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&pdc_time_mutex_g);
 #endif
 
-#ifdef ENABLE_TIMING
     server_update_time_g += ht_total_sec;
-#endif
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
 #endif
 
-done:
-#ifdef ENABLE_MULTITHREAD
-    if (unlocked == 0)
-        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-#endif
+#endif // End ENABLE_TIMING
+
     fflush(stdout);
 
     FUNC_LEAVE(ret_value);

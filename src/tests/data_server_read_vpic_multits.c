@@ -322,7 +322,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
         if (rank == 0)
-            printf("Timestep %d: query time %.4f, read time %.4f, wait time %.4f, compute time %.4f\n", ts,
+            printf("Timestep %d: query time %.5e, read time %.5e, wait time %.5e, compute time %.5e\n", ts,
                    query_time, read_time, wait_time, true_sleep_time);
     } // end of for ts
 

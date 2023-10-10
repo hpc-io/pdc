@@ -7,6 +7,7 @@ if(PDC_ENABLE_FASTBIT)
 endif()
 
 include_directories(
+  ${PDC_COMMON_INCLUDE_DIRS}
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_BINARY_DIR}
@@ -37,6 +38,7 @@ endif()
 
 add_executable(pdc_server.exe
                pdc_server.c
+               pdc_server_metadata_index.c
                pdc_server_metadata.c
                pdc_client_server_common.c
                dablooms/pdc_dablooms.c
@@ -48,11 +50,16 @@ add_executable(pdc_server.exe
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer_metadata_query.c
                ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
-               ${PDC_SOURCE_DIR}/src/utils/pdc_timing.c
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis_common.c
                ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transforms_common.c
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
+
+target_compile_definitions(pdc_server.exe PUBLIC PDC_SERVER_CACHE_MAX_GB=3 PDC_SERVER_CACHE_FLUSH_TIME=30)
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(pdc_server.exe PRIVATE ${SUPPRESSED_LIST})
+endif()
 
 #install(
 #  TARGETS
@@ -70,9 +77,9 @@ endif()
 
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
+    target_link_libraries(pdc_server.exe mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
 else()
-    target_link_libraries(pdc_server.exe mercury pdcprof -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
+    target_link_libraries(pdc_server.exe mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
 endif()
 
 

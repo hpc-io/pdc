@@ -191,7 +191,8 @@ perr_t PDCcont_del(pdcid_t cont_id);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t value_size);
+perr_t PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, pdc_var_type_t value_type,
+                       psize_t value_size);
 
 /**
  * ***********
@@ -203,7 +204,8 @@ perr_t PDCcont_put_tag(pdcid_t cont_id, char *tag_name, void *tag_value, psize_t
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, psize_t *value_size);
+perr_t PDCcont_get_tag(pdcid_t cont_id, char *tag_name, void **tag_value, pdc_var_type_t *value_type,
+                       psize_t *value_size);
 
 /**
  * Deleta a tag from a container

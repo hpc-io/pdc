@@ -24,8 +24,7 @@
 
 #ifndef PDC_PROP_PKG_H
 #define PDC_PROP_PKG_H
-
-#include "pdc_private.h"
+#include "pdc_public.h"
 
 /*******************/
 /* Private Typedefs */
@@ -37,10 +36,13 @@ struct _pdc_cont_prop {
 };
 
 typedef struct pdc_kvtag_t {
-    char *   name;
-    uint32_t size;
-    void *   value;
+    char *         name;
+    uint32_t       size;
+    pdc_var_type_t type;
+    void *         value;
 } pdc_kvtag_t;
+
+typedef enum { ROW_major, COL_major } _pdc_major_type_t;
 
 struct _pdc_transform_state {
     _pdc_major_type_t storage_order;

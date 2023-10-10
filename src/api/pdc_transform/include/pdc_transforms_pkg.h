@@ -32,6 +32,8 @@
 /***************************/
 /* Library Private Structs */
 /***************************/
+typedef enum { C_lang = 0, FORTRAN_lang, PYTHON_lang, JULIA_lang, N_LANGUAGES } _pdc_analysis_language_t;
+
 struct _pdc_region_transform_ftn_info {
     pdcid_t                 object_id;
     pdcid_t                 region_id;

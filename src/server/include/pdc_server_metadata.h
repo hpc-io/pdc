@@ -36,6 +36,7 @@
 
 #include "pdc_server_common.h"
 #include "pdc_client_server_common.h"
+#include "pdc_server_metadata_index.h"
 
 #define CREATE_BLOOM_THRESHOLD 64
 
@@ -44,7 +45,7 @@
 /*****************************/
 extern int           pdc_server_rank_g;
 extern int           pdc_server_size_g;
-extern char          pdc_server_tmp_dir_g[ADDR_MAX];
+extern char          pdc_server_tmp_dir_g[TMP_DIR_STRING_LEN];
 extern uint32_t      n_metadata_g;
 extern HashTable *   metadata_hash_table_g;
 extern HashTable *   container_hash_table_g;

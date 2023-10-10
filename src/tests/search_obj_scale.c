@@ -180,7 +180,7 @@ main(int argc, char **argv)
                                ht_total_end.tv_usec - ht_total_start.tv_usec;
             ht_total_sec = ht_total_elapsed / 1000000.0;
 
-            printf("%10d queried ... %.2fs\n", i * size, ht_total_sec);
+            printf("%10d queried ... %.5es\n", i * size, ht_total_sec);
             fflush(stdout);
         }
     }
@@ -193,7 +193,7 @@ main(int argc, char **argv)
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to create %d obj/rank with %d ranks: %.6f\n", count, size, ht_total_sec);
+        printf("Time to create %d obj/rank with %d ranks: %.5e\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 

@@ -76,7 +76,8 @@ main(int argc, char *argv[])
     double      stime, total_time, percent_time;
     pdc_kvtag_t kvtag;
     void **     values;
-    size_t      value_size;
+    pdc_var_type_t value_type;
+    size_t         value_size;
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
@@ -167,6 +168,7 @@ main(int argc, char *argv[])
     // Add tags
     kvtag.name  = "Group";
     kvtag.value = (void *)&v;
+    kvtag.type  = PDC_INT;
     kvtag.size  = sizeof(int);
 
 #ifdef ENABLE_MPI
@@ -175,7 +177,7 @@ main(int argc, char *argv[])
 #endif
     for (i = 0; i < my_add_tag; i++) {
         v = i + my_add_tag_s;
-        if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.size) < 0)
+        if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
             printf("fail to add a kvtag to o%d\n", i + my_obj_s);
 
         if (i % tag_1percent == 0) {
@@ -208,7 +210,8 @@ main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
     for (i = 0; i < my_query; i++) {
-        if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_size) < 0)
+        if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_type,
+                           (void *)&value_size) < 0)
             printf("fail to get a kvtag from o%d\n", i + my_query_s);
 
         if (i % query_1percent == 0) {

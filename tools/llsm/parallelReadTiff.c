@@ -1,7 +1,7 @@
 #include "parallelReadTiff.h"
 #include "tiffio.h"
 
-// #define ENABLE_OPENMP
+#define ENABLE_OPENMP
 
 #ifdef ENABLE_OPENMP
 #include "omp.h"
@@ -30,6 +30,8 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
     int32_t  numWorkers = omp_get_max_threads();
     int32_t  batchSize  = (z - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
+
+    printf("numWorkers %d\n", numWorkers);
 
     int32_t w;
 #ifdef ENABLE_OPENMP
@@ -104,6 +106,8 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
     int32_t  numWorkers = omp_get_max_threads();
     int32_t  batchSize  = (z - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
+
+    printf("numWorkers %d\n", numWorkers);
 
     uint16_t compressed = 1;
     TIFF *   tif        = TIFFOpen(fileName, "r");
@@ -321,6 +325,8 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
     int32_t  batchSize  = (y - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
 
+    printf("numWorkers %d\n", numWorkers);
+
     int32_t w;
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for
@@ -402,6 +408,8 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
     uint8_t err    = 0;
     uint8_t errBak = 0;
     char    errString[10000];
+
+    printf("numWorkers %d\n", numWorkers);
 
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for
@@ -543,7 +551,7 @@ readTiffParallelImageJ(uint64_t x, uint64_t y, uint64_t z, const char *fileName,
     TIFFClose(tif);
     lseek(fd, offset, SEEK_SET);
     uint64_t bytes = bits / 8;
-    //#pragma omp parallel for
+    // #pragma omp parallel for
     /*
     for(uint64_t i = 0; i < z; i++){
     uint64_t cOffset = x*y*bytes*i;
@@ -784,7 +792,7 @@ void
 parallel_TIFF_load(char *fileName, uint8_t flipXY, parallel_tiff_range_t *strip_range,
                    image_info_t **image_info)
 {
-    uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0, stripeSize = 0, is_imageJ = 0, imageJ_Z = 0;
+    uint64_t x = 1, y = 1, z = 1, bits = 1, startSlice = 0, stripeSize = 1, is_imageJ = 0, imageJ_Z = 0;
 
     get_tiff_info(fileName, strip_range, &x, &y, &z, &bits, &startSlice, &stripeSize, &is_imageJ, &imageJ_Z);
 

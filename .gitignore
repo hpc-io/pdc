@@ -1,8 +1,6 @@
 # ignore swp files
 *.swp
 
-# build dir
-
 # exes
 *.exe
 
@@ -10,6 +8,14 @@
 
 src/install
 
+# ignore vscode files
 .vscode
 
+# ignore macos files
+.DS_Store
+
+# ignore build dir
 build
+
+# ignore docs build dir
+docs/build

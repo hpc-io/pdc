@@ -27,6 +27,7 @@
 #include "pdc_malloc.h"
 #include "pdc_id_pkg.h"
 #include "pdc_cont.h"
+#include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_obj.h"
@@ -1235,9 +1236,7 @@ PDCobj_get_info(pdcid_t obj_id)
     /* obj_id = PDC_find_byname(PDC_OBJ, obj_name); */
 
     tmp = PDC_obj_get_info(obj_id);
-
-    ret_value = PDC_CALLOC(struct pdc_obj_info);
-    if (!ret_value)
+    if (NULL == tmp)
         PGOTO_ERROR(NULL, "failed to allocate memory");
 
     ret_value = tmp->obj_info_pub;

@@ -5,17 +5,17 @@ cmake_minimum_required (VERSION 3.0)
 
 # Setup cmake policies.
 foreach(p
-    CMP0012
-    CMP0013
-    CMP0014
-    CMP0022 # CMake 2.8.12
-    CMP0025 # CMake 3.0
-    CMP0053 # CMake 3.1
-    CMP0054 # CMake 3.1
-    CMP0074 # CMake 3.12
-    CMP0075 # CMake 3.12
-    CMP0083 # CMake 3.14
-    CMP0093 # CMake 3.15
+    CMP0012 # CMake 2.6; Full Path Libraries; When set to NEW, the full path is included when specifying a link library in the target_link_libraries command.
+    CMP0013 # CMake 2.6; Quoted Argument Expansion; When set to NEW, variables within quoted arguments are expanded, allowing variable substitution.
+    CMP0014 # CMake 2.8; Relative Path Libraries; When set to NEW, relative paths in link libraries are interpreted as relative to the current source directory.
+    CMP0022 # CMake 2.8.12; Same SONAME Overwrite; When set to NEW, shared libraries with the same SONAME are not overwritten during installation.
+    CMP0025 # CMake 3.0; Empty if Statement; When set to NEW, an empty if condition is treated as false, providing better control over conditionals.
+    CMP0053 # CMake 3.1; Find Package Version; When set to NEW, the VERSION option in find_package is interpreted as a version requirement rather than a version hint.
+    CMP0054 # CMake 3.1; Quoted Empty String; When set to NEW, a quoted empty string is treated as false in the if() command.
+    CMP0074 # CMake 3.12; Imported Target Usage Requirements; When set to NEW, the "PRIVATE" and "PUBLIC" keywords in target_link_libraries are treated as usage requirements for imported targets.
+    CMP0075 # CMake 3.12; GNU-Style Installation Paths on macOS; When set to NEW, the "GNUInstallDirs" module is enabled by default on macOS for "GNU-style" installation paths.
+    CMP0083 # CMake 3.14; Imported Targets Visibility; When set to NEW, imported targets created by find_package with namespaced aliases are visible to other targets within the same directory scope.
+    CMP0093 # CMake 3.15; Compiler and Linker Flags Handling; When set to NEW, each option in a list of compiler and linker flags is interpreted separately, allowing better control over individual options.
   )
   if(POLICY ${p})
     cmake_policy(SET ${p} NEW)
@@ -23,17 +23,30 @@ foreach(p
 endforeach()
 
 # Set a consistent MACOSX_RPATH default across all CMake versions.
+# checks if the variable CMAKE_MACOSX_RPATH is not defined and sets it to 0 if it is not defined.
+# The CMAKE_MACOSX_RPATH variable is used to control the behavior of the macOS-specific RPATH feature in CMake. 
+# RPATH is a linker option that specifies the runtime library search path for executables and shared libraries.
+# By default, when CMAKE_MACOSX_RPATH is not defined, the code sets it to 0, indicating that the project does not use the macOS RPATH feature. 
+# This means that the runtime library search path will not be embedded in the executables or shared libraries produced by the project.
+# This code snippet ensures a consistent default value for CMAKE_MACOSX_RPATH across different configurations of the project, even if the variable is not explicitly set before.
 # When CMake 2.8.12 is required, change this default to 1.
 # When CMake 3.0.0 is required, remove this block (see CMP0042).
 if(NOT DEFINED CMAKE_MACOSX_RPATH)
   set(CMAKE_MACOSX_RPATH 0)
 endif()
 
+# Project Name : PDC, Programming Language : C
 project(PDC C)
 
+# CMake will search for any header files under the project root directory.
 include_directories(
   ${PROJECT_SOURCE_DIR}
 )
+
+# Check if MPI_RUN_CMD is not defind. If not, set it to mpiexec.
+if(NOT MPI_RUN_CMD)
+    set(MPI_RUN_CMD mpiexec)
+endif()
 
 #------------------------------------------------------------------------------
 # Version information
@@ -48,9 +61,26 @@ set(PDC_PACKAGE_VERSION_MAJOR "${PDC_VERSION_MAJOR}.${PDC_VERSION_MINOR}")
 set(PDC_PACKAGE_VERSION_MINOR "${PDC_VERSION_PATCH}")
 set(PDC_PACKAGE_STRING "${PDC_PACKAGE_NAME} ${PDC_PACKAGE_VERSION}")
 set(PDC_PACKAGE_TARNAME "${PDC_PACKAGE}")
-if(NOT MPI_RUN_CMD)
-    set(MPI_RUN_CMD mpiexec)
+
+
+#------------------------------------------------------------------------------
+# Setup CMake Prefix Paths for searching external libraries.
+#------------------------------------------------------------------------------
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
 endif()
+
+#------------------------------------------------------------------------------
+#  general cmake flags:
+#    -DCMAKE_INSTALL_PREFIX=/usr/local     -- the prefix for installing
+#    -DCMAKE_BUILD_TYPE=type               -- type can be Debug, Release, ...
+#    -DCMAKE_PREFIX_PATH=/dir              -- external packages
+#
+#     note that CMAKE_PREFIX_PATH can be a list of directories:
+#      -DCMAKE_PREFIX_PATH='/dir1;/dir2;/dir3'
+#------------------------------------------------------------------------------
+
+
 #------------------------------------------------------------------------------
 # Setup install and output Directories
 #------------------------------------------------------------------------------
@@ -69,7 +99,16 @@ endif()
 if(NOT PDC_INSTALL_DATA_DIR)
   set(PDC_INSTALL_DATA_DIR ${CMAKE_INSTALL_PREFIX}/share)
 endif()
+if(NOT PDC_INSTALL_SHARE_DIR)
+  set(PDC_INSTALL_SHARE_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/pdc)
+endif()
 
+
+# The purpose of setting CMAKE_INSTALL_RPATH_USE_LINK_PATH to TRUE is to 
+# include the directories specified by the linker during the build process 
+# in the install RPATH, ensuring that the installed binary can locate its 
+# required shared libraries during runtime, regardless of the platform being used.
+#
 # Setting this ensures that "make install" will leave rpaths to external
 # libraries intact on "make install". This ensures that one can install a
 # version of PDC on the build machine without any issues. If this not
@@ -78,6 +117,19 @@ endif()
 if(NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH)
   set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 endif()
+
+#------------------------------------------------------------------------------
+# Setup CMake Prefix Paths for searching external libraries.
+#------------------------------------------------------------------------------
+#     note that CMAKE_PREFIX_PATH can be a list of directories:
+#      -DCMAKE_PREFIX_PATH='/dir1;/dir2;/dir3'
+
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
+endif()
+# MERCURY
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} $ENV{MERCURY_DIR})
+# ANY Future external package goes here...
 
 #------------------------------------------------------------------------------
 # Setup CMake Environment
@@ -129,6 +181,29 @@ if("${PDC_SOURCE_DIR}" STREQUAL "${PDC_BINARY_DIR}")
   message(FATAL_ERROR
     "PDC requires an out of source Build. "
     "Please create a separate binary directory and run CMake there.")
+endif()
+
+#------------------------------------------------------------------------------
+# Set whether or not to disable compiler warnings
+#------------------------------------------------------------------------------
+set(SUPPRESSED_LIST "")
+
+# Disable warnings for potentially ignorable issues
+option(SUPPRESS_IGNORABLE_WARNINGS "Disable warnings for potentially ignorable issues" ON)
+if(SUPPRESS_IGNORABLE_WARNINGS)
+  if(APPLE)
+    set(SUPPRESSED_LIST "-Wno-deprecated-non-prototype" ${SUPPRESSED_LIST})
+  else()
+    set(SUPPRESSED_LIST "-Wno-maybe-uninitialized" ${SUPPRESSED_LIST})
+  endif()
+  set(SUPPRESSED_LIST "-Wno-sign-compare" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-format" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-cast-qual" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-parameter" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-variable" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
 endif()
 
 #------------------------------------------------------------------------------
@@ -241,6 +316,24 @@ if(PDC_USE_CRAY_DRC)
 endif()
 
 #-----------------------------------------------------------------------------
+# Julia Support option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_JULIA_SUPPORT "Enable Julia Support." OFF)
+if(PDC_ENABLE_JULIA_SUPPORT)
+  find_package(JULIA REQUIRED)
+  if(JULIA_FOUND)
+    set(PDC_ENABLE_JULIA 1)
+    # include_directories(${JULIA_INCLUDE_DIRS})
+    # set(PDC_EXT_LIB_DEPENDENCIES
+    #   ${PDC_EXT_LIB_DEPENDENCIES}
+    #   ${JULIA_LIBRARIES}
+    # )
+  else()
+    message(FATAL_ERROR "Could not find Julia.")
+  endif()
+endif()
+
+#-----------------------------------------------------------------------------
 # MPI option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_MPI "Enable MPI." ON)
@@ -257,7 +350,7 @@ endif()
 option(PDC_ENABLE_LUSTRE "Enable Lustre." OFF)
 if(PDC_ENABLE_LUSTRE)
   set(ENABLE_LUSTRE 1)
-  set(PDC_LUSTRE_TOTAL_OST "248" CACHE STRING "Number of Lustre OSTs")
+  set(PDC_LUSTRE_TOTAL_OST "256" CACHE STRING "Number of Lustre OSTs")
 endif()
 
 #-----------------------------------------------------------------------------
@@ -271,9 +364,11 @@ endif()
 #-----------------------------------------------------------------------------
 # SERVER CACHE option
 #-----------------------------------------------------------------------------
-option(PDC_SERVER_CACHE "Enable timing." OFF)
+option(PDC_SERVER_CACHE "Enable Server Caching." OFF)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
+  set(PDC_SERVER_CACHE_MAX_GB 3 CACHE INT "Maximum region server cache size in GB.")
+  set(PDC_SERVER_CACHE_FLUSH_TIME 30 CACHE INT "Region server cache flush time interval in seconds.")
 endif()
 
 
@@ -317,6 +412,13 @@ if(PDC_ENABLE_MULTITHREAD)
 endif()
 
 #-----------------------------------------------------------------------------
+# Pthread support on Mac OS X
+#-----------------------------------------------------------------------------
+if(APPLE)
+  find_package(Threads REQUIRED)
+endif()
+
+#-----------------------------------------------------------------------------
 # PROFILING option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_PROFILING "Enable profiling." OFF)
@@ -330,6 +432,8 @@ endif()
 option(PDC_SERVER_CACHE "Enable server data caching with pthread." OFF)
 if(PDC_SERVER_CACHE)
     set(PDC_SERVER_CACHE 1)
+    set(PDC_SERVER_CACHE_MAX_GB 3 CACHE INT "Maximum region server cache size in GB.")
+    set(PDC_SERVER_CACHE_FLUSH_TIME 30 CACHE INT "Region server cache flush time interval in seconds.")
 endif()
 
 # Not used
@@ -384,8 +488,11 @@ configure_file(
 #-----------------------------------------------------------------------------
 # Source
 #-----------------------------------------------------------------------------
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/commons)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/api)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/server)
+
+
 
 #-----------------------------------------------------------------------------
 # Testing
@@ -396,6 +503,11 @@ if(NOT PDC_EXTERNALLY_CONFIGURED AND BUILD_TESTING)
   enable_testing()
   include(CTest)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tests)
+endif()
+
+option(BUILD_TOOLS "Build Tools." OFF)
+if(BUILD_TOOLS)
+  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/tools)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -455,6 +567,17 @@ install(
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
 
+if(BUILD_TOOLS)
+ install(
+ FILES
+    ${PDC_BINARY_DIR}/bin/pdc_ls
+    ${PDC_BINARY_DIR}/bin/pdc_export
+    ${PDC_BINARY_DIR}/bin/pdc_import
+  DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/bin
+  PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+)
+endif()
 
 install(
   DIRECTORY
@@ -464,6 +587,9 @@ install(
   FILES_MATCHING PATTERN "*.sh"
   PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
 )
+
+# set(ADD_EXE_PERMISSION_CMD "chmod +x ${}/test/*")
+# add_custom_command(TARGET ${PROJECT_NAME} POST_INSTALL COMMAND ${add_permission_cmd})
 
 
 #install(
