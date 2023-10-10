@@ -2238,7 +2238,7 @@ main(int argc, char *argv[])
     if (use_rocksdb_g) {
         /* rocksdb_backup_engine_t *be; */
         rocksdb_options_t *options = rocksdb_options_create();
-        rocksdb_options_increase_parallelism(options, 1);
+        rocksdb_options_increase_parallelism(options, 2);
         rocksdb_options_optimize_level_style_compaction(options, 0);
         rocksdb_options_set_create_if_missing(options, 1);
 
