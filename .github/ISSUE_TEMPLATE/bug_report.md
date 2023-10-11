@@ -10,7 +10,7 @@ How are you building/running PDC?
 ...
 ```
 
-What is the running configuration file you use?
+What is the running setup you use?
 
 ```bash
 ...
@@ -22,7 +22,7 @@ A clear and concise description of what you expected to happen.
 
 **Software Environment**
 
-- version of PDC: [e.g. 0.3]
+- version of PDC: [e.g. 0.3, branch, or hash]
 - installed PDC using: [spack, from source]
 - operating system: [name and version]
 - machine: [Are you running on a supercomputer or public cluster?]
