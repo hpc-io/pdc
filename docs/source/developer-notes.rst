@@ -138,6 +138,8 @@ For No-index approach, here are the APIs you can call for different communicatio
     * PDC_Client_query_kvtag (point-to-point)
     * PDC_Client_query_kvtag_mpi (collective)
 
+The default PDC kvtags are stored within each object's metadata as a linked list, we have additional support to manage them with RocksDB. Each PDC server creates and accesses its own RocksDB file, which is stored as an in-memory file in /tmp directory. When the RocksDB is enabled with setting the environment variable ``PDC_USE_ROCKSDB=1``, each kvtag is stored as a RocksDB key-value pair. To differenciate the kvtags for different objects, we encode the object ID to the key string used for the RocksDB, and store the value as the RocksDB value. As a result, the value can be retrieved directly when its object ID and key string is known. Otherwise we must iterate over the entire DB to search for an kvtag. 
+
 Index-facilitated Approach
 ---------------------------------------------
 
