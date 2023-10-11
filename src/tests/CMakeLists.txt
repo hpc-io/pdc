@@ -79,12 +79,8 @@ set(PROGRAMS
 #  data_server_meta_test
  kvtag_add_get
 #  kvtag_get
- kvtag_add_get_benchmark
- kvtag_add_get_scale
 #  kvtag_query
  kvtag_query_scale
- kvtag_query_scale_col
- kvtag_query_mpi
 #  obj_transformation
   region_transfer_query
   region_transfer
@@ -123,6 +119,13 @@ set(PROGRAMS
   query_data
   )
 
+set(MPI_PROGRAMS
+ kvtag_query_scale_col
+ kvtag_query_mpi
+ kvtag_add_get_benchmark
+ kvtag_add_get_scale
+ )
+
 set(TEST_EXT_LIB "")
 set(TEST_EXT_INCLUDE_DIRS "")
 set(EXTRA_SRC_FILE "")
@@ -135,6 +138,17 @@ foreach(program ${PROGRAMS})
   target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
   target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
 endforeach(program)
+
+if(BUILD_MPI_TESTING)
+  foreach(program ${MPI_PROGRAMS})
+    add_executable(${program} ${program}.c)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
+    endif()
+    target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
+    target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+  endforeach(program)
+endif()
 
 
 if(UUID_FOUND)
