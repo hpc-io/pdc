@@ -1,4 +1,4 @@
-**Is your feature request related to a problem? If so, please describe.**
+**What does this feature solve or improve?**
 
 A clear and concise description of what the problem is.
 Example: I always do the following workflow [...]
