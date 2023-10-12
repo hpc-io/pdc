@@ -128,8 +128,8 @@ int
 main(int argc, char *argv[])
 {
     if (argc == 1) {
-        printf("Expected directory/checkpoint file.\n");
-        return 1;
+        printf("Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] [-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
+        return 0;
     }
     else {
         FileNameNode * head     = NULL;
@@ -138,38 +138,42 @@ main(int argc, char *argv[])
         struct dirent *dir;
         struct dirent *direc;
         d = opendir(argv[1]);
+        char *full_path;
 
         if (d) {
-            while ((dir = readdir(d)) != NULL) { // for 'things' in the directory
-                ///// have question about what these compiled files do in the project and why they had to be
-                /// moved in the first place
-                if (!isDir(dir)) {                  // if it's directory
-                    if (strstr(dir->d_name, ".")) { // ignore parent and current directories
-                        break;
+            while ((dir = readdir(d)) != NULL) {
+                // if it's directory
+                if (!isDir(dir->d_name)) {
+                    if (strstr(dir->d_name, ".")) {
+                        // ignore parent and current directories
+                        continue;
                     }
                     // appends path together
                     char tmp[1024];
                     sprintf(tmp, "%s/%s", argv[1], dir->d_name);
                     DIR *d1 = opendir(tmp);
-                    printf("%s\n", tmp);
+                    /* printf("%s\n", tmp); */
 
                     while ((direc = readdir(d1)) != NULL) { // go into it and go for checkpoint files again
                         if (strstr(direc->d_name, "metadata_checkpoint.")) {
                             // printf("getting checkpoints\n");
                             char  last = argv[1][strlen(argv[1]) - 1];
-                            char *full_path;
                             if (last == '/') {
                                 full_path = (char *)malloc(sizeof(char) *
-                                                           (strlen(argv[1]) + strlen(dir->d_name) + 1));
+                                                           (strlen(argv[1]) + strlen(direc->d_name) + 1));
                                 strcpy(full_path, argv[1]);
-                                strcat(full_path, dir->d_name);
+                                strcat(full_path, direc->d_name);
+                                strcat(full_path, "/");
+                                strcat(full_path, direc->d_name);
                             }
                             else {
                                 full_path = (char *)malloc(sizeof(char) *
-                                                           (strlen(argv[1]) + strlen(dir->d_name) + 2));
+                                                           (strlen(argv[1]) + strlen(direc->d_name) + 2));
                                 strcpy(full_path, argv[1]);
                                 strcat(full_path, "/");
                                 strcat(full_path, dir->d_name);
+                                strcat(full_path, "/");
+                                strcat(full_path, direc->d_name);
                             }
                             if (head == NULL) {
                                 FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
@@ -189,45 +193,44 @@ main(int argc, char *argv[])
                     }
                     closedir(d1);
                 }
-            }
-            /////
-            if (strstr(dir->d_name, "metadata_checkpoint.")) {
-                printf("%s\n", dir->d_name);
-                char  last = argv[1][strlen(argv[1]) - 1];
-                char *full_path;
-                if (last == '/') {
-                    full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 1));
-                    strcpy(full_path, argv[1]);
-                    strcat(full_path, dir->d_name);
+                if (strstr(dir->d_name, "metadata_checkpoint.")) {
+                    printf("%s\n", dir->d_name);
+                    char  last = argv[1][strlen(argv[1]) - 1];
+                    if (last == '/') {
+                        full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 1));
+                        strcpy(full_path, argv[1]);
+                        strcat(full_path, dir->d_name);
+                    }
+                    else {
+                        full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 2));
+                        strcpy(full_path, argv[1]);
+                        strcat(full_path, "/");
+                        strcat(full_path, dir->d_name);
+                    }
+                    if (head == NULL) {
+                        FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
+                        new_node->file_name    = full_path;
+                        new_node->next         = NULL;
+                        head                   = new_node;
+                        cur_node               = new_node;
+                    }
+                    else {
+                        FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
+                        new_node->file_name    = full_path;
+                        new_node->next         = NULL;
+                        cur_node->next         = new_node;
+                        cur_node               = new_node;
+                    }
                 }
-                else {
-                    full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 2));
-                    strcpy(full_path, argv[1]);
-                    strcat(full_path, "/");
-                    strcat(full_path, dir->d_name);
-                }
-                if (head == NULL) {
-                    FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
-                    new_node->file_name    = full_path;
-                    new_node->next         = NULL;
-                    head                   = new_node;
-                    cur_node               = new_node;
-                }
-                else {
-                    FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
-                    new_node->file_name    = full_path;
-                    new_node->next         = NULL;
-                    cur_node->next         = new_node;
-                    cur_node               = new_node;
-                }
-            }
+            } // End if dir = readdir
             closedir(d);
-        }
+        } // Ene if d
         else {
+            // Open one checkpoint file
             FILE *file = fopen(argv[1], "r");
             if (file != NULL) {
                 FileNameNode *new_node  = (FileNameNode *)malloc(sizeof(FileNameNode));
-                char *        full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + 1));
+                full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + 1));
                 strcpy(full_path, argv[1]);
                 new_node->file_name = full_path;
                 new_node->next      = NULL;
@@ -236,12 +239,13 @@ main(int argc, char *argv[])
                 fclose(file);
             }
         }
+
         if (head == NULL) {
             printf("Unable to open/locate checkpoint file(s).\n");
-            return 1;
+            return -1;
         }
         else {
-            // pdc_ls(head, argc, argv);
+            pdc_ls(head, argc, argv);
         }
     }
 }
@@ -368,6 +372,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     int   list_names       = 0;
     int   list_ids         = 0;
     int   summary          = 0;
+    int   print_all        = 1;
 
     int arg_index = 2;
     while (arg_index < argc) {
@@ -389,12 +394,15 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         }
         else if (strcmp(argv[arg_index], "-ln") == 0) {
             list_names = 1;
+            print_all = 0;
         }
         else if (strcmp(argv[arg_index], "-li") == 0) {
             list_ids = 1;
+            print_all = 0;
         }
         else if (strcmp(argv[arg_index], "-s") == 0) {
             summary = 1;
+            print_all = 0;
         }
         arg_index++;
     }
@@ -422,7 +430,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     while (cur_file_node != NULL) {
         filename = cur_file_node->file_name;
         stat(filename, &attr);
-        printf("[INFO] File [%s] last modified at: %s\n", filename, ctime(&attr.st_mtime));
+        printf("[INFO] File [%s] last modified at: %s", filename, ctime(&attr.st_mtime));
         // Start server restart code
         perr_t ret_value = SUCCEED;
         int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
@@ -444,19 +452,21 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         }
 
         if (fread(&n_cont, sizeof(int), 1, file) != 1) {
-            printf("Read failed for n_count\n");
+            printf("Read failed for cont count\n");
         }
         all_cont = n_cont;
         while (n_cont > 0) {
             hash_key = (uint32_t *)malloc(sizeof(uint32_t));
             if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) {
-                printf("Read failed for hash_key\n");
+                printf("Read failed for cont hash_key\n");
+                return;
             }
 
             // Reconstruct hash table
             cont_entry = (pdc_cont_hash_table_entry_t *)malloc(sizeof(pdc_cont_hash_table_entry_t));
             if (fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file) != 1) {
                 printf("Read failed for cont_entry\n");
+                return;
             }
 
             n_cont--;
@@ -467,12 +477,14 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
 
         while (n_entry > 0) {
             if (fread(&count, sizeof(int), 1, file) != 1) {
-                printf("Read failed for count\n");
+                printf("Read failed for obj count\n");
+                return;
             }
 
             hash_key = (uint32_t *)malloc(sizeof(uint32_t));
             if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) {
-                printf("Read failed for hash_key\n");
+                printf("Read failed for obj hash_key\n");
+                return;
             }
 
             // Reconstruct hash table
@@ -536,6 +548,9 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                         printf("Read failed for kvtag_list->kvtag->name\n");
                     }
                     if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) {
+                        printf("Read failed for kvtag_list->kvtag->size\n");
+                    }
+                    if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) {
                         printf("Read failed for kvtag_list->kvtag->size\n");
                     }
                     kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
@@ -710,11 +725,11 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     cJSON *         start_arr_json   = NULL;
     cJSON *         output           = cJSON_CreateObject();
     int             prev_cont_id     = -1;
+    char            buf[1024];
     while (cur_m_node != NULL) {
         cur_metadata = cur_m_node->metadata_ptr;
         if (prev_cont_id != cur_metadata->cont_id) {
             cont_id_json = cJSON_CreateArray();
-            char buf[20];
             sprintf(buf, "cont_id: %d", cur_metadata->cont_id);
             cJSON_AddItemToObject(output, buf, cont_id_json);
         }
@@ -735,7 +750,6 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 }
             }
 
-            char buf[12];
             sprintf(buf, "%d", wanted_id);
             reti = regcomp(&regex, buf, 0);
             if (reti) {
@@ -744,7 +758,6 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 }
             }
             else {
-                char buf[12];
                 sprintf(buf, "%d", cur_metadata->obj_id);
                 reti = regexec(&regex, buf, 0, NULL, 0);
                 if (!reti) {
@@ -773,7 +786,6 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         }
         else if (wanted_id) {
             int  matched_id = 0;
-            char buf[12];
             sprintf(buf, "%d", wanted_id);
             reti = regcomp(&regex, buf, 0);
             if (reti) {
@@ -782,7 +794,6 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 }
             }
             else {
-                char buf[12];
                 sprintf(buf, "%d", cur_metadata->obj_id);
                 reti = regexec(&regex, buf, 0, NULL, 0);
                 if (!reti) {
@@ -796,7 +807,6 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 add(obj_names, cur_metadata->obj_name);
             }
             if (list_ids) {
-                char buf[12];
                 sprintf(buf, "%d", cur_metadata->obj_id);
                 add(obj_ids, buf);
             }
@@ -825,7 +835,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 cJSON_AddStringToObject(region_info_json, "storage_loc", cur_region->storage_location);
                 cJSON_AddNumberToObject(region_info_json, "offset", cur_region->offset);
                 cJSON_AddNumberToObject(region_info_json, "num_dims", cur_region->ndim);
-                dims[cur_region->ndim];
+                /* dims[cur_region->ndim]; */
                 for (int i = 0; i < (cur_metadata->ndim); i++) {
                     dims[i] = (cur_region->start)[i];
                 }
@@ -854,12 +864,13 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     FILE *fp;
     if (output_file_name) {
         fp = fopen(output_file_name, "w");
+        printf("Output to [%s]\n", output_file_name);
     }
     else {
         fp = stdout;
     }
     if (list_names) {
-        cJSON *all_names_json = cJSON_CreateStringArray(obj_names->items, obj_names->length);
+        cJSON *all_names_json = cJSON_CreateStringArray((const char**)obj_names->items, obj_names->length);
         cJSON_AddItemToObject(output, "all_obj_names", all_names_json);
     }
     if (list_ids) {
@@ -871,7 +882,6 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         cJSON_AddItemToObject(output, "all_obj_ids", all_ids_json);
     }
     if (summary) {
-        char buf[100];
         sprintf(buf, "pdc_ls found: %d containers, %d objects, %d regions", all_cont_total, all_nobj_total,
                 all_n_region_total);
         cJSON_AddStringToObject(output, "summary", buf);
@@ -882,4 +892,6 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     char *json_string = cJSON_Print(output);
     fprintf(fp, json_string);
     fprintf(fp, "\n");
+    if (output_file_name)
+        fclose(fp);
 }
