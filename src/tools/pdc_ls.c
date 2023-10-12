@@ -128,7 +128,8 @@ int
 main(int argc, char *argv[])
 {
     if (argc == 1) {
-        printf("Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] [-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
+        printf("Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] "
+               "[-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
         return 0;
     }
     else {
@@ -157,7 +158,7 @@ main(int argc, char *argv[])
                     while ((direc = readdir(d1)) != NULL) { // go into it and go for checkpoint files again
                         if (strstr(direc->d_name, "metadata_checkpoint.")) {
                             // printf("getting checkpoints\n");
-                            char  last = argv[1][strlen(argv[1]) - 1];
+                            char last = argv[1][strlen(argv[1]) - 1];
                             if (last == '/') {
                                 full_path = (char *)malloc(sizeof(char) *
                                                            (strlen(argv[1]) + strlen(direc->d_name) + 1));
@@ -195,14 +196,16 @@ main(int argc, char *argv[])
                 }
                 if (strstr(dir->d_name, "metadata_checkpoint.")) {
                     printf("%s\n", dir->d_name);
-                    char  last = argv[1][strlen(argv[1]) - 1];
+                    char last = argv[1][strlen(argv[1]) - 1];
                     if (last == '/') {
-                        full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 1));
+                        full_path =
+                            (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 1));
                         strcpy(full_path, argv[1]);
                         strcat(full_path, dir->d_name);
                     }
                     else {
-                        full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 2));
+                        full_path =
+                            (char *)malloc(sizeof(char) * (strlen(argv[1]) + strlen(dir->d_name) + 2));
                         strcpy(full_path, argv[1]);
                         strcat(full_path, "/");
                         strcat(full_path, dir->d_name);
@@ -229,8 +232,8 @@ main(int argc, char *argv[])
             // Open one checkpoint file
             FILE *file = fopen(argv[1], "r");
             if (file != NULL) {
-                FileNameNode *new_node  = (FileNameNode *)malloc(sizeof(FileNameNode));
-                full_path = (char *)malloc(sizeof(char) * (strlen(argv[1]) + 1));
+                FileNameNode *new_node = (FileNameNode *)malloc(sizeof(FileNameNode));
+                full_path              = (char *)malloc(sizeof(char) * (strlen(argv[1]) + 1));
                 strcpy(full_path, argv[1]);
                 new_node->file_name = full_path;
                 new_node->next      = NULL;
@@ -394,14 +397,14 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         }
         else if (strcmp(argv[arg_index], "-ln") == 0) {
             list_names = 1;
-            print_all = 0;
+            print_all  = 0;
         }
         else if (strcmp(argv[arg_index], "-li") == 0) {
-            list_ids = 1;
+            list_ids  = 1;
             print_all = 0;
         }
         else if (strcmp(argv[arg_index], "-s") == 0) {
-            summary = 1;
+            summary   = 1;
             print_all = 0;
         }
         arg_index++;
@@ -785,7 +788,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             add_obj = matched_name;
         }
         else if (wanted_id) {
-            int  matched_id = 0;
+            int matched_id = 0;
             sprintf(buf, "%d", wanted_id);
             reti = regcomp(&regex, buf, 0);
             if (reti) {
@@ -870,7 +873,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         fp = stdout;
     }
     if (list_names) {
-        cJSON *all_names_json = cJSON_CreateStringArray((const char**)obj_names->items, obj_names->length);
+        cJSON *all_names_json = cJSON_CreateStringArray((const char **)obj_names->items, obj_names->length);
         cJSON_AddItemToObject(output, "all_obj_names", all_names_json);
     }
     if (list_ids) {
