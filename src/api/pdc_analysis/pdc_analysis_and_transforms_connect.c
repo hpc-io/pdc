@@ -27,8 +27,8 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_transforms_common.h"
 
-static hg_context_t *send_context_g = NULL;
-static int           work_todo_g    = 0;
+static hg_context_t *     send_context_g     = NULL;
+static hg_atomic_int32_t *atomic_work_todo_g = NULL;
 
 /* Forward References:: */
 // Analysis and Transformations
@@ -59,6 +59,9 @@ PDC_Client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
     struct _pdc_obj_info *     object_info;
 
     FUNC_ENTER(NULL);
+    if (atomic_work_todo_g == NULL) {
+        hg_atomic_init32(atomic_work_todo_g, 0);
+    }
 
     my_rpc_state_p = (struct _pdc_my_rpc_state *)calloc(1, sizeof(struct _pdc_my_rpc_state));
     if (my_rpc_state_p == NULL)
@@ -114,7 +117,7 @@ PDC_Client_send_iter_recv_id(pdcid_t iter_id, pdcid_t *meta_id)
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_client_send_iter_recv_id(): Could not start HG_Forward()");
 
-    work_todo_g = 1;
+    hg_atomic_incr32(atomic_work_todo_g);
     PDC_Client_check_response(&send_context_g);
 
     if (my_rpc_state_p->value == 0) {
@@ -154,7 +157,7 @@ client_register_iterator_rpc_cb(const struct hg_cb_info *info)
 
 done:
     fflush(stdout);
-    work_todo_g--;
+    hg_atomic_decr32(atomic_work_todo_g);
     HG_Free_output(info->info.forward.handle, &output);
 
     FUNC_LEAVE(ret_value);
@@ -176,6 +179,9 @@ PDC_Client_register_obj_analysis(struct _pdc_region_analysis_ftn_info *thisFtn, 
     struct _pdc_obj_info *     obj_prop;
 
     FUNC_ENTER(NULL);
+    if (atomic_work_todo_g == NULL) {
+        hg_atomic_init32(atomic_work_todo_g, 0);
+    }
 
     my_rpc_state_p = (struct _pdc_my_rpc_state *)calloc(1, sizeof(struct _pdc_my_rpc_state));
     if (my_rpc_state_p == NULL)
@@ -232,7 +238,7 @@ PDC_Client_register_obj_analysis(struct _pdc_region_analysis_ftn_info *thisFtn, 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_register_obj_analysis(): Could not start HG_Forward()");
 
-    work_todo_g = 1;
+    hg_atomic_incr32(atomic_work_todo_g);
     PDC_Client_check_response(&send_context_g);
 
     if (my_rpc_state_p->value < 0) {
@@ -271,7 +277,7 @@ client_register_analysis_rpc_cb(const struct hg_cb_info *info)
 
 done:
     fflush(stdout);
-    work_todo_g--;
+    hg_atomic_decr32(atomic_work_todo_g);
     HG_Free_output(info->info.forward.handle, &output);
 
     FUNC_LEAVE(ret_value);
@@ -291,6 +297,9 @@ PDC_Client_register_region_transform(const char *func, const char *loadpath,
     struct _pdc_my_rpc_state *my_rpc_state_p;
 
     FUNC_ENTER(NULL);
+    if (atomic_work_todo_g == NULL) {
+        hg_atomic_init32(atomic_work_todo_g, 0);
+    }
 
     my_rpc_state_p = (struct _pdc_my_rpc_state *)calloc(1, sizeof(struct _pdc_my_rpc_state));
     if (my_rpc_state_p == NULL)
@@ -323,7 +332,7 @@ PDC_Client_register_region_transform(const char *func, const char *loadpath,
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not start HG_Forward()");
 
-    work_todo_g = 1;
+    hg_atomic_incr32(atomic_work_todo_g);
     PDC_Client_check_response(&send_context_g);
 
     if (my_rpc_state_p->value < 0) {
@@ -361,7 +370,7 @@ client_register_transform_rpc_cb(const struct hg_cb_info *info)
 
 done:
     fflush(stdout);
-    work_todo_g--;
+    hg_atomic_decr32(atomic_work_todo_g);
     HG_Free_output(info->info.forward.handle, &output);
 
     FUNC_LEAVE(ret_value);

@@ -687,7 +687,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 }
             }
             else {
-                char buf[12];
+                // char buf[12];
                 sprintf(buf, "%d", cur_metadata->obj_id);
                 reti = regexec(&regex, buf, 0, NULL, 0);
                 if (!reti) {
@@ -725,7 +725,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 }
             }
             else {
-                char buf[12];
+                // char buf[12];
                 sprintf(buf, "%d", cur_metadata->obj_id);
                 reti = regexec(&regex, buf, 0, NULL, 0);
                 if (!reti) {
@@ -768,7 +768,8 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 cJSON_AddStringToObject(region_info_json, "storage_loc", cur_region->storage_location);
                 cJSON_AddNumberToObject(region_info_json, "offset", cur_region->offset);
                 cJSON_AddNumberToObject(region_info_json, "num_dims", cur_region->ndim);
-                dims[cur_region->ndim];
+                // FIXME: statement with no effect. what did we expect to do here?
+                // dims[cur_region->ndim];
                 for (int i = 0; i < (cur_metadata->ndim); i++) {
                     dims[i] = (cur_region->start)[i];
                 }
@@ -802,7 +803,8 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         fp = stdout;
     }
     if (list_names) {
-        cJSON *all_names_json = cJSON_CreateStringArray(obj_names->items, obj_names->length);
+        cJSON *all_names_json =
+            cJSON_CreateStringArray((const char *const *)obj_names->items, obj_names->length);
         cJSON_AddItemToObject(output, "all_obj_names", all_names_json);
     }
     if (list_ids) {

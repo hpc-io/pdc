@@ -3,7 +3,7 @@
 #REGSBATCH -q regular
 #DBGSBATCH -q debug
 #SBATCH -N NODENUM
-#REGSBATCH -t 4:00:00
+#REGSBATCH -t 2:00:00
 #DBGSBATCH -t 0:30:00
 #SBATCH -C cpu
 #SBATCH -J JOBNAME
@@ -52,11 +52,13 @@ NCLIENT=$((NUM_CLIENT_PROC_PER_NODE * N_NODE))
 NSERVER=$((NUM_SERVER_PROC_PER_NODE * N_NODE))
 
 USE_DART=USING_DART
+Q_TYPE=QUERY_TYPE
+COM_TYPE=COMMUNICATION_TYPE
 
 # clean up the PDC tmp directory
 export PDC_TMPDIR=$SCRATCH/data/pdc/conf
+export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE/$USE_DART/$Q_TYPE/$COM_TYPE
 rm -rf $PDC_TMPDIR/*
-export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE/$USE_DART
 mkdir -p $PDC_TMPDIR
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
@@ -95,7 +97,7 @@ sleep 5
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 100 10 $USE_DART
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 100 10 $USE_DART $Q_TYPE $COM_TYPE
 
 echo ""
 echo "================="

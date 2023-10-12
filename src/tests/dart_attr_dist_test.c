@@ -186,13 +186,33 @@ main(int argc, char *argv[])
     double      duration_obj_ms  = 0.0;
     double      duration_dart_ms = 0.0;
 
-    for (i = 0; i < arr_len; i++) {
+    // attr 1: 10
+    // attr 2: 20
+    // attr 3: 30
+    //
+    // 10 objs with attr 1, 2, 3
+    // 10 objs with attr 2, 3,
+    // 10 objs with attr 3.
+    // m attrs, n objs, where m << n
+    // avg number of obj per attr: n/m
+    // so, every n/m objs will have different number of attr
+    // 1st n/m objs: 1 attrs
+    // 2nd n/m objs: 2 attrs
+    // 3rd n/m objs: 3 attrs
+    // ...
+    // mth n/m objs: m attrs
+
+    for (i = 0; i < arr_len; i++) { // iterate through all attributes
+        val                  = i + 23456;
+        pct                  = 0;
+        int num_obj_per_attr = attr_2_obj_array[i];
         sprintf(key, "k%ld", i + 12345);
-        val = i + 23456;
         sprintf(value, "v%ld", val);
-        pct = 0;
-        for (j = 0; j < attr_2_obj_array[i]; j++) {
-            if (j % size == rank) {
+        println("attaching attribute #%d [%s:%s] to %d objects", i, key, value, num_obj_per_attr);
+        for (j = 0; j < num_obj_per_attr; j++) {
+            // each attribute is attached to a specific number of objects, and this is how we make up
+            // different selectivity.
+            if (j % size == rank) { // evenly distribute the task to all ranks.
                 // attach attribute to object
                 timer_start(&timer_obj);
                 if (PDCobj_put_tag(obj_ids[j], key, (void *)&val, PDC_INT, sizeof(int)) < 0)
@@ -200,8 +220,8 @@ main(int argc, char *argv[])
                 timer_pause(&timer_obj);
                 duration_obj_ms += (double)timer_delta_ms(&timer_obj);
             }
-            size_t num_object_per_pct          = attr_2_obj_array[i] / 100;
-            size_t num_object_per_ton_thousand = attr_2_obj_array[i] / 10000;
+            size_t num_object_per_pct          = num_obj_per_attr / 100;
+            size_t num_object_per_ton_thousand = num_obj_per_attr / 10000;
             if (j % num_object_per_pct == 0)
                 pct += 1;
             if (rank == 0 && j % num_object_per_ton_thousand == 0) {

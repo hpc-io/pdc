@@ -6,6 +6,45 @@
 
 #define TAG_DELIMITER ","
 #include "string_utils.h"
+#include "pdc_public.h"
+
+typedef struct query_gen_input {
+    pdc_kvtag_t *base_tag;
+    int          key_query_type;
+    int          value_query_type;
+    int          affix_len;
+    int          range_lo;
+    int          range_hi;
+} query_gen_input_t;
+
+typedef struct query_gen_output {
+    char * key_query;
+    size_t key_query_len;
+    char * value_query;
+    size_t value_query_len;
+} query_gen_output_t;
+
+/**
+ * Generate query strings for key and value according to the given input.
+ * The query strings will be stored in the output.
+ * @param input
+ * @param output
+ */
+void gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output);
+
+/**
+ * Generate concatenated query strings for key and value according to the given input.
+ * @param query_gen_output
+ * @return concatenated query string
+ */
+char *gen_query_str(query_gen_output_t *query_gen_output);
+
+/**
+ * Free the memory allocated for the output of query generation
+ * This function does not free the memory allocated for the query_gen_output_t struct itself.
+ * @param output
+ */
+void free_query_output(query_gen_output_t *output);
 
 /**
  * Test tag generation in a for loop

@@ -10,7 +10,9 @@
 #endif /* HOST_NAME_MAX */
 
 #include "pdc_config.h"
+#ifdef ENABLE_MPI
 #include <mpi.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -103,9 +103,15 @@ endif()
 # Collect all source files
 file(GLOB_RECURSE PDC_COMMONS_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/serde/.*")
+list(FILTER PDC_COMMONS_HEADERS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/serde/.*")
+list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/.*_test.c")
 
-# list(FILTER PDC_COMMONS_SOURCES EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
-# list(FILTER PDC_COMMONS_HEADERS EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/rpc")
+message(STATUS "===PDC_COMMONS_SOURCES: ${PDC_COMMONS_SOURCES}")
+
+file(GLOB_RECURSE PDC_COMMONS_TEST_SRC ${CMAKE_CURRENT_SOURCE_DIR}/*_test.c)
+list(FILTER PDC_COMMONS_TEST_SRC EXCLUDE REGEX "${CMAKE_CURRENT_SOURCE_DIR}/serde/.*")
+message(STATUS "===PDC_COMMONS_TEST_SRC: ${PDC_COMMONS_TEST_SRC}")
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -114,10 +120,6 @@ file(GLOB_RECURSE PDC_COMMONS_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 
 add_library(${PDC_COMMON_LIBRARY_NAME} ${PDC_LIBTYPE} ${PDC_COMMONS_SOURCES} ${PDC_COMMONS_HEADERS})
-
-if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-    target_compile_options(${PDC_COMMON_LIBRARY_NAME} PRIVATE ${SUPPRESSED_LIST})
-endif()
 
 target_include_directories(${PDC_COMMON_LIBRARY_NAME}
   PUBLIC  "$<BUILD_INTERFACE:${PDC_COMMONS_INCLUDE_DIRS}>"
@@ -129,6 +131,19 @@ target_link_libraries(${PDC_COMMON_LIBRARY_NAME} INTERFACE
 )
 
 set(PDC_EXPORTED_LIBS ${PDC_COMMON_LIBRARY_NAME} ${PDC_EXPORTED_LIBS})
+
+#------------------------------------------------------------------------------
+# Tests
+#------------------------------------------------------------------------------
+
+# for each test source in $PDC_COMMONS_TEST_SRC, create an executable and link with PDC_COMMON_LIBRARY_NAME
+foreach(_test_src ${PDC_COMMONS_TEST_SRC})
+  get_filename_component(_test_name ${_test_src} NAME_WE)
+  add_executable(${_test_name} ${_test_src})
+  message(STATUS "===_test_name: ${_test_name}")
+  target_link_libraries(${_test_name} ${PDC_COMMON_LIBRARY_NAME})
+  # add_test(${_test_name} ${_test_name})
+endforeach()
 
 #-----------------------------------------------------------------------------
 # Specify project header files to be installed

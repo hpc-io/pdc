@@ -77,6 +77,7 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif /* HOST_NAME_MAX */
 
 #define pdc_server_cfg_name_g "server.cfg"
+#define pdc_app_lock_name_g   "pdc_app.lck"
 
 #define ADD_OBJ 1
 #define DEL_OBJ 2
@@ -612,6 +613,8 @@ typedef struct {
 /* Define metadata_query_transfer_out_t */
 typedef struct {
     int32_t   ret;
+    int64_t   server_time_elapsed;
+    int64_t   server_memory_consumption;
     hg_bulk_t bulk_handle;
 } metadata_query_transfer_out_t;
 
@@ -1171,6 +1174,8 @@ typedef struct {
     int8_t    has_bulk;
     int64_t   n_items;
     int64_t   timestamp;
+    int64_t   server_time_elapsed;
+    int64_t   server_memory_consumption;
 } dart_perform_one_server_out_t;
 
 /*****************************************/
@@ -1584,6 +1589,16 @@ hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
     metadata_query_transfer_out_t *struct_data = (metadata_query_transfer_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->server_time_elapsed);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->server_memory_consumption);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -3920,6 +3935,16 @@ hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    ret = hg_proc_int64_t(proc, &struct_data->server_time_elapsed);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int64_t(proc, &struct_data->server_memory_consumption);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     return ret;
 }
 
@@ -3927,21 +3952,25 @@ hg_proc_dart_perform_one_server_out_t(hg_proc_t proc, void *data)
 /* Library Private Structs */
 /***************************/
 struct bulk_args_t {
-    int              cnt;
-    int              op;
-    uint64_t         cont_id;
-    hg_handle_t      handle;
-    hg_bulk_t        bulk_handle;
-    size_t           nbytes;
-    int              origin;
-    size_t           ret;
-    pdc_metadata_t **meta_arr;
-    uint32_t         n_meta;
-    uint64_t         obj_id;
-    uint64_t *       obj_ids;
-    int              client_seq_id;
-    int              is_id; // if is_id == true, then use uint64_t; otherwise, pdc_metadata_t
-    int8_t           op_type;
+    int               cnt;
+    int               op;
+    uint64_t          cont_id;
+    hg_handle_t       handle;
+    hg_bulk_t         bulk_handle;
+    size_t            nbytes;
+    int               origin;
+    size_t            ret;
+    pdc_metadata_t ** meta_arr;
+    uint32_t          n_meta;
+    uint64_t          obj_id;
+    uint64_t *        obj_ids;
+    int               client_seq_id;
+    int               is_id; // if is_id == true, then use uint64_t; otherwise, pdc_metadata_t
+    int8_t            op_type;
+    hg_atomic_int32_t bulk_done_flag;
+    int               server_id;
+    int64_t           server_time_elapsed;
+    int64_t           server_memory_consumption;
 
     int query_id;
 
