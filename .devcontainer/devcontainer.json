@@ -4,5 +4,7 @@
     "forwardPorts": [
         3000
     ],
-    "postCreateCommand": ".devcontainer/post-create.sh"
+    "postCreateCommand": ".devcontainer/post-create.sh",
+    "workspaceFolder": "/workspaces/source",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/source/pdc,type=bind"
 }
