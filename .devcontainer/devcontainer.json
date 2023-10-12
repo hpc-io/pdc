@@ -1,0 +1,7 @@
+{
+    "name": "pdc_devcontainer",
+    "dockerFile": "devcontainer.Dockerfile",
+    "forwardPorts": [
+        3000
+    ]
+}
