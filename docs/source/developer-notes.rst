@@ -397,3 +397,39 @@ Remember, you must include all your bridging function calls inside the following
 Also, to make sure your code with Julia function calls doesn't get compiled when Julia support is not there, you can add your new test to the list of `ENHANCED_PROGRAMS` in `src/tests/CMakeLists.txt`.
 
 For more info on embedded Julia support, please visit: `Embedded Julia https://docs.julialang.org/en/v1/manual/embedding/`_.
+
+
+
+---------------------------------------------
+Github Codespace Support
+---------------------------------------------
+
+This is a feature current in progress. 
+We are trying to make PDC work with Github Codespace.
+
+Currently, with `.devcontainer/devcontainer.json` and `.devcontainer/Dockerfile`, you can build a docker image that contains all the dependencies for PDC.
+However, when the Codespace is created, the predefined directories in the docker file will disappear.
+
+
+------------------------------------------------------------
+Tracking your memory consumption with each memory allocation
+------------------------------------------------------------
+
+Now, you can use the APIs in `src/commons/utils/pdc_malloc.c` to allocate memory when needed. 
+Using these APIs and macros will allow you to track your memory consumption with each memory allocation.
+You can get the total memory consumption anytime by calling `PDC_get_global_mem_usage()`.
+
+Also, the root CMakeLists.txt file will automatically detect if HAVE_MALLOC_USABLE_SIZE is available.
+If so, the memory consumption will be more accurate (summation of both allocation and freeing). Otherwise, it will be less accurate but still usable (only measure the total memory ever allocated).
+
+
+------------------------------------------------------------
+DART Suffix Tree Mode
+------------------------------------------------------------
+
+In DART, to support efficient infix search, we can enable the suffix tree mode, 
+where suffix search becomes an exact search and infix search becomes a prefix search, 
+at the cost of indexing every possible suffix of indexed keywords. 
+
+To enable the suffix tree mode, you can turn on/off this switch in CMakeLists.txt:
+`PDC_DART_SUFFIX_TREE_MODE`
