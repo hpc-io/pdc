@@ -3,5 +3,6 @@
     "dockerFile": "devcontainer.Dockerfile",
     "forwardPorts": [
         3000
-    ]
+    ],
+    "postCreateCommand": ".devcontainer/post-create.sh"
 }
