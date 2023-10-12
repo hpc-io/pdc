@@ -2,6 +2,9 @@
 
 
 ln -s /workspaces/pdc /home/codespace/source/pdc 
+mkdir -p /workspaces/install
+mkdir -p /workspaces/source
+ln -s $PDC_SRC_DIR /workspaces/source/pdc
 ln -s $PDC_DIR  /workspaces/install/pdc
 
 export PDC_SRC_DIR=/workspaces/source/pdc
