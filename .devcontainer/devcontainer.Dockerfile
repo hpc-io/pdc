@@ -2,3 +2,6 @@
 
 # Use Ubuntu Jammy (latest LTS) as the base image
 FROM zhangwei217245/pdc_dev_base:latest
+
+RUN mkdir -p /home/codespace
+RUN mkdir -p /home/codespace/source
