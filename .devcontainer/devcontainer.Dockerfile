@@ -46,11 +46,10 @@ ENV LIBFABRIC_DIR=$WORK_SPACE/install/libfabric
 ENV MERCURY_DIR=$WORK_SPACE/install/mercury
 ENV PDC_DIR=$WORK_SPACE/install/pdc
 
-RUN mkdir -p $LIBFABRIC_SRC_DIR \
-    mkdir -p $MERCURY_SRC_DIR \
-    mkdir -p $PDC_SRC_DIR \
-    mkdir -p $LIBFABRIC_DIR \
-    mkdir -p $MERCURY_DIR \
+RUN mkdir -p $LIBFABRIC_SRC_DIR && \
+    mkdir -p $MERCURY_SRC_DIR && \
+    mkdir -p $LIBFABRIC_DIR && \
+    mkdir -p $MERCURY_DIR && \
     mkdir -p $PDC_DIR
 
 
@@ -94,5 +93,3 @@ ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 RUN echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
-RUN mkdir -p /home/codespace
-RUN mkdir -p /home/codespace/source

@@ -6,6 +6,6 @@
     ],
     "postCreateCommand": ".devcontainer/post-create.sh",
     "postStartCommand": ".devcontainer/post-start.sh",
-    "workspaceFolder": "/home/codespace/source",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/home/codespace/source,type=bind"
+    "workspaceFolder": "/workspaces/source/pdc",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/source/pdc,type=bind"
 }

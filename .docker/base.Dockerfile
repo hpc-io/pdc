@@ -24,9 +24,8 @@ RUN apt-get update && apt-get install -y \
     valgrind
 
 # Set WORK_SPACE environment variable and create necessary directories
-RUN mkdir -p /workspaces
-ENV WORK_SPACE=/workspaces
-
+ENV WORK_SPACE=/home/codespace
+RUN mkdir -p $WORK_SPACE
 
 # Clone the repositories
 WORKDIR $WORK_SPACE/source
