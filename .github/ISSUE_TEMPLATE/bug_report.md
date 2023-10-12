@@ -6,12 +6,12 @@ A clear and concise description of what the bug is, including module and feature
 
 How are you building/running PDC?
 
-- version of PDC: [e.g. 0.3, branch, or hash]
+- version of PDC: [e.g., 0.3, branch, or hash]
 - installed PDC using: [spack, from source]
 - operating system: [name and version]
 - machine: [Are you running on a supercomputer or public cluster?]
-- version of Mercury: [e.g. 1.12.0]
-- name and version of MPI: [e.g. OpenMPI 4.1.1]
+- version of Mercury: [e.g., 1.12.0]
+- name and version of MPI: [e.g., OpenMPI 4.1.1]
 
 What did you use to build PDC (cmake command)?
 
