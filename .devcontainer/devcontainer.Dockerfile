@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
     cmake-curses-gui \
     wget \
     axel \
+    curl \
     vim \
     nano \
     gdb \
