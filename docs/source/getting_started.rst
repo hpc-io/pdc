@@ -218,6 +218,16 @@ Then you can compile your PDC project with Julia support.
 
 Now, see Developer Notes to know how you can add your own Julia functions to enhance your test cases in PDC. 
 
+
+Build PDC Docker Image and Run PDC Docker Container
+---------------------------------------------------
+We provide a Dockerfile to build a PDC Docker image. The Dockerfile is located at `--$PDC_ROOT/.docker/local.Dockerfile`
+To build the PDC Docker image, you can run the following command from `$PDC_ROOT`:
+`docker build -t pdc_dev_base:latest -f $PDC_ROOT/.docker/base.Dockerfile .`
+
+To run the PDC Docker container, you can run the following command:
+`docker run -it --rm --name pdc -v $PDC_ROOT:/home/codespace/source/pdc pdc_dev_base:latest /bin/bash`
+
 ---------------------------
 Running PDC
 ---------------------------

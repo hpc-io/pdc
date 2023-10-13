@@ -1,9 +1,5 @@
-# Note: Run `docker build -f .devcontainer/Dockerfile -t pdc:latest .` from the root directory of the repository to build the docker image.
-
 # Use Ubuntu Jammy (latest LTS) as the base image
 FROM ubuntu:jammy
-
-
 
 # Install necessary tools, MPICH, UUID library and developer files
 RUN apt-get update && apt-get install -y \
@@ -28,9 +24,8 @@ RUN apt-get update && apt-get install -y \
     valgrind
 
 # Set WORK_SPACE environment variable and create necessary directories
-RUN mkdir -p /workspaces
-ENV WORK_SPACE=/workspaces
-
+ENV WORK_SPACE=/home/codespace
+RUN mkdir -p $WORK_SPACE
 
 # Clone the repositories
 WORKDIR $WORK_SPACE/source
@@ -46,10 +41,11 @@ ENV LIBFABRIC_DIR=$WORK_SPACE/install/libfabric
 ENV MERCURY_DIR=$WORK_SPACE/install/mercury
 ENV PDC_DIR=$WORK_SPACE/install/pdc
 
-RUN mkdir -p $LIBFABRIC_SRC_DIR && \
-    mkdir -p $MERCURY_SRC_DIR && \
-    mkdir -p $LIBFABRIC_DIR && \
-    mkdir -p $MERCURY_DIR && \
+RUN mkdir -p $LIBFABRIC_SRC_DIR \
+    mkdir -p $MERCURY_SRC_DIR \
+    mkdir -p $PDC_SRC_DIR \
+    mkdir -p $LIBFABRIC_DIR \
+    mkdir -p $MERCURY_DIR \
     mkdir -p $PDC_DIR
 
 
@@ -92,4 +88,3 @@ ENV LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 RUN echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
-
