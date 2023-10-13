@@ -44,7 +44,7 @@ case $arch in
 esac
 
 if [ -z "$2" ] || [ "$2" -eq 0 ]; then
-    docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
+    docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/dev_base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
     docker push ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
     exit 0
 else
