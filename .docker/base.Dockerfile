@@ -96,6 +96,4 @@ ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 RUN echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
-COPY ./.devcontainer/post_create.sh /.post_create.sh
-
-ENTRYPOINT [ "/.post_create.sh" ]
+ENTRYPOINT [ "/workspaces/pdc/.devcontainer/post-attach.sh" ]
