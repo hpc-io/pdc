@@ -28,8 +28,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
 
-RUN echo 'OSH_THEME="powerline-multiline"' >> ~/.bashrc
-RUN echo 'plugins=(battery progress)' >> ~/.bashrc
+RUN sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' /root/.bashrc
 
 # Set WORK_SPACE environment variable and create necessary directories
 ENV WORK_SPACE=/home/project
