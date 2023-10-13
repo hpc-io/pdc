@@ -26,6 +26,11 @@ RUN apt-get update && apt-get install -y \
     curl \
     valgrind
 
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+
+RUN echo 'OSH_THEME="powerline-multiline"' >> ~/.bashrc
+RUN echo 'plugins=(battery progress)' >> ~/.bashrc
+
 # Set WORK_SPACE environment variable and create necessary directories
 ENV WORK_SPACE=/home/project
 RUN mkdir -p $WORK_SPACE
@@ -91,3 +96,6 @@ ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 RUN echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
+COPY ./.devcontainer/post_create.sh /.post_create.sh
+
+ENTRYPOINT [ "/.post_create.sh" ]
