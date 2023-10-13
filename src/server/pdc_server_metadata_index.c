@@ -204,12 +204,14 @@ PDC_Server_dart_init()
 /* Create index item for KV in DART */
 /****************************/
 
+// #define PDC_DART_SFX_TREE
+
 perr_t
 create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void *data)
 {
     perr_t ret = SUCCEED;
     if (*index == NULL) {
-        *index = (art_tree *)calloc(1, sizeof(art_tree));
+        *index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
         art_tree_init(*index);
     }
 
@@ -220,7 +222,6 @@ create_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
     if (obj_id_set == NULL) {
         obj_id_set = set_new(ui64_hash, ui64_equal);
         set_register_free_function(obj_id_set, free);
-
         art_insert(art_value_prefix_tree, attr_value, len, (void *)obj_id_set);
     }
 
@@ -240,36 +241,56 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
     int                     len          = strlen(attr_name);
     key_index_leaf_content *leaf_content = NULL;
     art_tree *              nm_trie      = NULL;
+    unsigned char *         nm_key       = NULL;
 
-    // int rr = 0;
-    // for (rr = 0; rr < 2; rr++){
-    unsigned char *nm_key           = (unsigned char *)attr_name;
-    nm_trie                         = art_key_prefix_tree_g;
-    key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
-    if (leafcnt == NULL) {
-        leafcnt                     = (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
-        leafcnt->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
-        leafcnt->extra_suffix_index = (art_tree *)calloc(1, sizeof(art_tree));
-        leafcnt->extra_range_index  = (art_tree *)calloc(1, sizeof(art_tree));
-        leafcnt->extra_infix_index  = (art_tree *)calloc(1, sizeof(art_tree));
-        art_tree_init((art_tree *)leafcnt->extra_prefix_index);
-        art_tree_init((art_tree *)leafcnt->extra_suffix_index);
-        art_tree_init((art_tree *)leafcnt->extra_range_index);
-        art_tree_init((art_tree *)leafcnt->extra_infix_index);
-        art_insert(nm_trie, nm_key, len, leafcnt);
-    }
+#ifndef PDC_DART_SFX_TREE
+    int rr = 0;
+    for (rr = 0; rr < 2; rr++) {
+        nm_key  = (rr == 1) ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
+        nm_trie = (rr == 1) ? art_key_suffix_tree_g : art_key_prefix_tree_g;
+#else
+    int sub_loop_count = len; // should be 'len', but we already iterate all suffixes at client side
+    nm_trie            = art_key_prefix_tree_g;
+    for (int j = 0; j < sub_loop_count; j++) {
+        nm_key         = (unsigned char *)substring(attr_name, j, len);
+#endif
+        key_index_leaf_content *leafcnt =
+            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen((const char *)nm_key));
+        if (leafcnt == NULL) {
+            leafcnt = (key_index_leaf_content *)PDC_calloc(1, sizeof(key_index_leaf_content));
+            leafcnt->extra_prefix_index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
+            art_tree_init((art_tree *)leafcnt->extra_prefix_index);
+#ifndef PDC_DART_SFX_TREE
+            // we only enable suffix index when suffix tree mode is off.
+            leafcnt->extra_suffix_index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
+            art_tree_init((art_tree *)leafcnt->extra_suffix_index);
+#endif
+            // TODO: build local index for range query.
+            leafcnt->extra_range_index = (art_tree *)PDC_calloc(1, sizeof(art_tree));
+            art_tree_init((art_tree *)leafcnt->extra_range_index);
 
-    art_tree *secondary_trie = NULL;
-    int       r              = 0;
-    for (r = 0; r < 2; r++) {
-        unsigned char *val_key =
-            (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
-        secondary_trie =
-            (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index) : (art_tree *)(leafcnt->extra_prefix_index));
-        create_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
-    }
-    // TODO: build local index for infix and range.
-    // }
+            art_insert(nm_trie, nm_key, strlen((const char *)nm_key), leafcnt);
+        }
+
+        art_tree *secondary_trie = NULL;
+
+#ifndef PDC_DART_SFX_TREE
+        int r = 0;
+        for (r = 0; r < 2; r++) {
+            unsigned char *val_key =
+                (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
+            secondary_trie = (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index)
+                                     : (art_tree *)(leafcnt->extra_prefix_index));
+
+#else
+        secondary_trie = (art_tree *)(leafcnt->extra_prefix_index);
+        int val_len    = strlen(attr_value);
+        for (int jj = 0; jj < val_len; jj++) {
+            unsigned char *val_key = (unsigned char *)substring(attr_value, jj, val_len);
+#endif
+            create_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
+        } // this matches with the 'r' loop or 'jj' loop
+    }     // this matches with the 'rr' loop or 'j' loop
     return nm_trie;
 }
 
@@ -294,10 +315,11 @@ metadata_index_create(char *attr_key, char *attr_value, uint64_t obj_locator, in
     create_index_for_attr_name(attr_key, attr_value, (void *)data);
     // }
     timer_pause(&timer);
-    if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %d microseconds\n",
-               pdc_server_rank_g, attr_key, attr_value, timer_delta_us(&timer));
-    }
+    // if (DART_SERVER_DEBUG) {
+    //     printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f
+    //     microseconds\n",
+    //            pdc_server_rank_g, attr_key, attr_value, timer_delta_us(&timer));
+    // }
     indexed_word_count_g++;
     ret_value = SUCCEED;
     return ret_value;
@@ -312,7 +334,7 @@ delete_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
 {
     perr_t ret = SUCCEED;
     if (*index == NULL) {
-        println("The value prefix tree is NULL, there is nothing to delete.");
+        // println("The value prefix tree is NULL, there is nothing to delete.");
         return ret;
     }
 
@@ -321,14 +343,17 @@ delete_prefix_index_for_attr_value(void **index, unsigned char *attr_value, void
     int  len        = strlen((const char *)attr_value);
     Set *obj_id_set = (Set *)art_search(art_value_prefix_tree, attr_value, len);
     if (obj_id_set == NULL) {
-        println("The obj_id_set is NULL, there nothing more to delete.");
+        // println("The obj_id_set is NULL, there nothing more to delete.");
         if (art_size(art_value_prefix_tree) == 0) {
             art_tree_destroy(*index);
         }
         return ret;
     }
 
-    set_remove(obj_id_set, data);
+    if (set_query(obj_id_set, data) != 0) {
+        set_remove(obj_id_set, data);
+    }
+
     if (set_num_entries(obj_id_set) == 0) {
         art_delete(art_value_prefix_tree, attr_value, len);
         set_free(obj_id_set);
@@ -342,32 +367,47 @@ delete_index_for_attr_name(char *attr_name, char *attr_value, void *data)
     int                     len          = strlen(attr_name);
     key_index_leaf_content *leaf_content = NULL;
     art_tree *              nm_trie      = NULL;
+    unsigned char *         nm_key       = NULL;
 
-    // int rr = 0;
-    // for (rr = 0; rr < 2; rr++){
-    unsigned char *nm_key           = (unsigned char *)attr_name;
-    nm_trie                         = art_key_prefix_tree_g;
-    key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(nm_trie, nm_key, len);
-    if (leafcnt == NULL) {
-        art_delete(nm_trie, nm_key, len);
-    }
-    else {
-        art_tree *secondary_trie = NULL;
-        int       r              = 0;
-        for (r = 0; r < 2; r++) {
-            unsigned char *val_key =
-                (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
-            secondary_trie = (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index)
-                                     : (art_tree *)(leafcnt->extra_prefix_index));
-            delete_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
+#ifndef PDC_DART_SFX_TREE
+    int rr = 0;
+    for (rr = 0; rr < 2; rr++) {
+        nm_key  = rr == 1 ? (unsigned char *)reverse_str(attr_name) : (unsigned char *)attr_name;
+        nm_trie = rr == 1 ? art_key_suffix_tree_g : art_key_prefix_tree_g;
+#else
+    int sub_loop_count = 1; // should be 'len', but we already iterate all suffixes at client side;
+    nm_trie            = art_key_prefix_tree_g;
+    for (int j = 0; j < sub_loop_count; j++) {
+        nm_key = (unsigned char *)substring(attr_name, j, len);
+#endif
+        key_index_leaf_content *leafcnt =
+            (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen((const char *)nm_key));
+        if (leafcnt == NULL) {
+            art_delete(nm_trie, nm_key, strlen((const char *)nm_key));
         }
-        if (leafcnt->extra_suffix_index == NULL && leafcnt->extra_prefix_index == NULL) {
-            art_delete(nm_trie, nm_key, len);
-            leafcnt = NULL;
-        }
-    }
-    // TODO: build local index for infix and range.
-    // }
+        else {
+            art_tree *secondary_trie = NULL;
+#ifndef PDC_DART_SFX_TREE
+            int r = 0;
+            for (r = 0; r < 2; r++) {
+                secondary_trie = (r == 1 ? (art_tree *)(leafcnt->extra_suffix_index)
+                                         : (art_tree *)(leafcnt->extra_prefix_index));
+                unsigned char *val_key =
+                    (r == 1 ? (unsigned char *)reverse_str(attr_value) : (unsigned char *)attr_value);
+#else
+            secondary_trie = (art_tree *)(leafcnt->extra_prefix_index);
+            for (int jj = 0; jj < strlen(attr_value); jj++) {
+                unsigned char *val_key = (unsigned char *)substring(attr_value, jj, strlen(attr_value));
+#endif
+                delete_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
+            }
+            if (leafcnt->extra_suffix_index == NULL && leafcnt->extra_prefix_index == NULL) {
+                art_delete(nm_trie, nm_key, len);
+                leafcnt = NULL;
+            }
+            // TODO: deal with index for range query.
+        } // this matches with the 'r' loop or 'jj' loop
+    }     // this matches with the 'rr' loop or 'j' loop
 }
 
 perr_t
@@ -376,6 +416,8 @@ metadata_index_delete(char *attr_key, char *attr_value, uint64_t obj_locator, in
     perr_t      ret_value = FAIL;
     stopwatch_t timer;
     timer_start(&timer);
+    uint64_t *data = (uint64_t *)calloc(1, sizeof(uint64_t));
+    *data          = obj_locator;
 
     // if (index_type == DHT_FULL_HASH) {
     //     delete_hash_table_for_keyword(attr_key, strlen(attr_key), (void *)obj_locator);
@@ -384,14 +426,15 @@ metadata_index_delete(char *attr_key, char *attr_value, uint64_t obj_locator, in
     //     delete_hash_table_for_keyword(attr_key, 1, (void *)obj_locator);
     // }
     // else if (index_type == DART_HASH) {
-    delete_index_for_attr_name(attr_key, attr_value, (void *)obj_locator);
+    delete_index_for_attr_name(attr_key, attr_value, (void *)data);
     // }
 
     timer_pause(&timer);
-    if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_Delete_%d] Timer to delete a keyword %s : %s from index = %d microseconds\n",
-               pdc_server_rank_g, attr_key, attr_value, timer_delta_us(&timer));
-    }
+    // if (DART_SERVER_DEBUG) {
+    //     printf("[Server_Side_Delete_%d] Timer to delete a keyword %s : %s from index = %.4f
+    //     microseconds\n",
+    //            pdc_server_rank_g, attr_key, attr_value, timer_delta_us(&timer));
+    // }
     indexed_word_count_g--;
     ret_value = SUCCEED;
     return ret_value;
@@ -490,18 +533,38 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
                 }
                 break;
             case PATTERN_SUFFIX:
-                tok = substr(secondary_query, 1);
-                tok = reverse_str(tok);
-                if (leafcnt->extra_suffix_index != NULL) {
-                    art_iter_prefix((art_tree *)leafcnt->extra_suffix_index, (unsigned char *)tok,
-                                    strlen(tok), level_two_art_callback, param);
+                tok                      = substr(secondary_query, 1);
+                art_tree *secondary_trie = NULL;
+#ifndef PDC_DART_SFX_TREE
+                tok            = reverse_str(tok);
+                secondary_trie = (art_tree *)leafcnt->extra_suffix_index;
+#else
+                secondary_trie         = (art_tree *)leafcnt->extra_prefix_index;
+#endif
+                if (secondary_trie != NULL) {
+#ifndef PDC_DART_SFX_TREE
+                    art_iter_prefix(secondary_trie, (unsigned char *)tok, strlen(tok), level_two_art_callback,
+                                    param);
+#else
+                    Set *obj_id_set = (Set *)art_search(secondary_trie, (unsigned char *)tok, strlen(tok));
+                    if (obj_id_set != NULL) {
+                        level_two_art_callback((void *)param, (unsigned char *)tok, strlen(tok),
+                                               (void *)obj_id_set);
+                    }
+#endif
                 }
                 break;
             case PATTERN_MIDDLE:
-                tok                    = substring(secondary_query, 1, strlen(secondary_query) - 1);
-                param->level_two_infix = tok;
-                if (leafcnt->extra_prefix_index != NULL) {
-                    art_iter(leafcnt->extra_prefix_index, level_two_art_callback, param);
+                tok            = substring(secondary_query, 1, strlen(secondary_query) - 1);
+                secondary_trie = (art_tree *)leafcnt->extra_prefix_index;
+                if (secondary_trie != NULL) {
+#ifndef PDC_DART_SFX_TREE
+                    param->level_two_infix = tok;
+                    art_iter(secondary_trie, level_two_art_callback, param);
+#else
+                    art_iter_prefix(secondary_trie, (unsigned char *)tok, strlen(tok), level_two_art_callback,
+                                    param);
+#endif
                 }
                 break;
             default:
@@ -523,7 +586,14 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     char *k_query = get_key(query, '=');
     char *v_query = get_value(query, '=');
 
+    if (DART_SERVER_DEBUG) {
+        println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", pdc_server_rank_g, k_query,
+                v_query);
+    }
+
     pdc_art_iterator_param_t *param = (pdc_art_iterator_param_t *)calloc(1, sizeof(pdc_art_iterator_param_t));
+    param->level_one_infix          = NULL;
+    param->level_two_infix          = NULL;
     param->query_str                = v_query;
     param->out                      = set_new(ui64_hash, ui64_equal);
     set_register_free_function(param->out, free);
@@ -533,24 +603,27 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
     char *qType_string = "Exact";
 
     if (NULL == kdelim_ptr) {
-        println("[Server_Side_Query_%d]query string '%s' is not valid.", pdc_server_rank_g, query);
+        if (DART_SERVER_DEBUG) {
+            println("[Server_Side_Query_%d]query string '%s' is not valid.", pdc_server_rank_g, query);
+        }
         *n_obj_ids_ptr = 0;
         return result;
     }
     else {
         char *tok;
         // println("k_query %s, v_query %s", k_query, v_query);
-        pattern_type_t level_one_ptn_type = determine_pattern_type(k_query);
+        pattern_type_t          level_one_ptn_type = determine_pattern_type(k_query);
+        key_index_leaf_content *leafcnt            = NULL;
         // if (index_type == DHT_FULL_HASH || index_type == DHT_INITIAL_HASH) {
         //     search_through_hash_table(k_query, index_type, level_one_ptn_type, param);
         // }
         // else {
         switch (level_one_ptn_type) {
             case PATTERN_EXACT:
-                qType_string                    = "Exact";
-                tok                             = k_query;
-                key_index_leaf_content *leafcnt = (key_index_leaf_content *)art_search(
-                    art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok));
+                qType_string = "Exact";
+                tok          = k_query;
+                leafcnt = (key_index_leaf_content *)art_search(art_key_prefix_tree_g, (unsigned char *)tok,
+                                                               strlen(tok));
                 if (leafcnt != NULL) {
                     level_one_art_callback((void *)param, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
                 }
@@ -564,15 +637,28 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
             case PATTERN_SUFFIX:
                 qType_string = "Suffix";
                 tok          = substr(k_query, 1);
-                tok          = reverse_str(tok);
-                art_iter_prefix((art_tree *)art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
+#ifndef PDC_DART_SFX_TREE
+                tok = reverse_str(tok);
+                art_iter_prefix((art_tree *)art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                                 level_one_art_callback, param);
+#else
+                leafcnt = (key_index_leaf_content *)art_search(art_key_prefix_tree_g, (unsigned char *)tok,
+                                                               strlen(tok));
+                if (leafcnt != NULL) {
+                    level_one_art_callback((void *)param, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
+                }
+#endif
                 break;
             case PATTERN_MIDDLE:
-                qType_string           = "Infix";
-                tok                    = substring(k_query, 1, strlen(k_query) - 1);
+                qType_string = "Infix";
+                tok          = substring(k_query, 1, strlen(k_query) - 1);
+#ifndef PDC_DART_SFX_TREE
                 param->level_one_infix = tok;
                 art_iter(art_key_prefix_tree_g, level_one_art_callback, param);
+#else
+                art_iter_prefix(art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
+                                level_one_art_callback, param);
+#endif
                 break;
             default:
                 break;
@@ -596,7 +682,7 @@ metadata_index_search(char *query, int index_type, uint64_t *n_obj_ids_ptr, uint
 
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %ld microseconds\n",
+        printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
                qType_string, pdc_server_rank_g, query, *n_obj_ids_ptr, timer_delta_us(&index_timer));
     }
     server_request_count_g++;
@@ -614,7 +700,7 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     char *                 attr_val  = (char *)in->attr_val;
     dart_object_ref_type_t ref_type  = in->obj_ref_type;
 
-    uint64_t obj_locator = 0;
+    uint64_t obj_locator = in->obj_primary_ref;
     if (ref_type == REF_PRIMARY_ID) {
         obj_locator = in->obj_primary_ref;
     }

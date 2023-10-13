@@ -24,6 +24,9 @@
 /* Define if you want to enable profiling */
 #cmakedefine ENABLE_PROFILING
 
+/* Define if you want to enable DART_SUFFIX_TREE mode */
+#cmakedefine PDC_DART_SFX_TREE
+
 /* Define if you want to enable Julia */
 #cmakedefine PDC_ENABLE_JULIA
 

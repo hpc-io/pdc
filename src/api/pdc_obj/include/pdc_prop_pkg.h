@@ -35,13 +35,6 @@ struct _pdc_cont_prop {
     pdc_lifetime_t     cont_life;
 };
 
-typedef struct pdc_kvtag_t {
-    char *         name;
-    uint32_t       size;
-    pdc_var_type_t type;
-    void *         value;
-} pdc_kvtag_t;
-
 typedef enum { ROW_major, COL_major } _pdc_major_type_t;
 
 struct _pdc_transform_state {

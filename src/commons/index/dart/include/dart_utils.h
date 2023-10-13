@@ -18,6 +18,8 @@ int64_t get_timestamp_ns();
 
 int64_t get_timestamp_us();
 
-int64_t get_timestamp();
+int64_t get_timestamp_ms();
+
+int64_t get_timestamp_s();
 
 #endif // DART_UTILS_H

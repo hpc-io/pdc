@@ -3,6 +3,139 @@
 //
 #include "query_utils.h"
 
+int
+_gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **out_str)
+{
+
+    size_t token_len = strlen(token_str);
+    affix_len        = affix_len < token_len ? affix_len : token_len;
+    size_t copy_len  = affix_type == 0 ? token_len : affix_len;
+    char * source    = affix_type <= 1 ? token_str : &(token_str[token_len - affix_len]);
+    *out_str         = (char *)calloc(copy_len + 3, sizeof(char));
+    strncpy(*out_str, source, copy_len + 1);
+
+    if (affix_type == 0) { // exact
+        // nothing to do here.
+    }
+    else if (affix_type == 1) { // prefix
+        // "hello" -> "hell*" or "hell" -> "hell*"
+        (*out_str)[affix_len]     = '*';
+        (*out_str)[affix_len + 1] = '\0';
+    }
+    else if (affix_type == 2) { // suffix
+        // "hello" -> '*ello' or 'hell' -> '*hell'
+        for (int k = affix_len; k > 0; k--) {
+            (*out_str)[k] = (*out_str)[k - 1];
+        }
+        (*out_str)[0]             = '*';
+        (*out_str)[affix_len + 1] = '\0';
+    }
+    else if (affix_type == 3) { // infix
+        // "hello" -> '*ello*' or 'hell' -> '*hell*'
+        for (int k = affix_len; k > 0; k--) {
+            (*out_str)[k] = (*out_str)[k - 1];
+        }
+        (*out_str)[0]             = '*';
+        (*out_str)[affix_len + 1] = '*';
+        (*out_str)[affix_len + 2] = '\0';
+    }
+    else {
+        printf("Invalid affix type!\n");
+        return 0;
+    }
+    return strlen(*out_str);
+}
+
+void
+gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
+{
+    char * key_ptr       = NULL;
+    size_t key_ptr_len   = 0;
+    char * value_ptr     = NULL;
+    size_t value_ptr_len = 0;
+    // check base_tag->name length
+    if (strlen(input->base_tag->name) < 3) {
+        char *new_tag_name = (char *)calloc(4, sizeof(char));
+        memset(new_tag_name, input->base_tag->name[0], 3);
+        input->base_tag->name = new_tag_name;
+        input->affix_len      = 1;
+    }
+    // check base_tag->value length if it is a string
+    if (input->base_tag->type == PDC_STRING && strlen((char *)input->base_tag->value) < 3) {
+        char *new_tag_value = (char *)calloc(4, sizeof(char));
+        memset(new_tag_value, ((char *)input->base_tag->value)[0], 3);
+        input->base_tag->value = (void *)new_tag_value;
+        input->affix_len       = 1;
+    }
+    size_t affix_len = input->affix_len;
+
+    // "hello"
+    key_ptr_len = _gen_affix_for_token(input->base_tag->name, input->key_query_type, affix_len, &key_ptr);
+    if (key_ptr_len == 0) {
+        printf("Failed to generate key query!\n");
+        return;
+    }
+
+    // process value in base_tag
+    if (input->base_tag->type == PDC_STRING) {
+        value_ptr_len = _gen_affix_for_token((char *)input->base_tag->value, input->value_query_type,
+                                             affix_len, &value_ptr);
+        if (value_ptr_len == 0) {
+            printf("Failed to generate value query!\n");
+            return;
+        }
+    }
+    else if (input->base_tag->type == PDC_INT) {
+        if (input->value_query_type == 4) {
+            value_ptr_len = snprintf(NULL, 0, "%d", ((int *)input->base_tag->value)[0]);
+            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
+            snprintf(value_ptr, value_ptr_len + 1, "%d", ((int *)input->base_tag->value)[0]);
+        }
+        else if (input->value_query_type == 5) {
+            size_t lo_len = snprintf(NULL, 0, "%d", input->range_lo);
+            size_t hi_len = snprintf(NULL, 0, "%d", input->range_hi);
+            value_ptr_len = lo_len + hi_len + 1;
+            value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
+            snprintf(value_ptr, value_ptr_len + 1, "%d~%d", input->range_lo, input->range_hi);
+        }
+        else {
+            printf("Invalid value query type for integer!\n");
+            return;
+        }
+    }
+    else {
+        printf("Invalid tag type!\n");
+        return;
+    }
+
+    output->key_query       = key_ptr;
+    output->key_query_len   = key_ptr_len;
+    output->value_query     = value_ptr;
+    output->value_query_len = value_ptr_len;
+}
+
+char *
+gen_query_str(query_gen_output_t *query_gen_output)
+{
+    char *final_query_str =
+        (char *)calloc(query_gen_output->key_query_len + query_gen_output->value_query_len + 2, sizeof(char));
+    strcat(final_query_str, query_gen_output->key_query);
+    strcat(final_query_str, "=");
+    strcat(final_query_str, query_gen_output->value_query);
+    return final_query_str;
+}
+
+void
+free_query_output(query_gen_output_t *output)
+{
+    if (output->key_query != NULL) {
+        free(output->key_query);
+    }
+    if (output->value_query != NULL) {
+        free(output->value_query);
+    }
+}
+
 /**
  *
  * return the key from a kv_pair string connected by delim character.

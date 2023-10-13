@@ -73,12 +73,12 @@ PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     id_info   = PDC_find_id(cont_prop_id);
     cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
 
-    p->cont_pt = PDC_CALLOC(struct _pdc_cont_prop);
+    p->cont_pt = PDC_CALLOC(1, struct _pdc_cont_prop);
     if (!p->cont_pt)
         PGOTO_ERROR(0, "PDC container prop memory allocation failed");
     memcpy(p->cont_pt, cont_prop, sizeof(struct _pdc_cont_prop));
 
-    p->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    p->cont_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (!p->cont_pt->pdc)
         PGOTO_ERROR(0, "PDC container pdc class memory allocation failed");
     if (cont_prop->pdc->name)
@@ -121,12 +121,12 @@ PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
     id_info   = PDC_find_id(cont_prop_id);
     cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
 
-    p->cont_pt = PDC_CALLOC(struct _pdc_cont_prop);
+    p->cont_pt = PDC_CALLOC(1, struct _pdc_cont_prop);
     if (!p->cont_pt)
         PGOTO_ERROR(0, "PDC container prop memory allocation failed");
     memcpy(p->cont_pt, cont_prop, sizeof(struct _pdc_cont_prop));
 
-    p->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    p->cont_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (!p->cont_pt->pdc)
         PGOTO_ERROR(0, "PDC container pdc class memory allocation failed");
     if (cont_prop->pdc->name)
@@ -170,12 +170,12 @@ PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id)
 
     id_info    = PDC_find_id(cont_prop_id);
     cont_prop  = (struct _pdc_cont_prop *)(id_info->obj_ptr);
-    p->cont_pt = PDC_CALLOC(struct _pdc_cont_prop);
+    p->cont_pt = PDC_CALLOC(1, struct _pdc_cont_prop);
     if (!p->cont_pt)
         PGOTO_ERROR(0, "PDC container prop memory allocation failed");
     memcpy(p->cont_pt, cont_prop, sizeof(struct _pdc_cont_prop));
 
-    p->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    p->cont_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (!p->cont_pt->pdc)
         PGOTO_ERROR(0, "PDC container pdc class memory allocation failed");
 
@@ -318,13 +318,13 @@ PDC_cont_get_info(pdcid_t cont_id)
     id_info = PDC_find_id(cont_id);
     info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
-    ret_value = PDC_CALLOC(struct _pdc_cont_info);
+    ret_value = PDC_CALLOC(1, struct _pdc_cont_info);
     if (ret_value)
         memcpy(ret_value, info, sizeof(struct _pdc_cont_info));
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value");
 
-    ret_value->cont_info_pub = PDC_CALLOC(struct pdc_cont_info);
+    ret_value->cont_info_pub = PDC_CALLOC(1, struct pdc_cont_info);
     if (ret_value->cont_info_pub)
         memcpy(ret_value, info, sizeof(struct pdc_cont_info));
     else
@@ -337,7 +337,7 @@ PDC_cont_get_info(pdcid_t cont_id)
         memcpy(ret_value->cont_pt, info->cont_pt, sizeof(struct _pdc_cont_prop));
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value->cont_pt");
-    ret_value->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    ret_value->cont_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (ret_value->cont_pt->pdc) {
         ret_value->cont_pt->pdc->local_id = info->cont_pt->pdc->local_id;
         if (info->cont_pt->pdc->name)
@@ -364,7 +364,7 @@ PDCcont_get_info(const char *cont_name)
 
     tmp = PDC_cont_get_info(cont_id);
 
-    ret_value = PDC_CALLOC(struct pdc_cont_info);
+    ret_value = PDC_CALLOC(1, struct pdc_cont_info);
     if (!ret_value)
         PGOTO_ERROR(NULL, "cannot allocate memory");
 
@@ -438,7 +438,7 @@ PDCcont_iter_get_info(cont_handle *chandle)
     if (info == NULL)
         PGOTO_ERROR(NULL, "PDC container info memory allocation failed");
 
-    ret_value = PDC_CALLOC(struct pdc_cont_info);
+    ret_value = PDC_CALLOC(1, struct pdc_cont_info);
     if (!ret_value)
         PGOTO_ERROR(NULL, "failed to allocate memory");
 

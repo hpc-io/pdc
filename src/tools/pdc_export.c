@@ -692,7 +692,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             strcpy(only_file_name, last_slash + 1);
 
             char file_name[strlen(cur_metadata->obj_name) + 1];
-            char buf[20];
+            // char buf[20];
             sprintf(buf, "%d", cur_metadata->cont_id);
             char *cur_path = (char *)malloc(sizeof(char) * strlen(cur_metadata->obj_name) + strlen(buf) + 1);
             strcpy(cur_path, buf);
@@ -704,7 +704,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 printf("%s\n", token);
                 strcat(cur_path, "/");
                 strcat(cur_path, token);
-                hid_t cur_group_id = H5Gopen(file_id, cur_path, H5P_DEFAULT);
+                cur_group_id = H5Gopen(file_id, cur_path, H5P_DEFAULT);
                 if (cur_group_id < 0) {
                     cur_group_id = H5Gcreate(file_id, cur_path, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
                 }
@@ -726,15 +726,15 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         hsize_t dtype_size = H5Tget_size(data_type);
         void *  data_buf   = malloc(buf_size * dtype_size); // if data side is large, need to write in batches
 
-        uint64_t offset[10], size[10];
+        uint64_t region_offset[10], region_size[10];
         for (int i = 0; i < cur_metadata->ndim; i++) {
-            offset[i] = 0;
-            size[i]   = (cur_metadata->dims)[i];
+            region_offset[i] = 0;
+            region_size[i]   = (cur_metadata->dims)[i];
         }
-        // size[0] *= dtype_size;
+        // region_size[0] *= dtype_size;
 
-        pdcid_t local_region  = PDCregion_create(cur_metadata->ndim, offset, size);
-        pdcid_t remote_region = PDCregion_create(cur_metadata->ndim, offset, size);
+        pdcid_t local_region  = PDCregion_create(cur_metadata->ndim, region_offset, region_size);
+        pdcid_t remote_region = PDCregion_create(cur_metadata->ndim, region_offset, region_size);
         pdcid_t local_obj_id  = PDCobj_open(cur_metadata->obj_name, pdc_id_g);
         pdcid_t transfer_request =
             PDCregion_transfer_create(data_buf, PDC_READ, local_obj_id, local_region, remote_region);

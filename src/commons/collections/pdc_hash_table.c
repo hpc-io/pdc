@@ -25,6 +25,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <math.h>
 #include <stdint.h>
 #include "pdc_hash_table.h"
+#include "pdc_malloc.h"
 
 #ifdef ALLOC_TESTING
 #include "alloc-testing.h"
@@ -389,7 +390,7 @@ hash_table_insert(HashTable *hash_table, HashTableKey key, HashTableValue value)
     }
 
     /* Not in the hash table yet.  Create a new entry */
-    newentry = (HashTableEntry *)malloc(sizeof(HashTableEntry));
+    newentry = (HashTableEntry *)PDC_malloc(sizeof(HashTableEntry));
 
     if (newentry == NULL) {
         return 0;
