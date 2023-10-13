@@ -33,6 +33,7 @@
 #include "mercury_request.h"
 #include "pdc_region.h"
 #include "dart_core.h"
+#include "query_utils.h"
 #include "pdc_set.h"
 #include "pdc_compare.h"
 #include "pdc_hash.h"
@@ -1028,12 +1029,6 @@ perr_t PDC_Client_del_metadata(pdcid_t id, int is_cont);
 DART *get_dart_g();
 
 /**
- * To lookup the server just in case.
- *
- */
-perr_t server_lookup_connection(int serverId, int retry_times);
-
-/**
  * Return the abstract of the server by server ID
  *
  *
@@ -1101,5 +1096,10 @@ perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *att
  */
 perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
                                            dart_object_ref_type_t ref_type, uint64_t data);
+
+/**
+ * Report the average profiling time of the server if the info is available.
+ */
+void report_avg_server_profiling_rst();
 
 #endif /* PDC_CLIENT_CONNECT_H */

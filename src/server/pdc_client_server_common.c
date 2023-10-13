@@ -4546,7 +4546,14 @@ HG_TEST_RPC_CB(query_partial, handle)
 
     n_meta_ptr = (uint32_t *)malloc(sizeof(uint32_t));
 
+    stopwatch_t server_timer;
+    timer_start(&server_timer);
+
     PDC_Server_get_partial_query_result(&in, n_meta_ptr, &buf_ptrs);
+
+    timer_pause(&server_timer);
+    out.server_time_elapsed       = (int64_t)timer_delta_us(&server_timer);
+    out.server_memory_consumption = (int64_t)PDC_get_global_mem_usage();
 
     // No result found
     if (*n_meta_ptr == 0) {
@@ -4630,7 +4637,15 @@ HG_TEST_RPC_CB(query_kvtag, handle)
     // Decode input
     HG_Get_input(handle, &in);
 
+    stopwatch_t server_timer;
+    timer_start(&server_timer);
+
     ret_value = PDC_Server_get_kvtag_query_result(&in, &nmeta, &buf_ptr);
+
+    timer_pause(&server_timer);
+    out.server_time_elapsed       = (int64_t)timer_delta_us(&server_timer);
+    out.server_memory_consumption = (int64_t)PDC_get_global_mem_usage();
+
     if (ret_value != SUCCEED || nmeta == 0) {
         out.bulk_handle = HG_BULK_NULL;
         out.ret         = 0;
@@ -6432,7 +6447,15 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     n_obj_ids_ptr = (uint64_t *)calloc(1, sizeof(uint64_t));
     buf_ptrs      = (uint64_t **)calloc(1, sizeof(uint64_t *));
 
+    stopwatch_t server_timer;
+    timer_start(&server_timer);
+
     PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, buf_ptrs);
+
+    timer_pause(&server_timer);
+    out.server_time_elapsed       = (int64_t)timer_delta_us(&server_timer);
+    out.server_memory_consumption = (int64_t)PDC_get_global_mem_usage();
+
     // printf("perform_server_cb. n_obj_ids_ptr on op_type = %d = %d\n", in.op_type ,*n_obj_ids_ptr);
     out.op_type = in.op_type;
     // printf("out.n_items= %d\n", out.n_items);
@@ -6944,11 +6967,11 @@ PDC_kvtag_dup(pdc_kvtag_t *from, pdc_kvtag_t **to)
     if (from == NULL || to == NULL)
         PGOTO_DONE(FAIL);
 
-    (*to)        = (pdc_kvtag_t *)calloc(1, sizeof(pdc_kvtag_t));
-    (*to)->name  = (char *)malloc(strlen(from->name) + 1);
+    (*to)        = (pdc_kvtag_t *)PDC_calloc(1, sizeof(pdc_kvtag_t));
+    (*to)->name  = (char *)PDC_malloc(strlen(from->name) + 1);
     (*to)->size  = from->size;
     (*to)->type  = from->type;
-    (*to)->value = (void *)malloc(from->size);
+    (*to)->value = (void *)PDC_malloc(from->size);
     memcpy((void *)(*to)->name, (void *)from->name, strlen(from->name) + 1);
     memcpy((void *)(*to)->value, (void *)from->value, from->size);
 

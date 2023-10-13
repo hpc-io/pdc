@@ -26,6 +26,8 @@
 //
 
 #include <stdint.h>
+#include "pdc_malloc.h"
+
 #ifndef ART_H
 #define ART_H
 

@@ -21,6 +21,7 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include "pdc_set.h"
+#include "pdc_malloc.h"
 
 /* malloc() / free() testing */
 
@@ -102,7 +103,7 @@ set_new(SetHashFunc hash_func, SetEqualFunc equal_func)
 
     /* Allocate a new set and fill in the fields */
 
-    new_set = (Set *)malloc(sizeof(Set));
+    new_set = (Set *)PDC_malloc(sizeof(Set));
 
     if (new_set == NULL) {
         return NULL;
@@ -275,7 +276,7 @@ set_insert(Set *set, SetValue data)
 
     /* Make a new entry for this data */
 
-    newentry = (SetEntry *)malloc(sizeof(SetEntry));
+    newentry = (SetEntry *)PDC_malloc(sizeof(SetEntry));
 
     if (newentry == NULL) {
         return 0;
@@ -392,7 +393,7 @@ set_to_array(Set *set)
 
     /* Create an array to hold the set entries */
 
-    array = malloc(sizeof(SetValue) * set->entries);
+    array = PDC_malloc(sizeof(SetValue) * set->entries);
 
     if (array == NULL) {
         return NULL;
