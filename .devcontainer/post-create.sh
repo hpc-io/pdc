@@ -1,6 +1,4 @@
 #!/bin/bash
-<<<<<<< HEAD
-=======
 
 
 WORK_SPACE_INITIALIZED_FILE=/workspaces/.workspace_initialized
@@ -43,4 +41,3 @@ export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
 echo 'export LD_LIBRARY_PATH=$PDC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
 echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
->>>>>>> b9dce9b1af1c4d2af5ae154c2d9287684eeeca06
