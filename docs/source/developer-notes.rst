@@ -421,37 +421,27 @@ We provide docker support for PDC on such purpose.
 To build the docker image, you can run the following command in the root directory of PDC project:
 
 .. code-block:: Bash
-    docker build -t 
+    .docker/run_dev_base.sh
 
+This will mount your PDC project directory to `/workspaces/pdc` directory in the docker container and an initial step will be performed once you attach to the container. 
+The experience will be pretty much similar to the Github Codespace.
 
 ------------------------------------------------
 Maintaining Docker Image
 ------------------------------------------------
 
 We currently only support to architectures, amd64 and arm64v8. 
-To build the docker image both, you can run the following command in the root directory of PDC project:
+To build the docker image, you can run the following command in the root directory of PDC project:
 
 .. code-block:: Bash
-    IMG_NS=<registry_namespace>
+    .docker/publish_dev_base.sh <docker_registry_namespace>
 
-    ARCH_CODE=amd64
-    docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
-    docker push ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
-
-    ARCH_CODE=arm64v8
-    docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
-    docker push ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
-
-    docker manifest create ${IMG_NS}/pdc_dev_base:latest --amend ${IMG_NS}/pdc_dev_base:latest-arm64v8 --amend ${IMG_NS}/pdc_dev_base:latest-amd64
-    docker manifest push ${IMG_NS}/pdc_dev_base:latest
-
-
-Or we can do this in a single line: 
+Once the above is done, you can pick the image build machine with fastest network and run the following
 
 .. code-block:: Bash
-    IMG_NS=<registry_namespace>
-    docker buildx build --platform linux/amd64,linux/arm64v8 -f .docker/base.Dockerfile -t ${IMG_NS}/pdc_dev_base:1.0  . --push
+    .docker/publish_dev_base.sh <docker_registry_namespace> 1
 
+This will create a multi-arch image with both amd64 and arm64v8 architectures in your registry under your namespace. 
 
 
 ------------------------------------------------------------
