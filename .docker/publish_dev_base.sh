@@ -12,41 +12,38 @@ IMG_NS=$1
 arch=$(uname -m)
 ARCH_CODE=""
 
+case $arch in
+    x86_64)
+        ARCH_CODE="amd64"
+        echo "You are running on x86_64 (AMD64) architecture."
+        ;;
+    arm64 | aarch64)
+        ARCH_CODE="arm64v8"
+        echo "You are running on ARM64 (AArch64) architecture."
+        ;;
+    i386 | i686)
+        ARCH_CODE="i386"
+        echo "You are running on x86 (32-bit) architecture."
+        ;;
+    arm*)
+        ARCH_CODE="arm32v7"
+        echo "You are running on ARM (32-bit) architecture."
+        ;;
+    ppc64le)
+        ARCH_CODE="ppc64le"
+        echo "You are running on PowerPC (64-bit little-endian) architecture."
+        ;;
+    s390x)
+        ARCH_CODE="s390x"
+        echo "You are running on IBM Z (s390x) architecture."
+        ;;
+    *)
+        echo "Unknown or unsupported architecture: $arch"
+        exit 1
+        ;;
+esac
+
 if [ -z "$2" ] || [ "$2" -eq 0 ]; then
-
-    case $arch in
-        x86_64)
-            ARCH_CODE="amd64"
-            echo "You are running on x86_64 (AMD64) architecture."
-            ;;
-        arm64 | aarch64)
-            ARCH_CODE="arm64v8"
-            echo "You are running on ARM64 (AArch64) architecture."
-            ;;
-        i386 | i686)
-            ARCH_CODE="i386"
-            echo "You are running on x86 (32-bit) architecture."
-            ;;
-        arm*)
-            ARCH_CODE="arm32v7"
-            echo "You are running on ARM (32-bit) architecture."
-            ;;
-        ppc64le)
-            ARCH_CODE="ppc64le"
-            echo "You are running on PowerPC (64-bit little-endian) architecture."
-            ;;
-        s390x)
-            ARCH_CODE="s390x"
-            echo "You are running on IBM Z (s390x) architecture."
-            ;;
-        *)
-            echo "Unknown or unsupported architecture: $arch"
-            exit 1
-            ;;
-    esac
-
-    DEFAULT_WORKSPACE=/workspaces/pdc
-
     docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
     docker push ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
     exit 0
@@ -58,13 +55,13 @@ else
     manifest_args=()
     for arch in "${arch_strings[@]}"; do
         echo "Processing architecture: $arch"
+        manifest_args+=("--amend" "${IMG_NS}/pdc_dev_base:latest-${arch}")
         if [[  "$arch" == "$ARCH_CODE" ]]; then
-            echo "Skipping current architecture: $arch"
+            echo "Skipping pulling current architecture: $arch"
             continue
         fi
         # Your logic for each architecture goes here...
         docker pull ${IMG_NS}/pdc_dev_base:latest-${arch}
-        manifest_args+=("--amend" "${IMG_NS}/pdc_dev_base:latest-${arch}")
     done
 
     docker manifest create ${IMG_NS}/pdc_dev_base:latest ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} ${manifest_args[@]}
