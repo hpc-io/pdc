@@ -5,5 +5,10 @@
         3000
     ],
     "postCreateCommand": ".devcontainer/post-create.sh",
+<<<<<<< HEAD
     "postStartCommand": ".devcontainer/post-start.sh"
+=======
+    "postStartCommand": ".devcontainer/post-start.sh",
+    "postAttachCommand": ".devcontainer/post-attach.sh"
+>>>>>>> b9dce9b1af1c4d2af5ae154c2d9287684eeeca06
 }
