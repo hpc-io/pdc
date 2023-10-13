@@ -13,6 +13,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <errno.h>
+#include "pdc_malloc.h"
 
 #include "pdc_murmur.h"
 #include "pdc_dablooms.h"
@@ -37,7 +38,7 @@ free_bitmap(bitmap_t *bitmap)
 bitmap_t *
 bitmap_resize(bitmap_t *bitmap, size_t new_size)
 {
-    bitmap->array = malloc(new_size);
+    bitmap->array = PDC_malloc(new_size);
     bitmap->bytes = new_size;
     return bitmap;
 }
@@ -50,7 +51,7 @@ new_bitmap(size_t bytes)
 {
     bitmap_t *bitmap;
 
-    if ((bitmap = (bitmap_t *)malloc(sizeof(bitmap_t))) == NULL) {
+    if ((bitmap = (bitmap_t *)PDC_malloc(sizeof(bitmap_t))) == NULL) {
         return NULL;
     }
 
@@ -181,7 +182,7 @@ counting_bloom_init(unsigned int capacity, double error_rate, long offset)
 {
     counting_bloom_t *bloom;
 
-    if ((bloom = malloc(sizeof(counting_bloom_t))) == NULL) {
+    if ((bloom = PDC_malloc(sizeof(counting_bloom_t))) == NULL) {
         fprintf(stderr, "Error, could not realloc a new bloom filter\n");
         return NULL;
     }
@@ -194,7 +195,7 @@ counting_bloom_init(unsigned int capacity, double error_rate, long offset)
     bloom->size            = bloom->nfuncs * bloom->counts_per_func;
     /* rounding-up integer divide by 2 of bloom->size */
     bloom->num_bytes = ((bloom->size + 1) / 2) + sizeof(counting_bloom_header_t);
-    bloom->hashes    = calloc(bloom->nfuncs, sizeof(uint32_t));
+    bloom->hashes    = PDC_calloc(bloom->nfuncs, sizeof(uint32_t));
 
     return bloom;
 }

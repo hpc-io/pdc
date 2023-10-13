@@ -38,6 +38,9 @@ endif()
 # Project Name : PDC, Programming Language : C
 project(PDC C)
 
+# include CheckSymbolExists module
+include(CheckSymbolExists)
+
 # CMake will search for any header files under the project root directory.
 include_directories(
   ${PROJECT_SOURCE_DIR}
@@ -204,6 +207,10 @@ if(SUPPRESS_IGNORABLE_WARNINGS)
   set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
   set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
   set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
+
+  if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    add_compile_options(${SUPPRESSED_LIST})
+  endif()
 endif()
 
 #------------------------------------------------------------------------------
@@ -316,6 +323,15 @@ if(PDC_USE_CRAY_DRC)
 endif()
 
 #-----------------------------------------------------------------------------
+# DART Suffix Tree mode
+#-----------------------------------------------------------------------------
+option(PDC_DART_SUFFIX_TREE_MODE "Enable DART Suffix Tree mode." ON)
+if(PDC_DART_SUFFIX_TREE_MODE)
+  set(PDC_DART_SFX_TREE 1)
+  # add_compile_definitions(PDC_DART_SFX_TREE=${PDC_DART_SFX_TREE})
+endif()
+
+#-----------------------------------------------------------------------------
 # Julia Support option
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_JULIA_SUPPORT "Enable Julia Support." OFF)
@@ -367,8 +383,10 @@ endif()
 option(PDC_SERVER_CACHE "Enable Server Caching." OFF)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
-  set(PDC_SERVER_CACHE_MAX_GB 3 CACHE INT "Maximum region server cache size in GB.")
-  set(PDC_SERVER_CACHE_FLUSH_TIME 30 CACHE INT "Region server cache flush time interval in seconds.")
+  set(PDC_SERVER_CACHE_MAX_GB "3" CACHE STRING "Max GB for server cache")
+  set(PDC_SERVER_CACHE_FLUSH_TIME "30" CACHE STRING "Flush time for server cache")
+
+  add_compile_definitions(PDC_SERVER_CACHE_MAX_GB=${PDC_SERVER_CACHE_MAX_GB} PDC_SERVER_CACHE_FLUSH_TIME=${PDC_SERVER_CACHE_FLUSH_TIME})
 endif()
 
 
@@ -426,16 +444,6 @@ if(PDC_ENABLE_PROFILING)
   set(ENABLE_PROFILING 1)
 endif()
 
-#-----------------------------------------------------------------------------
-# CACHE option
-#-----------------------------------------------------------------------------
-option(PDC_SERVER_CACHE "Enable server data caching with pthread." OFF)
-if(PDC_SERVER_CACHE)
-    set(PDC_SERVER_CACHE 1)
-    set(PDC_SERVER_CACHE_MAX_GB 3 CACHE INT "Maximum region server cache size in GB.")
-    set(PDC_SERVER_CACHE_FLUSH_TIME 30 CACHE INT "Region server cache flush time interval in seconds.")
-endif()
-
 # Not used
 # option(PDC_ENABLE_CACHE "Enable data caching." OFF)
 # if(PDC_ENABLE_CACHE)
@@ -459,12 +467,19 @@ if(PDC_ENABLE_FASTBIT)
     set(ENABLE_FASTBIT 1)
 endif()
 
-#-----------------------------------------------------------------------------
+
 # Metadata with RocksDB
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_ROCKSDB "Enable RocksDB." OFF)
 if(PDC_ENABLE_ROCKSDB)
     set(ENABLE_ROCKSDB 1)
+endif()
+
+# Check availability of symbols
+#-----------------------------------------------------------------------------
+check_symbol_exists(malloc_usable_size "malloc.h" HAVE_MALLOC_USABLE_SIZE)
+if(HAVE_MALLOC_USABLE_SIZE)
+  add_definitions(-DHAVE_MALLOC_USABLE_SIZE)
 endif()
 
 #------------------------------------------------------------------------------

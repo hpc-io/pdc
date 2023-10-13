@@ -88,35 +88,6 @@ struct ArrayList *container_names;
 int               overwrite = 0;
 
 int
-add_tag(char *str)
-{
-    int str_len = 0;
-    if (NULL == str || NULL == tags_ptr_g) {
-        fprintf(stderr, "%s - input str is NULL!", __func__);
-        return 0;
-    }
-    else if (tag_size_g + str_len >= MAX_TAG_SIZE) {
-        fprintf(stderr, "%s - tags_ptr_g overflow!", __func__);
-        return 0;
-    }
-
-    // Remove the trailing ','
-    if (*str == '}' || *str == ')' || *str == ']') {
-        if (*(--tags_ptr_g) != ',') {
-            tags_ptr_g++;
-        }
-    }
-
-    str_len = strlen(str);
-    strncpy(tags_ptr_g, str, str_len);
-
-    tag_size_g += str_len;
-    tags_ptr_g += str_len;
-
-    return str_len;
-}
-
-int
 main(int argc, char **argv)
 {
 #ifdef ENABLE_MPI
@@ -381,8 +352,8 @@ scan_group(hid_t gid, int level, char *app_name)
                 // create container - check if container exists first
                 //  create a container
                 create_cont = 1;
-                for (int i = 0; i < container_names->length; i++) {
-                    if (strcmp(container_names->items[i], group_name) == 0) {
+                for (int ctn = 0; ctn < container_names->length; ctn++) {
+                    if (strcmp(container_names->items[ctn], group_name) == 0) {
                         create_cont = 0;
                         break;
                     }
@@ -428,7 +399,7 @@ do_dset(hid_t did, char *name, char *app_name)
     char *                 obj_name;
     int                    name_len, i;
     hsize_t                ndim, dims[10];
-    uint64_t               offset[10], size[10];
+    uint64_t               region_offset[10], region_size[10];
     void *                 buf;
     struct pdc_region_info obj_region;
 
@@ -444,7 +415,6 @@ do_dset(hid_t did, char *name, char *app_name)
     H5Iget_name(did, ds_name, TAG_LEN_MAX);
     memset(dset_name_g, 0, TAG_LEN_MAX);
     strcpy(dset_name_g, ds_name);
-    /* add_tag(ds_name); */
 
     // dset_name_g has the full path to the dataset, e.g. /group/subgroup/dset_name
     // substract the actual dset name with following
@@ -464,7 +434,6 @@ do_dset(hid_t did, char *name, char *app_name)
      */
     sid = H5Dget_space(did); /* the dimensions of the dataset (not shown) */
     tid = H5Dget_type(did);
-    /* add_tag(",DT:"); */
 
     pdcid_t cur_obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
@@ -484,12 +453,12 @@ do_dset(hid_t did, char *name, char *app_name)
     PDCprop_set_obj_app_name(obj_prop_g, app_name);
 
     pdcid_t obj_id = PDCobj_open(ds_name, pdc_id_g);
-    if (check > 0) {
-        if (!overwrite) {
-            return;
-        }
+
+    if (!overwrite) {
+        return;
     }
     else {
+        // FIXME: should open the object here instead of creating a new one.
         obj_id = PDCobj_create(cont_id_g, ds_name, obj_prop_g);
     }
     if (obj_id <= 0) {
@@ -497,8 +466,6 @@ do_dset(hid_t did, char *name, char *app_name)
     }
 
     do_dtype(tid, did, 0);
-
-    add_tag(",");
 
     ndset_g++;
     /* if (ndset_g > 10) { */
@@ -547,12 +514,12 @@ do_dset(hid_t did, char *name, char *app_name)
     // pdc_metadata_t *meta = NULL;
     obj_region.ndim = ndim;
     for (i = 0; i < ndim; i++) {
-        offset[i] = 0;
-        size[i]   = dims[i];
+        region_offset[i] = 0;
+        region_size[i]   = dims[i];
     }
-    size[0] *= dtype_size;
-    obj_region.offset = offset;
-    obj_region.size   = size;
+    region_size[0] *= dtype_size;
+    obj_region.offset = region_offset;
+    obj_region.size   = region_size;
 
     if (ndset_g == 1)
         clock_gettime(CLOCK_MONOTONIC, &write_timer_start_g);
@@ -563,8 +530,8 @@ do_dset(hid_t did, char *name, char *app_name)
     /* else */
     /*     PDC_Client_write(meta, &obj_region, buf); */
 
-    pdcid_t local_region     = PDCregion_create(ndim, offset, size);
-    pdcid_t remote_region    = PDCregion_create(ndim, offset, size);
+    pdcid_t local_region     = PDCregion_create(ndim, region_offset, region_size);
+    pdcid_t remote_region    = PDCregion_create(ndim, region_offset, region_size);
     pdcid_t transfer_request = PDCregion_transfer_create(buf, PDC_WRITE, obj_id, local_region, remote_region);
     PDCregion_transfer_start(transfer_request);
     PDCregion_transfer_wait(transfer_request);
@@ -604,7 +571,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
     hsize_t     dims[8], ndim;
     char *      mem_name;
     char *      attr_string[100], new_string[TAG_LEN_MAX], tmp_str[TAG_LEN_MAX];
-    hsize_t     size, attr_len;
+    hsize_t     attr_size, attr_len;
     hid_t       mem_type;
     hid_t       atype, aspace, naive_type;
     H5T_class_t t_class, compound_class;
@@ -613,11 +580,11 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
         /* puts("   Invalid datatype.\n"); */
     }
     else {
-        size = H5Tget_size(tid);
-        /* printf("    Datasize %3d, type", size); */
+        attr_size = H5Tget_size(tid);
+        /* printf("    Datasize %3d, type", attr_size); */
         /*
          * Each class has specific properties that can be
-         * retrieved, e.g., size, byte order, exponent, etc.
+         * retrieved, e.g., attr_size, byte order, exponent, etc.
          */
         if (t_class == H5T_INTEGER) {
             /* puts(" 'H5T_INTEGER'."); */
@@ -640,7 +607,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
         }
         else if (t_class == H5T_ARRAY) {
             if (is_compound == 0) {
-                tag_size_g += size;
+                tag_size_g += attr_size;
             }
             ndim = H5Tget_array_ndims(tid);
             H5Tget_array_dims2(tid, dims);
@@ -660,6 +627,7 @@ do_dtype(hid_t tid, hid_t oid, int is_compound)
             return PDC_UNKNOWN;
         }
     }
+    return PDC_UNKNOWN;
 }
 
 /*

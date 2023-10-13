@@ -15,6 +15,7 @@
 #include "dart_math.h"
 #include "thpool.h"
 #include "string_utils.h"
+#include "pdc_config.h"
 
 typedef enum { NUMERIC = 1, TIME = 2, CHAR = 3, BINARY = 4 } dart_indexed_value_type_t;
 
@@ -46,6 +47,7 @@ typedef struct {
     uint32_t    num_server;
     uint64_t    num_vnode;
     dart_vnode *vnodes;
+    int         suffix_tree_mode;
 } DART;
 
 typedef struct {
@@ -58,6 +60,11 @@ typedef struct {
     int64_t  indexed_word_count;
     int64_t  request_count;
 } dart_server;
+
+typedef struct {
+    uint32_t server_id;
+    char *   key;
+} index_hash_result_t;
 
 // Defining a function pointer by which the server load information can be retrieved.
 // The returning data type should be dart_server, which is a struct.
@@ -159,7 +166,7 @@ int get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t is_prefix
  *  A for loop can use the return value as the upper bound to iterate all elements in the array.
  *
  * \param dart_g        [IN]        Pointer of Global state of DART
- * \param key           [IN]        The given key.
+ * \param key           [IN]        The given key. For queries, it is already a bare keyword without '*'.
  * \param op_type       [IN]        Give the operation type.
  * \param get_server_cb [IN]        The callback function for getting the statistical information of a server.
  * Signature: dart_server (*get_server_info_callback)(uint32_t server_id) \param out           [IN/OUT]    The
@@ -169,7 +176,7 @@ int get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t is_prefix
  *
  */
 int DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callback get_server_cb,
-              uint64_t **out);
+              index_hash_result_t **out);
 
 /**
  * This function performs DHT hashing, solely for comparison purpose.
@@ -177,6 +184,15 @@ int DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_c
  * out will take an array of the IDs of all servers which should be accessed
  * return value is the length of the array.
  */
-int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, uint64_t **out);
+int DHT_hash(DART *dart_g, size_t len, char *key, dart_op_type_t op_type, index_hash_result_t **out);
+
+/**
+ * This is a quick function to test if the operation type any type of operation that will write to the index.
+ * These operations currently include: insert, delete.
+ *
+ * @param op_type [IN] The operation type.
+ * @return 1 if the operation type is for index write operations, 0 otherwise.
+ */
+int is_index_write_op(dart_op_type_t op_type);
 
 #endif // DART_H

@@ -49,6 +49,7 @@
 #include "pdc_server_metadata.h"
 #include "pdc_server.h"
 #include "mercury_hash_table.h"
+#include "pdc_malloc.h"
 
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_NEW    new_counting_bloom
@@ -1217,7 +1218,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    metadata = (pdc_metadata_t *)malloc(sizeof(pdc_metadata_t));
+    metadata = (pdc_metadata_t *)PDC_malloc(sizeof(pdc_metadata_t));
     if (metadata == NULL) {
         printf("Cannot allocate pdc_metadata_t!\n");
         goto done;
@@ -1252,7 +1253,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     strcpy(metadata->tags, in->data.tags);
     strcpy(metadata->data_location, in->data.data_location);
 
-    hash_key = (uint32_t *)malloc(sizeof(uint32_t));
+    hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
     if (hash_key == NULL) {
         printf("Cannot allocate hash_key!\n");
         goto done;
@@ -1301,7 +1302,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             fflush(stdout);
 
             pdc_hash_table_entry_head *entry =
-                (pdc_hash_table_entry_head *)malloc(sizeof(pdc_hash_table_entry_head));
+                (pdc_hash_table_entry_head *)PDC_malloc(sizeof(pdc_hash_table_entry_head));
             entry->bloom    = NULL;
             entry->metadata = NULL;
             entry->n_obj    = 0;
@@ -1597,24 +1598,25 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
     pbool_t ret_value = TRUE;
     FUNC_ENTER(NULL);
     // match attribute name
-    if (in->name[0] != ' ') {
-        int matched = simple_matches(kvtag->name, in->name);
-        if (matched == 0)
-            ret_value = FALSE;
+    if (!simple_matches(kvtag->name, in->name)) {
+        return FALSE;
     }
+
     // test attribute type
-    if (ret_value == TRUE && in->type == kvtag->type) {
-        if (in->type == PDC_STRING && ((char *)(in->value))[0] != ' ') {
-            char *pattern = (char *)in->value;
-            int   matched = simple_matches(kvtag->value, pattern);
-            if (matched == 0)
-                ret_value = FALSE;
+    if (in->type != kvtag->type) {
+        return FALSE;
+    }
+    if (in->type == (int8_t)PDC_STRING) {
+        // FIXME: need to address kvtag->type serialization problem.
+        char *pattern = (char *)in->value;
+        if (!simple_matches(kvtag->value, pattern)) {
+            return FALSE;
         }
-        else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
-               // have to support range query.
-            if (memcmp(in->value, kvtag->value, in->size) != 0)
-                ret_value = FALSE;
-        }
+    }
+    else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
+           // have to support range query.
+        if (memcmp(in->value, kvtag->value, in->size) != 0)
+            return FALSE;
     }
 
     FUNC_LEAVE(ret_value);
@@ -1637,7 +1639,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     FUNC_ENTER(NULL);
 
     *n_meta = 0;
-    // TODO: free obj_ids
+
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
 
     if (use_rocksdb_g == 1) {
@@ -1682,6 +1684,8 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
             rocksdb_iter_destroy(rocksdb_iter);
 #else
         printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+        ret_value = FAIL;
+        goto done;
 #endif
     }
     else {
@@ -1696,9 +1700,18 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                 head = pair.value;
                 DL_FOREACH(head->metadata, elt)
                 {
+#ifdef PDC_DEBUG_OUTPUT
+                    printf("==PDC_SERVER: Matching kvtag [\"%s\":\"%s\"] of object %s on condition in->key: "
+                           "%s, in->value: %s ",
+                           (char *)kvtag_list_elt->kvtag->name, (char *)kvtag_list_elt->kvtag->value,
+                           elt->obj_name, in->name, in->value);
+#endif
                     DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
                     {
                         if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
+#ifdef PDC_DEBUG_OUTPUT
+                            println("[Found]");
+#endif
                             if (iter >= alloc_size) {
                                 alloc_size *= 2;
                                 *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
@@ -1706,13 +1719,13 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                             (*obj_ids)[iter++] = elt->obj_id;
                             break;
                         }
-
-                    } // End for each kvtag
-                }     // End for each metadata
-            }         // End while
+                    } // End for each kvtag in list
+                } // End for each metadata from hash table entry
+            }  // End looping metadata hash table
             *n_meta = iter;
-            // Debug
+#ifdef PDC_DEBUG_OUTPUT
             printf("==PDC_SERVER[%d]: found %d objids \n", pdc_server_rank_g, iter);
+#endif
         } // if (metadata_hash_table_g != NULL)
         else {
             printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
@@ -2259,7 +2272,7 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
         // Check if need to allocate space
         if (cont_entry->n_allocated == 0) {
             cont_entry->n_allocated = PDC_ALLOC_BASE_NUM;
-            cont_entry->obj_ids     = (uint64_t *)calloc(sizeof(uint64_t), PDC_ALLOC_BASE_NUM);
+            cont_entry->obj_ids     = (uint64_t *)PDC_calloc(sizeof(uint64_t), PDC_ALLOC_BASE_NUM);
             total_mem_usage_g += sizeof(uint64_t) * cont_entry->n_allocated;
         }
         else if (cont_entry->n_allocated < cont_entry->n_obj + n_obj) {
@@ -2273,7 +2286,7 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
                        cont_entry->n_allocated, realloc_size / sizeof(uint64_t));
             }
 
-            cont_entry->obj_ids = (uint64_t *)realloc(cont_entry->obj_ids, realloc_size);
+            cont_entry->obj_ids = (uint64_t *)PDC_realloc(cont_entry->obj_ids, realloc_size);
             if (NULL == cont_entry->obj_ids) {
                 printf("==PDC_SERVER[%d]: %s - ERROR with realloc!\n", pdc_server_rank_g, __func__);
                 ret_value = FAIL;
@@ -2583,7 +2596,7 @@ PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *tag)
     FUNC_ENTER(NULL);
 
     PDC_kvtag_dup(tag, &newtag);
-    new_list_item        = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
+    new_list_item        = PDC_CALLOC(1, pdc_kvtag_list_t);
     new_list_item->kvtag = newtag;
     DL_APPEND(*list_head, new_list_item);
 

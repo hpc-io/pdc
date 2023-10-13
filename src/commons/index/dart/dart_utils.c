@@ -85,7 +85,13 @@ get_timestamp_us()
 }
 
 int64_t
-get_timestamp()
+get_timestamp_ms()
 {
     return get_timestamp_us() / 1000;
+}
+
+int64_t
+get_timestamp_s()
+{
+    return get_timestamp_ms() / 1000;
 }

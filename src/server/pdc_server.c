@@ -2162,16 +2162,8 @@ PDC_Server_get_env()
     }
 }
 
-/*
- * Main function of PDC server
- *
- * \param  argc[IN]     Number of command line arguments
- * \param  argv[IN]     Command line arguments
- *
- * \return Non-negative on success/Negative on failure
- */
 int
-main(int argc, char *argv[])
+server_run(int argc, char *argv[])
 {
     int    port;
     perr_t ret;

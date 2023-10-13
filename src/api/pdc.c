@@ -89,7 +89,7 @@ PDCinit(const char *pdc_name)
 
     FUNC_ENTER(NULL);
 
-    if (NULL == (pdc_id_list_g = PDC_CALLOC(struct pdc_id_list)))
+    if (NULL == (pdc_id_list_g = PDC_CALLOC(1, struct pdc_id_list)))
         PGOTO_ERROR(FAIL, "PDC global id list: memory allocation failed");
 
     if (PDC_class_init() < 0)
