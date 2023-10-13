@@ -42,3 +42,4 @@ export PATH="$PDC_DIR/include:$PDC_DIR/lib:$PATH"
 echo 'export LD_LIBRARY_PATH=$PDC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
 echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
+/bin/bash
