@@ -9,7 +9,7 @@ if ! [ -f $WORK_SPACE_INITIALIZED_FILE ]; then
 else
     echo "Workspace already initialized, skip the installation"
     cd $PDC_SRC_DIR/build
-    ctest
+    # ctest
     exit 0
 fi
 
