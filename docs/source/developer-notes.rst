@@ -404,11 +404,44 @@ For more info on embedded Julia support, please visit: `Embedded Julia https://d
 Github Codespace Support
 ---------------------------------------------
 
-This is a feature current in progress. 
-We are trying to make PDC work with Github Codespace.
+Now the PDC project can be built and run in Github Codespace.
 
-Currently, with `.devcontainer/devcontainer.json` and `.devcontainer/Dockerfile`, you can build a docker image that contains all the dependencies for PDC.
-However, when the Codespace is created, the predefined directories in the docker file will disappear.
+When you create a code space, you can find your PDC project in `/workspaces/pdc` directory. 
+And, you can find your PDC project and its dependencies in `/home/project` directory, you will see the same directory structure there as described in our standalone installation guide.  
+
+
+---------------------------------------------
+Docker Support
+---------------------------------------------
+
+Sometimes, you may want to have a development or testing environment to work on PDC. 
+
+We provide docker support for PDC on such purpose. 
+
+To build the docker image, you can run the following command in the root directory of PDC project:
+
+.. code-block:: Bash
+    .docker/run_dev_base.sh
+
+This will mount your PDC project directory to `/workspaces/pdc` directory in the docker container and an initial step will be performed once you attach to the container. 
+The experience will be pretty much similar to the Github Codespace.
+
+------------------------------------------------
+Maintaining Docker Image
+------------------------------------------------
+
+We currently only support to architectures, amd64 and arm64v8. 
+To build the docker image, you can run the following command in the root directory of PDC project:
+
+.. code-block:: Bash
+    .docker/publish_dev_base.sh <docker_registry_namespace>
+
+Once the above is done, you can pick the image build machine with fastest network and run the following
+
+.. code-block:: Bash
+    .docker/publish_dev_base.sh <docker_registry_namespace> 1
+
+This will create a multi-arch image with both amd64 and arm64v8 architectures in your registry under your namespace. 
 
 
 ------------------------------------------------------------

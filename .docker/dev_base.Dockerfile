@@ -1,5 +1,8 @@
+# Note: Run `docker build -f .devcontainer/Dockerfile -t pdc:latest .` from the root directory of the repository to build the docker image.
+
 # Use Ubuntu Jammy (latest LTS) as the base image
-FROM ubuntu:jammy
+ARG ARCH=
+FROM ${ARCH}ubuntu:jammy
 
 # Install necessary tools, MPICH, UUID library and developer files
 RUN apt-get update && apt-get install -y \
@@ -23,8 +26,13 @@ RUN apt-get update && apt-get install -y \
     curl \
     valgrind
 
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+
+RUN echo 'OSH_THEME="powerline-multiline"' >> ~/.bashrc
+RUN echo 'plugins=(battery progress)' >> ~/.bashrc
+
 # Set WORK_SPACE environment variable and create necessary directories
-ENV WORK_SPACE=/home/codespace
+ENV WORK_SPACE=/home/project
 RUN mkdir -p $WORK_SPACE
 
 # Clone the repositories
@@ -32,29 +40,28 @@ WORKDIR $WORK_SPACE/source
 RUN git clone https://github.com/ofiwg/libfabric.git && \
     git clone https://github.com/mercury-hpc/mercury.git --recursive
 
-COPY ./ ${WORK_SPACE}/source/pdc
-
 ENV LIBFABRIC_SRC_DIR=$WORK_SPACE/source/libfabric
-ENV MERCURY_SRC_DIR=$WORK_SPACE/source/mercury
-ENV PDC_SRC_DIR=$WORK_SPACE/source/pdc
 ENV LIBFABRIC_DIR=$WORK_SPACE/install/libfabric
+ENV MERCURY_SRC_DIR=$WORK_SPACE/source/mercury
 ENV MERCURY_DIR=$WORK_SPACE/install/mercury
+
+ENV PDC_SRC_DIR=$WORK_SPACE/source/pdc
 ENV PDC_DIR=$WORK_SPACE/install/pdc
 
-RUN mkdir -p $LIBFABRIC_SRC_DIR \
-    mkdir -p $MERCURY_SRC_DIR \
-    mkdir -p $PDC_SRC_DIR \
-    mkdir -p $LIBFABRIC_DIR \
-    mkdir -p $MERCURY_DIR \
+RUN mkdir -p $LIBFABRIC_SRC_DIR && \
+    mkdir -p $MERCURY_SRC_DIR && \
+    mkdir -p $PDC_SRC_DIR && \
+    mkdir -p $LIBFABRIC_DIR && \
+    mkdir -p $MERCURY_DIR && \
     mkdir -p $PDC_DIR
 
 
 # Save the environment variables to a file
 RUN echo "export LIBFABRIC_SRC_DIR=$WORK_SPACE/source/libfabric" > $WORK_SPACE/pdc_env.sh && \
-    echo "export MERCURY_SRC_DIR=$WORK_SPACE/source/mercury" >> $WORK_SPACE/pdc_env.sh && \
-    echo "export PDC_SRC_DIR=$WORK_SPACE/source/pdc" >> $WORK_SPACE/pdc_env.sh && \
     echo "export LIBFABRIC_DIR=$WORK_SPACE/install/libfabric" >> $WORK_SPACE/pdc_env.sh && \
+    echo "export MERCURY_SRC_DIR=$WORK_SPACE/source/mercury" >> $WORK_SPACE/pdc_env.sh && \
     echo "export MERCURY_DIR=$WORK_SPACE/install/mercury" >> $WORK_SPACE/pdc_env.sh && \
+    echo "export PDC_SRC_DIR=$WORK_SPACE/source/pdc" >> $WORK_SPACE/pdc_env.sh && \
     echo "export PDC_DIR=$WORK_SPACE/install/pdc" >> $WORK_SPACE/pdc_env.sh
 
 
@@ -88,3 +95,5 @@ ENV LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 RUN echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
+
+ENTRYPOINT [ "/workspaces/pdc/.devcontainer/post-attach.sh" ]

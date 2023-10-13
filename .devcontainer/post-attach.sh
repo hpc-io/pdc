@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 WORK_SPACE_INITIALIZED_FILE=/workspaces/.workspace_initialized
 
 
@@ -9,6 +8,8 @@ if ! [ -f $WORK_SPACE_INITIALIZED_FILE ]; then
     echo "First time to create workspace, start to install PDC"
 else
     echo "Workspace already initialized, skip the installation"
+    cd $PDC_SRC_DIR/build
+    # ctest
     exit 0
 fi
 
