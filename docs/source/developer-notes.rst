@@ -404,11 +404,24 @@ For more info on embedded Julia support, please visit: `Embedded Julia https://d
 Github Codespace Support
 ---------------------------------------------
 
-This is a feature current in progress. 
-We are trying to make PDC work with Github Codespace.
+Now the PDC project can be built and run in Github Codespace.
 
-Currently, with `.devcontainer/devcontainer.json` and `.devcontainer/Dockerfile`, you can build a docker image that contains all the dependencies for PDC.
-However, when the Codespace is created, the predefined directories in the docker file will disappear.
+When you create a code space, you can find your PDC project in `/workspaces/pdc` directory. 
+And, you can find your PDC project and its dependencies in `/home/project` directory, you will see the same directory structure there as described in our standalone installation guide.  
+
+
+---------------------------------------------
+Docker Support
+---------------------------------------------
+
+Sometimes, you may want to have a development or testing environment to work on PDC. 
+
+We provide docker support for PDC on such purpose. 
+
+To build the docker image, you can run the following command in the root directory of PDC project:
+
+.. code-block:: Bash
+    docker build -t 
 
 
 ------------------------------------------------------------
