@@ -1720,8 +1720,8 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                             break;
                         }
                     } // End for each kvtag in list
-                } // End for each metadata from hash table entry
-            }  // End looping metadata hash table
+                }     // End for each metadata from hash table entry
+            }         // End looping metadata hash table
             *n_meta = iter;
 #ifdef PDC_DEBUG_OUTPUT
             printf("==PDC_SERVER[%d]: found %d objids \n", pdc_server_rank_g, iter);
