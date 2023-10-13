@@ -3,6 +3,7 @@
 # Check if $1 is unset or empty
 if [ "$#" -lt 1 ]; then
     echo "./publish_dev_base.sh <docker_registry_namespace> <process_manifest:0/1>"
+    echo "For building and publishing image, just ignore the second argument. For processing manifest, set the second argument to 1."
     echo "For best performance, you need to run this script on the same architecture as the target image. But you may specify the second argument to 1 on the machine where fastest network is available to process the manifest."
     exit 1
 fi
