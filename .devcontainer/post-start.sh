@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf $PDC_SRC_DIR
+rm -rf $PDC_DIR
 
 ln -s /workspaces/pdc $PDC_SRC_DIR
 
