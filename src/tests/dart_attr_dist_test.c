@@ -88,7 +88,7 @@ main(int argc, char *argv[])
     size_t   total_num_attr   = atoi(argv[2]);
     pdcid_t *obj_ids;
     int      i, j, k, pct, q_repeat_count = 100;
-    double   stime, total_time;
+    double   stime, total_time = 0;
     int      val;
 
     char pdc_context_name[40];
@@ -121,17 +121,23 @@ main(int argc, char *argv[])
         // &arr_len);
 
         // broadcast the size from rank 0 to all other processes
+#ifdef ENABLE_MPI
         MPI_Bcast(&arr_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+#endif
     }
     else {
         // receive the size on all other ranks
+#ifdef ENABLE_MPI
         MPI_Bcast(&arr_len, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+#endif
 
         // allocate memory for the array
         attr_2_obj_array = (int64_t *)malloc(arr_len * sizeof(int64_t));
     }
     // broadcast the array itself
+#ifdef ENABLE_MPI
     MPI_Bcast(attr_2_obj_array, arr_len, MPI_LONG_LONG_INT, 0, MPI_COMM_WORLD);
+#endif
 
     // print array.
     for (i = 0; i < arr_len; ++i) {
