@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# rm -rf $PDC_SRC_DIR
-# rm -rf $PDC_DIR
+WORK_SPACE_INITIALIZED_FILE=/workspaces/.workspace_initialized
+
+
+if ! [ -f $WORK_SPACE_INITIALIZED_FILE ]; then
+    touch $WORK_SPACE_INITIALIZED_FILE
+    echo "First time to create workspace, start to install PDC"
+else
+    echo "Workspace already initialized, skip the installation"
+    exit 0
+fi
+
 
 ln -s /workspaces/pdc $PDC_SRC_DIR
 
