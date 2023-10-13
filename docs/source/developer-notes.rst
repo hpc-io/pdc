@@ -424,6 +424,36 @@ To build the docker image, you can run the following command in the root directo
     docker build -t 
 
 
+------------------------------------------------
+Maintaining Docker Image
+------------------------------------------------
+
+We currently only support to architectures, amd64 and arm64v8. 
+To build the docker image both, you can run the following command in the root directory of PDC project:
+
+.. code-block:: Bash
+    IMG_NS=<registry_namespace>
+
+    ARCH_CODE=amd64
+    docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
+    docker push ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
+
+    ARCH_CODE=arm64v8
+    docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
+    docker push ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
+
+    docker manifest create ${IMG_NS}/pdc_dev_base:latest --amend ${IMG_NS}/pdc_dev_base:latest-arm64v8 --amend ${IMG_NS}/pdc_dev_base:latest-amd64
+    docker manifest push ${IMG_NS}/pdc_dev_base:latest
+
+
+Or we can do this in a single line: 
+
+.. code-block:: Bash
+    IMG_NS=<registry_namespace>
+    docker buildx build --platform linux/amd64,linux/arm64v8 -f .docker/base.Dockerfile -t ${IMG_NS}/pdc_dev_base:1.0  . --push
+
+
+
 ------------------------------------------------------------
 Tracking your memory consumption with each memory allocation
 ------------------------------------------------------------
