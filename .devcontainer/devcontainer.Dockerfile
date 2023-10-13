@@ -42,11 +42,11 @@ ENV MERCURY_DIR=$WORK_SPACE/install/mercury
 ENV PDC_SRC_DIR=$WORK_SPACE/source/pdc
 ENV PDC_DIR=$WORK_SPACE/install/pdc
 
-RUN mkdir -p $LIBFABRIC_SRC_DIR \
-    mkdir -p $MERCURY_SRC_DIR \
-    mkdir -p $PDC_SRC_DIR \
-    mkdir -p $LIBFABRIC_DIR \
-    mkdir -p $MERCURY_DIR \
+RUN mkdir -p $LIBFABRIC_SRC_DIR && \
+    mkdir -p $MERCURY_SRC_DIR && \
+    mkdir -p $PDC_SRC_DIR && \
+    mkdir -p $LIBFABRIC_DIR && \
+    mkdir -p $MERCURY_DIR && \
     mkdir -p $PDC_DIR
 
 
