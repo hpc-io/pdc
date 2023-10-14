@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     git \
     mpich \
     libmpich-dev \
-    libhdf5-mpi-dev \
+    libhdf5-dev \
+    libhdf5-mpich-dev \
     uuid \
     uuid-dev \
     autoconf \
@@ -34,18 +35,14 @@ RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/
 
 # Install Julia
 
-# Set a default value for JULIA_URL, assuming x86_64 (amd64) as default
-ARG JULIA_URL=https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz
+RUN echo "https://julialang-s3.julialang.org/bin/linux/aarch64/1.6/julia-1.6.7-linux-aarch64.tar.gz" > /tmp/julia_url_arm64v8.txt
+RUN echo "https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz" > /tmp/julia_url_amd64.txt
 
-# If the architecture is arm64, set the JULIA_URL to the arm64 version
-RUN if [ "$ARCH" = "arm64v8/" ]; then \
-    JULIA_URL=https://julialang-s3.julialang.org/bin/linux/aarch64/1.6/julia-1.6.7-linux-aarch64.tar.gz; \
-    elif [ "${ARCH}" = "amd64/" ]; then \
-    JULIA_URL=https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz; \
-    fi
 
-RUN mkdir -p /opt/julia && wget -O - $JULIA_URL | tar -xz -C /opt/julia --strip-components=1 && \
+RUN mkdir -p /opt/julia && wget -O - $(cat /tmp/julia_url_${ARCH}.txt) | tar -xz -C /opt/julia --strip-components=1 && \
     ln -s /opt/julia/bin/julia /usr/local/bin/julia
+
+RUN rm -rf /tmp/julia_url_*.txt
 
 ENV JULIA_HOME=/opt/julia
 
