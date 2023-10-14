@@ -1,14 +1,15 @@
 #!/bin/bash
 
 # Check if $1 is unset or empty
-if [ "$#" -lt 1 ]; then
-    echo "./publish_dev_base.sh <docker_registry_namespace> <process_manifest:0/1>"
+if [ "$#" -lt 2 ]; then
+    echo "./publish_dev_base.sh <docker_registry_namespace> <version> <process_manifest:0/1>"
     echo "For building and publishing image, just ignore the second argument. For processing manifest, set the second argument to 1."
     echo "For best performance, you need to run this script on the same architecture as the target image. But you may specify the second argument to 1 on the machine where fastest network is available to process the manifest."
     exit 1
 fi
 
 IMG_NS=$1
+VERSION=$2
 arch=$(uname -m)
 ARCH_CODE=""
 
@@ -43,8 +44,10 @@ case $arch in
         ;;
 esac
 
-if [ -z "$2" ] || [ "$2" -eq 0 ]; then
-    docker build -t ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} -f .docker/dev_base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
+if [ -z "$3" ] || [ "$3" -eq 0 ]; then
+    docker build -t ${IMG_NS}/pdc_dev_base:${VERSION}-${ARCH_CODE} -f .docker/dev_base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ .
+    docker tag ${IMG_NS}/pdc_dev_base:${VERSION}-${ARCH_CODE} ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
+    docker push ${IMG_NS}/pdc_dev_base:${VERSION}-${ARCH_CODE}
     docker push ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE}
     exit 0
 else
@@ -55,13 +58,20 @@ else
     manifest_args=()
     for arch in "${arch_strings[@]}"; do
         echo "Processing architecture: $arch"
-        manifest_args+=("--amend" "${IMG_NS}/pdc_dev_base:latest-${arch}")
+        manifest_args+=("--amend" "${IMG_NS}/pdc_dev_base:${VERSION}-${arch}")
         if [[  "$arch" == "$ARCH_CODE" ]]; then
             echo "Skipping pulling current architecture: $arch"
             continue
         fi
-        # Your logic for each architecture goes here...
-        docker pull ${IMG_NS}/pdc_dev_base:latest-${arch}
+        docker pull ${IMG_NS}/pdc_dev_base:${VERSION}-${arch}
+    done
+
+    docker manifest create ${IMG_NS}/pdc_dev_base:${VERSION} ${IMG_NS}/pdc_dev_base:${VERSION}-${ARCH_CODE} ${manifest_args[@]}
+    docker manifest push ${IMG_NS}/pdc_dev_base:${VERSION}
+
+    for arch in "${arch_strings[@]}"; do
+        echo "Processing architecture: $arch"
+        manifest_args+=("--amend" "${IMG_NS}/pdc_dev_base:latest-${arch}")
     done
 
     docker manifest create ${IMG_NS}/pdc_dev_base:latest ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} ${manifest_args[@]}
