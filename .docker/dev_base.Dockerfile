@@ -27,8 +27,29 @@ RUN apt-get update && apt-get install -y \
     valgrind \
     python3 
 
-RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+# Install Julia
 
+# Set a default value for JULIA_URL, assuming x86_64 (amd64) as default
+ARG JULIA_URL=https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz
+
+# If the architecture is arm64, set the JULIA_URL to the arm64 version
+RUN if [ "$ARCH" = "arm64v8/" ]; then \
+    JULIA_URL=https://julialang-s3.julialang.org/bin/linux/aarch64/1.6/julia-1.6.7-linux-aarch64.tar.gz; \
+    elif [ "${ARCH}" = "amd64/" ]; then \
+    JULIA_URL=https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz; \
+    fi
+
+RUN mkdir -p /opt/julia && wget -O - $JULIA_URL | tar -xz -C /opt/julia --strip-components=1 && \
+    ln -s /opt/julia/bin/julia /usr/local/bin/julia
+
+ENV JULIA_HOME=/opt/julia
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+
+# Install Oh My Bash
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
 RUN sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' /root/.bashrc
 
 # Set WORK_SPACE environment variable and create necessary directories
