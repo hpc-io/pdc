@@ -28,7 +28,11 @@
                 "twxs.cmake",
                 "xaver.clang-format",
                 "yzhang.markdown-all-in-one"
-            ]
+            ],
+            "settings": {
+                "C_Cpp.clang_format_path": "clang-format-11",
+                "terminal.integrated.scrollback": 10000
+            }
         }
     }
 }
