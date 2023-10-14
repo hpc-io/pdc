@@ -24,7 +24,8 @@ RUN apt-get update && apt-get install -y \
     gdb \
     cgdb \
     curl \
-    valgrind
+    valgrind \
+    python3 
 
 RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
 
@@ -70,7 +71,7 @@ RUN git checkout v1.18.0 && \
     ./autogen.sh && \
     ./configure --prefix=$LIBFABRIC_DIR CC=mpicc CFLAG="-O2" && \
     make clean && \
-    make -j && make install && \
+    make -j 8 && make install && \
     make check
 
 ENV LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
@@ -86,7 +87,7 @@ RUN git checkout v2.2.0 \
     mkdir -p build 
 WORKDIR ${MERCURY_SRC_DIR}/build
 RUN cmake $MERCURY_CMAKE_FLAGS ../ && \
-    make -j && make install && \
+    make -j 16 && make install && \
     ctest
 
 # Set the environment variables
