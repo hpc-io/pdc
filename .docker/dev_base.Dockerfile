@@ -28,6 +28,10 @@ RUN apt-get update && apt-get install -y \
     valgrind \
     python3 
 
+# Install Oh My Bash
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+RUN sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' ~/.bashrc
+
 # Install Julia
 
 # Set a default value for JULIA_URL, assuming x86_64 (amd64) as default
@@ -49,10 +53,6 @@ ENV JULIA_HOME=/opt/julia
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 RUN echo 'source $HOME/.cargo/env' >> ~/.bashrc
 
-
-# Install Oh My Bash
-RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
-RUN sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' /root/.bashrc
 
 # Set WORK_SPACE environment variable and create necessary directories
 ENV WORK_SPACE=/home/project
@@ -118,5 +118,8 @@ ENV LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 RUN echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
+
+
+ENV PDC_CMAKE_FLAGS="-DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DUSE_SYSTEM_HDF5=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD=mpiexec "
 
 ENTRYPOINT [ "/workspaces/pdc/.devcontainer/post-attach.sh" ]
