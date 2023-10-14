@@ -72,6 +72,11 @@ else
     for arch in "${arch_strings[@]}"; do
         echo "Processing architecture: $arch"
         manifest_args+=("--amend" "${IMG_NS}/pdc_dev_base:latest-${arch}")
+        if [[  "$arch" == "$ARCH_CODE" ]]; then
+            echo "Skipping pulling current architecture: $arch"
+            continue
+        fi
+        docker tag ${IMG_NS}/pdc_dev_base:${VERSION}-${arch} ${IMG_NS}/pdc_dev_base:latest-${arch}
     done
 
     docker manifest create ${IMG_NS}/pdc_dev_base:latest ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} ${manifest_args[@]}
