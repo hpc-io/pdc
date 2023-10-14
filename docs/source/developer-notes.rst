@@ -434,12 +434,12 @@ We currently only support to architectures, amd64 and arm64v8.
 To build the docker image, you can run the following command in the root directory of PDC project:
 
 .. code-block:: Bash
-    .docker/publish_dev_base.sh <docker_registry_namespace>
+    .docker/publish_dev_base.sh <docker_registry_namespace> <version>
 
 Once the above is done, you can pick the image build machine with fastest network and run the following
 
 .. code-block:: Bash
-    .docker/publish_dev_base.sh <docker_registry_namespace> 1
+    .docker/publish_dev_base.sh <docker_registry_namespace> <version> 1
 
 This will create a multi-arch image with both amd64 and arm64v8 architectures in your registry under your namespace. 
 
