@@ -66,7 +66,7 @@ else
         docker pull ${IMG_NS}/pdc_dev_base:${VERSION}-${arch}
     done
 
-    docker manifest create ${IMG_NS}/pdc_dev_base:${VERSION} ${IMG_NS}/pdc_dev_base:${VERSION}-${ARCH_CODE} ${manifest_args[@]}
+    docker manifest create ${IMG_NS}/pdc_dev_base:${VERSION} ${manifest_args[@]}
     docker manifest push ${IMG_NS}/pdc_dev_base:${VERSION}
 
     for arch in "${arch_strings[@]}"; do
@@ -76,10 +76,10 @@ else
             echo "Skipping pulling current architecture: $arch"
             continue
         fi
-        docker tag ${IMG_NS}/pdc_dev_base:${VERSION}-${arch} ${IMG_NS}/pdc_dev_base:latest-${arch}
+        docker pull ${IMG_NS}/pdc_dev_base:latest-${arch}
     done
 
-    docker manifest create ${IMG_NS}/pdc_dev_base:latest ${IMG_NS}/pdc_dev_base:latest-${ARCH_CODE} ${manifest_args[@]}
+    docker manifest create ${IMG_NS}/pdc_dev_base:latest ${manifest_args[@]}
     docker manifest push ${IMG_NS}/pdc_dev_base:latest
 fi
 
