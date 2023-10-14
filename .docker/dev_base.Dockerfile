@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     git \
     mpich \
     libmpich-dev \
+    libhdf5-mpi-dev \
     uuid \
     uuid-dev \
     autoconf \
@@ -46,6 +47,7 @@ ENV JULIA_HOME=/opt/julia
 
 # Install Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN echo 'source $HOME/.cargo/env' >> ~/.bashrc
 
 
 # Install Oh My Bash
