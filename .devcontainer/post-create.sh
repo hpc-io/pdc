@@ -2,7 +2,6 @@
 
 
 WORK_SPACE_INITIALIZED_FILE=/workspaces/.workspace_initialized
-sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' /root/.bashrc
 
 if ! [ -f $WORK_SPACE_INITIALIZED_FILE ]; then
     touch $WORK_SPACE_INITIALIZED_FILE
