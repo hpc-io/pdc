@@ -1,9 +1,14 @@
 # Note: Run `docker build -f .devcontainer/Dockerfile -t pdc:latest .` from the root directory of the repository to build the docker image.
 
 # Use Ubuntu Jammy (latest LTS) as the base image
-ARG ARCH=
+ARG ARCH
 FROM ${ARCH}ubuntu:jammy
 
+RUN echo "ARCH=${ARCH}" && sleep 3
+
+ARG ARCH_CODE
+
+RUN echo "ARCH_CODE=${ARCH_CODE}" && sleep 3
 # Install necessary tools, MPICH, UUID library and developer files
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -35,11 +40,12 @@ RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/
 
 # Install Julia
 
-RUN echo "https://julialang-s3.julialang.org/bin/linux/aarch64/1.6/julia-1.6.7-linux-aarch64.tar.gz" > /tmp/julia_url_arm64v8.txt
-RUN echo "https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz" > /tmp/julia_url_amd64.txt
+RUN echo "https://julialang-s3.julialang.org/bin/linux/aarch64/1.6/julia-1.6.7-linux-aarch64.tar.gz" > /julia_url_arm64v8.txt && \
+    echo "https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz" > /julia_url_amd64.txt
 
+RUN echo $(cat /julia_url_${ARCH_CODE}.txt) && sleep 3
 
-RUN mkdir -p /opt/julia && wget -O - $(cat /tmp/julia_url_${ARCH}.txt) | tar -xz -C /opt/julia --strip-components=1 && \
+RUN mkdir -p /opt/julia && wget -O - $(cat /julia_url_${ARCH_CODE}.txt) | tar -xz -C /opt/julia --strip-components=1 && \
     ln -s /opt/julia/bin/julia /usr/local/bin/julia
 
 RUN rm -rf /tmp/julia_url_*.txt
