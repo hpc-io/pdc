@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 sudo apt-get update
-sudo apt-get install libopenmpi-dev
+sudo apt-get install libopenmpi-dev libhdf5-dev
 
 # libfabric
 # git clone https://github.com/ofiwg/libfabric.git

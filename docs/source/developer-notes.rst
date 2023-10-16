@@ -399,17 +399,6 @@ Also, to make sure your code with Julia function calls doesn't get compiled when
 For more info on embedded Julia support, please visit: `Embedded Julia https://docs.julialang.org/en/v1/manual/embedding/`_.
 
 
-
----------------------------------------------
-Github Codespace Support
----------------------------------------------
-
-Now the PDC project can be built and run in Github Codespace.
-
-When you create a code space, you can find your PDC project in `/workspaces/pdc` directory. 
-And, you can find your PDC project and its dependencies in `/home/project` directory, you will see the same directory structure there as described in our standalone installation guide.  
-
-
 ---------------------------------------------
 Docker Support
 ---------------------------------------------
@@ -426,6 +415,20 @@ To build the docker image, you can run the following command in the root directo
 This will mount your PDC project directory to `/workspaces/pdc` directory in the docker container and an initial step will be performed once you attach to the container. 
 The experience will be pretty much similar to the Github Codespace.
 
+Note: If you need to compile PDC tools in your docker container, you need to set `USE_SYSTEM_HDF5` to `ON` in CMake.
+
+
+-------------------------------------------------
+Github Codespace && VSCode Dev Container Support
+-------------------------------------------------
+
+Now the PDC project can be built and run in Github Codespace. You can also use VSCode Dev Container to develop PDC as long as you have VSCode and Docker installed on you local computer.
+
+When you create a code space, you can find your PDC project in `/workspaces/pdc` directory. 
+And, you can find your PDC project and its dependencies in `/home/project` directory, you will see the same directory structure there as described in our standalone installation guide.  
+
+Since you are using the same PDC dev_base docker image, everything should be the same as the docker support described above.
+
 ------------------------------------------------
 Maintaining Docker Image
 ------------------------------------------------
@@ -434,12 +437,12 @@ We currently only support to architectures, amd64 and arm64v8.
 To build the docker image, you can run the following command in the root directory of PDC project:
 
 .. code-block:: Bash
-    .docker/publish_dev_base.sh <docker_registry_namespace>
+    .docker/publish_dev_base.sh <docker_registry_namespace> <version>
 
 Once the above is done, you can pick the image build machine with fastest network and run the following
 
 .. code-block:: Bash
-    .docker/publish_dev_base.sh <docker_registry_namespace> 1
+    .docker/publish_dev_base.sh <docker_registry_namespace> <version> 1
 
 This will create a multi-arch image with both amd64 and arm64v8 architectures in your registry under your namespace. 
 

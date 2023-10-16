@@ -1,15 +1,22 @@
 # Note: Run `docker build -f .devcontainer/Dockerfile -t pdc:latest .` from the root directory of the repository to build the docker image.
 
 # Use Ubuntu Jammy (latest LTS) as the base image
-ARG ARCH=
+ARG ARCH
 FROM ${ARCH}ubuntu:jammy
 
+RUN echo "ARCH=${ARCH}" && sleep 3
+
+ARG ARCH_CODE
+
+RUN echo "ARCH_CODE=${ARCH_CODE}" && sleep 3
 # Install necessary tools, MPICH, UUID library and developer files
 RUN apt-get update && apt-get install -y \
     build-essential \
     git \
     mpich \
     libmpich-dev \
+    libhdf5-dev \
+    libhdf5-mpich-dev \
     uuid \
     uuid-dev \
     autoconf \
@@ -27,9 +34,28 @@ RUN apt-get update && apt-get install -y \
     valgrind \
     python3 
 
-RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+# Install Oh My Bash
+RUN bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" && \
+    sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' ~/.bashrc
 
-RUN sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' /root/.bashrc
+# Install Julia
+
+RUN echo "https://julialang-s3.julialang.org/bin/linux/aarch64/1.6/julia-1.6.7-linux-aarch64.tar.gz" > /julia_url_arm64v8.txt && \
+    echo "https://julialang-s3.julialang.org/bin/linux/x64/1.6/julia-1.6.7-linux-x86_64.tar.gz" > /julia_url_amd64.txt
+
+RUN echo $(cat /julia_url_${ARCH_CODE}.txt) && sleep 3
+
+RUN mkdir -p /opt/julia && wget -O - $(cat /julia_url_${ARCH_CODE}.txt) | tar -xz -C /opt/julia --strip-components=1 && \
+    ln -s /opt/julia/bin/julia /usr/local/bin/julia
+
+RUN rm -rf /tmp/julia_url_*.txt
+
+ENV JULIA_HOME=/opt/julia
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN echo 'source $HOME/.cargo/env' >> ~/.bashrc
+
 
 # Set WORK_SPACE environment variable and create necessary directories
 ENV WORK_SPACE=/home/project
@@ -95,5 +121,8 @@ ENV LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
 RUN echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
+
+
+ENV PDC_CMAKE_FLAGS="-DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DUSE_SYSTEM_HDF5=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD=mpiexec "
 
 ENTRYPOINT [ "/workspaces/pdc/.devcontainer/post-attach.sh" ]

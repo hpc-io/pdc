@@ -7,6 +7,7 @@ LAST_PDC_DEV_CONTAINER=$(docker ps -a | grep pdc_dev_base | head -1 | awk '{prin
 # if this is empty, then we need to create a new container
 if [ -z "$LAST_PDC_DEV_CONTAINER" ]; then
     echo "No existing pdc_dev_base container found, creating a new one"
+    docker image rm -f zhangwei217245/pdc_dev_base:latest
     docker create -it -v $(pwd):${DEFAULT_WORKSPACE} -w ${DEFAULT_WORKSPACE} --entrypoint /bin/bash zhangwei217245/pdc_dev_base:latest
     sleep 1
     LAST_PDC_DEV_CONTAINER=$(docker ps -a | grep pdc_dev_base | head -1 | awk '{print $NF}') 

@@ -10,6 +10,10 @@ include_directories(
   $ENV{HOME}/include
 )
 
+set(TEST_EXT_LIB "")
+set(TEST_EXT_INCLUDE_DIRS "")
+set(EXTRA_SRC_FILE "")
+
 # *************************************************
 # Julia Support
 # *************************************************
@@ -24,6 +28,19 @@ find_package(UUID REQUIRED)
 if(UUID_FOUND)
   include_directories(${UUID_INCLUDE_DIRS})
 endif(UUID_FOUND)
+
+# *************************************************
+# * Find MERCURY
+# *************************************************
+# Mercury
+find_package(MERCURY REQUIRED)
+if(MERCURY_FOUND)
+  set(TEST_EXT_INCLUDE_DIRS ${MERCURY_INCLUDE_DIRS}
+    ${TEST_EXT_INCLUDE_DIRS}
+    )
+  set(TEST_EXT_LIB ${MERCURY_LIBRARIES} ${TEST_EXT_LIB})
+endif()
+include_directories(${TEST_EXT_INCLUDE_DIRS})
 
 set(PROGRAMS
   pdc_init
@@ -119,16 +136,7 @@ set(PROGRAMS
   query_data
   )
 
-set(MPI_PROGRAMS
- kvtag_query_scale_col
- kvtag_query_mpi
- kvtag_add_get_benchmark
- kvtag_add_get_scale
- )
 
-set(TEST_EXT_LIB "")
-set(TEST_EXT_INCLUDE_DIRS "")
-set(EXTRA_SRC_FILE "")
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
@@ -137,6 +145,13 @@ foreach(program ${PROGRAMS})
 endforeach(program)
 
 if(BUILD_MPI_TESTING)
+  set(MPI_PROGRAMS
+    kvtag_query_scale_col
+    # kvtag_query_mpi
+    kvtag_add_get_benchmark
+    kvtag_add_get_scale
+  )
+
   foreach(program ${MPI_PROGRAMS})
     add_executable(${program} ${program}.c)
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
