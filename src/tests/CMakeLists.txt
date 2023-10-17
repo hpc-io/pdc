@@ -32,6 +32,7 @@ endif(UUID_FOUND)
 # *************************************************
 # *  MERCURY
 # *************************************************
+find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
   set(TEST_EXT_INCLUDE_DIRS ${MERCURY_INCLUDE_DIRS}
     ${TEST_EXT_INCLUDE_DIRS}
