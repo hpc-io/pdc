@@ -19,10 +19,10 @@ set(EXT_INCLUDE_DIRS "")
 # *************************************************
 # * Find HDF5
 # *************************************************
-if (HDF5_FOUND) 
+if(HDF5_FOUND) 
   set(EXT_LIB ${HDF5_LIBRARIES} ${EXT_LIB})
   set(EXT_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} ${EXT_INCLUDE_DIRS})
-else ()
+else()
   message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
 endif()
 
