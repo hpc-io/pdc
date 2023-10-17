@@ -16,28 +16,14 @@ set(EXT_LIB "")
 set(EXT_INCLUDE_DIRS "")
 
 
-#-----------------------------------------------------------------------------
-# Find HDF5
-#-----------------------------------------------------------------------------
-#HDF5
-
-find_package(HDF5 MODULE REQUIRED)
-if (NOT HDF5_FOUND)
-  message(STATUS "Could not find HDF5 via CMake configuration, fallback to traditional search")
-  find_package(HDF5 NO_MODULE NAMES hdf5 COMPONENTS C shared)
-  if (NOT HDF5_FOUND)
-    message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
-  endif()
-endif()
-if(HDF5_FOUND)
-  set(EXT_INCLUDE_DIRS
-    ${EXT_INCLUDE_DIRS}
-    ${HDF5_INCLUDE_DIRS}
-  )
-  set(EXT_LIB
-    ${EXT_LIB}
-    ${HDF5_LIBRARIES}
-  )
+# *************************************************
+# * Find HDF5
+# *************************************************
+if (HDF5_FOUND) 
+  set(EXT_LIB ${HDF5_LIBRARIES} ${EXT_LIB})
+  set(EXT_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} ${EXT_INCLUDE_DIRS})
+else ()
+  message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
 endif()
 
 # *************************************************

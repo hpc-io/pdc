@@ -30,10 +30,8 @@ if(UUID_FOUND)
 endif(UUID_FOUND)
 
 # *************************************************
-# * Find MERCURY
+# *  MERCURY
 # *************************************************
-# Mercury
-find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
   set(TEST_EXT_INCLUDE_DIRS ${MERCURY_INCLUDE_DIRS}
     ${TEST_EXT_INCLUDE_DIRS}
@@ -136,6 +134,13 @@ set(PROGRAMS
   query_data
   )
 
+# TODO: Check if import_vpic.c is needed. If yes, we have to add the following :
+# if (HDF5_FOUND) 
+#   set(TEST_EXT_LIB ${HDF5_LIBRARIES} ${TEST_EXT_LIB})
+#   set(TEST_EXT_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} ${TEST_EXT_INCLUDE_DIRS})
+# else ()
+#   message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
+# endif()
 
 
 foreach(program ${PROGRAMS})
