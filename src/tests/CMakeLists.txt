@@ -219,12 +219,6 @@ endforeach(script)
 
 
 # *******************************************
-# Add the HDF5 library for pdc-neon
-# *******************************************
-FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/lib)
-
-
-# *******************************************
 # Create a transform library which contains:
 #  1. compression/depression functions
 #  2. datatype conversion
