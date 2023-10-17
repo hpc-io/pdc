@@ -20,42 +20,25 @@ set(EXT_INCLUDE_DIRS "")
 # Find HDF5
 #-----------------------------------------------------------------------------
 #HDF5
-option(USE_SYSTEM_HDF5 "Use system-installed HDF5." ON)
-  if(USE_SYSTEM_HDF5)
+
+find_package(HDF5 MODULE REQUIRED)
+if (NOT HDF5_FOUND)
+  message(STATUS "Could not find HDF5 via CMake configuration, fallback to traditional search")
   find_package(HDF5 NO_MODULE NAMES hdf5 COMPONENTS C shared)
-  if(HDF5_FOUND)
-    set(HDF5_C_SHARED_LIBRARY hdf5-shared)
-#    if(NOT TARGET ${HDF5_C_SHARED_LIBRARY})
-#      message(FATAL_ERROR "Could not find hdf5 shared target, please make "
-#"sure that HDF5 has ben compiled with shared libraries enabled.")
-#    endif()
-    set(EXT_INCLUDE_DIRS
-        ${EXT_INCLUDE_DIRS}
-        ${HDF5_INCLUDE_DIR}
-      )
-    set(EXT_LIB
-      ${EXT_LIB}
-      ${HDF5_C_SHARED_LIBRARY}
-    )
-  else()
-    # Allow for HDF5 autotools builds
-    find_package(HDF5 MODULE REQUIRED)
-    if(HDF5_FOUND)
-      set(EXT_INCLUDE_DIRS
-        ${EXT_INCLUDE_DIRS}
-        ${HDF5_INCLUDE_DIRS}
-      )
-      set(EXT_LIB
-        ${EXT_LIB}
-        ${HDF5_LIBRARIES}
-      )
-    else()
-      message(FATAL_ERROR "Could not find HDF5, please check HDF5_DIR.")
-    endif()
+  if (NOT HDF5_FOUND)
+    message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
   endif()
 endif()
-
-
+if(HDF5_FOUND)
+  set(EXT_INCLUDE_DIRS
+    ${EXT_INCLUDE_DIRS}
+    ${HDF5_INCLUDE_DIRS}
+  )
+  set(EXT_LIB
+    ${EXT_LIB}
+    ${HDF5_LIBRARIES}
+  )
+endif()
 
 # *************************************************
 # * Find MERCURY
