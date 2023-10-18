@@ -12,22 +12,6 @@ include_directories(
   $ENV{HOME}/include
 )
 
-set(EXT_LIB "")
-set(EXT_INCLUDE_DIRS "")
-
-# *************************************************
-# * Find MERCURY
-# *************************************************
-# Mercury
-find_package(MERCURY REQUIRED)
-if(MERCURY_FOUND)
-  set(EXT_INCLUDE_DIRS ${MERCURY_INCLUDE_DIRS}
-    ${EXT_INCLUDE_DIRS}
-    )
-  set(EXT_LIB ${MERCURY_LIBRARIES} ${EXT_LIB})
-endif()
-include_directories(${EXT_INCLUDE_DIRS})
-
 set(PROGRAMS
   pdc_import
   pdc_export
@@ -35,12 +19,15 @@ set(PROGRAMS
   )
 
 add_library(cjson cjson/cJSON.c)
-set(EXT_LIB cjson ${EXT_LIB})
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
-  target_link_libraries(${program} pdc pdc_commons ${EXT_LIB})
+  target_link_libraries(${program} pdc)
+  target_link_libraries(${program} cjson)
 endforeach(program)
 
 
-
+# *******************************************
+# Add the HDF5 library for pdc-neon
+# *******************************************
+FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/lib)
