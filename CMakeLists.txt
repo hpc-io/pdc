@@ -557,6 +557,7 @@ if(BUILD_TOOLS)
           ${PDC_EXT_LIB_DEPENDENCIES}
           ${HDF5_LIBRARIES}
         )
+        message(STATUS "HDF5 found: INC=${HDF5_INCLUDE_DIRS} LIB=${HDF5_LIBRARIES}")
       else()
         message(FATAL_ERROR "Could not find HDF5, please check HDF5_DIR.")
       endif()
