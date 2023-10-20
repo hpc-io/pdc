@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
     libmpich-dev \
     libhdf5-dev \
     libhdf5-mpich-dev \
+    libtiff5 \
+    libtiff5-dev \
     uuid \
     uuid-dev \
     autoconf \
