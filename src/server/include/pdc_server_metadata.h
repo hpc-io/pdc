@@ -63,6 +63,7 @@ extern double                    total_mem_usage_g;
 extern int                       is_hash_table_init_g;
 extern int                       is_restart_g;
 extern int                       use_rocksdb_g;
+extern int                       use_sqlite3_g;
 
 /****************************/
 /* Library Private Typedefs */

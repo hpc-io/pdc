@@ -475,6 +475,13 @@ if(PDC_ENABLE_ROCKSDB)
     set(ENABLE_ROCKSDB 1)
 endif()
 
+# Metadata with SQLite
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_SQLITE3 "Enable SQLITE3." OFF)
+if(PDC_ENABLE_SQLITE3)
+    set(ENABLE_SQLITE3 1)
+endif()
+
 # Check availability of symbols
 #-----------------------------------------------------------------------------
 check_symbol_exists(malloc_usable_size "malloc.h" HAVE_MALLOC_USABLE_SIZE)

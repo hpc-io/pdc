@@ -67,6 +67,11 @@
 rocksdb_t *rocksdb_g;
 #endif
 
+#ifdef ENABLE_SQLITE3
+#include "sqlite3.h"
+sqlite3 *sqlite3_db_g;
+#endif
+
 // Check how long PDC has run every OP_INTERVAL operations
 #define PDC_CHECKPOINT_CHK_OP_INTERVAL 2000
 // Checkpoint every INTERVAL_SEC second and at least OP_INTERVAL operations
@@ -138,6 +143,7 @@ int               gen_hist_g                   = 0;
 int               gen_fastbit_idx_g            = 0;
 int               use_fastbit_idx_g            = 0;
 int               use_rocksdb_g                = 0;
+int               use_sqlite3_g                = 0;
 char *            gBinningOption               = NULL;
 
 double server_write_time_g                  = 0.0;
@@ -458,6 +464,14 @@ PDC_Server_rm_config_file()
         remove_directory(config_fname);
     }
 #endif
+
+#ifdef ENABLE_SQLITE3
+    if (use_sqlite3_g) {
+        snprintf(config_fname, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
+        remove_directory(config_fname);
+    }
+#endif
+
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2148,15 +2162,25 @@ PDC_Server_get_env()
         gen_fastbit_idx_g = 1;
 
     tmp_env_char = getenv("PDC_USE_FASTBIT_IDX");
-    if (tmp_env_char != NULL)
+    if (tmp_env_char != NULL) {
         use_fastbit_idx_g = 1;
+        printf("==PDC_SERVER[%d]: using FastBit for data indexing and querying\n");
+    }
 
     tmp_env_char = getenv("PDC_USE_ROCKSDB");
-    if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0)
+    if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
         use_rocksdb_g = 1;
+        printf("==PDC_SERVER[%d]: using RocksDB for kvtag\n");
+    }
+
+    tmp_env_char = getenv("PDC_USE_SQLITE3");
+    if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
+        use_sqlite3_g = 1;
+        printf("==PDC_SERVER[%d]: using SQLite3 for kvtag\n", pdc_server_rank_g);
+    }
 
     if (pdc_server_rank_g == 0) {
-        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir, %d OSTs, %d OSTs per data file, %d%% to BB\n",
+        printf("==PDC_SERVER[%d]: using [%s] as tmp dir, %d OSTs, %d OSTs per data file, %d%% to BB\n",
                pdc_server_rank_g, pdc_server_tmp_dir_g, lustre_total_ost_g, pdc_nost_per_file_g,
                write_to_bb_percentage_g);
     }
@@ -2258,6 +2282,37 @@ server_run(int argc, char *argv[])
 
 #endif
 
+#ifdef ENABLE_SQLITE3
+    if (use_sqlite3_g) {
+        char *errMessage = 0;
+        char  sqlite3_path[ADDR_MAX];
+        snprintf(sqlite3_path, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
+        sqlite3_open(sqlite3_path, &sqlite3_db_g);
+
+        sqlite3_exec(sqlite3_db_g, "CREATE TABLE objects (objid INTEGER, name TEXT, value_text TEXT, "
+                     "value_int INTEGER, value_float REAL, value_double REAL, value_blob BLOB);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+
+        // Create indexes
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_name ON objects(name);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_int ON objects(value_int);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_text ON objects(value_text);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_float ON objects(value_float);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_double ON objects(value_double);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+    }
+#endif
+
 #ifdef PDC_TIMING
 #ifdef ENABLE_MPI
     pdc_server_timings->PDCserver_start_total += MPI_Wtime() - start;
@@ -2300,6 +2355,18 @@ done:
         printf("==PDC_SERVER[%d]: RocksDB file size %lu\n", pdc_server_rank_g, st.st_size);
 
         rocksdb_close(rocksdb_g);
+    }
+#endif
+
+#ifdef ENABLE_SQLITE3
+    if (use_sqlite3_g) {
+        char        sqlite3_fname[ADDR_MAX];
+        struct stat st;
+        snprintf(sqlite3_fname, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
+        stat(sqlite3_fname, &st);
+        printf("==PDC_SERVER[%d]: SQLite3 file size %lu\n", pdc_server_rank_g, st.st_size);
+
+        sqlite3_close(sqlite3_db_g);
     }
 #endif
 

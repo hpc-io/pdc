@@ -12,6 +12,11 @@ if(PDC_ENABLE_ROCKSDB)
     find_library(ROCKSDB_LIBRARY rocksdb 8 REQUIRED)
 endif()
 
+if(PDC_ENABLE_SQLITE3)
+    add_definitions(-DENABLE_SQLITE3=1)
+    find_package(SQLite3 REQUIRED)
+endif()
+
 include_directories(
   ${PDC_COMMON_INCLUDE_DIRS}
   ${PDC_INCLUDES_BUILD_TIME}
@@ -67,6 +72,8 @@ if(PDC_ENABLE_FASTBIT)
     target_link_libraries(pdc_server_lib mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
 elseif(PDC_ENABLE_ROCKSDB)
     target_link_libraries(pdc_server_lib mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${ROCKSDB_LIBRARY})
+elseif(PDC_ENABLE_SQLITE3)
+    target_link_libraries(pdc_server_lib mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} SQLite::SQLite3)
 else()
     target_link_libraries(pdc_server_lib mercury ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
 endif()
