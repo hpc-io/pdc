@@ -472,7 +472,6 @@ PDC_Server_rm_config_file()
     }
 #endif
 
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -2289,8 +2288,10 @@ server_run(int argc, char *argv[])
         snprintf(sqlite3_path, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
         sqlite3_open(sqlite3_path, &sqlite3_db_g);
 
-        sqlite3_exec(sqlite3_db_g, "CREATE TABLE objects (objid INTEGER, name TEXT, value_text TEXT, "
-                     "value_int INTEGER, value_float REAL, value_double REAL, value_blob BLOB);", 0, 0, &errMessage);
+        sqlite3_exec(sqlite3_db_g,
+                     "CREATE TABLE objects (objid INTEGER, name TEXT, value_text TEXT, "
+                     "value_int INTEGER, value_float REAL, value_double REAL, value_blob BLOB);",
+                     0, 0, &errMessage);
         if (errMessage)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
 
@@ -2301,13 +2302,16 @@ server_run(int argc, char *argv[])
         sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_int ON objects(value_int);", 0, 0, &errMessage);
         if (errMessage)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_text ON objects(value_text);", 0, 0, &errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_text ON objects(value_text);", 0, 0,
+                     &errMessage);
         if (errMessage)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_float ON objects(value_float);", 0, 0, &errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_float ON objects(value_float);", 0, 0,
+                     &errMessage);
         if (errMessage)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_double ON objects(value_double);", 0, 0, &errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_double ON objects(value_double);", 0, 0,
+                     &errMessage);
         if (errMessage)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
     }

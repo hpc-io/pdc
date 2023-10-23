@@ -1691,7 +1691,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     else if (use_sqlite3_g) {
         // SQLite3
 #ifdef ENABLE_SQLITE3
-        char sql[TAG_LEN_MAX];
+        char  sql[TAG_LEN_MAX];
         char *errMessage = NULL;
         // Check if there is * in tag name
         if (NULL == strstr(in->name, "*")) {
@@ -1700,11 +1700,11 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
         else {
             char *tmp_name = strdup(in->name);
             // replace * with % for sqlite3
-	    char *current_pos = strchr(tmp_name, '*');
-	    while (current_pos) {
-		*current_pos = '%';
-		current_pos = strchr(current_pos, '*');
-	    }
+            char *current_pos = strchr(tmp_name, '*');
+            while (current_pos) {
+                *current_pos = '%';
+                current_pos  = strchr(current_pos, '*');
+            }
 
             sprintf(sql, "SELECT id FROM objects WHERE name LIKE \'%s\';", tmp_name);
             if (tmp_name)
@@ -1716,7 +1716,7 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
         sqlite3_exec(sqlite3_db_g, sql, NULL, 0, &errMessage);
         if (errMessage)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-        // TODO extract sqlite result
+            // TODO extract sqlite result
 
 #else
         printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
@@ -2694,24 +2694,24 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     } // End if rocksdb
     else if (use_sqlite3_g == 1) {
 #ifdef ENABLE_SQLITE3
-        char sql[TAG_LEN_MAX] = {0};
-        char *errMessage = NULL;
+        char  sql[TAG_LEN_MAX] = {0};
+        char *errMessage       = NULL;
 
         if (in->kvtag.type == PDC_STRING || in->kvtag.type == PDC_CHAR) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_text) VALUES (%llu, '%s', '%s');", 
-                    obj_id, in->kvtag.name, (char*)in->kvtag.value);
+            sprintf(sql, "INSERT INTO objects (objid, name, value_text) VALUES (%llu, '%s', '%s');", obj_id,
+                    in->kvtag.name, (char *)in->kvtag.value);
         }
         else if (in->kvtag.type == PDC_INT && in->kvtag.size == sizeof(int)) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_int) VALUES (%llu, '%s', '%d');", 
-                    obj_id, in->kvtag.name, *((int*)in->kvtag.value));
+            sprintf(sql, "INSERT INTO objects (objid, name, value_int) VALUES (%llu, '%s', '%d');", obj_id,
+                    in->kvtag.name, *((int *)in->kvtag.value));
         }
         else if (in->kvtag.type == PDC_FLOAT && in->kvtag.size == sizeof(float)) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_float) VALUES (%llu, '%s', '%f');", 
-                    obj_id, in->kvtag.name, *((float*)in->kvtag.value));
+            sprintf(sql, "INSERT INTO objects (objid, name, value_float) VALUES (%llu, '%s', '%f');", obj_id,
+                    in->kvtag.name, *((float *)in->kvtag.value));
         }
         else if (in->kvtag.type == PDC_DOUBLE && in->kvtag.size == sizeof(double)) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_double) VALUES (%llu, '%s', '%lf');", 
-                    obj_id, in->kvtag.name, *((double*)in->kvtag.value));
+            sprintf(sql, "INSERT INTO objects (objid, name, value_double) VALUES (%llu, '%s', '%lf');",
+                    obj_id, in->kvtag.name, *((double *)in->kvtag.value));
         }
         else {
             printf("==PDC_SERVER[%d]: datatype not supported %d!\n", pdc_server_rank_g, in->kvtag.type);
@@ -2820,33 +2820,33 @@ PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, metadata_
 
 #ifdef ENABLE_SQLITE3
 static int
-sqlite_get_kvtag_callback(void* data, int argc, char** argv, char** colName) 
+sqlite_get_kvtag_callback(void *data, int argc, char **argv, char **colName)
 {
-    pdc_kvtag_t *out = (pdc_kvtag_t*) data;
+    pdc_kvtag_t *out = (pdc_kvtag_t *)data;
 
     for (int i = 0; i < argc; i++) {
         if (NULL != argv[i]) {
             if (0 == strcmp(colName[i], "value_int")) {
-                int *int_tmp = (int*)malloc(sizeof(int));
-                *int_tmp = atoi(argv[i]);
-                out->value = (void*)int_tmp;
-                out->size = sizeof(int);
+                int *int_tmp = (int *)malloc(sizeof(int));
+                *int_tmp     = atoi(argv[i]);
+                out->value   = (void *)int_tmp;
+                out->size    = sizeof(int);
                 printf("SQLite3 found %s = %d\n", colName[i], int_tmp);
                 break;
             }
             else if (0 == strcmp(colName[i], "value_real")) {
-                float *float_tmp = (float*)malloc(sizeof(float));
-                *float_tmp = (float)atof(argv[i]);
-                out->value = (void*)float_tmp;
-                out->size = sizeof(float);
+                float *float_tmp = (float *)malloc(sizeof(float));
+                *float_tmp       = (float)atof(argv[i]);
+                out->value       = (void *)float_tmp;
+                out->size        = sizeof(float);
                 printf("SQLite3 found %s = %f\n", colName[i], float_tmp);
                 break;
             }
             else if (0 == strcmp(colName[i], "value_double")) {
-                double *double_tmp = (double*)malloc(sizeof(double));
-                *double_tmp = atof(argv[i]);
-                out->value = (void*)double_tmp;
-                out->size = sizeof(double);
+                double *double_tmp = (double *)malloc(sizeof(double));
+                *double_tmp        = atof(argv[i]);
+                out->value         = (void *)double_tmp;
+                out->size          = sizeof(double);
                 printf("SQLite3 found %s = %f\n", colName[i], double_tmp);
                 break;
             }
@@ -2863,8 +2863,8 @@ sqlite_get_kvtag_callback(void* data, int argc, char** argv, char** colName)
             }
         }
     }
-  
-    return 0; 
+
+    return 0;
 }
 #endif
 
@@ -2923,9 +2923,11 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     else if (use_sqlite3_g) {
 #ifdef ENABLE_SQLITE3
         // SQLite3
-        char sql[TAG_LEN_MAX];
+        char  sql[TAG_LEN_MAX];
         char *errMessage = NULL;
-        sprintf(sql, "SELECT value_text, value_int, value_float, value_double, value_blob FROM objects WHERE objid = %llu AND name = \'%s\';", 
+        sprintf(sql,
+                "SELECT value_text, value_int, value_float, value_double, value_blob FROM objects WHERE "
+                "objid = %llu AND name = \'%s\';",
                 in->obj_id, in->key);
 
         printf("==PDC_SERVER[%d]: get kvtag [%s]!\n", pdc_server_rank_g, in->key);
@@ -2934,8 +2936,8 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
         }
         else {
-            out->kvtag.name  = in->key;
-            out->ret         = 1;
+            out->kvtag.name = in->key;
+            out->ret        = 1;
         }
 #else
         printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
@@ -3065,14 +3067,15 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 
     if (use_rocksdb_g) {
 #ifdef ENABLE_ROCKSDB
-        char *err = NULL;
-        rocksdb_writeoptions_t *writeoptions = rocksdb_writeoptions_create();
-        char rocksdb_key[TAG_LEN_MAX] = {0};
+        char *                  err                      = NULL;
+        rocksdb_writeoptions_t *writeoptions             = rocksdb_writeoptions_create();
+        char                    rocksdb_key[TAG_LEN_MAX] = {0};
         sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name);
 
         rocksdb_delete(rocksdb_g, writeoptions, rocksdb_key, strlen(rocksdb_key) + 1, &err);
         if (err != NULL) {
-            printf("==PDC_SERVER[%d]: error with rocksdb_delete [%s], [%s]!\n", pdc_server_rank_g, in->kvtag.name, err);
+            printf("==PDC_SERVER[%d]: error with rocksdb_delete [%s], [%s]!\n", pdc_server_rank_g,
+                   in->kvtag.name, err);
             ret_value = FAIL;
         }
         out->ret = 1;
@@ -3083,7 +3086,7 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
     }
     else if (use_sqlite3_g) {
 #ifdef ENABLE_SQLITE3
-        char sql[TAG_LEN_MAX];
+        char  sql[TAG_LEN_MAX];
         char *errMessage = NULL;
 
         sprintf(sql, "DELETE FROM objects WHERE objid = %llu AND name = \'%s\';", in->obj_id, in->key);
