@@ -51,8 +51,8 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
 
             int counter = 0;
             while (!TIFFSetDirectory(tif, (uint64_t)dir) && counter < 3) {
-                printf("Thread %d: File \"%s\" Directory \"%"PRId64"\" failed to open. Try %d\n", w, fileName, dir,
-                       counter + 1);
+                printf("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
+                       fileName, dir, counter + 1);
                 counter++;
             }
 
@@ -345,8 +345,8 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
 
             int counter = 0;
             while (!TIFFSetDirectory(tif, (uint64_t)0) && counter < 3) {
-                printf("Thread %d: File \"%s\" Directory \"%"PRId64"\" failed to open. Try %d\n", w, fileName, dir,
-                       counter + 1);
+                printf("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
+                       fileName, dir, counter + 1);
                 counter++;
             }
 

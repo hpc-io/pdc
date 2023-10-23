@@ -63,6 +63,11 @@ RUN echo 'source $HOME/.cargo/env' >> ~/.bashrc
 ENV WORK_SPACE=/home/project
 RUN mkdir -p $WORK_SPACE
 
+# Install clang-format repo
+RUN mkdir -p $WORK_SPACE/software
+RUN cd $WORK_SPACE/software && git clone https://github.com/DoozyX/clang-format-lint-action.git
+ENV CLANG_FORMAT_PATH=$WORK_SPACE/software/clang-format-lint-action/clang-format/clang-format10
+
 # Clone the repositories
 WORKDIR $WORK_SPACE/source
 RUN git clone https://github.com/ofiwg/libfabric.git && \
