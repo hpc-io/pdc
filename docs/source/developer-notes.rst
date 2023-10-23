@@ -415,37 +415,40 @@ To build the docker image, you can run the following command in the root directo
 This will mount your PDC project directory to `/workspaces/pdc` directory in the docker container and an initial step will be performed once you attach to the container. 
 The experience will be pretty much similar to the Github Codespace.
 
-Note: If you need to compile PDC tools in your docker container, you need to set `USE_SYSTEM_HDF5` to `ON` in CMake.
-
 
 -------------------------------------------------
 Github Codespace && VSCode Dev Container Support
 -------------------------------------------------
 
-Now the PDC project can be built and run in Github Codespace. You can also use VSCode Dev Container to develop PDC as long as you have VSCode and Docker installed on you local computer.
+Now the PDC project can be built and run in Github Codespace. For more information on how to create Github Codespace, please refer to `Github Codespace Documentation <https://docs.github.com/en/codespaces/developing-in-codespaces/creating-a-codespace>`_
+
+You can also use VSCode Dev Container to develop PDC as long as you have VSCode and Docker installed on you local computer. For more information on VSCode dev container, please refer to `Developing inside a Container <https://code.visualstudio.com/docs/devcontainers/containers>`_ .
 
 When you create a code space, you can find your PDC project in `/workspaces/pdc` directory. 
 And, you can find your PDC project and its dependencies in `/home/project` directory, you will see the same directory structure there as described in our standalone installation guide.  
 
-Since you are using the same PDC dev_base docker image, everything should be the same as the docker support described above.
+Since you are using the same PDC dev_base docker image, everything should be the same as in the docker support described above.
+
 
 ------------------------------------------------
 Maintaining Docker Image
 ------------------------------------------------
 
 We currently only support to architectures, amd64 and arm64v8. 
-To build the docker image, you can run the following command in the root directory of PDC project:
+To build the architecture-specific docker image on the machine with specific CPU architecture, you can run the following command in the root directory of PDC project:
 
 .. code-block:: Bash
     .docker/publish_dev_base.sh <docker_registry_namespace> <version>
 
+If you run the above command on an ARM64v8 CPU (say, Apple Silicon Mac), it will generate an image named '<docker_registry_namespace>/pdc_dev_base:<version>-arm64v8'. 
+If you run the above command on any Intel X64/AMD x64 CPU (say, Microsoft surface or Apple Intel Mac, or an Intel CPU VM from AWS/Azure/GCP/OCI), it will generate an image named '<docker_registry_namespace>/pdc_dev_base:<version>-amd64'.
 Once the above is done, you can pick the image build machine with fastest network and run the following
 
 .. code-block:: Bash
     .docker/publish_dev_base.sh <docker_registry_namespace> <version> 1
 
 This will create a multi-arch image with both amd64 and arm64v8 architectures in your registry under your namespace. 
-
+All two different architecture-specific imagest will be linked to a manifest in your docker registry named '<docker_registry_namespace>/pdc_dev_base:latest'.
 
 ------------------------------------------------------------
 Tracking your memory consumption with each memory allocation
