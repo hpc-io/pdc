@@ -1623,6 +1623,32 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef ENABLE_SQLITE3
+static int
+sqlite_query_kvtag_callback(void* data, int argc, char** argv, char** colName) 
+{
+    pdc_sqlite3_query_t *query_data = (pdc_sqlite3_query_t*) data;
+
+    if (NULL != argv[0]) {
+        pdcid_t id = strtoull(argv[0], NULL, 10);
+        if (query_data->nobj >= query_data->nalloc) {
+            query_data->nalloc *= 2;
+            *query_data->obj_ids = realloc(*query_data->obj_ids, query_data->nalloc * sizeof(uint64_t));
+        }
+        (*query_data->obj_ids)[query_data->nobj] = id;
+        query_data->nobj += 1;
+        /* printf("SQLite3 found %s = %llu\n", colName[0], id); */
+    }
+    else {
+        printf("SQLite3 found nothing\n");
+        return 0;
+    }
+  
+    return 0; 
+}
+#endif
+
+
 perr_t
 PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
                                   uint32_t *n_meta, uint64_t **obj_ids)
@@ -1693,9 +1719,11 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
 #ifdef ENABLE_SQLITE3
         char  sql[TAG_LEN_MAX];
         char *errMessage = NULL;
+        pdc_sqlite3_query_t query_data;
+
         // Check if there is * in tag name
         if (NULL == strstr(in->name, "*")) {
-            sprintf(sql, "SELECT id FROM objects WHERE name = \'%s\';", in->name);
+            sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\';", in->name);
         }
         else {
             char *tmp_name = strdup(in->name);
@@ -1706,18 +1734,22 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                 current_pos  = strchr(current_pos, '*');
             }
 
-            sprintf(sql, "SELECT id FROM objects WHERE name LIKE \'%s\';", tmp_name);
+            sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\';", tmp_name);
             if (tmp_name)
                 free(tmp_name);
         }
 
+        *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
+        query_data.nobj = 0;
+        query_data.nalloc = 64;
+        query_data.obj_ids = obj_ids;
+
         // Construct a SQL query
-        /* sqlite3_exec(sqlite3_db_g, sql, sqlite3_callback, 0, &errMessage); */
-        sqlite3_exec(sqlite3_db_g, sql, NULL, 0, &errMessage);
+        sqlite3_exec(sqlite3_db_g, sql, sqlite_query_kvtag_callback, &query_data, &errMessage);
         if (errMessage)
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-            // TODO extract sqlite result
 
+        *n_meta = query_data.nobj;
 #else
         printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
 #endif
@@ -2720,7 +2752,7 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
         }
 
         // debug
-        printf("==PDC_SERVER[%d]: constructed SQL [%s]\n", pdc_server_rank_g, sql);
+        /* printf("==PDC_SERVER[%d]: constructed SQL [%s]\n", pdc_server_rank_g, sql); */
         sqlite3_exec(sqlite3_db_g, sql, NULL, 0, &errMessage);
 
         if (errMessage)
@@ -2852,13 +2884,13 @@ sqlite_get_kvtag_callback(void *data, int argc, char **argv, char **colName)
             }
             else if (0 == strcmp(colName[i], "value_text")) {
                 out->value = strdup(argv[i]);
-                printf("SQLite3 found %s = %s\n", colName[i], argv[i]);
+                /* printf("SQLite3 found %s = %s\n", colName[i], argv[i]); */
                 out->size = strlen(argv[i]) + 1;
                 break;
             }
             else {
                 out->value = NULL;
-                printf("SQLite3 found nothing\n");
+                /* printf("SQLite3 found nothing\n"); */
                 return 0;
             }
         }
@@ -2930,7 +2962,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
                 "objid = %llu AND name = \'%s\';",
                 in->obj_id, in->key);
 
-        printf("==PDC_SERVER[%d]: get kvtag [%s]!\n", pdc_server_rank_g, in->key);
+        /* printf("==PDC_SERVER[%d]: get kvtag [%s]!\n", pdc_server_rank_g, in->key); */
         sqlite3_exec(sqlite3_db_g, sql, sqlite_get_kvtag_callback, &out->kvtag, &errMessage);
         if (errMessage) {
             printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
