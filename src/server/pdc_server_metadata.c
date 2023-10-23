@@ -2859,27 +2859,27 @@ sqlite_get_kvtag_callback(void *data, int argc, char **argv, char **colName)
     for (int i = 0; i < argc; i++) {
         if (NULL != argv[i]) {
             if (0 == strcmp(colName[i], "value_int")) {
-                int *int_tmp = (int *)malloc(sizeof(int));
-                *int_tmp     = atoi(argv[i]);
-                out->value   = (void *)int_tmp;
-                out->size    = sizeof(int);
-                printf("SQLite3 found %s = %d\n", colName[i], int_tmp);
+                int *int_tmp = (int*)malloc(sizeof(int));
+                *int_tmp = atoi(argv[i]);
+                out->value = (void*)int_tmp;
+                out->size = sizeof(int);
+                /* printf("SQLite3 found %s = %d\n", colName[i], int_tmp); */
                 break;
             }
             else if (0 == strcmp(colName[i], "value_real")) {
-                float *float_tmp = (float *)malloc(sizeof(float));
-                *float_tmp       = (float)atof(argv[i]);
-                out->value       = (void *)float_tmp;
-                out->size        = sizeof(float);
-                printf("SQLite3 found %s = %f\n", colName[i], float_tmp);
+                float *float_tmp = (float*)malloc(sizeof(float));
+                *float_tmp = (float)atof(argv[i]);
+                out->value = (void*)float_tmp;
+                out->size = sizeof(float);
+                /* printf("SQLite3 found %s = %f\n", colName[i], float_tmp); */
                 break;
             }
             else if (0 == strcmp(colName[i], "value_double")) {
-                double *double_tmp = (double *)malloc(sizeof(double));
-                *double_tmp        = atof(argv[i]);
-                out->value         = (void *)double_tmp;
-                out->size          = sizeof(double);
-                printf("SQLite3 found %s = %f\n", colName[i], double_tmp);
+                double *double_tmp = (double*)malloc(sizeof(double));
+                *double_tmp = atof(argv[i]);
+                out->value = (void*)double_tmp;
+                out->size = sizeof(double);
+                /* printf("SQLite3 found %s = %f\n", colName[i], double_tmp); */
                 break;
             }
             else if (0 == strcmp(colName[i], "value_text")) {
