@@ -1625,9 +1625,9 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
 
 #ifdef ENABLE_SQLITE3
 static int
-sqlite_query_kvtag_callback(void* data, int argc, char** argv, char** colName) 
+sqlite_query_kvtag_callback(void *data, int argc, char **argv, char **colName)
 {
-    pdc_sqlite3_query_t *query_data = (pdc_sqlite3_query_t*) data;
+    pdc_sqlite3_query_t *query_data = (pdc_sqlite3_query_t *)data;
 
     if (NULL != argv[0]) {
         pdcid_t id = strtoull(argv[0], NULL, 10);
@@ -1643,11 +1643,10 @@ sqlite_query_kvtag_callback(void* data, int argc, char** argv, char** colName)
         printf("SQLite3 found nothing\n");
         return 0;
     }
-  
-    return 0; 
+
+    return 0;
 }
 #endif
-
 
 perr_t
 PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
@@ -1717,8 +1716,8 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     else if (use_sqlite3_g) {
         // SQLite3
 #ifdef ENABLE_SQLITE3
-        char  sql[TAG_LEN_MAX];
-        char *errMessage = NULL;
+        char                sql[TAG_LEN_MAX];
+        char *              errMessage = NULL;
         pdc_sqlite3_query_t query_data;
 
         // Check if there is * in tag name
@@ -1739,9 +1738,9 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                 free(tmp_name);
         }
 
-        *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
-        query_data.nobj = 0;
-        query_data.nalloc = 64;
+        *obj_ids           = (void *)calloc(alloc_size, sizeof(uint64_t));
+        query_data.nobj    = 0;
+        query_data.nalloc  = 64;
         query_data.obj_ids = obj_ids;
 
         // Construct a SQL query
@@ -2859,26 +2858,26 @@ sqlite_get_kvtag_callback(void *data, int argc, char **argv, char **colName)
     for (int i = 0; i < argc; i++) {
         if (NULL != argv[i]) {
             if (0 == strcmp(colName[i], "value_int")) {
-                int *int_tmp = (int*)malloc(sizeof(int));
-                *int_tmp = atoi(argv[i]);
-                out->value = (void*)int_tmp;
-                out->size = sizeof(int);
+                int *int_tmp = (int *)malloc(sizeof(int));
+                *int_tmp     = atoi(argv[i]);
+                out->value   = (void *)int_tmp;
+                out->size    = sizeof(int);
                 /* printf("SQLite3 found %s = %d\n", colName[i], int_tmp); */
                 break;
             }
             else if (0 == strcmp(colName[i], "value_real")) {
-                float *float_tmp = (float*)malloc(sizeof(float));
-                *float_tmp = (float)atof(argv[i]);
-                out->value = (void*)float_tmp;
-                out->size = sizeof(float);
+                float *float_tmp = (float *)malloc(sizeof(float));
+                *float_tmp       = (float)atof(argv[i]);
+                out->value       = (void *)float_tmp;
+                out->size        = sizeof(float);
                 /* printf("SQLite3 found %s = %f\n", colName[i], float_tmp); */
                 break;
             }
             else if (0 == strcmp(colName[i], "value_double")) {
-                double *double_tmp = (double*)malloc(sizeof(double));
-                *double_tmp = atof(argv[i]);
-                out->value = (void*)double_tmp;
-                out->size = sizeof(double);
+                double *double_tmp = (double *)malloc(sizeof(double));
+                *double_tmp        = atof(argv[i]);
+                out->value         = (void *)double_tmp;
+                out->size          = sizeof(double);
                 /* printf("SQLite3 found %s = %f\n", colName[i], double_tmp); */
                 break;
             }

@@ -88,8 +88,8 @@ typedef struct pdc_cont_hash_table_entry_t {
 #ifdef ENABLE_SQLITE3
 typedef struct pdc_sqlite3_query_t {
     pdcid_t **obj_ids;
-    int      nobj;
-    int      nalloc;
+    int       nobj;
+    int       nalloc;
 } pdc_sqlite3_query_t;
 #endif
 
