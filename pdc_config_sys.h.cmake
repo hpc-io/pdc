@@ -12,11 +12,23 @@
 /* Define if you want to enable server cache */
 #cmakedefine PDC_SERVER_CACHE
 
+/* Define the max region cache size in GB */
+#cmakedefine PDC_SERVER_CACHE_MAX_GB @PDC_SERVER_CACHE_MAX_GB@
+
+/* Define region cache flush time interval */
+#cmakedefine PDC_SERVER_CACHE_FLUSH_TIME @PDC_SERVER_CACHE_FLUSH_TIME@
+
 /* Define if you want to enable checkpoint */
 #cmakedefine PDC_ENABLE_CHECKPOINT
 
 /* Define if you want to enable profiling */
 #cmakedefine ENABLE_PROFILING
+
+/* Define if you want to enable DART_SUFFIX_TREE mode */
+#cmakedefine PDC_DART_SFX_TREE
+
+/* Define if you want to enable Julia */
+#cmakedefine PDC_ENABLE_JULIA
 
 /* Define if you want to enable multithread */
 #cmakedefine ENABLE_MULTITHREAD

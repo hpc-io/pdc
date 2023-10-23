@@ -1,6 +1,7 @@
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR}/helper/include
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_BINARY_DIR}
   ${PDC_SOURCE_DIR}
@@ -8,6 +9,21 @@ include_directories(
   $ENV{HOME}/Sandbox/c-blosc/blosc
   $ENV{HOME}/include
 )
+
+# *************************************************
+# Julia Support
+# *************************************************
+if (PDC_ENABLE_JULIA)
+  include_directories(${JULIA_INCLUDE_DIRS})
+endif(PDC_ENABLE_JULIA)
+
+# *************************************************
+# *  Find UUID library
+# *************************************************
+find_package(UUID REQUIRED)
+if(UUID_FOUND)
+  include_directories(${UUID_INCLUDE_DIRS})
+endif(UUID_FOUND)
 
 set(PROGRAMS
   pdc_init
@@ -63,8 +79,6 @@ set(PROGRAMS
 #  data_server_meta_test
  kvtag_add_get
 #  kvtag_get
- kvtag_add_get_benchmark
- kvtag_add_get_scale
 #  kvtag_query
  kvtag_query_scale
 #  obj_transformation
@@ -105,10 +119,68 @@ set(PROGRAMS
   query_data
   )
 
+set(MPI_PROGRAMS
+ kvtag_query_scale_col
+ kvtag_query_mpi
+ kvtag_add_get_benchmark
+ kvtag_add_get_scale
+ )
+
+set(TEST_EXT_LIB "")
+set(TEST_EXT_INCLUDE_DIRS "")
+set(EXTRA_SRC_FILE "")
+
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
-  target_link_libraries(${program} pdc)
+  target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
+  target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
 endforeach(program)
+
+if(BUILD_MPI_TESTING)
+  foreach(program ${MPI_PROGRAMS})
+    add_executable(${program} ${program}.c)
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
+    endif()
+    target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
+    target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+  endforeach(program)
+endif()
+
+
+if(UUID_FOUND)
+  message(STATUS "UUID library found: ${UUID_LIBRARIES}")
+  message(STATUS "UUID include directory: ${UUID_INCLUDE_DIRS}")
+  set(ENHANCED_PROGRAMS 
+  dart_algo_sim
+  dart_attr_dist_test
+  dart_func_test
+  dart_test
+  )
+
+  set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES})
+  set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/helper/include)
+
+  set(EXTRA_SRC_FILE "")
+  if (PDC_ENABLE_JULIA)
+    list(APPEND EXTRA_SRC_FILE
+      ${CMAKE_CURRENT_SOURCE_DIR}/helper/julia_helper_loader.c
+    )
+    list(APPEND TEST_EXT_LIB
+      ${JULIA_LIBRARIES}
+    )
+    list(APPEND TEST_EXT_INCLUDE_DIRS
+      ${JULIA_INCLUDE_DIRS}
+    )
+  endif(PDC_ENABLE_JULIA)
+
+  foreach(program ${ENHANCED_PROGRAMS})
+    add_executable(${program} ${program}.c ${EXTRA_SRC_FILE})
+    target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
+    target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+  endforeach(program)
+endif(UUID_FOUND)
+
 
 set(SCRIPTS
   run_test.sh
@@ -358,7 +430,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME region_transfer_all3_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all ${MPI_RUN_CMD} 4 6 0 0)
     add_test(NAME region_transfer_all3_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_2D ${MPI_RUN_CMD} 4 6 0 0)
     add_test(NAME region_transfer_all3_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_3D ${MPI_RUN_CMD} 4 6 0 0)
-    add_test(NAME region_transfer_all_append3_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 4 60 0)
+    add_test(NAME region_transfer_all_append3_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append ${MPI_RUN_CMD} 4 6 0 0)
     add_test(NAME region_transfer_all_append3_2D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_2D ${MPI_RUN_CMD} 4 6 0 0)
     add_test(NAME region_transfer_all_append3_3D_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all_append_3D ${MPI_RUN_CMD} 4 6 0 0)
     add_test(NAME region_transfer_all4_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./region_transfer_all ${MPI_RUN_CMD} 4 6 1 0)

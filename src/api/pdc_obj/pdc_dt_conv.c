@@ -34,10 +34,10 @@ PDC_UNKNOWN      = -1,
 PDC_INT          = 0,
 PDC_FLOAT        = 1,
 PDC_DOUBLE       = 2,
-PDC_STRING       = 3,
-PDC_COMPOUND     = 4,
-PDC_ENUM         = 5,
-PDC_ARRAY        = 6,
+PDC_CHAR         = 3,
+PDC_STRING       = 4,
+PDC_BOOLEAN      = 5,
+PDC_SHORT        = 6,
 */
 
 /* Called if overflow is possible */

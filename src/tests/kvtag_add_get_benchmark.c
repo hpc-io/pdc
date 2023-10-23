@@ -220,7 +220,8 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
         v = i + my_obj_s;
         for (j = 0; j < n_attr; j++) {
             sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", v, j);
-            if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)tag_values[j], tag_value_len + 1) < 0)
+            if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)tag_values[j], PDC_STRING, tag_value_len + 1) <
+                0)
                 printf("fail to add a kvtag to o%" PRIu64 "\n", v);
         }
     }
@@ -238,12 +239,13 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
 void
 get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, uint64_t n_attr, void **tag_values, uint64_t *value_size)
 {
-    uint64_t i;
-    char     tag_name[256];
+    uint64_t       i;
+    char           tag_name[256];
+    pdc_var_type_t tag_type;
 
     for (i = 0; i < n_attr; i++) {
         sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", obj_name_v, i);
-        if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], (void *)&value_size[i]) < 0)
+        if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], &tag_type, (void *)&value_size[i]) < 0)
             printf("fail to get a kvtag from o%" PRIu64 "\n", obj_name_v);
     }
 }
@@ -293,12 +295,12 @@ check_and_release_query_result(uint64_t n_query, uint64_t my_obj, uint64_t my_ob
         }
     }
     free(values);
-    // close  objects
-    for (i = 0; i < my_obj; i++) {
-        v = i + my_obj_s;
-        if (PDCobj_close(obj_ids[i]) < 0)
-            printf("fail to close object o%" PRIu64 "\n", v);
-    }
+    // FIXME: close  objects. This is currently commented off to save node hours for benchmarks.
+    // for (i = 0; i < my_obj; i++) {
+    //     v = i + my_obj_s;
+    //     if (PDCobj_close(obj_ids[i]) < 0)
+    //         printf("fail to close object o%" PRIu64 "\n", v);
+    // }
 }
 
 void
@@ -399,12 +401,12 @@ main(int argc, char *argv[])
 
         if (my_rank == 0) {
             printf("Iteration %" PRIu64 " : Objects: %" PRIu64
-                   " , Time: %.4f sec. Object throughput in this iteration: "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Object throughput in this iteration: "
+                   "%.5e .\n",
                    k, n_obj_incr, step_elapse, ((double)n_obj_incr) / step_elapse);
             printf("Overall   %" PRIu64 " : Objects: %" PRIu64
-                   " , Time: %.4f sec. Overall object throughput:           "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Overall object throughput:           "
+                   "%.5e .\n",
                    k, total_object_count, total_object_time,
                    ((double)total_object_count) / total_object_time);
         }
@@ -424,10 +426,10 @@ main(int argc, char *argv[])
 #endif
         if (my_rank == 0) {
             printf("Iteration %" PRIu64 " : Tags: %" PRIu64
-                   " , Time: %.4f sec. Tag throughput in this iteration: %.4f .\n",
+                   " , Time: %.5e sec. Tag throughput in this iteration: %.5e .\n",
                    k, n_obj_incr * n_attr, step_elapse, (double)(n_obj_incr * n_attr) / step_elapse);
             printf("Overall   %" PRIu64 " : Tags: %" PRIu64
-                   " , Time: %.4f sec. Overall tag throughput:           %.4f .\n",
+                   " , Time: %.5e sec. Overall tag throughput:           %.5e .\n",
                    k, total_tag_count, total_tag_time, ((double)total_tag_count) / total_tag_time);
         }
 
@@ -448,12 +450,12 @@ main(int argc, char *argv[])
 #endif
         if (my_rank == 0) {
             printf("Iteration %" PRIu64 " : Queries: %" PRIu64
-                   " , Time: %.4f sec. Query throughput in this iteration: "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Query throughput in this iteration: "
+                   "%.5e .\n",
                    k, n_query * n_attr, step_elapse, (double)(n_query * n_attr) / step_elapse);
             printf("Overall   %" PRIu64 " : Queries: %" PRIu64
-                   " , Time: %.4f sec. Overall query throughput:           "
-                   "%.4f .\n",
+                   " , Time: %.5e sec. Overall query throughput:           "
+                   "%.5e .\n",
                    k, total_query_count, total_query_time, ((double)total_query_count) / total_query_time);
         }
 
@@ -468,13 +470,13 @@ main(int argc, char *argv[])
 
     if (my_rank == 0) {
         printf("Final Report: \n");
-        printf("[Final Report 1] Servers: %" PRIu64 " , Clients: %" PRIu64 " , C/S ratio: %.4f \n", n_servers,
+        printf("[Final Report 1] Servers: %" PRIu64 " , Clients: %" PRIu64 " , C/S ratio: %.5e \n", n_servers,
                n_clients, (double)n_clients / (double)n_servers);
         printf("[Final Report 2] Iterations: %" PRIu64 " ,  Objects: %" PRIu64 " , Tags/Object: %" PRIu64
                " ,  Queries/Iteration: "
                "%" PRIu64 " , \n",
                k, total_object_count, n_attr, n_query);
-        printf("[Final Report 3] Object throughput: %.4f , Tag Throughput: %.4f , Query Throughput: %.4f ,",
+        printf("[Final Report 3] Object throughput: %.5e , Tag Throughput: %.5e , Query Throughput: %.5e ,",
                (double)total_object_count / total_object_time,
                (double)(total_object_count * n_attr) / total_tag_time,
                (double)(total_query_count * n_attr) / total_query_time);
@@ -486,7 +488,9 @@ main(int argc, char *argv[])
     free(tag_values);
     free(obj_ids);
 
-    closePDC(pdc, cont_prop, cont, obj_prop);
+    // FIXME: the following is currently commented off to reduce node hours taken by time-consuming resource
+    // releasing procedure.
+    // closePDC(pdc, cont_prop, cont, obj_prop);
 
 done:
 #ifdef ENABLE_MPI

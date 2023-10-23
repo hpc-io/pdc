@@ -78,14 +78,13 @@ pdc_task_list_t *pdc_server_agg_task_head_g = NULL;
 pdc_task_list_t *pdc_server_s2s_task_head_g = NULL;
 int              pdc_server_task_id_g       = PDC_SERVER_TASK_INIT_VALUE;
 
-pdc_client_info_t *       pdc_client_info_g         = NULL;
-pdc_remote_server_info_t *pdc_remote_server_info_g  = NULL;
-char *                    all_addr_strings_1d_g     = NULL;
-char **                   all_addr_strings_g        = NULL;
-int                       is_all_client_connected_g = 0;
-int                       is_hash_table_init_g      = 0;
-int                       lustre_stripe_size_mb_g   = 16;
-int                       lustre_total_ost_g        = 0;
+pdc_client_info_t *       pdc_client_info_g        = NULL;
+pdc_remote_server_info_t *pdc_remote_server_info_g = NULL;
+char *                    all_addr_strings_1d_g    = NULL;
+char **                   all_addr_strings_g       = NULL;
+int                       is_hash_table_init_g     = 0;
+int                       lustre_stripe_size_mb_g  = 16;
+int                       lustre_total_ost_g       = 0;
 
 hg_id_t get_remote_metadata_register_id_g;
 hg_id_t buf_map_server_register_id_g;
@@ -112,7 +111,7 @@ extern hg_thread_pool_t *hg_test_thread_pool_g;
 extern hg_thread_pool_t *hg_test_thread_pool_fs_g;
 
 hg_atomic_int32_t close_server_g;
-char              pdc_server_tmp_dir_g[ADDR_MAX];
+char              pdc_server_tmp_dir_g[TMP_DIR_STRING_LEN];
 int               is_restart_g                 = 0;
 int               pdc_server_rank_g            = 0;
 int               pdc_server_size_g            = 1;
@@ -265,13 +264,15 @@ PDC_Server_get_client_addr(const struct hg_cb_info *callback_info)
     hg_thread_mutex_lock(&pdc_client_addr_mutex_g);
 #endif
 
-    if (is_all_client_connected_g == 1) {
-        printf("==PDC_SERVER[%d]: new application run detected, create new client info\n", pdc_server_rank_g);
-        fflush(stdout);
+    if (pdc_client_info_g && in->is_init == 1) {
+        if (is_debug_g && pdc_server_rank_g == 0) {
+            printf("==PDC_SERVER[%d]: new application run detected, create new client info\n",
+                   pdc_server_rank_g);
+            fflush(stdout);
+        }
 
         PDC_Server_destroy_client_info(pdc_client_info_g);
-        pdc_client_info_g         = NULL;
-        is_all_client_connected_g = 0;
+        pdc_client_info_g = NULL;
     }
 
 #ifdef ENABLE_MULTITHREAD
@@ -692,8 +693,8 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     perr_t              ret_value = SUCCEED;
     int                 i         = 0;
     char                self_addr_string[ADDR_MAX];
-    char                na_info_string[ADDR_MAX];
-    char                hostname[1024];
+    char                na_info_string[NA_STRING_INFO_LEN];
+    char                hostname[HOSTNAME_LEN];
     struct hg_init_info init_info = {0};
 
     /* Set the default mercury transport
@@ -727,9 +728,9 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
         hg_transport = default_hg_transport;
     }
-    memset(hostname, 0, 1024);
-    gethostname(hostname, 1023);
-    snprintf(na_info_string, ADDR_MAX, "%s://%s:%d", hg_transport, hostname, port);
+    memset(hostname, 0, HOSTNAME_LEN);
+    gethostname(hostname, HOSTNAME_LEN - 1);
+    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_server_rank_g == 0)
         printf("==PDC_SERVER[%d]: using %.7s\n", pdc_server_rank_g, na_info_string);
 
@@ -903,6 +904,9 @@ drc_access_again:
     hg_atomic_set32(&close_server_g, 0);
 
     n_metadata_g = 0;
+
+    // Initialize DART
+    PDC_Server_dart_init();
 
     // PDC transfer_request infrastructures
     PDC_server_transfer_request_init();
@@ -1223,6 +1227,7 @@ PDC_Server_checkpoint()
                 fwrite(&key_len, sizeof(int), 1, file);
                 fwrite(kvlist_elt->kvtag->name, key_len, 1, file);
                 fwrite(&kvlist_elt->kvtag->size, sizeof(uint32_t), 1, file);
+                fwrite(&kvlist_elt->kvtag->type, sizeof(int8_t), 1, file);
                 fwrite(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size, 1, file);
             }
 
@@ -1401,9 +1406,6 @@ PDC_Server_restart(char *filename)
         printf("Error getting slurm job id from SLURM_JOB_ID!\n");
     }
 
-    // init hash table
-    PDC_Server_init_hash_table();
-
     if (fread(&n_cont, sizeof(int), 1, file) != 1) {
         printf("Read failed for n_count\n");
     }
@@ -1490,6 +1492,9 @@ PDC_Server_restart(char *filename)
                 }
                 if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) {
                     printf("Read failed for kvtag_list->kvtag->size\n");
+                }
+                if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) {
+                    printf("Read failed for kvtag_list->kvtag->type\n");
                 }
                 kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                 if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {
@@ -1951,6 +1956,10 @@ PDC_Server_mercury_register()
     PDC_region_transform_release_register(hg_class_g);
     PDC_region_analysis_release_register(hg_class_g);
 
+    // DART Index
+    PDC_dart_get_server_info_register(hg_class_g);
+    PDC_dart_perform_one_server_register(hg_class_g);
+
     // Server to client RPC
     server_lookup_client_register_id_g = PDC_server_lookup_client_register(hg_class_g);
     notify_io_complete_register_id_g   = PDC_notify_io_complete_register(hg_class_g);
@@ -1988,7 +1997,7 @@ PDC_Server_get_env()
     if (tmp_env_char == NULL)
         tmp_env_char = "./pdc_tmp";
 
-    snprintf(pdc_server_tmp_dir_g, ADDR_MAX, "%s/", tmp_env_char);
+    snprintf(pdc_server_tmp_dir_g, TMP_DIR_STRING_LEN, "%s/", tmp_env_char);
 
     lustre_total_ost_g = 1;
 #ifdef ENABLE_LUSTRE
@@ -2070,16 +2079,8 @@ PDC_Server_get_env()
     }
 }
 
-/*
- * Main function of PDC server
- *
- * \param  argc[IN]     Number of command line arguments
- * \param  argv[IN]     Command line arguments
- *
- * \return Non-negative on success/Negative on failure
- */
 int
-main(int argc, char *argv[])
+server_run(int argc, char *argv[])
 {
     int    port;
     perr_t ret;

@@ -124,7 +124,7 @@ main(int argc, char **argv)
     ht_total_sec = ht_total_elapsed / 1000000.0;
 
     if (rank == 0) {
-        printf("Time to write data with %d ranks: %.6f\n", size, ht_total_sec);
+        printf("Time to write data with %d ranks: %.5e\n", size, ht_total_sec);
         fflush(stdout);
     }
 

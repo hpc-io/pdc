@@ -25,6 +25,7 @@
 #ifndef PDC_HIST_H
 #define PDC_HIST_H
 
+#include "pdc_private.h"
 #include "pdc_public.h"
 #include "math.h"
 #include <inttypes.h>

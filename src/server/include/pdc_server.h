@@ -191,4 +191,13 @@ hg_return_t PDC_Server_checkpoint_cb();
  */
 hg_return_t PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info);
 
+/**
+ * This is for main function in the executable to call.
+ *
+ * \param  argc[IN]     Number of command line arguments
+ * \param  argv[IN]     Command line arguments
+ * \return Non-negative on success/Negative on failure
+ */
+int server_run(int argc, char *argv[]);
+
 #endif /* PDC_SERVER_H */

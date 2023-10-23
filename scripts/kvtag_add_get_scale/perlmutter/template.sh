@@ -3,11 +3,11 @@
 #REGSBATCH -q regular
 #DBGSBATCH -q debug
 #SBATCH -N NODENUM
-#REGSBATCH -t 4:00:00
+#REGSBATCH -t 1:00:00
 #DBGSBATCH -t 0:30:00
 #SBATCH -C cpu
 #SBATCH -J JOBNAME
-#SBATCH -A m2621
+#SBATCH -A PROJNAME
 #SBATCH -o o%j.JOBNAME.out
 #SBATCH -e o%j.JOBNAME.out
 
@@ -21,6 +21,7 @@ REPEAT=1
 
 N_NODE=NODENUM
 NCLIENT=31
+# NCLIENT=126
 
 export PDC_TMPDIR=${PDC_TMPDIR}/$N_NODE
 mkdir -p $PDC_TMPDIR
@@ -45,19 +46,19 @@ echo ""
 echo "============="
 echo "$i Init server"
 echo "============="
-srun -N $N_NODE -n $N_NODE -c 2 --mem=128000 --cpu_bind=cores stdbuf -i0 -o0 -e0 $SERVER  &
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $((N_NODE*1)) -c 2 --cpu_bind=cores $SERVER &
 sleep 5
 
 
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-srun -N $N_NODE -n $TOTALPROC -c 2 --mem=256000 --cpu_bind=cores stdbuf -i0 -o0 -e0 $CLIENT $NUM_OBJ $NUM_TAGS $NUM_QUERY
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $TOTALPROC -c 2 --cpu_bind=cores $CLIENT $NUM_OBJ $NUM_TAGS $NUM_QUERY
 
 echo ""
 echo "================="
 echo "$i Closing server"
 echo "================="
-srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores stdbuf -i0 -o0 -e0 $CLOSE
+stdbuf -i0 -o0 -e0 srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores $CLOSE
 
 date

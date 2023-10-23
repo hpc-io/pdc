@@ -27,6 +27,7 @@
 #include "pdc_malloc.h"
 #include "pdc_id_pkg.h"
 #include "pdc_cont.h"
+#include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_obj.h"
@@ -85,24 +86,24 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
         cont_info = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
         /* struct _pdc_cont_info field */
-        p->cont = PDC_CALLOC(struct _pdc_cont_info);
+        p->cont = PDC_CALLOC(1,struct _pdc_cont_info);
         if (!p->cont)
             PGOTO_ERROR(0, "PDC object container memory allocation failed");
         memcpy(p->cont, cont_info, sizeof(struct _pdc_cont_info));
 
-        p->cont->cont_info_pub = PDC_CALLOC(struct pdc_cont_info);
+        p->cont->cont_info_pub = PDC_CALLOC(1,struct pdc_cont_info);
         if (!p->cont->cont_info_pub)
             PGOTO_ERROR(0, "PDC object pub container memory allocation failed");
         memcpy(p->cont->cont_info_pub, cont_info->cont_info_pub, sizeof(struct pdc_cont_info));
         if (cont_info->cont_info_pub->name)
             p->cont->cont_info_pub->name = strdup(cont_info->cont_info_pub->name);
 
-        p->cont->cont_pt = PDC_CALLOC(struct _pdc_cont_prop);
+        p->cont->cont_pt = PDC_CALLOC(1,struct _pdc_cont_prop);
         if (!p->cont->cont_pt)
             PGOTO_ERROR(0, "PDC object container property memory allocation failed");
         memcpy(p->cont->cont_pt, cont_info->cont_pt, sizeof(struct _pdc_cont_prop));
 
-        p->cont->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+        p->cont->cont_pt->pdc = PDC_CALLOC(1,struct _pdc_class);
         if (!p->cont->cont_pt->pdc)
             PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed");
         p->cont->cont_pt->pdc->name     = strdup(cont_info->cont_pt->pdc->name);
@@ -114,20 +115,20 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
     obj_prop = (struct _pdc_obj_prop *)(id_info->obj_ptr);
 
     /* struct _pdc_obj_prop field */
-    p->obj_pt = PDC_CALLOC(struct _pdc_obj_prop);
+    p->obj_pt = PDC_CALLOC(1,struct _pdc_obj_prop);
     if (!p->obj_pt)
         PGOTO_ERROR(0, "PDC object property memory allocation failed");
     memcpy(p->obj_pt, obj_prop, sizeof(struct _pdc_obj_prop));
     if (obj_prop->app_name)
         p->obj_pt->app_name = strdup(obj_prop->app_name);
-    p->obj_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    p->obj_pt->pdc = PDC_CALLOC(1,struct _pdc_class);
     if (!p->obj_pt->pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     p->obj_pt->pdc->name     = strdup(obj_prop->pdc->name);
     p->obj_pt->pdc->local_id = obj_prop->pdc->local_id;
 
     /* struct pdc_obj_prop field */
-    p->obj_pt->obj_prop_pub = PDC_CALLOC(struct pdc_obj_prop);
+    p->obj_pt->obj_prop_pub = PDC_CALLOC(1,struct pdc_obj_prop);
     if (!p->obj_pt->obj_prop_pub)
         PGOTO_ERROR(0, "cannot allocate ret_value->obj_pt->obj_prop_pub");
     p->obj_pt->obj_prop_pub->ndim = obj_prop->obj_prop_pub->ndim;
@@ -155,7 +156,7 @@ PDCobj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id)
     if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create object on server!");
 
-    p->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
+    p->obj_info_pub->obj_pt = PDC_CALLOC(1,struct pdc_obj_prop);
     if (!p->obj_info_pub->obj_pt)
         PGOTO_ERROR(0, "PDC object prop memory allocation failed");
     memcpy(p->obj_info_pub->obj_pt, p->obj_pt->obj_prop_pub, sizeof(struct pdc_obj_prop));
@@ -253,13 +254,13 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         /* struct _pdc_cont_info field */
         cont_info = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
-        p->cont = PDC_CALLOC(struct _pdc_cont_info);
+        p->cont = PDC_CALLOC(1, struct _pdc_cont_info);
         if (!p->cont)
             PGOTO_ERROR(0, "PDC object container memory allocation failed");
         memcpy(p->cont, cont_info, sizeof(struct _pdc_cont_info));
 
         /* struct pdc_cont_info field */
-        p->cont->cont_info_pub = PDC_CALLOC(struct pdc_cont_info);
+        p->cont->cont_info_pub = PDC_CALLOC(1, struct pdc_cont_info);
         if (!p->cont->cont_info_pub)
             PGOTO_ERROR(0, "PDC object pub container memory allocation failed");
         memcpy(p->cont->cont_info_pub, cont_info->cont_info_pub, sizeof(struct pdc_cont_info));
@@ -267,13 +268,13 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
             p->cont->cont_info_pub->name = strdup(cont_info->cont_info_pub->name);
 
         /* struct _pdc_cont_prop field */
-        p->cont->cont_pt = PDC_CALLOC(struct _pdc_cont_prop);
+        p->cont->cont_pt = PDC_CALLOC(1, struct _pdc_cont_prop);
         if (!p->cont->cont_pt)
             PGOTO_ERROR(0, "PDC object container property memory allocation failed");
         memcpy(p->cont->cont_pt, cont_info->cont_pt, sizeof(struct _pdc_cont_prop));
 
         /* struct _pdc_class field */
-        p->cont->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+        p->cont->cont_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
         if (!p->cont->cont_pt->pdc)
             PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed");
         if (cont_info->cont_pt->pdc->name)
@@ -286,7 +287,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     obj_prop = (struct _pdc_obj_prop *)(id_info->obj_ptr);
 
     /* struct _pdc_obj_prop field */
-    p->obj_pt = PDC_CALLOC(struct _pdc_obj_prop);
+    p->obj_pt = PDC_CALLOC(1, struct _pdc_obj_prop);
     if (!p->obj_pt)
         PGOTO_ERROR(0, "PDC object property memory allocation failed");
     memcpy(p->obj_pt, obj_prop, sizeof(struct _pdc_obj_prop));
@@ -298,7 +299,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         p->obj_pt->tags = strdup(obj_prop->tags);
     p->obj_pt->locus = PDC_get_execution_locus();
 
-    p->obj_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    p->obj_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (!p->obj_pt->pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
     if (obj_prop->pdc->name)
@@ -306,7 +307,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     p->obj_pt->pdc->local_id = obj_prop->pdc->local_id;
 
     /* struct pdc_obj_prop field */
-    p->obj_pt->obj_prop_pub = PDC_CALLOC(struct pdc_obj_prop);
+    p->obj_pt->obj_prop_pub = PDC_CALLOC(1, struct pdc_obj_prop);
     if (!p->obj_pt->obj_prop_pub)
         PGOTO_ERROR(0, "cannot allocate ret_value->obj_pt->obj_prop_pub");
     p->obj_pt->obj_prop_pub->ndim = obj_prop->obj_prop_pub->ndim;
@@ -348,7 +349,7 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
                                             p->obj_pt->obj_prop_pub->region_partition,
                                             p->obj_pt->obj_prop_pub->consistency, p);
 
-    p->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
+    p->obj_info_pub->obj_pt = PDC_CALLOC(1, struct pdc_obj_prop);
     if (!p->obj_info_pub->obj_pt)
         PGOTO_ERROR(0, "PDC object prop memory allocation failed");
     memcpy(p->obj_info_pub->obj_pt, p->obj_pt->obj_prop_pub, sizeof(struct pdc_obj_prop));
@@ -539,31 +540,31 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     p = PDC_MALLOC(struct _pdc_obj_info);
     if (!p)
         PGOTO_ERROR(0, "PDC object memory allocation failed");
-    p->cont = PDC_CALLOC(struct _pdc_cont_info);
+    p->cont = PDC_CALLOC(1, struct _pdc_cont_info);
     if (!p->cont)
         PGOTO_ERROR(0, "PDC object container memory allocation failed");
-    p->cont->cont_info_pub = PDC_CALLOC(struct pdc_cont_info);
+    p->cont->cont_info_pub = PDC_CALLOC(1, struct pdc_cont_info);
     if (!p->cont->cont_info_pub)
         PGOTO_ERROR(0, "PDC object pub container memory allocation failed");
-    p->cont->cont_pt = PDC_CALLOC(struct _pdc_cont_prop);
+    p->cont->cont_pt = PDC_CALLOC(1, struct _pdc_cont_prop);
     if (!p->cont->cont_pt)
         PGOTO_ERROR(0, "PDC object container property memory allocation failed");
-    p->cont->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    p->cont->cont_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (!p->cont->cont_pt->pdc)
         PGOTO_ERROR(0, "PDC object container property pdc memory allocation failed");
-    p->obj_pt = PDC_CALLOC(struct _pdc_obj_prop);
+    p->obj_pt = PDC_CALLOC(1, struct _pdc_obj_prop);
     if (!p->obj_pt)
         PGOTO_ERROR(0, "PDC object property memory allocation failed");
-    p->obj_pt->obj_prop_pub = PDC_CALLOC(struct pdc_obj_prop);
+    p->obj_pt->obj_prop_pub = PDC_CALLOC(1, struct pdc_obj_prop);
     if (!p->obj_pt->obj_prop_pub)
         PGOTO_ERROR(0, "PDC object property memory allocation failed");
     p->obj_info_pub = PDC_MALLOC(struct pdc_obj_info);
     if (!p->obj_info_pub)
         PGOTO_ERROR(0, "PDC pub object memory allocation failed");
-    p->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
+    p->obj_info_pub->obj_pt = PDC_CALLOC(1, struct pdc_obj_prop);
     if (!p->obj_info_pub->obj_pt)
         PGOTO_ERROR(0, "PDC object prop memory allocation failed");
-    p->obj_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    p->obj_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (!p->obj_pt->pdc)
         PGOTO_ERROR(0, "cannot allocate ret_value->pdc");
 
@@ -737,12 +738,12 @@ PDCobj_iter_get_info(obj_handle *ohandle)
     if (info == NULL)
         PGOTO_ERROR(NULL, "PDC container info memory allocation failed");
 
-    ret_value = PDC_CALLOC(struct pdc_obj_info);
+    ret_value = PDC_CALLOC(1, struct pdc_obj_info);
     if (!ret_value)
         PGOTO_ERROR(NULL, "failed to allocate memory");
     memcpy(ret_value, info->obj_info_pub, sizeof(struct pdc_obj_info));
 
-    ret_value->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
+    ret_value->obj_pt = PDC_CALLOC(1, struct pdc_obj_prop);
     if (!ret_value->obj_pt)
         PGOTO_ERROR(NULL, "failed to allocate memory");
     memcpy(ret_value->obj_pt, info->obj_info_pub->obj_pt, sizeof(struct pdc_obj_prop));
@@ -1057,14 +1058,14 @@ PDC_obj_get_info(pdcid_t obj_id)
         PGOTO_ERROR(NULL, "cannot locate object");
 
     info      = (struct _pdc_obj_info *)(obj->obj_ptr);
-    ret_value = PDC_CALLOC(struct _pdc_obj_info);
+    ret_value = PDC_CALLOC(1, struct _pdc_obj_info);
     if (ret_value)
         memcpy(ret_value, info, sizeof(struct _pdc_obj_info));
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value");
 
     /* struct pdc_obj_info field */
-    ret_value->obj_info_pub = PDC_CALLOC(struct pdc_obj_info);
+    ret_value->obj_info_pub = PDC_CALLOC(1, struct pdc_obj_info);
     if (ret_value->obj_info_pub)
         memcpy(ret_value->obj_info_pub, info->obj_info_pub, sizeof(struct pdc_obj_info));
     else
@@ -1074,7 +1075,7 @@ PDC_obj_get_info(pdcid_t obj_id)
     else
         ret_value->obj_info_pub->name = NULL;
 
-    ret_value->obj_info_pub->obj_pt = PDC_CALLOC(struct pdc_obj_prop);
+    ret_value->obj_info_pub->obj_pt = PDC_CALLOC(1, struct pdc_obj_prop);
     if (!ret_value->obj_info_pub->obj_pt)
         PGOTO_ERROR(NULL, "failed to allocate memory");
     memcpy(ret_value->obj_info_pub->obj_pt, info->obj_info_pub->obj_pt, sizeof(struct pdc_obj_prop));
@@ -1088,13 +1089,13 @@ PDC_obj_get_info(pdcid_t obj_id)
     ret_value->metadata = NULL;
 
     // fill in struct _pdc_cont_info field in ret_value->cont
-    ret_value->cont = PDC_CALLOC(struct _pdc_cont_info);
+    ret_value->cont = PDC_CALLOC(1, struct _pdc_cont_info);
     if (ret_value->cont)
         memcpy(ret_value->cont, info->cont, sizeof(struct _pdc_cont_info));
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value->cont");
 
-    ret_value->cont->cont_info_pub = PDC_CALLOC(struct pdc_cont_info);
+    ret_value->cont->cont_info_pub = PDC_CALLOC(1, struct pdc_cont_info);
     if (ret_value->cont->cont_info_pub)
         memcpy(ret_value->cont->cont_info_pub, info->cont->cont_info_pub, sizeof(struct pdc_cont_info));
     else
@@ -1104,12 +1105,12 @@ PDC_obj_get_info(pdcid_t obj_id)
     else
         ret_value->cont->cont_info_pub->name = NULL;
 
-    ret_value->cont->cont_pt = PDC_CALLOC(struct _pdc_cont_prop);
+    ret_value->cont->cont_pt = PDC_CALLOC(1, struct _pdc_cont_prop);
     if (ret_value->cont->cont_pt)
         memcpy(ret_value->cont->cont_pt, info->cont->cont_pt, sizeof(struct _pdc_cont_prop));
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value->cont->cont_pt");
-    ret_value->cont->cont_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    ret_value->cont->cont_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (ret_value->cont->cont_pt->pdc) {
         ret_value->cont->cont_pt->pdc->local_id = info->cont->cont_pt->pdc->local_id;
         if (info->cont->cont_pt->pdc->name)
@@ -1121,12 +1122,12 @@ PDC_obj_get_info(pdcid_t obj_id)
         PGOTO_ERROR(NULL, "cannot allocate ret_value->cont->cont_pt->pdc");
 
     // fill in struct _pdc_obj_prop field in ret_value->obj_pt
-    ret_value->obj_pt = PDC_CALLOC(struct _pdc_obj_prop);
+    ret_value->obj_pt = PDC_CALLOC(1, struct _pdc_obj_prop);
     if (ret_value->obj_pt)
         memcpy(ret_value->obj_pt, info->obj_pt, sizeof(struct _pdc_obj_prop));
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value->obj_pt");
-    ret_value->obj_pt->pdc = PDC_CALLOC(struct _pdc_class);
+    ret_value->obj_pt->pdc = PDC_CALLOC(1, struct _pdc_class);
     if (ret_value->obj_pt->pdc) {
         ret_value->obj_pt->pdc->local_id = info->obj_pt->pdc->local_id;
         if (info->obj_pt->pdc->name)
@@ -1137,7 +1138,7 @@ PDC_obj_get_info(pdcid_t obj_id)
     else
         PGOTO_ERROR(NULL, "cannot allocate ret_value->obj_pt->pdc");
 
-    ret_value->obj_pt->obj_prop_pub = PDC_CALLOC(struct pdc_obj_prop);
+    ret_value->obj_pt->obj_prop_pub = PDC_CALLOC(1, struct pdc_obj_prop);
     if (ret_value->obj_pt->obj_prop_pub)
         memcpy(ret_value->obj_pt->obj_prop_pub, info->obj_pt->obj_prop_pub, sizeof(struct pdc_obj_prop));
     else
@@ -1235,9 +1236,7 @@ PDCobj_get_info(pdcid_t obj_id)
     /* obj_id = PDC_find_byname(PDC_OBJ, obj_name); */
 
     tmp = PDC_obj_get_info(obj_id);
-
-    ret_value = PDC_CALLOC(struct pdc_obj_info);
-    if (!ret_value)
+    if (NULL == tmp)
         PGOTO_ERROR(NULL, "failed to allocate memory");
 
     ret_value = tmp->obj_info_pub;

@@ -36,8 +36,8 @@
 
 #define MAX_SERVER_NUM 1024
 
-static hg_id_t gen_obj_id_client_id_g;
-static int     work_todo_g = 0;
+static hg_id_t           gen_obj_id_client_id_g;
+static hg_atomic_int32_t atomic_work_todo_g;
 
 int
 PDC_Client_read_server_addr_from_file(char target_addr_string[MAX_SERVER_NUM][PATH_MAX])
@@ -79,7 +79,7 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
     /* printf("Return value=%llu\n", output.ret); */
     client_lookup_args->obj_id = output.ret;
 
-    work_todo_g--;
+    hg_atomic_decr32(&atomic_work_todo_g);
     return HG_SUCCESS;
 }
 
@@ -153,7 +153,7 @@ PDC_Client_check_response(hg_context_t **hg_context)
 
         /* printf("actual_count=%d\n",actual_count); */
         /* Do not try to make progress anymore if we're done */
-        if (work_todo_g <= 0)
+        if (hg_atomic_get32(&atomic_work_todo_g) <= 0)
             break;
 
         hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
@@ -209,13 +209,13 @@ main(int argc, char **argv)
         printf("Error with Mercury Init, exiting...\n");
         exit(0);
     }
+    hg_atomic_init32(&atomic_work_todo_g, 0);
 
     // Obj name and ID
     char **test_obj_names = (char **)malloc(sizeof(char *) * n_server);
     for (i = 0; i < n_server; i++)
         test_obj_names[i] = (char *)malloc(sizeof(char) * 128);
 
-    work_todo_g = 0;
     struct client_lookup_args *client_lookup_args =
         (struct client_lookup_args *)malloc(sizeof(struct client_lookup_args) * n_server);
 
@@ -227,7 +227,7 @@ main(int argc, char **argv)
         client_lookup_args[i].obj_name   = test_obj_names[i];
         client_lookup_args[i].obj_id     = -1;
 
-        work_todo_g++;
+        hg_atomic_incr32(&atomic_work_todo_g);
         printf("Target addr:%s\n", target_addr_string[i]);
         send_name_recv_id(&client_lookup_args[i], target_addr_string[i]);
     }
@@ -237,7 +237,7 @@ main(int argc, char **argv)
     hg_time_get_current(&end_time);
     elapsed_time        = hg_time_subtract(end_time, start_time);
     elapsed_time_double = hg_time_to_double(elapsed_time);
-    printf("Total elapsed time for PDC server connection: %.6fs\n", elapsed_time_double);
+    printf("Total elapsed time for PDC server connection: %.5e s\n", elapsed_time_double);
 
     for (i = 0; i < n_server; i++) {
         printf("\"%s\" obj_id = %d\n", client_lookup_args[i].obj_name, client_lookup_args[i].obj_id);

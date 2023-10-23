@@ -208,7 +208,7 @@ main(int argc, char **argv)
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     if (rank == 0) {
-        printf("Time to process write data with %d ranks: %.6f\n", size, write_time);
+        printf("Time to process write data with %d ranks: %.5e\n", size, write_time);
         fflush(stdout);
     }
 
@@ -259,7 +259,7 @@ main(int argc, char **argv)
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     if (rank == 0) {
-        printf("Time to process read data with %d ranks: %.6f\n", size, write_time);
+        printf("Time to process read data with %d ranks: %.5e\n", size, write_time);
         fflush(stdout);
     }
 

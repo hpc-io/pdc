@@ -1,7 +1,7 @@
- #------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Include source and build directories
 #------------------------------------------------------------------------------
-set( LOCAL_INCLUDE_DIR
+set(LOCAL_INCLUDE_DIR
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_BINARY_DIR}
   ${PDC_SOURCE_DIR}
@@ -32,14 +32,13 @@ include_directories(
 # External dependencies
 #------------------------------------------------------------------------------
 # profiling
-#set(PDC_EXT_LIB_DEPENDENCIES pdcprof ${PDC_EXT_LIB_DEPENDENCIES})
-set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
-set(PDC_EXPORTED_LIBS pdcprof)
+# set(PDC_EXT_LIB_DEPENDENCIES pdcprof ${PDC_EXT_LIB_DEPENDENCIES})
+# set(PDC_EXT_INCLUDE_DEPENDENCIES ${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+# set(PDC_EXPORTED_LIBS pdcprof)
 
 # Mercury
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
-  message(STATUS "mercury dir ${MERCURY_DIR}")
   set(PDC_EXT_INCLUDE_DEPENDENCIES ${MERCURY_INCLUDE_DIR}
     ${PDC_EXT_INCLUDE_DEPENDENCIES}
     )
@@ -87,21 +86,23 @@ set(PDC_SRCS
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_cache.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer_metadata_query.c
-  ${PDC_SOURCE_DIR}/src/utils/pdc_timing.c
-  ${PDC_SOURCE_DIR}/src/utils/pdc_malloc.c
   ${PDC_SOURCE_DIR}/src/utils/pdc_interface.c
   ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
   )
 
-  add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+  set(PDC_COMMON_INCLUDE_DIRS ${PDC_COMMON_INCLUDE_DIRS})
+  # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
 
 #------------------------------------------------------------------------------
 # Libraries
 #------------------------------------------------------------------------------
 # PDC
 set(PDC_BUILD_INCLUDE_DEPENDENCIES
+  ${PDC_COMMON_INCLUDE_DIRS}
   ${LOCAL_INCLUDE_DIR}
 )
+
+message(STATUS "PDC_BUILD_INCLUDE_DEPENDENCIES: ${PDC_BUILD_INCLUDE_DEPENDENCIES}")
 
 add_library(pdc ${PDC_SRCS})
 
@@ -110,7 +111,12 @@ target_include_directories(pdc
           $<INSTALL_INTERFACE:${PDC_INSTALL_INCLUDE_INTERFACE}>
 )
 
+message(STATUS "PDC_EXPORTED_LIBS: ${PDC_EXPORTED_LIBS}")
+message(STATUS "PDC_EXT_LIB_DEPENDENCIES: ${PDC_EXT_LIB_DEPENDENCIES}")
+message(STATUS "PDC_COMMONS_LIBRARIES: ${PDC_COMMONS_LIBRARIES}")
+
 target_link_libraries(pdc
+  ${PDC_COMMONS_LIBRARIES}
   ${PDC_EXPORTED_LIBS}
   ${PDC_EXT_LIB_DEPENDENCIES}
   -ldl
@@ -122,7 +128,8 @@ set(PDC_EXPORTED_LIBS pdc ${PDC_EXPORTED_LIBS})
 add_executable(close_server
                close_server.c
 )
-target_link_libraries(close_server pdc)
+
+target_link_libraries(close_server pdc ${PDC_COMMON_LIBRARIES})
 
 install(
   TARGETS
@@ -135,13 +142,15 @@ install(
 #-----------------------------------------------------------------------------
 set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/api/include/pdc.h
-  ${PDC_SOURCE_DIR}/src/api/include/pdc_public.h
   ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include/pdc_analysis.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_cont.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_mpi.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_obj.h
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_prop.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_cont_pkg.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_obj_pkg.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_prop_pkg.h
   ${PDC_SOURCE_DIR}/src/api/pdc_query/include/pdc_query.h
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
   ${PDC_SOURCE_DIR}/src/api/pdc_transform/include/pdc_transform.h
@@ -173,9 +182,10 @@ install(
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
 #-----------------------------------------------------------------------------
+
 install(
   TARGETS
-    pdc
+    pdc 
   EXPORT
     ${PDC_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
@@ -204,6 +214,7 @@ EXPORT (
     ${PDC_EXPORTED_LIBS}
   FILE
     ${PDC_EXPORTED_TARGETS}.cmake
+  APPEND
 )
 endif()
 
