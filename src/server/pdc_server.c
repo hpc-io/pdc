@@ -2169,13 +2169,15 @@ PDC_Server_get_env()
     tmp_env_char = getenv("PDC_USE_ROCKSDB");
     if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
         use_rocksdb_g = 1;
-        printf("==PDC_SERVER[%d]: using RocksDB for kvtag\n");
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[%d]: using RocksDB for kvtag\n");
     }
 
     tmp_env_char = getenv("PDC_USE_SQLITE3");
     if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
         use_sqlite3_g = 1;
-        printf("==PDC_SERVER[%d]: using SQLite3 for kvtag\n", pdc_server_rank_g);
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[%d]: using SQLite3 for kvtag\n", pdc_server_rank_g);
     }
 
     if (pdc_server_rank_g == 0) {

@@ -1648,6 +1648,158 @@ sqlite_query_kvtag_callback(void *data, int argc, char **argv, char **colName)
 }
 #endif
 
+static perr_t
+PDC_Server_query_kvtag_rocksdb(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids, uint64_t alloc_size)
+{
+    perr_t ret_value = SUCCEED;
+#ifdef ENABLE_ROCKSDB
+    const char *rocksdb_key;
+    pdc_kvtag_t tmp;
+    uint64_t    obj_id;
+    char        name[TAG_LEN_MAX];
+    size_t      len;
+    rocksdb_readoptions_t *readoptions  = rocksdb_readoptions_create();
+    rocksdb_iterator_t *   rocksdb_iter = rocksdb_create_iterator(rocksdb_g, readoptions);
+    rocksdb_iter_seek_to_first(rocksdb_iter);
+
+    // Iterate over all rocksdb kv
+    while (rocksdb_iter_valid(rocksdb_iter)) {
+        rocksdb_key = rocksdb_iter_key(rocksdb_iter, &len);
+        /* sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name); */
+        sscanf(rocksdb_key, "%lu`%s", &obj_id, name);
+        tmp.name  = name;
+        tmp.value = (void *)rocksdb_iter_value(rocksdb_iter, &len);
+        tmp.size  = len;
+        tmp.type  = in->type;
+
+        if (_is_matching_kvtag(in, &tmp) == TRUE) {
+            if (iter >= alloc_size) {
+                alloc_size *= 2;
+                *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
+            }
+            (*obj_ids)[iter++] = obj_id;
+        }
+
+        /* printf("==PDC_SERVER[%d]: rocksdb iter [%s] [%d], len %d\n", pdc_server_rank_g, tmp.name,
+         * *((int*)tmp.value), tmp.size); */
+        rocksdb_iter_next(rocksdb_iter);
+    }
+
+    *n_meta = iter;
+    // Debug
+    /* printf("==PDC_SERVER[%d]: rocksdb found %d objids \n", pdc_server_rank_g, iter); */
+
+    if (rocksdb_iter)
+        rocksdb_iter_destroy(rocksdb_iter);
+#else
+    printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
+static perr_t
+PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids, uint64_t alloc_size)
+{
+    perr_t ret_value = SUCCEED;
+#ifdef ENABLE_SQLITE3
+    char  sql[TAG_LEN_MAX];
+    char *errMessage = NULL;
+    char *tmp_value, *tmp_name, *current_pos;
+    pdc_sqlite3_query_t query_data;
+
+    // Check if there is * in tag name
+    if (NULL == strstr(in->name, "*")) {
+        // exact name match
+        if (in->type == PDC_STRING) {
+            // valut type is string
+            if (NULL == strstr((char*)in->value, "*")) {
+                // exact name and value string match
+                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text = \'%s\';", in->name, (char*)in->value);
+            }
+            else {
+                // value has * in it
+                tmp_value = strdup((char*)in->value);
+                // replace * with % for sqlite3
+                current_pos = strchr(tmp_value, '*');
+                while (current_pos) {
+                    *current_pos = '%';
+                    current_pos  = strchr(current_pos, '*');
+                }
+
+                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text LIKE \'%s\';", in->name, tmp_value);
+                if (tmp_value)
+                    free(tmp_value);
+            }
+        }
+        else {
+            // Only check name for non string value type
+            sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\';", in->name);
+        }
+    }
+    else {
+        tmp_name = strdup(in->name);
+        // replace * with % for sqlite3
+        current_pos = strchr(tmp_name, '*');
+        while (current_pos) {
+            *current_pos = '%';
+            current_pos  = strchr(current_pos, '*');
+        }
+
+        sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\';", tmp_name);
+
+        if (in->type == PDC_STRING) {
+            // valut type is string
+            if (NULL == strstr((char*)in->value, "*")) {
+                // exact name and value string match
+                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text = \'%s\';", tmp_name, (char*)in->value);
+            }
+            else {
+                // value has * in it
+                tmp_value = strdup((char*)in->value);
+                // replace * with % for sqlite3
+                current_pos = strchr(tmp_value, '*');
+                while (current_pos) {
+                    *current_pos = '%';
+                    current_pos  = strchr(current_pos, '*');
+                }
+
+                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';", tmp_name, tmp_value);
+                if (tmp_value)
+                    free(tmp_value);
+            }
+        }
+        else {
+            // Only check name for non string value type
+            sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\';", tmp_name);
+        }
+
+        if (tmp_name)
+            free(tmp_name);
+    }
+
+    query_data.nobj    = 0;
+    query_data.nalloc  = alloc_size;
+    query_data.obj_ids = obj_ids;
+
+    // debug
+    /* printf("==PDC_SERVER[%d]: constructed SQL [%s]\n", pdc_server_rank_g, sql); */
+
+    // Construct a SQL query
+    sqlite3_exec(sqlite3_db_g, sql, sqlite_query_kvtag_callback, &query_data, &errMessage);
+    if (errMessage)
+        printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+
+    *n_meta = query_data.nobj;
+#else
+    printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
 perr_t
 PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
                                   uint32_t *n_meta, uint64_t **obj_ids)
@@ -1669,146 +1821,10 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
 
     if (use_rocksdb_g == 1) {
-        // RocksDB backend
-#ifdef ENABLE_ROCKSDB
-        const char *           rocksdb_key;
-        pdc_kvtag_t            tmp;
-        uint64_t               obj_id;
-        char                   name[TAG_LEN_MAX];
-        size_t                 len;
-        rocksdb_readoptions_t *readoptions  = rocksdb_readoptions_create();
-        rocksdb_iterator_t *   rocksdb_iter = rocksdb_create_iterator(rocksdb_g, readoptions);
-        rocksdb_iter_seek_to_first(rocksdb_iter);
-        while (rocksdb_iter_valid(rocksdb_iter)) {
-            rocksdb_key = rocksdb_iter_key(rocksdb_iter, &len);
-            /* sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name); */
-            sscanf(rocksdb_key, "%lu`%s", &obj_id, name);
-            tmp.name  = name;
-            tmp.value = (void *)rocksdb_iter_value(rocksdb_iter, &len);
-            tmp.size  = len;
-            tmp.type  = in->type;
-
-            if (_is_matching_kvtag(in, &tmp) == TRUE) {
-                if (iter >= alloc_size) {
-                    alloc_size *= 2;
-                    *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
-                }
-                (*obj_ids)[iter++] = obj_id;
-            }
-
-            /* printf("==PDC_SERVER[%d]: rocksdb iter [%s] [%d], len %d\n", pdc_server_rank_g, tmp.name,
-             * *((int*)tmp.value), tmp.size); */
-            rocksdb_iter_next(rocksdb_iter);
-        }
-
-        *n_meta = iter;
-        // Debug
-        /* printf("==PDC_SERVER[%d]: rocksdb found %d objids \n", pdc_server_rank_g, iter); */
-
-        if (rocksdb_iter)
-            rocksdb_iter_destroy(rocksdb_iter);
-#else
-        printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
-        ret_value = FAIL;
-        goto done;
-#endif
-    } // End if rocksdb
+        ret_value = PDC_Server_query_kvtag_rocksdb(in, n_meta, obj_ids, alloc_size);
+    }
     else if (use_sqlite3_g) {
-        // SQLite3
-#ifdef ENABLE_SQLITE3
-        char                sql[TAG_LEN_MAX];
-        char *              errMessage = NULL;
-        char *              tmp_value, *tmp_name, *current_pos;
-        pdc_sqlite3_query_t query_data;
-
-        // Check if there is * in tag name
-        if (NULL == strstr(in->name, "*")) {
-            // exact name match
-            if (in->type == PDC_STRING) {
-                // valut type is string
-                if (NULL == strstr((char *)in->value, "*")) {
-                    // exact name and value string match
-                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text = \'%s\';",
-                            in->name, (char *)in->value);
-                }
-                else {
-                    // value has * in it
-                    tmp_value = strdup((char *)in->value);
-                    // replace * with % for sqlite3
-                    current_pos = strchr(tmp_value, '*');
-                    while (current_pos) {
-                        *current_pos = '%';
-                        current_pos  = strchr(current_pos, '*');
-                    }
-
-                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text LIKE \'%s\';",
-                            in->name, tmp_value);
-                    if (tmp_value)
-                        free(tmp_value);
-                }
-            }
-            else {
-                // Only check name for non string value type
-                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\';", in->name);
-            }
-        }
-        else {
-            tmp_name = strdup(in->name);
-            // replace * with % for sqlite3
-            current_pos = strchr(tmp_name, '*');
-            while (current_pos) {
-                *current_pos = '%';
-                current_pos  = strchr(current_pos, '*');
-            }
-
-            sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\';", tmp_name);
-            if (tmp_name)
-                free(tmp_name);
-
-            if (in->type == PDC_STRING) {
-                // valut type is string
-                if (NULL == strstr((char *)in->value, "*")) {
-                    // exact name and value string match
-                    sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text = \'%s\';",
-                            in->name, (char *)in->value);
-                }
-                else {
-                    // value has * in it
-                    tmp_value = strdup((char *)in->value);
-                    // replace * with % for sqlite3
-                    current_pos = strchr(tmp_value, '*');
-                    while (current_pos) {
-                        *current_pos = '%';
-                        current_pos  = strchr(current_pos, '*');
-                    }
-
-                    sprintf(sql,
-                            "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';",
-                            in->name, tmp_value);
-                    if (tmp_value)
-                        free(tmp_value);
-                }
-            }
-            else {
-                // Only check name for non string value type
-                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\';", tmp_name);
-            }
-        }
-
-        *obj_ids           = (void *)calloc(alloc_size, sizeof(uint64_t));
-        query_data.nobj    = 0;
-        query_data.nalloc  = 64;
-        query_data.obj_ids = obj_ids;
-
-        // Construct a SQL query
-        sqlite3_exec(sqlite3_db_g, sql, sqlite_query_kvtag_callback, &query_data, &errMessage);
-        if (errMessage)
-            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-
-        *n_meta = query_data.nobj;
-#else
-        printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
-#endif
+        ret_value = PDC_Server_query_kvtag_sqlite(in, n_meta, obj_ids, alloc_size);
     } // End if SQLite3
     else {
         // SoMeta backend
