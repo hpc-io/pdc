@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
     libmpich-dev \
     libhdf5-dev \
     libhdf5-mpich-dev \
+    libtiff5 \
+    libtiff5-dev \
     uuid \
     uuid-dev \
     autoconf \
@@ -60,6 +62,11 @@ RUN echo 'source $HOME/.cargo/env' >> ~/.bashrc
 # Set WORK_SPACE environment variable and create necessary directories
 ENV WORK_SPACE=/home/project
 RUN mkdir -p $WORK_SPACE
+
+# Install clang-format repo
+RUN mkdir -p $WORK_SPACE/software
+RUN cd $WORK_SPACE/software && git clone https://github.com/DoozyX/clang-format-lint-action.git
+ENV CLANG_FORMAT_PATH=$WORK_SPACE/software/clang-format-lint-action/clang-format/clang-format10
 
 # Clone the repositories
 WORKDIR $WORK_SPACE/source

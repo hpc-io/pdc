@@ -59,7 +59,7 @@
                 "ZhangYue.rust-mod-generator"
             ],
             "settings": {
-                "C_Cpp.clang_format_path": "clang-format-11",
+                "C_Cpp.clang_format_path": "/home/project/software/clang-format-lint-action/clang-format/clang-format10",
                 "terminal.integrated.scrollback": 10000
             }
         }
