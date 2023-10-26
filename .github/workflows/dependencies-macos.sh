@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-brew install open-mpi
+brew install open-mpi autoconf automake libtool
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.12.1.tar.gz
