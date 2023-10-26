@@ -1716,18 +1716,44 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     else if (use_sqlite3_g) {
         // SQLite3
 #ifdef ENABLE_SQLITE3
-        char                sql[TAG_LEN_MAX];
-        char *              errMessage = NULL;
+        char  sql[TAG_LEN_MAX];
+        char *errMessage = NULL;
+        char *tmp_value, *tmp_name, *current_pos;
         pdc_sqlite3_query_t query_data;
 
         // Check if there is * in tag name
         if (NULL == strstr(in->name, "*")) {
-            sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\';", in->name);
+            // exact name match
+            if (in->type == PDC_STRING) {
+                // valut type is string
+                if (NULL == strstr((char*)in->value, "*")) {
+                    // exact name and value string match
+                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text = \'%s\';", in->name, (char*)in->value);
+                }
+                else {
+                    // value has * in it
+                    tmp_value = strdup((char*)in->value);
+                    // replace * with % for sqlite3
+                    current_pos = strchr(tmp_value, '*');
+                    while (current_pos) {
+                        *current_pos = '%';
+                        current_pos  = strchr(current_pos, '*');
+                    }
+
+                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text LIKE \'%s\';", in->name, tmp_value);
+                    if (tmp_value)
+                        free(tmp_value);
+                }
+            }
+            else {
+                // Only check name for non string value type
+                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\';", in->name);
+            }
         }
         else {
-            char *tmp_name = strdup(in->name);
+            tmp_name = strdup(in->name);
             // replace * with % for sqlite3
-            char *current_pos = strchr(tmp_name, '*');
+            current_pos = strchr(tmp_name, '*');
             while (current_pos) {
                 *current_pos = '%';
                 current_pos  = strchr(current_pos, '*');
@@ -1736,6 +1762,33 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
             sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\';", tmp_name);
             if (tmp_name)
                 free(tmp_name);
+
+
+            if (in->type == PDC_STRING) {
+                // valut type is string
+                if (NULL == strstr((char*)in->value, "*")) {
+                    // exact name and value string match
+                    sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text = \'%s\';", in->name, (char*)in->value);
+                }
+                else {
+                    // value has * in it
+                    tmp_value = strdup((char*)in->value);
+                    // replace * with % for sqlite3
+                    current_pos = strchr(tmp_value, '*');
+                    while (current_pos) {
+                        *current_pos = '%';
+                        current_pos  = strchr(current_pos, '*');
+                    }
+
+                    sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';", in->name, tmp_value);
+                    if (tmp_value)
+                        free(tmp_value);
+                }
+            }
+            else {
+                // Only check name for non string value type
+                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\';", tmp_name);
+            }
         }
 
         *obj_ids           = (void *)calloc(alloc_size, sizeof(uint64_t));
@@ -2719,8 +2772,10 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
             ret_value = FAIL;
         }
         out->ret = 1;
+        goto done;
 #else
         printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+        goto done;
 #endif
     } // End if rocksdb
     else if (use_sqlite3_g == 1) {
@@ -2792,6 +2847,7 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
         }
     }
 
+done:
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
