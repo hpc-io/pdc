@@ -24,7 +24,7 @@ endif(PDC_ENABLE_JULIA)
 # *************************************************
 # *  Find UUID library
 # *************************************************
-find_package(UUID REQUIRED)
+find_package(UUID)
 if(UUID_FOUND)
   include_directories(${UUID_INCLUDE_DIRS})
 endif(UUID_FOUND)
