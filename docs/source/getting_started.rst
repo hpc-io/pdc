@@ -174,6 +174,7 @@ Install PDC
 
 .. note::
 	If you are trying to compile PDC on your Mac, ``LibUUID`` needs to be installed on your MacOS first. Simple use ``brew install ossp-uuid`` to install it.
+	If you are trying to compile PDC on Linux, you should also make sure ``LibUUID`` is installed on your system. If not, you can install it with ``sudo apt-get install uuid-dev`` on Ubuntu or ``yum install libuuid-devel`` on CentOS.
 
 Test Your PDC Installation
 --------------------------
