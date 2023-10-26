@@ -184,8 +184,8 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
-    my_cnt_round = (int*)calloc(round, sizeof(int));
-    total_cnt_round = (int*)calloc(round, sizeof(int));
+    my_cnt_round    = (int *)calloc(round, sizeof(int));
+    total_cnt_round = (int *)calloc(round, sizeof(int));
 
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
@@ -289,8 +289,9 @@ main(int argc, char *argv[])
                 else {
                     kvtag.name  = output.key_query;
                     kvtag.value = output.value_query;
-                    /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name, kvtag.value); */
-                    ret_value   = (comm_type == 0)
+                    /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name,
+                     * kvtag.value); */
+                    ret_value = (comm_type == 0)
                                     ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                                     : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
                 }
@@ -301,7 +302,8 @@ main(int argc, char *argv[])
 
                 if (iter >= 0) {
                     if (nres != total_cnt_round[iter])
-                        printf("Rank %d: query results %d do not match expected %d\n", my_rank, nres, total_cnt_round[iter]);
+                        printf("Rank %d: query results %d do not match expected %d\n", my_rank, nres,
+                               total_cnt_round[iter]);
                 }
 
                 round_total += nres;
@@ -328,7 +330,7 @@ main(int argc, char *argv[])
             }
 #endif
         } // end query type
-    } // end comm type
+    }     // end comm type
 
     if (my_rank == 0) {
         println("Rank %d: All queries are done.", my_rank);

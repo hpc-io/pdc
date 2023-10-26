@@ -1653,11 +1653,11 @@ PDC_Server_query_kvtag_rocksdb(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj
 {
     perr_t ret_value = SUCCEED;
 #ifdef ENABLE_ROCKSDB
-    const char *rocksdb_key;
-    pdc_kvtag_t tmp;
-    uint64_t    obj_id;
-    char        name[TAG_LEN_MAX];
-    size_t      len;
+    const char *           rocksdb_key;
+    pdc_kvtag_t            tmp;
+    uint64_t               obj_id;
+    char                   name[TAG_LEN_MAX];
+    size_t                 len;
     rocksdb_readoptions_t *readoptions  = rocksdb_readoptions_create();
     rocksdb_iterator_t *   rocksdb_iter = rocksdb_create_iterator(rocksdb_g, readoptions);
     rocksdb_iter_seek_to_first(rocksdb_iter);
@@ -1704,9 +1704,9 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
 {
     perr_t ret_value = SUCCEED;
 #ifdef ENABLE_SQLITE3
-    char  sql[TAG_LEN_MAX];
-    char *errMessage = NULL;
-    char *tmp_value, *tmp_name, *current_pos;
+    char                sql[TAG_LEN_MAX];
+    char *              errMessage = NULL;
+    char *              tmp_value, *tmp_name, *current_pos;
     pdc_sqlite3_query_t query_data;
 
     // Check if there is * in tag name
@@ -1714,13 +1714,14 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
         // exact name match
         if (in->type == PDC_STRING) {
             // valut type is string
-            if (NULL == strstr((char*)in->value, "*")) {
+            if (NULL == strstr((char *)in->value, "*")) {
                 // exact name and value string match
-                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text = \'%s\';", in->name, (char*)in->value);
+                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text = \'%s\';",
+                        in->name, (char *)in->value);
             }
             else {
                 // value has * in it
-                tmp_value = strdup((char*)in->value);
+                tmp_value = strdup((char *)in->value);
                 // replace * with % for sqlite3
                 current_pos = strchr(tmp_value, '*');
                 while (current_pos) {
@@ -1728,7 +1729,8 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                     current_pos  = strchr(current_pos, '*');
                 }
 
-                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text LIKE \'%s\';", in->name, tmp_value);
+                sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text LIKE \'%s\';",
+                        in->name, tmp_value);
                 if (tmp_value)
                     free(tmp_value);
             }
@@ -1751,13 +1753,14 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
 
         if (in->type == PDC_STRING) {
             // valut type is string
-            if (NULL == strstr((char*)in->value, "*")) {
+            if (NULL == strstr((char *)in->value, "*")) {
                 // exact name and value string match
-                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text = \'%s\';", tmp_name, (char*)in->value);
+                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text = \'%s\';",
+                        tmp_name, (char *)in->value);
             }
             else {
                 // value has * in it
-                tmp_value = strdup((char*)in->value);
+                tmp_value = strdup((char *)in->value);
                 // replace * with % for sqlite3
                 current_pos = strchr(tmp_value, '*');
                 while (current_pos) {
@@ -1765,7 +1768,8 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                     current_pos  = strchr(current_pos, '*');
                 }
 
-                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';", tmp_name, tmp_value);
+                sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';",
+                        tmp_name, tmp_value);
                 if (tmp_value)
                     free(tmp_value);
             }
