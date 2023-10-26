@@ -1716,9 +1716,9 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     else if (use_sqlite3_g) {
         // SQLite3
 #ifdef ENABLE_SQLITE3
-        char  sql[TAG_LEN_MAX];
-        char *errMessage = NULL;
-        char *tmp_value, *tmp_name, *current_pos;
+        char                sql[TAG_LEN_MAX];
+        char *              errMessage = NULL;
+        char *              tmp_value, *tmp_name, *current_pos;
         pdc_sqlite3_query_t query_data;
 
         // Check if there is * in tag name
@@ -1726,13 +1726,14 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
             // exact name match
             if (in->type == PDC_STRING) {
                 // valut type is string
-                if (NULL == strstr((char*)in->value, "*")) {
+                if (NULL == strstr((char *)in->value, "*")) {
                     // exact name and value string match
-                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text = \'%s\';", in->name, (char*)in->value);
+                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text = \'%s\';",
+                            in->name, (char *)in->value);
                 }
                 else {
                     // value has * in it
-                    tmp_value = strdup((char*)in->value);
+                    tmp_value = strdup((char *)in->value);
                     // replace * with % for sqlite3
                     current_pos = strchr(tmp_value, '*');
                     while (current_pos) {
@@ -1740,7 +1741,8 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                         current_pos  = strchr(current_pos, '*');
                     }
 
-                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text LIKE \'%s\';", in->name, tmp_value);
+                    sprintf(sql, "SELECT objid FROM objects WHERE name = \'%s\' AND value_text LIKE \'%s\';",
+                            in->name, tmp_value);
                     if (tmp_value)
                         free(tmp_value);
                 }
@@ -1763,16 +1765,16 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
             if (tmp_name)
                 free(tmp_name);
 
-
             if (in->type == PDC_STRING) {
                 // valut type is string
-                if (NULL == strstr((char*)in->value, "*")) {
+                if (NULL == strstr((char *)in->value, "*")) {
                     // exact name and value string match
-                    sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text = \'%s\';", in->name, (char*)in->value);
+                    sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text = \'%s\';",
+                            in->name, (char *)in->value);
                 }
                 else {
                     // value has * in it
-                    tmp_value = strdup((char*)in->value);
+                    tmp_value = strdup((char *)in->value);
                     // replace * with % for sqlite3
                     current_pos = strchr(tmp_value, '*');
                     while (current_pos) {
@@ -1780,7 +1782,9 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
                         current_pos  = strchr(current_pos, '*');
                     }
 
-                    sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';", in->name, tmp_value);
+                    sprintf(sql,
+                            "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';",
+                            in->name, tmp_value);
                     if (tmp_value)
                         free(tmp_value);
                 }
