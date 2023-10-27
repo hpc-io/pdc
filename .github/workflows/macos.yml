@@ -11,8 +11,6 @@ jobs:
   PDC:
     runs-on: macos-latest
     timeout-minutes: 60
-    env:
-      HG_TRANSPORT: "sockets"
 
     steps:
       - uses: actions/checkout@v3
@@ -28,4 +26,6 @@ jobs:
 
       - name: Test PDC
         working-directory: build
-        run: ctest -L serial
+        run: |
+          export HG_TRANSPORT="sockets"
+          ctest -L serial
