@@ -199,8 +199,8 @@ main(int argc, char *argv[])
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
             char tag_value[64];
-            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
+            snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
+            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
             kvtag.name  = strdup(attr_name);
             kvtag.value = (void *)strdup(tag_value);
             kvtag.type  = PDC_STRING;
@@ -239,6 +239,10 @@ main(int argc, char *argv[])
     for (i = 0; i < round; i++)
         MPI_Allreduce(&my_cnt_round[i], &total_cnt_round[i], 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
+    if (my_rank == 0) {
+        for (i = 0; i < round; i++)
+            printf("expected round %d: %d\n", i, total_cnt_round[i]);
+    }
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
@@ -260,8 +264,8 @@ main(int argc, char *argv[])
 #endif
                 char attr_name[64];
                 char tag_value[64];
-                snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
-                snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
+                snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
+                snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
 
                 kvtag.name  = strdup(attr_name);
                 kvtag.value = (void *)strdup(tag_value);
@@ -273,7 +277,7 @@ main(int argc, char *argv[])
                 input.base_tag         = &kvtag;
                 input.key_query_type   = query_type;
                 input.value_query_type = query_type;
-                input.affix_len        = 4;
+                input.affix_len        = 12;
 
                 gen_query_key_value(&input, &output);
 
@@ -302,8 +306,8 @@ main(int argc, char *argv[])
 
                 if (iter >= 0) {
                     if (nres != total_cnt_round[iter])
-                        printf("Rank %d: query results %d do not match expected %d\n", my_rank, nres,
-                               total_cnt_round[iter]);
+                        printf("Rank %d: query %d, comm %d, round %d - results %d do not match expected %d\n",
+                                my_rank, query_type, comm_type, iter, nres, total_cnt_round[iter]);
                 }
 
                 round_total += nres;
@@ -346,8 +350,8 @@ main(int argc, char *argv[])
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
             char tag_value[64];
-            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
+            snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
+            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
             kvtag.name  = strdup(attr_name);
             kvtag.value = (void *)strdup(tag_value);
             kvtag.type  = PDC_STRING;
