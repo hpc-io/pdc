@@ -11,6 +11,8 @@ jobs:
   PDC:
     runs-on: macos-latest
     timeout-minutes: 60
+    env:
+      HG_TRANSPORT: "sockets"
 
     steps:
       - uses: actions/checkout@v3
