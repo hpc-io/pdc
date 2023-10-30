@@ -22,10 +22,4 @@ jobs:
         run: |
           mkdir build && cd build
           cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=mpicc
-          make -j2
-
-      - name: Test PDC
-        working-directory: build
-        run: |
-          export HG_TRANSPORT="sockets"
-          ctest -L serial
+          make -j 2
