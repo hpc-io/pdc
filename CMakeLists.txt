@@ -470,14 +470,14 @@ endif()
 
 # Metadata with RocksDB
 #-----------------------------------------------------------------------------
-option(PDC_ENABLE_ROCKSDB "Enable RocksDB." OFF)
+option(PDC_ENABLE_ROCKSDB "Enable RocksDB (experimental)." OFF)
 if(PDC_ENABLE_ROCKSDB)
     set(ENABLE_ROCKSDB 1)
 endif()
 
 # Metadata with SQLite
 #-----------------------------------------------------------------------------
-option(PDC_ENABLE_SQLITE3 "Enable SQLITE3." OFF)
+option(PDC_ENABLE_SQLITE3 "Enable SQLite3 (experimental)." OFF)
 if(PDC_ENABLE_SQLITE3)
     set(ENABLE_SQLITE3 1)
 endif()

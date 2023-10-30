@@ -270,9 +270,14 @@ PDC maintains object metadata (obj name, dimension, create time, etc.) in a dist
 accessed with its object ID. Users can also issue metadata queries to retrieve the object IDs that meet the query constraints.
 
 PDC allows users to add key-value tags to each object, where key is a string and value can be a binary array of any datatype and length.
-The key-value tags are stored in an in-memory linked list by default, however, a user can optionally compile PDC with RocksDB support
-and maintain the key-value tags as RocksDB entries. This option can be enabled by turning on the PDC_ENABLE_ROCKSDB flag in cmake, 
-and setting the environment variable PDC_USE_ROCKSDB to 1 before launching the server.
+The key-value tags are stored in an in-memory linked list by default.
+
+PDC has metadata indexing and querying support when DART is enabled. See ``DART`` section in the Developer Notes.
+
+PDC additionally supports managing the key-value tags with RocksDB and SQLite, both are considered experimental at the moment.
+Either RocksDB or SQLite can be enabled by turning on the ``PDC_ENABLE_ROCKSDB`` or ``PDC_USE_SQLITE3`` flag in CMake, setting the
+``ROCKSDB_DIR`` or ``SQLITE3_DIR`` and setting the environment variable ``PDC_USE_ROCKSDB`` or ``PDC_USE_SQLITE3`` to 1 before launching the server.
+Users can use the same PDC query APIs when RocksDB or SQLite is enabled.
 
 
 * perr_t PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, psize_t value_size)
