@@ -239,10 +239,6 @@ main(int argc, char *argv[])
     for (i = 0; i < round; i++)
         MPI_Allreduce(&my_cnt_round[i], &total_cnt_round[i], 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
-    if (my_rank == 0) {
-        for (i = 0; i < round; i++)
-            printf("expected round %d: %d\n", i, total_cnt_round[i]);
-    }
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
