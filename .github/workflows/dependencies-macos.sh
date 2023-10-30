@@ -6,8 +6,8 @@ brew install open-mpi autoconf automake libtool ossp-uuid
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.15.2.tar.gz
-tar xf v1.12.1.tar.gz
-cd libfabric-1.12.1
+tar xf v1.15.2.tar.gz
+cd libfabric-1.15.2
 ./autogen.sh
 ./configure --disable-usnic --disable-mrail --disable-rstream --disable-perf --disable-efa --disable-psm2 --disable-psm --disable-verbs --disable-shm --disable-static --disable-silent-rules
 make -j2 && sudo make install
