@@ -689,9 +689,9 @@ drc_strerror(int errnum)
 static int
 PDC_Server_get_subdir_count(char *path)
 {
-    DIR *dir;
+    DIR *          dir;
     struct dirent *entry;
-    int count = 0;
+    int            count = 0;
 
     if (!(dir = opendir(path))) {
         printf("==PDC_SERVER[%4d]: Error opening dir [%s]\n", path);
@@ -706,7 +706,7 @@ PDC_Server_get_subdir_count(char *path)
             count++;
         }
     }
-    closedir (dir); 
+    closedir(dir);
 
     return count;
 }
@@ -718,32 +718,32 @@ PDC_Server_get_subdir_count(char *path)
  *
  * \return Pointer to the file content (need to be freed separately)
  */
-char*
+char *
 PDC_Server_read_entire_file(char *fname)
 {
-    FILE    *infile;
-    char    *buffer;
-    long    numbytes;
-     
+    FILE *infile;
+    char *buffer;
+    long  numbytes;
+
     infile = fopen(fname, "r");
-     
-    if(infile == NULL)
-	return NULL;
-     
+
+    if (infile == NULL)
+        return NULL;
+
     /* Get the number of bytes */
     fseek(infile, 0L, SEEK_END);
     numbytes = ftell(infile);
-     
-    fseek(infile, 0L, SEEK_SET);	
-     
-    buffer = (char*)malloc(numbytes);	
-    if(buffer == NULL)
-	return NULL;
-     
+
+    fseek(infile, 0L, SEEK_SET);
+
+    buffer = (char *)malloc(numbytes);
+    if (buffer == NULL)
+        return NULL;
+
     /* copy all the text into the buffer */
     fread(buffer, sizeof(char), numbytes, infile);
     fclose(infile);
-     
+
     return buffer;
 }
 
@@ -766,8 +766,9 @@ static perr_t
 PDC_Server_restart_flex(char *chk_dir)
 {
     perr_t ret_value = SUCCEED;
-    int n_file, n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0;
-    int n_kvtag, key_len, n_cont, myi, server_id, is_mine, fid;
+    int    n_file, n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs,
+                                      total_region = 0;
+    int                          n_kvtag, key_len, n_cont, myi, server_id, is_mine, fid;
     pdc_metadata_t *             metadata, *elt;
     region_list_t *              region_list;
     pdc_hash_table_entry_head *  obj_entry;
@@ -776,7 +777,7 @@ PDC_Server_restart_flex(char *chk_dir)
     unsigned                     idx;
     uint64_t                     checkpoint_size;
     char *                       checkpoint_buf = NULL;
-    char **                      chk_bufs = NULL;
+    char **                      chk_bufs       = NULL;
     char                         fname[ADDR_MAX];
 
     FUNC_ENTER(NULL);
@@ -790,13 +791,14 @@ PDC_Server_restart_flex(char *chk_dir)
         if (n_file == pdc_server_size_g) {
             // If the current number of servers is the same as that when writing the checkpoint file,
             // only need to read from one file
-            n_file = 1;
-            chk_bufs = (char**)calloc(n_file, sizeof(char*));
-            snprintf(fname, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", chk_dir, pdc_server_rank_g, pdc_server_rank_g);
+            n_file   = 1;
+            chk_bufs = (char **)calloc(n_file, sizeof(char *));
+            snprintf(fname, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", chk_dir, pdc_server_rank_g,
+                     pdc_server_rank_g);
             chk_bufs[0] = PDC_Server_read_entire_file(fname);
         }
         else {
-            chk_bufs = (char**)calloc(n_file, sizeof(char*));
+            chk_bufs = (char **)calloc(n_file, sizeof(char *));
             // When the server number changes from checkpoint file, need to read all files
             for (i = 0; i < n_fwrite_g; i++) {
                 // Have different servers read different files initially to avoid congestion
@@ -807,7 +809,8 @@ PDC_Server_restart_flex(char *chk_dir)
         }
     }
     else {
-        printf("==PDC_SERVER[%d]: %s - Error getting number of sub directories from PDC_TMP dir!", pdc_server_rank_g, __func__);
+        printf("==PDC_SERVER[%d]: %s - Error getting number of sub directories from PDC_TMP dir!",
+               pdc_server_rank_g, __func__);
         ret_value = FAIL;
         goto done;
     }
@@ -827,7 +830,7 @@ PDC_Server_restart_flex(char *chk_dir)
 
     // Iterate over all checkpoint files and reconstruct the hash table and others
     for (fid = 0; fid < n_file; fid++) {
-        char *buf = chk_bufs[fid]; 
+        char *buf = chk_bufs[fid];
 
         /* if (fread(&n_cont, sizeof(int), 1, file) != 1) { */
         /*     printf("Read failed for n_count\n"); */
@@ -880,7 +883,7 @@ PDC_Server_restart_flex(char *chk_dir)
             for (j = 0; j < n_kvtag; j++) {
                 pdc_kvtag_list_t *kvtag_list = NULL;
                 if (is_mine) {
-                    kvtag_list = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
+                    kvtag_list        = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
                     kvtag_list->kvtag = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
                 }
                 /* if (fread(&key_len, sizeof(int), 1, file) != 1) { */
@@ -930,9 +933,9 @@ PDC_Server_restart_flex(char *chk_dir)
                 buf += sizeof(int);
 
                 if (is_mine) {
-                /* if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) { */
-                /*     printf("Read failed for kvtag_list->kvtag->value\n"); */
-                /* } */
+                    /* if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) { */
+                    /*     printf("Read failed for kvtag_list->kvtag->value\n"); */
+                    /* } */
                     kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                     memcpy(kvtag_list->kvtag->value, buf, kvtag_list->kvtag->size);
                 }
@@ -1005,7 +1008,7 @@ PDC_Server_restart_flex(char *chk_dir)
                     /* if (fread(metadata + i, sizeof(pdc_metadata_t), 1, file) != 1) { */
                     /*     printf("Read failed for metadata\n"); */
                     /* } */
-                    memcpy(metadata+i, buf, sizeof(pdc_metadata_t));
+                    memcpy(metadata + i, buf, sizeof(pdc_metadata_t));
                     buf += sizeof(pdc_metadata_t);
 
                     (metadata + i)->storage_region_list_head       = NULL;
@@ -1023,7 +1026,8 @@ PDC_Server_restart_flex(char *chk_dir)
                     /*     printf("Read failed for n_kvtag\n"); */
                     /* } */
                     if (sscanf(buf, "%d", &n_kvtag) != 1) {
-                        fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont n_kvtag\n", pdc_server_rank_g);
+                        fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont n_kvtag\n",
+                                pdc_server_rank_g);
                         ret_value = FAIL;
                         goto done;
                     }
@@ -1032,14 +1036,15 @@ PDC_Server_restart_flex(char *chk_dir)
                     for (j = 0; j < n_kvtag; j++) {
                         pdc_kvtag_list_t *kvtag_list = NULL;
                         if (is_mine) {
-                            kvtag_list = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
+                            kvtag_list        = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
                             kvtag_list->kvtag = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
                         }
                         /* if (fread(&key_len, sizeof(int), 1, file) != 1) { */
                         /*     printf("Read failed for key_len\n"); */
                         /* } */
                         if (sscanf(buf, "%d", &key_len) != 1) {
-                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont key_len\n", pdc_server_rank_g);
+                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont key_len\n",
+                                    pdc_server_rank_g);
                             ret_value = FAIL;
                             goto done;
                         }
@@ -1059,7 +1064,8 @@ PDC_Server_restart_flex(char *chk_dir)
                         /* } */
                         uint32_t value_size;
                         if (sscanf(buf, "%u", &value_size) != 1) {
-                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont value size\n", pdc_server_rank_g);
+                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont value size\n",
+                                    pdc_server_rank_g);
                             ret_value = FAIL;
                             goto done;
                         }
@@ -1073,7 +1079,8 @@ PDC_Server_restart_flex(char *chk_dir)
                         /* } */
                         int type = 0;
                         if (sscanf(buf, "%d", &type) != 1) {
-                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont value size\n", pdc_server_rank_g);
+                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for cont value size\n",
+                                    pdc_server_rank_g);
                             ret_value = FAIL;
                             goto done;
                         }
@@ -1082,9 +1089,10 @@ PDC_Server_restart_flex(char *chk_dir)
                         buf += sizeof(int);
 
                         if (is_mine) {
-                        /* if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) { */
-                        /*     printf("Read failed for kvtag_list->kvtag->value\n"); */
-                        /* } */
+                            /* if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {
+                             */
+                            /*     printf("Read failed for kvtag_list->kvtag->value\n"); */
+                            /* } */
                             kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                             memcpy(kvtag_list->kvtag->value, buf, kvtag_list->kvtag->size);
                         }
@@ -1105,8 +1113,8 @@ PDC_Server_restart_flex(char *chk_dir)
                     buf += sizeof(int);
 
                     if (n_region < 0) {
-                        printf("==PDC_SERVER[%d]: %s -  Checkpoint file region number ERROR!", pdc_server_rank_g,
-                               __func__);
+                        printf("==PDC_SERVER[%d]: %s -  Checkpoint file region number ERROR!",
+                               pdc_server_rank_g, __func__);
                         ret_value = FAIL;
                         goto done;
                     }
@@ -1128,7 +1136,8 @@ PDC_Server_restart_flex(char *chk_dir)
                         /*     printf("Read failed for has_list\n"); */
                         /* } */
                         if (sscanf(buf, "%d", &has_hist) != 1) {
-                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for has_hist\n", pdc_server_rank_g);
+                            fprintf(stderr, "==PDC_SERVER[%d]: Read failed for has_hist\n",
+                                    pdc_server_rank_g);
                             ret_value = FAIL;
                             goto done;
                         }
@@ -1144,7 +1153,8 @@ PDC_Server_restart_flex(char *chk_dir)
                             /*     printf("Read failed for region_list->region_hist->dtype\n"); */
                             /* } */
                             if (sscanf(buf, "%d", &dtype) != 1) {
-                                fprintf(stderr, "==PDC_SERVER[%d]: Read failed for dtype\n", pdc_server_rank_g);
+                                fprintf(stderr, "==PDC_SERVER[%d]: Read failed for dtype\n",
+                                        pdc_server_rank_g);
                                 ret_value = FAIL;
                                 goto done;
                             }
@@ -1157,7 +1167,8 @@ PDC_Server_restart_flex(char *chk_dir)
                             /*     printf("Read failed for region_list->region_hist->nbin\n"); */
                             /* } */
                             if (sscanf(buf, "%d", &nbin) != 1) {
-                                fprintf(stderr, "==PDC_SERVER[%d]: Read failed for nbin\n", pdc_server_rank_g);
+                                fprintf(stderr, "==PDC_SERVER[%d]: Read failed for nbin\n",
+                                        pdc_server_rank_g);
                                 ret_value = FAIL;
                                 goto done;
                             }
@@ -1173,7 +1184,7 @@ PDC_Server_restart_flex(char *chk_dir)
 
                             if (is_mine) {
                                 region_list->region_hist->range = (double *)malloc(sizeof(double) * nbin * 2);
-                                region_list->region_hist->bin = (uint64_t *)malloc(sizeof(uint64_t) * nbin);
+                                region_list->region_hist->bin   = (uint64_t *)malloc(sizeof(uint64_t) * nbin);
 
                                 /* if (fread(region_list->region_hist->range, sizeof(double), */
                                 /*           region_list->region_hist->nbin * 2, file) != 1) { */
@@ -1182,18 +1193,21 @@ PDC_Server_restart_flex(char *chk_dir)
                                 memcpy(region_list->region_hist->range, buf, nbin * 2 * sizeof(double));
                                 buf += (nbin * 2 * sizeof(double));
 
-                                /* if (fread(region_list->region_hist->bin, sizeof(uint64_t), region_list->region_hist->nbin, */
+                                /* if (fread(region_list->region_hist->bin, sizeof(uint64_t),
+                                 * region_list->region_hist->nbin, */
                                 /*           file) != 1) { */
                                 /*     printf("Read failed for region_list->region_hist->bin\n"); */
                                 /* } */
                                 memcpy(region_list->region_hist->bin, buf, nbin * sizeof(uint64_t));
                                 buf += (nbin * sizeof(uint64_t));
 
-                                /* if (fread(&region_list->region_hist->incr, sizeof(double), 1, file) != 1) { */
+                                /* if (fread(&region_list->region_hist->incr, sizeof(double), 1, file) != 1) {
+                                 */
                                 /*     printf("Read failed for region_list->region_hist->incr\n"); */
                                 /* } */
                                 if (sscanf(buf, "%f", &region_list->region_hist->incr) != 1) {
-                                    fprintf(stderr, "==PDC_SERVER[%d]: Read failed for incr\n", pdc_server_rank_g);
+                                    fprintf(stderr, "==PDC_SERVER[%d]: Read failed for incr\n",
+                                            pdc_server_rank_g);
                                     ret_value = FAIL;
                                     goto done;
                                 }
@@ -1235,7 +1249,8 @@ PDC_Server_restart_flex(char *chk_dir)
                             region_list->io_cache_region    = NULL;
 
                             memset(region_list->shm_addr, 0, ADDR_MAX);
-                            memset(region_list->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
+                            memset(region_list->client_ids, 0,
+                                   PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
 
                             if (strstr(region_list->storage_location, "scratch") != NULL) {
                                 region_list->data_loc_type = PDC_LUSTRE;
@@ -1250,7 +1265,7 @@ PDC_Server_restart_flex(char *chk_dir)
                         DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
                     }
                 } // End for metadata
-            } // End if ismine
+            }     // End if ismine
             else
                 buf += (count * sizeof(pdc_metadata_t));
 
@@ -1355,8 +1370,8 @@ PDC_Server_restart_flex(char *chk_dir)
     MPI_Reduce(&nobj, &all_nobj, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&total_region, &all_n_region, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #else
-    all_nobj          = nobj;
-    all_n_region      = total_region;
+    all_nobj     = nobj;
+    all_n_region = total_region;
 #endif
 
     if (pdc_server_rank_g == 0) {
@@ -1374,7 +1389,6 @@ done:
 
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_restart_flex
-
 
 /*
  * Callback function of the server to lookup other servers via Mercury RPC
@@ -2212,7 +2226,7 @@ PDC_Server_restart(char *filename)
                 if (fread(&type, sizeof(int), 1, file) != 1) {
                     printf("Read failed for kvtag_list->kvtag->type\n");
                 }
-                kvtag_list->kvtag->type = (int8_t)type;
+                kvtag_list->kvtag->type  = (int8_t)type;
                 kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                 if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {
                     printf("Read failed for kvtag_list->kvtag->value\n");
