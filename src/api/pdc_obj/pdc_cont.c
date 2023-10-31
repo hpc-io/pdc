@@ -86,6 +86,7 @@ PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
     p->cont_pt->pdc->local_id = cont_prop->pdc->local_id;
 
     ret = PDC_Client_create_cont_id(cont_name, cont_prop_id, &(p->cont_info_pub->meta_id));
+
     if (ret == FAIL)
         PGOTO_ERROR(0, "Unable to create container on the server!");
 
@@ -316,8 +317,10 @@ PDC_cont_get_info(pdcid_t cont_id)
     FUNC_ENTER(NULL);
 
     id_info = PDC_find_id(cont_id);
-    info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
+    if (id_info == NULL)
+        PGOTO_ERROR(NULL, "cannot locate object");
 
+    info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
     ret_value = PDC_CALLOC(1, struct _pdc_cont_info);
     if (ret_value)
         memcpy(ret_value, info, sizeof(struct _pdc_cont_info));
@@ -326,9 +329,9 @@ PDC_cont_get_info(pdcid_t cont_id)
 
     ret_value->cont_info_pub = PDC_CALLOC(1, struct pdc_cont_info);
     if (ret_value->cont_info_pub)
-        memcpy(ret_value, info, sizeof(struct pdc_cont_info));
-    else
-        PGOTO_ERROR(NULL, "cannot allocate ret_value->cont_info_pub");
+        //memcpy(ret_value->cont_info_pub, info, sizeof(struct pdc_cont_info));
+        memcpy(ret_value->cont_info_pub, info->cont_info_pub, sizeof(struct pdc_cont_info));
+
     if (info->cont_info_pub->name)
         ret_value->cont_info_pub->name = strdup(info->cont_info_pub->name);
 
