@@ -45,8 +45,8 @@ case $arch in
 esac
 
 if [ -z "$3" ] || [ "$3" -eq 0 ]; then
-    docker build -t ${IMG_NS}/pdc_dev_base:${VERSION}-${ARCH_CODE} -f .docker/dev_base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ --build-arg ARCH_CODE=${ARCH_CODE} .
-    docker push ${IMG_NS}/pdc_dev_base:${VERSION}-${ARCH_CODE}
+    docker build -t ${IMG_NS}/pdc-dev-base:${VERSION}-${ARCH_CODE} -f .docker/dev_base.Dockerfile --build-arg ARCH=${ARCH_CODE}/ --build-arg ARCH_CODE=${ARCH_CODE} .
+    docker push ${IMG_NS}/pdc-dev-base:${VERSION}-${ARCH_CODE}
     exit 0
 else
     echo "Processing manifest..."
@@ -56,19 +56,19 @@ else
     manifest_args=()
     for arch in "${arch_strings[@]}"; do
         echo "Processing architecture: $arch"
-        manifest_args+=("--amend" "${IMG_NS}/pdc_dev_base:${VERSION}-${arch}")
+        manifest_args+=("--amend" "${IMG_NS}/pdc-dev-base:${VERSION}-${arch}")
         if [[  "$arch" == "$ARCH_CODE" ]]; then
             echo "Skipping pulling current architecture: $arch"
             continue
         fi
-        docker pull ${IMG_NS}/pdc_dev_base:${VERSION}-${arch}
+        docker pull ${IMG_NS}/pdc-dev-base:${VERSION}-${arch}
     done
 
-    docker manifest create ${IMG_NS}/pdc_dev_base:${VERSION} ${manifest_args[@]}
-    docker manifest push ${IMG_NS}/pdc_dev_base:${VERSION}
-    docker manifest rm ${IMG_NS}/pdc_dev_base:latest
-    docker manifest create ${IMG_NS}/pdc_dev_base:latest ${manifest_args[@]}
-    docker manifest push ${IMG_NS}/pdc_dev_base:latest
+    docker manifest create ${IMG_NS}/pdc-dev-base:${VERSION} ${manifest_args[@]}
+    docker manifest push ${IMG_NS}/pdc-dev-base:${VERSION}
+    docker manifest rm ${IMG_NS}/pdc-dev-base:latest
+    docker manifest create ${IMG_NS}/pdc-dev-base:latest ${manifest_args[@]}
+    docker manifest push ${IMG_NS}/pdc-dev-base:latest
 
 fi
 
