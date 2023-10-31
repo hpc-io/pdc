@@ -10,6 +10,10 @@ include_directories(
   $ENV{HOME}/include
 )
 
+set(TEST_EXT_LIB "")
+set(TEST_EXT_INCLUDE_DIRS "")
+set(EXTRA_SRC_FILE "")
+
 # *************************************************
 # Julia Support
 # *************************************************
@@ -20,10 +24,22 @@ endif(PDC_ENABLE_JULIA)
 # *************************************************
 # *  Find UUID library
 # *************************************************
-find_package(UUID REQUIRED)
+find_package(UUID)
 if(UUID_FOUND)
   include_directories(${UUID_INCLUDE_DIRS})
 endif(UUID_FOUND)
+
+# *************************************************
+# *  MERCURY
+# *************************************************
+find_package(MERCURY REQUIRED)
+if(MERCURY_FOUND)
+  set(TEST_EXT_INCLUDE_DIRS ${MERCURY_INCLUDE_DIRS}
+    ${TEST_EXT_INCLUDE_DIRS}
+    )
+  set(TEST_EXT_LIB ${MERCURY_LIBRARIES} ${TEST_EXT_LIB})
+endif()
+include_directories(${TEST_EXT_INCLUDE_DIRS})
 
 set(PROGRAMS
   pdc_init
@@ -119,16 +135,14 @@ set(PROGRAMS
   query_data
   )
 
-set(MPI_PROGRAMS
- kvtag_query_scale_col
- kvtag_query_mpi
- kvtag_add_get_benchmark
- kvtag_add_get_scale
- )
+# TODO: Check if import_vpic.c is needed. If yes, we have to add the following :
+# if (HDF5_FOUND) 
+#   set(TEST_EXT_LIB ${HDF5_LIBRARIES} ${TEST_EXT_LIB})
+#   set(TEST_EXT_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} ${TEST_EXT_INCLUDE_DIRS})
+# else ()
+#   message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
+# endif()
 
-set(TEST_EXT_LIB "")
-set(TEST_EXT_INCLUDE_DIRS "")
-set(EXTRA_SRC_FILE "")
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
@@ -137,6 +151,13 @@ foreach(program ${PROGRAMS})
 endforeach(program)
 
 if(BUILD_MPI_TESTING)
+  set(MPI_PROGRAMS
+    kvtag_query_scale_col
+    # kvtag_query_mpi
+    kvtag_add_get_benchmark
+    kvtag_add_get_scale
+  )
+
   foreach(program ${MPI_PROGRAMS})
     add_executable(${program} ${program}.c)
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -195,12 +216,6 @@ foreach(script ${SCRIPTS})
        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE
     )
 endforeach(script)
-
-
-# *******************************************
-# Add the HDF5 library for pdc-neon
-# *******************************************
-FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/lib)
 
 
 # *******************************************
