@@ -320,7 +320,7 @@ PDC_cont_get_info(pdcid_t cont_id)
     if (id_info == NULL)
         PGOTO_ERROR(NULL, "cannot locate object");
 
-    info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
+    info      = (struct _pdc_cont_info *)(id_info->obj_ptr);
     ret_value = PDC_CALLOC(1, struct _pdc_cont_info);
     if (ret_value)
         memcpy(ret_value, info, sizeof(struct _pdc_cont_info));
@@ -329,7 +329,7 @@ PDC_cont_get_info(pdcid_t cont_id)
 
     ret_value->cont_info_pub = PDC_CALLOC(1, struct pdc_cont_info);
     if (ret_value->cont_info_pub)
-        //memcpy(ret_value->cont_info_pub, info, sizeof(struct pdc_cont_info));
+        // memcpy(ret_value->cont_info_pub, info, sizeof(struct pdc_cont_info));
         memcpy(ret_value->cont_info_pub, info->cont_info_pub, sizeof(struct pdc_cont_info));
 
     if (info->cont_info_pub->name)
