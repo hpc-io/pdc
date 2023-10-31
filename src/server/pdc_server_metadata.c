@@ -1653,12 +1653,12 @@ PDC_Server_query_kvtag_rocksdb(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj
 {
     perr_t ret_value = SUCCEED;
 #ifdef ENABLE_ROCKSDB
-    const char *           rocksdb_key;
-    pdc_kvtag_t            tmp;
-    uint64_t               obj_id;
-    char                   name[TAG_LEN_MAX];
-    size_t                 len;
-    uint32_t               iter = 0;
+    const char *rocksdb_key;
+    pdc_kvtag_t tmp;
+    uint64_t    obj_id;
+    char        name[TAG_LEN_MAX];
+    size_t      len;
+    uint32_t    iter = 0;
 
     rocksdb_readoptions_t *readoptions  = rocksdb_readoptions_create();
     rocksdb_iterator_t *   rocksdb_iter = rocksdb_create_iterator(rocksdb_g, readoptions);
@@ -2774,8 +2774,8 @@ PDC_Server_add_kvtag_rocksdb(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t
 {
     perr_t ret_value = SUCCEED;
 #ifdef ENABLE_ROCKSDB
-    rocksdb_writeoptions_t *writeoptions = rocksdb_writeoptions_create();
-    char rocksdb_key[TAG_LEN_MAX] = {0};
+    rocksdb_writeoptions_t *writeoptions             = rocksdb_writeoptions_create();
+    char                    rocksdb_key[TAG_LEN_MAX] = {0};
     sprintf(rocksdb_key, "%lu`%s", in->obj_id, in->kvtag.name);
     char *err = NULL;
     // Debug
@@ -2818,8 +2818,8 @@ PDC_Server_add_kvtag_sqlite3(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t
                 in->kvtag.name, *((float *)in->kvtag.value));
     }
     else if (in->kvtag.type == PDC_DOUBLE && in->kvtag.size == sizeof(double)) {
-        sprintf(sql, "INSERT INTO objects (objid, name, value_double) VALUES (%llu, '%s', '%lf');", in->obj_id,
-                in->kvtag.name, *((double *)in->kvtag.value));
+        sprintf(sql, "INSERT INTO objects (objid, name, value_double) VALUES (%llu, '%s', '%lf');",
+                in->obj_id, in->kvtag.name, *((double *)in->kvtag.value));
     }
     else {
         printf("==PDC_SERVER[%d]: datatype not supported %d!\n", pdc_server_rank_g, in->kvtag.type);
@@ -2875,7 +2875,8 @@ PDC_Server_add_kvtag_someta(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
             out->ret = 1;
         }
         else {
-            printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g, in->obj_id);
+            printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g,
+                   in->obj_id);
             ret_value = FAIL;
             out->ret  = -1;
         }
