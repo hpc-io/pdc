@@ -76,8 +76,8 @@ void *PDC_free(void *mem);
  */
 size_t PDC_get_global_mem_usage();
 
-#define PDC_MALLOC(t)    (t *)PDC_malloc(sizeof(t) + 1)
-#define PDC_CALLOC(c, t) (t *)PDC_calloc(c, sizeof(t) + 1)
+#define PDC_MALLOC(t)    (t *)PDC_malloc(sizeof(t))
+#define PDC_CALLOC(c, t) (t *)PDC_calloc(c, sizeof(t))
 
 #define PDC_FREE(t, obj) (t *)(intptr_t) PDC_free(obj)
 
