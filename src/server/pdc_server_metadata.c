@@ -1804,9 +1804,8 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
     return ret_value;
 }
 
-perr_t
-PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
-                                  uint32_t *n_meta, uint64_t **obj_ids)
+static perr_t
+PDC_Server_query_kvtag_someta(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids, uint64_t alloc_size)
 {
     perr_t                     ret_value = SUCCEED;
     uint32_t                   iter      = 0;
@@ -1816,62 +1815,84 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     HashTableIterator          hash_table_iter;
     int                        n_entry, is_name_match, is_value_match;
     HashTablePair              pair;
+
+    if (metadata_hash_table_g != NULL) {
+
+        n_entry = hash_table_num_entries(metadata_hash_table_g);
+        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+            pair = hash_table_iter_next(&hash_table_iter);
+            head = pair.value;
+            DL_FOREACH(head->metadata, elt)
+            {
+#ifdef PDC_DEBUG_OUTPUT
+                printf("==PDC_SERVER: Matching kvtag [\"%s\":\"%s\"] of object %s on condition in->key: "
+                       "%s, in->value: %s ",
+                       (char *)kvtag_list_elt->kvtag->name, (char *)kvtag_list_elt->kvtag->value,
+                       elt->obj_name, in->name, in->value);
+#endif
+                DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
+                {
+                    if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
+#ifdef PDC_DEBUG_OUTPUT
+                        println("[Found]");
+#endif
+                        if (iter >= alloc_size) {
+                            alloc_size *= 2;
+                            *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
+                        }
+                        (*obj_ids)[iter++] = elt->obj_id;
+                        break;
+                    }
+                } // End for each kvtag in list
+            }     // End for each metadata from hash table entry
+        }         // End looping metadata hash table
+        *n_meta = iter;
+#ifdef PDC_DEBUG_OUTPUT
+        printf("==PDC_SERVER[%d]: found %d objids \n", pdc_server_rank_g, iter);
+#endif
+    } // if (metadata_hash_table_g != NULL)
+    else {
+        printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
+        ret_value = FAIL;
+    }
+
+    return ret_value;
+}
+
+perr_t
+PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
+                                  uint32_t *n_meta, uint64_t **obj_ids)
+{
+    perr_t                     ret_value = SUCCEED;
+
     uint32_t                   alloc_size = 128;
 
     FUNC_ENTER(NULL);
 
     *n_meta = 0;
-
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
 
     if (use_rocksdb_g == 1) {
         ret_value = PDC_Server_query_kvtag_rocksdb(in, n_meta, obj_ids, alloc_size);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_query_kvtag_rocksdb!\n", pdc_server_rank_g);
+            goto done;
+        }
     }
     else if (use_sqlite3_g) {
         ret_value = PDC_Server_query_kvtag_sqlite(in, n_meta, obj_ids, alloc_size);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_query_kvtag_sqlite!\n", pdc_server_rank_g);
+            goto done;
+        }
     } // End if SQLite3
     else {
         // SoMeta backend
-        if (metadata_hash_table_g != NULL) {
-
-            n_entry = hash_table_num_entries(metadata_hash_table_g);
-            hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
-
-            while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
-                pair = hash_table_iter_next(&hash_table_iter);
-                head = pair.value;
-                DL_FOREACH(head->metadata, elt)
-                {
-#ifdef PDC_DEBUG_OUTPUT
-                    printf("==PDC_SERVER: Matching kvtag [\"%s\":\"%s\"] of object %s on condition in->key: "
-                           "%s, in->value: %s ",
-                           (char *)kvtag_list_elt->kvtag->name, (char *)kvtag_list_elt->kvtag->value,
-                           elt->obj_name, in->name, in->value);
-#endif
-                    DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
-                    {
-                        if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
-#ifdef PDC_DEBUG_OUTPUT
-                            println("[Found]");
-#endif
-                            if (iter >= alloc_size) {
-                                alloc_size *= 2;
-                                *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
-                            }
-                            (*obj_ids)[iter++] = elt->obj_id;
-                            break;
-                        }
-                    } // End for each kvtag in list
-                }     // End for each metadata from hash table entry
-            }         // End looping metadata hash table
-            *n_meta = iter;
-#ifdef PDC_DEBUG_OUTPUT
-            printf("==PDC_SERVER[%d]: found %d objids \n", pdc_server_rank_g, iter);
-#endif
-        } // if (metadata_hash_table_g != NULL)
-        else {
-            printf("==PDC_SERVER: metadata_hash_table_g not initialized!\n");
-            ret_value = FAIL;
+        ret_value = PDC_Server_query_kvtag_someta(in, n_meta, obj_ids, alloc_size);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_query_kvtag_someta!\n", pdc_server_rank_g);
             goto done;
         }
     }
@@ -2746,19 +2767,130 @@ PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *tag)
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t
+PDC_Server_add_kvtag_rocksdb(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
+{
+    perr_t   ret_value = SUCCEED;
+#ifdef ENABLE_ROCKSDB
+    rocksdb_writeoptions_t *writeoptions = rocksdb_writeoptions_create();
+    char rocksdb_key[TAG_LEN_MAX] = {0};
+    sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name);
+    char *err = NULL;
+    // Debug
+    /* printf("Put [%s] [%d], len%lu\n", in->kvtag.name, *((int*)in->kvtag.value), in->kvtag.size); */
+    rocksdb_put(rocksdb_g, writeoptions, rocksdb_key, strlen(rocksdb_key) + 1, in->kvtag.value,
+                in->kvtag.size, &err);
+    if (err != NULL) {
+        printf("==PDC_SERVER[%d]: error with rocksdb_put %s, [%s]!\n", pdc_server_rank_g, in->kvtag.name,
+               err);
+        ret_value = FAIL;
+    }
+    else
+        out->ret = 1;
+#else
+    printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
+static perr_t
+PDC_Server_add_kvtag_sqlite3(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
+{
+    perr_t   ret_value = SUCCEED;
+#ifdef ENABLE_SQLITE3
+    char  sql[TAG_LEN_MAX] = {0};
+    char *errMessage       = NULL;
+
+    if (in->kvtag.type == PDC_STRING || in->kvtag.type == PDC_CHAR) {
+        sprintf(sql, "INSERT INTO objects (objid, name, value_text) VALUES (%llu, '%s', '%s');", obj_id,
+                in->kvtag.name, (char *)in->kvtag.value);
+    }
+    else if (in->kvtag.type == PDC_INT && in->kvtag.size == sizeof(int)) {
+        sprintf(sql, "INSERT INTO objects (objid, name, value_int) VALUES (%llu, '%s', '%d');", obj_id,
+                in->kvtag.name, *((int *)in->kvtag.value));
+    }
+    else if (in->kvtag.type == PDC_FLOAT && in->kvtag.size == sizeof(float)) {
+        sprintf(sql, "INSERT INTO objects (objid, name, value_float) VALUES (%llu, '%s', '%f');", obj_id,
+                in->kvtag.name, *((float *)in->kvtag.value));
+    }
+    else if (in->kvtag.type == PDC_DOUBLE && in->kvtag.size == sizeof(double)) {
+        sprintf(sql, "INSERT INTO objects (objid, name, value_double) VALUES (%llu, '%s', '%lf');",
+                obj_id, in->kvtag.name, *((double *)in->kvtag.value));
+    }
+    else {
+        printf("==PDC_SERVER[%d]: datatype not supported %d!\n", pdc_server_rank_g, in->kvtag.type);
+        ret_value = FAIL;
+        goto done;
+    }
+
+    // debug
+    /* printf("==PDC_SERVER[%d]: constructed SQL [%s]\n", pdc_server_rank_g, sql); */
+    sqlite3_exec(sqlite3_db_g, sql, NULL, 0, &errMessage);
+
+    if (errMessage)
+        printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+    else
+        out->ret = 1;
+#else
+    printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
+static perr_t
+PDC_Server_add_kvtag_someta(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
+{
+    perr_t ret_value = SUCCEED;
+    pdc_hash_table_entry_head *lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
+    uint32_t hash_key;
+    uint64_t obj_id;
+
+    hash_key = in->hash_value;
+    obj_id   = in->obj_id;
+
+    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+    if (lookup_value != NULL) {
+        pdc_metadata_t *target;
+        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+        if (target != NULL) {
+            PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
+            out->ret = 1;
+        } // if (lookup_value != NULL)
+        else {
+            // Object not found
+            ret_value = FAIL;
+            out->ret  = -1;
+        }
+    }      // if lookup_value != NULL
+    else { // look for containers
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_add_kvtag_to_list(&cont_lookup_value->kvtag_list_head, &in->kvtag);
+            out->ret = 1;
+        }
+        else {
+            printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g,
+                   obj_id);
+            ret_value = FAIL;
+            out->ret  = -1;
+        }
+    }
+
+    return ret_value;
+}
+
 perr_t
 PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
 {
-
     perr_t   ret_value = SUCCEED;
-    uint32_t hash_key;
-    uint64_t obj_id;
 #ifdef ENABLE_MULTITHREAD
     int unlocked;
 #endif
-    pdc_hash_table_entry_head *  lookup_value;
-    pdc_cont_hash_table_entry_t *cont_lookup_value;
-
     FUNC_ENTER(NULL);
 
 #ifdef ENABLE_TIMING
@@ -2768,10 +2900,7 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    hash_key = in->hash_value;
-    obj_id   = in->obj_id;
     out->ret = -1;
-
     // printf("==SERVER[%d]: PDC_add_kvtag::in.obj_id = %llu \n ", pdc_server_rank_g, obj_id);
 
 #ifdef ENABLE_MULTITHREAD
@@ -2781,93 +2910,24 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
 #endif
 
     if (use_rocksdb_g == 1) {
-#ifdef ENABLE_ROCKSDB
-        rocksdb_writeoptions_t *writeoptions             = rocksdb_writeoptions_create();
-        char                    rocksdb_key[TAG_LEN_MAX] = {0};
-        sprintf(rocksdb_key, "%lu`%s", obj_id, in->kvtag.name);
-        char *err = NULL;
-        // Debug
-        /* printf("Put [%s] [%d], len%lu\n", in->kvtag.name, *((int*)in->kvtag.value), in->kvtag.size); */
-        rocksdb_put(rocksdb_g, writeoptions, rocksdb_key, strlen(rocksdb_key) + 1, in->kvtag.value,
-                    in->kvtag.size, &err);
-        if (err != NULL) {
-            printf("==PDC_SERVER[%d]: error with rocksdb_put %s, [%s]!\n", pdc_server_rank_g, in->kvtag.name,
-                   err);
-            ret_value = FAIL;
-        }
-        out->ret = 1;
-        goto done;
-#else
-        printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
-        goto done;
-#endif
-    } // End if rocksdb
-    else if (use_sqlite3_g == 1) {
-#ifdef ENABLE_SQLITE3
-        char  sql[TAG_LEN_MAX] = {0};
-        char *errMessage       = NULL;
-
-        if (in->kvtag.type == PDC_STRING || in->kvtag.type == PDC_CHAR) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_text) VALUES (%llu, '%s', '%s');", obj_id,
-                    in->kvtag.name, (char *)in->kvtag.value);
-        }
-        else if (in->kvtag.type == PDC_INT && in->kvtag.size == sizeof(int)) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_int) VALUES (%llu, '%s', '%d');", obj_id,
-                    in->kvtag.name, *((int *)in->kvtag.value));
-        }
-        else if (in->kvtag.type == PDC_FLOAT && in->kvtag.size == sizeof(float)) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_float) VALUES (%llu, '%s', '%f');", obj_id,
-                    in->kvtag.name, *((float *)in->kvtag.value));
-        }
-        else if (in->kvtag.type == PDC_DOUBLE && in->kvtag.size == sizeof(double)) {
-            sprintf(sql, "INSERT INTO objects (objid, name, value_double) VALUES (%llu, '%s', '%lf');",
-                    obj_id, in->kvtag.name, *((double *)in->kvtag.value));
-        }
-        else {
-            printf("==PDC_SERVER[%d]: datatype not supported %d!\n", pdc_server_rank_g, in->kvtag.type);
-            ret_value = FAIL;
+        ret_value = PDC_Server_add_kvtag_rocksdb(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_add_kvtag_rocksdb!\n", pdc_server_rank_g);
             goto done;
         }
-
-        // debug
-        /* printf("==PDC_SERVER[%d]: constructed SQL [%s]\n", pdc_server_rank_g, sql); */
-        sqlite3_exec(sqlite3_db_g, sql, NULL, 0, &errMessage);
-
-        if (errMessage)
-            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-        else
-            out->ret = 1;
-#else
-        printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
-#endif
+    } // End if rocksdb
+    else if (use_sqlite3_g == 1) {
+        ret_value = PDC_Server_add_kvtag_sqlite3(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_add_kvtag_sqlite3!\n", pdc_server_rank_g);
+            goto done;
+        }
     } // End if sqlite3
     else {
-        lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
-        if (lookup_value != NULL) {
-            pdc_metadata_t *target;
-            target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
-            if (target != NULL) {
-                PDC_add_kvtag_to_list(&target->kvtag_list_head, &in->kvtag);
-                out->ret = 1;
-            } // if (lookup_value != NULL)
-            else {
-                // Object not found
-                ret_value = FAIL;
-                out->ret  = -1;
-            }
-        }      // if lookup_value != NULL
-        else { // look for containers
-            cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
-            if (cont_lookup_value != NULL) {
-                PDC_add_kvtag_to_list(&cont_lookup_value->kvtag_list_head, &in->kvtag);
-                out->ret = 1;
-            }
-            else {
-                printf("==PDC_SERVER[%d]: add tag target %" PRIu64 " not found!\n", pdc_server_rank_g,
-                       obj_id);
-                ret_value = FAIL;
-                out->ret  = -1;
-            }
+        ret_value = PDC_Server_add_kvtag_someta(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_add_kvtag_someta!\n", pdc_server_rank_g);
+            goto done;
         }
     }
 
@@ -2978,18 +3038,112 @@ sqlite_get_kvtag_callback(void *data, int argc, char **argv, char **colName)
 }
 #endif
 
-perr_t
-PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
+static perr_t
+PDC_Server_get_kvtag_rocksdb(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 {
+    perr_t   ret_value = SUCCEED;
 
+#ifdef ENABLE_ROCKSDB
+    rocksdb_readoptions_t *readoptions = rocksdb_readoptions_create();
+    char rocksdb_key[TAG_LEN_MAX] = {0};
+    sprintf(rocksdb_key, "%lu`%s", obj_id, in->key);
+    char * err = NULL;
+    size_t len;
+    char * value = rocksdb_get(rocksdb_g, readoptions, rocksdb_key, strlen(rocksdb_key) + 1, &len, &err);
+    if (value == NULL) {
+        printf("==PDC_SERVER[%d]: error with rocksdb_get %s, [%s]!\n", pdc_server_rank_g, in->key, err);
+        ret_value = FAIL;
+    }
+    out->kvtag.name  = in->key;
+    out->kvtag.size  = len;
+    out->kvtag.value = value;
+    out->ret         = 1;
+#else
+    printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
+static perr_t
+PDC_Server_get_kvtag_sqlite3(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
+{
+    perr_t   ret_value = SUCCEED;
+#ifdef ENABLE_SQLITE3
+    char  sql[TAG_LEN_MAX];
+    char *errMessage = NULL;
+    sprintf(sql,
+            "SELECT value_text, value_int, value_float, value_double, value_blob FROM objects WHERE "
+            "objid = %llu AND name = \'%s\';",
+            in->obj_id, in->key);
+
+    /* printf("==PDC_SERVER[%d]: get kvtag [%s]!\n", pdc_server_rank_g, in->key); */
+    sqlite3_exec(sqlite3_db_g, sql, sqlite_get_kvtag_callback, &out->kvtag, &errMessage);
+    if (errMessage) {
+        printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+    }
+    else {
+        // size and value is filled in sqlite_get_kvtag_callback
+        out->kvtag.name = in->key;
+        out->ret = 1;
+    }
+#else
+    printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
+static perr_t
+PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
+{
     perr_t   ret_value = SUCCEED;
     uint32_t hash_key;
     uint64_t obj_id;
+    pdc_hash_table_entry_head *  lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
+
+    hash_key = in->hash_value;
+    obj_id   = in->obj_id;
+
+    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+    if (lookup_value != NULL) {
+        pdc_metadata_t *target;
+        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+        if (target != NULL) {
+            PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
+            out->ret = 1;
+        }
+        else {
+            ret_value = FAIL;
+            out->ret  = -1;
+        }
+    }
+    else {
+
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
+            out->ret = 1;
+        }
+        else {
+            ret_value = FAIL;
+            out->ret  = -1;
+        }
+    }
+
+    return ret_value;
+}
+
+perr_t
+PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
+{
+    perr_t   ret_value = SUCCEED;
 #ifdef ENABLE_MULTITHREAD
     int unlocked;
 #endif
-    pdc_hash_table_entry_head *  lookup_value;
-    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -3000,8 +3154,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    hash_key = in->hash_value;
-    obj_id   = in->obj_id;
+    out->ret = -1;
 
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
@@ -3010,82 +3163,29 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 #endif
 
     if (use_rocksdb_g == 1) {
-        out->ret = -1;
-#ifdef ENABLE_ROCKSDB
-        rocksdb_readoptions_t *readoptions              = rocksdb_readoptions_create();
-        char                   rocksdb_key[TAG_LEN_MAX] = {0};
-        sprintf(rocksdb_key, "%lu`%s", obj_id, in->key);
-        char * err = NULL;
-        size_t len;
-        char * value = rocksdb_get(rocksdb_g, readoptions, rocksdb_key, strlen(rocksdb_key) + 1, &len, &err);
-        if (value == NULL) {
-            printf("==PDC_SERVER[%d]: error with rocksdb_get %s, [%s]!\n", pdc_server_rank_g, in->key, err);
-            ret_value = FAIL;
+        ret_value = PDC_Server_get_kvtag_rocksdb(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_get_kvtag_rocksdb!\n", pdc_server_rank_g);
+            goto done;
         }
-        out->kvtag.name  = in->key;
-        out->kvtag.size  = len;
-        out->kvtag.value = value;
-        out->ret         = 1;
-#else
-        printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
-#endif
     }
-    else if (use_sqlite3_g) {
-#ifdef ENABLE_SQLITE3
-        // SQLite3
-        char  sql[TAG_LEN_MAX];
-        char *errMessage = NULL;
-        sprintf(sql,
-                "SELECT value_text, value_int, value_float, value_double, value_blob FROM objects WHERE "
-                "objid = %llu AND name = \'%s\';",
-                in->obj_id, in->key);
-
-        /* printf("==PDC_SERVER[%d]: get kvtag [%s]!\n", pdc_server_rank_g, in->key); */
-        sqlite3_exec(sqlite3_db_g, sql, sqlite_get_kvtag_callback, &out->kvtag, &errMessage);
-        if (errMessage) {
-            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+    else if (use_sqlite3_g == 1) {
+        ret_value = PDC_Server_get_kvtag_sqlite3(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_get_kvtag_sqlite3!\n", pdc_server_rank_g);
+            goto done;
         }
-        else {
-            out->kvtag.name = in->key;
-            out->ret        = 1;
-        }
-#else
-        printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
-#endif
-    } // End if SQLite3
+    }
     else {
-        lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
-        if (lookup_value != NULL) {
-            pdc_metadata_t *target;
-            target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
-            if (target != NULL) {
-                PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
-                out->ret = 1;
-            }
-            else {
-                ret_value = FAIL;
-                out->ret  = -1;
-            }
-        }
-        else {
-
-            cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
-            if (cont_lookup_value != NULL) {
-                PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
-                out->ret = 1;
-            }
-            else {
-                ret_value = FAIL;
-                out->ret  = -1;
-            }
+        // Someta
+        ret_value = PDC_Server_get_kvtag_someta(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_get_kvtag_someta!\n", pdc_server_rank_g);
+            goto done;
         }
     }
 
-    if (ret_value != SUCCEED) {
-        printf("==PDC_SERVER[%d]: %s - error \n", pdc_server_rank_g, __func__);
-        goto done;
-    }
-
+done:
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
@@ -3110,7 +3210,6 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
     hg_thread_mutex_unlock(&pdc_time_mutex_g);
 #endif
 
-done:
 #ifdef ENABLE_MULTITHREAD
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
@@ -3145,18 +3244,109 @@ PDC_del_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key)
     FUNC_LEAVE(ret_value);
 }
 
+static perr_t
+PDC_Server_del_kvtag_rocksdb(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
+{
+    perr_t   ret_value = SUCCEED;
+#ifdef ENABLE_ROCKSDB
+    char *err = NULL;
+    char rocksdb_key[TAG_LEN_MAX] = {0};
+    rocksdb_writeoptions_t *writeoptions = rocksdb_writeoptions_create();
+
+    sprintf(rocksdb_key, "%lu`%s", obj_id, in->key);
+    rocksdb_delete(rocksdb_g, writeoptions, rocksdb_key, strlen(rocksdb_key) + 1, &err);
+    if (err != NULL) {
+        printf("==PDC_SERVER[%d]: error with rocksdb_delete [%s], [%s]!\n", pdc_server_rank_g, in->key,
+               err);
+        ret_value = FAIL;
+    }
+    else
+        out->ret = 1;
+#else
+    printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
+static perr_t
+PDC_Server_del_kvtag_sqlite3(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
+{
+    perr_t ret_value = SUCCEED;
+#ifdef ENABLE_SQLITE3
+    char  sql[TAG_LEN_MAX];
+    char *errMessage = NULL;
+
+    sprintf(sql, "DELETE FROM objects WHERE objid = %llu AND name = \'%s\';", in->obj_id, in->key);
+
+    sqlite3_exec(sqlite3_db_g, sql, NULL, 0, &errMessage);
+    if (errMessage) {
+        printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        ret_value = FAIL;
+    }
+    else
+        out->ret = 1;
+#else
+    printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
+    ret_value = FAIL;
+#endif
+
+    return ret_value;
+}
+
+static perr_t
+PDC_Server_del_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
+{
+    perr_t ret_value = SUCCEED;
+    uint32_t hash_key;
+    uint64_t obj_id;
+    pdc_hash_table_entry_head *  lookup_value;
+    pdc_cont_hash_table_entry_t *cont_lookup_value;
+
+    hash_key = in->hash_value;
+    obj_id   = in->obj_id;
+
+    // Look obj tags first
+    lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
+    if (lookup_value != NULL) {
+        pdc_metadata_t *target;
+        target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
+        if (target != NULL) {
+            ret_value = PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
+            out->ret  = 1;
+        }
+        else {
+            ret_value = FAIL;
+            out->ret  = -1;
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
+        }
+    }
+    else {
+        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        if (cont_lookup_value != NULL) {
+            PDC_del_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key);
+            out->ret = 1;
+        }
+        else {
+            ret_value = FAIL;
+            out->ret  = -1;
+            printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
+                   __func__, in->key);
+        }
+    }
+
+    return ret_value;
+}
+
 perr_t
 PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 {
-
     perr_t   ret_value = SUCCEED;
-    uint32_t hash_key;
-    uint64_t obj_id;
 #ifdef ENABLE_MULTITHREAD
     int unlocked;
 #endif
-    pdc_hash_table_entry_head *  lookup_value;
-    pdc_cont_hash_table_entry_t *cont_lookup_value;
 
     FUNC_ENTER(NULL);
 
@@ -3167,8 +3357,7 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
     gettimeofday(&pdc_timer_start, 0);
 #endif
 
-    hash_key = in->hash_value;
-    obj_id   = in->obj_id;
+    out->ret = -1;
 
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
@@ -3176,71 +3365,24 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 #endif
 
     if (use_rocksdb_g) {
-#ifdef ENABLE_ROCKSDB
-        char *                  err                      = NULL;
-        rocksdb_writeoptions_t *writeoptions             = rocksdb_writeoptions_create();
-        char                    rocksdb_key[TAG_LEN_MAX] = {0};
-        sprintf(rocksdb_key, "%lu`%s", obj_id, in->key);
-
-        rocksdb_delete(rocksdb_g, writeoptions, rocksdb_key, strlen(rocksdb_key) + 1, &err);
-        if (err != NULL) {
-            printf("==PDC_SERVER[%d]: error with rocksdb_delete [%s], [%s]!\n", pdc_server_rank_g, in->key,
-                   err);
-            ret_value = FAIL;
+        ret_value = PDC_Server_del_kvtag_rocksdb(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_del_kvtag_rocksdb!\n", pdc_server_rank_g);
+            goto done;
         }
-        out->ret = 1;
-#else
-        printf("==PDC_SERVER[%d]: enabled rocksdb but PDC is not compiled with it!\n", pdc_server_rank_g);
-        ret_value = FAIL;
-#endif
     }
     else if (use_sqlite3_g) {
-#ifdef ENABLE_SQLITE3
-        char  sql[TAG_LEN_MAX];
-        char *errMessage = NULL;
-
-        sprintf(sql, "DELETE FROM objects WHERE objid = %llu AND name = \'%s\';", in->obj_id, in->key);
-
-        sqlite3_exec(sqlite3_db_g, sql, NULL, 0, &errMessage);
-        if (errMessage)
-            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
-        else
-            out->ret = 1;
-#else
-        printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
-#endif
+        ret_value = PDC_Server_del_kvtag_sqlite3(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_del_kvtag_sqlite3!\n", pdc_server_rank_g);
+            goto done;
+        }
     }
     else {
-        // Look obj tags first
-        lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
-        if (lookup_value != NULL) {
-            pdc_metadata_t *target;
-            target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
-            if (target != NULL) {
-                ret_value = PDC_del_kvtag_value_from_list(&target->kvtag_list_head, in->key);
-                out->ret  = 1;
-            }
-            else {
-                ret_value = FAIL;
-                out->ret  = -1;
-                printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
-                       __func__, in->key);
-                goto done;
-            }
-        }
-        else {
-            cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
-            if (cont_lookup_value != NULL) {
-                PDC_del_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key);
-                out->ret = 1;
-            }
-            else {
-                ret_value = FAIL;
-                out->ret  = -1;
-                printf("==PDC_SERVER[%d]: %s - failed to find requested kvtag [%s]\n", pdc_server_rank_g,
-                       __func__, in->key);
-                goto done;
-            }
+        ret_value = PDC_Server_del_kvtag_someta(in, out);
+        if (ret_value != SUCCEED) {
+            printf("==PDC_SERVER[%d]: Error with PDC_Server_del_kvtag_someta!\n", pdc_server_rank_g);
+            goto done;
         }
     }
 
