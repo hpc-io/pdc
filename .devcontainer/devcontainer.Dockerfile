@@ -2,7 +2,7 @@
 
 # Use Ubuntu Jammy (latest LTS) as the base image
 # FROM ubuntu:jammy
-FROM zhangwei217245/pdc_dev_base:latest
+FROM hpcio/pdc-dev-base:latest
 
 RUN rm -rf $PDC_SRC_DIR && \
     rm -rf $PDC_DIR
