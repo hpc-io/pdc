@@ -25,11 +25,6 @@
 
 typedef enum { PATTERN_EXACT = 2, PATTERN_PREFIX = 3, PATTERN_SUFFIX = 4, PATTERN_MIDDLE = 5 } pattern_type_t;
 
-typedef struct {
-    char * start;
-    size_t length;
-} string;
-
 /**
  * take the part starting from the start position
  * you need to free str after use.

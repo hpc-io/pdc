@@ -174,6 +174,7 @@ Install PDC
 
 .. note::
 	If you are trying to compile PDC on your Mac, ``LibUUID`` needs to be installed on your MacOS first. Simple use ``brew install ossp-uuid`` to install it.
+	If you are trying to compile PDC on Linux, you should also make sure ``LibUUID`` is installed on your system. If not, you can install it with ``sudo apt-get install uuid-dev`` on Ubuntu or ``yum install libuuid-devel`` on CentOS.
 
 Test Your PDC Installation
 --------------------------
@@ -219,14 +220,18 @@ Then you can compile your PDC project with Julia support.
 Now, see Developer Notes to know how you can add your own Julia functions to enhance your test cases in PDC. 
 
 
-Build PDC Docker Image and Run PDC Docker Container
+Build PDC in a Docker Container
 ---------------------------------------------------
-We provide a Dockerfile to build a PDC Docker image. The Dockerfile is located at `--$PDC_ROOT/.docker/local.Dockerfile`
-To build the PDC Docker image, you can run the following command from `$PDC_ROOT`:
-`docker build -t pdc_dev_base:latest -f $PDC_ROOT/.docker/base.Dockerfile .`
+Simply run the following command from the project root directory to build PDC in a Docker container:
+.. code-block:: Bash
+	.docker/run_dev_base.sh
 
-To run the PDC Docker container, you can run the following command:
-`docker run -it --rm --name pdc -v $PDC_ROOT:/home/codespace/source/pdc pdc_dev_base:latest /bin/bash`
+
+Build PDC in Github Codespace
+---------------------------------------------------
+Simply start a Github Codespace from the targeting branch of your PDC project, and enjoy. 
+For more information on how to create Github Codespace, please refer to `Github Codespace Documentation <https://docs.github.com/en/codespaces/developing-in-codespaces/creating-a-codespace>`_
+
 
 ---------------------------
 Running PDC

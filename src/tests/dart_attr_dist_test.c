@@ -26,7 +26,7 @@
 #define JULIA_HELPER_NAME "JuliaHelper"
 // only define the following once, in an executable (not in a shared library) if you want fast
 // code.
-JULIA_DEFINE_FAST_TLS
+// JULIA_DEFINE_FAST_TLS
 
 void
 generate_incremental_associations(int64_t num_attr, int64_t num_obj, int64_t num_groups, int64_t **arr,
