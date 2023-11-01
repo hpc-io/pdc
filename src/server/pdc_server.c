@@ -2370,8 +2370,8 @@ done:
         struct stat st;
         snprintf(sqlite3_fname, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
         stat(sqlite3_fname, &st);
-        printf("==PDC_SERVER[%d]: SQLite3 file size %lu\n", pdc_server_rank_g, st.st_size);
-
+        printf("==PDC_SERVER[%d]: SQLite3 max memory usage: %llu, DB file size %lu\n", 
+                pdc_server_rank_g, sqlite3_memory_highwater(0), st.st_size);
         sqlite3_close(sqlite3_db_g);
     }
 #endif
