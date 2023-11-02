@@ -131,7 +131,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
     size_t len;
     int    i, index;
     char   tmp[TMP_DIR_STRING_LEN];
-    char   cmd[TAG_LEN_MAX];
+    char   cmd[1024];
 
     FUNC_ENTER(NULL);
 
@@ -159,7 +159,7 @@ PDC_Server_set_lustre_stripe(const char *path, int stripe_count, int stripe_size
             break;
         }
     }
-    snprintf(cmd, TAG_LEN_MAX, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index,
+    snprintf(cmd, 1024, "lfs setstripe -S %dM -c %d -i %d %s", stripe_size_MB, stripe_count, index,
              tmp);
 
     if (system(cmd) < 0) {

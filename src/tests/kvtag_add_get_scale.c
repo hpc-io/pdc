@@ -103,8 +103,14 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
 
     obj_1percent   = my_obj / 100;
+    if (obj_1percent == 0)
+        obj_1percent = 1;
     tag_1percent   = my_add_tag / 100;
+    if (tag_1percent == 0)
+        tag_1percent = 1;
     query_1percent = my_query / 100;
+    if (query_1percent == 0)
+        query_1percent = 1;
 
     if (my_rank == 0)
         printf("Create %d obj, %d tags, query %d\n", my_obj, my_add_tag, my_query);

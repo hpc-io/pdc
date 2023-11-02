@@ -53,8 +53,8 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #define HOSTNAME_LEN                 ADDR_MAX / 8
 #define TMP_DIR_STRING_LEN           ADDR_MAX / 2
 #define DIM_MAX                      4
-#define TAG_LEN_MAX                  2048
-#define OBJ_NAME_MAX                 TAG_LEN_MAX / 2
+#define TAG_LEN_MAX                  16
+#define OBJ_NAME_MAX                 1024
 #define PDC_SERVER_ID_INTERVEL       1000000000ull
 #define PDC_SERVER_MAX_PROC_PER_NODE 32
 #define PDC_SERIALIZE_MAX_SIZE       256
@@ -367,7 +367,7 @@ typedef struct pdc_metadata_t {
     uint8_t        region_partition;
     uint8_t        consistency;
 
-    char              tags[TAG_LEN_MAX];
+    char              tags[TAG_LEN_MAX];        // old, use kvtag
     pdc_kvtag_list_t *kvtag_list_head;
     char              data_location[ADDR_MAX];
 

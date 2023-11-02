@@ -242,7 +242,7 @@ static inline void
 combine_obj_info_to_string(pdc_metadata_t *metadata, char *output)
 {
     FUNC_ENTER(NULL);
-    snprintf(output, TAG_LEN_MAX, "%s%d", metadata->obj_name, metadata->time_step);
+    snprintf(output, OBJ_NAME_MAX, "%s`%d", metadata->obj_name, metadata->time_step);
 }
 
 /*
@@ -351,7 +351,7 @@ find_identical_metadata(pdc_hash_table_entry_head *entry, pdc_metadata_t *a)
     pdc_metadata_t *ret_value = NULL;
     BLOOM_TYPE_T *  bloom;
     int             bloom_check;
-    char            combined_string[TAG_LEN_MAX];
+    char            combined_string[2048];
     pdc_metadata_t *elt;
 
     FUNC_ENTER(NULL);
@@ -497,7 +497,7 @@ PDC_Server_remove_from_bloom(pdc_metadata_t *metadata, BLOOM_TYPE_T *bloom)
         goto done;
     }
 
-    char combined_string[TAG_LEN_MAX];
+    char combined_string[OBJ_NAME_MAX];
     combine_obj_info_to_string(metadata, combined_string);
 
     ret_value = BLOOM_REMOVE(bloom, combined_string, strlen(combined_string));
@@ -522,7 +522,7 @@ static perr_t
 PDC_Server_add_to_bloom(pdc_metadata_t *metadata, BLOOM_TYPE_T *bloom)
 {
     perr_t ret_value = SUCCEED;
-    char   combined_string[TAG_LEN_MAX];
+    char   combined_string[OBJ_NAME_MAX];
 
     FUNC_ENTER(NULL);
 

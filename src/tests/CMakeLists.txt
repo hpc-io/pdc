@@ -61,6 +61,7 @@ set(PROGRAMS
   cont_tags
   consistency_semantics
   create_obj
+  create_obj_scale
   open_obj
   open_existing_obj
   obj_info
