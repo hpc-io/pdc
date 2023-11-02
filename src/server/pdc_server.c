@@ -701,9 +701,9 @@ PDC_Server_get_subdir_count(char *path)
     while ((entry = readdir(dir)) != NULL) {
         char *name = entry->d_name;
         /* if (entry->d_type == DT_DIR) { */
-            if (!strcmp(name, ".") || !strcmp(name, "..") || strstr(name, "cfg"))
-                continue;
-            count++;
+        if (!strcmp(name, ".") || !strcmp(name, "..") || strstr(name, "cfg"))
+            continue;
+        count++;
         /* } */
     }
     closedir(dir);
@@ -765,11 +765,11 @@ region_cmp(region_list_t *a, region_list_t *b)
 static perr_t
 PDC_Server_restart_flex(char *chk_dir)
 {
-    perr_t ret_value = SUCCEED;
-    int    n_file, n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs;
-    int    n_kvtag, key_len, n_cont, myi, server_id, is_mine, fid, ret, total_region = 0;
-    pdc_metadata_t *             metadata, *elt;
-    region_list_t *              region_list;
+    perr_t          ret_value = SUCCEED;
+    int             n_file, n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs;
+    int             n_kvtag, key_len, n_cont, myi, server_id, is_mine, fid, ret, total_region = 0;
+    pdc_metadata_t *metadata, *elt;
+    region_list_t * region_list;
     pdc_hash_table_entry_head *  obj_entry;
     pdc_cont_hash_table_entry_t *cont_entry;
     uint32_t                     hash_key;
@@ -835,7 +835,7 @@ PDC_Server_restart_flex(char *chk_dir)
         /*     printf("Read failed for n_count\n"); */
         /* } */
 
-        n_cont = *(int*)buf;
+        n_cont = *(int *)buf;
         buf += sizeof(int);
 
         for (j = 0; j < n_cont; j++) {
@@ -844,7 +844,7 @@ PDC_Server_restart_flex(char *chk_dir)
             /* if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) { */
             /*     printf("Read failed for hash_key\n"); */
             /* } */
-            hash_key = *(uint32_t*)buf;
+            hash_key = *(uint32_t *)buf;
             buf += sizeof(uint32_t);
 
             server_id = hash_key % pdc_server_size_g;
@@ -863,7 +863,7 @@ PDC_Server_restart_flex(char *chk_dir)
 
             // Read cont kvtags
             /* if (fread(&n_kvtag, sizeof(int), 1, file) != 1) { */
-            n_kvtag = *(int*)buf;
+            n_kvtag = *(int *)buf;
             buf += sizeof(int);
 
             for (j = 0; j < n_kvtag; j++) {
@@ -875,7 +875,7 @@ PDC_Server_restart_flex(char *chk_dir)
                 /* if (fread(&key_len, sizeof(int), 1, file) != 1) { */
                 /*     printf("Read failed for key_len\n"); */
                 /* } */
-                key_len = *(int*)buf;
+                key_len = *(int *)buf;
                 buf += sizeof(int);
 
                 /* if (fread((void *)(kvtag_list->kvtag->name), key_len, 1, file) != 1) { */
@@ -890,7 +890,7 @@ PDC_Server_restart_flex(char *chk_dir)
                 /* if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) { */
                 /*     printf("Read failed for kvtag_list->kvtag->size\n"); */
                 /* } */
-                uint32_t value_size = *(uint32_t*)buf;
+                uint32_t value_size = *(uint32_t *)buf;
                 buf += sizeof(uint32_t);
                 if (is_mine)
                     kvtag_list->kvtag->size = value_size;
@@ -898,7 +898,7 @@ PDC_Server_restart_flex(char *chk_dir)
                 /* if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) { */
                 /*     printf("Read failed for kvtag_list->kvtag->type\n"); */
                 /* } */
-                int8_t type = *(int8_t*)buf;
+                int8_t type = *(int8_t *)buf;
                 buf += sizeof(int8_t);
                 if (is_mine)
                     kvtag_list->kvtag->type = type;
@@ -931,7 +931,7 @@ PDC_Server_restart_flex(char *chk_dir)
         /* if (fread(&n_entry, sizeof(int), 1, file) != 1) { */
         /*     printf("Read failed for n_entry\n"); */
         /* } */
-        n_entry = *(int*)buf;
+        n_entry = *(int *)buf;
         buf += sizeof(int);
 
         while (n_entry > 0) {
@@ -939,13 +939,13 @@ PDC_Server_restart_flex(char *chk_dir)
             /* if (fread(&count, sizeof(int), 1, file) != 1) { */
             /*     printf("Read failed for count\n"); */
             /* } */
-            count = *(int*)buf;
+            count = *(int *)buf;
             buf += sizeof(int);
 
             /* if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) { */
             /*     printf("Read failed for hash_key\n"); */
             /* } */
-            hash_key = *(uint32_t*)buf;
+            hash_key = *(uint32_t *)buf;
             buf += sizeof(uint32_t);
 
             server_id = hash_key % pdc_server_size_g;
@@ -984,7 +984,7 @@ PDC_Server_restart_flex(char *chk_dir)
                     /* if (fread(&n_kvtag, sizeof(int), 1, file) != 1) { */
                     /*     printf("Read failed for n_kvtag\n"); */
                     /* } */
-                    n_kvtag = *(int*)buf;
+                    n_kvtag = *(int *)buf;
                     buf += sizeof(int);
 
                     for (j = 0; j < n_kvtag; j++) {
@@ -996,7 +996,7 @@ PDC_Server_restart_flex(char *chk_dir)
                         /* if (fread(&key_len, sizeof(int), 1, file) != 1) { */
                         /*     printf("Read failed for key_len\n"); */
                         /* } */
-                        key_len = *(int*)buf;
+                        key_len = *(int *)buf;
                         buf += sizeof(int);
 
                         /* if (fread((void *)(kvtag_list->kvtag->name), key_len, 1, file) != 1) { */
@@ -1011,7 +1011,7 @@ PDC_Server_restart_flex(char *chk_dir)
                         /* if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) { */
                         /*     printf("Read failed for kvtag_list->kvtag->size\n"); */
                         /* } */
-                        uint32_t value_size = *(uint32_t*)buf;
+                        uint32_t value_size = *(uint32_t *)buf;
                         if (is_mine)
                             kvtag_list->kvtag->size = value_size;
 
@@ -1020,7 +1020,7 @@ PDC_Server_restart_flex(char *chk_dir)
                         /* if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) { */
                         /*     printf("Read failed for kvtag_list->kvtag->type\n"); */
                         /* } */
-                        int8_t type = *(int8_t*)buf;
+                        int8_t type = *(int8_t *)buf;
                         buf += sizeof(int8_t);
                         if (is_mine)
                             kvtag_list->kvtag->type = (int8_t)type;
@@ -1042,12 +1042,11 @@ PDC_Server_restart_flex(char *chk_dir)
                     /* if (fread(&n_region, sizeof(int), 1, file) != 1) { */
                     /*     printf("Read failed for n_region\n"); */
                     /* } */
-                    n_region = *(int*)buf;
+                    n_region = *(int *)buf;
                     buf += sizeof(int);
 
                     if (n_region < 0) {
-                        printf("==PDC_SERVER[%d]: %s -  region number ERROR!",
-                               pdc_server_rank_g, __func__);
+                        printf("==PDC_SERVER[%d]: %s -  region number ERROR!", pdc_server_rank_g, __func__);
                         ret_value = FAIL;
                         goto done;
                     }
@@ -1068,7 +1067,7 @@ PDC_Server_restart_flex(char *chk_dir)
                         /* if (fread(&has_hist, sizeof(int), 1, file) != 1) { */
                         /*     printf("Read failed for has_list\n"); */
                         /* } */
-                        has_hist = *(int*)buf;
+                        has_hist = *(int *)buf;
                         buf += sizeof(int);
 
                         if (has_hist == 1) {
@@ -1080,7 +1079,7 @@ PDC_Server_restart_flex(char *chk_dir)
                             /* if (fread(&region_list->region_hist->dtype, sizeof(int), 1, file) != 1) { */
                             /*     printf("Read failed for region_list->region_hist->dtype\n"); */
                             /* } */
-                            dtype = *(int*)buf;
+                            dtype = *(int *)buf;
                             buf += sizeof(int);
 
                             if (is_mine)
@@ -1089,14 +1088,14 @@ PDC_Server_restart_flex(char *chk_dir)
                             /* if (fread(&region_list->region_hist->nbin, sizeof(int), 1, file) != 1) { */
                             /*     printf("Read failed for region_list->region_hist->nbin\n"); */
                             /* } */
-                            nbin = *(int*)buf;
+                            nbin = *(int *)buf;
                             buf += sizeof(int);
 
                             if (is_mine) {
                                 region_list->region_hist->nbin = nbin;
                                 if (region_list->region_hist->nbin == 0) {
-                                    printf("==PDC_SERVER[%d]: %s -  histogram size is 0!",
-                                           pdc_server_rank_g, __func__);
+                                    printf("==PDC_SERVER[%d]: %s -  histogram size is 0!", pdc_server_rank_g,
+                                           __func__);
                                 }
                             }
 
@@ -1123,7 +1122,7 @@ PDC_Server_restart_flex(char *chk_dir)
                                  */
                                 /*     printf("Read failed for region_list->region_hist->incr\n"); */
                                 /* } */
-                                region_list->region_hist->incr = *(double*)buf;
+                                region_list->region_hist->incr = *(double *)buf;
                                 buf += sizeof(double);
                             }
                             else {
@@ -1204,7 +1203,7 @@ PDC_Server_restart_flex(char *chk_dir)
         /* if (fread(&n_objs, sizeof(int), 1, file) != 1) { */
         /*     printf("Read failed for n_objs\n"); */
         /* } */
-        n_objs = *(int*)buf;
+        n_objs = *(int *)buf;
         buf += sizeof(int);
 
         // NOTE: Currently only supports restart data regions with same or more number of servers
@@ -1218,13 +1217,13 @@ PDC_Server_restart_flex(char *chk_dir)
                 /* if (fread(&new_obj_reg->obj_id, sizeof(uint64_t), 1, file) != 1) { */
                 /*     printf("Read failed for obj_id\n"); */
                 /* } */
-                new_obj_reg->obj_id = *(uint64_t*)buf;
+                new_obj_reg->obj_id = *(uint64_t *)buf;
                 buf += sizeof(uint64_t);
 
                 /* if (fread(&n_region, sizeof(int), 1, file) != 1) { */
                 /*     printf("Read failed for n_region\n"); */
                 /* } */
-                n_region = *(int*)buf;
+                n_region = *(int *)buf;
                 buf += sizeof(int);
 
                 DL_APPEND(dataserver_region_g, new_obj_reg);
@@ -1242,7 +1241,7 @@ PDC_Server_restart_flex(char *chk_dir)
             /* if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) { */
             /*     printf("Read failed for checkpoint size\n"); */
             /* } */
-            checkpoint_size = *(uint64_t*)buf;
+            checkpoint_size = *(uint64_t *)buf;
             buf += sizeof(uint64_t);
 
             /* printf("checkpoint size for metadata query = %lu\n", checkpoint_size); */

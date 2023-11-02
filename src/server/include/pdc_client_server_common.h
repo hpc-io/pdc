@@ -367,7 +367,7 @@ typedef struct pdc_metadata_t {
     uint8_t        region_partition;
     uint8_t        consistency;
 
-    char              tags[TAG_LEN_MAX];        // old, use kvtag
+    char              tags[TAG_LEN_MAX]; // old, use kvtag
     pdc_kvtag_list_t *kvtag_list_head;
     char              data_location[ADDR_MAX];
 

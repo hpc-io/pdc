@@ -102,10 +102,10 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_query, &my_query, &my_query_s);
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
 
-    obj_1percent   = my_obj / 100;
+    obj_1percent = my_obj / 100;
     if (obj_1percent == 0)
         obj_1percent = 1;
-    tag_1percent   = my_add_tag / 100;
+    tag_1percent = my_add_tag / 100;
     if (tag_1percent == 0)
         tag_1percent = 1;
     query_1percent = my_query / 100;
