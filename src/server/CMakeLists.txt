@@ -9,12 +9,12 @@ endif()
 if(PDC_ENABLE_ROCKSDB)
     add_definitions(-DENABLE_ROCKSDB=1)
     find_path(ROCKSDB_INCLUDE_DIR include/db.h)
-    find_library(ROCKSDB_LIBRARY rocksdb 8 REQUIRED)
+    find_library(ROCKSDB_LIBRARY rocksdb 8.1.1< REQUIRED)
 endif()
 
 if(PDC_ENABLE_SQLITE3)
     add_definitions(-DENABLE_SQLITE3=1)
-    find_package(SQLite3 REQUIRED)
+    find_package(SQLite3 3.31.0< REQUIRED)
 endif()
 
 include_directories(
