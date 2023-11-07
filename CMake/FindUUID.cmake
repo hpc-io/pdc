@@ -18,9 +18,9 @@ find_path(UUID_INCLUDE_DIR uuid/uuid.h
 
 if (UUID_LIBRARY AND UUID_INCLUDE_DIR)
   set(UUID_LIBRARIES ${UUID_LIBRARY})
-  set(UUID_FOUND "YES")
+  set(UUID_FOUND "TRUE")
 else ()
-  set(UUID_FOUND "NO")
+  set(UUID_FOUND "FALSE")
 endif ()
 
 if (UUID_FOUND)
