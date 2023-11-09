@@ -14,7 +14,7 @@ endif()
 
 if(PDC_ENABLE_SQLITE3)
     add_definitions(-DENABLE_SQLITE3=1)
-    find_package(SQLite3 3.31.0< REQUIRED)
+    find_package(SQLite3 3.31.0 REQUIRED)
 endif()
 
 include_directories(
