@@ -34,6 +34,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <math.h>
+#include <fts.h>
 
 #include <sys/shm.h>
 #include <sys/mman.h>
@@ -59,6 +60,16 @@
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
+#endif
+
+#ifdef ENABLE_ROCKSDB
+#include "rocksdb/c.h"
+rocksdb_t *rocksdb_g;
+#endif
+
+#ifdef ENABLE_SQLITE3
+#include "sqlite3.h"
+sqlite3 *sqlite3_db_g;
 #endif
 
 // Check how long PDC has run every OP_INTERVAL operations
@@ -131,6 +142,8 @@ int               read_from_bb_size_g          = 0;
 int               gen_hist_g                   = 0;
 int               gen_fastbit_idx_g            = 0;
 int               use_fastbit_idx_g            = 0;
+int               use_rocksdb_g                = 0;
+int               use_sqlite3_g                = 0;
 char *            gBinningOption               = NULL;
 
 double server_write_time_g                  = 0.0;
@@ -359,6 +372,71 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static int
+remove_directory(const char *dir)
+{
+    int     ret  = 0;
+    FTS *   ftsp = NULL;
+    FTSENT *curr;
+
+    // Cast needed (in C) because fts_open() takes a "char * const *", instead
+    // of a "const char * const *", which is only allowed in C++. fts_open()
+    // does not modify the argument.
+    char *files[] = {(char *)dir, NULL};
+
+    // FTS_NOCHDIR  - Avoid changing cwd, which could cause unexpected behavior
+    //                in multithreaded programs
+    // FTS_PHYSICAL - Don't follow symlinks. Prevents deletion of files outside
+    //                of the specified directory
+    // FTS_XDEV     - Don't cross filesystem boundaries
+    ftsp = fts_open(files, FTS_NOCHDIR | FTS_PHYSICAL | FTS_XDEV, NULL);
+    if (!ftsp) {
+        fprintf(stderr, "PDC_SERVER: %s: fts_open failed: %s\n", dir, strerror(curr->fts_errno));
+        ret = -1;
+        goto done;
+    }
+
+    while ((curr = fts_read(ftsp))) {
+        switch (curr->fts_info) {
+            case FTS_NS:
+            case FTS_DNR:
+            case FTS_ERR:
+                break;
+
+            case FTS_DC:
+            case FTS_DOT:
+            case FTS_NSOK:
+                // Not reached unless FTS_LOGICAL, FTS_SEEDOT, or FTS_NOSTAT were
+                // passed to fts_open()
+                break;
+
+            case FTS_D:
+                // Do nothing. Need depth-first search, so directories are deleted
+                // in FTS_DP
+                break;
+
+            case FTS_DP:
+            case FTS_F:
+            case FTS_SL:
+            case FTS_SLNONE:
+            case FTS_DEFAULT:
+                if (remove(curr->fts_accpath) < 0) {
+                    fprintf(stderr, "PDC_SERVER: %s: Failed to remove: %s\n", curr->fts_path,
+                            strerror(curr->fts_errno));
+                    ret = -1;
+                }
+                break;
+        }
+    }
+
+done:
+    if (ftsp) {
+        fts_close(ftsp);
+    }
+
+    return ret;
+}
+
 /*
  * Remove server config file
  *
@@ -379,6 +457,20 @@ PDC_Server_rm_config_file()
         ret_value = FAIL;
         goto done;
     }
+
+#ifdef ENABLE_ROCKSDB
+    if (use_rocksdb_g) {
+        snprintf(config_fname, ADDR_MAX, "/tmp/PDC_rocksdb_%d", pdc_server_rank_g);
+        remove_directory(config_fname);
+    }
+#endif
+
+#ifdef ENABLE_SQLITE3
+    if (use_sqlite3_g) {
+        snprintf(config_fname, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
+        remove_directory(config_fname);
+    }
+#endif
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2069,11 +2161,27 @@ PDC_Server_get_env()
         gen_fastbit_idx_g = 1;
 
     tmp_env_char = getenv("PDC_USE_FASTBIT_IDX");
-    if (tmp_env_char != NULL)
+    if (tmp_env_char != NULL) {
         use_fastbit_idx_g = 1;
+        printf("==PDC_SERVER[%d]: using FastBit for data indexing and querying\n");
+    }
+
+    tmp_env_char = getenv("PDC_USE_ROCKSDB");
+    if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
+        use_rocksdb_g = 1;
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[%d]: using RocksDB for kvtag\n");
+    }
+
+    tmp_env_char = getenv("PDC_USE_SQLITE3");
+    if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
+        use_sqlite3_g = 1;
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[%d]: using SQLite3 for kvtag\n", pdc_server_rank_g);
+    }
 
     if (pdc_server_rank_g == 0) {
-        printf("\n==PDC_SERVER[%d]: using [%s] as tmp dir, %d OSTs, %d OSTs per data file, %d%% to BB\n",
+        printf("==PDC_SERVER[%d]: using [%s] as tmp dir, %d OSTs, %d OSTs per data file, %d%% to BB\n",
                pdc_server_rank_g, pdc_server_tmp_dir_g, lustre_total_ost_g, pdc_nost_per_file_g,
                write_to_bb_percentage_g);
     }
@@ -2142,6 +2250,75 @@ server_run(int argc, char *argv[])
     if (pdc_server_rank_g == 0)
         if (PDC_Server_write_addr_to_file(all_addr_strings_g, pdc_server_size_g) != SUCCEED)
             printf("==PDC_SERVER[%d]: Error with write config file\n", pdc_server_rank_g);
+
+#ifdef ENABLE_ROCKSDB
+    if (use_rocksdb_g) {
+        /* rocksdb_backup_engine_t *be; */
+        rocksdb_options_t *options = rocksdb_options_create();
+        rocksdb_options_increase_parallelism(options, 2);
+        rocksdb_options_optimize_level_style_compaction(options, 0);
+        rocksdb_options_set_create_if_missing(options, 1);
+
+        rocksdb_block_based_table_options_t *table_options = rocksdb_block_based_options_create();
+        rocksdb_filterpolicy_t *             filter_policy = rocksdb_filterpolicy_create_bloom(10);
+        rocksdb_block_based_options_set_filter_policy(table_options, filter_policy);
+
+        rocksdb_options_set_block_based_table_factory(options, table_options);
+        rocksdb_slicetransform_t *slicetransform = rocksdb_slicetransform_create_fixed_prefix(3);
+        rocksdb_options_set_prefix_extractor(options, slicetransform);
+
+        char *err = NULL;
+        char  rocksdb_path[ADDR_MAX];
+        snprintf(rocksdb_path, ADDR_MAX, "/tmp/PDC_rocksdb_%d", pdc_server_rank_g);
+
+        // Remove the in-memory db
+        remove_directory(rocksdb_path);
+
+        // Create db
+        rocksdb_g = rocksdb_open(options, rocksdb_path, &err);
+        assert(!err);
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[%d]: RocksDB initialized\n", pdc_server_rank_g);
+    }
+
+#endif
+
+#ifdef ENABLE_SQLITE3
+    if (use_sqlite3_g) {
+        char *errMessage = 0;
+        char  sqlite3_path[ADDR_MAX];
+        snprintf(sqlite3_path, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
+        sqlite3_open(sqlite3_path, &sqlite3_db_g);
+
+        sqlite3_exec(sqlite3_db_g,
+                     "CREATE TABLE objects (objid INTEGER, name TEXT, value_text TEXT, "
+                     "value_int INTEGER, value_float REAL, value_double REAL, value_blob BLOB);",
+                     0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+
+        // Create indexes
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_name ON objects(name);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_int ON objects(value_int);", 0, 0, &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_text ON objects(value_text);", 0, 0,
+                     &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_float ON objects(value_float);", 0, 0,
+                     &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+        sqlite3_exec(sqlite3_db_g, "CREATE INDEX index_value_double ON objects(value_double);", 0, 0,
+                     &errMessage);
+        if (errMessage)
+            printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
+    }
+#endif
+
 #ifdef PDC_TIMING
 #ifdef ENABLE_MPI
     pdc_server_timings->PDCserver_start_total += MPI_Wtime() - start;
@@ -2175,6 +2352,30 @@ server_run(int argc, char *argv[])
 #endif
 
 done:
+#ifdef ENABLE_ROCKSDB
+    if (use_rocksdb_g) {
+        char        rocksdb_fname[ADDR_MAX];
+        struct stat st;
+        snprintf(rocksdb_fname, ADDR_MAX, "/tmp/PDC_rocksdb_%d", pdc_server_rank_g);
+        stat(rocksdb_fname, &st);
+        printf("==PDC_SERVER[%d]: RocksDB file size %lu\n", pdc_server_rank_g, st.st_size);
+
+        rocksdb_close(rocksdb_g);
+    }
+#endif
+
+#ifdef ENABLE_SQLITE3
+    if (use_sqlite3_g) {
+        char        sqlite3_fname[ADDR_MAX];
+        struct stat st;
+        snprintf(sqlite3_fname, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
+        stat(sqlite3_fname, &st);
+        printf("==PDC_SERVER[%d]: SQLite3 max memory usage: %llu, DB file size %lu\n", pdc_server_rank_g,
+               sqlite3_memory_highwater(0), st.st_size);
+        sqlite3_close(sqlite3_db_g);
+    }
+#endif
+
 #ifdef PDC_TIMING
     PDC_server_timing_report();
 #endif
