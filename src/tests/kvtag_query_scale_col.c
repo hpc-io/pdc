@@ -30,6 +30,7 @@
 #include <inttypes.h>
 #include "pdc.h"
 #include "pdc_client_connect.h"
+#include "string_utils.h"
 
 int
 assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
@@ -140,6 +141,8 @@ main(int argc, char *argv[])
     pdc_kvtag_t kvtag;
     uint64_t *  pdc_ids;
     int         nres, ntotal;
+    int *       my_cnt_round;
+    int *       total_cnt_round;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -181,6 +184,9 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
+    my_cnt_round    = (int *)calloc(round, sizeof(int));
+    total_cnt_round = (int *)calloc(round, sizeof(int));
+
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
@@ -193,8 +199,8 @@ main(int argc, char *argv[])
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
             char tag_value[64];
-            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
+            snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
+            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
             kvtag.name  = strdup(attr_name);
             kvtag.value = (void *)strdup(tag_value);
             kvtag.type  = PDC_STRING;
@@ -212,8 +218,9 @@ main(int argc, char *argv[])
             }
             free(kvtag.name);
             free(kvtag.value);
+            my_cnt_round[iter]++;
         }
-        if (my_rank == 0) {
+        if (my_rank == 0 && n_obj > 1000) {
             println("Rank %d: Added %d kvtag to the %d / %d th object, I'm applying selectivity %d to %d "
                     "objects.\n",
                     my_rank, round, i + 1, my_obj_after_selectivity, selectivity, my_obj);
@@ -229,6 +236,9 @@ main(int argc, char *argv[])
     }
 
 #ifdef ENABLE_MPI
+    for (i = 0; i < round; i++)
+        MPI_Allreduce(&my_cnt_round[i], &total_cnt_round[i], 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
@@ -253,8 +263,8 @@ main(int argc, char *argv[])
 #endif
                 char attr_name[64];
                 char tag_value[64];
-                snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
-                snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
+                snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
+                snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
 
                 kvtag.name  = strdup(attr_name);
                 kvtag.value = (void *)strdup(tag_value);
@@ -266,10 +276,11 @@ main(int argc, char *argv[])
                 input.base_tag         = &kvtag;
                 input.key_query_type   = query_type;
                 input.value_query_type = query_type;
-                input.affix_len        = 4;
+                input.affix_len        = 12;
 
                 gen_query_key_value(&input, &output);
 
+                pdc_ids = NULL;
                 if (is_using_dart) {
                     char *query_string = gen_query_str(&output);
                     ret_value          = (comm_type == 0)
@@ -281,7 +292,9 @@ main(int argc, char *argv[])
                 else {
                     kvtag.name  = output.key_query;
                     kvtag.value = output.value_query;
-                    ret_value   = (comm_type == 0)
+                    /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name,
+                     * kvtag.value); */
+                    ret_value = (comm_type == 0)
                                     ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                                     : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
                 }
@@ -289,6 +302,13 @@ main(int argc, char *argv[])
                     printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                     break;
                 }
+
+                if (iter >= 0) {
+                    if (nres != total_cnt_round[iter])
+                        printf("Rank %d: query %d, comm %d, round %d - results %d do not match expected %d\n",
+                               my_rank, query_type, comm_type, iter, nres, total_cnt_round[iter]);
+                }
+
                 round_total += nres;
                 free(kvtag.name);
                 free(kvtag.value);
@@ -312,8 +332,8 @@ main(int argc, char *argv[])
                         is_using_dart == 0 ? " NO " : " DART ", round, round_total, total_time * 1000.0);
             }
 #endif
-        }
-    }
+        } // end query type
+    }     // end comm type
 
     if (my_rank == 0) {
         println("Rank %d: All queries are done.", my_rank);
@@ -329,8 +349,8 @@ main(int argc, char *argv[])
         for (iter = 0; iter < round; iter++) {
             char attr_name[64];
             char tag_value[64];
-            snprintf(attr_name, 63, "%d%dattr_name%d%d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%d%dtag_value%d%d", iter, iter, iter, iter);
+            snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
+            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
             kvtag.name  = strdup(attr_name);
             kvtag.value = (void *)strdup(tag_value);
             kvtag.type  = PDC_STRING;
@@ -343,6 +363,7 @@ main(int argc, char *argv[])
                 PDCobj_del_tag(obj_ids[i], kvtag.name);
             }
             free(kvtag.name);
+            free(kvtag.value);
         }
     }
 
