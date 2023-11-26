@@ -235,13 +235,16 @@ main(int argc, char *argv[])
     // For the queries, we issue #round queries.
     // The selectivity of each exact query should be #selectivity / 100 * #n_obj.
     // Namely, if you have 1M objects, selectivity is 10, then each query should return 100K objects.
+    int iter_round = round;
+    if (comm_type == 0 && is_using_dart == 0) {
+        iter_round = 2;
+    }
+
     for (comm_type = 1; comm_type >= 0; comm_type--) {
         for (query_type = 0; query_type < 4; query_type++) {
             perr_t ret_value;
-            if (comm_type == 0 && is_using_dart == 0)
-                round = 2;
-            int round_total = 0;
-            for (iter = -1; iter < round; iter++) { // -1 is for warm up
+            int    round_total = 0;
+            for (iter = -1; iter < iter_round; iter++) { // -1 is for warm up
 #ifdef ENABLE_MPI
                 if (iter == 0) {
                     MPI_Barrier(MPI_COMM_WORLD);
