@@ -17,7 +17,7 @@
 #include "string_utils.h"
 #include "pdc_config.h"
 
-typedef enum { NUMERIC = 1, TIME = 2, CHAR = 3, BINARY = 4 } dart_indexed_value_type_t;
+typedef enum { INTEGER = 1, FLOAT = 2, STRING = 3 } dart_indexed_value_type_t;
 
 typedef enum { DHT_FULL_HASH = 1, DHT_INITIAL_HASH = 2, DART_HASH = 3 } dart_hash_algo_t;
 
