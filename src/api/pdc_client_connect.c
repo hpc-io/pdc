@@ -9020,8 +9020,16 @@ _standard_all_gather_result(int query_sent, int *n_res, uint64_t **pdc_ids, MPI_
     uint64_t *all_ids = (uint64_t *)malloc(ntotal * sizeof(uint64_t));
     MPI_Allgatherv(*pdc_ids, *n_res, MPI_UINT64_T, all_ids, all_nmeta_array, disp, MPI_UINT64_T, world_comm);
 
+    if (*pdc_ids)
+        free(*pdc_ids);
+
     *n_res   = ntotal;
     *pdc_ids = all_ids;
+
+    free(all_nmeta_array);
+    free(disp);
+
+    return;
 }
 
 void
@@ -9127,7 +9135,7 @@ PDC_Client_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_
 
     if (*n_res <= 0) {
         *n_res   = 0;
-        *pdc_ids = (uint64_t *)malloc(0);
+        *pdc_ids = NULL;
     }
     else {
         // print the pdc ids returned by this client, along with the client id

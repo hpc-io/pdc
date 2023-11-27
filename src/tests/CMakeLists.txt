@@ -96,7 +96,7 @@ set(PROGRAMS
 #  data_server_meta_test
  kvtag_add_get
 #  kvtag_get
-#  kvtag_query
+ kvtag_query
  kvtag_query_scale
 #  obj_transformation
   region_transfer_query
@@ -259,6 +259,8 @@ add_test(NAME obj_life          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 #add_test(NAME obj_dim           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_dim )
 add_test(NAME obj_buf           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_buf )
 add_test(NAME obj_tags          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
+add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get)
+add_test(NAME kvtag_query     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
 add_test(NAME obj_info          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_info )
 add_test(NAME obj_put_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
 add_test(NAME obj_get_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_get_data )
@@ -338,6 +340,8 @@ set_tests_properties(obj_life           PROPERTIES LABELS serial )
 #set_tests_properties(obj_dim            PROPERTIES LABELS serial )
 set_tests_properties(obj_buf            PROPERTIES LABELS serial )
 set_tests_properties(obj_tags           PROPERTIES LABELS serial )
+set_tests_properties(kvtag_add_get      PROPERTIES LABELS serial )
+set_tests_properties(kvtag_query        PROPERTIES LABELS serial )
 set_tests_properties(obj_info           PROPERTIES LABELS serial )
 set_tests_properties(obj_put_data       PROPERTIES LABELS serial )
 set_tests_properties(obj_get_data       PROPERTIES LABELS serial )
