@@ -62,6 +62,8 @@ extern pdc_remote_server_info_t *pdc_remote_server_info_g;
 extern double                    total_mem_usage_g;
 extern int                       is_hash_table_init_g;
 extern int                       is_restart_g;
+extern int                       use_rocksdb_g;
+extern int                       use_sqlite3_g;
 
 /****************************/
 /* Library Private Typedefs */
@@ -82,6 +84,14 @@ typedef struct pdc_cont_hash_table_entry_t {
     char              tags[TAG_LEN_MAX];
     pdc_kvtag_list_t *kvtag_list_head;
 } pdc_cont_hash_table_entry_t;
+
+#ifdef ENABLE_SQLITE3
+typedef struct pdc_sqlite3_query_t {
+    pdcid_t **obj_ids;
+    int       nobj;
+    int       nalloc;
+} pdc_sqlite3_query_t;
+#endif
 
 /***************************************/
 /* Library-private Function Prototypes */
