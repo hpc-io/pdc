@@ -426,7 +426,7 @@ done:
  *
  * \return 64-bit integer of object ID
  */
-static uint64_t
+uint64_t
 PDC_Server_gen_obj_id()
 {
     uint64_t ret_value;
@@ -2838,6 +2838,7 @@ PDC_Server_add_kvtag_sqlite3(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t
 #else
     printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
     ret_value = FAIL;
+    goto done;
 #endif
 
 done:

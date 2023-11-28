@@ -950,6 +950,8 @@ PDC_Server_restart_flex(char *chk_dir)
                 /*     printf("Read failed for cont_entry\n"); */
                 /* } */
                 memcpy(cont_entry, buf, sizeof(pdc_cont_hash_table_entry_t));
+                // Re-generate new id for possibily new server location
+                cont_entry->cont_id     = PDC_Server_gen_obj_id();
             }
             buf += sizeof(pdc_cont_hash_table_entry_t);
 
@@ -1044,12 +1046,13 @@ PDC_Server_restart_flex(char *chk_dir)
             if (server_id == pdc_server_rank_g)
                 is_mine = 1;
 
-            // Reconstruct hash table
             if (is_mine) {
+                // Reconstruct hash table
                 obj_entry           = (pdc_hash_table_entry_head *)malloc(sizeof(pdc_hash_table_entry_head));
                 obj_entry->n_obj    = 0;
                 obj_entry->bloom    = NULL;
                 obj_entry->metadata = NULL;
+
                 // hash key may be freed in PDC_Server_hash_table_list_init / hash_table_insert
                 key_ptr  = (uint32_t *)malloc(sizeof(uint32_t));
                 *key_ptr = hash_key;
@@ -1057,14 +1060,14 @@ PDC_Server_restart_flex(char *chk_dir)
                 PDC_Server_hash_table_list_init(obj_entry, key_ptr);
 
                 metadata = (pdc_metadata_t *)calloc(sizeof(pdc_metadata_t), count);
+            }
 
-                for (i = 0; i < count; i++) {
-                    /* if (fread(metadata + i, sizeof(pdc_metadata_t), 1, file) != 1) { */
-                    /*     printf("Read failed for metadata\n"); */
-                    /* } */
+            for (i = 0; i < count; i++) {
+                /* if (fread(metadata + i, sizeof(pdc_metadata_t), 1, file) != 1) { */
+                /*     printf("Read failed for metadata\n"); */
+                /* } */
+                if (is_mine) {
                     memcpy(metadata + i, buf, sizeof(pdc_metadata_t));
-                    buf += sizeof(pdc_metadata_t);
-
                     (metadata + i)->storage_region_list_head       = NULL;
                     (metadata + i)->region_lock_head               = NULL;
                     (metadata + i)->region_map_head                = NULL;
@@ -1075,206 +1078,210 @@ PDC_Server_restart_flex(char *chk_dir)
                     (metadata + i)->kvtag_list_head                = NULL;
                     (metadata + i)->all_storage_region_distributed = 0;
 
-                    // Read kv tags
-                    /* if (fread(&n_kvtag, sizeof(int), 1, file) != 1) { */
-                    /*     printf("Read failed for n_kvtag\n"); */
-                    /* } */
-                    n_kvtag = *(int *)buf;
-                    buf += sizeof(int);
+                    // Re-generate new id for possibily new server location
+                    (metadata+i)->obj_id = PDC_Server_gen_obj_id();
+                }
 
-                    for (j = 0; j < n_kvtag; j++) {
-                        pdc_kvtag_list_t *kvtag_list = NULL;
-                        if (is_mine) {
-                            kvtag_list        = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
-                            kvtag_list->kvtag = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
-                        }
-                        /* if (fread(&key_len, sizeof(int), 1, file) != 1) { */
-                        /*     printf("Read failed for key_len\n"); */
-                        /* } */
-                        key_len = *(int *)buf;
-                        buf += sizeof(int);
+                buf += sizeof(pdc_metadata_t);
 
-                        /* if (fread((void *)(kvtag_list->kvtag->name), key_len, 1, file) != 1) { */
-                        /*     printf("Read failed for kvtag_list->kvtag->name\n"); */
-                        /* } */
-                        if (is_mine) {
-                            kvtag_list->kvtag->name = malloc(key_len);
-                            memcpy(kvtag_list->kvtag->name, buf, key_len);
-                        }
-                        buf += key_len;
+                // Read kv tags
+                /* if (fread(&n_kvtag, sizeof(int), 1, file) != 1) { */
+                /*     printf("Read failed for n_kvtag\n"); */
+                /* } */
 
-                        /* if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) { */
-                        /*     printf("Read failed for kvtag_list->kvtag->size\n"); */
-                        /* } */
-                        uint32_t value_size = *(uint32_t *)buf;
-                        if (is_mine)
-                            kvtag_list->kvtag->size = value_size;
+                n_kvtag = *(int *)buf;
+                buf += sizeof(int);
 
-                        buf += sizeof(uint32_t);
-
-                        /* if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) { */
-                        /*     printf("Read failed for kvtag_list->kvtag->type\n"); */
-                        /* } */
-                        int8_t type = *(int8_t *)buf;
-                        buf += sizeof(int8_t);
-                        if (is_mine)
-                            kvtag_list->kvtag->type = (int8_t)type;
-
-                        if (is_mine) {
-                            /* if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {
-                             */
-                            /*     printf("Read failed for kvtag_list->kvtag->value\n"); */
-                            /* } */
-                            kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
-                            memcpy(kvtag_list->kvtag->value, buf, kvtag_list->kvtag->size);
-                        }
-                        buf += value_size;
-
-                        if (is_mine)
-                            DL_APPEND((metadata + i)->kvtag_list_head, kvtag_list);
-                    } // end for kvtags
-
-                    /* if (fread(&n_region, sizeof(int), 1, file) != 1) { */
-                    /*     printf("Read failed for n_region\n"); */
-                    /* } */
-                    n_region = *(int *)buf;
-                    buf += sizeof(int);
-
-                    if (n_region < 0) {
-                        printf("==PDC_SERVER[%d]: %s -  region number ERROR!", pdc_server_rank_g, __func__);
-                        ret_value = FAIL;
-                        goto done;
+                for (j = 0; j < n_kvtag; j++) {
+                    pdc_kvtag_list_t *kvtag_list = NULL;
+                    if (is_mine) {
+                        kvtag_list        = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
+                        kvtag_list->kvtag = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
                     }
+                    /* if (fread(&key_len, sizeof(int), 1, file) != 1) { */
+                    /*     printf("Read failed for key_len\n"); */
+                    /* } */
+                    key_len = *(int *)buf;
+                    buf += sizeof(int);
 
-                    total_region += n_region;
+                    /* if (fread((void *)(kvtag_list->kvtag->name), key_len, 1, file) != 1) { */
+                    /*     printf("Read failed for kvtag_list->kvtag->name\n"); */
+                    /* } */
+                    if (is_mine) {
+                        kvtag_list->kvtag->name = malloc(key_len);
+                        memcpy(kvtag_list->kvtag->name, buf, key_len);
+                    }
+                    buf += key_len;
 
-                    for (j = 0; j < n_region; j++) {
-                        /* if (fread(region_list, sizeof(region_list_t), 1, file) != 1) { */
-                        /*     printf("Read failed for region_list\n"); */
-                        /* } */
-                        if (is_mine) {
-                            region_list = (region_list_t *)malloc(sizeof(region_list_t));
-                            memcpy(region_list, buf, sizeof(region_list_t));
-                        }
-                        buf += sizeof(region_list_t);
+                    /* if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) { */
+                    /*     printf("Read failed for kvtag_list->kvtag->size\n"); */
+                    /* } */
+                    uint32_t value_size = *(uint32_t *)buf;
+                    if (is_mine)
+                        kvtag_list->kvtag->size = value_size;
 
-                        int has_hist = 0;
-                        /* if (fread(&has_hist, sizeof(int), 1, file) != 1) { */
-                        /*     printf("Read failed for has_list\n"); */
-                        /* } */
-                        has_hist = *(int *)buf;
-                        buf += sizeof(int);
+                    buf += sizeof(uint32_t);
 
-                        if (has_hist == 1) {
-                            int dtype = -1, nbin = -1;
-                            if (is_mine) {
-                                region_list->region_hist = (pdc_histogram_t *)malloc(sizeof(pdc_histogram_t));
-                            }
-
-                            /* if (fread(&region_list->region_hist->dtype, sizeof(int), 1, file) != 1) { */
-                            /*     printf("Read failed for region_list->region_hist->dtype\n"); */
-                            /* } */
-                            dtype = *(int *)buf;
-                            buf += sizeof(int);
-
-                            if (is_mine)
-                                region_list->region_hist->dtype = dtype;
-
-                            /* if (fread(&region_list->region_hist->nbin, sizeof(int), 1, file) != 1) { */
-                            /*     printf("Read failed for region_list->region_hist->nbin\n"); */
-                            /* } */
-                            nbin = *(int *)buf;
-                            buf += sizeof(int);
-
-                            if (is_mine) {
-                                region_list->region_hist->nbin = nbin;
-                                if (region_list->region_hist->nbin == 0) {
-                                    printf("==PDC_SERVER[%d]: %s -  histogram size is 0!", pdc_server_rank_g,
-                                           __func__);
-                                }
-                            }
-
-                            if (is_mine) {
-                                region_list->region_hist->range = (double *)malloc(sizeof(double) * nbin * 2);
-                                region_list->region_hist->bin   = (uint64_t *)malloc(sizeof(uint64_t) * nbin);
-
-                                /* if (fread(region_list->region_hist->range, sizeof(double), */
-                                /*           region_list->region_hist->nbin * 2, file) != 1) { */
-                                /*     printf("Read failed for region_list->region_hist->range\n"); */
-                                /* } */
-                                memcpy(region_list->region_hist->range, buf, nbin * 2 * sizeof(double));
-                                buf += (nbin * 2 * sizeof(double));
-
-                                /* if (fread(region_list->region_hist->bin, sizeof(uint64_t),
-                                 * region_list->region_hist->nbin, */
-                                /*           file) != 1) { */
-                                /*     printf("Read failed for region_list->region_hist->bin\n"); */
-                                /* } */
-                                memcpy(region_list->region_hist->bin, buf, nbin * sizeof(uint64_t));
-                                buf += (nbin * sizeof(uint64_t));
-
-                                /* if (fread(&region_list->region_hist->incr, sizeof(double), 1, file) != 1) {
-                                 */
-                                /*     printf("Read failed for region_list->region_hist->incr\n"); */
-                                /* } */
-                                region_list->region_hist->incr = *(double *)buf;
-                                buf += sizeof(double);
-                            }
-                            else {
-                                buf += (nbin * 2 * sizeof(double));
-                                buf += (nbin * sizeof(uint64_t));
-                                buf += sizeof(double);
-                            }
-                        } // End has_hist
-
-                        if (is_mine) {
-                            region_list->buf       = NULL;
-                            region_list->data_size = 1;
-                            for (idx = 0; idx < region_list->ndim; idx++)
-                                region_list->data_size *= region_list->count[idx];
-                            region_list->is_data_ready            = 0;
-                            region_list->shm_fd                   = 0;
-                            region_list->meta                     = (metadata + i);
-                            region_list->prev                     = NULL;
-                            region_list->next                     = NULL;
-                            region_list->overlap_storage_regions  = NULL;
-                            region_list->n_overlap_storage_region = 0;
-                            hg_atomic_init32(&(region_list->buf_map_refcount), 0);
-                            region_list->reg_dirty_from_buf = 0;
-                            region_list->access_type        = PDC_NA;
-                            region_list->bulk_handle        = NULL;
-                            region_list->lock_handle        = NULL;
-                            region_list->addr               = NULL;
-                            region_list->obj_id             = (metadata + i)->obj_id;
-                            region_list->reg_id             = 0;
-                            region_list->from_obj_id        = 0;
-                            region_list->client_id          = 0;
-                            region_list->is_io_done         = 0;
-                            region_list->is_shm_closed      = 0;
-                            region_list->seq_id             = 0;
-                            region_list->sent_to_server     = 0;
-                            region_list->io_cache_region    = NULL;
-
-                            memset(region_list->shm_addr, 0, ADDR_MAX);
-                            memset(region_list->client_ids, 0,
-                                   PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
-
-                            if (strstr(region_list->storage_location, "scratch") != NULL) {
-                                region_list->data_loc_type = PDC_LUSTRE;
-                            }
-
-                            DL_APPEND((metadata + i)->storage_region_list_head, region_list);
-                        }
-                    } // For j
-                    total_region += n_region;
+                    /* if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) { */
+                    /*     printf("Read failed for kvtag_list->kvtag->type\n"); */
+                    /* } */
+                    int8_t type = *(int8_t *)buf;
+                    buf += sizeof(int8_t);
+                    if (is_mine)
+                        kvtag_list->kvtag->type = (int8_t)type;
 
                     if (is_mine) {
-                        DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
+                        /* if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {
+                         */
+                        /*     printf("Read failed for kvtag_list->kvtag->value\n"); */
+                        /* } */
+                        kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
+                        memcpy(kvtag_list->kvtag->value, buf, kvtag_list->kvtag->size);
                     }
-                } // End for metadata
-            }     // End if ismine
-            else
-                buf += (count * sizeof(pdc_metadata_t));
+                    buf += value_size;
+
+                    if (is_mine)
+                        DL_APPEND((metadata + i)->kvtag_list_head, kvtag_list);
+                } // end for kvtags
+
+                /* if (fread(&n_region, sizeof(int), 1, file) != 1) { */
+                /*     printf("Read failed for n_region\n"); */
+                /* } */
+                n_region = *(int *)buf;
+                buf += sizeof(int);
+
+                if (n_region < 0) {
+                    printf("==PDC_SERVER[%d]: %s -  region number ERROR!", pdc_server_rank_g, __func__);
+                    ret_value = FAIL;
+                    goto done;
+                }
+
+                total_region += n_region;
+
+                for (j = 0; j < n_region; j++) {
+                    /* if (fread(region_list, sizeof(region_list_t), 1, file) != 1) { */
+                    /*     printf("Read failed for region_list\n"); */
+                    /* } */
+                    if (is_mine) {
+                        region_list = (region_list_t *)malloc(sizeof(region_list_t));
+                        memcpy(region_list, buf, sizeof(region_list_t));
+                    }
+                    buf += sizeof(region_list_t);
+
+                    int has_hist = 0;
+                    /* if (fread(&has_hist, sizeof(int), 1, file) != 1) { */
+                    /*     printf("Read failed for has_list\n"); */
+                    /* } */
+                    has_hist = *(int *)buf;
+                    buf += sizeof(int);
+
+                    if (has_hist == 1) {
+                        int dtype = -1, nbin = -1;
+                        if (is_mine) {
+                            region_list->region_hist = (pdc_histogram_t *)malloc(sizeof(pdc_histogram_t));
+                        }
+
+                        /* if (fread(&region_list->region_hist->dtype, sizeof(int), 1, file) != 1) { */
+                        /*     printf("Read failed for region_list->region_hist->dtype\n"); */
+                        /* } */
+                        dtype = *(int *)buf;
+                        buf += sizeof(int);
+
+                        if (is_mine)
+                            region_list->region_hist->dtype = dtype;
+
+                        /* if (fread(&region_list->region_hist->nbin, sizeof(int), 1, file) != 1) { */
+                        /*     printf("Read failed for region_list->region_hist->nbin\n"); */
+                        /* } */
+                        nbin = *(int *)buf;
+                        buf += sizeof(int);
+
+                        if (is_mine) {
+                            region_list->region_hist->nbin = nbin;
+                            if (region_list->region_hist->nbin == 0) {
+                                printf("==PDC_SERVER[%d]: %s -  histogram size is 0!", pdc_server_rank_g,
+                                       __func__);
+                            }
+                        }
+
+                        if (is_mine) {
+                            region_list->region_hist->range = (double *)malloc(sizeof(double) * nbin * 2);
+                            region_list->region_hist->bin   = (uint64_t *)malloc(sizeof(uint64_t) * nbin);
+
+                            /* if (fread(region_list->region_hist->range, sizeof(double), */
+                            /*           region_list->region_hist->nbin * 2, file) != 1) { */
+                            /*     printf("Read failed for region_list->region_hist->range\n"); */
+                            /* } */
+                            memcpy(region_list->region_hist->range, buf, nbin * 2 * sizeof(double));
+                            buf += (nbin * 2 * sizeof(double));
+
+                            /* if (fread(region_list->region_hist->bin, sizeof(uint64_t),
+                             * region_list->region_hist->nbin, */
+                            /*           file) != 1) { */
+                            /*     printf("Read failed for region_list->region_hist->bin\n"); */
+                            /* } */
+                            memcpy(region_list->region_hist->bin, buf, nbin * sizeof(uint64_t));
+                            buf += (nbin * sizeof(uint64_t));
+
+                            /* if (fread(&region_list->region_hist->incr, sizeof(double), 1, file) != 1) {
+                             */
+                            /*     printf("Read failed for region_list->region_hist->incr\n"); */
+                            /* } */
+                            region_list->region_hist->incr = *(double *)buf;
+                            buf += sizeof(double);
+                        }
+                        else {
+                            buf += (nbin * 2 * sizeof(double));
+                            buf += (nbin * sizeof(uint64_t));
+                            buf += sizeof(double);
+                        }
+                    } // End has_hist
+
+                    if (is_mine) {
+                        region_list->buf       = NULL;
+                        region_list->data_size = 1;
+                        for (idx = 0; idx < region_list->ndim; idx++)
+                            region_list->data_size *= region_list->count[idx];
+                        region_list->is_data_ready            = 0;
+                        region_list->shm_fd                   = 0;
+                        region_list->meta                     = (metadata + i);
+                        region_list->prev                     = NULL;
+                        region_list->next                     = NULL;
+                        region_list->overlap_storage_regions  = NULL;
+                        region_list->n_overlap_storage_region = 0;
+                        hg_atomic_init32(&(region_list->buf_map_refcount), 0);
+                        region_list->reg_dirty_from_buf = 0;
+                        region_list->access_type        = PDC_NA;
+                        region_list->bulk_handle        = NULL;
+                        region_list->lock_handle        = NULL;
+                        region_list->addr               = NULL;
+                        region_list->obj_id             = (metadata + i)->obj_id;
+                        region_list->reg_id             = 0;
+                        region_list->from_obj_id        = 0;
+                        region_list->client_id          = 0;
+                        region_list->is_io_done         = 0;
+                        region_list->is_shm_closed      = 0;
+                        region_list->seq_id             = 0;
+                        region_list->sent_to_server     = 0;
+                        region_list->io_cache_region    = NULL;
+
+                        memset(region_list->shm_addr, 0, ADDR_MAX);
+                        memset(region_list->client_ids, 0,
+                               PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
+
+                        if (strstr(region_list->storage_location, "scratch") != NULL) {
+                            region_list->data_loc_type = PDC_LUSTRE;
+                        }
+
+                        DL_APPEND((metadata + i)->storage_region_list_head, region_list);
+                    }
+                } // For j
+                total_region += n_region;
+
+                if (is_mine) {
+                    DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
+                }
+            } // End for metadata
 
             if (is_mine) {
                 nobj += count;
@@ -1597,7 +1604,7 @@ drc_access_again:
         MPI_Barrier(MPI_COMM_WORLD);
         restart_time = MPI_Wtime() - restart_time;
         if (pdc_server_rank_g == 0)
-            printf("==PDC_SERVER[%d]: restart took %.2f s!\n", pdc_server_rank_g, restart_time);
+            printf("==PDC_SERVER[%d]: restart took %.2f s\n", pdc_server_rank_g, restart_time);
 #endif
     }
     else {

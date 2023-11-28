@@ -390,4 +390,13 @@ perr_t PDC_free_cont_hash_table();
  */
 perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out);
 
+/**
+ * Add the kvtag received from one client to the corresponding metadata structure
+ *
+ * \param in [IN]               NULL
+ * \param out [IN]              New (unique) metadata ID
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+uint64_t PDC_Server_gen_obj_id();
 #endif /* PDC_SERVER_METADATA_H */
