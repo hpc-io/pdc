@@ -864,7 +864,7 @@ PDC_Server_restart_flex(char *chk_dir)
     region_list_t * region_list;
     pdc_hash_table_entry_head *  obj_entry;
     pdc_cont_hash_table_entry_t *cont_entry;
-    uint32_t                     hash_key;
+    uint32_t                     hash_key, *key_ptr;
     unsigned                     idx;
     uint64_t                     checkpoint_size;
     char *                       checkpoint_buf = NULL;
@@ -1050,8 +1050,11 @@ PDC_Server_restart_flex(char *chk_dir)
                 obj_entry->n_obj    = 0;
                 obj_entry->bloom    = NULL;
                 obj_entry->metadata = NULL;
+                // hash key may be freed in PDC_Server_hash_table_list_init / hash_table_insert
+                key_ptr = (uint32_t*)malloc(sizeof(uint32_t));
+                *key_ptr = hash_key;
                 // Init hash table metadata (w/ bloom) with first obj
-                PDC_Server_hash_table_list_init(obj_entry, &hash_key);
+                PDC_Server_hash_table_list_init(obj_entry, key_ptr);
 
                 metadata = (pdc_metadata_t *)calloc(sizeof(pdc_metadata_t), count);
 
@@ -1571,6 +1574,10 @@ drc_access_again:
     // TODO: support restart with different number of servers than previous run
     char checkpoint_file[ADDR_MAX + sizeof(int) + 1];
     if (is_restart_g == 1) {
+
+#ifdef ENABLE_MPI
+        double restart_time = MPI_Wtime();
+#endif
         // Old version
         /* snprintf(checkpoint_file, ADDR_MAX, "%s/%d/metadata_checkpoint.%d", pdc_server_tmp_dir_g, */
         /*          pdc_server_rank_g, pdc_server_rank_g); */
@@ -1586,6 +1593,12 @@ drc_access_again:
             printf("==PDC_SERVER[%d]: error with PDC_Server_restart_flex\n", pdc_server_rank_g);
             goto done;
         }
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        restart_time = MPI_Wtime() - restart_time;
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[%d]: restart took %.2f s!\n", pdc_server_rank_g, restart_time);
+#endif
     }
     else {
         // We are starting a brand new server
