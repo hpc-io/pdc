@@ -951,7 +951,7 @@ PDC_Server_restart_flex(char *chk_dir)
                 /* } */
                 memcpy(cont_entry, buf, sizeof(pdc_cont_hash_table_entry_t));
                 // Re-generate new id for possibily new server location
-                cont_entry->cont_id     = PDC_Server_gen_obj_id();
+                cont_entry->cont_id = PDC_Server_gen_obj_id();
             }
             buf += sizeof(pdc_cont_hash_table_entry_t);
 
@@ -1079,7 +1079,7 @@ PDC_Server_restart_flex(char *chk_dir)
                     (metadata + i)->all_storage_region_distributed = 0;
 
                     // Re-generate new id for possibily new server location
-                    (metadata+i)->obj_id = PDC_Server_gen_obj_id();
+                    (metadata + i)->obj_id = PDC_Server_gen_obj_id();
                 }
 
                 buf += sizeof(pdc_metadata_t);
@@ -1266,8 +1266,7 @@ PDC_Server_restart_flex(char *chk_dir)
                         region_list->io_cache_region    = NULL;
 
                         memset(region_list->shm_addr, 0, ADDR_MAX);
-                        memset(region_list->client_ids, 0,
-                               PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
+                        memset(region_list->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
 
                         if (strstr(region_list->storage_location, "scratch") != NULL) {
                             region_list->data_loc_type = PDC_LUSTRE;
