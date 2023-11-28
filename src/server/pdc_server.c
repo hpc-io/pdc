@@ -1051,7 +1051,7 @@ PDC_Server_restart_flex(char *chk_dir)
                 obj_entry->bloom    = NULL;
                 obj_entry->metadata = NULL;
                 // hash key may be freed in PDC_Server_hash_table_list_init / hash_table_insert
-                key_ptr = (uint32_t*)malloc(sizeof(uint32_t));
+                key_ptr  = (uint32_t *)malloc(sizeof(uint32_t));
                 *key_ptr = hash_key;
                 // Init hash table metadata (w/ bloom) with first obj
                 PDC_Server_hash_table_list_init(obj_entry, key_ptr);
