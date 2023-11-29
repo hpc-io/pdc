@@ -38,23 +38,17 @@ typedef enum pdc_c_var_type_t {
     PDC_LONG       = 16, /* long types                                                     */
     PDC_VOID_PTR   = 17, /* void pointer type                                              */
     PDC_SIZE_T     = 18, /* size_t type                                                    */
-    PDC_TYPE_COUNT = 19  /* this is the number of var types and has to be the last         */
+    PDC_BULKI      = 19, /* BULKI type                                                     */
+    PDC_BULKI_ENT  = 20, /* BULKI_ENTITY type                                              */
+    PDC_TYPE_COUNT = 21  /* this is the number of var types and has to be the last         */
 } pdc_c_var_type_t;
 
 // typedef pdc_c_var_type_t PDC_CType;
 
 typedef enum pdc_c_var_class_t {
-    PDC_CLS_SCALAR,
-    PDC_CLS_ARRAY,
-    PDC_CLS_ENUM,     // not implemented, users can use PDC_CT_INT
-    PDC_CLS_STRUCT,   // not implemented, users can use embedded key value pairs for the members in a struct
-    PDC_CLS_UNION,    // not implemented, users can use embedded key value pairs for the only one member value
-                      // in a union.
-    PDC_CLS_POINTER,  // not implemented, users can use PDC_CT_INT64_T to store the pointer address, but
-                      // won't work for distributed memory.
-    PDC_CLS_FUNCTION, // not implemented, users can use PDC_CT_INT64_T to store the function address, but
-                      // won't work for distributed memory.
-    PDC_CLS_COUNT     // just the count of the enum.
+    PDC_CLS_ITEM  = 0,
+    PDC_CLS_ARRAY = 1,
+    PDC_CLS_COUNT = 2 // just the count of the enum.
 } pdc_c_var_class_t;
 
 // typedef pdc_c_var_class_t PDC_CType_Class;
@@ -79,7 +73,8 @@ static size_t DataTypeSizes[PDC_TYPE_COUNT] = {
     sizeof(uint32_t),
     sizeof(long),
     sizeof(void *),
-    sizeof(size_t)
+    sizeof(size_t),
+    sizeof(void *)
 };
 
 static char *DataTypeNames[PDC_TYPE_COUNT] = {
@@ -101,7 +96,9 @@ static char *DataTypeNames[PDC_TYPE_COUNT] = {
     "uint32_t",
     "long",
     "void*",
-    "size_t"
+    "size_t",
+    "BULKI",
+    "BULKI_ENTITY"
 };
 
 static char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
@@ -123,7 +120,9 @@ static char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
     "PDC_UINT32",
     "PDC_LONG",
     "PDC_VOID_PTR",
-    "PDC_SIZE_T"
+    "PDC_SIZE_T",
+    "PDC_BULKI",
+    "PDC_BULKI_ENT"
 };
 
 __attribute__((unused))
@@ -146,7 +145,9 @@ static char *DataTypeFormat[PDC_TYPE_COUNT] = {
     "%u",     // uint32_t
     "%ld",    // long
     "%p",     // void* (pointer)
-    "%zu"     // size_t
+    "%zu",     // size_t
+    "%p",      // BULKI
+    "%p"       // BULKI_ENTITY
 };
 
 // clang-format on
@@ -171,7 +172,7 @@ get_size_by_class_n_type(void *data, size_t item_count, pdc_c_var_class_t pdc_cl
                          pdc_c_var_type_t pdc_type)
 {
     size_t size = 0;
-    if (pdc_class == PDC_CLS_SCALAR) {
+    if (pdc_class == PDC_CLS_ITEM) {
         if (pdc_type == PDC_STRING) {
             size = (strlen((char *)data) + 1) * sizeof(char);
         }

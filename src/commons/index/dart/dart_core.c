@@ -95,150 +95,152 @@ get_base_virtual_node_id_by_string(DART *dart, char *str)
     return (rst % (uint64_t)dart->num_vnode);
 }
 
-/**
- * This function is for getting the alternative virtual node ID.
- *
- */
-uint64_t
-get_reconciled_vnode_id_with_power_of_two_choice_rehashing(DART *dart, uint64_t base_vnode_idx, char *word,
-                                                           get_server_info_callback get_server_cb)
-{
+// /**
+//  * This function is for getting the alternative virtual node ID.
+//  *
+//  */
+// uint64_t
+// get_reconciled_vnode_id_with_power_of_two_choice_rehashing(DART *dart, uint64_t base_vnode_idx, char *word,
+//                                                            get_server_info_callback get_server_cb)
+// {
 
-    int ir_idx = (int)ceil((double)(dart->alphabet_size / 2));
+//     int ir_idx = (int)ceil((double)(dart->alphabet_size / 2));
 
-    // base virtual node address always in the first element of the array.
-    uint64_t rst = base_vnode_idx;
+//     // base virtual node address always in the first element of the array.
+//     uint64_t rst = base_vnode_idx;
 
-    // determine the tree height.
-    int tree_height = dart->dart_tree_height;
+//     // determine the tree height.
+//     int tree_height = dart->dart_tree_height;
 
-    // get serverID for base virtual node
-    uint64_t serverId = get_server_id_by_vnode_id(dart, base_vnode_idx);
+//     // get serverID for base virtual node
+//     uint64_t serverId = get_server_id_by_vnode_id(dart, base_vnode_idx);
 
-    // we first let reconciled virtual node to be the base virtual node.
-    uint64_t reconciled_vnode_idx = base_vnode_idx;
+//     // we first let reconciled virtual node to be the base virtual node.
+//     uint64_t reconciled_vnode_idx = base_vnode_idx;
 
-    if (dart->dart_tree_height <= 1) {
-        return reconciled_vnode_idx;
-    }
+//     if (dart->dart_tree_height <= 1) {
+//         return reconciled_vnode_idx;
+//     }
 
-    // The procedure of picking alternative virtual node is important.
-    // We first need to know what is the character lying on the leaves of DART partition tree.
-    int last_c_index = tree_height - 1;
+//     // The procedure of picking alternative virtual node is important.
+//     // We first need to know what is the character lying on the leaves of DART partition tree.
+//     int last_c_index = tree_height - 1;
 
-    int post_leaf_index = 0;
-    int pre_leaf_index  = 0;
+//     int post_leaf_index = 0;
+//     int pre_leaf_index  = 0;
 
-    // The pre_leaf_index is the index of character right before the leaf character.
-    // The post_leaf_index is the index of character right after the leaf character.
-    if (strlen(word) <= tree_height) {
-        // if the word is not longer than the tree height, then there is no post-leaf character, therefore
-        // post_leaf_index should be 0
-        post_leaf_index = 0;
-        // then the last_c_index should be the index of the last character in the alphabet.
-        last_c_index = strlen(word) - 1;
-        if (strlen(word) <= 1) {
-            // if the word contains 0-1 character, there is no pre-leaf character and therefore pre_leaf_index
-            // should be 0.
-            pre_leaf_index = 0;
-        }
-        else {
-            // otherwise, pre_leaf_index should be the index of proceeding character of the
-            // leaf-level character in the alphabet.
-            pre_leaf_index = (int)word[last_c_index - 1] % dart->alphabet_size;
-        }
-    }
-    else {
-        // if the length of the word exceeds the height of the DART partition tree,
-        // definitely, post-leaf character exists.
-        post_leaf_index = (int)word[last_c_index + 1] % dart->alphabet_size;
-        // but, there is a case where DART partition tree is of height 1.
-        // in this case, there will be no pre-leaf character.
-        if (tree_height <= 1) {
-            pre_leaf_index = 0;
-        }
-        else {
-            // otherwise, there will be a pre-leaf character.
-            pre_leaf_index = (int)word[last_c_index - 1] % dart->alphabet_size;
-        }
-    }
-    int leaf_index = (int)word[last_c_index] % dart->alphabet_size;
+//     // The pre_leaf_index is the index of character right before the leaf character.
+//     // The post_leaf_index is the index of character right after the leaf character.
+//     if (strlen(word) <= tree_height) {
+//         // if the word is not longer than the tree height, then there is no post-leaf character, therefore
+//         // post_leaf_index should be 0
+//         post_leaf_index = 0;
+//         // then the last_c_index should be the index of the last character in the alphabet.
+//         last_c_index = strlen(word) - 1;
+//         if (strlen(word) <= 1) {
+//             // if the word contains 0-1 character, there is no pre-leaf character and therefore
+//             pre_leaf_index
+//             // should be 0.
+//             pre_leaf_index = 0;
+//         }
+//         else {
+//             // otherwise, pre_leaf_index should be the index of proceeding character of the
+//             // leaf-level character in the alphabet.
+//             pre_leaf_index = (int)word[last_c_index - 1] % dart->alphabet_size;
+//         }
+//     }
+//     else {
+//         // if the length of the word exceeds the height of the DART partition tree,
+//         // definitely, post-leaf character exists.
+//         post_leaf_index = (int)word[last_c_index + 1] % dart->alphabet_size;
+//         // but, there is a case where DART partition tree is of height 1.
+//         // in this case, there will be no pre-leaf character.
+//         if (tree_height <= 1) {
+//             pre_leaf_index = 0;
+//         }
+//         else {
+//             // otherwise, there will be a pre-leaf character.
+//             pre_leaf_index = (int)word[last_c_index - 1] % dart->alphabet_size;
+//         }
+//     }
+//     int leaf_index = (int)word[last_c_index] % dart->alphabet_size;
 
-    int leaf_post_sum  = leaf_index + pre_leaf_index + post_leaf_index;
-    int leaf_post_diff = abs(post_leaf_index - leaf_index - pre_leaf_index);
+//     int leaf_post_sum  = leaf_index + pre_leaf_index + post_leaf_index;
+//     int leaf_post_diff = abs(post_leaf_index - leaf_index - pre_leaf_index);
 
-    // int leaf_post_sum = leaf_index + pre_leaf_index + 0;
-    // int leaf_post_diff = abs(leaf_index-pre_leaf_index);
+//     // int leaf_post_sum = leaf_index + pre_leaf_index + 0;
+//     // int leaf_post_diff = abs(leaf_index-pre_leaf_index);
 
-    // We calculate the region size:
-    int region_size = dart->num_vnode / dart->alphabet_size; // d=1, rs = 1; d = 2, rs = k; d = 3, rs =k^2;
-    // We calculate the sub-region size:
-    int sub_region_size = region_size / dart->alphabet_size; // d=1, srs = 0; d = 2, srs = 1; d = 3, srs = k;
+//     // We calculate the region size:
+//     int region_size = dart->num_vnode / dart->alphabet_size; // d=1, rs = 1; d = 2, rs = k; d = 3, rs =k^2;
+//     // We calculate the sub-region size:
+//     int sub_region_size = region_size / dart->alphabet_size; // d=1, srs = 0; d = 2, srs = 1; d = 3, srs =
+//     k;
 
-    // We calculate the major offset which possibly pick a virtual node in another sub-region.
-    int major_offset = (leaf_post_sum % dart->alphabet_size) * (sub_region_size);
-    // We calcuate the minor offset which will possibly pick a different virtual node within the same
-    // sub-region.
-    int minor_offset = leaf_post_diff;
-    // Finally the region offset will be some certain virtual node in one region.
-    // uint64_t region_offset = (reconciled_vnode_idx + (uint64_t)major_offset - (uint64_t)minor_offset)
-    //                         % (uint64_t)region_size;
-    uint64_t region_offset =
-        (reconciled_vnode_idx + (uint64_t)major_offset - (uint64_t)minor_offset) % (uint64_t)region_size;
-    // Invert region Index:  ceil(alphabet_size / 2);
+//     // We calculate the major offset which possibly pick a virtual node in another sub-region.
+//     int major_offset = (leaf_post_sum % dart->alphabet_size) * (sub_region_size);
+//     // We calcuate the minor offset which will possibly pick a different virtual node within the same
+//     // sub-region.
+//     int minor_offset = leaf_post_diff;
+//     // Finally the region offset will be some certain virtual node in one region.
+//     // uint64_t region_offset = (reconciled_vnode_idx + (uint64_t)major_offset - (uint64_t)minor_offset)
+//     //                         % (uint64_t)region_size;
+//     uint64_t region_offset =
+//         (reconciled_vnode_idx + (uint64_t)major_offset - (uint64_t)minor_offset) % (uint64_t)region_size;
+//     // Invert region Index:  ceil(alphabet_size / 2);
 
-    int      n = 0;
-    uint64_t c;
-    // uint64_t rst = 0;
-    uint64_t i_t_n;
-    int      met_end = 0;
-    for (n = 1; n <= dart->dart_tree_height; n++) {
-        if (word[n - 1] == '\0') {
-            met_end = 1;
-        }
-        if (word[n - 1] != '\0' && met_end == 0) {
-            if (n == 1) {
-                i_t_n = ((int)word[n - 1] + ir_idx) % dart->alphabet_size;
-            }
-            else if (n == (dart->dart_tree_height - 1)) {
-                i_t_n = ((int)word[n - 1] + leaf_post_sum) % dart->alphabet_size;
-            }
-            else if (n == dart->dart_tree_height) {
-                i_t_n = abs((int)word[n - 1] - leaf_post_diff) % dart->alphabet_size;
-            }
-        }
-        c = (i_t_n) * ((uint64_t)uint32_pow(dart->alphabet_size, dart->dart_tree_height - n));
-        rst += c;
-    }
+//     int      n = 0;
+//     uint64_t c;
+//     // uint64_t rst = 0;
+//     uint64_t i_t_n;
+//     int      met_end = 0;
+//     for (n = 1; n <= dart->dart_tree_height; n++) {
+//         if (word[n - 1] == '\0') {
+//             met_end = 1;
+//         }
+//         if (word[n - 1] != '\0' && met_end == 0) {
+//             if (n == 1) {
+//                 i_t_n = ((int)word[n - 1] + ir_idx) % dart->alphabet_size;
+//             }
+//             else if (n == (dart->dart_tree_height - 1)) {
+//                 i_t_n = ((int)word[n - 1] + leaf_post_sum) % dart->alphabet_size;
+//             }
+//             else if (n == dart->dart_tree_height) {
+//                 i_t_n = abs((int)word[n - 1] - leaf_post_diff) % dart->alphabet_size;
+//             }
+//         }
+//         c = (i_t_n) * ((uint64_t)uint32_pow(dart->alphabet_size, dart->dart_tree_height - n));
+//         rst += c;
+//     }
 
-    int alterV = (rst % (uint64_t)dart->num_vnode);
+//     int alterV = (rst % (uint64_t)dart->num_vnode);
 
-    // // We also calculate the region start position.
-    // uint64_t region_start = ((((int)word[0]+ir_idx) % dart->alphabet_size)) * region_size;//
-    // ((reconciled_vnode_idx)/region_size) * (region_size);
-    // // Finally, the reconciled vnode index is calculated.
-    // // reconciled_vnode_idx = (0 + region_start + region_offset) % dart->num_vnode;
-    // reconciled_vnode_idx = (reconciled_vnode_idx + region_start + region_offset) % dart->num_vnode;
+//     // // We also calculate the region start position.
+//     // uint64_t region_start = ((((int)word[0]+ir_idx) % dart->alphabet_size)) * region_size;//
+//     // ((reconciled_vnode_idx)/region_size) * (region_size);
+//     // // Finally, the reconciled vnode index is calculated.
+//     // // reconciled_vnode_idx = (0 + region_start + region_offset) % dart->num_vnode;
+//     // reconciled_vnode_idx = (reconciled_vnode_idx + region_start + region_offset) % dart->num_vnode;
 
-    // Only when inserting a word, we do such load detection.
-    // get alternative virtual node and therefore the alternative server ID.
-    int reconcile_serverId = get_server_id_by_vnode_id(dart, alterV);
-    if (get_server_cb != NULL) {
-        // Check both physical server to see which one has smaller number of indexed keywords on it.
-        dart_server origin_server     = get_server_cb(serverId);
-        dart_server reconciled_server = get_server_cb(reconcile_serverId);
-        // printf("For keyword %s, choosing between %d and %d\n", word, serverId, reconcile_serverId);
+//     // Only when inserting a word, we do such load detection.
+//     // get alternative virtual node and therefore the alternative server ID.
+//     int reconcile_serverId = get_server_id_by_vnode_id(dart, alterV);
+//     if (get_server_cb != NULL) {
+//         // Check both physical server to see which one has smaller number of indexed keywords on it.
+//         dart_server origin_server     = get_server_cb(serverId);
+//         dart_server reconciled_server = get_server_cb(reconcile_serverId);
+//         // printf("For keyword %s, choosing between %d and %d\n", word, serverId, reconcile_serverId);
 
-        if (origin_server.indexed_word_count > reconciled_server.indexed_word_count) {
-            // printf("Reconcile happened. from %d to %d\n", vnode_idx , reconciled_vnode_idx);
-            rst = alterV;
-        }
-    }
-    else {
-        rst = alterV;
-    }
-    return rst;
-}
+//         if (origin_server.indexed_word_count > reconciled_server.indexed_word_count) {
+//             // printf("Reconcile happened. from %d to %d\n", vnode_idx , reconciled_vnode_idx);
+//             rst = alterV;
+//         }
+//     }
+//     else {
+//         rst = alterV;
+//     }
+//     return rst;
+// }
 
 /**
  * This function is for getting the alternative virtual node ID.

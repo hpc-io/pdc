@@ -64,6 +64,7 @@ typedef struct {
 typedef struct {
     uint32_t server_id;
     char *   key;
+
 } index_hash_result_t;
 
 // Defining a function pointer by which the server load information can be retrieved.
@@ -98,13 +99,14 @@ uint64_t get_server_id_by_vnode_id(DART *dart, uint64_t vnode_id);
  */
 uint64_t get_base_virtual_node_id_by_string(DART *dart, char *str);
 
-/**
- * This function is for getting the alternative virtual node ID.
- *
- */
-uint64_t get_reconciled_vnode_id_with_power_of_two_choice_rehashing(DART *dart, uint64_t base_vnode_idx,
-                                                                    char *                   word,
-                                                                    get_server_info_callback get_server_cb);
+// /**
+//  * This function is for getting the alternative virtual node ID.
+//  *
+//  */
+// uint64_t get_reconciled_vnode_id_with_power_of_two_choice_rehashing(DART *dart, uint64_t base_vnode_idx,
+//                                                                     char *                   word,
+//                                                                     get_server_info_callback
+//                                                                     get_server_cb);
 
 /**
  * Get IDs of all virtual nodes of replicas by given string and overall tree-height setting.

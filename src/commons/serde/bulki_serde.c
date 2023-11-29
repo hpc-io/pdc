@@ -1,16 +1,5 @@
 #include "bulki_serde.h"
 
-uint64_t
-get_total_size_for_serialized_data(BULKI *data)
-{
-
-    if (data->totalSize <= 0) {
-        size_t total_size = data->header->totalSize + data->data->totalSize + sizeof(uint64_t) * 6;
-        data->totalSize   = total_size;
-    }
-    return data->totalSize;
-}
-
 // clang-format off
 /**
  * This function serializes the entire BULKI structure.
@@ -51,7 +40,7 @@ get_total_size_for_serialized_data(BULKI *data)
  */
 // clang-format on
 void *
-BULKI_serde_serialize(BULKI *data)
+BULKI_serialize(BULKI *data)
 {
     // The buffer contains:
     // the size of the header (size_t) +
@@ -61,17 +50,17 @@ BULKI_serde_serialize(BULKI *data)
     // the data offset (size_t) +
     // the number of value entries (size_t) +
     // the data region
-    void *buffer = malloc(get_total_size_for_serialized_data(data));
+    void *buffer = malloc(get_BULKI_size(data, 1, PDC_BULKI, PDC_CLS_ITEM));
     // serialize the meta header, which contains only the size of the header and the size of the data region.
-    memcpy(buffer, &data->header->totalSize, sizeof(size_t));
-    memcpy(buffer + sizeof(size_t), &data->data->totalSize, sizeof(size_t));
-
+    memcpy(buffer, &data->header->headerSize, sizeof(size_t));
+    memcpy(buffer + sizeof(size_t), &data->data->dataSize, sizeof(size_t));
     // serialize the header
     // start with the number of keys
-    memcpy(buffer + sizeof(size_t) * 2, &data->header->numKeys, sizeof(size_t));
+    memcpy(buffer + sizeof(size_t) * 2, &data->numKeys, sizeof(size_t));
+
     // then the keys
     size_t offset = sizeof(size_t) * 3;
-    for (size_t i = 0; i < data->header->numKeys; i++) {
+    for (size_t i = 0; i < data->numKeys; i++) {
         int8_t pdc_type = (int8_t)(data->header->keys[i].pdc_type);
         memcpy(buffer + offset, &pdc_type, sizeof(int8_t));
         offset += sizeof(int8_t);
@@ -87,10 +76,10 @@ BULKI_serde_serialize(BULKI *data)
 
     // serialize the data
     // start with the number of value entries
-    memcpy(buffer + offset, &data->data->numValues, sizeof(size_t));
+    memcpy(buffer + offset, &data->numKeys, sizeof(size_t));
     offset += sizeof(size_t);
     // then the values
-    for (size_t i = 0; i < data->data->numValues; i++) {
+    for (size_t i = 0; i < data->numKeys; i++) {
         int8_t pdc_class = (int8_t)data->data->values[i].pdc_class;
         int8_t pdc_type  = (int8_t)data->data->values[i].pdc_type;
         memcpy(buffer + offset, &pdc_class, sizeof(int8_t));
@@ -100,7 +89,7 @@ BULKI_serde_serialize(BULKI *data)
         memcpy(buffer + offset, &data->data->values[i].size, sizeof(size_t));
         offset += sizeof(size_t);
 
-        if (data->data->values[i].pdc_class == PDC_CLS_STRUCT) {
+        if (data->data->values[i].pdc_class == PDC_BULKI) {
             void *sdata = BULKI_serde_serialize((BULKI *)(data->data->values[i].data));
             memcpy(buffer + offset, sdata, data->data->values[i].size);
         }
@@ -125,6 +114,7 @@ BULKI_serde_serialize(BULKI *data)
 BULKI *
 BULKI_serde_deserialize(void *buffer)
 {
+    BULKI *bulki  = malloc(sizeof(BULKI));
     size_t offset = 0;
     // read the meta header
     size_t headerSize;
@@ -141,13 +131,13 @@ BULKI_serde_deserialize(void *buffer)
     size_t numKeys;
     memcpy(&numKeys, buffer + offset, sizeof(size_t));
     offset += sizeof(size_t);
+    bulki->numKeys = numKeys;
 
     printf("numKeys: %zu\n", numKeys);
 
     BULKI_Header *header = malloc(sizeof(BULKI_Header));
-    header->keys         = malloc(sizeof(BULKI_Key) * numKeys);
-    header->numKeys      = numKeys;
-    header->totalSize    = headerSize;
+    header->keys         = malloc(sizeof(BULKI_Entity) * numKeys);
+    header->headerSize   = headerSize;
 
     printf("iterating %zu keys in the header\n", numKeys);
 
@@ -161,7 +151,7 @@ BULKI_serde_deserialize(void *buffer)
         void *key = malloc(size);
         memcpy(key, buffer + offset, size);
         offset += size;
-        header->keys[i].key      = key;
+        header->keys[i].data     = key;
         header->keys[i].pdc_type = (pdc_c_var_type_t)pdc_type;
         header->keys[i].size     = size;
 
@@ -183,9 +173,8 @@ BULKI_serde_deserialize(void *buffer)
     memcpy(&numValues, buffer + offset, sizeof(size_t));
     offset += sizeof(size_t);
     BULKI_Data *data = malloc(sizeof(BULKI_Data));
-    data->values     = malloc(sizeof(BULKI_Value) * numValues);
-    data->numValues  = numValues;
-    data->totalSize  = dataSize;
+    data->values     = malloc(sizeof(BULKI_Entity) * numValues);
+    data->dataSize   = dataSize;
     for (size_t i = 0; i < numValues; i++) {
         int8_t pdc_class;
         int8_t pdc_type;
@@ -220,10 +209,9 @@ BULKI_serde_deserialize(void *buffer)
         return NULL;
     }
     // create the serialized data
-    BULKI *serializedData     = malloc(sizeof(BULKI));
-    serializedData->header    = header;
-    serializedData->data      = data;
-    serializedData->totalSize = headerSize + dataSize + sizeof(size_t) * 6;
+    bulki->header    = header;
+    bulki->data      = data;
+    bulki->totalSize = headerSize + dataSize + sizeof(size_t) * 6;
 
-    return serializedData;
+    return bulki;
 }
