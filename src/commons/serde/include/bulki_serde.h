@@ -68,10 +68,28 @@ BULKI *BULKI_deserialize_from_buffer(void *buffer, size_t *offset);
  * @brief Deserialize a BULKI structure from a buffer
  *
  * @param buffer Pointer to the buffer
+ *
+ * @return Pointer to the BULKI structure
+ */
+BULKI *BULKI_deserialize(void *buffer);
+
+/**
+ * @brief Deserialize a BULKI structure from a buffer
+ *
+ * @param buffer Pointer to the buffer
  * @param offset Pointer to the offset
  *
  * @return Pointer to the BULKI structure
  */
 BULKI_Entity *BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset);
+
+/**
+ * @brief Deserialize a BULKI structure from a buffer
+ *
+ * @param buffer Pointer to the buffer
+ *
+ * @return Pointer to the BULKI structure
+ */
+BULKI_Entity *BULKI_Entity_deserialize(void *buffer);
 
 #endif /* BULKI_SERDE_H */

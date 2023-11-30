@@ -159,7 +159,7 @@ BULKI_add(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
         bulki->header->keys = realloc(bulki->header->keys, bulki->capacity * sizeof(BULKI_Entity));
         bulki->data->values = realloc(bulki->data->values, bulki->capacity * sizeof(BULKI_Entity));
     }
-    size_t total_size_increase          = key->size + value->size;
+    uint64_t total_size_increase        = key->size + value->size;
     bulki->header->keys[bulki->numKeys] = *key;
     // append bytes for type, size, and key
     bulki->header->headerSize += key->size;
@@ -170,14 +170,14 @@ BULKI_add(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
 
     bulki->numKeys++;
 
-    bulki->totalSize = bulki->totalSize += total_size_increase;
+    bulki->totalSize += total_size_increase;
 }
 
 BULKI_Entity *
 BULKI_delete(BULKI *bulki, BULKI_Entity *key)
 {
     BULKI_Entity *value               = NULL;
-    size_t        total_size_deducted = 0;
+    uint64_t      total_size_deducted = 0;
     for (size_t i = 0; i < bulki->numKeys; i++) {
         if (BULKI_Entity_equal(&bulki->header->keys[i], key)) {
             value = &bulki->data->values[i];
@@ -190,25 +190,25 @@ BULKI_delete(BULKI *bulki, BULKI_Entity *key)
             break;
         }
     }
-    bulki->totalSize = bulki->totalSize -= total_size_deducted;
+    bulki->totalSize -= total_size_deducted;
     return value;
 }
 
 void
-free_BULKI_Entity(BULKI_Entity *bulk_entity)
+BULKI_Entity_free(BULKI_Entity *bulk_entity)
 {
     if (bulk_entity != NULL) {
         if (bulk_entity->pdc_class == PDC_CLS_ARRAY) {
             if (bulk_entity->pdc_type == PDC_BULKI) {
                 BULKI *bulki_array = (BULKI *)bulk_entity->data;
                 for (size_t i = 0; i < bulk_entity->count; i++) {
-                    free_BULKI(&bulki_array[i]);
+                    BULKI_free(&bulki_array[i]);
                 }
             }
             else if (bulk_entity->pdc_type == PDC_BULKI_ENT) {
                 BULKI_Entity *bulki_entity_array = (BULKI_Entity *)bulk_entity->data;
                 for (size_t i = 0; i < bulk_entity->count; i++) {
-                    free_BULKI_Entity(&bulki_entity_array[i]);
+                    BULKI_Entity_free(&bulki_entity_array[i]);
                 }
             }
             else {
@@ -217,7 +217,7 @@ free_BULKI_Entity(BULKI_Entity *bulk_entity)
         }
         else if (bulk_entity->pdc_class == PDC_CLS_ITEM) {
             if (bulk_entity->pdc_type == PDC_BULKI) {
-                free_BULKI((BULKI *)bulk_entity->data);
+                BULKI_free((BULKI *)bulk_entity->data);
             }
             else {
                 free(bulk_entity->data);
@@ -225,16 +225,16 @@ free_BULKI_Entity(BULKI_Entity *bulk_entity)
         }
         free(bulk_entity);
     }
-} // free_BULKI_Entity
+} // BULKI_Entity_free
 
 void
-free_BULKI(BULKI *bulki)
+BULKI_free(BULKI *bulki)
 {
     if (bulki != NULL) {
         if (bulki->header != NULL) {
             if (bulki->header->keys != NULL) {
                 for (size_t i = 0; i < bulki->numKeys; i++) {
-                    free_BULKI_Entity(&bulki->header->keys[i]);
+                    BULKI_Entity_free(&bulki->header->keys[i]);
                 }
                 free(bulki->header->keys);
             }
@@ -243,7 +243,7 @@ free_BULKI(BULKI *bulki)
         if (bulki->data != NULL) {
             if (bulki->data->values != NULL) {
                 for (size_t i = 0; i < bulki->numKeys; i++) {
-                    free_BULKI_Entity(&bulki->data->values[i]);
+                    BULKI_Entity_free(&bulki->data->values[i]);
                 }
                 free(bulki->data->values);
             }
@@ -251,4 +251,4 @@ free_BULKI(BULKI *bulki)
         }
         free(bulki);
     }
-} // free_BULKI
+} // BULKI_free

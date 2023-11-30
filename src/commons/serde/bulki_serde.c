@@ -133,7 +133,7 @@ BULKI_serialize_to_buffer(BULKI *bulki, void *buffer, size_t *offset)
     }
 
     // serialize the data offset
-    memcpy(buffer + *offset, *offset, sizeof(uint64_t));
+    memcpy(buffer + *offset, offset, sizeof(uint64_t));
     *offset += sizeof(uint64_t);
 
     // serialize the data
@@ -142,7 +142,7 @@ BULKI_serialize_to_buffer(BULKI *bulki, void *buffer, size_t *offset)
     }
 
     // serialize the data offset
-    memcpy(buffer + *offset, *offset, sizeof(uint64_t));
+    memcpy(buffer + *offset, offset, sizeof(uint64_t));
     *offset += sizeof(uint64_t);
 
     return buffer;
@@ -217,6 +217,7 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
         printf("Error: data offset does not match the expected offset.\n");
         return NULL;
     }
+    return bulki;
 }
 
 BULKI_Entity *
@@ -284,4 +285,18 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
         return NULL;
     }
     return entity;
+}
+
+BULKI_Entity *
+BULKI_Entity_deserialize(void *buffer)
+{
+    size_t offset = 0;
+    return BULKI_Entity_deserialize_from_buffer(buffer, &offset);
+}
+
+BULKI *
+BULKI_deserialize(void *buffer)
+{
+    size_t offset = 0;
+    return BULKI_deserialize_from_buffer(buffer, &offset);
 }

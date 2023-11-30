@@ -123,7 +123,7 @@ size_t get_BULKI_Entity_size(BULKI_Entity *bulk_entity);
  * @param bulk_entity Pointer to the BULKI_Entity structure to be freed
  * @return void
  */
-void free_BULKI_Entity(BULKI_Entity *bulk_entity);
+void BULKI_Entity_free(BULKI_Entity *bulk_entity);
 
 /**
  * @brief free the memory allocated for the BULKI structure
@@ -131,6 +131,6 @@ void free_BULKI_Entity(BULKI_Entity *bulk_entity);
  * @param bulki Pointer to the BULKI structure to be freed
  * @return void
  */
-void free_BULKI(BULKI *bulki);
+void BULKI_free(BULKI *bulki);
 
 #endif /* BULKI_H */
