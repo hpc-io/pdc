@@ -5,213 +5,283 @@
  * This function serializes the entire BULKI structure.
  * 
  * The overview of the serialized binary data layout is:
- * +---------------------+---------------------+---------------------+----------------------+----------------------+----------------------+
- * | Size of the Header  |   Size of the Data  |   Header Region     | Data Offset          |   Data Region        | Data Offset          |
- * |     (uint64_t)      |     (uint64_t)      |                     |   (uint64_t)         |                      |   (uint64_t)         |
- * +---------------------+---------------------+---------------------+----------------------+----------------------+----------------------+
+ * +---------------------+---------------------+---------------------+---------------------+---------------------+----------------------+----------------------+----------------------+
+ * |   Total Size        |   Number of Keys    | Size of the Header  |   Size of the Data  |   Header Region     | Data Offset          |   Data Region        | Data Offset          |
+ * |     (uint64_t)      |     (uint64_t)      |     (uint64_t)      |   (uint64_t)        |   (uint64_t)        |   (uint64_t)         |   (uint64_t)         |   (uint64_t)         |
+ * +---------------------+---------------------+---------------------+---------------------+---------------------+----------------------+----------------------+----------------------+
  * 
- * The first 3 field is called meta-header, which provides metadata about size of the header region and the size of the data region.
- * Note that the size of the header region doesn't include the 'Number of Keys' field.
- * Also, the size of the data region doesn't include the 'Data Offset' field.
+ * The first 3 field is called meta-header, which provides metadata about the total size of BULKI, number of keys, size of the header region and the size of the data region.
  * 
- * Then the following is the header region with two keys:
- * +----------------------+-------------------------+-----------------------------+---------------------------+--------------------------+-----------------------------+---------------------------+
- * | Number of K-Vs       | Key 1 Type              | Key 1 Size                  | Key 1 Data                | Key 2 Type               | Key 2 Size                  | Key 2 Data                |
- * |   (uint64_t)         | (uint8_t)               | (uint64_t)                  | (Variable size depending  | (uint8_t)                | (uint64_t)                  | (Variable size depending  |
- * |                      |                         |                             | on Key 1 Size)            |                          |                             | on Key 2 Size)            |
- * +----------------------+-------------------------+-----------------------------+---------------------------+--------------------------+-----------------------------+---------------------------+
+ * The header region contains multiple BULKI entities, each of which is a key. 
+ * Each BULKI entity contains the following fields:
+ * +-------------------------+-----------------------------+---------------------------+--------------------------+-----------------------------+
+ * | size                    |     Entitiy class           | Entitiy type              | count                    | data                        |
+ * | (uint64_t)              |     (uint8_t)               | (uint8_t)                 | (uint64_t)               | (Variable size depending    |
+ * |                         |                             |                           |                          | on the type and class)      |
+ * +-------------------------+-----------------------------+---------------------------+--------------------------+-----------------------------+
  * 
- * Then, the following is the layout of the data region with the final offset validation point.
- *
- * |----------------------------------------------------------------------------------------------------------------|
- * | Number of K-V Pairs (uint64_t)     | Value 1 Class (uint8_t) | Value 1 Type (uint8_t) | Value 1 Size (uint64_t)|
- * |----------------------------------------------------------------------------------------------------------------|
- * | Value 1 Data (Variable size depending on Value 1 Size) | Value 2 Class (uint8_t)      | Value 2 Type (uint8_t) |
- * |----------------------------------------------------------------------------------------------------------------|
- * | Value 2 Size (uint64_t) | Value 2 Data (Variable size depending on Value 2 Size)                               |
- * |----------------------------------------------------------------------------------------------------------------|
- * | ...repeated for the number of value entries in the data...                                                     |
- * |----------------------------------------------------------------------------------------------------------------|
- * | Final Data Offset (uint64_t)                                                                                   |
- * |----------------------------------------------------------------------------------------------------------------|
+ * Note that the data field in the BULKI entity is a pointer to either an array of BULKI entities , an array of BULKI structures, an array of base type items, 
+ * or a single item of BULKI, or a single item of a base type.
+ * 
+ * After the header region, there is a data offset field, which is used to validate the header region.
+ * 
+ * The data region contains multiple BULKI entities, each of which is a value entry.
+ * 
+ * After the data region, there is another data offset field, which is used to validate the data region.
  * 
  * Please refer to `get_size_by_class_n_type` function in pdc_generic.h for size calculation on scalar values and array values.
+ * 
+ * For performance and simplicity, we do not recommend to use BULKI for large and deeply embedded data structures. 
  *
  */
+
 // clang-format on
+
+/********************** Serialize ************************** */
+
 void *
-BULKI_serialize(BULKI *data)
+BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *offset)
 {
-    // The buffer contains:
-    // the size of the header (size_t) +
-    // the size of the data (size_t) +
-    // the number of keys (size_t) +
-    // the header region +
-    // the data offset (size_t) +
-    // the number of value entries (size_t) +
-    // the data region
-    void *buffer = malloc(get_BULKI_size(data, 1, PDC_BULKI, PDC_CLS_ITEM));
-    // serialize the meta header, which contains only the size of the header and the size of the data region.
-    memcpy(buffer, &data->header->headerSize, sizeof(size_t));
-    memcpy(buffer + sizeof(size_t), &data->data->dataSize, sizeof(size_t));
-    // serialize the header
-    // start with the number of keys
-    memcpy(buffer + sizeof(size_t) * 2, &data->numKeys, sizeof(size_t));
+    // serialize the size
+    memcpy(buffer + *offset, &entity->size, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
 
-    // then the keys
-    size_t offset = sizeof(size_t) * 3;
-    for (size_t i = 0; i < data->numKeys; i++) {
-        int8_t pdc_type = (int8_t)(data->header->keys[i].pdc_type);
-        memcpy(buffer + offset, &pdc_type, sizeof(int8_t));
-        offset += sizeof(int8_t);
-        memcpy(buffer + offset, &data->header->keys[i].size, sizeof(size_t));
-        offset += sizeof(size_t);
-        memcpy(buffer + offset, data->header->keys[i].key, data->header->keys[i].size);
-        offset += data->header->keys[i].size;
-    }
+    // serialize the class
+    int8_t pdc_class = (int8_t)(entity->pdc_class);
+    memcpy(buffer + *offset, &pdc_class, sizeof(int8_t));
+    *offset += sizeof(int8_t);
 
-    // serialize the data offset, this is for validation purpose to see if header region is corrupted.
-    memcpy(buffer + offset, &offset, sizeof(size_t));
-    offset += sizeof(size_t);
+    // serialize the type
+    int8_t pdc_type = (int8_t)(entity->pdc_type);
+    memcpy(buffer + *offset, &pdc_type, sizeof(int8_t));
+    *offset += sizeof(int8_t);
+
+    // serialize the count
+    memcpy(buffer + *offset, &entity->count, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
 
     // serialize the data
-    // start with the number of value entries
-    memcpy(buffer + offset, &data->numKeys, sizeof(size_t));
-    offset += sizeof(size_t);
-    // then the values
-    for (size_t i = 0; i < data->numKeys; i++) {
-        int8_t pdc_class = (int8_t)data->data->values[i].pdc_class;
-        int8_t pdc_type  = (int8_t)data->data->values[i].pdc_type;
-        memcpy(buffer + offset, &pdc_class, sizeof(int8_t));
-        offset += sizeof(int8_t);
-        memcpy(buffer + offset, &pdc_type, sizeof(int8_t));
-        offset += sizeof(int8_t);
-        memcpy(buffer + offset, &data->data->values[i].size, sizeof(size_t));
-        offset += sizeof(size_t);
-
-        if (data->data->values[i].pdc_class == PDC_BULKI) {
-            void *sdata = BULKI_serde_serialize((BULKI *)(data->data->values[i].data));
-            memcpy(buffer + offset, sdata, data->data->values[i].size);
+    if (entity->pdc_class == PDC_CLS_ITEM) {
+        if (entity->pdc_type == PDC_BULKI) { // BULKI
+            BULKI *bulki = (BULKI *)(entity->data);
+            BULKI_serialize_to_buffer(bulki, buffer, offset);
         }
-        else if (data->data->values[i].pdc_class <= PDC_CLS_ARRAY) {
-            memcpy(buffer + offset, data->data->values[i].data, data->data->values[i].size);
+        else { // all base types
+            memcpy(buffer + *offset, entity->data, entity->size);
+            *offset += entity->size;
         }
-        else {
-            printf("Error: unsupported class type %d\n", data->data->values[i].pdc_class);
-            return NULL;
-        }
-
-        offset += data->data->values[i].size;
-        memcpy(buffer + offset, data->data->values[i].data, data->data->values[i].size);
-        offset += data->data->values[i].size;
     }
-    // serialize the data offset again, this is for validation purpose to see if data region is corrupted.
-    memcpy(buffer + offset, &offset, sizeof(size_t));
-    offset += sizeof(size_t);
+    else if (entity->pdc_class <= PDC_CLS_ARRAY) {
+        if (pdc_type == PDC_BULKI) { // BULKI
+            for (size_t i = 0; i < entity->count; i++) {
+                BULKI *bulki = (BULKI *)entity->data;
+                BULKI_serialize_to_buffer(bulki, buffer, offset);
+            }
+        }
+        else if (pdc_type == PDC_BULKI_ENT) { // BULKI_Entity
+            for (size_t i = 0; i < entity->count; i++) {
+                BULKI_Entity *bulki_entity = (BULKI_Entity *)entity->data;
+                BULKI_Entity_serialize_to_buffer(bulki_entity, buffer, offset);
+            }
+        }
+        else { // all base types
+            for (size_t i = 0; i < entity->count; i++) {
+                memcpy(buffer + *offset, entity->data, entity->size);
+                *offset += entity->size;
+            }
+        }
+    }
+    else {
+        printf("Error: unsupported class type %d\n", entity->pdc_class);
+        return NULL;
+    }
+    *offset += entity->size;
     return buffer;
 }
 
-BULKI *
-BULKI_serde_deserialize(void *buffer)
+void *
+BULKI_Entity_serialize(BULKI_Entity *entity)
 {
-    BULKI *bulki  = malloc(sizeof(BULKI));
+    void * buffer = malloc(entity->size);
     size_t offset = 0;
-    // read the meta header
-    size_t headerSize;
-    size_t dataSize;
-    memcpy(&headerSize, buffer + offset, sizeof(size_t));
-    offset += sizeof(size_t);
-    memcpy(&dataSize, buffer + offset, sizeof(size_t));
-    offset += sizeof(size_t);
+    BULKI_Entity_serialize_to_buffer(entity, buffer, &offset);
+    return buffer;
+}
 
-    printf("headerSize: %zu\n", headerSize);
-    printf("dataSize: %zu\n", dataSize);
+void *
+BULKI_serialize_to_buffer(BULKI *bulki, void *buffer, size_t *offset)
+{
+    // serialize the total size
+    memcpy(buffer + *offset, &bulki->totalSize, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
 
-    // read the header
-    size_t numKeys;
-    memcpy(&numKeys, buffer + offset, sizeof(size_t));
-    offset += sizeof(size_t);
+    // serialize the number of keys
+    memcpy(buffer + *offset, &bulki->numKeys, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
+
+    // serialize the header size
+    memcpy(buffer + *offset, &bulki->header->headerSize, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
+
+    // serialize the data size
+    memcpy(buffer + *offset, &bulki->data->dataSize, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
+
+    // serialize the header
+    for (size_t i = 0; i < bulki->numKeys; i++) {
+        BULKI_Entity_serialize_to_buffer(&(bulki->header->keys[i]), buffer, offset);
+    }
+
+    // serialize the data offset
+    memcpy(buffer + *offset, *offset, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
+
+    // serialize the data
+    for (size_t i = 0; i < bulki->numKeys; i++) {
+        BULKI_Entity_serialize_to_buffer(&(bulki->data->values[i]), buffer, offset);
+    }
+
+    // serialize the data offset
+    memcpy(buffer + *offset, *offset, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
+
+    return buffer;
+}
+
+void *
+BULKI_serialize(BULKI *data)
+{
+    void * buffer = malloc(data->totalSize);
+    size_t offset = 0;
+    BULKI_serialize_to_buffer(data, buffer, &offset);
+    return buffer;
+}
+
+/********************** Deserialize ************************** */
+
+BULKI *
+BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
+{
+    BULKI *bulki = malloc(sizeof(BULKI));
+    // deserialize the total size
+    uint64_t totalSize;
+    memcpy(&totalSize, buffer + *offset, sizeof(uint64_t));
+    bulki->totalSize = totalSize;
+    *offset += sizeof(uint64_t);
+
+    // deserialize the number of keys
+    uint64_t numKeys;
+    memcpy(&numKeys, buffer + *offset, sizeof(uint64_t));
     bulki->numKeys = numKeys;
+    *offset += sizeof(uint64_t);
 
-    printf("numKeys: %zu\n", numKeys);
+    // deserialize the header size
+    uint64_t headerSize;
+    memcpy(&headerSize, buffer + *offset, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
 
+    // deserialize the data size
+    uint64_t dataSize;
+    memcpy(&dataSize, buffer + *offset, sizeof(uint64_t));
+    *offset += sizeof(uint64_t);
+
+    // deserialize the header
     BULKI_Header *header = malloc(sizeof(BULKI_Header));
     header->keys         = malloc(sizeof(BULKI_Entity) * numKeys);
     header->headerSize   = headerSize;
-
-    printf("iterating %zu keys in the header\n", numKeys);
-
     for (size_t i = 0; i < numKeys; i++) {
-        int8_t pdc_type;
-        size_t size;
-        memcpy(&pdc_type, buffer + offset, sizeof(int8_t));
-        offset += sizeof(int8_t);
-        memcpy(&size, buffer + offset, sizeof(size_t));
-        offset += sizeof(size_t);
-        void *key = malloc(size);
-        memcpy(key, buffer + offset, size);
-        offset += size;
-        header->keys[i].data     = key;
-        header->keys[i].pdc_type = (pdc_c_var_type_t)pdc_type;
-        header->keys[i].size     = size;
-
-        printf("key %zu: %s, size: %zu, type: %s\n", i, (char *)key, size, get_name_by_dtype(pdc_type));
+        header->keys[i] = *(BULKI_Entity_deserialize_from_buffer(buffer, offset));
     }
 
-    // read the data offset
-    size_t dataOffset;
-    memcpy(&dataOffset, buffer + offset, sizeof(size_t));
+    // deserialize the data offset
+    uint64_t dataOffset;
+    memcpy(&dataOffset, buffer + *offset, sizeof(uint64_t));
     // check the data offset
-    if (dataOffset != offset) {
+    if (((size_t)dataOffset) != *offset) {
         printf("Error: data offset does not match the expected offset.\n");
         return NULL;
     }
-    offset += sizeof(size_t);
+    *offset += sizeof(uint64_t);
 
-    // read the data
-    size_t numValues;
-    memcpy(&numValues, buffer + offset, sizeof(size_t));
-    offset += sizeof(size_t);
+    // deserialize the data
     BULKI_Data *data = malloc(sizeof(BULKI_Data));
-    data->values     = malloc(sizeof(BULKI_Entity) * numValues);
+    data->values     = malloc(sizeof(BULKI_Entity) * numKeys);
     data->dataSize   = dataSize;
-    for (size_t i = 0; i < numValues; i++) {
-        int8_t pdc_class;
-        int8_t pdc_type;
-        size_t size;
-        memcpy(&pdc_class, buffer + offset, sizeof(int8_t));
-        offset += sizeof(int8_t);
-        memcpy(&pdc_type, buffer + offset, sizeof(int8_t));
-        offset += sizeof(int8_t);
-        memcpy(&size, buffer + offset, sizeof(size_t));
-        offset += sizeof(size_t);
-        void *value = malloc(size);
-        memcpy(value, buffer + offset, size);
-        offset += size;
-
-        // TODO: postponed deserialization of struct data, need to be finished here.
-        data->values[i].pdc_class = (pdc_c_var_class_t)pdc_class;
-        data->values[i].pdc_type  = (pdc_c_var_type_t)pdc_type;
-        data->values[i].size      = size;
-        data->values[i].data      = value;
-        printf("value %zu: size: %zu, type: %s\n", i, size, get_name_by_dtype(pdc_type));
+    for (size_t i = 0; i < numKeys; i++) {
+        data->values[i] = *(BULKI_Entity_deserialize_from_buffer(buffer, offset));
     }
     // check the total size
-    memcpy(&dataOffset, buffer + offset, sizeof(size_t));
+    memcpy(&dataOffset, buffer + *offset, sizeof(uint64_t));
     // check the data offset
-    if (dataOffset != offset) {
+    if (((size_t)dataOffset) != *offset) {
         printf("Error: data offset does not match the expected offset.\n");
         return NULL;
     }
-    offset += sizeof(size_t);
-    if (offset != headerSize + sizeof(size_t) * 6 + dataSize) {
-        printf("Error: total size does not match the expected size.\n");
+}
+
+BULKI_Entity *
+BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
+{
+    BULKI_Entity *entity = malloc(sizeof(BULKI_Entity));
+    // deserialize the size
+    uint64_t size;
+    memcpy(&size, buffer + *offset, sizeof(uint64_t));
+    entity->size = (size_t)size;
+    *offset += sizeof(uint64_t);
+
+    // deserialize the class
+    int8_t pdc_class;
+    memcpy(&pdc_class, buffer + *offset, sizeof(int8_t));
+    *offset += sizeof(int8_t);
+    entity->pdc_class = (pdc_c_var_class_t)pdc_class;
+
+    // deserialize the type
+    int8_t pdc_type;
+    memcpy(&pdc_type, buffer + *offset, sizeof(int8_t));
+    *offset += sizeof(int8_t);
+    entity->pdc_type = (pdc_c_var_type_t)pdc_type;
+
+    // deserialize the count
+    uint64_t count;
+    memcpy(&count, buffer + *offset, sizeof(uint64_t));
+    entity->count = (size_t)count;
+    *offset += sizeof(uint64_t);
+
+    // deserialize the data
+    if (entity->pdc_class == PDC_CLS_ITEM) {
+        if (entity->pdc_type == PDC_BULKI) { // BULKI
+            entity->data = BULKI_deserialize_from_buffer(buffer, offset);
+        }
+        else { // all base types
+            entity->data = malloc(entity->size);
+            memcpy(entity->data, buffer + *offset, entity->size);
+            *offset += entity->size;
+        }
+    }
+    else if (entity->pdc_class <= PDC_CLS_ARRAY) {
+        if (pdc_type == PDC_BULKI) { // BULKI
+            BULKI *bulki_array = malloc(sizeof(BULKI) * entity->count);
+            for (size_t i = 0; i < entity->count; i++) {
+                bulki_array[i] = *(BULKI_deserialize_from_buffer(buffer, offset));
+            }
+            entity->data = bulki_array;
+        }
+        else if (pdc_type == PDC_BULKI_ENT) { // BULKI_Entity
+            BULKI_Entity *bulki_entity_array = malloc(sizeof(BULKI_Entity) * entity->count);
+            for (size_t i = 0; i < entity->count; i++) {
+                bulki_entity_array[i] = *(BULKI_Entity_deserialize_from_buffer(buffer, offset));
+            }
+            entity->data = bulki_entity_array;
+        }
+        else { // all base types
+            entity->data = malloc(entity->size * entity->count);
+            memcpy(entity->data, buffer + *offset, entity->size * entity->count);
+            *offset += entity->size * entity->count;
+        }
+    }
+    else {
+        printf("Error: unsupported class type %d\n", entity->pdc_class);
         return NULL;
     }
-    // create the serialized data
-    bulki->header    = header;
-    bulki->data      = data;
-    bulki->totalSize = headerSize + dataSize + sizeof(size_t) * 6;
-
-    return bulki;
+    return entity;
 }

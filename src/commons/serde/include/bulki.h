@@ -104,13 +104,18 @@ void BULKI_print(void *data, size_t count, pdc_c_var_type_t pdc_type, pdc_c_var_
 /**
  * @brief get the total size of BULKI or BULKI_Entity structure.
  *
- * @param data Pointer to the data
- * @param count Number of elements in the array
- * @param pdc_type Data type of each element in the array
- * @param pdc_class Class of the each element in the array
+ * @param data Pointer to the BULKI structure
  * @return size_t
  */
-size_t get_BULKI_size(void *data, size_t count, pdc_c_var_type_t pdc_type, pdc_c_var_class_t pdc_class);
+size_t get_BULKI_size(BULKI *bulki);
+
+/**
+ * @brief get the total size of BULKI_Entity structure.
+ *
+ * @param data Pointer to the BULKI_Entity structure
+ * @return size_t
+ */
+size_t get_BULKI_Entity_size(BULKI_Entity *bulk_entity);
 
 /**
  * @brief free the memory allocated for the BULKI_Entity structure
