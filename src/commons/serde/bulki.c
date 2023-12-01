@@ -44,7 +44,7 @@ get_BULKI_size(BULKI *bulki)
     if (bulki == NULL) {
         return 0;
     }
-    size_t size = sizeof(uint64_t) * 4; // totalSize + numKeys + headerSize + dataSize;
+    size_t size = sizeof(uint64_t) * 6; // totalSize + numKeys + headerSize + dataSize + offsets * 2;
     for (size_t i = 0; i < bulki->numKeys; i++) {
         size += get_BULKI_Entity_size(&bulki->header->keys[i]);
         size += get_BULKI_Entity_size(&bulki->data->values[i]);
@@ -54,58 +54,135 @@ get_BULKI_size(BULKI *bulki)
 }
 
 void
-BULKI_print(void *data, size_t count, pdc_c_var_type_t pdc_type, pdc_c_var_class_t pdc_class)
+BULKI_Entity_print(BULKI_Entity *bulk_entity)
 {
-    if (pdc_class != PDC_CLS_ITEM && pdc_class != PDC_CLS_ARRAY) {
-        printf("Error: unsupported class %d\n", pdc_class);
+    if (bulk_entity == NULL) {
+        printf("Error: bulki_entity is NULL\n");
         return;
     }
-    if (count == 0) {
-        printf("Error: array count cannot be 0\n");
-        return;
-    }
-
-    if (pdc_class == PDC_CLS_ARRAY) {
-        if (pdc_type == PDC_BULKI) { // BULKI array
-            BULKI *bulki_array = (BULKI *)data;
-            for (size_t i = 0; i < count; i++) {
+    printf("BULKI_Entity:\n");
+    printf("pdc_class: %d\n", bulk_entity->pdc_class);
+    printf("pdc_type: %d\n", bulk_entity->pdc_type);
+    printf("count: %zu\n", bulk_entity->count);
+    printf("size: %zu\n", bulk_entity->size);
+    if (bulk_entity->pdc_class == PDC_CLS_ARRAY) {
+        if (bulk_entity->pdc_type == PDC_BULKI) {
+            BULKI *bulki_array = (BULKI *)bulk_entity->data;
+            for (size_t i = 0; i < bulk_entity->count; i++) {
                 printf("BULKI[%zu]:\n", i);
-                BULKI_print(bulki_array[i].data, bulki_array[i].numKeys, PDC_BULKI_ENT, PDC_CLS_ARRAY);
+                BULKI_print(&bulki_array[i]);
             }
         }
-        else if (pdc_type == PDC_BULKI_ENT) { // BULKI_Entity array
-            BULKI_Entity *bulki_entity_array = (BULKI_Entity *)data;
-            for (size_t i = 0; i < count; i++) {
+        else if (bulk_entity->pdc_type == PDC_BULKI_ENT) {
+            BULKI_Entity *bulki_entity_array = (BULKI_Entity *)bulk_entity->data;
+            for (size_t i = 0; i < bulk_entity->count; i++) {
                 printf("BULKI_Entity[%zu]:\n", i);
-                BULKI_print(bulki_entity_array[i].data, bulki_entity_array[i].count,
-                            bulki_entity_array[i].pdc_type, bulki_entity_array[i].pdc_class);
+                BULKI_Entity_print(&bulki_entity_array[i]);
             }
         }
-        else { // all base types
-            printf("BULKI_Entity[%zu]:\n", count);
-            for (size_t i = 0; i < count; i++) {
-                printf("%s ", DataTypeNames[pdc_type]);
+        else {
+            printf("BULKI_Entity[%zu]:\n", bulk_entity->count);
+            for (size_t i = 0; i < bulk_entity->count; i++) {
+                printf("%s : ", DataTypeNames[bulk_entity->pdc_type]);
             }
             printf("\n");
         }
     }
-    else if (pdc_class == PDC_CLS_ITEM) {
-        if (pdc_type == PDC_BULKI) { // BULKI
+    else if (bulk_entity->pdc_class == PDC_CLS_ITEM) {
+        if (bulk_entity->pdc_type == PDC_BULKI) {
             printf("BULKI:\n");
-            for (size_t i = 0; i < ((BULKI *)data)->numKeys; i++) {
-                printf("key[%zu]:\n", i);
-                BULKI_print(((BULKI *)data)->header->keys[i].data, ((BULKI *)data)->header->keys[i].count,
-                            ((BULKI *)data)->header->keys[i].pdc_type,
-                            ((BULKI *)data)->header->keys[i].pdc_class);
-                BULKI_print(((BULKI *)data)->data->values[i].data, ((BULKI *)data)->data->values[i].count,
-                            ((BULKI *)data)->data->values[i].pdc_type,
-                            ((BULKI *)data)->data->values[i].pdc_class);
-            }
+            BULKI_print((BULKI *)bulk_entity->data);
         }
         else {
-            printf("%s\n", DataTypeNames[pdc_type]);
+            printf("%s\n", DataTypeNames[bulk_entity->pdc_type]);
         }
     }
+}
+
+void
+BULKI_print(BULKI *bulki)
+{
+    if (bulki == NULL) {
+        printf("Error: bulki is NULL\n");
+        return;
+    }
+    printf("BULKI:\n");
+    printf("totalSize: %zu\n", bulki->totalSize);
+    printf("numKeys: %zu\n", bulki->numKeys);
+    printf("headerSize: %zu\n", bulki->header->headerSize);
+    printf("dataSize: %zu\n", bulki->data->dataSize);
+    for (size_t i = 0; i < bulki->numKeys; i++) {
+        printf("key[%zu]:\n", i);
+        BULKI_Entity_print(&bulki->header->keys[i]);
+        printf("value[%zu]:\n", i);
+        BULKI_Entity_print(&bulki->data->values[i]);
+    }
+}
+
+BULKI_Entity *
+empty_BULKI_Entity()
+{
+    BULKI_Entity *bulki_entity = (BULKI_Entity *)malloc(sizeof(BULKI_Entity));
+    bulki_entity->pdc_type     = PDC_UNKNOWN;
+    bulki_entity->pdc_class    = PDC_CLS_ITEM;
+    bulki_entity->count        = 0;
+    bulki_entity->data         = NULL;
+    get_BULKI_Entity_size(bulki_entity);
+    return bulki_entity;
+}
+
+BULKI_Entity *
+BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src)
+{
+    if (src == NULL || dest == NULL) {
+        printf("Error: bulki is NULL\n");
+        return NULL;
+    }
+    dest->pdc_type = PDC_BULKI;
+    if (dest->count == 0) {
+        dest->pdc_class = PDC_CLS_ITEM;
+        dest->count     = 1;
+        dest->data      = src;
+    }
+    else if (dest->count >= 1) {
+        dest->pdc_class = PDC_CLS_ARRAY;
+        dest->count     = dest->count + 1;
+        dest->data      = realloc(dest->data, dest->count * sizeof(BULKI));
+        memcpy(dest->data + (dest->count - 1) * sizeof(BULKI), src, sizeof(BULKI));
+    }
+    else {
+        printf("Error: dest->count is %zu\n", dest->count);
+        return NULL;
+    }
+    get_BULKI_Entity_size(dest);
+    return dest;
+}
+
+BULKI_Entity *
+BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src)
+{
+    if (src == NULL || dest == NULL) {
+        printf("Error: bulki is NULL\n");
+        return NULL;
+    }
+    dest->pdc_type = PDC_BULKI_ENT;
+    if (dest->count == 0) {
+        dest->pdc_class = PDC_CLS_ITEM;
+        dest->count     = 1;
+        dest->data      = src;
+    }
+    else if (dest->count >= 1) {
+        dest->pdc_class = PDC_CLS_ARRAY;
+        dest->count     = dest->count + 1;
+        dest->data      = realloc(dest->data, dest->count * sizeof(BULKI_Entity));
+        memcpy(dest->data + (dest->count - 1) * sizeof(BULKI_Entity), src, sizeof(BULKI_Entity));
+    }
+    else {
+        printf("Error: dest->count is %zu\n", dest->count);
+        return NULL;
+    }
+    get_BULKI_Entity_size(dest);
+    return dest;
 }
 
 BULKI_Entity *
@@ -119,8 +196,10 @@ BULKI_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type, pdc_c_var_cl
     bulki_entity->pdc_type     = pdc_type;
     bulki_entity->pdc_class    = pdc_class;
     bulki_entity->count        = (pdc_class == PDC_CLS_ITEM) ? 1 : count;
-    bulki_entity->data         = data;
-    bulki_entity->size         = get_BULKI_Entity_size(bulki_entity);
+    size_t size                = get_size_by_class_n_type(data, count, pdc_class, pdc_type);
+    bulki_entity->data         = malloc(size);
+    memcpy(bulki_entity->data, data, size);
+    get_BULKI_Entity_size(bulki_entity);
     return bulki_entity;
 }
 
@@ -136,7 +215,7 @@ BULKI_init(int initial_field_count)
     buiki->data               = calloc(1, sizeof(BULKI_Data));
     buiki->data->values       = calloc(buiki->capacity, sizeof(BULKI_Entity));
     buiki->data->dataSize     = 0;
-    buiki->totalSize          = sizeof(uint64_t) * 3; // numKeys + headerSize + dataSize;
+    get_BULKI_size(buiki);
     return buiki;
 }
 
@@ -159,7 +238,6 @@ BULKI_add(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
         bulki->header->keys = realloc(bulki->header->keys, bulki->capacity * sizeof(BULKI_Entity));
         bulki->data->values = realloc(bulki->data->values, bulki->capacity * sizeof(BULKI_Entity));
     }
-    uint64_t total_size_increase        = key->size + value->size;
     bulki->header->keys[bulki->numKeys] = *key;
     // append bytes for type, size, and key
     bulki->header->headerSize += key->size;
@@ -169,28 +247,25 @@ BULKI_add(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
     bulki->data->dataSize += value->size;
 
     bulki->numKeys++;
-
-    bulki->totalSize += total_size_increase;
+    get_BULKI_size(bulki);
 }
 
 BULKI_Entity *
 BULKI_delete(BULKI *bulki, BULKI_Entity *key)
 {
-    BULKI_Entity *value               = NULL;
-    uint64_t      total_size_deducted = 0;
+    BULKI_Entity *value = NULL;
     for (size_t i = 0; i < bulki->numKeys; i++) {
         if (BULKI_Entity_equal(&bulki->header->keys[i], key)) {
             value = &bulki->data->values[i];
             bulki->header->headerSize -= key->size;
             bulki->data->dataSize -= value->size;
-            total_size_deducted = key->size + value->size;
             bulki->numKeys--;
             bulki->header->keys[i] = bulki->header->keys[bulki->numKeys - 1];
             bulki->data->values[i] = bulki->data->values[bulki->numKeys - 1];
             break;
         }
     }
-    bulki->totalSize -= total_size_deducted;
+    get_BULKI_size(bulki);
     return value;
 }
 

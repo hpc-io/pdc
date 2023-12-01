@@ -2835,12 +2835,13 @@ PDC_Server_add_kvtag_sqlite3(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t
         printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
     else
         out->ret = 1;
+
+done:
 #else
     printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
     ret_value = FAIL;
 #endif
 
-done:
     return ret_value;
 }
 

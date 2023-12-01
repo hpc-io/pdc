@@ -44,7 +44,23 @@ typedef struct {
 } BULKI;
 
 /**
- * @brief Create a BULKI_Entity structure
+ * @brief Append a BULKI structure to the BULKI_Entity structure
+ * @param bulki_entity Pointer to the BULKI_Entity structure
+ * @param bulki Pointer to the BULKI structure
+ * @return Pointer to the BULKI_Entity structure
+ */
+BULKI_Entity *BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src);
+
+/**
+ * @brief Append a BULKI_Entity structure to the BULKI_Entity structure
+ * @param bulki_entity Pointer to the BULKI_Entity structure
+ * @param ent Pointer to the BULKI_Entity structure
+ * @return Pointer to the BULKI_Entity structure
+ */
+BULKI_Entity *BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src);
+
+/**
+ * @brief Create a BULKI_Entity structure with data of base type.
  *
  * @param data Pointer to the Entity data
  * @param count Number of elements in the array
@@ -93,13 +109,15 @@ BULKI_Entity *BULKI_delete(BULKI *bulki, BULKI_Entity *key);
 
 /**
  * @brief Print the contents of BULKI or BULKI_Entity structure.
- * @param data Pointer to the data
- * @param count Number of elements in the array
- * @param pdc_type Data type of each element in the array
- * @param pdc_class Class of the each element in the array
- * @return size_t
+ * @param data Pointer to the BULKI structure
  */
-void BULKI_print(void *data, size_t count, pdc_c_var_type_t pdc_type, pdc_c_var_class_t pdc_class);
+void BULKI_print(BULKI *bulki);
+
+/**
+ * @brief Print the contents of BULKI or BULKI_Entity structure.
+ * @param data Pointer to the BULKI structure
+ */
+void BULKI_Entity_print(BULKI_Entity *bulk_entity);
 
 /**
  * @brief get the total size of BULKI or BULKI_Entity structure.
