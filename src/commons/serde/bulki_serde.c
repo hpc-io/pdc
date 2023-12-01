@@ -42,7 +42,7 @@
 void *
 BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *offset)
 {
-    printf("offset: %zu\n", *offset);
+    // printf("offset: %zu\n", *offset);
     // serialize the size
     uint64_t size = (uint64_t)get_BULKI_Entity_size(entity);
     memcpy(buffer + *offset, &size, sizeof(uint64_t));
@@ -63,8 +63,8 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
     memcpy(buffer + *offset, &count, sizeof(uint64_t));
     *offset += sizeof(uint64_t);
 
-    printf("PRE-ser: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-           entity->pdc_class, entity->pdc_type, entity->count, *offset);
+    // printf("PRE-ser: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
+    //        entity->pdc_class, entity->pdc_type, entity->count, *offset);
 
     // serialize the data
     if (entity->pdc_class == PDC_CLS_ITEM) {
@@ -80,13 +80,13 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
     else if (entity->pdc_class <= PDC_CLS_ARRAY) {
         if (pdc_type == PDC_BULKI) { // BULKI
             for (size_t i = 0; i < entity->count; i++) {
-                BULKI *bulki = (BULKI *)entity->data;
+                BULKI *bulki = ((BULKI *)entity->data) + i;
                 BULKI_serialize_to_buffer(bulki, buffer, offset);
             }
         }
         else if (pdc_type == PDC_BULKI_ENT) { // BULKI_Entity
             for (size_t i = 0; i < entity->count; i++) {
-                BULKI_Entity *bulki_entity = (BULKI_Entity *)entity->data;
+                BULKI_Entity *bulki_entity = ((BULKI_Entity *)entity->data) + i;
                 BULKI_Entity_serialize_to_buffer(bulki_entity, buffer, offset);
             }
         }
@@ -100,8 +100,8 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
         return NULL;
     }
 
-    printf("POST-ser: size: %zu, size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-           size, entity->pdc_class, entity->pdc_type, entity->count, *offset);
+    // printf("POST-ser: size: %zu,  class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
+    //        entity->pdc_class, entity->pdc_type, entity->count, *offset);
     return buffer;
 }
 
@@ -111,7 +111,7 @@ BULKI_Entity_serialize(BULKI_Entity *entity)
     void * buffer = calloc(1, get_BULKI_Entity_size(entity));
     size_t offset = 0;
     BULKI_Entity_serialize_to_buffer(entity, buffer, &offset);
-    printf("offset: %zu\n", offset);
+    // printf("offset: %zu\n", offset);
     return buffer;
 }
 
@@ -163,7 +163,7 @@ BULKI_serialize(BULKI *data)
     void * buffer = calloc(1, get_BULKI_size(data));
     size_t offset = 0;
     BULKI_serialize_to_buffer(data, buffer, &offset);
-    printf("offset: %zu\n", offset);
+    // printf("offset: %zu\n", offset);
     return buffer;
 }
 
@@ -172,7 +172,7 @@ BULKI_serialize(BULKI *data)
 BULKI_Entity *
 BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
 {
-    printf("offset: %zu\n", *offset);
+    // printf("offset: %zu\n", *offset);
     BULKI_Entity *entity = malloc(sizeof(BULKI_Entity));
     // deserialize the size
     uint64_t size;
@@ -198,8 +198,8 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
     entity->count = (size_t)count;
     *offset += sizeof(uint64_t);
 
-    printf("PRE-DE: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-           entity->pdc_class, entity->pdc_type, entity->count, *offset);
+    // printf("PRE-DE: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
+    //    entity->pdc_class, entity->pdc_type, entity->count, *offset);
 
     // deserialize the data
     if (entity->pdc_class == PDC_CLS_ITEM) {
@@ -239,8 +239,8 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
         return NULL;
     }
 
-    printf("POST-DE: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-           entity->pdc_class, entity->pdc_type, entity->count, *offset);
+    // printf("POST-DE: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
+    //        entity->pdc_class, entity->pdc_type, entity->count, *offset);
     return entity;
 }
 
@@ -253,7 +253,7 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
     memcpy(&totalSize, buffer + *offset, sizeof(uint64_t));
     bulki->totalSize = totalSize;
     *offset += sizeof(uint64_t);
-    printf("totalSize: %zu\n", bulki->totalSize);
+    // printf("totalSize: %zu\n", bulki->totalSize);
 
     // deserialize the number of keys
     uint64_t numKeys;
@@ -303,7 +303,7 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
     // check the total size
     memcpy(&dataOffset, buffer + *offset, sizeof(uint64_t));
     *offset += sizeof(uint64_t);
-    printf("dataOffset: %zu, offset: %zu\n", dataOffset, *offset);
+    // printf("dataOffset: %zu, offset: %zu\n", dataOffset, *offset);
 
     // check the data offset
     if (((size_t)dataOffset) != *offset) {

@@ -74,6 +74,7 @@ static size_t DataTypeSizes[PDC_TYPE_COUNT] = {
     sizeof(long),
     sizeof(void *),
     sizeof(size_t),
+    sizeof(void *),
     sizeof(void *)
 };
 

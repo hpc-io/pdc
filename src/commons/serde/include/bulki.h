@@ -60,6 +60,15 @@ BULKI_Entity *BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src);
 BULKI_Entity *BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src);
 
 /**
+ * @brief create an empty BULKI_Entity structure, usually used as a wrapper for either a BULKI or a
+ * BULKI_Entity structure
+ * @param pdc_type Data type of the value
+ * @param pdc_class Class of the value
+ * @return Pointer to the created BULKI_Entity structure
+ */
+BULKI_Entity *empty_BULKI_Entity();
+
+/**
  * @brief Create a BULKI_Entity structure with data of base type.
  *
  * @param data Pointer to the Entity data
@@ -88,6 +97,14 @@ BULKI *BULKI_init(int initial_field_count);
  * @return 1 if the two structures are equal, 0 otherwise
  */
 int BULKI_Entity_equal(BULKI_Entity *be1, BULKI_Entity *be2);
+
+/**
+ * @brief Compare two BULKI structures for equality
+ * @param bulki1 Pointer to the first BULKI structure
+ * @param bulki2 Pointer to the second BULKI structure
+ * @return 1 if the two structures are equal, 0 otherwise
+ */
+int BULKI_equal(BULKI *bulki1, BULKI *bulki2);
 
 /**
  * @brief Append a key-value pair to the serialized data structure

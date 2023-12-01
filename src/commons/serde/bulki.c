@@ -123,8 +123,8 @@ BULKI_Entity *
 empty_BULKI_Entity()
 {
     BULKI_Entity *bulki_entity = (BULKI_Entity *)malloc(sizeof(BULKI_Entity));
-    bulki_entity->pdc_type     = PDC_UNKNOWN;
-    bulki_entity->pdc_class    = PDC_CLS_ITEM;
+    bulki_entity->pdc_type     = PDC_BULKI_ENT;
+    bulki_entity->pdc_class    = PDC_CLS_ARRAY;
     bulki_entity->count        = 0;
     bulki_entity->data         = NULL;
     get_BULKI_Entity_size(bulki_entity);
@@ -138,22 +138,11 @@ BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src)
         printf("Error: bulki is NULL\n");
         return NULL;
     }
-    dest->pdc_type = PDC_BULKI;
-    if (dest->count == 0) {
-        dest->pdc_class = PDC_CLS_ITEM;
-        dest->count     = 1;
-        dest->data      = src;
-    }
-    else if (dest->count >= 1) {
-        dest->pdc_class = PDC_CLS_ARRAY;
-        dest->count     = dest->count + 1;
-        dest->data      = realloc(dest->data, dest->count * sizeof(BULKI));
-        memcpy(dest->data + (dest->count - 1) * sizeof(BULKI), src, sizeof(BULKI));
-    }
-    else {
-        printf("Error: dest->count is %zu\n", dest->count);
-        return NULL;
-    }
+    dest->pdc_type  = PDC_BULKI;
+    dest->pdc_class = PDC_CLS_ARRAY;
+    dest->count     = dest->count + 1;
+    dest->data      = realloc(dest->data, dest->count * sizeof(BULKI));
+    memcpy(dest->data + (dest->count - 1) * sizeof(BULKI), src, sizeof(BULKI));
     get_BULKI_Entity_size(dest);
     return dest;
 }
@@ -165,22 +154,11 @@ BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src)
         printf("Error: bulki is NULL\n");
         return NULL;
     }
-    dest->pdc_type = PDC_BULKI_ENT;
-    if (dest->count == 0) {
-        dest->pdc_class = PDC_CLS_ITEM;
-        dest->count     = 1;
-        dest->data      = src;
-    }
-    else if (dest->count >= 1) {
-        dest->pdc_class = PDC_CLS_ARRAY;
-        dest->count     = dest->count + 1;
-        dest->data      = realloc(dest->data, dest->count * sizeof(BULKI_Entity));
-        memcpy(dest->data + (dest->count - 1) * sizeof(BULKI_Entity), src, sizeof(BULKI_Entity));
-    }
-    else {
-        printf("Error: dest->count is %zu\n", dest->count);
-        return NULL;
-    }
+    dest->pdc_type  = PDC_BULKI_ENT;
+    dest->pdc_class = PDC_CLS_ARRAY;
+    dest->count     = dest->count + 1;
+    dest->data      = realloc(dest->data, dest->count * sizeof(BULKI_Entity));
+    memcpy(dest->data + (dest->count - 1) * sizeof(BULKI_Entity), src, sizeof(BULKI_Entity));
     get_BULKI_Entity_size(dest);
     return dest;
 }
@@ -222,8 +200,74 @@ BULKI_init(int initial_field_count)
 int
 BULKI_Entity_equal(BULKI_Entity *be1, BULKI_Entity *be2)
 {
-    return be1->pdc_type == be2->pdc_type && be1->pdc_class == be2->pdc_class && be1->count == be2->count &&
-           be1->size == be2->size && be1->data == be2->data;
+    int meta_equal = be1->pdc_type == be2->pdc_type && be1->pdc_class == be2->pdc_class &&
+                     be1->count == be2->count && be1->size == be2->size;
+    if (!meta_equal) {
+        printf("Error: be1 and be2 are not equal in terms of metadata\n");
+        return 0;
+    }
+    if (be1->pdc_class == PDC_CLS_ARRAY) {
+        if (be1->pdc_type == PDC_BULKI) {
+            BULKI *bulki_array1 = (BULKI *)be1->data;
+            BULKI *bulki_array2 = (BULKI *)be2->data;
+            for (size_t i = 0; i < be1->count; i++) {
+                if (!BULKI_equal(&bulki_array1[i], &bulki_array2[i])) {
+                    printf("Error: be1 and be2 are not equal in terms of BULKI data in the array\n");
+                    return 0;
+                }
+            }
+        }
+        else if (be1->pdc_type == PDC_BULKI_ENT) {
+            BULKI_Entity *bulki_entity_array1 = (BULKI_Entity *)be1->data;
+            BULKI_Entity *bulki_entity_array2 = (BULKI_Entity *)be2->data;
+            for (size_t i = 0; i < be1->count; i++) {
+                if (!BULKI_Entity_equal(&bulki_entity_array1[i], &bulki_entity_array2[i])) {
+                    printf("Error: be1 and be2 are not equal in terms of BULKI_Entity data in the array\n");
+                    return 0;
+                }
+            }
+        }
+        else {
+            if (memcmp(be1->data, be2->data, be1->size - sizeof(uint8_t) * 2 - sizeof(uint64_t) * 2) != 0) {
+                printf("Error: be1 and be2 are not equal in terms of base type data in the array\n");
+                return 0;
+            }
+        }
+    }
+    else if (be1->pdc_class == PDC_CLS_ITEM) {
+        if (be1->pdc_type == PDC_BULKI) {
+            if (!BULKI_equal((BULKI *)be1->data, (BULKI *)be2->data)) {
+                printf("Error: be1 and be2 are not equal in terms of BULKI data\n");
+                return 0;
+            }
+        }
+        else {
+            if (memcmp(be1->data, be2->data, be1->size - sizeof(uint8_t) * 2 - sizeof(uint64_t) * 2) != 0) {
+                printf("Error: be1 and be2 are not equal in terms of base type data\n");
+                return 0;
+            }
+        }
+    }
+    return 1;
+}
+
+int
+BULKI_equal(BULKI *bulki1, BULKI *bulki2)
+{
+    if (bulki1->numKeys != bulki2->numKeys || bulki1->totalSize != bulki2->totalSize ||
+        bulki1->header->headerSize != bulki2->header->headerSize ||
+        bulki1->data->dataSize != bulki2->data->dataSize) {
+        printf("Error: bulki1 and bulki2 are not equal in terms of metadata\n");
+        return 0;
+    }
+    for (size_t i = 0; i < bulki1->numKeys; i++) {
+        if (!BULKI_Entity_equal(&bulki1->header->keys[i], &bulki2->header->keys[i]) ||
+            !BULKI_Entity_equal(&bulki1->data->values[i], &bulki2->data->values[i])) {
+            printf("Error: bulki1 and bulki2 are not equal in terms of data\n");
+            return 0;
+        }
+    }
+    return 1;
 }
 
 void
