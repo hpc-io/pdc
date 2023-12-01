@@ -290,6 +290,8 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
     }
     *offset += sizeof(uint64_t);
 
+    bulki->header = header;
+
     // deserialize the data
     BULKI_Data *data = malloc(sizeof(BULKI_Data));
     data->values     = malloc(sizeof(BULKI_Entity) * numKeys);
@@ -308,6 +310,8 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
         printf("Error: data offset does not match the expected offset.\n");
         return NULL;
     }
+
+    bulki->data = data;
 
     return bulki;
 }

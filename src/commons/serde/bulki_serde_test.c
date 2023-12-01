@@ -40,8 +40,10 @@ test_base_type()
     BULKI_print(deserializedBulki);
 
     // Free the memory
-    BULKI_free(bulki);
-    BULKI_free(deserializedBulki);
+    BULKI_free(deserializedBulki, 1);
+    printf("Freed deserializedBulki\n");
+    BULKI_free(bulki, 1);
+    printf("Freed bulki\n");
     free(buffer);
 
     return 0;
