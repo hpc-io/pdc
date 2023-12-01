@@ -70,6 +70,7 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     wget \
     axel \
     curl \
+    bc \
     vim \
     nano \
     gdb \
