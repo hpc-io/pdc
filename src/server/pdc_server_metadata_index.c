@@ -10,180 +10,6 @@ double    unit_time_to_update_request = 5000.0; // ms.
 art_tree *art_key_prefix_tree_g       = NULL;
 art_tree *art_key_suffix_tree_g       = NULL;
 
-// void
-// create_hash_table_for_keyword(char *keyword, char *value, size_t len, void *data)
-// {
-//     uint32_t hashVal = djb2_hash(keyword, (int)len);
-//     printf("%d:", hashVal);
-//     gen_obj_id_in_t  in;
-//     gen_obj_id_out_t out;
-
-//     in.data.obj_name  = keyword;
-//     in.data.time_step = (int32_t)data;
-//     in.data.user_id   = (uint32_t)data;
-//     char *taglist     = (char *)calloc(256, sizeof(char));
-//     printf("%s=%s", keyword, value);
-//     sprintf(taglist, "%s=%s", keyword, value);
-//     in.data.tags          = taglist;
-//     in.data.data_location = " ";
-//     in.data.app_name      = " ";
-//     in.data.ndim          = 1;
-//     in.hash_value         = hashVal;
-
-//     PDC_insert_metadata_to_hash_table(&in, &out);
-// }
-
-// int
-// brutal_force_partial_search(metadata_query_transfer_in_t *in, uint32_t *n_meta, void ***buf_ptrs,
-//                             char *k_query, char *vfrom_query, char *vto_query, uint32_t *hash_value)
-// {
-//     int result = 0;
-
-//     uint32_t          iter = 0;
-//     HashTableIterator hash_table_iter;
-//     HashTableValue *  head = NULL;
-//     pdc_metadata_t *  elt;
-//     int               n_entry;
-
-//     if (metadata_hash_table_g != NULL) {
-//         if (hash_value != NULL) {
-//             head = hash_table_lookup(metadata_hash_table_g, hash_value);
-//             if (head != NULL) {
-//                 DL_FOREACH(head->metadata, elt)
-//                 {
-//                     // List all objects, no need to check other constraints
-//                     if (in->is_list_all == 1) {
-//                         (*buf_ptrs)[iter++] = elt;
-//                     }
-//                     // check if current metadata matches search constraint
-//                     else if (is_metadata_satisfy_constraint(elt, in) == 1) {
-//                         (*buf_ptrs)[iter++] = elt;
-//                     }
-//                 }
-//             }
-//         }
-//         else {
-//             n_entry = hash_table_num_entries(metadata_hash_table_g);
-//             hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
-
-//             while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
-//                 head = hash_table_iter_next(&hash_table_iter);
-//                 DL_FOREACH(head->metadata, elt)
-//                 {
-//                     // List all objects, no need to check other constraints
-//                     if (in->is_list_all == 1) {
-//                         (*buf_ptrs)[iter++] = elt;
-//                     }
-//                     // check if current metadata matches search constraint
-//                     else if (is_metadata_satisfy_constraint(elt, in) == 1) {
-//                         (*buf_ptrs)[iter++] = elt;
-//                     }
-//                 }
-//             }
-//         }
-//         *n_meta = iter;
-
-//         printf("==PDC_SERVER: brutal_force_partial_search: Total matching results: %d\n", *n_meta);
-//         result = 1;
-//     } // if (metadata_hash_table_g != NULL)
-//     else {
-//         printf("==PDC_SERVER: metadata_hash_table_g not initilized!\n");
-//         result = 0;
-//     }
-
-//     return result;
-// }
-
-// void
-// search_through_hash_table(char *k_query, uint32_t index_type, pattern_type_t pattern_type,
-//                           pdc_art_iterator_param_t *param)
-// {
-
-//     metadata_query_transfer_in_t in;
-//     in.is_list_all    = -1;
-//     in.user_id        = -1;
-//     in.app_name       = " ";
-//     in.obj_name       = " ";
-//     in.time_step_from = -1;
-//     in.time_step_to   = -1;
-//     in.ndim           = -1;
-//     in.tags           = " ";
-//     char *   qType_string;
-//     uint32_t n_meta;
-//     void **  buf_ptrs;
-//     char *   tok;
-
-//     uint32_t *hash_ptr   = NULL;
-//     uint32_t  hash_value = -1;
-
-//     switch (pattern_type) {
-//         case PATTERN_EXACT:
-//             qType_string = "Exact";
-//             tok          = k_query;
-//             if (index_type == 1) {
-//                 hash_value = djb2_hash(tok, (int)strlen(tok));
-//                 hash_ptr   = &hash_value;
-//             }
-//             else if (index_type == 2) {
-//                 hash_value = djb2_hash(tok, 1);
-//                 hash_ptr   = &hash_value;
-//             }
-//             break;
-//         case PATTERN_PREFIX:
-//             qType_string = "Prefix";
-//             tok          = subrstr(k_query, strlen(k_query) - 1);
-//             if (index_type == 2) {
-//                 hash_value = djb2_hash(tok, 1);
-//                 hash_ptr   = &hash_value;
-//             }
-//             else {
-//                 hash_ptr = NULL;
-//             }
-//             break;
-//         case PATTERN_SUFFIX:
-//             qType_string = "Suffix";
-//             tok          = substr(k_query, 1);
-//             tok          = reverse_str(tok);
-//             if (index_type == 2) {
-//                 hash_value = djb2_hash(tok, 1);
-//                 hash_ptr   = &hash_value;
-//             }
-//             else {
-//                 hash_ptr = NULL;
-//             }
-//             break;
-//         case PATTERN_MIDDLE:
-//             qType_string = "Infix";
-//             tok          = substring(k_query, 1, strlen(k_query) - 1);
-//             break;
-//         default:
-//             break;
-//     }
-
-//     int search_rst = brutal_force_partial_search(&in, &n_meta, &buf_ptrs, k_query, NULL, NULL, hash_ptr);
-//     int i          = 0;
-//     for (i = 0; i < n_meta; i++) {
-//         pdc_metadata_t *metadata = (pdc_metadata_t *)buf_ptrs[i];
-//         hashset_add(param->out, (metadata->user_id));
-//         param->total_count = param->total_count + 1;
-//     }
-// }
-
-// void
-// delete_hash_table_for_keyword(char *keyword, size_t len, void *data)
-// {
-//     uint32_t hashVal = djb2_hash(keyword, (int)len);
-
-//     metadata_delete_in_t  in;
-//     metadata_delete_out_t out;
-
-//     in.obj_name   = keyword;
-//     in.time_step  = (int32_t)data;
-//     in.hash_value = hashVal;
-
-//     PDC_delete_metadata_from_hash_table(&in, &out);
-// }
-
 /****************************/
 /* Initialize DART */
 /****************************/
@@ -727,4 +553,207 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
         }
     }
     return result;
+}
+
+/**
+ * This is a object ID set
+ * |number of object IDs = n|object ID 1|...|object ID n|
+ */
+append_obj_id_set(obj_id_set, stream)
+{
+    uint64_t num_obj_id = set_num_entries(obj_id_set);
+    miqs_append_uint64(num_obj_id, stream);
+    SetIterator iter;
+    set_iterate(obj_id_set, &iter);
+    while (set_iter_has_more(&iter)) {
+        uint64_t *item = (uint64_t *)set_iter_next(&iter);
+        miqs_append_uint64(*item, stream);
+    }
+    return num_obj_id;
+}
+
+/**
+ * This is a string value node
+ * |str_val|file_obj_pair_list|
+ */
+int
+append_string_value_node(void *fh, const unsigned char *key, uint32_t key_len, void *value)
+{
+    FILE *stream = (FILE *)fh;
+    // 1. append string value
+    miqs_append_string_with_len((char *)key, (size_t)key_len, stream);
+    // 2. append object ID set.
+    Set *obj_id_set = (Set *)value;
+    rst             = append_obj_id_set(obj_id_set, stream);
+    return 0; // return 0 for art iteration to continue;
+}
+
+/**
+ * This is the string value region
+ * |type = 3|number of values = n|value_node_1|...|value_node_n|
+ *
+ * return number of strings in the string value tree
+ */
+int
+append_string_value_tree(art_tree *art, FILE *stream)
+{
+    // 1. type
+    miqs_append_type(3, stream);
+    // 2. number of values
+    uint64_t num_str_value = art_iter_size(art);
+    miqs_append_uint64(num_str_value, stream);
+    // 3. value nodes
+    int rst = art_iter(art, append_string_value_node, stream);
+    return rst == 0 ? num_str_value : 0;
+}
+
+/**
+ * return number of attribute values
+ * This is an attribute node
+ * |attr_name|attr_value_region|
+ */
+int
+append_attr_name_node(void *fh, const unsigned char *key, uint32_t key_len, void *value)
+{
+    int   rst    = 0;
+    FILE *stream = (FILE *)fh;
+    // 1. attr name
+    char *attr_name = (char *)key;
+    miqs_append_string_with_len(attr_name, (size_t)key_len, stream);
+    // 2. attr value region
+    key_index_leaf_content *key_index_leaf = (key_index_leaf_content *)value;
+    if (key_index_leaf->data_type == DART_STRING) {
+        rst = append_string_value_tree(key_index_leaf->extra_prefix_index, stream);
+#ifndef PDC_DART_SFX_TREE
+        rst = append_string_value_tree(key_index_leaf->extra_suffix_index, stream);
+#endif
+    }
+    printf("number of attribute values = %d\n", rst);
+    return 0; // return 0 for art iteration to continue;
+}
+
+/**
+ * This is the "attribute region"
+ * |number of attributes = n|attr_node 1|...|attr_node n|
+ */
+int
+append_attr_root_tree(art_tree *art, FILE *stream)
+{
+    uint64_t num_str_value = art_iter_size(art);
+    miqs_append_uint64(num_str_value, stream);
+    return art_iter(art, append_attr_name_node, stream);
+}
+
+perr_t
+metadata_index_dump(uint32_t serverID)
+{
+    perr_t ret_value = SUCCEED;
+    // 1. open file
+    char file_name[1024];
+    sprintf(file_name, "dart_index_%d.bin", serverID);
+    FILE *stream = fopen(file_name, "wb");
+
+    // 2. append attribute region
+    append_attr_root_tree(art_key_prefix_tree_g, stream);
+#ifndef PDC_DART_SFX_TREE
+    append_attr_root_tree(art_key_suffix_tree_g, stream);
+#endif
+    // 3. close file
+    fclose(stream);
+    return ret_value;
+}
+
+int
+read_attr_value_node(art_tree *art_value_index, FILE *stream)
+{
+    // 1. read value
+    char *val = miqs_read_string(stream);
+
+    Set *obj_id_set = set_new(ui64_hash, ui64_equal);
+    set_register_free_function(obj_id_set, free);
+
+    // 2. read object ID set
+    uint64_t *num_obj_id = miqs_read_uint64(stream);
+    uint64_t  i          = 0;
+    for (i = 0; i < *num_obj_id; i++) {
+        uint64_t *obj_id = miqs_read_uint64(stream);
+        set_insert(obj_id_set, obj_id);
+    }
+    // 3. insert value into art tree
+    art_insert(art_value_index, (const unsigned char *)val, strlen(val), (void *)obj_id_set);
+    int rst = (set_num_entries(obj_id_set) == *num_obj_id) ? 0 : 1;
+    return rst;
+}
+
+int
+read_attr_values(art_tree *art_value_index, FILE *stream)
+{
+    int rst = 0;
+
+    key_index_leaf_node->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
+    art_tree_init(art_value_index);
+
+    uint64_t *num_values = miqs_read_uint64(stream);
+    uint64_t  i          = 0;
+    for (i = 0; i < *num_values; i++) {
+        rst = rst | read_attr_value_node(art_value_index, type, stream);
+    }
+    return rst;
+}
+
+int
+read_attr_name_node(art_tree *art_key_index, FILE *stream)
+{
+    char *                  attr_name = miqs_read_string(stream);
+    key_index_leaf_content *key_index_leaf_node =
+        (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
+    int *                     tv   = miqs_read_int(stream);
+    dart_indexed_value_type_t type = (dart_indexed_value_type_t)(*tv);
+    key_index_leaf_node->data_type = type;
+    art_insert(art_key_index, (const unsigned char *)attr_name, strlen(attr_name), key_index_leaf_node);
+
+    key_index_leaf_node->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
+    int rst = read_attr_values(key_index_leaf_node->extra_prefix_index, stream);
+#ifndef PDC_DART_SFX_TREE
+    key_index_leaf_node->extra_suffix_index = (art_tree *)calloc(1, sizeof(art_tree));
+    rst = rst | read_attr_values(key_index_leaf_node->extra_suffix_index, stream);
+#endif
+    return rst;
+}
+
+perr_t
+metadata_index_recover(uint32_t serverID)
+{
+    perr_t ret_value = SUCCEED;
+
+    // 1. open file
+    char file_name[1024];
+    sprintf(file_name, "dart_index_%d.bin", serverID);
+    FILE *stream = fopen(file_name, "rb");
+
+    // 2. read attribute region
+    num_kv_pairs_loaded_mdb = 0;
+    num_attrs_loaded_mdb    = 0;
+    uint64_t *num_attrs     = miqs_read_uint64(stream);
+    num_attrs_loaded_mdb    = (size_t)num_attrs;
+    uint64_t i              = 0;
+    int      rst            = 0;
+    for (i = 0; i < *num_attrs; i++) {
+        rst = rst | read_attr_name_node(art_key_prefix_tree_g, stream);
+    }
+
+#ifndef PDC_DART_SFX_TREE
+    num_attrs            = miqs_read_uint64(stream);
+    num_attrs_loaded_mdb = (size_t)num_attrs;
+    rst                  = 0;
+    for (i = 0; i < *num_attrs; i++) {
+        rst = rst | read_attr_name_node(art_key_suffix_tree_g, stream);
+    }
+
+#endif
+    // 3. close file
+    fclose(stream);
+    ret_value = (rst != 0);
+
+    return ret_value;
 }
