@@ -648,7 +648,7 @@ append_attr_root_tree(art_tree *art, FILE *stream)
 }
 
 perr_t
-metadata_index_dump(uint32_t serverID)
+metadata_index_dump(char *checkpiont_dir, uint32_t serverID)
 {
     perr_t ret_value = SUCCEED;
 
@@ -670,6 +670,8 @@ metadata_index_dump(uint32_t serverID)
     timer_pause(&timer);
     printf("[Metadata_Index_Dump_%d] Timer to dump index = %.4f microseconds\n", pdc_server_rank_g,
            timer_delta_us(&timer));
+
+    fflush(stdout);
     return ret_value;
 }
 
@@ -732,7 +734,7 @@ read_attr_name_node(art_tree *art_key_index, FILE *stream)
 }
 
 perr_t
-metadata_index_recover(uint32_t serverID)
+metadata_index_recover(char *checkpiont_dir, uint32_t serverID)
 {
     perr_t ret_value = SUCCEED;
 
@@ -771,6 +773,6 @@ metadata_index_recover(uint32_t serverID)
     timer_pause(&timer);
     printf("[Metadata_Index_Recover_%d] Timer to recover index = %.4f microseconds\n", pdc_server_rank_g,
            timer_delta_us(&timer));
-
+    fflush(stdout);
     return ret_value;
 }

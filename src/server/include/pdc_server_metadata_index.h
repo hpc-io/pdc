@@ -57,8 +57,8 @@ perr_t PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t * in,
                                           dart_perform_one_server_out_t *out, uint64_t *n_obj_ids_ptr,
                                           uint64_t **buf_ptrs);
 
-perr_t metadata_index_dump(uint32_t serverID);
+perr_t metadata_index_dump(char *checkpoint_dir, uint32_t serverID);
 
-perr_t metadata_index_recover(uint32_t serverID);
+perr_t metadata_index_recover(char *checkpiont_dir, uint32_t serverID);
 
 #endif /* PDC_SERVER_METADATA_INDEX_H */
