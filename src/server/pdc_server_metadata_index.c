@@ -651,6 +651,9 @@ perr_t
 metadata_index_dump(uint32_t serverID)
 {
     perr_t ret_value = SUCCEED;
+
+    stopwatch_t timer;
+    timer_start(&timer);
     // 1. open file
     char file_name[1024];
     sprintf(file_name, "dart_index_%d.bin", serverID);
@@ -663,6 +666,10 @@ metadata_index_dump(uint32_t serverID)
 #endif
     // 3. close file
     fclose(stream);
+
+    timer_pause(&timer);
+    printf("[Metadata_Index_Dump_%d] Timer to dump index = %.4f microseconds\n", pdc_server_rank_g,
+           timer_delta_us(&timer));
     return ret_value;
 }
 
@@ -729,6 +736,9 @@ metadata_index_recover(uint32_t serverID)
 {
     perr_t ret_value = SUCCEED;
 
+    stopwatch_t timer;
+    timer_start(&timer);
+
     // 1. open file
     char file_name[1024];
     sprintf(file_name, "dart_index_%d.bin", serverID);
@@ -757,6 +767,10 @@ metadata_index_recover(uint32_t serverID)
     // 3. close file
     fclose(stream);
     ret_value = (rst != 0);
+
+    timer_pause(&timer);
+    printf("[Metadata_Index_Recover_%d] Timer to recover index = %.4f microseconds\n", pdc_server_rank_g,
+           timer_delta_us(&timer));
 
     return ret_value;
 }
