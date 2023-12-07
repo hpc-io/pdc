@@ -1438,7 +1438,7 @@ PDC_Server_checkpoint()
         fflush(stdout);
     }
 
-    metadata_index_dump(pdc_server_rank_g);
+    metadata_index_dump(pdc_server_tmp_dir_g, pdc_server_rank_g);
 
 done:
     fflush(stdout);
