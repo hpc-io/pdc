@@ -971,7 +971,7 @@ drc_access_again:
             printf("==PDC_SERVER[%d]: error with PDC_Server_restart\n", pdc_server_rank_g);
             goto done;
         }
-        metadata_index_recover(pdc_server_rank_g);
+        metadata_index_recover(pdc_server_tmp_dir_g, pdc_server_rank_g);
     }
     else {
         // We are starting a brand new server

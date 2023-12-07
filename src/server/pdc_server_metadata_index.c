@@ -656,7 +656,7 @@ metadata_index_dump(char *checkpiont_dir, uint32_t serverID)
     timer_start(&timer);
     // 1. open file
     char file_name[1024];
-    sprintf(file_name, "dart_index_%d.bin", serverID);
+    sprintf(file_name, "%s/dart_index_%d.bin", checkpiont_dir, serverID);
     FILE *stream = fopen(file_name, "wb");
 
     // 2. append attribute region
@@ -743,7 +743,7 @@ metadata_index_recover(char *checkpiont_dir, uint32_t serverID)
 
     // 1. open file
     char file_name[1024];
-    sprintf(file_name, "dart_index_%d.bin", serverID);
+    sprintf(file_name, "%s/dart_index_%d.bin", checkpiont_dir, serverID);
     FILE *stream = fopen(file_name, "rb");
 
     // 2. read attribute region
