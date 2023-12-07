@@ -207,6 +207,7 @@ if(SUPPRESS_IGNORABLE_WARNINGS)
   set(SUPPRESSED_LIST "-Wno-unused-function" ${SUPPRESSED_LIST})
   set(SUPPRESSED_LIST "-Wno-unused-result" ${SUPPRESSED_LIST})
   set(SUPPRESSED_LIST "-Wno-unused-but-set-variable" ${SUPPRESSED_LIST})
+  set(SUPPRESSED_LIST "-Wno-inline" ${SUPPRESSED_LIST})
 
   if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(${SUPPRESSED_LIST})
