@@ -808,3 +808,86 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
     idioms_g->search_request_count_g += 1;
     return result_count;
 }
+
+/****************************/
+/* Index Dump               */
+/****************************/
+
+int
+dump_key_index_callback(void *data, const unsigned char *key, uint32_t key_len, void *value)
+{
+}
+
+perr_t
+metadata_index_dump(char *dir_path)
+{
+    perr_t ret = SUCCEED;
+    if (idioms_g == NULL) {
+        return FAIL;
+    }
+    if (dir_path == NULL) {
+        return FAIL;
+    }
+    char *file_path = (char *)calloc(strlen(dir_path) + 32, sizeof(char));
+    sprintf(file_path, "%s/idioms_idx_%d.bin", dir_path, idioms_g->server_id_g);
+    FILE *fp = fopen(file_path, "wb");
+    if (fp == NULL) {
+        printf("ERROR: failed to open file %s\n", file_path);
+        return FAIL;
+    }
+    // prepare the bulki structure
+    BULKI *bulki = BULKI_init(2);
+
+    // dump the prefix tree
+    char *        key1 = "prefix_tree";
+    BULKI_Entity *bk1  = BULKI_ENTITY(key1, 1, PDC_STRING, PDC_CLS_ITEM);
+    BULKI_Entity *bv1  = empty_BULKI_Entity();
+
+    art_iter(idioms_g->art_key_prefix_tree_g, dump_key_index_callback, bv1);
+    BULKI_add(bulki, bk1, bv1);
+#ifndef PDC_DART_SFX_TREE
+    // dump the suffix tree
+    char *        key2 = "suffix_tree";
+    BULKI_Entity *bk2  = BULKI_ENTITY(key2, 1, PDC_STRING, PDC_CLS_ITEM);
+    BULKI_Entity *bv2  = empty_BULKI_Entity();
+
+    art_iter(idioms_g->art_key_suffix_tree_g, dump_key_index_callback, bv2);
+    BULKI_add(bulki, bk2, bv2);
+#endif
+    void *buffer = BULKI_serialize(bulki);
+    fwrite(buffer, 1, bulki->totalSize, fp);
+    fclose(fp);
+}
+
+perr_t
+metadata_index_recover(char *dir_path)
+{
+    perr_t ret = SUCCEED;
+    if (idioms_g == NULL) {
+        return FAIL;
+    }
+    if (dir_path == NULL) {
+        return FAIL;
+    }
+    char *file_path = (char *)calloc(strlen(dir_path) + 32, sizeof(char));
+    sprintf(file_path, "%s/idioms_idx_%d.bin", dir_path, idioms_g->server_id_g);
+    FILE *fp = fopen(file_path, "rb");
+    if (fp == NULL) {
+        printf("ERROR: failed to open file %s\n", file_path);
+        return FAIL;
+    }
+    // read the file into buffer
+    fseek(fp, 0, SEEK_END);
+    long file_size = ftell(fp);
+    rewind(fp);
+    void *buffer = PDC_malloc(file_size);
+    fread(buffer, 1, file_size, fp);
+    fclose(fp);
+
+    // deserialize the buffer
+    BULKI *bulki = BULKI_deserialize(buffer);
+    if (bulki == NULL) {
+        printf("ERROR: failed to deserialize the buffer\n");
+        return FAIL;
+    }
+}

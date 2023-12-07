@@ -631,7 +631,7 @@ append_attr_name_node(void *fh, const unsigned char *key, uint32_t key_len, void
         rst = append_string_value_tree(key_index_leaf->extra_suffix_index, stream);
 #endif
     }
-    printf("number of attribute values = %d\n", rst);
+    // printf("number of attribute values = %d\n", rst);
     return 0; // return 0 for art iteration to continue;
 }
 

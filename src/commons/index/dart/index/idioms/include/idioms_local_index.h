@@ -72,8 +72,8 @@ perr_t idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record);
  */
 uint64_t idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record);
 
-perr_t metadata_index_dump(uint32_t serverID);
+perr_t metadata_index_dump(char *dir_path);
 
-perr_t metadata_index_recover(uint32_t serverID);
+perr_t metadata_index_recover(char *dir_path);
 
 #endif // IDIOMS_LOCAL_INDEX_H

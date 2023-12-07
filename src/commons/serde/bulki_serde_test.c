@@ -31,8 +31,24 @@ test_base_type()
     // printf("Serialized data:\n");
     // BULKI_print(bulki);
 
+    // Do some I/O if you like
+    FILE *fp = fopen("test.bin", "wb");
+    fwrite(buffer, 1, bulki->totalSize, fp);
+    fclose(fp);
+
+    // read the file and deserialize
+    fp = fopen("test.bin", "rb");
+    fseek(fp, 0, SEEK_END);
+    long fsize = ftell(fp);
+    fseek(fp, 0, SEEK_SET); /* same as rewind(f); */
+    // read the file into the buffer
+    void *buffer2 = malloc(fsize + 1);
+    fread(buffer2, fsize, 1, fp);
+    // printf("Read %ld bytes\n", fsize);
+    fclose(fp);
+
     // Deserialize the buffer
-    BULKI *deserializedBulki = BULKI_deserialize(buffer);
+    BULKI *deserializedBulki = BULKI_deserialize(buffer2);
 
     // printf("Deserialized data:\n");
     // BULKI_print(deserializedBulki);
