@@ -103,6 +103,14 @@ echo ""
 echo "================="
 echo "$i Closing server"
 echo "================="
-stdbuf -i0 -o0 -e0 srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores $CLOSE
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NSERVER -c 2 --mem=25600 --cpu_bind=cores $CLOSE
+
+
+echo ""
+echo "============="
+echo "$i restart server"
+echo "============="
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NSERVER -c $NUM_THREAD_PER_SERVER_PROC  --cpu_bind=cores $SERVER restart &
+sleep 5
 
 date

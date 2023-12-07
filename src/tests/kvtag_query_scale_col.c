@@ -74,7 +74,7 @@ print_usage(char *name)
            "one query against one tag\n");
     printf("  n_selectivity: selectivity, on a 100 scale. \n");
     printf("  is_using_dart: 1 for using dart, 0 for not using dart\n");
-    printf("  query_type: 0 for exact, 1 for prefix, 2 for suffix, 3 for infix\n");
+    printf("  query_type: -1 for no query, 0 for exact, 1 for prefix, 2 for suffix, 3 for infix\n");
     printf("  comm_type: 0 for point-to-point, 1 for collective\n");
 }
 
@@ -163,6 +163,7 @@ main(int argc, char *argv[])
                                    // 4 for num_exact, 5 for num_range
     comm_type = atoi(argv[6]);     // 0 for point-to-point, 1 for collective
 
+    int bypass_query = query_type == -1 ? 1 : 0;
     // prepare container
     if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, my_rank) < 0) {
         println("fail to prepare container @ line %d", __LINE__);
@@ -247,6 +248,14 @@ main(int argc, char *argv[])
 
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
+    if (bypass_query) {
+        if (my_rank == 0) {
+            println("Rank %d: All queries are bypassed.", my_rank);
+            report_avg_server_profiling_rst();
+        }
+        goto done;
+    }
 
     // For the queries, we issue #round queries.
     // The selectivity of each exact query should be #selectivity / 100 * #n_obj.
@@ -382,6 +391,7 @@ main(int argc, char *argv[])
                 my_obj, total_time * 1000.0);
     }
 
+done:
     // close a container
     if (PDCcont_close(cont) < 0) {
         if (my_rank == 0) {
@@ -418,7 +428,7 @@ main(int argc, char *argv[])
         if (my_rank == 0)
             printf("fail to close PDC\n");
     }
-done:
+
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
