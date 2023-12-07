@@ -1438,6 +1438,8 @@ PDC_Server_checkpoint()
         fflush(stdout);
     }
 
+    metadata_index_dump(pdc_server_rank_g);
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -1771,8 +1773,6 @@ done:
 #endif
 
     fflush(stdout);
-
-    metadata_index_dump(pdc_server_rank_g);
 
     FUNC_LEAVE(ret_value);
 }
