@@ -172,78 +172,96 @@ read_lines_to_buffer(const char *filename, char **buffer, int num_lines, size_t 
     return 0;
 }
 
-add_tags_to_objects(pid_t *obj_ids, char ***csv_data, char **csv_header, int num_columns, my_csv_rows,
-                    int csv_expand_factor, int is_using_dart)
+typedef int (*process_tag_of_one_object)(pid_t obj_id, char *attr_name, char *attr_value, int is_using_dart);
+
+int
+add_tag_to_one_object(pid_t obj_id, char *attr_name, char *attr_value, int is_using_dart)
 {
-    size_t obj_idx = 0;
+    pdc_kvtag_t kvtag;
+    kvtag.name  = strdup(attr_name);
+    kvtag.value = (void *)strdup(attr_value);
+    kvtag.type  = PDC_STRING;
+    kvtag.size  = (strlen(kvtag.value) + 1) * sizeof(char);
+
+    if (PDCobj_put_tag(obj_id, kvtag) < 0) {
+        printf("Fail to add tag to object %" PRIu64 "\n", obj_id);
+        return -1;
+    }
+    if (is_using_dart) {
+        PDC_Client_add_obj_ref_to_dart(hash_algo, kvtag.name, (char *)kvtag.value, ref_type,
+                                       (uint64_t)obj_id);
+    }
+    return 0;
+}
+
+int
+delete_tag_from_one_object(pid_t obj_id, char *attr_name, char *attr_value, int is_using_dart)
+{
+    pdc_kvtag_t kvtag;
+    kvtag.name  = strdup(attr_name);
+    kvtag.value = (void *)strdup(attr_value);
+    kvtag.type  = PDC_STRING;
+    kvtag.size  = (strlen(kvtag.value) + 1) * sizeof(char);
+
+    PDCobj_del_tag(obj_id, kvtag.name);
+    if (is_using_dart) {
+        PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, ref_type,
+                                            (uint64_t)obj_id);
+    }
+}
+
+int
+csv_tags_on_objects(pid_t *obj_ids, char ***csv_data, char **csv_header, int num_columns, my_csv_rows,
+                    int csv_expand_factor, int is_using_dart, process_tag_of_one_object tag_processor)
+{
+
+    pdc_kvtag_t kvtag;
+    size_t      tags_processed = 0;
+    size_t      obj_idx        = 0;
     for (int i = 0; i < my_csv_rows; i++) {
         // take one row from csv_data.
         char **row = csv_data[i];
 
         for (int j = 0; j < csv_expand_factor; j++) {
 
-            char new_iter_value[MAX_LINE_LENGTH];
+            char new_iter_value[30];
             sprintf(new_iter_value, "Scan_Iter_%04d", j);
+            char new_iter_tok[10];
+            sprintf(new_iter_tok, "%04dt.tif", j);
+
+            char extra_attr_name[100];
+            char extra_attr_value[200];
 
             for (int col_idx = 0; col_idx < num_columns; col_idx++) {
                 char *attr_name  = strdup(csv_header[col_idx]);
                 char *attr_value = strdup(row[col_idx]);
                 if (strstr(attr_value, "Scan_Iter_0000")) {
                     char *start = strstr(attr_value, "Scan_Iter_0000");
-                    strncpy(start, new_iter_value, strlen(new_iter_value) - 4);
-                }
+                    strncpy(start, new_iter_value, strlen(new_iter_value));
+                    char *zerot = strstr(attr_value, "0000t.tif");
+                    strncpy(zerot, new_iter_tok, strlen(new_iter_tok));
 
-                kvtag.name  = strdup(attr_name);
-                kvtag.value = (void *)strdup(attr_value);
-                kvtag.type  = PDC_STRING;
-                kvtag.size  = (strlen(attr_value) + 1) * sizeof(char);
-                if (PDCobj_put_tag(obj_ids[obj_idx], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    printf("fail to add a kvtag to o%d\n", obj_idx);
-                }
-                if (is_using_dart) {
-
-                    if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, ref_type,
-                                                            (uint64_t)obj_ids[obj_idx]) < 0) {
-                        printf("fail to add a kvtag index to o%d\n", obj_idx);
+                    if (startsWith(attr_name, "Filepath")) {
+                        sprintf(extra_attr_value, "%s", attr_value);
+                        // remove the last 4 characters, namely '.tif'.
+                        extra_attr_value[strlen(extra_attr_value) - 4] = '\0';
+                    }
+                    else if (startsWith(attr_name, "Filename")) {
+                        sprintf(extra_attr_name, "%s", attr_value);
+                        // remove the last 4 characters, namely '.tif'.
+                        extra_attr_name[strlen(extra_attr_name) - 4] = '\0';
                     }
                 }
+                tag_processor(obj_ids[obj_idx], attr_name, attr_value, is_using_dart);
+                tags_processed++;
             }
+            // add one extra tag
+            tag_processor(obj_ids[obj_idx], extra_attr_name, extra_attr_value, is_using_dart);
+            tags_processed++;
             obj_idx++;
         }
     }
-}
-
-for (int obj_idx = 0; obj_idx < obj_created; obj_idx++) {
-
-    int iteration = obj_idx % csv_expand_factor;
-
-    for (iter = 0; iter < round; iter++) {
-        char attr_name[64];
-        char tag_value[64];
-        snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-        snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
-        kvtag.name  = strdup(attr_name);
-        kvtag.value = (void *)strdup(tag_value);
-        kvtag.type  = PDC_STRING;
-        kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
-        if (is_using_dart) {
-            if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-            }
-            if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, ref_type,
-                                                    (uint64_t)obj_ids[i]) < 0) {
-                printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-            }
-        }
-        else {
-            if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-            }
-        }
-        free(kvtag.name);
-        free(kvtag.value);
-    }
-}
+    return tags_processed;
 }
 
 int
@@ -296,6 +314,60 @@ read_csv_from_buffer(char *data, char ***csv_header, char ****csv_data, int *num
     }
 
     return my_csv_row_num;
+}
+
+int perform_search(is_using_dart, query_type, comm_type, iter_round)
+{
+    int       nres    = 0;
+    uint64_t *pdc_ids = NULL;
+    // perform search
+    char attr_name[100];
+    char tag_value[200];
+    snprintf(attr_name, 100,
+             "Scan_Iter_%04d_CamA_ch0_CAM1_stack0000_488nm_0000000msec_0%3d511977msecAbs_000x_"
+             "000y_%03dz_%04dt",
+             iter_round, iter_round, iter_round, iter_round);
+    snprintf(tag_value, 200,
+             "/clusterfs/nvme2/Data/20221128_Korra_GaoGroupVisit/Data/20221213_OB_WT/V1_600um//"
+             "Scan_Iter_%04d_CamA_ch0_CAM1_stack0000_488nm_0000000msec_0%3d511977msecAbs_000x_000y_%03dz_"
+             "%04dt",
+             iter_round, iter_round, iter_round, iter_round);
+
+    kvtag.name  = strdup(attr_name);
+    kvtag.value = (void *)strdup(tag_value);
+    kvtag.type  = PDC_STRING;
+    kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
+
+    query_gen_input_t  input;
+    query_gen_output_t output;
+    input.base_tag         = &kvtag;
+    input.key_query_type   = query_type;
+    input.value_query_type = query_type;
+    input.affix_len        = 14;
+
+    gen_query_key_value(&input, &output);
+
+    if (is_using_dart) {
+        char *query_string = gen_query_str(&output);
+        ret_value          = (comm_type == 0)
+                        ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, REF_PRIMARY_ID,
+                                                                 &nres, &pdc_ids)
+                        : PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, REF_PRIMARY_ID,
+                                                                     &nres, &pdc_ids, MPI_COMM_WORLD);
+    }
+    else {
+        kvtag.name  = output.key_query;
+        kvtag.value = output.value_query;
+        /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name,
+         * kvtag.value); */
+        ret_value = (comm_type == 0) ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
+                                     : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
+    }
+    if (ret_value < 0) {
+        printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
+        break;
+    }
+    return nres;
 }
 
 int
@@ -381,32 +453,24 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 
     if (my_rank == 0) {
-        println("[Object Creation] Rank %d: Created %d objects, time: %.5f ms", my_rank, obj_created,
-                total_time * 1000.0);
+        println("[Object Creation] Rank %d/%d: Created %d objects, time: %.5f ms", my_rank, proc_num,
+                obj_created, total_time * 1000.0);
     }
 
     // ********************** Add tags to objects **********************
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
-    size_t tags_added = add_tags_to_objects(obj_ids, csv_data, csv_header, num_columns, my_csv_rows,
-                                            csv_expand_factor, is_using_dart);
+    size_t tags_added = csv_tags_on_objects(obj_ids, csv_data, csv_header, num_columns, my_csv_rows,
+                                            csv_expand_factor, is_using_dart, add_tag_to_one_object);
 
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
 
     if (my_rank == 0) {
-        println("[Tag Creation] Rank %d: Added %d tags for %d objects, time: %.5f ms", my_rank, tags_added,
-                obj_created, total_time * 1000.0);
+        println("[Tag Creation] Rank %d/%d: Added %d tags for %d objects, time: %.5f ms", my_rank, proc_num,
+                tags_added, obj_created, total_time * 1000.0);
     }
-
-#ifdef ENABLE_MPI
-    // TODO: This is for checking the correctness of the query results.
-    // for (i = 0; i < round; i++)
-    //     MPI_Allreduce(&my_cnt_round[i], &total_cnt_round[i], 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
 
     if (bypass_query) {
         if (my_rank == 0) {
@@ -416,9 +480,7 @@ main(int argc, char *argv[])
         goto done;
     }
 
-    // For the queries, we issue #round queries.
-    // The selectivity of each exact query should be #selectivity / 100 * #n_obj.
-    // Namely, if you have 1M objects, selectivity is 10, then each query should return 100K objects.
+    // ********************** Perform queries **********************
     int iter_round = round;
     if (comm_type == 0 && is_using_dart == 0) {
         iter_round = 2;
@@ -435,54 +497,8 @@ main(int argc, char *argv[])
                     stime = MPI_Wtime();
                 }
 #endif
-                char attr_name[64];
-                char tag_value[64];
-                snprintf(attr_name, 63, "%04d_Filename_%04d", iter, iter);
-                snprintf(tag_value, 63,
-                         "Scan_Iter_%04d_CamA_ch0_CAM1_stack0000_488nm_0000000msec_0067511977msecAbs_000x_"
-                         "000y_%03dz_%04dt",
-                         iter, iter, iter);
-
-                kvtag.name  = strdup(attr_name);
-                kvtag.value = (void *)strdup(tag_value);
-                kvtag.type  = PDC_STRING;
-                kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
-
-                query_gen_input_t  input;
-                query_gen_output_t output;
-                input.base_tag         = &kvtag;
-                input.key_query_type   = query_type;
-                input.value_query_type = query_type;
-                input.affix_len        = 6;
-
-                gen_query_key_value(&input, &output);
-
-                pdc_ids = NULL;
-                if (is_using_dart) {
-                    char *query_string = gen_query_str(&output);
-                    ret_value          = (comm_type == 0)
-                                    ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string,
-                                                                             ref_type, &nres, &pdc_ids)
-                                    : PDC_Client_search_obj_ref_through_dart_mpi(
-                                          hash_algo, query_string, ref_type, &nres, &pdc_ids, MPI_COMM_WORLD);
-                }
-                else {
-                    kvtag.name  = output.key_query;
-                    kvtag.value = output.value_query;
-                    /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name,
-                     * kvtag.value); */
-                    ret_value = (comm_type == 0)
-                                    ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
-                                    : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
-                }
-                if (ret_value < 0) {
-                    printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
-                    break;
-                }
-
+                nres = perform_search(is_using_dart, query_type, comm_type, iter_round);
                 round_total += nres;
-                free(kvtag.name);
-                free(kvtag.value);
             }
 
 #ifdef ENABLE_MPI
@@ -498,7 +514,7 @@ main(int argc, char *argv[])
                     query_type_str = "SUFFIX";
                 else if (query_type == 3)
                     query_type_str = "INFIX";
-                println("[%s Client %s Query with%sINDEX] %d rounds with %d results, time: %.5f ms",
+                println("[%s Client %s Query with%sINDEX] %d rounds (%d) within %.5f ms",
                         comm_type == 0 ? "Single" : "Multi", query_type_str,
                         is_using_dart == 0 ? " NO " : " DART ", round, round_total, total_time * 1000.0);
             }
@@ -515,34 +531,14 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
-    my_obj_after_selectivity = my_obj * selectivity / 100;
-    for (i = 0; i < my_obj_after_selectivity; i++) {
-        for (iter = 0; iter < round; iter++) {
-            char attr_name[64];
-            char tag_value[64];
-            snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
-            kvtag.name  = strdup(attr_name);
-            kvtag.value = (void *)strdup(tag_value);
-            kvtag.type  = PDC_STRING;
-            kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
-            if (is_using_dart) {
-                PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, ref_type,
-                                                    (uint64_t)obj_ids[i]);
-            }
-            else {
-                PDCobj_del_tag(obj_ids[i], kvtag.name);
-            }
-            free(kvtag.name);
-            free(kvtag.value);
-        }
-    }
+    size_t tags_deleted = csv_tags_on_objects(obj_ids, csv_data, csv_header, num_columns, my_csv_rows,
+                                              csv_expand_factor, is_using_dart, delete_tag_from_one_object);
 
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
     if (my_rank == 0) {
-        println("[TAG Deletion] Rank %d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank, round,
-                my_obj, total_time * 1000.0);
+        println("[TAG Deletion] Rank %d/%d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank,
+                proc_num, tags_deleted, obj_created, total_time * 1000.0);
     }
 
 done:
