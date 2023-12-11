@@ -89,6 +89,10 @@ echo "NUM_THREAD_PER_CLIENT_PROC=$NUM_THREAD_PER_CLIENT_PROC"
 
 export ATP_ENABLED=1
 
+TOTAL_OBJ=1000000
+ROUND=100
+EXPAND_FACTOR=1000
+
 echo ""
 echo "============="
 echo "$i Init server"
@@ -100,7 +104,7 @@ sleep 5
 echo "============================================"
 echo "KVTAGS with $N_NODE nodes"
 echo "============================================"
-stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT 1000000 100 10 $USE_DART $Q_TYPE $COM_TYPE $CSV_FILE
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NCLIENT -c $NUM_THREAD_PER_CLIENT_PROC --cpu_bind=cores $CLIENT $TOTAL_OBJ $ROUND $EXPAND_FACTOR $USE_DART $Q_TYPE $COM_TYPE $CSV_FILE
 
 echo ""
 echo "================="
