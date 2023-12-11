@@ -423,7 +423,7 @@ main(int argc, char *argv[])
     size_t data_size = 0;
 
     if (my_rank == 0) {
-        if (read_lines_to_buffer("your_file.csv", &data, rows_to_read + 1, &data_size) != 0) {
+        if (read_lines_to_buffer(file_name, &data, rows_to_read + 1, &data_size) != 0) {
             fprintf(stderr, "Failed to read lines from the file\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
