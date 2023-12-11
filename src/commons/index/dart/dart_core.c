@@ -25,7 +25,7 @@ is_index_write_op(dart_op_type_t op_type)
 
 void
 dart_space_init(DART *dart, int num_client, int num_server, int alphabet_size, int extra_tree_height,
-                int replication_factor)
+                int replication_factor, int max_server_num_to_adapt)
 {
     if (dart == NULL) {
         dart = (DART *)calloc(1, sizeof(DART));
@@ -36,8 +36,11 @@ dart_space_init(DART *dart, int num_client, int num_server, int alphabet_size, i
     // initialize servers;
     dart->num_server = num_server;
 
-    dart->dart_tree_height = (int)ceil(log_with_base((double)dart->alphabet_size, (double)dart->num_server)) +
-                             1 + extra_tree_height;
+    double physical_node_num =
+        max_server_num_to_adapt == 0 ? (double)num_server : (double)max_server_num_to_adapt;
+
+    dart->dart_tree_height =
+        (int)ceil(log_with_base((double)dart->alphabet_size, physical_node_num)) + 1 + extra_tree_height;
     // calculate number of all leaf nodes
     dart->num_vnode          = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
     dart->replication_factor = replication_factor;
@@ -54,6 +57,27 @@ get_server_id_by_vnode_id(DART *dart, uint64_t vnode_id)
     // printf("vnode_id = %d, dart->num_server = %d\n", vnode_id, dart->num_server);
     int num_vnode_per_server = dart->num_vnode / dart->num_server;
     return (vnode_id / num_vnode_per_server) % dart->num_server;
+}
+
+size_t
+get_vnode_ids_by_serverID(DART *dart, uint32_t serverID, uint64_t **out)
+{
+    if (out == NULL) {
+        return 0;
+    }
+    size_t    num_result = 0;
+    uint64_t *temp_out   = (uint64_t *)calloc(dart->num_vnode, sizeof(uint64_t));
+    int       vid        = 0;
+    for (vid = 0; vid < dart->num_vnode; vid++) {
+        if (get_server_id_by_vnode_id(dart, vid) == serverID) {
+            temp_out[vid] = vid;
+            num_result++;
+        }
+    }
+    out[0] = (uint64_t *)calloc(num_result, sizeof(uint64_t));
+    memcpy(out[0], temp_out, num_result * sizeof(uint64_t));
+    free(temp_out);
+    return num_result;
 }
 
 /**
@@ -415,7 +439,7 @@ get_server_ids_for_insert(DART *dart_g, char *keyword, get_server_info_callback 
     uint64_t alter_virtual_node_id = get_reconciled_vnode_id_with_power_of_two_choice_rehashing_2(
         dart_g, base_virtual_node_id, keyword, get_server_cb);
     // We call the following function to calculate all the server IDs.
-    int is_physical = 1;
+    int is_physical = 0;
     int rst_len     = get_replica_node_ids(dart_g, alter_virtual_node_id, is_physical, out);
     return rst_len;
 }
@@ -525,8 +549,10 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
         uint64_t *base_replicas;
         uint64_t *alter_replicas;
 
-        int num_base_reps  = get_replica_node_ids(dart_g, base_virtual_node_id, 1, &base_replicas);
-        int num_alter_reps = get_replica_node_ids(dart_g, reconciled_vnode_id, 1, &alter_replicas);
+        int is_physical = 0;
+
+        int num_base_reps  = get_replica_node_ids(dart_g, base_virtual_node_id, is_physical, &base_replicas);
+        int num_alter_reps = get_replica_node_ids(dart_g, reconciled_vnode_id, is_physical, &alter_replicas);
         if (op_type == OP_DELETE) {
             // for delete operations, we need to perform delete on all replicas
             out[0] = (uint64_t *)calloc(num_base_reps + num_alter_reps, sizeof(uint64_t));
@@ -629,7 +655,8 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
             *out = (index_hash_result_t *)realloc(*out, ret_value * sizeof(index_hash_result_t));
         }
         for (int j = 0; j < tmp_out_len; j++) {
-            (*out)[ret_value - tmp_out_len + j].server_id = temp_out[j];
+            (*out)[ret_value - tmp_out_len + j].virtual_node_id = temp_out[j];
+            (*out)[ret_value - tmp_out_len + j].server_id = get_server_id_by_vnode_id(dart_g, temp_out[j]);
             (*out)[ret_value - tmp_out_len + j].key       = tok;
         }
         if (temp_out != NULL)

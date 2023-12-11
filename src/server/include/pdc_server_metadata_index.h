@@ -37,7 +37,7 @@ typedef struct pdc_art_iterator_param {
 /**
  * @brief Initialize the ART index
  */
-void PDC_Server_dart_init();
+void PDC_Server_dart_init(uint32_t num_server, uint32_t server_id);
 
 /**
  * @brief Get the server information for the metadata index

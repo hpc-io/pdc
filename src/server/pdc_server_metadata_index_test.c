@@ -44,7 +44,7 @@ void
 test_PDC_Server_dart_perform_one_server()
 {
 
-    PDC_Server_dart_init();
+    PDC_Server_dart_init(1, 0);
 
     char *key = (char *)calloc(100, sizeof(char));
     char *val = (char *)calloc(100, sizeof(char));

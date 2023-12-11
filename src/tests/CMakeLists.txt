@@ -156,6 +156,7 @@ if(BUILD_MPI_TESTING)
     # kvtag_query_mpi
     kvtag_add_get_benchmark
     kvtag_add_get_scale
+    llsm_idioms_bench
   )
 
   foreach(program ${MPI_PROGRAMS})

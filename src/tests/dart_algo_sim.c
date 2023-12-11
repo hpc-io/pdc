@@ -437,28 +437,28 @@ main(int argc, char **argv)
     if (INPUT_TYPE == INPUT_DICTIONARY) {
         // Init dart space.
         alphabet_size = 29;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height, replication_factor,
+                        1024);
         read_words_from_text(txtFilePath, &word_count, &req_count, prefix_len, keyword_insert[hashalgo],
                              keyword_search[hashalgo]);
     }
     else if (INPUT_TYPE == INPUT_RANDOM_STRING) {
         alphabet_size = 129;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height, replication_factor,
+                        1024);
         gen_random_strings_with_cb(word_count, 6, 16, alphabet_size, prefix_len, keyword_insert[hashalgo],
                                    keyword_search[hashalgo]);
     }
     else if (INPUT_TYPE == INPUT_UUID) {
         alphabet_size = 37;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height, replication_factor,
+                        1024);
         gen_uuids(word_count, prefix_len, keyword_insert[hashalgo], keyword_search[hashalgo]);
     }
     else if (INPUT_TYPE == INPUT_WIKI_KEYWORD) {
         alphabet_size = 129;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height, replication_factor,
+                        1024);
         read_words_from_text(txtFilePath, &word_count, &req_count, prefix_len, keyword_insert[hashalgo],
                              keyword_search[hashalgo]);
     }

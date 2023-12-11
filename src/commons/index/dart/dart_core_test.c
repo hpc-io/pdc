@@ -36,7 +36,8 @@ main(int argc, char *argv[])
         all_servers[i].request_count      = 0;
     }
 
-    dart_space_init(&dart, num_client, num_server, alphabet_size, extra_tree_height, replication_factor);
+    dart_space_init(&dart, num_client, num_server, alphabet_size, extra_tree_height, replication_factor,
+                    1024);
 
     println(
         "num_server: %d, num_client: %d, alphabet_size: %d, extra_tree_height: %d, replication_factor: %d",

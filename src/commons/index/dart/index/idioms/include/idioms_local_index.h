@@ -15,6 +15,9 @@
 #include "bulki_serde.h"
 #include "rbtree.h"
 
+#define IDIOMS_DART_ALPHABET_SIZE        27
+#define IDIOMS_MAX_SERVER_COUNT_TO_ADAPT 1024
+
 typedef struct {
     int64_t   index_record_count_g;
     int64_t   search_request_count_g;
@@ -43,6 +46,7 @@ typedef struct {
 typedef struct {
     uint64_t         virtural_node_id;
     pdc_c_var_type_t type;
+    int              simple_value_type; // 0: uint64_t, 1: int64_t, 2: double, 3: char*
     // Also, for key lookup ART, we also maintain the pointer to the value tree
     art_tree *primary_trie;
     art_tree *secondary_trie;
@@ -54,10 +58,32 @@ typedef struct {
     Set *obj_id_set;
 } value_index_leaf_content_t;
 
+typedef struct {
+    void *    value;
+    size_t    value_len;
+    uint64_t *obj_ids;
+    size_t    num_obj_ids;
+} value_index_record_t;
+
+typedef struct {
+    value_index_record_t *value_idx_record;
+    uint64_t              num_value_idx_record;
+    char *                key;
+    uint64_t              virtual_node_id;
+} key_index_record_t;
+
+typedef struct {
+    void * buffer;
+    size_t buffer_size;
+    size_t buffer_capacity;
+} index_buffer_t;
+
 /**
  * @brief Initialize the ART root index
  */
 void IDIOMS_init(uint32_t server_id, uint32_t num_servers);
+
+IDIOMS_t *get_idioms_g();
 
 perr_t idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record);
 
@@ -72,8 +98,10 @@ perr_t idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record);
  */
 uint64_t idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record);
 
-perr_t metadata_index_dump(char *dir_path);
+perr_t idioms_metadata_index_dump(char *dir_path, uint32_t serverID);
 
-perr_t metadata_index_recover(char *dir_path);
+perr_t idioms_metadata_index_recover(char *dir_path, int num_client, int num_server, uint32_t serverID);
+
+void init_dart_space_via_idioms(DART *dart, int num_client, int num_server, int max_server_num_to_adapt);
 
 #endif // IDIOMS_LOCAL_INDEX_H

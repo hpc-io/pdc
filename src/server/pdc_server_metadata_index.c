@@ -1,4 +1,5 @@
 #include "pdc_server_metadata_index.h"
+#include "idioms_local_index.h"
 
 #define DART_SERVER_DEBUG 0
 
@@ -16,7 +17,7 @@ size_t    num_attrs_loaded_mdb        = 0;
 /* Initialize DART */
 /****************************/
 void
-PDC_Server_dart_init()
+PDC_Server_dart_init(uint32_t num_server, uint32_t server_id)
 {
 
     indexed_word_count_g   = 0;
@@ -26,6 +27,8 @@ PDC_Server_dart_init()
 
     art_tree_init(art_key_prefix_tree_g);
     art_tree_init(art_key_suffix_tree_g);
+
+    IDIOMS_init(server_id, num_server);
 }
 
 /****************************/
@@ -277,9 +280,13 @@ PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_server_i
 {
     perr_t ret_value = SUCCEED;
     FUNC_ENTER(NULL);
-    uint32_t serverId       = in->serverId;
-    out->indexed_word_count = indexed_word_count_g;
-    out->request_count      = server_request_count_g;
+    uint32_t serverId = in->serverId;
+    // out->indexed_word_count = indexed_word_count_g;
+    // out->request_count      = server_request_count_g;
+
+    out->indexed_word_count = get_idioms_g()->index_record_count_g;
+    out->request_count      = get_idioms_g()->search_request_count_g;
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -528,6 +535,13 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     char *                 attr_val  = (char *)in->attr_val;
     dart_object_ref_type_t ref_type  = in->obj_ref_type;
 
+    IDIOMS_md_idx_record_t *idx_record = (IDIOMS_md_idx_record_t *)calloc(1, sizeof(IDIOMS_md_idx_record_t));
+    idx_record->key                    = attr_key;
+    idx_record->value                  = attr_val;
+    idx_record->virtual_node_id        = in->vnode_id;
+    idx_record->type                   = in->attr_dtype;
+    idx_record->value_len = get_size_by_class_n_type(idx_record->value, 1, PDC_CLS_ITEM, idx_record->type);
+
     uint64_t obj_locator = in->obj_primary_ref;
     if (ref_type == REF_PRIMARY_ID) {
         obj_locator = in->obj_primary_ref;
@@ -538,17 +552,29 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     else if (ref_type == REF_SERVER_ID) {
         obj_locator = in->obj_server_ref;
     }
+
+    idx_record->obj_ids     = (uint64_t *)calloc(1, sizeof(uint64_t));
+    idx_record->obj_ids[0]  = obj_locator;
+    idx_record->num_obj_ids = 1;
+
     out->has_bulk = 0;
     // printf("Respond to: in->op_type=%d\n", in->op_type );
     if (op_type == OP_INSERT) {
-        metadata_index_create(attr_key, attr_val, obj_locator, hash_algo);
+
+        // metadata_index_create(attr_key, attr_val, obj_locator, hash_algo);
+        idioms_local_index_create(idx_record);
     }
     else if (op_type == OP_DELETE) {
-        metadata_index_delete(attr_key, attr_val, obj_locator, hash_algo);
+        // metadata_index_delete(attr_key, attr_val, obj_locator, hash_algo);
+        idioms_local_index_delete(idx_record);
     }
     else {
-        char *query  = (char *)in->attr_key;
-        result       = metadata_index_search(query, hash_algo, n_obj_ids_ptr, buf_ptrs);
+        // char *query  = (char *)in->attr_key;
+        // result       = metadata_index_search(query, hash_algo, n_obj_ids_ptr, buf_ptrs);
+        idioms_local_index_search(idx_record);
+        *n_obj_ids_ptr = idx_record->num_obj_ids;
+        *buf_ptrs      = idx_record->obj_ids;
+
         out->n_items = (*n_obj_ids_ptr);
         if ((*n_obj_ids_ptr) > 0) {
             out->has_bulk = 1;
@@ -556,7 +582,7 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     }
     return result;
 }
-
+// ********************* Index Dump and Load *********************
 /**
  * This is a object ID set
  * |number of object IDs = n|object ID 1|...|object ID n|

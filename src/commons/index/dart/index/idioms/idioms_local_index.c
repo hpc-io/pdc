@@ -3,6 +3,9 @@
 #include "pdc_set.h"
 #include "pdc_hash.h"
 #include "idioms_local_index.h"
+#include "bin_file_ops.h"
+#include "pdc_hash_table.h"
+#include "dart_core.h"
 
 #define DART_SERVER_DEBUG 0
 
@@ -22,6 +25,12 @@ IDIOMS_init(uint32_t server_id, uint32_t num_servers)
 #endif
     idioms_g->server_id_g   = server_id;
     idioms_g->num_servers_g = num_servers;
+}
+
+IDIOMS_t *
+get_idioms_g()
+{
+    return idioms_g;
 }
 
 /****************************/
@@ -157,14 +166,19 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
     // look up for leaf_content
     key_index_leaf_content_t *key_leaf_content =
         (key_index_leaf_content_t *)art_search(key_trie, (unsigned char *)key, len);
+
+    key_leaf_content->virtural_node_id = idx_record->virtual_node_id;
     // create leaf_content node if not exist.
     if (key_leaf_content == NULL) {
         key_leaf_content = (key_index_leaf_content_t *)PDC_calloc(1, sizeof(key_index_leaf_content_t));
         // fill the content of the leaf_content node.
         key_leaf_content->type = idx_record->type;
 
+        int simple_value_type = 3;
+
         if (contains(value_type_str, "STRING")) {
-            use_trie = 1;
+            simple_value_type = 3;
+            use_trie          = 1;
             // the following gurarantees that both prefix index and suffix index are initialized.
             key_leaf_content->primary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->primary_trie);
@@ -176,8 +190,8 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
 #endif
         }
         else {
-            int                  simple_value_type = -1;
-            libhl_cmp_callback_t compare_func      = NULL;
+
+            libhl_cmp_callback_t compare_func = NULL;
             if (startsWith(value_type_str, "PDC_UINT")) {
                 simple_value_type = 0; // UINT64
                 compare_func      = LIBHL_CMP_CB(PDC_UINT64);
@@ -196,6 +210,7 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
             }
             key_leaf_content->primary_rbt = rbt_create(compare_func, free);
         }
+        key_leaf_content->simple_value_type = simple_value_type;
         // insert the key into the the key trie along with the key_leaf_content.
         art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
     }
@@ -813,81 +828,394 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
 /* Index Dump               */
 /****************************/
 
+// ********************* Index Dump and Load *********************
+
+void *
+append_buffer(index_buffer_t *buffer, void *new_buf, uint64_t new_buf_size)
+{
+    if (buffer->buffer_size + new_buf_size + sizeof(uint64_t) > buffer->buffer_capacity) {
+        buffer->buffer_capacity = (buffer->buffer_size + new_buf_size + sizeof(uint64_t)) * 2;
+        buffer->buffer          = realloc(buffer->buffer, buffer->buffer_capacity);
+    }
+    memcpy(buffer->buffer + buffer->buffer_size, &new_buf_size, sizeof(uint64_t));
+    buffer->buffer_size += sizeof(uint64_t);
+    memcpy(buffer->buffer + buffer->buffer_size, new_buf, new_buf_size);
+    buffer->buffer_size += new_buf_size;
+    return buffer->buffer;
+}
+
+/**
+ * This is a object ID set
+ * |number of object IDs = n|object ID 1|...|object ID n|
+ */
+uint64_t
+append_obj_id_set(Set *obj_id_set, index_buffer_t *buffer)
+{
+
+    uint64_t  num_obj_id    = set_num_entries(obj_id_set);
+    uint64_t *id_set_buffer = calloc(num_obj_id + 1, sizeof(uint64_t));
+    id_set_buffer[0]        = num_obj_id;
+
+    int         offset = 1;
+    SetIterator iter;
+    set_iterate(obj_id_set, &iter);
+    while (set_iter_has_more(&iter)) {
+        uint64_t *item        = (uint64_t *)set_iter_next(&iter);
+        id_set_buffer[offset] = *item;
+        offset++;
+    }
+
+    append_buffer(buffer, id_set_buffer, (num_obj_id + 1) * sizeof(uint64_t));
+    free(id_set_buffer);
+    return num_obj_id + 1;
+}
+
 int
-dump_key_index_callback(void *data, const unsigned char *key, uint32_t key_len, void *value)
+append_value_tree_node(void *buf, void *key, uint32_t key_size, void *value)
 {
+    index_buffer_t *buffer = (index_buffer_t *)buf;
+    append_buffer(buffer, key, key_size);
+
+    value_index_leaf_content_t *value_index_leaf = (value_index_leaf_content_t *)(value);
+    if (value_index_leaf != NULL) {
+        Set *obj_id_set = (Set *)value_index_leaf->obj_id_set;
+        append_obj_id_set(obj_id_set, buffer);
+    }
+    return 0; // return 0 for art iteration to continue;
 }
 
-perr_t
-metadata_index_dump(char *dir_path)
+/**
+ * This is a string value node
+ * |str_val|file_obj_pair_list|
+ */
+int
+append_string_value_node(void *buffer, const unsigned char *key, uint32_t key_len, void *value)
 {
-    perr_t ret = SUCCEED;
-    if (idioms_g == NULL) {
-        return FAIL;
-    }
-    if (dir_path == NULL) {
-        return FAIL;
-    }
-    char *file_path = (char *)calloc(strlen(dir_path) + 32, sizeof(char));
-    sprintf(file_path, "%s/idioms_idx_%d.bin", dir_path, idioms_g->server_id_g);
-    FILE *fp = fopen(file_path, "wb");
-    if (fp == NULL) {
-        printf("ERROR: failed to open file %s\n", file_path);
-        return FAIL;
-    }
-    // prepare the bulki structure
-    BULKI *bulki = BULKI_init(2);
+    return append_value_tree_node(buffer, (void *)key, key_len, value);
+}
 
-    // dump the prefix tree
-    char *        key1 = "prefix_tree";
-    BULKI_Entity *bk1  = BULKI_ENTITY(key1, 1, PDC_STRING, PDC_CLS_ITEM);
-    BULKI_Entity *bv1  = empty_BULKI_Entity();
+rbt_walk_return_code_t
+append_numeric_value_node(rbt_t *rbt, void *key, size_t klen, void *value, void *priv)
+{
+    append_value_tree_node(priv, key, klen, value);
+    return RBT_WALK_CONTINUE;
+}
 
-    art_iter(idioms_g->art_key_prefix_tree_g, dump_key_index_callback, bv1);
-    BULKI_add(bulki, bk1, bv1);
+/**
+ * This is the string value region
+ * |type = 3|number of values = n|value_node_1|...|value_node_n|
+ *
+ * return number of strings in the string value tree
+ */
+uint64_t
+append_string_value_tree(art_tree *art, index_buffer_t *buffer)
+{
+    // 1. number of values
+    uint64_t *num_str_value = malloc(sizeof(uint64_t));
+    *num_str_value          = art_size(art);
+    append_buffer(buffer, num_str_value, sizeof(uint64_t));
+
+    // 2. value nodes
+    uint64_t rst = art_iter(art, append_string_value_node, buffer);
+    rst          = (rst == 0) ? *num_str_value : 0;
+    free(num_str_value);
+    return rst;
+}
+
+/**
+ * This is the numeric value region
+ * |type = 0/1/2|number of values = n|value_node_1|...|value_node_n|
+ *
+ * return number of numeric values in the numeric value tree
+ */
+uint64_t
+append_numeric_value_tree(rbt_t *rbt, index_buffer_t *buffer)
+{
+    // 1. number of values
+    uint64_t *num_str_value = malloc(sizeof(uint64_t));
+    *num_str_value          = rbt_size(rbt);
+    append_buffer(buffer, num_str_value, sizeof(uint64_t));
+
+    // 2. value nodes
+    uint64_t rst = rbt_walk(rbt, append_numeric_value_node, buffer);
+    free(num_str_value);
+    return rst;
+}
+
+/**
+ * return number of attribute values
+ * This is an attribute node
+ * |attr_name|attr_value_region|
+ */
+int
+append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, void *value)
+{
+    key_index_leaf_content_t *leafcnt      = (key_index_leaf_content_t *)value;
+    HashTable *               vnode_buf_ht = (HashTable *)data;
+    index_buffer_t *          buffer       = hash_table_lookup(vnode_buf_ht, &(leafcnt->virtural_node_id));
+    if (buffer == NULL) {
+        buffer                  = (index_buffer_t *)calloc(1, sizeof(index_buffer_t));
+        buffer->buffer_capacity = 1024;
+        buffer->buffer          = calloc(1, buffer->buffer_capacity);
+        hash_table_insert(vnode_buf_ht, &(leafcnt->virtural_node_id), buffer);
+    }
+    int rst = 0;
+    // 1. attr name
+    append_buffer(buffer, (void *)key, key_len);
+
+    // 2. attr value type
+    int8_t *type = (int8_t *)calloc(1, sizeof(int8_t));
+    type[0]      = leafcnt->type;
+    append_buffer(buffer, type, sizeof(int8_t));
+
+    // 3. attr value simple type.
+    int8_t *simple_type = (int8_t *)calloc(1, sizeof(int8_t));
+    simple_type[0]      = leafcnt->simple_value_type;
+    append_buffer(buffer, simple_type, sizeof(int8_t));
+
+    if (leafcnt->simple_value_type == 3) {
+        rst = append_string_value_tree(leafcnt->primary_trie, buffer);
 #ifndef PDC_DART_SFX_TREE
-    // dump the suffix tree
-    char *        key2 = "suffix_tree";
-    BULKI_Entity *bk2  = BULKI_ENTITY(key2, 1, PDC_STRING, PDC_CLS_ITEM);
-    BULKI_Entity *bv2  = empty_BULKI_Entity();
-
-    art_iter(idioms_g->art_key_suffix_tree_g, dump_key_index_callback, bv2);
-    BULKI_add(bulki, bk2, bv2);
+        rst = append_string_value_tree(leafcnt->secondary_trie, buffer);
 #endif
-    void *buffer = BULKI_serialize(bulki);
-    fwrite(buffer, 1, bulki->totalSize, fp);
-    fclose(fp);
+    }
+    else {
+        rst = append_numeric_value_tree(leafcnt->primary_rbt, buffer);
+    }
+    // printf("number of attribute values = %d\n", rst);
+    return 0; // return 0 for art iteration to continue;
+}
+
+/**
+ * This is the "attribute region"
+ * |number of attributes = n|attr_node 1|...|attr_node n|
+ */
+int
+append_attr_root_tree(art_tree *art, char *dir_path, char *base_name)
+{
+    HashTable *vid_buf_hash =
+        hash_table_new(pdc_default_uint64_hash_func_ptr, pdc_default_uint64_equal_func_ptr);
+    int rst = art_iter(art, append_attr_name_node, vid_buf_hash);
+
+    int n_entry = hash_table_num_entries(vid_buf_hash);
+    // iterate the hashtable and store the buffers into the file corresponds to the vnode id
+    HashTableIterator iter;
+    hash_table_iterate(vid_buf_hash, &iter);
+    while (n_entry != 0 && hash_table_iter_has_more(&iter)) {
+        HashTablePair   pair   = hash_table_iter_next(&iter);
+        uint64_t *      vid    = pair.key;
+        index_buffer_t *buffer = pair.value;
+        char            file_name[1024];
+        sprintf(file_name, "%s/%s_%d.bin", dir_path, base_name, *vid);
+        FILE *stream = fopen(file_name, "wb");
+        fwrite(&(buffer->buffer_size), sizeof(uint64_t), 1, stream);
+        fwrite(buffer->buffer, 1, buffer->buffer_size, stream);
+        fclose(stream);
+    }
+    return rst;
 }
 
 perr_t
-metadata_index_recover(char *dir_path)
+idioms_metadata_index_dump(char *dir_path, uint32_t serverID)
 {
-    perr_t ret = SUCCEED;
-    if (idioms_g == NULL) {
-        return FAIL;
-    }
-    if (dir_path == NULL) {
-        return FAIL;
-    }
-    char *file_path = (char *)calloc(strlen(dir_path) + 32, sizeof(char));
-    sprintf(file_path, "%s/idioms_idx_%d.bin", dir_path, idioms_g->server_id_g);
-    FILE *fp = fopen(file_path, "rb");
-    if (fp == NULL) {
-        printf("ERROR: failed to open file %s\n", file_path);
-        return FAIL;
-    }
-    // read the file into buffer
-    fseek(fp, 0, SEEK_END);
-    long file_size = ftell(fp);
-    rewind(fp);
-    void *buffer = PDC_malloc(file_size);
-    fread(buffer, 1, file_size, fp);
-    fclose(fp);
+    perr_t ret_value = SUCCEED;
 
-    // deserialize the buffer
-    BULKI *bulki = BULKI_deserialize(buffer);
-    if (bulki == NULL) {
-        printf("ERROR: failed to deserialize the buffer\n");
-        return FAIL;
+    stopwatch_t timer;
+    timer_start(&timer);
+
+    // 2. append attribute region
+    append_attr_root_tree(idioms_g->art_key_prefix_tree_g, dir_path, "idioms_prefix");
+#ifndef PDC_DART_SFX_TREE
+    append_attr_root_tree(idioms_g->art_key_suffix_tree_g, dir_path, "idioms_suffix");
+#endif
+
+    timer_pause(&timer);
+    println("[IDIOMS_Index_Dump_%d] Timer to dump index = %.4f microseconds\n", serverID,
+            timer_delta_us(&timer));
+    return ret_value;
+}
+
+// *********************** Index Loading ***********************************
+
+size_t
+read_buffer(index_buffer_t *buffer, void **dst, size_t *size)
+{
+    if (buffer->buffer_size < *size) {
+        return 0;
     }
+    uint64_t dsize;
+    memcpy(&dsize, buffer->buffer, sizeof(uint64_t));
+    buffer->buffer += sizeof(uint64_t);
+    buffer->buffer_size -= sizeof(uint64_t);
+    *size = dsize;
+
+    *dst = calloc(1, *size);
+    memcpy(*dst, buffer->buffer, *size);
+    buffer->buffer += *size;
+    buffer->buffer_size -= *size;
+    return *size;
+}
+
+int
+read_attr_value_node(void *value_index, int simple_value_type, index_buffer_t *buffer)
+{
+    // 1. read value
+    size_t len;
+    void * val = NULL;
+    read_buffer(buffer, (void **)&val, &len);
+
+    // 2. read object ID set
+    Set *     obj_id_set = set_new(ui64_hash, ui64_equal);
+    uint64_t *num_obj_id;
+    read_buffer(buffer, (void **)&num_obj_id, &len);
+    uint64_t i = 0;
+    for (i = 0; i < *num_obj_id; i++) {
+        uint64_t *obj_id;
+        read_buffer(buffer, (void **)&obj_id, &len);
+        set_insert(obj_id_set, obj_id);
+    }
+
+    value_index_leaf_content_t *value_index_leaf =
+        (value_index_leaf_content_t *)calloc(1, sizeof(value_index_leaf_content_t));
+    value_index_leaf->obj_id_set = obj_id_set;
+
+    // 3. insert value into art tree
+    if (simple_value_type == 3) {
+        art_insert((art_tree *)value_index, (const unsigned char *)val, strlen(val),
+                   (void *)value_index_leaf);
+    }
+    else {
+        rbt_add((rbt_t *)value_index, val, strlen(val), (void *)value_index_leaf);
+    }
+    int rst = (set_num_entries(obj_id_set) == *num_obj_id) ? 0 : 1;
+    return rst;
+}
+
+int
+read_value_tree(void *value_index, int simple_value_type, index_buffer_t *buffer)
+{
+    int rst = 0;
+    if (simple_value_type == 3) {
+        art_tree_init((art_tree *)value_index);
+    }
+
+    size_t    len;
+    uint64_t *num_values;
+    read_buffer(buffer, (void **)&num_values, &len);
+
+    uint64_t i = 0;
+    for (i = 0; i < *num_values; i++) {
+        rst = rst | read_attr_value_node(value_index, simple_value_type, buffer);
+    }
+    return rst;
+}
+
+int
+read_attr_name_node(art_tree *art_key_index, char *dir_path, char *base_name, uint64_t vnode_id)
+{
+
+    char file_name[1024];
+    sprintf(file_name, "%s/%s_%d.bin", dir_path, base_name, vnode_id);
+    FILE *          stream = fopen(file_name, "rb");
+    index_buffer_t *buffer = (index_buffer_t *)calloc(1, sizeof(index_buffer_t));
+    fread(&(buffer->buffer_size), sizeof(uint64_t), 1, stream);
+    buffer->buffer_capacity = buffer->buffer_size;
+    buffer->buffer          = calloc(1, buffer->buffer_capacity);
+    fread(buffer->buffer, 1, buffer->buffer_size, stream);
+    fclose(stream);
+    int rst = 0;
+    while (buffer->buffer_size > 0) {
+        key_index_leaf_content_t *leafcnt =
+            (key_index_leaf_content_t *)calloc(1, sizeof(key_index_leaf_content_t));
+
+        // 1. read attr name
+        size_t key_len   = 0;
+        char * attr_name = NULL;
+        read_buffer(buffer, (void **)&attr_name, &key_len);
+
+        // 2. read attr value type
+        int8_t *type;
+        size_t  len;
+        read_buffer(buffer, (void **)&type, &len);
+        leafcnt->type = type[0];
+
+        // 3. attr value simple type.
+        int8_t *simple_type;
+        read_buffer(buffer, (void **)&simple_type, &len);
+        leafcnt->simple_value_type = simple_type[0];
+
+        // 4. read attr values
+        void *value_index = NULL;
+        if (leafcnt->simple_value_type == 3) {
+            leafcnt->primary_trie = (art_tree *)calloc(1, sizeof(art_tree));
+            value_index           = leafcnt->primary_trie;
+#ifndef PDC_DART_SFX_TREE
+            leafcnt->secondary_trie = (art_tree *)calloc(1, sizeof(art_tree));
+            value_index             = leafcnt->secondary_trie;
+#endif
+        }
+        else {
+            libhl_cmp_callback_t compare_func = NULL;
+            if (leafcnt->simple_value_type == 0) { // UINT64
+                compare_func = LIBHL_CMP_CB(PDC_UINT64);
+            }
+            else if (leafcnt->simple_value_type == 1) { // INT64
+                compare_func = LIBHL_CMP_CB(PDC_INT64);
+            }
+            else if (leafcnt->simple_value_type == 2) { // DOUBLE
+                compare_func = LIBHL_CMP_CB(PDC_DOUBLE);
+            }
+            else {
+                printf("ERROR: unsupported data type %d\n", leafcnt->simple_value_type);
+                return FAIL;
+            }
+            leafcnt->primary_rbt = (rbt_t *)rbt_create(compare_func, free);
+            value_index          = leafcnt->primary_rbt;
+        }
+        read_value_tree(value_index, leafcnt->simple_value_type, buffer);
+
+        // 5. insert the key into the key trie along with the key_leaf_content.
+        art_insert(art_key_index, (const unsigned char *)attr_name, key_len, leafcnt);
+    }
+    return rst;
+}
+
+perr_t
+idioms_metadata_index_recover(char *dir_path, int num_client, int num_server, uint32_t serverID)
+{
+    perr_t ret_value = SUCCEED;
+
+    stopwatch_t timer;
+    timer_start(&timer);
+
+    DART *dart_info = (DART *)calloc(1, sizeof(DART));
+    init_dart_space_via_idioms(dart_info, num_client, num_server, IDIOMS_MAX_SERVER_COUNT_TO_ADAPT);
+
+    uint64_t *vid_array = NULL;
+    size_t    num_vids  = get_vnode_ids_by_serverID(dart_info, serverID, &vid_array);
+
+    IDIOMS_init(serverID, num_server);
+
+    // load the attribute region for each vnode
+    for (size_t vid = 0; vid < num_vids; vid++) {
+        read_attr_name_node(idioms_g->art_key_prefix_tree_g, dir_path, "idioms_prefix", vid);
+#ifndef PDC_DART_SFX_TREE
+        read_attr_name_node(idioms_g->art_key_suffix_tree_g, dir_path, "idioms_suffix", vid);
+#endif
+    }
+
+    timer_pause(&timer);
+    println("[IDIOMS_Index_Recover_%d] Timer to recover index = %.4f microseconds\n", serverID,
+            timer_delta_us(&timer));
+    return ret_value;
+}
+
+void
+init_dart_space_via_idioms(DART *dart, int num_client, int num_server, int max_server_num_to_adapt)
+{
+    int extra_tree_height  = 0;
+    int replication_factor = 3;
+    replication_factor     = replication_factor > 0 ? replication_factor : 2;
+    dart_space_init(dart, num_client, num_server, IDIOMS_DART_ALPHABET_SIZE, extra_tree_height,
+                    replication_factor, max_server_num_to_adapt);
 }

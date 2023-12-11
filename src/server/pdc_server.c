@@ -999,7 +999,7 @@ drc_access_again:
     n_metadata_g = 0;
 
     // Initialize DART
-    PDC_Server_dart_init();
+    PDC_Server_dart_init(pdc_server_size_g, pdc_server_rank_g);
 
     // PDC transfer_request infrastructures
     PDC_server_transfer_request_init();

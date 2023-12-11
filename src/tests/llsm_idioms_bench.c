@@ -92,10 +92,14 @@ done:
 }
 
 size_t
-create_objects(pdcid_t **obj_ids, int my_csv_rows, int csv_expand_factor)
+create_objects(pdcid_t **obj_ids, int my_csv_rows, int csv_expand_factor, pdcid_t cont, pdcid_t obj_prop,
+               int my_rank)
 {
-    size_t obj_created = 0;
-    *obj_ids           = (pdcid_t *)calloc(my_csv_rows * csv_expand_factor, sizeof(pdcid_t));
+    size_t  obj_created = 0;
+    char    obj_name[128];
+    int64_t timestamp = get_timestamp_us();
+
+    *obj_ids = (pdcid_t *)calloc(my_csv_rows * csv_expand_factor, sizeof(pdcid_t));
     for (int i = 0; i < my_csv_rows; i++) {
         // create `csv_expansion_factor` data objects for each csv row.
         for (int obj_idx = 0; obj_idx < csv_expand_factor; obj_idx++) {
@@ -110,6 +114,7 @@ create_objects(pdcid_t **obj_ids, int my_csv_rows, int csv_expand_factor)
             obj_created++;
         }
     }
+done:
     return obj_created;
 }
 
@@ -149,7 +154,7 @@ read_lines_to_buffer(const char *filename, char **buffer, int num_lines, size_t 
     }
 
     // Allocate the buffer
-    *buffer = (char *)calloc(total_size * sizeof(char) + 1);
+    *buffer = (char *)calloc(total_size, sizeof(char) + 1);
     if (*buffer == NULL) {
         perror("Failed to allocate buffer");
         fclose(file);
@@ -183,13 +188,13 @@ add_tag_to_one_object(pid_t obj_id, char *attr_name, char *attr_value, int is_us
     kvtag.type  = PDC_STRING;
     kvtag.size  = (strlen(kvtag.value) + 1) * sizeof(char);
 
-    if (PDCobj_put_tag(obj_id, kvtag) < 0) {
+    if (PDCobj_put_tag(obj_id, kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
         printf("Fail to add tag to object %" PRIu64 "\n", obj_id);
         return -1;
     }
     if (is_using_dart) {
-        PDC_Client_add_obj_ref_to_dart(hash_algo, kvtag.name, (char *)kvtag.value, ref_type,
-                                       (uint64_t)obj_id);
+        PDC_Client_insert_obj_ref_into_dart(DART_HASH, kvtag.name, (char *)kvtag.value, REF_PRIMARY_ID,
+                                            (uint64_t)obj_id);
     }
     return 0;
 }
@@ -205,13 +210,14 @@ delete_tag_from_one_object(pid_t obj_id, char *attr_name, char *attr_value, int 
 
     PDCobj_del_tag(obj_id, kvtag.name);
     if (is_using_dart) {
-        PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, ref_type,
+        PDC_Client_delete_obj_ref_from_dart(DART_HASH, kvtag.name, (char *)kvtag.value, REF_PRIMARY_ID,
                                             (uint64_t)obj_id);
     }
+    return 1;
 }
 
 int
-csv_tags_on_objects(pid_t *obj_ids, char ***csv_data, char **csv_header, int num_columns, my_csv_rows,
+csv_tags_on_objects(pdcid_t *obj_ids, char ***csv_data, char **csv_header, int num_columns, int my_csv_rows,
                     int csv_expand_factor, int is_using_dart, process_tag_of_one_object tag_processor)
 {
 
@@ -266,7 +272,7 @@ csv_tags_on_objects(pid_t *obj_ids, char ***csv_data, char **csv_header, int num
 
 int
 read_csv_from_buffer(char *data, char ***csv_header, char ****csv_data, int *num_columns, int rows_to_read,
-                     my_rank, proc_num)
+                     int my_rank, int proc_num)
 {
     int my_csv_row_num = 0;
     // Allocate memory for the header and data
@@ -280,13 +286,12 @@ read_csv_from_buffer(char *data, char ***csv_header, char ****csv_data, int *num
     char *line = strtok(data, "\n");
     if (line == NULL) {
         fprintf(stderr, "Error reading headers from CSV\n");
-        free(buffer);
         return -1;
     }
 
     // Parse the header line
     char *header[MAX_COLUMNS];
-    *num_columns = split_line(line, ',', headers, MAX_COLUMNS);
+    *num_columns = split_line(line, ',', *csv_header, MAX_COLUMNS);
 
     // Read and parse the data lines
     int data_line_count = 0;
@@ -294,18 +299,18 @@ read_csv_from_buffer(char *data, char ***csv_header, char ****csv_data, int *num
         line = strtok(NULL, "\n");
         if (line == NULL) {
             fprintf(stderr, "Error reading data from CSV\n");
-            free(buffer);
+            // free(buffer);
             return -1;
         }
         if (data_line_count % proc_num == my_rank) {
 
             // Parse the data line
-            char *data[MAX_COLUMNS];
-            *num_columns = split_line(line, ',', data, MAX_COLUMNS);
+            char *tmp_data[MAX_COLUMNS];
+            *num_columns = split_line(line, ',', tmp_data, MAX_COLUMNS);
 
             // Copy the data into the csv_data array
             for (int i = 0; i < *num_columns; i++) {
-                (*csv_data)[my_csv_row_num][i] = strdup(data[i]);
+                (*csv_data)[my_csv_row_num][i] = strdup(tmp_data[i]);
             }
             my_csv_row_num++;
         }
@@ -316,8 +321,10 @@ read_csv_from_buffer(char *data, char ***csv_header, char ****csv_data, int *num
     return my_csv_row_num;
 }
 
-int perform_search(is_using_dart, query_type, comm_type, iter_round)
+int
+perform_search(int is_using_dart, int query_type, int comm_type, int iter_round)
 {
+    perr_t    ret_value;
     int       nres    = 0;
     uint64_t *pdc_ids = NULL;
     // perform search
@@ -333,6 +340,7 @@ int perform_search(is_using_dart, query_type, comm_type, iter_round)
              "%04dt",
              iter_round, iter_round, iter_round, iter_round);
 
+    pdc_kvtag_t kvtag;
     kvtag.name  = strdup(attr_name);
     kvtag.value = (void *)strdup(tag_value);
     kvtag.type  = PDC_STRING;
@@ -350,9 +358,9 @@ int perform_search(is_using_dart, query_type, comm_type, iter_round)
     if (is_using_dart) {
         char *query_string = gen_query_str(&output);
         ret_value          = (comm_type == 0)
-                        ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, REF_PRIMARY_ID,
+                        ? PDC_Client_search_obj_ref_through_dart(DART_HASH, query_string, REF_PRIMARY_ID,
                                                                  &nres, &pdc_ids)
-                        : PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, query_string, REF_PRIMARY_ID,
+                        : PDC_Client_search_obj_ref_through_dart_mpi(DART_HASH, query_string, REF_PRIMARY_ID,
                                                                      &nres, &pdc_ids, MPI_COMM_WORLD);
     }
     else {
@@ -363,10 +371,7 @@ int perform_search(is_using_dart, query_type, comm_type, iter_round)
         ret_value = (comm_type == 0) ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                                      : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
     }
-    if (ret_value < 0) {
-        printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
-        break;
-    }
+
     return nres;
 }
 
@@ -427,7 +432,7 @@ main(int argc, char *argv[])
     MPI_Bcast(&data_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
     // Allocate memory for other ranks
-    if (rank != 0) {
+    if (my_rank != 0) {
         data = (char *)malloc(data_size * sizeof(char));
         if (data == NULL) {
             fprintf(stderr, "Failed to allocate buffer\n");
@@ -447,7 +452,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
-    size_t obj_created = create_objects(&obj_ids, my_csv_rows, csv_expand_factor);
+    size_t obj_created = create_objects(&obj_ids, my_csv_rows, csv_expand_factor, cont, obj_prop, my_rank);
 
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;

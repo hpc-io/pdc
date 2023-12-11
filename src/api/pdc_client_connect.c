@@ -1494,10 +1494,10 @@ PDC_Client_init()
         /* Initialize DART space */
         dart_g                 = (DART *)calloc(1, sizeof(DART));
         int extra_tree_height  = 0;
-        int replication_factor = pdc_server_num_g / 10;
+        int replication_factor = 3; // pdc_server_num_g / 10;
         replication_factor     = replication_factor > 0 ? replication_factor : 2;
         dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE,
-                        extra_tree_height, replication_factor);
+                        extra_tree_height, replication_factor, 1024);
 
         server_time_total_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
         server_call_count_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
@@ -8655,6 +8655,7 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
         lookup_args[i].op_type = op_type;
 
         if (is_index_write_op(op_type)) {
+            dart_in->vnode_id = (*hash_result)[i].virtual_node_id;
             dart_in->attr_key = strdup((*hash_result)[i].key);
         }
 
