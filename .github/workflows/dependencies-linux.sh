@@ -6,7 +6,6 @@ sudo apt-get update
 sudo apt-get install libopenmpi-dev libhdf5-dev
 
 # libfabric
-# git clone https://github.com/ofiwg/libfabric.git
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.12.1.tar.gz
 tar xf v1.12.1.tar.gz
 cd libfabric-1.12.1
