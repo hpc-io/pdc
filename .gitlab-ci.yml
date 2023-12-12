@@ -318,7 +318,7 @@ perlmutter-metrics:
     rules:
         - if: '$METRICS == "true"'
     needs:
-        - perlmutter-build
+        - perlmutter-cache-build
     tags:
         - perlmutter
     variables:
@@ -330,9 +330,9 @@ perlmutter-metrics:
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-metrics"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-metrics"
         PDC_CLIENT_LOOKUP: "NONE"
-        PDC_SERVER: "${PDC_BUILD_PATH}/perlmutter/bin/pdc_server.exe"
-        PDC_SERVER_CLOSE: "${PDC_BUILD_PATH}/perlmutter/bin/close_server"
-        PDC_CLIENT: "${PDC_BUILD_PATH}/perlmutter/bin/vpicio_mts"
+        PDC_SERVER: "${PDC_BUILD_PATH}/perlmutter/cache/bin/pdc_server.exe"
+        PDC_SERVER_CLOSE: "${PDC_BUILD_PATH}/perlmutter/cache/bin/close_server"
+        PDC_CLIENT: "${PDC_BUILD_PATH}/perlmutter/cache/bin/vpicio_mts"
         PDC_JOB_OUTPUT: "pdc-metrics.log"
     script: 
         - hostname
