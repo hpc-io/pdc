@@ -26,4 +26,6 @@ jobs:
 
       - name: Test PDC
         working-directory: build
-        run: ctest -L serial
+        run: |
+          export HG_TRANSPORT="sockets"
+          ctest -L serial
