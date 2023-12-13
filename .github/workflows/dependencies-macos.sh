@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-brew install open-mpi autoconf automake libtool ossp-uuid
+brew install open-mpi autoconf automake libtool
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.15.2.tar.gz
