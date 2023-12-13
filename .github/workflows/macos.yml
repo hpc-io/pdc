@@ -28,5 +28,6 @@ jobs:
         working-directory: build
         run: |
           sudo sh -c 'echo "`ipconfig getifaddr en0` PDC" >> /etc/hosts'
+          sudo scutil --set HostName PDC
           export HG_TRANSPORT="sockets"
           ctest -L serial
