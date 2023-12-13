@@ -58,9 +58,9 @@ Before installing the dependencies and downloading the code repository, we assum
 	mkdir -p $WORK_SPACE/install
 
 	cd $WORK_SPACE/source
-	git clone git@github.com:ofiwg/libfabric.git
-	git clone git@github.com:mercury-hpc/mercury.git --recursive
-	git clone git@github.com:hpc-io/pdc.git
+	git clone https://github.com/ofiwg/libfabric
+	git clone https://github.com/mercury-hpc/mercury --recursive
+	git clone https://github.com/hpc-io/pdc
 
 	export LIBFABRIC_SRC_DIR=$WORK_SPACE/source/libfabric
 	export MERCURY_SRC_DIR=$WORK_SPACE/source/mercury
