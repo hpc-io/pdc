@@ -1,0 +1,33 @@
+name: MacOS
+
+on:
+  pull_request:
+    branches: [ stable, develop ]
+
+  # Allows to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  PDC:
+    runs-on: macos-13
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Dependencies
+        run: .github/workflows/dependencies-macos.sh
+
+      - name: Build PDC
+        run: |
+          mkdir build && cd build
+          cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=mpicc
+          make -j 2
+
+      - name: Test PDC
+        working-directory: build
+        run: |
+          sudo sh -c 'echo "`ipconfig getifaddr en0` PDC" >> /etc/hosts'
+          sudo scutil --set HostName PDC
+          export HG_TRANSPORT="sockets"
+          ctest -L serial
