@@ -1,0 +1,28 @@
+name: Ubuntu (cache)
+
+on:
+  pull_request:
+    branches: [ stable, develop ]
+
+  workflow_dispatch:
+
+jobs:
+  PDC:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Dependencies
+        run: .github/workflows/dependencies-linux.sh
+
+      - name: Build PDC
+        run: |
+          mkdir build && cd build
+          cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=mpicc
+          make -j2
+
+      - name: Test PDC
+        working-directory: build
+        run: ctest -L serial
