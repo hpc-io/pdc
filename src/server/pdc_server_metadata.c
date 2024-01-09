@@ -1845,7 +1845,12 @@ PDC_Server_query_kvtag_someta(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                             *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
                         }
                         (*obj_ids)[iter++] = elt->obj_id;
-                        break;
+                        // break; // FIXME: shall we break here? or continue to check other kvtags?
+                    }
+                    else {
+#ifdef PDC_DEBUG_OUTPUT
+                        println("[NOT FOUND]");
+#endif
                     }
                 } // End for each kvtag in list
             }     // End for each metadata from hash table entry
