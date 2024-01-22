@@ -10,6 +10,10 @@ include_directories(
   $ENV{HOME}/include
 )
 
+set(TEST_EXT_LIB "")
+set(TEST_EXT_INCLUDE_DIRS "")
+set(EXTRA_SRC_FILE "")
+
 # *************************************************
 # Julia Support
 # *************************************************
@@ -20,10 +24,22 @@ endif(PDC_ENABLE_JULIA)
 # *************************************************
 # *  Find UUID library
 # *************************************************
-find_package(UUID REQUIRED)
+find_package(UUID)
 if(UUID_FOUND)
   include_directories(${UUID_INCLUDE_DIRS})
 endif(UUID_FOUND)
+
+# *************************************************
+# *  MERCURY
+# *************************************************
+find_package(MERCURY REQUIRED)
+if(MERCURY_FOUND)
+  set(TEST_EXT_INCLUDE_DIRS ${MERCURY_INCLUDE_DIRS}
+    ${TEST_EXT_INCLUDE_DIRS}
+    )
+  set(TEST_EXT_LIB ${MERCURY_LIBRARIES} ${TEST_EXT_LIB})
+endif()
+include_directories(${TEST_EXT_INCLUDE_DIRS})
 
 set(PROGRAMS
   pdc_init
@@ -79,7 +95,7 @@ set(PROGRAMS
 #  data_server_meta_test
  kvtag_add_get
 #  kvtag_get
-#  kvtag_query
+ kvtag_query
  kvtag_query_scale
 #  obj_transformation
   region_transfer_query
@@ -119,16 +135,14 @@ set(PROGRAMS
   query_data
   )
 
-set(MPI_PROGRAMS
- kvtag_query_scale_col
- kvtag_query_mpi
- kvtag_add_get_benchmark
- kvtag_add_get_scale
- )
+# TODO: Check if import_vpic.c is needed. If yes, we have to add the following :
+# if (HDF5_FOUND) 
+#   set(TEST_EXT_LIB ${HDF5_LIBRARIES} ${TEST_EXT_LIB})
+#   set(TEST_EXT_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} ${TEST_EXT_INCLUDE_DIRS})
+# else ()
+#   message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
+# endif()
 
-set(TEST_EXT_LIB "")
-set(TEST_EXT_INCLUDE_DIRS "")
-set(EXTRA_SRC_FILE "")
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
@@ -137,6 +151,13 @@ foreach(program ${PROGRAMS})
 endforeach(program)
 
 if(BUILD_MPI_TESTING)
+  set(MPI_PROGRAMS
+    kvtag_query_scale_col
+    # kvtag_query_mpi
+    kvtag_add_get_benchmark
+    kvtag_add_get_scale
+  )
+
   foreach(program ${MPI_PROGRAMS})
     add_executable(${program} ${program}.c)
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
@@ -198,12 +219,6 @@ endforeach(script)
 
 
 # *******************************************
-# Add the HDF5 library for pdc-neon
-# *******************************************
-FIND_LIBRARY(HDF5_LIBRARY NAMES hdf5_debug PATHS $ENV{HOME}/lib)
-
-
-# *******************************************
 # Create a transform library which contains:
 #  1. compression/depression functions
 #  2. datatype conversion
@@ -243,6 +258,8 @@ add_test(NAME obj_life          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 #add_test(NAME obj_dim           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_dim )
 add_test(NAME obj_buf           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_buf )
 add_test(NAME obj_tags          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
+add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get)
+add_test(NAME kvtag_query     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
 add_test(NAME obj_info          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_info )
 add_test(NAME obj_put_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
 add_test(NAME obj_get_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_get_data )
@@ -322,6 +339,8 @@ set_tests_properties(obj_life           PROPERTIES LABELS serial )
 #set_tests_properties(obj_dim            PROPERTIES LABELS serial )
 set_tests_properties(obj_buf            PROPERTIES LABELS serial )
 set_tests_properties(obj_tags           PROPERTIES LABELS serial )
+set_tests_properties(kvtag_add_get      PROPERTIES LABELS serial )
+set_tests_properties(kvtag_query        PROPERTIES LABELS serial )
 set_tests_properties(obj_info           PROPERTIES LABELS serial )
 set_tests_properties(obj_put_data       PROPERTIES LABELS serial )
 set_tests_properties(obj_get_data       PROPERTIES LABELS serial )

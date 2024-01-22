@@ -4,22 +4,17 @@
 #include <getopt.h>
 #include <time.h>
 
-#ifndef ENABLE_MPI
-#define ENABLE_MPI
-#endif
-
-#ifdef ENABLE_MPI
+#ifdef LLSM_ENABLE_MPI
 #include "mpi.h"
-// #undef ENABLE_MPI
 #endif
 
 #include "pdc.h"
 // #include "pdc_client_server_common.h"
 // #include "pdc_client_connect.h"
 
-#include "llsm/parallelReadTiff.h"
-#include "llsm/pdc_list.h"
-#include "llsm/csvReader.h"
+#include "llsm_aux/parallelReadTiff.h"
+#include "llsm_aux/pdc_list.h"
+#include "llsm_aux/csvReader.h"
 #include <libgen.h>
 
 typedef struct llsm_importer_args_t {
@@ -126,7 +121,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 
     duration = getDoubleTimestamp() - start; // end timing the operation and calculate duration in nanoseconds
 
-    printf("[Rank %4d] Region_Transfer %s_[%d_Bytes] Done! Time taken: %.4f seconds\n", rank,
+    printf("[Rank %4d] Region_Transfer %s_[%ld_Bytes] Done! Time taken: %.4f seconds\n", rank,
            fileName_cell->field_value, image_info->tiff_size, duration);
 
     // add metadata tags based on the csv row
@@ -372,7 +367,7 @@ main(int argc, char *argv[])
 #endif
 
     if (rank == 0) {
-        printf("[Completion Time] LLSM IMPORTER FINISHES! Time taken: %.4f seconds\n", rank, duration);
+        printf("[Completion Time] LLSM IMPORTER FINISHES! Time taken: %.4f seconds\n", duration);
     }
     // free memory for csv table
     csv_free_table(csv_table);

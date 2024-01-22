@@ -467,7 +467,21 @@ if(PDC_ENABLE_FASTBIT)
     set(ENABLE_FASTBIT 1)
 endif()
 
+
+# Metadata with RocksDB
 #-----------------------------------------------------------------------------
+option(PDC_ENABLE_ROCKSDB "Enable RocksDB (experimental)." OFF)
+if(PDC_ENABLE_ROCKSDB)
+    set(ENABLE_ROCKSDB 1)
+endif()
+
+# Metadata with SQLite
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_SQLITE3 "Enable SQLite3 (experimental)." OFF)
+if(PDC_ENABLE_SQLITE3)
+    set(ENABLE_SQLITE3 1)
+endif()
+
 # Check availability of symbols
 #-----------------------------------------------------------------------------
 check_symbol_exists(malloc_usable_size "malloc.h" HAVE_MALLOC_USABLE_SIZE)
@@ -650,4 +664,3 @@ add_custom_target(format
   COMMENT "clang-format all source codes"
   VERBATIM 
 )
-

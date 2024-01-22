@@ -1,8 +1,6 @@
-name: linux 
+name: MacOS
 
 on:
-  # push:
-  #   branches: [ stable ]
   pull_request:
     branches: [ stable, develop ]
 
@@ -11,30 +9,25 @@ on:
 
 jobs:
   PDC:
-    runs-on: ubuntu-latest
+    runs-on: macos-13
     timeout-minutes: 60
 
     steps:
       - uses: actions/checkout@v3
 
       - name: Dependencies
-        run: .github/workflows/dependencies-linux.sh
+        run: .github/workflows/dependencies-macos.sh
 
       - name: Build PDC
-        # working-directory: ./src
         run: |
           mkdir build && cd build
           cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=mpicc
-          make -j2
-
-      # - name: Debug test PDC
-      #   working-directory: ./src/build/bin
-      #   run: |
-      #     mpirun -n 1 ./pdc_server.exe &
-      #     sleep 1
-      #     mpirun -n 1 ./pdc_init
-      #     mpirun -n 1 ./close_server
+          make -j 2
 
       - name: Test PDC
         working-directory: build
-        run: ctest -L serial
+        run: |
+          sudo sh -c 'echo "`ipconfig getifaddr en0` PDC" >> /etc/hosts'
+          sudo scutil --set HostName PDC
+          export HG_TRANSPORT="sockets"
+          ctest -L serial
