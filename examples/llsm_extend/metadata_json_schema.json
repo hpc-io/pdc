@@ -1,0 +1,123 @@
+{
+    "dataset_name": "LLSM",
+    "dataset_description": "LLSM dataset",
+    "source_URL": "",
+    "collector": "Wei Zhang",
+    "objects": [
+        {
+            "name": "object00",
+            "type": "file",
+            "full_path": "/clusterfs/nvme2/Data/20221128_Korra_GaoGroupVisit/Data/20221213_OB_WT/V1_600um//Scan_Iter_0000_CamA_ch0_CAM1_stack0000_488nm_0000000msec_0067511977msecAbs_000x_000y_015z_0000t.tif",
+            "properties": [
+                {
+                    "name": "Filepath",
+                    "value": "/clusterfs/nvme2/Data/20221128_Korra_GaoGroupVisit/Data/20221213_OB_WT/V1_600um//Scan_Iter_0000_CamA_ch0_CAM1_stack0000_488nm_0000000msec_0067511977msecAbs_000x_000y_015z_0000t.tif",
+                    "class": "singleton",
+                    "type": "str"
+                },
+                {
+                    "name": "Scan Iter",
+                    "value": 0,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "Cam",
+                    "value": "A",
+                    "class": "singleton",
+                    "type": "str"
+                },
+                {
+                    "name": "Ch",
+                    "value": 0,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "stackn",
+                    "value": 0,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "laser_nm",
+                    "value": 488,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "abstime",
+                    "value": 0,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "fpgatime",
+                    "value": 67511977,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "x_str",
+                    "value": 0,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "y_str",
+                    "value": 0,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "z_str",
+                    "value": 15,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "t_str",
+                    "value": 0,
+                    "class": "singleton",
+                    "type": "int"
+                },
+                {
+                    "name": "StageX_um_",
+                    "value": -2600.054803,
+                    "class": "singleton",
+                    "type": "float"
+                },
+                {
+                    "name": "StageY_um_",
+                    "value": -1553.199101,
+                    "class": "singleton",
+                    "type": "float"
+                },
+                {
+                    "name": "StageZ_um_",
+                    "value": -7220.279901,
+                    "class": "singleton",
+                    "type": "float"
+                },
+                {
+                    "name": "ObjectiveX_um_",
+                    "value": -2600.054803,
+                    "class": "singleton",
+                    "type": "float"
+                },
+                {
+                    "name": "ObjectiveY_um_",
+                    "value": -1553.199101,
+                    "class": "singleton",
+                    "type": "float"
+                },
+                {
+                    "name": "ObjectiveZ_um_",
+                    "value": -7220.279901,
+                    "class": "singleton",
+                    "type": "float"
+                }
+            ]
+        }
+    ]
+}

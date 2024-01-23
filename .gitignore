@@ -19,3 +19,5 @@ build
 
 # ignore docs build dir
 docs/build
+
+**/venv
