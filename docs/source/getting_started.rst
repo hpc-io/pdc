@@ -42,6 +42,7 @@ PDC can use either MPICH or OpenMPI as the MPI library, if your system doesn't h
 We provide detailed instructions for installing libfabric, Mercury, and PDC below.
 
 .. attention:: 
+
 	Following the instructions below will record all the environmental variables needed to run PDC in the ``$WORK_SPACE/pdc_env.sh`` file, which can be used for future PDC runs with ``source $WORK_SPACE/pdc_env.sh``.
 
 
@@ -57,9 +58,9 @@ Before installing the dependencies and downloading the code repository, we assum
 	mkdir -p $WORK_SPACE/install
 
 	cd $WORK_SPACE/source
-	git clone git@github.com:ofiwg/libfabric.git
-	git clone git@github.com:mercury-hpc/mercury.git --recursive
-	git clone git@github.com:hpc-io/pdc.git
+	git clone https://github.com/ofiwg/libfabric
+	git clone https://github.com/mercury-hpc/mercury --recursive
+	git clone https://github.com/hpc-io/pdc
 
 	export LIBFABRIC_SRC_DIR=$WORK_SPACE/source/libfabric
 	export MERCURY_SRC_DIR=$WORK_SPACE/source/mercury
@@ -118,8 +119,17 @@ Install libfabric
 
 
 .. note::
+
 	``CC=mpicc`` may need to be changed to the corresponding compiler in your system, e.g. ``CC=cc`` or ``CC=gcc``.
 	On Perlmutter@NERSC, ``--disable-efa --disable-sockets`` should be added to the ``./configure`` command when compiling on login nodes.
+
+.. attention::
+
+	If you're installing PDC on MacOS, you need to make sure you enable ``sockets``:
+
+	.. code-block: Bash
+
+		./configure CFLAG=-O2 --enable-sockets=yes --enable-tcp=yes --enable-udp=yes --enable-rxm=yes
 
 
 Install Mercury
@@ -149,6 +159,15 @@ Install Mercury
 	``CC=mpicc`` may need to be changed to the corresponding compiler in your system, e.g. ``-DCMAKE_C_COMPILER=cc`` or ``-DCMAKE_C_COMPILER=gcc``.
 	Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
 
+.. attention::
+
+	If you're installing PDC on MacOS, for the tests to work you need to specify the protocol used by Mercury:
+
+	.. code-block: Bash
+
+		cmake -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DBUILD_SHARED_LIBS=ON \
+	      -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DNA_OFI_TESTING_PROTOCOL=sockets
+
 
 Install PDC
 -----------
@@ -170,10 +189,20 @@ Install PDC
 	echo 'export PATH=$PDC_DIR/include:$PDC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
 .. note::
+
 	``-DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD=mpiexec`` may need to be changed to ``-DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD=srun`` depending on your system environment.
 
 .. note::
-	If you are trying to compile PDC on your Mac, ``LibUUID`` needs to be installed on your MacOS first. Simple use ``brew install ossp-uuid`` to install it.
+
+	If you are trying to compile PDC on MacOS, ``LibUUID`` needs to be installed on your MacOS first. Simple use ``brew install ossp-uuid`` to install it.
+	If you are trying to compile PDC on Linux, you should also make sure ``LibUUID`` is installed on your system. If not, you can install it with ``sudo apt-get install uuid-dev`` on Ubuntu or ``yum install libuuid-devel`` on CentOS.
+
+	In MacOS you also need to export the following environment variable so PDC (i.e., Mercury) uses the ``socket`` protocol, the only one supported in MacOS:
+
+	.. code-block: Bash
+
+		export HG_TRANSPORT="sockets"
+
 
 Test Your PDC Installation
 --------------------------
@@ -182,6 +211,12 @@ PDC's ``ctest`` contains both sequential and parallel/MPI tests, and can be run 
 .. code-block:: Bash
 
 	ctest
+
+You can also specify a timeout (e.g., 2 minutes) for the tests by specifying the ``timeout`` parameter when calling ``ctest``:
+
+.. code-block:: Bash
+
+	ctest --timeout 120
 
 .. note::
 	If you are using PDC on an HPC system, e.g. Perlmutter@NERSC, ``ctest`` should be run on a compute node, you can submit an interactive job on Perlmutter: ``salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx``
@@ -219,14 +254,18 @@ Then you can compile your PDC project with Julia support.
 Now, see Developer Notes to know how you can add your own Julia functions to enhance your test cases in PDC. 
 
 
-Build PDC Docker Image and Run PDC Docker Container
+Build PDC in a Docker Container
 ---------------------------------------------------
-We provide a Dockerfile to build a PDC Docker image. The Dockerfile is located at `--$PDC_ROOT/.docker/local.Dockerfile`
-To build the PDC Docker image, you can run the following command from `$PDC_ROOT`:
-`docker build -t pdc_dev_base:latest -f $PDC_ROOT/.docker/base.Dockerfile .`
+Simply run the following command from the project root directory to build PDC in a Docker container:
+.. code-block:: Bash
+	.docker/run_dev_base.sh
 
-To run the PDC Docker container, you can run the following command:
-`docker run -it --rm --name pdc -v $PDC_ROOT:/home/codespace/source/pdc pdc_dev_base:latest /bin/bash`
+
+Build PDC in Github Codespace
+---------------------------------------------------
+Simply start a Github Codespace from the targeting branch of your PDC project, and enjoy. 
+For more information on how to create Github Codespace, please refer to `Github Codespace Documentation <https://docs.github.com/en/codespaces/developing-in-codespaces/creating-a-codespace>`_
+
 
 ---------------------------
 Running PDC

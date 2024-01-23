@@ -49,6 +49,18 @@
 #include "iapi.h"
 #endif
 
+#ifdef ENABLE_ROCKSDB
+#include "rocksdb/c.h"
+extern rocksdb_t *rocksdb_g;
+extern int        use_rocksdb_g;
+#endif
+
+#ifdef ENABLE_SQLITE3
+#include "sqlite3.h"
+extern sqlite3 *sqlite3_db_g;
+extern int      use_sqlite3_g;
+#endif
+
 #ifdef ENABLE_MULTITHREAD
 // Mercury multithread
 #include "mercury_thread.h"
