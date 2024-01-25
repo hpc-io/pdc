@@ -20,7 +20,9 @@ def validate_json(json_data, json_schema):
 def main(schema_path, data_path):
     """Main function to load and validate JSON data against a schema."""
     schema = load_json(schema_path)
+    print("Schema {} loaded".format(schema_path))
     data = load_json(data_path)
+    print("JSON {} loaded".format(data_path))
     result = validate_json(data, schema)
     print("{} is {}. Object count: {}".format(data_path, result, len(data["objects"])))
 
