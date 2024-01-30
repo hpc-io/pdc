@@ -37,7 +37,7 @@ if(PDC_FOUND)
   set(LLSM_EXT_LIBRARIES pdc ${LLSM_EXT_LIBRARIES})
 endif()
 
-option(USE_SYSTEM_MPI "Use system-installed OpenMP." ON)
+option(USE_SYSTEM_MPI "Use system-installed MPI." ON)
 if(USE_SYSTEM_MPI)
   find_package(MPI)
   if(MPI_FOUND)

@@ -37,23 +37,26 @@
                                     "type": "string"
                                 },
                                 "value": {
-                                    "oneOf": [
-                                        {
-                                            "type": "string"
-                                        },
-                                        {
-                                            "type": "integer"
-                                        },
-                                        {
-                                            "type": "number"
-                                        }
+                                    "type": [
+                                        "number",
+                                        "string",
+                                        "array"
                                     ]
                                 },
                                 "class": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "enum": [
+                                        "singleton",
+                                        "array"
+                                    ]
                                 },
                                 "type": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "enum": [
+                                        "int",
+                                        "float",
+                                        "str"
+                                    ]
                                 }
                             },
                             "required": [
@@ -61,6 +64,131 @@
                                 "value",
                                 "class",
                                 "type"
+                            ],
+                            "allOf": [
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "singleton"
+                                            },
+                                            "type": {
+                                                "const": "int"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "singleton"
+                                            },
+                                            "type": {
+                                                "const": "float"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "number"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "singleton"
+                                            },
+                                            "type": {
+                                                "const": "str"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "array"
+                                            },
+                                            "type": {
+                                                "const": "int"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "array"
+                                            },
+                                            "type": {
+                                                "const": "float"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "array"
+                                            },
+                                            "type": {
+                                                "const": "str"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             ]
                         }
                     }
