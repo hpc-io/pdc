@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ stable, develop ]
 
+  push:
+    branches: [ stable, develop ]
+
   workflow_dispatch:
 
 jobs:
