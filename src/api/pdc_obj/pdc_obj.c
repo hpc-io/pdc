@@ -1257,7 +1257,7 @@ PDCobj_del(pdcid_t obj_id)
     FUNC_LEAVE(ret_value);
 }
 
-perr_t 
+perr_t
 PDCobj_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
 {
     perr_t ret_value;
@@ -1274,7 +1274,7 @@ done:
 }
 
 #ifdef ENABLE_MPI
-perr_t 
+perr_t
 PDCobj_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm world_comm)
 {
     perr_t ret_value;
