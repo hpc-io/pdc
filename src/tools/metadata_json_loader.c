@@ -102,7 +102,7 @@ parseProperties(cJSON *properties, MD_JSON_ARGS *md_json_args)
         cJSON *class = cJSON_GetObjectItemCaseSensitive(property, "class");
         cJSON *type  = cJSON_GetObjectItemCaseSensitive(property, "type");
 
-        md_json_processor->process_object_property(name, value, class, type, md_json_args);
+        md_json_processor->process_object_property(name, type, class, value, md_json_args);
     }
 }
 

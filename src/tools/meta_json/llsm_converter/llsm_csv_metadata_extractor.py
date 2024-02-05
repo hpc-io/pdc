@@ -18,8 +18,8 @@ for filename in os.listdir(directory):
     if filename.endswith('.csv'):
         filepath = os.path.join(directory, filename)
         df = pd.read_csv(filepath, delimiter=',')
-        for index, row in df.iterrows():
-            for incr in range(object_replica_number):
+        for incr in range(object_replica_number):
+            for index, row in df.iterrows():
                 obj_id = str(index) + str(incr)
                 new_obj = {
                     "name": "object" + str(obj_id),
@@ -130,5 +130,7 @@ for filename in os.listdir(directory):
                     }
                     new_obj["properties"].append(original_prop)
                 output_dict["objects"].append(new_obj);
-        with open(filepath+".json", "w") as json_file:
-            json.dump(output_dict, json_file)
+            json_file_path = "{}_{}.json".format(filepath, incr)
+            with open(json_file_path, "w") as json_file:
+                json.dump(output_dict, json_file)
+                print("File {} has been written".format(json_file_path))
