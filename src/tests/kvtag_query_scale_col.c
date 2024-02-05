@@ -188,9 +188,10 @@ main(int argc, char *argv[])
     my_cnt_round    = (int *)calloc(round, sizeof(int));
     total_cnt_round = (int *)calloc(round, sizeof(int));
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
-
+#endif
     // This is for adding #rounds tags to the objects.
     // Each rank will add #rounds tags to #my_obj objects.
     // With the selectivity, we should be able to control how many objects will be attached with the #round
@@ -233,8 +234,10 @@ main(int argc, char *argv[])
         }
     }
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
+#endif
 
     if (my_rank == 0) {
         println("[TAG Creation] Rank %d: Added %d kvtag to %d objects, time: %.5f ms", my_rank, round, my_obj,
@@ -298,20 +301,30 @@ main(int argc, char *argv[])
                 pdc_ids = NULL;
                 if (is_using_dart) {
                     char *query_string = gen_query_str(&output);
-                    ret_value          = (comm_type == 0)
+#ifdef ENABLE_MPI
+                    ret_value = (comm_type == 0)
                                     ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string,
                                                                              ref_type, &nres, &pdc_ids)
                                     : PDC_Client_search_obj_ref_through_dart_mpi(
                                           hash_algo, query_string, ref_type, &nres, &pdc_ids, MPI_COMM_WORLD);
+#else
+                    ret_value = PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type,
+                                                                       &nres, &pdc_ids);
+#endif
                 }
                 else {
                     kvtag.name  = output.key_query;
                     kvtag.value = output.value_query;
                     /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name,
                      * kvtag.value); */
+
+#ifdef ENABLE_MPI
                     ret_value = (comm_type == 0)
                                     ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                                     : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
+#else
+                    ret_value = PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids);
+#endif
                 }
                 if (ret_value < 0) {
                     printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
@@ -358,8 +371,11 @@ main(int argc, char *argv[])
     }
 
     // delete all tags
+
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
+#endif
 
     my_obj_after_selectivity = my_obj * selectivity / 100;
     for (i = 0; i < my_obj_after_selectivity; i++) {
@@ -384,8 +400,10 @@ main(int argc, char *argv[])
         }
     }
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
+#endif
     if (my_rank == 0) {
         println("[TAG Deletion] Rank %d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank, round,
                 my_obj, total_time * 1000.0);

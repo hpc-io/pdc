@@ -357,19 +357,29 @@ perform_search(int is_using_dart, int query_type, int comm_type, int iter_round)
 
     if (is_using_dart) {
         char *query_string = gen_query_str(&output);
-        ret_value          = (comm_type == 0)
+#ifdef ENABLE_MPI
+        ret_value = (comm_type == 0)
                         ? PDC_Client_search_obj_ref_through_dart(DART_HASH, query_string, REF_PRIMARY_ID,
                                                                  &nres, &pdc_ids)
                         : PDC_Client_search_obj_ref_through_dart_mpi(DART_HASH, query_string, REF_PRIMARY_ID,
                                                                      &nres, &pdc_ids, MPI_COMM_WORLD);
+#else
+        ret_value =
+            PDC_Client_search_obj_ref_through_dart(DART_HASH, query_string, REF_PRIMARY_ID, &nres, &pdc_ids);
+#endif
     }
     else {
         kvtag.name  = output.key_query;
         kvtag.value = output.value_query;
         /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name,
          * kvtag.value); */
+
+#ifdef ENABLE_MPI
         ret_value = (comm_type == 0) ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
                                      : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
+#else
+        ret_value = PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids);
+#endif
     }
 
     return nres;
@@ -425,9 +435,12 @@ main(int argc, char *argv[])
     if (my_rank == 0) {
         if (read_lines_to_buffer(file_name, &data, rows_to_read + 1, &data_size) != 0) {
             fprintf(stderr, "Failed to read lines from the file\n");
+#ifdef ENABLE_MPI
             MPI_Abort(MPI_COMM_WORLD, 1);
+#endif
         }
     }
+#ifdef ENABLE_MPI
     // Broadcast the buffer size first
     MPI_Bcast(&data_size, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
@@ -441,6 +454,7 @@ main(int argc, char *argv[])
     }
     // Broadcast the data
     MPI_Bcast(data, data_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+#endif
 
     // ********************** Parse these rows of CSV file **********************
     // read the CSV file and parse into data
@@ -449,13 +463,17 @@ main(int argc, char *argv[])
     my_csv_rows =
         read_csv_from_buffer(data, &csv_header, &csv_data, &num_columns, rows_to_read, my_rank, proc_num);
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
+#endif
 
     size_t obj_created = create_objects(&obj_ids, my_csv_rows, csv_expand_factor, cont, obj_prop, my_rank);
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
+#endif
 
     if (my_rank == 0) {
         println("[Object Creation] Rank %d/%d: Created %d objects, time: %.5f ms", my_rank, proc_num,
@@ -463,14 +481,19 @@ main(int argc, char *argv[])
     }
 
     // ********************** Add tags to objects **********************
+
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
+#endif
 
     size_t tags_added = csv_tags_on_objects(obj_ids, csv_data, csv_header, num_columns, my_csv_rows,
                                             csv_expand_factor, is_using_dart, add_tag_to_one_object);
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
+#endif
 
     if (my_rank == 0) {
         println("[Tag Creation] Rank %d/%d: Added %d tags for %d objects, time: %.5f ms", my_rank, proc_num,
@@ -533,14 +556,20 @@ main(int argc, char *argv[])
     }
 
     // delete all tags
+
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
+#endif
 
     size_t tags_deleted = csv_tags_on_objects(obj_ids, csv_data, csv_header, num_columns, my_csv_rows,
                                               csv_expand_factor, is_using_dart, delete_tag_from_one_object);
 
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
+#endif
+
     if (my_rank == 0) {
         println("[TAG Deletion] Rank %d/%d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank,
                 proc_num, tags_deleted, obj_created, total_time * 1000.0);
