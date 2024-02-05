@@ -1256,3 +1256,37 @@ PDCobj_del(pdcid_t obj_id)
     // done:
     FUNC_LEAVE(ret_value);
 }
+
+perr_t 
+PDCobj_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids)
+{
+    perr_t ret_value;
+
+    FUNC_ENTER(NULL);
+
+    if (kvtag == NULL || n_res == NULL || pdc_ids == NULL)
+        PGOTO_ERROR(FAIL, "NULL input");
+
+    ret_value = PDC_Client_query_kvtag(kvtag, n_res, pdc_ids);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+#ifdef ENABLE_MPI
+perr_t 
+PDCobj_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm world_comm)
+{
+    perr_t ret_value;
+
+    FUNC_ENTER(NULL);
+
+    if (kvtag == NULL || n_res == NULL || pdc_ids == NULL)
+        PGOTO_ERROR(FAIL, "NULL input");
+
+    ret_value = PDC_Client_query_kvtag_mpi(kvtag, n_res, pdc_ids, world_comm);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+#endif

@@ -27,6 +27,10 @@
 
 #include "pdc_public.h"
 
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
+
 /*******************/
 /* Public Typedefs */
 /*******************/
@@ -434,5 +438,30 @@ perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, pdc_var_
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCobj_del_tag(pdcid_t obj_id, char *tag_name);
+
+/**
+ * Query objects with the given tag
+ *
+ * \param kvtag [IN]            KV-tag
+ * \param n_res [OUT]           Number of result objects that have tags matching the input tag
+ * \param pdc_ids [OUT]         Result object IDs
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCobj_query_kvtag(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids);
+
+#ifdef ENABLE_MPI
+/**
+ * Query objects with the given tag with MPI, all results will be scatterred to all ranks 
+ *
+ * \param kvtag [IN]            KV-tag
+ * \param n_res [OUT]           Number of result objects that have tags matching the input tag
+ * \param pdc_ids [OUT]         Result object IDs
+ * \param world_comm[IN]        MPI communicator (currently only support MPI_WORLD_COMM)
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCobj_query_kvtag_mpi(const pdc_kvtag_t *kvtag, int *n_res, uint64_t **pdc_ids, MPI_Comm world_comm);
+#endif
 
 #endif /* PDC_OBJ_H */
