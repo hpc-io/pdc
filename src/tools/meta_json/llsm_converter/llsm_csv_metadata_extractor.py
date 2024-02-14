@@ -17,6 +17,7 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
         if filename.endswith('.csv'):
             filepath = os.path.join(input_directory, filename)
             df = pd.read_csv(filepath, delimiter=',')
+            print("Processing file: {} and extend for {} times.".format(filepath, object_replica_number))
             for incr in range(object_replica_number):
                 for index, row in df.iterrows():
                     obj_id = str(index) + str(incr)
