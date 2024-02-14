@@ -147,7 +147,7 @@ import_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JS
     }
 
     if (PDCobj_put_tag(pdc_args->obj_id, name->valuestring, (void *)&property_value, pdc_type,
-                       strlen(value->valuestring) + 1) != SUCCEED) {
+                       property_value_size) != SUCCEED) {
         printf("Fail to add tag!\n");
     }
 
