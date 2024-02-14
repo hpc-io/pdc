@@ -143,7 +143,7 @@ parseJSON(const char *jsonString)
     cJSON *object = NULL;
     cJSON_ArrayForEach(object, objects)
     {
-        obj_timer         = timer_start(&obj_timer);
+        timer_start(&obj_timer);
         cJSON *name       = cJSON_GetObjectItemCaseSensitive(object, "name");
         cJSON *type       = cJSON_GetObjectItemCaseSensitive(object, "type");
         cJSON *full_path  = cJSON_GetObjectItemCaseSensitive(object, "full_path");
@@ -152,7 +152,7 @@ parseJSON(const char *jsonString)
         md_json_processor->process_object_base(name, type, full_path, md_json_args);
         int num_properties = (properties, md_json_args);
 
-        obj_timer = timer_pause(&obj_timer);
+        timer_pause(&obj_timer);
         printf("  Imported object %s with %d properties in %.4f ms.\n", name->valuestring, num_properties,
                timer_delta_ms(&obj_timer));
     }
