@@ -20,4 +20,8 @@ build
 # ignore docs build dir
 docs/build
 
-**/venv
+# ignore venv
+**/*venv
+
+# ignore .zed
+.zed
