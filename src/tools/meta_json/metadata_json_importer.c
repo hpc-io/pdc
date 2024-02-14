@@ -144,7 +144,7 @@ import_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JS
         property_value      = &pval;
         property_value_size = sizeof(double);
     }
-    else if (strcmp(type->valuestring, "string") == 0) {
+    else if (strcmp(type->valuestring, "str") == 0) {
         pdc_type   = PDC_STRING;
         char *pval = cJSON_GetStringValue(value);
         if (pval != NULL) {
