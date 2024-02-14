@@ -1,5 +1,6 @@
 #include "metadata_json_importer.h"
 #include "pdc.h"
+#include <time.h>
 
 typedef struct {
     pdcid_t obj_prop;
@@ -87,8 +88,14 @@ import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_
         printf("Object name is NULL!\n");
         return -1;
     }
+    char       datetime_buff[15];
+    struct tm *local_time = localtime(&time(NULL));
+    strftime(datetime_buff, sizeof(datetime_buff), "%Y%m%d%H%M%S", local_time);
     // create object in PDC and store the object ID in md_json_args
-    pdc_args->obj_id = PDCobj_create(pdc_args->cont, cJSON_GetStringValue(name), pdc_args->obj_prop);
+
+    char *object_name = (char *)calloc(strlen(cJSON_GetStringValue(name)) + 16, sizeof(char));
+    sprintf(object_name, "%s_%Y%m%d%H%M%S", cJSON_GetStringValue(name), datetime_buff);
+    pdc_args->obj_id = PDCobj_create(pdc_args->cont, object_name, pdc_args->obj_prop);
     if (pdc_args->obj_id <= 0) {
         printf("Fail to create object!\n");
         return -1;
