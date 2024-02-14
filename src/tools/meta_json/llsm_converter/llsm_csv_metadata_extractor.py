@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import json
 
-def extract_metadata(directory, object_replica_number=100):
+def extract_metadata(input_directory, output_directory, object_replica_number=100):
     object_replica_number = 100 # number of replicas for each object
 
     output_dict = {
@@ -13,9 +13,9 @@ def extract_metadata(directory, object_replica_number=100):
         "objects":[]
     }
 
-    for filename in os.listdir(directory):
+    for filename in os.listdir(input_directory):
         if filename.endswith('.csv'):
-            filepath = os.path.join(directory, filename)
+            filepath = os.path.join(input_directory, filename)
             df = pd.read_csv(filepath, delimiter=',')
             for incr in range(object_replica_number):
                 for index, row in df.iterrows():
@@ -129,18 +129,20 @@ def extract_metadata(directory, object_replica_number=100):
                         }
                         new_obj["properties"].append(original_prop)
                     output_dict["objects"].append(new_obj);
-                json_file_path = "{}_{}.json".format(filepath, incr)
+                json_file_path = "{}/{}_{}.json".format(output_directory, filename, incr)
                 with open(json_file_path, "w") as json_file:
                     json.dump(output_dict, json_file)
                     print("File {} has been written".format(json_file_path))
-                    
-                    
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="LLSM CSV Metadata Extractor")
-    parser.add_argument("directory", type=str, help="Directory path containing CSV files")
-    parser.add_argument("-n", "--num_replica", type=int, default=100, help="Number of replicas for each object")
+    parser.add_argument("-i", "--input_directory", required=True, type=str, help="Directory path containing CSV files")
+    parser.add_argument("-o", "--output_directory", required=True, type=str, help="Directory path to save the JSON files")
+    parser.add_argument("-n", "--num_replica", required=False, type=int, default=100, help="Number of replicas for each object")
+
     args = parser.parse_args()
 
-    extract_metadata(args.directory, args.replica)
+    extract_metadata(args.input_directory, args.output_directory , args.num_replica)
