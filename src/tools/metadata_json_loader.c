@@ -57,7 +57,7 @@ read_json_file(const char *filename)
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
-        fprintln(stderr, "Error: cannot open file %s\n", filename);
+        fprintf(stderr, "Error: cannot open file %s\n", filename);
         exit(1);
     }
 
@@ -66,20 +66,20 @@ read_json_file(const char *filename)
     rewind(fp);
 
     // if (json_file_size > MAX_JSON_FILE_SIZE) {
-    //     fprintln(stderr, "Error: file %s is too large\n", filename);
+    //     fprintf(stderr, "Error: file %s is too large\n", filename);
     //     exit(1);
     // }
 
     json_str = (char *)malloc(json_file_size + 1);
     if (json_str == NULL) {
-        fprintln(stderr, "Error: cannot allocate memory for json_str\n");
+        fprintf(stderr, "Error: cannot allocate memory for json_str\n");
         exit(1);
     }
 
     size_t bytesRead = fread(json_str, 1, json_file_size, fp);
     if (bytesRead < json_file_size) {
         if (!feof(fp)) {
-            fprintln(stderr, "Error: cannot read file %s\n", filename);
+            fprintf(stderr, "Error: cannot read file %s\n", filename);
             fclose(fp);
             exit(1);
         }
@@ -119,7 +119,7 @@ parseJSON(const char *jsonString)
     if (json == NULL) {
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
-            fprintln(stderr, "Error before: %s\n", error_ptr);
+            fprintf(stderr, "Error before: %s\n", error_ptr);
         }
         goto end;
     }
@@ -206,7 +206,7 @@ int
 on_file(struct dirent *f_entry, const char *parent_path, void *arg)
 {
     char *filepath = (char *)calloc(512, sizeof(char));
-    sprintln(filepath, "%s/%s", parent_path, f_entry->d_name);
+    sprintf(filepath, "%s/%s", parent_path, f_entry->d_name);
     scan_single_meta_json_file(filepath, arg);
     free(filepath);
     return 0;
@@ -216,7 +216,7 @@ int
 on_dir(struct dirent *d_entry, const char *parent_path, void *arg)
 {
     // char *dirpath = (char *)calloc(512, sizeof(char));
-    // sprintln(dirpath, "%s/%s", parent_path, d_entry->d_name);
+    // sprintf(dirpath, "%s/%s", parent_path, d_entry->d_name);
     // Nothing to do here currently.
     return 0;
 }
@@ -250,7 +250,7 @@ main(int argc, char **argv)
     }
 
     if (argc != 3) {
-        fprintln(stderr, "Usage: %s <json_file_dir> <num_files>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <json_file_dir> <num_files>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
