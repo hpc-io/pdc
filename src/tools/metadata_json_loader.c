@@ -49,7 +49,7 @@ initilize_md_json_processor()
 }
 
 static char *
-read_json_file(const char *filename)
+read_json_file(const char *filename, void *args)
 {
     FILE *fp;
     char *json_str;
@@ -111,7 +111,7 @@ parseProperties(cJSON *properties, MD_JSON_ARGS *md_json_args)
 
 // Function to traverse and print the JSON structure
 void
-parseJSON(const char *jsonString)
+parseJSON(const char *jsonString, void *args)
 {
     stopwatch_t total_timer;
     stopwatch_t obj_timer;
@@ -124,8 +124,7 @@ parseJSON(const char *jsonString)
         goto end;
     }
 
-    initilize_md_json_processor();
-    MD_JSON_ARGS *md_json_args = md_json_processor->init_processor();
+    MD_JSON_ARGS *md_json_args = (MD_JSON_ARGS *)args;
 
     cJSON *dataset_name        = cJSON_GetObjectItemCaseSensitive(json, "dataset_name");
     cJSON *dataset_description = cJSON_GetObjectItemCaseSensitive(json, "dataset_description");
@@ -184,23 +183,24 @@ is_meta_json(const struct dirent *entry)
 int
 scan_single_meta_json_file(char *full_filepath, void *args)
 {
-    meta_json_loader_args_t *mjargs = (meta_json_loader_args_t *)args;
+    MD_JSON_ARGS *           md_json_args   = (MD_JSON_ARGS *)args;
+    meta_json_loader_args_t *mj_loader_args = (meta_json_loader_args_t *)args->arg2;
 
-    if (mjargs->current_file_count % mjargs->mpi_size != mjargs->mpi_rank) {
+    if (mj_loader_args->current_file_count % mj_loader_args->mpi_size != mj_loader_args->mpi_rank) {
         goto done;
     }
 
-    char *jsonString = read_json_file(full_filepath);
+    char *jsonString = read_json_file(full_filepath, args);
     if (jsonString == NULL) {
         return EXIT_FAILURE;
     }
 
-    parseJSON(jsonString);
+    parseJSON(jsonString, args);
     free(jsonString);
 
-    mjargs->processed_file_count += 1;
+    mj_loader_args->processed_file_count += 1;
 done:
-    mjargs->current_file_count += 1;
+    mj_loader_args->current_file_count += 1;
     return 0;
 }
 
@@ -260,18 +260,25 @@ main(int argc, char **argv)
     int         topk      = atoi(argv[2]);
     char        full_filepath[1024];
 
+    initilize_md_json_processor();
+    // we initialize PDC in the function below
+    MD_JSON_ARGS *md_json_args = md_json_processor->init_processor();
+
+    // now we need to make sure we pass this as one of the arguments to the scan function.
     meta_json_loader_args_t *param = (meta_json_loader_args_t *)malloc(sizeof(meta_json_loader_args_t));
     param->current_file_count      = 0;
     param->processed_file_count    = 0;
     param->mpi_size                = size;
     param->mpi_rank                = rank;
+    md_json_args->arg2             = (void *)param;
+    // Note: in the above, the scanner args goes to arg2. The JSON processor args goes to arg1.
 
     if (is_regular_file(INPUT_DIR)) {
-        scan_single_meta_json_file((char *)INPUT_DIR, param);
+        scan_single_meta_json_file((char *)INPUT_DIR, md_json_args);
         rst = 0;
     }
     else {
-        rst = scan_files_in_dir((char *)INPUT_DIR, topk, param);
+        rst = scan_files_in_dir((char *)INPUT_DIR, topk, md_json_args);
     }
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
