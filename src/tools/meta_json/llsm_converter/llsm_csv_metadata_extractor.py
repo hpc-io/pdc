@@ -2,7 +2,7 @@ import pandas as pd
 import os
 import json
 
-def extract_metadata(input_directory, output_directory, object_replica_number=100):
+def extract_metadata(input_directory, output_directory, object_replica_number):
     object_replica_number = 100 # number of replicas for each object
 
     output_dict = {
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="LLSM CSV Metadata Extractor")
     parser.add_argument("-i", "--input_directory", required=True, type=str, help="Directory path containing CSV files")
     parser.add_argument("-o", "--output_directory", required=True, type=str, help="Directory path to save the JSON files")
-    parser.add_argument("-n", "--num_replica", required=False, type=int, default=100, help="Number of replicas for each object")
+    parser.add_argument("-n", "--num_replica", required=False, type=int, help="Number of replicas for each object")
 
     args = parser.parse_args()
 
