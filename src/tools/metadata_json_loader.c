@@ -185,7 +185,6 @@ int
 scan_single_meta_json_file(char *full_filepath, void *args)
 {
     meta_json_loader_args_t *mjargs = (meta_json_loader_args_t *)args;
-    mjargs->current_file_count      = mjargs->current_file_count + 1;
     if (mjargs->current_file_count % mjargs->mpi_size != mjargs->mpi_rank) {
         return 0;
     }
@@ -198,6 +197,7 @@ scan_single_meta_json_file(char *full_filepath, void *args)
     parseJSON(jsonString);
     free(jsonString);
 
+    mjargs->current_file_count += 1;
     mjargs->processed_file_count += 1;
     return 0;
 }
