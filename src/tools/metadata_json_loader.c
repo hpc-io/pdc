@@ -150,7 +150,7 @@ parseJSON(const char *jsonString)
         cJSON *properties = cJSON_GetObjectItemCaseSensitive(object, "properties");
 
         md_json_processor->process_object_base(name, type, full_path, md_json_args);
-        int num_properties = (properties, md_json_args);
+        int num_properties = parseProperties(properties, md_json_args);
 
         timer_pause(&obj_timer);
         printf("  Imported object %s with %d properties in %.4f ms.\n", name->valuestring, num_properties,
