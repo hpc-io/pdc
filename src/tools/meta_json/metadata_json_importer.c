@@ -153,7 +153,7 @@ import_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JS
         }
     }
     else {
-        printf("Unknown type!\n");
+        printf("attr %s is of unknown type %s \n", cJSON_GetStringValue(name), cJSON_GetStringValue(type));
         goto end;
     }
 

@@ -57,7 +57,7 @@ read_json_file(const char *filename)
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
-        fprintf(stderr, "Error: cannot open file %s\n", filename);
+        fprintln(stderr, "Error: cannot open file %s\n", filename);
         exit(1);
     }
 
@@ -66,20 +66,20 @@ read_json_file(const char *filename)
     rewind(fp);
 
     // if (json_file_size > MAX_JSON_FILE_SIZE) {
-    //     fprintf(stderr, "Error: file %s is too large\n", filename);
+    //     fprintln(stderr, "Error: file %s is too large\n", filename);
     //     exit(1);
     // }
 
     json_str = (char *)malloc(json_file_size + 1);
     if (json_str == NULL) {
-        fprintf(stderr, "Error: cannot allocate memory for json_str\n");
+        fprintln(stderr, "Error: cannot allocate memory for json_str\n");
         exit(1);
     }
 
     size_t bytesRead = fread(json_str, 1, json_file_size, fp);
     if (bytesRead < json_file_size) {
         if (!feof(fp)) {
-            fprintf(stderr, "Error: cannot read file %s\n", filename);
+            fprintln(stderr, "Error: cannot read file %s\n", filename);
             fclose(fp);
             exit(1);
         }
@@ -119,7 +119,7 @@ parseJSON(const char *jsonString)
     if (json == NULL) {
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
-            fprintf(stderr, "Error before: %s\n", error_ptr);
+            fprintln(stderr, "Error before: %s\n", error_ptr);
         }
         goto end;
     }
@@ -137,7 +137,7 @@ parseJSON(const char *jsonString)
                                            md_json_args);
 
     int num_objects = cJSON_GetArraySize(objects);
-    printf("Start to import %d objects...\n", num_objects);
+    println("Start to import %d objects...\n", num_objects);
     timer_start(&total_timer);
 
     cJSON *object = NULL;
@@ -152,16 +152,16 @@ parseJSON(const char *jsonString)
         int object_creation_result =
             md_json_processor->process_object_base(name, type, full_path, md_json_args);
         if (object_creation_result != 0) {
-            printf("Error: failed to create object %s\n", cJSON_GetStringValue(name));
+            println("Error: failed to create object %s\n", cJSON_GetStringValue(name));
             continue;
         }
         int num_properties = parseProperties(properties, md_json_args);
 
         timer_pause(&obj_timer);
-        printf("  Imported object %s with %d properties in %.4f ms.\n", cJSON_GetStringValue(name),
-               num_properties, timer_delta_ms(&obj_timer));
+        println("  Imported object %s with %d properties in %.4f ms.\n", cJSON_GetStringValue(name),
+                num_properties, timer_delta_ms(&obj_timer));
     }
-    printf("Imported %d objects in %.4f ms.\n", num_objects, timer_delta_ms(&total_timer));
+    println("Imported %d objects in %.4f ms.\n", num_objects, timer_delta_ms(&total_timer));
 end:
     cJSON_Delete(json);
 }
@@ -206,7 +206,7 @@ int
 on_file(struct dirent *f_entry, const char *parent_path, void *arg)
 {
     char *filepath = (char *)calloc(512, sizeof(char));
-    sprintf(filepath, "%s/%s", parent_path, f_entry->d_name);
+    sprintln(filepath, "%s/%s", parent_path, f_entry->d_name);
     scan_single_meta_json_file(filepath, arg);
     free(filepath);
     return 0;
@@ -216,7 +216,7 @@ int
 on_dir(struct dirent *d_entry, const char *parent_path, void *arg)
 {
     // char *dirpath = (char *)calloc(512, sizeof(char));
-    // sprintf(dirpath, "%s/%s", parent_path, d_entry->d_name);
+    // sprintln(dirpath, "%s/%s", parent_path, d_entry->d_name);
     // Nothing to do here currently.
     return 0;
 }
@@ -242,7 +242,7 @@ main(int argc, char **argv)
     // check the current working directory
     char cwd[768];
     if (getcwd(cwd, sizeof(cwd)) != NULL) {
-        // printf("Current working dir: %s\n", cwd);
+        // println("Current working dir: %s\n", cwd);
     }
     else {
         perror("getcwd() error");
@@ -250,7 +250,7 @@ main(int argc, char **argv)
     }
 
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s <json_file_dir> <num_files>\n", argv[0]);
+        fprintln(stderr, "Usage: %s <json_file_dir> <num_files>\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -274,7 +274,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-    printf("Rank %d: Processed %d files\n", rank, param->processed_file_count);
+    println("Rank %d: Processed %d files\n", rank, param->processed_file_count);
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
