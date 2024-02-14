@@ -3,8 +3,6 @@ import os
 import json
 
 def extract_metadata(input_directory, output_directory, object_replica_number):
-    object_replica_number = 100 # number of replicas for each object
-
     output_dict = {
         "dataset_name": "LLSM",
         "dataset_description": "LLSM dataset",
