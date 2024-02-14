@@ -49,17 +49,18 @@ import_json_header(cJSON *dataset_name, cJSON *dataset_description, cJSON *sourc
         printf("Fail to create container property @ line  %d!\n", __LINE__);
 
     // create a container
-    pdc_args->cont = PDCcont_create(dataset_name->valuestring, pdc_args->cont_prop);
+    pdc_args->cont = PDCcont_create(cJSON_GetStringValue(dataset_name), pdc_args->cont_prop);
     if (pdc_args->cont <= 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    // add tags to the container, based on the additional attributes in the JSON
-    PDCcont_put_tag(pdc_args->cont, "dataset_description", (void *)dataset_description->valuestring,
-                    PDC_STRING, strlen(dataset_description->valuestring) + 1);
-    PDCcont_put_tag(pdc_args->cont, "source_URL", (void *)source_URL->valuestring, PDC_STRING,
-                    strlen(source_URL->valuestring) + 1);
-    PDCcont_put_tag(pdc_args->cont, "collector", (void *)collector->valuestring, PDC_STRING,
-                    strlen(collector->valuestring) + 1);
+    // extract the strings from the JSON attributes
+    char *ds_desc   = cJSON_GetStringValue(dataset_description);
+    char *ds_srcURL = cJSON_GetStringValue(source_URL);
+    char *ds_col    = cJSON_GetStringValue(collector);
+    // add tags to the container
+    PDCcont_put_tag(pdc_args->cont, "dataset_description", (void *)ds_desc, PDC_STRING, strlen(ds_desc) + 1);
+    PDCcont_put_tag(pdc_args->cont, "source_URL", (void *)ds_srcURL, PDC_STRING, strlen(ds_srcURL) + 1);
+    PDCcont_put_tag(pdc_args->cont, "collector", (void *)ds_col, PDC_STRING, strlen(ds_col) + 1);
 
     // create an object property
     pdc_args->obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_args->pdc);
@@ -82,16 +83,26 @@ import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_
 {
     pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
 
-    // create object in PDC and store the object ID in md_json_args
-    pdc_args->obj_id = PDCobj_create(pdc_args->cont, name->valuestring, pdc_args->obj_prop);
-
-    if (PDCobj_put_tag(pdc_args->obj_id, "obj_full_path", (void *)full_path->valuestring, PDC_STRING,
-                       strlen(full_path->valuestring) + 1) != SUCCEED) {
-        printf("Fail to put tag!\n");
+    if (cJSON_GetStringValue(name) == NULL) {
+        printf("Object name is NULL!\n");
+        return -1;
     }
-    if (PDCobj_put_tag(pdc_args->obj_id, "obj_type", (void *)type->valuestring, PDC_STRING,
-                       strlen(type->valuestring) + 1) != SUCCEED) {
+    // create object in PDC and store the object ID in md_json_args
+    pdc_args->obj_id = PDCobj_create(pdc_args->cont, cJSON_GetStringValue(name), pdc_args->obj_prop);
+    if (pdc_args->obj_id <= 0) {
+        printf("Fail to create object!\n");
+        return -1;
+    }
+
+    if (PDCobj_put_tag(pdc_args->obj_id, "obj_full_path", (void *)cJSON_GetStringValue(full_path), PDC_STRING,
+                       strlen(cJSON_GetStringValue(full_path)) + 1) != SUCCEED) {
         printf("Fail to put tag!\n");
+        return -1;
+    }
+    if (PDCobj_put_tag(pdc_args->obj_id, "obj_type", (void *)cJSON_GetStringValue(type), PDC_STRING,
+                       strlen(cJSON_GetStringValue(type)) + 1) != SUCCEED) {
+        printf("Fail to put tag!\n");
+        return -1;
     }
 
     return 0;
