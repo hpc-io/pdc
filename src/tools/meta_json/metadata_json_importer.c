@@ -89,7 +89,8 @@ import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_
         return -1;
     }
     char       datetime_buff[15];
-    struct tm *local_time = localtime(&time(NULL));
+    time_t     now        = time(NULL);
+    struct tm *local_time = localtime(&now);
     strftime(datetime_buff, sizeof(datetime_buff), "%Y%m%d%H%M%S", local_time);
     // create object in PDC and store the object ID in md_json_args
 
