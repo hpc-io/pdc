@@ -184,7 +184,7 @@ int
 scan_single_meta_json_file(char *full_filepath, void *args)
 {
     MD_JSON_ARGS *           md_json_args   = (MD_JSON_ARGS *)args;
-    meta_json_loader_args_t *mj_loader_args = (meta_json_loader_args_t *)args->arg2;
+    meta_json_loader_args_t *mj_loader_args = (meta_json_loader_args_t *)md_json_args->arg2;
 
     if (mj_loader_args->current_file_count % mj_loader_args->mpi_size != mj_loader_args->mpi_rank) {
         goto done;
