@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include "fs/fs_ops.h"
 #include "string_utils.h"
+#include "timer_utils.h"
 
 #ifdef JMD_DEBUG
 #include "meta_json/metadata_json_printer.h"
@@ -91,10 +92,11 @@ read_json_file(const char *filename)
 }
 
 // Function to print the properties array
-void
+int
 parseProperties(cJSON *properties, MD_JSON_ARGS *md_json_args)
 {
-    cJSON *property = NULL;
+    int    num_properties = cJSON_GetArraySize(properties);
+    cJSON *property       = NULL;
     cJSON_ArrayForEach(property, properties)
     {
         cJSON *name  = cJSON_GetObjectItemCaseSensitive(property, "name");
@@ -104,13 +106,16 @@ parseProperties(cJSON *properties, MD_JSON_ARGS *md_json_args)
 
         md_json_processor->process_object_property(name, type, class, value, md_json_args);
     }
+    return num_properties;
 }
 
 // Function to traverse and print the JSON structure
 void
 parseJSON(const char *jsonString)
 {
-    cJSON *json = cJSON_Parse(jsonString);
+    stopwatch_t total_timer;
+    stopwatch_t obj_timer;
+    cJSON *     json = cJSON_Parse(jsonString);
     if (json == NULL) {
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
@@ -131,17 +136,27 @@ parseJSON(const char *jsonString)
     md_json_processor->process_json_header(dataset_name, dataset_description, source_URL, collector,
                                            md_json_args);
 
+    int num_objects = cJSON_GetArraySize(objects);
+    printf("Start to import %d objects...\n", num_objects);
+    timer_start(&total_timer);
+
     cJSON *object = NULL;
     cJSON_ArrayForEach(object, objects)
     {
+        obj_timer         = timer_start(&obj_timer);
         cJSON *name       = cJSON_GetObjectItemCaseSensitive(object, "name");
         cJSON *type       = cJSON_GetObjectItemCaseSensitive(object, "type");
         cJSON *full_path  = cJSON_GetObjectItemCaseSensitive(object, "full_path");
         cJSON *properties = cJSON_GetObjectItemCaseSensitive(object, "properties");
 
         md_json_processor->process_object_base(name, type, full_path, md_json_args);
-        parseProperties(properties, md_json_args);
+        int num_properties = (properties, md_json_args);
+
+        obj_timer = timer_pause(&obj_timer);
+        printf("  Imported object %s with %d properties in %.4f ms.\n", name->valuestring, num_properties,
+               timer_delta_ms(&obj_timer));
     }
+    printf("Imported %d objects in %.4f ms.\n", num_objects, timer_delta_ms(&total_timer));
 end:
     cJSON_Delete(json);
 }
