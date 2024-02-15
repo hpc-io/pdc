@@ -23,6 +23,8 @@ typedef struct {
 
     int (*process_object_property)(cJSON *, cJSON *, cJSON *, cJSON *, MD_JSON_ARGS *);
 
+    int (*complete_one_json_file)(MD_JSON_ARGS *);
+
     int (*finalize_processor)(MD_JSON_ARGS *);
 
 } MD_JSON_PROCESSOR;

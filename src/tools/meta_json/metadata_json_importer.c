@@ -175,12 +175,12 @@ end:
 }
 
 /**
- * @brief finalize_importer
+ * @brief print_object_property_array
  * @param md_json_args
  * @return 0 if success, -1 if error
  */
 int
-finalize_importer(MD_JSON_ARGS *md_json_args)
+complete_one_json_file(MD_JSON_ARGS *md_json_args)
 {
     pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
     // finalize PDC related things
@@ -194,7 +194,18 @@ finalize_importer(MD_JSON_ARGS *md_json_args)
 
     if (PDCprop_close(pdc_args->cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
+}
 
+/**
+ * @brief finalize_importer
+ * @param md_json_args
+ * @return 0 if success, -1 if error
+ */
+int
+finalize_importer(MD_JSON_ARGS *md_json_args)
+{
+    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
+    // finalize PDC related things
     // close pdc
     if (PDCclose(pdc_args->pdc) < 0)
         printf("fail to close PDC\n");
@@ -214,6 +225,7 @@ create_md_json_importer()
     md_json_processor->process_json_header     = import_json_header;
     md_json_processor->process_object_base     = import_object_base;
     md_json_processor->process_object_property = import_object_property;
+    md_json_processor->complete_one_json_file  = complete_one_json_file;
     md_json_processor->finalize_processor      = finalize_importer;
     return md_json_processor;
 }

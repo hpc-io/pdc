@@ -161,6 +161,7 @@ parseJSON(const char *jsonString, void *args)
                 num_properties, timer_delta_ms(&obj_timer));
     }
     println("Imported %d objects in %.4f ms.\n", num_objects, timer_delta_ms(&total_timer));
+    md_json_processor->complete_one_json_file(md_json_args);
 end:
     cJSON_Delete(json);
 }
@@ -260,6 +261,9 @@ main(int argc, char **argv)
     int         topk      = atoi(argv[2]);
     char        full_filepath[1024];
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
     initilize_md_json_processor();
     // we initialize PDC in the function below
     MD_JSON_ARGS *md_json_args = md_json_processor->init_processor();
@@ -284,6 +288,8 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     println("Rank %d: Processed %d files\n", rank, param->processed_file_count);
+
+    md_json_processor->finalize_processor(md_json_args);
 
 #ifdef ENABLE_MPI
     MPI_Finalize();
