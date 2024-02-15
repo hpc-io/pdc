@@ -7,15 +7,15 @@
 #include "cjson/cJSON.h"
 
 typedef struct {
-    void *arg1;
-    void *arg2;
-    void *arg3;
-    void *arg4;
+    void *processor_args; // pdc_importer_args_t
+    void *loader_args;    // md_json_loader_args_t
+    void *arg1;           // unused
+    void *arg2;           // unused
 } MD_JSON_ARGS;
 
 typedef struct {
 
-    MD_JSON_ARGS *(*init_processor)();
+    int (*init_processor)(MD_JSON_ARGS *);
 
     int (*process_json_header)(cJSON *, cJSON *, cJSON *, cJSON *, MD_JSON_ARGS *);
 

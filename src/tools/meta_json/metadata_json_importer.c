@@ -12,20 +12,21 @@ typedef struct {
 
 /**
  * @brief init_importer
+ * @param md_json_args
+ * @return 0 if success, -1 if error
  */
-MD_JSON_ARGS *
-init_importer()
+int
+init_importer(MD_JSON_ARGS *md_json_args)
 {
     pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)malloc(sizeof(pdc_importer_args_t));
 
-    MD_JSON_ARGS *md_json_args = (MD_JSON_ARGS *)malloc(sizeof(MD_JSON_ARGS));
     // initilize PDC related things, and store in the above structure.
     // create a pdc
     pdc_args->pdc = PDCinit("pdc");
 
-    md_json_args->arg1 = pdc_args;
+    md_json_args->processor_args = pdc_args;
 
-    return md_json_args;
+    return pdc_args->pdc;
 }
 
 /**
@@ -42,7 +43,7 @@ import_json_header(cJSON *dataset_name, cJSON *dataset_description, cJSON *sourc
                    MD_JSON_ARGS *md_json_args)
 {
     // create object in PDC and store the object ID in md_json_args
-    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
+    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->processor_args;
 
     // create a container property
     pdc_args->cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_args->pdc);
@@ -65,8 +66,10 @@ import_json_header(cJSON *dataset_name, cJSON *dataset_description, cJSON *sourc
 
     // create an object property
     pdc_args->obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_args->pdc);
-    if (pdc_args->obj_prop <= 0)
+    if (pdc_args->obj_prop <= 0) {
         printf("Fail to create object property @ line  %d!\n", __LINE__);
+        return -1;
+    }
 
     return 0;
 }
@@ -82,7 +85,7 @@ import_json_header(cJSON *dataset_name, cJSON *dataset_description, cJSON *sourc
 int
 import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_json_args)
 {
-    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
+    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->processor_args;
 
     if (cJSON_GetStringValue(name) == NULL) {
         printf("Object name is NULL!\n");
@@ -129,7 +132,7 @@ import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_
 int
 import_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JSON_ARGS *md_json_args)
 {
-    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
+    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->processor_args;
 
     // create object in PDC and store the object ID in md_json_args
 
@@ -175,25 +178,33 @@ end:
 }
 
 /**
- * @brief print_object_property_array
+ * @brief finish_import_one_json
  * @param md_json_args
  * @return 0 if success, -1 if error
  */
 int
-complete_one_json_file(MD_JSON_ARGS *md_json_args)
+finish_import_one_json(MD_JSON_ARGS *md_json_args)
 {
-    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
+    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->processor_args;
     // finalize PDC related things
     // close a container
-    if (PDCcont_close(pdc_args->cont) < 0)
+    if (PDCcont_close(pdc_args->cont) < 0) {
         printf("fail to close container c1\n");
+        return -1;
+    }
 
     // close a container property
-    if (PDCprop_close(pdc_args->obj_prop) < 0)
+    if (PDCprop_close(pdc_args->obj_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
+        return -1;
+    }
 
-    if (PDCprop_close(pdc_args->cont_prop) < 0)
+    if (PDCprop_close(pdc_args->cont_prop) < 0) {
         printf("Fail to close property @ line %d\n", __LINE__);
+        return -1;
+    }
+
+    return 0;
 }
 
 /**
@@ -204,11 +215,13 @@ complete_one_json_file(MD_JSON_ARGS *md_json_args)
 int
 finalize_importer(MD_JSON_ARGS *md_json_args)
 {
-    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->arg1;
+    pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->processor_args;
     // finalize PDC related things
     // close pdc
-    if (PDCclose(pdc_args->pdc) < 0)
+    if (PDCclose(pdc_args->pdc) < 0) {
         printf("fail to close PDC\n");
+        return -1;
+    }
 
     return 0;
 }
@@ -225,7 +238,7 @@ create_md_json_importer()
     md_json_processor->process_json_header     = import_json_header;
     md_json_processor->process_object_base     = import_object_base;
     md_json_processor->process_object_property = import_object_property;
-    md_json_processor->complete_one_json_file  = complete_one_json_file;
+    md_json_processor->complete_one_json_file  = finish_import_one_json;
     md_json_processor->finalize_processor      = finalize_importer;
     return md_json_processor;
 }

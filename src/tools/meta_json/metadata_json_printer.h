@@ -9,8 +9,10 @@
 
 /**
  * @brief init_printer
+ * @param md_json_args
+ * @return 0 if success, -1 if error
  */
-MD_JSON_ARGS *init_printer();
+int init_printer(MD_JSON_ARGS *md_json_args);
 
 /**
  * @brief print_json_header
@@ -46,11 +48,11 @@ int print_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *
 int print_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JSON_ARGS *md_json_args);
 
 /**
- * @brief print_object_property_array
+ * @brief done_printing_one_json
  * @param md_json_args
  * @return 0 if success, -1 if error
  */
-int complete_one_json_file(MD_JSON_ARGS *md_json_args);
+int done_printing_one_json(MD_JSON_ARGS *md_json_args);
 
 /**
  * @brief finalize_printer

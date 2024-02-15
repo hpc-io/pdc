@@ -1,9 +1,9 @@
 #include "metadata_json_printer.h"
 
-MD_JSON_ARGS *
-init_printer()
+int
+init_printer(MD_JSON_ARGS *md_json_args)
 {
-    return NULL;
+    return EXIT_SUCCESS;
 }
 
 int
@@ -42,7 +42,7 @@ print_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JSO
 }
 
 int
-complete_one_json_file(MD_JSON_ARGS *md_json_args)
+done_printing_one_json(MD_JSON_ARGS *md_json_args)
 {
     return 0;
 }
@@ -61,7 +61,7 @@ create_md_json_printer()
     md_json_processor->process_json_header     = print_json_header;
     md_json_processor->process_object_base     = print_object_base;
     md_json_processor->process_object_property = print_object_property;
-    md_json_processor->complete_one_json_file  = complete_one_json_file;
+    md_json_processor->complete_one_json_file  = done_printing_one_json;
     md_json_processor->finalize_processor      = finalize_printer;
     return md_json_processor;
 }

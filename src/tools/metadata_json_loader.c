@@ -185,7 +185,7 @@ int
 scan_single_meta_json_file(char *full_filepath, void *args)
 {
     MD_JSON_ARGS *           md_json_args   = (MD_JSON_ARGS *)args;
-    meta_json_loader_args_t *mj_loader_args = (meta_json_loader_args_t *)md_json_args->arg2;
+    meta_json_loader_args_t *mj_loader_args = (meta_json_loader_args_t *)md_json_args->loader_args;
 
     if (mj_loader_args->current_file_count % mj_loader_args->mpi_size != mj_loader_args->mpi_rank) {
         goto done;
@@ -265,8 +265,12 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     initilize_md_json_processor();
+    MD_JSON_ARGS *md_json_args = (MD_JSON_ARGS *)malloc(sizeof(MD_JSON_ARGS));
     // we initialize PDC in the function below
-    MD_JSON_ARGS *md_json_args = md_json_processor->init_processor();
+    if (md_json_processor->init_processor(md_json_args) < 0) {
+        println("Error: failed to initialize the JSON processor.\n");
+        return EXIT_FAILURE;
+    }
 
     // now we need to make sure we pass this as one of the arguments to the scan function.
     meta_json_loader_args_t *param = (meta_json_loader_args_t *)malloc(sizeof(meta_json_loader_args_t));
@@ -274,8 +278,8 @@ main(int argc, char **argv)
     param->processed_file_count    = 0;
     param->mpi_size                = size;
     param->mpi_rank                = rank;
-    md_json_args->arg2             = (void *)param;
-    // Note: in the above, the scanner args goes to arg2. The JSON processor args goes to arg1.
+    md_json_args->loader_args      = (void *)param;
+    // Note: in the above, the scanner args goes to loader_args. The JSON processor args goes to arg1.
 
     if (is_regular_file(INPUT_DIR)) {
         scan_single_meta_json_file((char *)INPUT_DIR, md_json_args);
