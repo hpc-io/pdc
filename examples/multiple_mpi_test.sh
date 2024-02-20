@@ -8,7 +8,7 @@ if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 extra_cmd=""
 
 if [[ "$HOSTNAME" == "cori"* || "$HOSTNAME" == "nid"* ]]; then
-    extra_cmd="--mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap "
+    extra_cmd="--mem=25600 --cpu_bind=cores --overlap "
 fi
 # check the test to be run:
 # test_exe="$1"

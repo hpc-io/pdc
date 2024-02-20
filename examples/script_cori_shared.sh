@@ -11,8 +11,8 @@
 #SBATCH -e qout.%j
 
 ulimit -n 63536
-COMMON_CMD="--gres=craynetwork:1 --mem=51200 --overlap"
-SERVER_COMMON_CMD="--gres=craynetwork:1 --mem=21600 --overlap"
+COMMON_CMD="--mem=51200 --overlap"
+SERVER_COMMON_CMD="--mem=21600 --overlap"
 ###########       Programs Location      ############
 OUTDIR=$SCRATCH/VPIC
 #-N $SLURM_JOB_NUM_NODES
