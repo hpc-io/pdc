@@ -1,4 +1,4 @@
-option(JMD_DEBUG_MODE "Enable debug mode." ON)
+option(JMD_DEBUG_MODE "Enable debug mode." OFF)
 if(JMD_DEBUG_MODE)
   add_definitions(-DJMD_DEBUG=1)
 endif()
