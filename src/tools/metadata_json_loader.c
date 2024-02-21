@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <inttypes.h>
 #include "cjson/cJSON.h"
 #include <dirent.h>
 #include <unistd.h>
@@ -113,9 +114,11 @@ parseProperties(cJSON *properties, MD_JSON_ARGS *md_json_args)
 void
 parseJSON(const char *jsonString, void *args)
 {
+#ifdef JMD_VERBOSE
     stopwatch_t total_timer;
     stopwatch_t obj_timer;
-    cJSON *     json = cJSON_Parse(jsonString);
+#endif
+    cJSON *json = cJSON_Parse(jsonString);
     if (json == NULL) {
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
@@ -134,15 +137,19 @@ parseJSON(const char *jsonString, void *args)
 
     md_json_processor->process_json_header(dataset_name, dataset_description, source_URL, collector,
                                            md_json_args);
-
     int num_objects = cJSON_GetArraySize(objects);
+
+#ifdef JMD_VERBOSE
     println("Start to import %d objects...\n", num_objects);
     timer_start(&total_timer);
+#endif
 
     cJSON *object = NULL;
     cJSON_ArrayForEach(object, objects)
     {
+#ifdef JMD_VERBOSE
         timer_start(&obj_timer);
+#endif
         cJSON *name       = cJSON_GetObjectItemCaseSensitive(object, "name");
         cJSON *type       = cJSON_GetObjectItemCaseSensitive(object, "type");
         cJSON *full_path  = cJSON_GetObjectItemCaseSensitive(object, "full_path");
@@ -156,12 +163,18 @@ parseJSON(const char *jsonString, void *args)
         }
         int num_properties = parseProperties(properties, md_json_args);
 
+        md_json_args->total_prop_count += num_properties;
+#ifdef JMD_VERBOSE
         timer_pause(&obj_timer);
         println("  Imported object %s with %d properties in %.4f ms.\n", cJSON_GetStringValue(name),
                 num_properties, timer_delta_ms(&obj_timer));
+#endif
     }
+    md_json_args->total_obj_count += num_objects;
+#ifdef JMD_VERBOSE
     println("Imported %d objects in %.4f ms.\n", num_objects, timer_delta_ms(&total_timer));
     md_json_processor->complete_one_json_file(md_json_args);
+#endif
 end:
     cJSON_Delete(json);
 }
@@ -236,10 +249,18 @@ main(int argc, char **argv)
 {
     int rst;
     int rank = 0, size = 1;
+
+    double   stime, duration;
+    uint64_t total_obj_count  = 0;
+    uint64_t total_prop_count = 0;
+    int      num_files        = 0;
+
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+#else
+    stopwatch_t global_timer;
 #endif
 
     // check the current working directory
@@ -263,7 +284,11 @@ main(int argc, char **argv)
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
+#else
+    timer_start(&global_timer);
 #endif
+
     initilize_md_json_processor();
     MD_JSON_ARGS *md_json_args = (MD_JSON_ARGS *)malloc(sizeof(MD_JSON_ARGS));
     // we initialize PDC in the function below
@@ -288,10 +313,29 @@ main(int argc, char **argv)
     else {
         rst = scan_files_in_dir((char *)INPUT_DIR, topk, md_json_args);
     }
+
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
+    duration = MPI_Wtime() - stime;
+    MPI_Reduce(&(md_json_args->total_obj_count), &total_obj_count, 1, MPI_UINT64_T, MPI_SUM, 0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(&(md_json_args->total_prop_count), &total_prop_count, 1, MPI_UINT64_T, MPI_SUM, 0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(&(param->processed_file_count), &num_files, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+#else
+    timer_pause(&global_timer);
+    duration         = timer_delta_ms(&global_timer) / 1000.0;
+    total_obj_count  = md_json_args->total_obj_count;
+    total_prop_count = md_json_args->total_prop_count;
+    num_files        = param->processed_file_count;
 #endif
-    println("Rank %d: Processed %d files\n", rank, param->processed_file_count);
+
+    if (rank == 0) {
+        println("Processed %d files, imported %" PRIu64 " objects and %" PRIu64
+                " attributes. Total duration: %.4f seconds.\n",
+                param->processed_file_count, md_json_args->total_obj_count, md_json_args->total_prop_count,
+                duration);
+    }
 
     md_json_processor->finalize_processor(md_json_args);
 

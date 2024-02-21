@@ -3,6 +3,11 @@ if(JMD_DEBUG_MODE)
   add_definitions(-DJMD_DEBUG=1)
 endif()
 
+option(JMD_VERBOSE "Enable verbose mode." OFF)
+if(JMD_VERBOSE)
+  add_definitions(-DJMD_VERBOSE=1)
+endif()
+
 set(TOOLS_EXT_INCLUDE "")
 set(TOOLS_EXT_LIB "")
 
