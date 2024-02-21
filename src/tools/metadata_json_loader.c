@@ -333,8 +333,7 @@ main(int argc, char **argv)
     if (rank == 0) {
         println("Processed %d files, imported %" PRIu64 " objects and %" PRIu64
                 " attributes. Total duration: %.4f seconds.\n",
-                param->processed_file_count, md_json_args->total_obj_count, md_json_args->total_prop_count,
-                duration);
+                num_files, total_obj_count, total_prop_count, duration);
     }
 
     md_json_processor->finalize_processor(md_json_args);
