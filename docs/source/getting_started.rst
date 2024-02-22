@@ -125,11 +125,8 @@ Install libfabric
 
 .. attention::
 
-	If you're installing PDC on MacOS, you need to make sure you enable ``sockets``:
-
-	.. code-block: Bash
-
-		./configure CFLAG=-O2 --enable-sockets=yes --enable-tcp=yes --enable-udp=yes --enable-rxm=yes
+	When installing on MacOS, make sure to enable ``sockets`` with the following configure command:
+	``./configure CFLAG=-O2 --enable-sockets=yes --enable-tcp=yes --enable-udp=yes --enable-rxm=yes``
 
 
 Install Mercury
@@ -156,17 +153,13 @@ Install Mercury
 	echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
 
 .. note::
+
 	``CC=mpicc`` may need to be changed to the corresponding compiler in your system, e.g. ``-DCMAKE_C_COMPILER=cc`` or ``-DCMAKE_C_COMPILER=gcc``.
 	Make sure the ctest passes. PDC may not work without passing all the tests of Mercury.
 
 .. attention::
 
-	If you're installing PDC on MacOS, for the tests to work you need to specify the protocol used by Mercury:
-
-	.. code-block: Bash
-
-		cmake -DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DBUILD_SHARED_LIBS=ON \
-	      -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DNA_OFI_TESTING_PROTOCOL=sockets
+	When installing on MacOS, specify the ``sockets`` protocol used by Mercury by replacing the cmake command from ``-DNA_OFI_TESTING_PROTOCOL=tcp`` to ``-DNA_OFI_TESTING_PROTOCOL=sockets``
 
 
 Install PDC
@@ -197,11 +190,7 @@ Install PDC
 	If you are trying to compile PDC on MacOS, ``LibUUID`` needs to be installed on your MacOS first. Simple use ``brew install ossp-uuid`` to install it.
 	If you are trying to compile PDC on Linux, you should also make sure ``LibUUID`` is installed on your system. If not, you can install it with ``sudo apt-get install uuid-dev`` on Ubuntu or ``yum install libuuid-devel`` on CentOS.
 
-	In MacOS you also need to export the following environment variable so PDC (i.e., Mercury) uses the ``socket`` protocol, the only one supported in MacOS:
-
-	.. code-block: Bash
-
-		export HG_TRANSPORT="sockets"
+	In MacOS you also need to export the following environment variable so PDC (i.e., Mercury) uses the ``socket`` protocol, the only one supported in MacOS: ``export HG_TRANSPORT="sockets"``
 
 
 Test Your PDC Installation
@@ -219,6 +208,7 @@ You can also specify a timeout (e.g., 2 minutes) for the tests by specifying the
 	ctest --timeout 120
 
 .. note::
+
 	If you are using PDC on an HPC system, e.g. Perlmutter@NERSC, ``ctest`` should be run on a compute node, you can submit an interactive job on Perlmutter: ``salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx``
 
 
@@ -232,23 +222,21 @@ But before adding any of your function, we need to enable the Julia support firs
 Prerequisite
 ^^^^^^^^^^^^
 
-Make sure you have Julia-lang installed. You can check with your system administrator to see if you already have Julia-lang installed. If not, you can either ask your system administrator to install it for you or you can install it yourself if permitted. On macOS, the best way to install Julia is via `Homebrew https://brew.sh`_. You may also refer to `Julia Download Page https://julialang.org/downloads/`_ for instructions on installing Julia.
-Once you installed Julia, you can set `JULIA_HOME` to be where Julia-lang is installed.
+Make sure you have Julia-lang installed. You can check with your system administrator to see if you already have Julia-lang installed. If not, you can either ask your system administrator to install it for you or you can install it yourself if permitted. On macOS, the best way to install Julia is via `Homebrew <https://brew.sh>`_. You may also refer to `Julia Download Page <https://julialang.org/downloads/>`_ for instructions on installing Julia.
+Once you installed Julia, you can set ``JULIA_HOME`` to be where Julia-lang is installed.
 
 .. code-block:: Bash
+
 	export JULIA_HOME=/path/to/julia/install/directory
 
+.. note::
 
-.. note:: Note on perlmutter:
-	You can easily perform `module load julia` to load the Julia-lang environment. Then, you can do the following to set `$JULIA_HOME`:
-
-	.. code-block:: Bash
-		export JULIA_HOME=$(dirname $(dirname $(which julia)))
+	On Perlmutter You can ``module load julia`` to load the Julia-lang module and set ``$JULIA_HOME`` with: ``export JULIA_HOME=$(dirname $(dirname $(which julia)))``
 
 
 Enabling Julia Support for PDC Tests
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Once the Prerequisite is satisfied, you can enable Julia support by adding `--DPDC_ENABLE_JULIA_SUPPORT=ON` to your cmake command and re-run it. 
+Once the Prerequisite is satisfied, you can enable Julia support by adding ``--DPDC_ENABLE_JULIA_SUPPORT=ON`` to your cmake command and re-run it. 
 Then you can compile your PDC project with Julia support. 
 
 Now, see Developer Notes to know how you can add your own Julia functions to enhance your test cases in PDC. 
@@ -257,9 +245,10 @@ Now, see Developer Notes to know how you can add your own Julia functions to enh
 Build PDC in a Docker Container
 ---------------------------------------------------
 Simply run the following command from the project root directory to build PDC in a Docker container:
-.. code-block:: Bash
-	.docker/run_dev_base.sh
 
+.. code-block:: Bash
+
+	.docker/run_dev_base.sh
 
 Build PDC in Github Codespace
 ---------------------------------------------------
