@@ -301,7 +301,6 @@ main(int argc, char **argv)
     md_json_args->processed_file_count = 0;
     md_json_args->mpi_size             = size;
     md_json_args->mpi_rank             = rank;
-    md_json_args->loader_args          = (void *)param;
     // Note: in the above, the scanner args goes to loader_args. The JSON processor args goes to arg1.
 
     if (is_regular_file(INPUT_DIR)) {
