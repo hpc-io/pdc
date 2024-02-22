@@ -98,7 +98,7 @@ import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_
     // create object in PDC and store the object ID in md_json_args
 
     char *object_name = (char *)calloc(strlen(cJSON_GetStringValue(name)) + 20, sizeof(char));
-    sprintf(object_name, "%s_%s", cJSON_GetStringValue(name), datetime_buff);
+    sprintf(object_name, "%s_%d%s", cJSON_GetStringValue(name), md_json_args->mpi_rank, datetime_buff);
     pdc_args->obj_id = PDCobj_create(pdc_args->cont, object_name, pdc_args->obj_prop);
     if (pdc_args->obj_id <= 0) {
         printf("Fail to create object!\n");

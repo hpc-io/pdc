@@ -15,6 +15,7 @@ insert_kv_to_index(char *key, char *value, uint64_t obj_id)
     input.op_type         = OP_INSERT;
     input.attr_val        = value;
     input.obj_primary_ref = obj_id;
+    input.attr_dtype      = PDC_STRING;
 
     for (int i = 0; i < strlen(key); i++) {
         input.attr_key = substring(key, i, strlen(key));
@@ -49,14 +50,16 @@ test_PDC_Server_dart_perform_one_server()
     char *key = (char *)calloc(100, sizeof(char));
     char *val = (char *)calloc(100, sizeof(char));
 
-    for (int i = 0; i < 100; i++) {
-        sprintf(key, "key%03dkey", i);
-        sprintf(val, "val%03dval", i);
-        printf("Inserting %s, %s\n", key, val);
-        insert_kv_to_index(key, val, 10000 + i);
-    }
+    // for (int i = 0; i < 100; i++) {
+    //     sprintf(key, "key%03dkey", i);
+    //     sprintf(val, "val%03dval", i);
+    //     printf("Inserting %s, %s\n", key, val);
+    //     insert_kv_to_index(key, val, 10000 + i);
+    // }
 
     insert_kv_to_index("0key", "0val", 20000);
+    insert_kv_to_index("key000key", "val000val", 10000);
+    insert_kv_to_index("key000key", "val000val", 20000);
     insert_kv_to_index("key000key", "val000val", 30000);
 
     query_result_from_kvtag("key000key=val000val", OP_EXACT_QUERY);

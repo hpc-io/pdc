@@ -9,9 +9,12 @@
 
 typedef struct {
     void *   processor_args; // pdc_importer_args_t
-    void *   loader_args;    // md_json_loader_args_t
     void *   arg1;           // unused
     void *   arg2;           // unused
+    int      current_file_count;
+    int      processed_file_count;
+    int      mpi_size;
+    int      mpi_rank;
     uint64_t total_obj_count;
     uint64_t total_prop_count;
 } MD_JSON_ARGS;

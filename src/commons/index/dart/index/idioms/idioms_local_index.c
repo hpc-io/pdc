@@ -77,6 +77,7 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         uint64_t *obj_id = (uint64_t *)PDC_calloc(1, sizeof(uint64_t));
         *obj_id          = obj_ids[j];
         set_insert(((value_index_leaf_content_t *)entry)->obj_id_set, (SetValue)obj_id);
+        // print address for index, actual value of attr_val,
     }
     return ret;
 }
@@ -167,7 +168,6 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
     key_index_leaf_content_t *key_leaf_content =
         (key_index_leaf_content_t *)art_search(key_trie, (unsigned char *)key, len);
 
-    key_leaf_content->virtural_node_id = idx_record->virtual_node_id;
     // create leaf_content node if not exist.
     if (key_leaf_content == NULL) {
         key_leaf_content = (key_index_leaf_content_t *)PDC_calloc(1, sizeof(key_index_leaf_content_t));
@@ -214,6 +214,12 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
         // insert the key into the the key trie along with the key_leaf_content.
         art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
     }
+
+    key_leaf_content->virtural_node_id = idx_record->virtual_node_id;
+
+    // print out the key as well as the value of the key_leaf_content pointer
+    printf("key: %s, key_leaf_content: %p\n", key, key_leaf_content);
+
     // insert the value part into second level index.
     ret = insert_value_into_second_level_index(key_leaf_content, use_trie, idx_record);
     return ret;
