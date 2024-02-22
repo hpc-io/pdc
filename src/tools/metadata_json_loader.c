@@ -318,13 +318,13 @@ main(int argc, char **argv)
                MPI_COMM_WORLD);
     MPI_Reduce(&(md_json_args->total_prop_count), &total_prop_count, 1, MPI_UINT64_T, MPI_SUM, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&(param->processed_file_count), &num_files, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&(md_json_args->processed_file_count), &num_files, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #else
     timer_pause(&global_timer);
     duration         = timer_delta_ms(&global_timer) / 1000.0;
     total_obj_count  = md_json_args->total_obj_count;
     total_prop_count = md_json_args->total_prop_count;
-    num_files        = param->processed_file_count;
+    num_files        = md_json_args->processed_file_count;
 #endif
 
     if (rank == 0) {
