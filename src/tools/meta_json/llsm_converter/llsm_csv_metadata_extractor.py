@@ -2,6 +2,23 @@ import pandas as pd
 import os
 import json
 
+
+def base62_encode(num, base=62):
+    characters = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    if num == 0:
+        return characters[0]
+    digits = []
+    while num:
+        digits.append(characters[num % base])
+        num //= base
+    digits.reverse()
+    return ''.join(digits)
+
+def generate_short_string(unique_id):
+    # Assuming unique_id is an integer that uniquely identifies the input
+    short_string = base62_encode(unique_id)
+    return short_string
+
 def extract_metadata(input_directory, output_directory, object_replica_number):
     output_dict = {
         "dataset_name": "LLSM",
@@ -10,17 +27,18 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
         "collector": "Wei Zhang",
         "objects":[]
     }
-
+    num_files = 0;
     for filename in os.listdir(input_directory):
         if filename.endswith('.csv'):
+            num_files += 1
             filepath = os.path.join(input_directory, filename)
             df = pd.read_csv(filepath, delimiter=',')
             # print("Processing file: {} and extend for {} times.".format(filepath, object_replica_number))
             for incr in range(object_replica_number):
                 for index, row in df.iterrows():
-                    obj_id = str(index) + str(incr)
+                    obj_id = int(str(num_files) + str(index) + str(incr))
                     new_obj = {
-                        "name": "object" + str(obj_id),
+                        "name": "object_" + generate_short_string(obj_id),
                         "type": "file",
                         "full_path": row['Filepath'],
                         "properties":[]
