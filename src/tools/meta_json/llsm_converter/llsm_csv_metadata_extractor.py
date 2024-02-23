@@ -3,6 +3,98 @@ import os
 import json
 import uuid
 
+def extract_attributes_from_filename(filename, incr, new_obj):
+    attr_in_fn = filename.split('_')
+    # Scan Iter
+    scanIter = {
+        "name": "Scan Iter",
+        "value": int(attr_in_fn[2]) + incr,
+        "class" : "singleton",
+        "type": "int",
+    }
+    # CAM
+    CAM = {
+        "name": "Cam",
+        "value": attr_in_fn[3].replace('Cam', ''),
+        "class" : "singleton",
+        "type": "str",
+    }
+    # Ch
+    Ch = {
+        "name": "Ch",
+        "value": int(attr_in_fn[4].replace('ch', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # stackn
+    stackn = {
+        "name": "stackn",
+        "value": int(attr_in_fn[6].replace('stack', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # laser
+    laser = {
+        "name": "laser_nm",
+        "value": int(attr_in_fn[7].replace('nm', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # abstime
+    abstime = {
+        "name": "abstime",
+        "value": int(attr_in_fn[8].replace('msec', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # fpgatime
+    fpgatime = {
+        "name": "fpgatime",
+        "value": int(attr_in_fn[9].replace('msecAbs', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # x_str
+    x_str = {
+        "name": "x_str",
+        "value": int(attr_in_fn[10].replace('x', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # y_str
+    y_str = {
+        "name": "y_str",
+        "value": int(attr_in_fn[11].replace('y', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # z_str
+    z_str = {
+        "name": "z_str",
+        "value": int(attr_in_fn[12].replace('z', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    # t_str
+    t_str = {
+        "name": "t_str",
+        "value": int(attr_in_fn[13].replace('t.tif', '')),
+        "class" : "singleton",
+        "type": "int",
+    }
+    new_obj["properties"].append(scanIter)
+    new_obj["properties"].append(CAM)
+    new_obj["properties"].append(Ch)
+    new_obj["properties"].append(stackn)
+    new_obj["properties"].append(laser)
+    new_obj["properties"].append(abstime)
+    new_obj["properties"].append(fpgatime)
+    new_obj["properties"].append(x_str)
+    new_obj["properties"].append(y_str)
+    new_obj["properties"].append(z_str)
+    new_obj["properties"].append(t_str)
+    
+
 def extract_metadata(input_directory, output_directory, object_replica_number):
     output_dict = {
         "dataset_name": "LLSM",
@@ -17,10 +109,10 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
             num_files += 1
             filepath = os.path.join(input_directory, filename)
             df = pd.read_csv(filepath, delimiter=',')
-            # print("Processing file: {} and extend for {} times.".format(filepath, object_replica_number))
             for incr in range(object_replica_number):
                 for index, row in df.iterrows():
-                    unique_id = uuid.uuid4().hex
+                    output_dict["objects"] = []
+                    unique_id = int(str(num_files) + str(incr) + str(index)) # uuid.uuid4().hex
                     new_obj = {
                         "name": "object_" + unique_id,
                         "type": "file",
@@ -32,96 +124,8 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
                         # variables used in original LLSM: stitching_rt, prefix, fullIter{n}, Cam(ncam), Ch(c), stackn(s), laser, abstime, fpgatime, z_str);
                         # example: Scan_Iter_0000_CamA_ch0_CAM1_stack0000_488nm_0000000msec_0067511977msecAbs_000x_000y_015z_0000t.tif
                         if column_name == 'Filename':
-                            attr_in_fn = value.split('_')
-                            # Scan Iter
-                            scanIter = {
-                                "name": "Scan Iter",
-                                "value": int(attr_in_fn[2]) + incr,
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # CAM
-                            CAM = {
-                                "name": "Cam",
-                                "value": attr_in_fn[3].replace('Cam', ''),
-                                "class" : "singleton",
-                                "type": "str",
-                            }
-                            # Ch
-                            Ch = {
-                                "name": "Ch",
-                                "value": int(attr_in_fn[4].replace('ch', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # stackn
-                            stackn = {
-                                "name": "stackn",
-                                "value": int(attr_in_fn[6].replace('stack', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # laser
-                            laser = {
-                                "name": "laser_nm",
-                                "value": int(attr_in_fn[7].replace('nm', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # abstime
-                            abstime = {
-                                "name": "abstime",
-                                "value": int(attr_in_fn[8].replace('msec', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # fpgatime
-                            fpgatime = {
-                                "name": "fpgatime",
-                                "value": int(attr_in_fn[9].replace('msecAbs', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # x_str
-                            x_str = {
-                                "name": "x_str",
-                                "value": int(attr_in_fn[10].replace('x', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # y_str
-                            y_str = {
-                                "name": "y_str",
-                                "value": int(attr_in_fn[11].replace('y', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # z_str
-                            z_str = {
-                                "name": "z_str",
-                                "value": int(attr_in_fn[12].replace('z', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            # t_str
-                            t_str = {
-                                "name": "t_str",
-                                "value": int(attr_in_fn[13].replace('t.tif', '')),
-                                "class" : "singleton",
-                                "type": "int",
-                            }
-                            new_obj["properties"].append(scanIter)
-                            new_obj["properties"].append(CAM)
-                            new_obj["properties"].append(Ch)
-                            new_obj["properties"].append(stackn)
-                            new_obj["properties"].append(laser)
-                            new_obj["properties"].append(abstime)
-                            new_obj["properties"].append(fpgatime)
-                            new_obj["properties"].append(x_str)
-                            new_obj["properties"].append(y_str)
-                            new_obj["properties"].append(z_str)
-                            new_obj["properties"].append(t_str)
-                            continue # this will avoid adding the filename as a property, instead, we add all the attributes in the filename as properties
+                            extract_attributes_from_filename(value, incr, new_obj)
+                            continue # this will avoid adding the filename as a property again, instead, we add all the attributes in the filename as properties
                         original_prop = {
                             "name": column_name,
                             "value": value,
@@ -129,7 +133,7 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
                             "type": str(type(value).__name__)
                         }
                         new_obj["properties"].append(original_prop)
-                    output_dict["objects"].append(new_obj);
+                    output_dict["objects"].append(new_obj)
                 json_file_path = "{}/{}_{}.json".format(output_directory, filename, incr)
                 with open(json_file_path, "w") as json_file:
                     json.dump(output_dict, json_file)
