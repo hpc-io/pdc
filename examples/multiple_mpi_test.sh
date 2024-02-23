@@ -7,7 +7,7 @@ if [ $# -lt 1 ]; then echo "missing test argument" && exit -1 ; fi
 
 extra_cmd=""
 
-if [[ "$HOSTNAME" == "cori"* || "$HOSTNAME" == "nid"* ]]; then
+if [[ "$NERSC_HOST" == "perlmutter" ]]; then
     extra_cmd="--mem=25600 --cpu_bind=cores --overlap "
 fi
 # check the test to be run:
