@@ -110,8 +110,8 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
             filepath = os.path.join(input_directory, filename)
             df = pd.read_csv(filepath, delimiter=',')
             for incr in range(object_replica_number):
+                output_dict["objects"] = []
                 for index, row in df.iterrows():
-                    output_dict["objects"] = []
                     unique_id = int(str(num_files) + str(incr) + str(index)) # uuid.uuid4().hex
                     new_obj = {
                         "name": f"object_{unique_id}",
