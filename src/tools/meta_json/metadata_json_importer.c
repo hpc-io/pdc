@@ -216,7 +216,6 @@ int
 finalize_importer(MD_JSON_ARGS *md_json_args)
 {
     pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->processor_args;
-    printf("finalize_importer\n");
     // finalize PDC related things
     // close pdc
     if (PDCclose(pdc_args->pdc) < 0) {
