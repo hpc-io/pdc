@@ -1,14 +1,7 @@
 import pandas as pd
 import os
 import json
-import hashlib
 import uuid
-
-# Assuming generate_short_string is a function you've defined to shorten or hash the object ID,
-# If not, here's a simple way to generate a hash for obj_id:
-def generate_short_string(obj_id):
-    # This function will return a shortened version of the hash
-    return hashlib.sha256(str(obj_id).encode()).hexdigest()[:8] 
 
 def extract_metadata(input_directory, output_directory, object_replica_number):
     output_dict = {
@@ -27,13 +20,9 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
             # print("Processing file: {} and extend for {} times.".format(filepath, object_replica_number))
             for incr in range(object_replica_number):
                 for index, row in df.iterrows():
-                    # Using UUID for a truly unique ID across all files
-                    unique_suffix = uuid.uuid4().hex  # Generates a random UUID for each object
-                    # Incorporating filename and index into the ID for uniqueness and traceability
-                    hash_input = f"{filename}_{num_files}_{index}_{incr}_{unique_suffix}"
-                    obj_id = generate_short_string(hash_input)
+                    unique_id = uuid.uuid4().hex
                     new_obj = {
-                        "name": "object_" + generate_short_string(obj_id),
+                        "name": "object_" + unique_id,
                         "type": "file",
                         "full_path": row['Filepath'],
                         "properties":[]
