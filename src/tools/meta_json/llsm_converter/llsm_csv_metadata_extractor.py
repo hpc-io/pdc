@@ -114,7 +114,7 @@ def extract_metadata(input_directory, output_directory, object_replica_number):
                     output_dict["objects"] = []
                     unique_id = int(str(num_files) + str(incr) + str(index)) # uuid.uuid4().hex
                     new_obj = {
-                        "name": "object_" + unique_id,
+                        "name": f"object_{unique_id}",
                         "type": "file",
                         "full_path": row['Filepath'],
                         "properties":[]
