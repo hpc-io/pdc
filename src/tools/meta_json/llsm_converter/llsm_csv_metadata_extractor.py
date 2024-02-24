@@ -5,9 +5,9 @@ import uuid
 
 def extract_attributes_from_filename(filename, incr, new_obj):
     attr_in_fn = filename.split('_')
-    # Scan Iter
+    # Scan_Iter
     scanIter = {
-        "name": "Scan Iter",
+        "name": "Scan_Iter",
         "value": int(attr_in_fn[2]) + incr,
         "class" : "singleton",
         "type": "int",

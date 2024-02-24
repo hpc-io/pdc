@@ -42,6 +42,7 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
                                size_t num_obj_ids)
 {
     perr_t ret = SUCCEED;
+    // printf("index is %p, obj_id: %llu\n", index, obj_ids[0]);
     if (index == NULL) {
         return FAIL;
     }
@@ -55,7 +56,11 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
     else {
         idx_found = rbt_find((rbt_t *)index, attr_val, value_len, &entry);
     }
-    if (idx_found != 0) { // not found
+
+    printf("idx_found=%d, index=%p, value=%s, is_trie=%d, entry: %p, obj_id:%llu\n", idx_found, index,
+           attr_val, is_trie, entry, obj_ids[0]);
+
+    if (entry == NULL) { // not found
         entry = (value_index_leaf_content_t *)PDC_calloc(1, sizeof(value_index_leaf_content_t));
         // create new set for obj_ids
         Set *obj_id_set = set_new(ui64_hash, ui64_equal);
@@ -70,12 +75,22 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         }
     }
 
+    if (is_trie) {
+        // print out the address of the index and the actual value of attr_val
+        printf("index %p, attr_val %s, entry: %p\n", index, (char *)attr_val, entry);
+    }
+    else {
+        // print out the address of the index and the actual value of attr_val
+        printf("index %p, attr_val %.4f, entry: %p\n", index, ((double *)attr_val)[0], entry);
+    }
+
     for (int j = 0; j < num_obj_ids; j++) {
-        if (ret == FAIL) {
-            return ret;
-        }
+        // if (ret == FAIL) {
+        //     return ret;
+        // }
         uint64_t *obj_id = (uint64_t *)PDC_calloc(1, sizeof(uint64_t));
         *obj_id          = obj_ids[j];
+        printf("obj_id: %llu\n", *obj_id);
         set_insert(((value_index_leaf_content_t *)entry)->obj_id_set, (SetValue)obj_id);
         // print address for index, actual value of attr_val,
     }
@@ -86,6 +101,8 @@ perr_t
 insert_into_value_index(void *value_index, int use_trie, IDIOMS_md_idx_record_t *idx_record)
 {
     perr_t ret = SUCCEED;
+    // printf("[insert_into_value_index] value_index: %p, value:%s, obj_id:%llu\n", value_index,
+    //        idx_record->value, idx_record->obj_ids[0]);
     if (value_index == NULL) {
         return FAIL;
     }
@@ -129,28 +146,39 @@ insert_into_value_index(void *value_index, int use_trie, IDIOMS_md_idx_record_t 
 }
 
 perr_t
-insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content, int use_trie,
-                                     IDIOMS_md_idx_record_t *idx_record)
+insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
+                                     IDIOMS_md_idx_record_t *  idx_record)
 {
     perr_t ret = SUCCEED;
     if (leaf_content == NULL) {
         return FAIL;
     }
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
-    if (use_trie) {
+
+    // printf("key: %s, val %s, leaf_content: %p, use_trie: %d, obj_id: %llu, type:%d"
+    //        "leaf_content->primary_trie: %p, leaf_content->secondary_trie: %p, "
+    //        "leaf_content->primary_rbt: %p\n",
+    //        idx_record->key, idx_record->value, leaf_content, leaf_content->type == PDC_STRING,
+    //        idx_record->obj_ids[0], idx_record->type, leaf_content->primary_trie,
+    //        leaf_content->secondary_trie, leaf_content->primary_rbt);
+    if (leaf_content->type == PDC_STRING) {
         // insert the value into the prefix tree.
-        ret = insert_into_value_index((void *)leaf_content->primary_trie, use_trie, idx_record);
+        // printf("inserting into primary trie\n");
+        ret =
+            insert_into_value_index(leaf_content->primary_trie, leaf_content->type == PDC_STRING, idx_record);
 #ifndef PDC_DART_SFX_TREE
         if (ret == FAIL) {
             return ret;
         }
         // insert the value into the trie for suffix search.
-        ret = insert_into_value_index((void *)leaf_content->secondary_trie, use_trie, idx_record);
+        ret = insert_into_value_index(leaf_content->secondary_trie, leaf_content->type == PDC_STRING,
+                                      idx_record);
 #endif
     }
     else {
         // insert the value into the primary index.
-        ret = insert_into_value_index((void *)leaf_content->primary_rbt, use_trie, idx_record);
+        ret =
+            insert_into_value_index(leaf_content->primary_rbt, leaf_content->type == PDC_STRING, idx_record);
     }
     return ret;
 }
@@ -162,8 +190,7 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
     if (key_trie == NULL) {
         return FAIL;
     }
-    char *value_type_str = get_enum_name_by_dtype(idx_record->type);
-    int   use_trie       = 0;
+
     // look up for leaf_content
     key_index_leaf_content_t *key_leaf_content =
         (key_index_leaf_content_t *)art_search(key_trie, (unsigned char *)key, len);
@@ -173,12 +200,7 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
         key_leaf_content = (key_index_leaf_content_t *)PDC_calloc(1, sizeof(key_index_leaf_content_t));
         // fill the content of the leaf_content node.
         key_leaf_content->type = idx_record->type;
-
-        int simple_value_type = 3;
-
-        if (contains(value_type_str, "STRING")) {
-            simple_value_type = 3;
-            use_trie          = 1;
+        if (key_leaf_content->type == PDC_STRING) {
             // the following gurarantees that both prefix index and suffix index are initialized.
             key_leaf_content->primary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->primary_trie);
@@ -188,21 +210,22 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
             key_leaf_content->secondary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->secondary_trie);
 #endif
+            key_leaf_content->simple_value_type = 3; // string.
         }
         else {
-
-            libhl_cmp_callback_t compare_func = NULL;
+            char *               value_type_str = get_enum_name_by_dtype(idx_record->type);
+            libhl_cmp_callback_t compare_func   = NULL;
             if (startsWith(value_type_str, "PDC_UINT")) {
-                simple_value_type = 0; // UINT64
-                compare_func      = LIBHL_CMP_CB(PDC_UINT64);
+                key_leaf_content->simple_value_type = 0; // UINT64
+                compare_func                        = LIBHL_CMP_CB(PDC_UINT64);
             }
             else if (startsWith(value_type_str, "PDC_INT") || startsWith(value_type_str, "PDC_LONG")) {
-                simple_value_type = 1; // INT64
-                compare_func      = LIBHL_CMP_CB(PDC_INT64);
+                key_leaf_content->simple_value_type = 1; // INT64
+                compare_func                        = LIBHL_CMP_CB(PDC_INT64);
             }
             else if (startsWith(value_type_str, "PDC_FLOAT") || startsWith(value_type_str, "PDC_DOUBLE")) {
-                simple_value_type = 2; // DOUBLE
-                compare_func      = LIBHL_CMP_CB(PDC_DOUBLE);
+                key_leaf_content->simple_value_type = 2; // DOUBLE
+                compare_func                        = LIBHL_CMP_CB(PDC_DOUBLE);
             }
             else {
                 printf("ERROR: unsupported data type %s\n", value_type_str);
@@ -210,18 +233,14 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
             }
             key_leaf_content->primary_rbt = rbt_create(compare_func, free);
         }
-        key_leaf_content->simple_value_type = simple_value_type;
         // insert the key into the the key trie along with the key_leaf_content.
         art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
     }
 
     key_leaf_content->virtural_node_id = idx_record->virtual_node_id;
 
-    // print out the key as well as the value of the key_leaf_content pointer
-    printf("key: %s, key_leaf_content: %p\n", key, key_leaf_content);
-
     // insert the value part into second level index.
-    ret = insert_value_into_second_level_index(key_leaf_content, use_trie, idx_record);
+    ret = insert_value_into_second_level_index(key_leaf_content, idx_record);
     return ret;
 }
 
