@@ -41,6 +41,8 @@ typedef struct {
     size_t           value_len;
     uint64_t *       obj_ids;
     size_t           num_obj_ids;
+    size_t           key_offset;
+    size_t           value_offset;
 } IDIOMS_md_idx_record_t;
 
 typedef struct {

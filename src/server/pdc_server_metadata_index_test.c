@@ -27,13 +27,15 @@ insert_kv_to_index(char *key, char *value, uint64_t obj_id)
 void
 query_result_from_kvtag(char *key_value_query, int8_t op_type)
 {
-    dart_perform_one_server_in_t  input;
-    dart_perform_one_server_out_t output;
-    uint64_t                      n_obj_ids = 0;
-    uint64_t *                    buf_ptr   = NULL;
-    input.op_type                           = op_type;
-    input.attr_key                          = key_value_query;
-    assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);
+    dart_perform_one_server_in_t *input =
+        (dart_perform_one_server_in_t *)calloc(1, sizeof(dart_perform_one_server_in_t));
+    dart_perform_one_server_out_t *output =
+        (dart_perform_one_server_out_t *)calloc(1, sizeof(dart_perform_one_server_out_t));
+    uint64_t  n_obj_ids = 0;
+    uint64_t *buf_ptr   = NULL;
+    input->op_type      = op_type;
+    input->attr_key     = key_value_query;
+    assert(PDC_Server_dart_perform_one_server(input, output, &n_obj_ids, &buf_ptr) == SUCCEED);
     printf("Query Successful! %d Results: ", n_obj_ids);
     for (int i = 0; i < n_obj_ids; i++) {
         printf("%llu, ", buf_ptr[i]);
@@ -50,23 +52,23 @@ test_PDC_Server_dart_perform_one_server()
     char *key = (char *)calloc(100, sizeof(char));
     char *val = (char *)calloc(100, sizeof(char));
 
-    // for (int i = 0; i < 100; i++) {
-    //     sprintf(key, "key%03dkey", i);
-    //     sprintf(val, "val%03dval", i);
-    //     printf("Inserting %s, %s\n", key, val);
-    //     insert_kv_to_index(key, val, 10000 + i);
-    // }
+    for (int i = 0; i < 100; i++) {
+        sprintf(key, "key%03dkey", i);
+        sprintf(val, "val%03dval", i);
+        printf("Inserting %s, %s\n", key, val);
+        insert_kv_to_index(key, val, 10000 + i);
+    }
 
-    // insert_kv_to_index("0key", "0val", 20000);
+    insert_kv_to_index("0key", "0val", 20000);
     insert_kv_to_index("key000key", "val000val", 10000);
     insert_kv_to_index("key000key", "val000val", 20000);
     insert_kv_to_index("key000key", "val000val", 30000);
-
+    // key000key val000val
     query_result_from_kvtag("key000key=val000val", OP_EXACT_QUERY);
-    // query_result_from_kvtag("0key=0val", OP_EXACT_QUERY);
-    // query_result_from_kvtag("key01*=val01*", OP_PREFIX_QUERY);
-    // query_result_from_kvtag("*3key=*3val", OP_SUFFIX_QUERY);
-    // query_result_from_kvtag("*9*=*9*", OP_INFIX_QUERY);
+    query_result_from_kvtag("0key=0val", OP_EXACT_QUERY);
+    query_result_from_kvtag("key01*=val01*", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*3key=*3val", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*9*=*9*", OP_INFIX_QUERY);
 }
 
 int
