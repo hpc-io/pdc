@@ -19,10 +19,10 @@ IDIOMS_init(uint32_t server_id, uint32_t num_servers)
     idioms_g                        = (IDIOMS_t *)calloc(1, sizeof(IDIOMS_t));
     idioms_g->art_key_prefix_tree_g = (art_tree *)calloc(1, sizeof(art_tree));
     art_tree_init(idioms_g->art_key_prefix_tree_g);
-#ifndef PDC_DART_SFX_TREE
+
     idioms_g->art_key_suffix_tree_g = (art_tree *)calloc(1, sizeof(art_tree));
     art_tree_init(idioms_g->art_key_suffix_tree_g);
-#endif
+
     idioms_g->server_id_g   = server_id;
     idioms_g->num_servers_g = num_servers;
 }
@@ -57,9 +57,6 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         idx_found = rbt_find((rbt_t *)index, attr_val, value_len, &entry);
     }
 
-    // printf("idx_found=%d, index=%p, value=%s, is_trie=%d, entry: %p, obj_id:%llu\n", idx_found, index,
-    //     attr_val, is_trie, entry, obj_ids[0]);
-
     if (entry == NULL) { // not found
         entry = (value_index_leaf_content_t *)PDC_calloc(1, sizeof(value_index_leaf_content_t));
         // create new set for obj_ids
@@ -75,22 +72,11 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         }
     }
 
-    // if (is_trie) {
-    //     // print out the address of the index and the actual value of attr_val
-    //     // printf("index %p, attr_val %s, entry: %p\n", index, (char *)attr_val, entry);
-    // }
-    // else {
-    //     // print out the address of the index and the actual value of attr_val
-    //     // printf("index %p, attr_val %.4f, entry: %p\n", index, ((double *)attr_val)[0], entry);
-    // }
-
     for (int j = 0; j < num_obj_ids; j++) {
         uint64_t *obj_id = (uint64_t *)PDC_calloc(1, sizeof(uint64_t));
         *obj_id          = obj_ids[j];
-        // printf("obj_id: %llu\n", *obj_id);
         set_insert(((value_index_leaf_content_t *)entry)->obj_id_set, (SetValue)obj_id);
         size_t num_entires = set_num_entries(((value_index_leaf_content_t *)entry)->obj_id_set);
-        // printf("num_entires: %zu\n", num_entires);
     }
     return ret;
 }
@@ -99,8 +85,6 @@ perr_t
 insert_into_value_index(void *value_index, int use_trie, IDIOMS_md_idx_record_t *idx_record)
 {
     perr_t ret = SUCCEED;
-    // printf("[insert_into_value_index] value_index: %p, value:%s, obj_id:%llu\n", value_index,
-    //        idx_record->value, idx_record->obj_ids[0]);
     if (value_index == NULL) {
         return FAIL;
     }
@@ -128,9 +112,6 @@ insert_into_value_index(void *value_index, int use_trie, IDIOMS_md_idx_record_t 
         int    i          = 0;
         size_t mem_offset = 0;
         for (i = 0; i < idx_record->value_len; i++) {
-            if (ret == FAIL) {
-                return ret;
-            }
             size_t value_size_by_type = get_size_by_dtype(idx_record->type);
             void * attr_val           = PDC_calloc(1, value_size_by_type);
             memcpy(attr_val, idx_record->value + mem_offset, value_size_by_type);
@@ -164,6 +145,8 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
         // printf("inserting into primary trie\n");
         ret =
             insert_into_value_index(leaf_content->primary_trie, leaf_content->type == PDC_STRING, idx_record);
+        // FIXME: postpone this to insert_into_value_index and also change the first parameter of that
+        // function to leaf_content.
 #ifndef PDC_DART_SFX_TREE
         if (ret == FAIL) {
             return ret;
@@ -182,7 +165,7 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
 }
 
 perr_t
-insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_record_t *idx_record)
+insert_into_key_trie(art_tree *key_trie, char *key, int len, int is_sfx, IDIOMS_md_idx_record_t *idx_record)
 {
     perr_t ret = SUCCEED;
     if (key_trie == NULL) {
@@ -203,11 +186,9 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
             key_leaf_content->primary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->primary_trie);
 
-#ifndef PDC_DART_SFX_TREE
-            // we only enable suffix index when suffix tree mode is off.
             key_leaf_content->secondary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->secondary_trie);
-#endif
+
             key_leaf_content->simple_value_type = 3; // string.
         }
         else {
@@ -253,18 +234,18 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     stopwatch_t index_timer;
     timer_start(&index_timer);
 
-    ret = insert_into_key_trie(idioms_g->art_key_prefix_tree_g, key, len, idx_record);
+    ret = insert_into_key_trie(idioms_g->art_key_prefix_tree_g, key, len, 0, idx_record);
 #ifndef PDC_DART_SFX_TREE
     if (ret == FAIL) {
         return ret;
     }
-    ret = insert_into_key_trie(idioms_g->art_key_suffix_tree, reverse_str(key), len, idx_record);
+    ret = insert_into_key_trie(idioms_g->art_key_suffix_tree, reverse_str(key), len, 0, idx_record);
 #else
     // insert every suffix of the key into the trie;
     int sub_loop_count = len;
     for (int j = 1; j < sub_loop_count; j++) {
         char *suffix = substring(key, j, len);
-        ret = insert_into_key_trie(idioms_g->art_key_prefix_tree_g, suffix, strlen(suffix), idx_record);
+        ret = insert_into_key_trie(idioms_g->art_key_suffix_tree_g, suffix, strlen(suffix), 1, idx_record);
         if (ret == FAIL) {
             return ret;
         }
