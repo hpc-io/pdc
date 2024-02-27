@@ -8655,8 +8655,9 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
         lookup_args[i].op_type = op_type;
 
         if (is_index_write_op(op_type)) {
-            dart_in->vnode_id = (*hash_result)[i].virtual_node_id;
-            dart_in->attr_key = strdup((*hash_result)[i].key);
+            dart_in->vnode_id         = (*hash_result)[i].virtual_node_id;
+            dart_in->attr_key         = strdup((*hash_result)[i].key);
+            dart_in->inserting_suffix = (*hash_result)[i].is_suffix;
         }
 
         _dart_send_request_to_one_server(server_id, dart_in, &(lookup_args[i]), &(dart_request_handles[i]));

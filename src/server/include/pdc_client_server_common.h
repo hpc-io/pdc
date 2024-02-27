@@ -1163,6 +1163,7 @@ typedef struct {
     uint64_t          obj_primary_ref;
     uint64_t          obj_secondary_ref;
     uint64_t          obj_server_ref;
+    int8_t            inserting_suffix;
     int64_t           timestamp;
 } dart_perform_one_server_in_t;
 
@@ -3893,7 +3894,11 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-
+    ret = hg_proc_int8_t(proc, &struct_data->inserting_suffix);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_int64_t(proc, &struct_data->timestamp);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");

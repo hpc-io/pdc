@@ -629,12 +629,17 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
         loop_count = 2;
 #endif
     }
-    int iter = 0;
+    int iter      = 0;
+    int is_suffix = 0;
     for (iter = 0; iter < loop_count; iter++) {
 #ifdef PDC_DART_SFX_TREE
         tok = substring(key, iter, strlen(key));
+        // when suffix tree mode is ON, we store suffixes of the key to the suffix trie.
+        is_suffix = iter > 0 ? 1 : 0;
 #else
-        tok        = iter == 0 ? strdup(key) : reverse_str(key);
+        tok        = iter > 0 ? reverse_str(key) : strdup(key);
+        // when suffix tree mode is OFF, we store reversed string to the suffix trie.
+        is_suffix = iter > 0 ? 1 : 0;
 #endif
         /* ************ [START] CORE DART HASH FOR EVERY SINGLE TOKEN ************** */
         if (op_type == OP_INSERT) {
@@ -658,6 +663,7 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
             (*out)[ret_value - tmp_out_len + j].virtual_node_id = temp_out[j];
             (*out)[ret_value - tmp_out_len + j].server_id = get_server_id_by_vnode_id(dart_g, temp_out[j]);
             (*out)[ret_value - tmp_out_len + j].key       = tok;
+            (*out)[ret_value - tmp_out_len + j].is_suffix = is_suffix;
         }
         if (temp_out != NULL)
             free(temp_out);

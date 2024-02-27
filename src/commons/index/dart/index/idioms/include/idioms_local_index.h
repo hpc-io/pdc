@@ -34,6 +34,7 @@ typedef struct {
 
 typedef struct {
     char *           key;
+    int8_t           is_key_suffix;
     uint64_t         virtual_node_id;
     pdc_c_var_type_t type;
     int              simple_value_type; // 0: uint64_t, 1: int64_t, 2: double, 3: char*

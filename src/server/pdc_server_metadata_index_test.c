@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include "pdc_server_metadata_index.h"
 
+typedef struct {
+
+} dummy_server_t;
+
 void
 delete_kv_from_index(char *key, char *value, uint64_t obj_id)
 {
@@ -17,11 +21,17 @@ delete_kv_from_index(char *key, char *value, uint64_t obj_id)
     input.obj_primary_ref = obj_id;
     input.attr_dtype      = PDC_STRING;
 
-    // for (int i = 0; i < strlen(key); i++) {
-    input.attr_key = substring(key, 0, strlen(key));
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-    printf("Index Deletion Successful!\n");
-    // }
+    for (int i = 0; i < strlen(key); i++) {
+        if (i == 0) {
+            input.inserting_suffix = 0;
+        }
+        else {
+            input.inserting_suffix = 1;
+        }
+        input.attr_key = substring(key, 0, strlen(key));
+        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        printf("Index Deletion Successful!\n");
+    }
 }
 
 void
@@ -38,11 +48,38 @@ insert_kv_to_index(char *key, char *value, uint64_t obj_id)
     input.obj_primary_ref = obj_id;
     input.attr_dtype      = PDC_STRING;
 
-    // for (int i = 0; i < strlen(key); i++) {
-    input.attr_key = substring(key, 0, strlen(key));
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-    printf("Index Insertion Successful!\n");
-    // }
+    for (int i = 0; i < strlen(key); i++) {
+        if (i == 0) {
+            input.inserting_suffix = 0;
+        }
+        else {
+            input.inserting_suffix = 1;
+        }
+        input.attr_key = substring(key, 0, strlen(key));
+        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        printf("Index Insertion Successful!\n");
+    }
+}
+
+void
+insert_num_kv_to_index(char *key, int64_t *value, pdc_var_type_t value_type, uint64_t obj_id)
+{
+    dart_perform_one_server_in_t  input;
+    dart_perform_one_server_out_t output;
+
+    input.obj_ref_type = REF_PRIMARY_ID;
+    input.hash_algo    = DART_HASH;
+    // Test Insert Index
+    input.op_type         = OP_INSERT;
+    input.attr_val        = value;
+    input.obj_primary_ref = obj_id;
+    input.attr_dtype      = value_type;
+
+    for (int i = 0; i < strlen(key); i++) {
+        input.attr_key = substring(key, 0, strlen(key));
+        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        printf("Index Insertion Successful!\n");
+    }
 }
 
 void

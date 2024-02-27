@@ -65,6 +65,7 @@ typedef struct {
     uint32_t server_id;
     char *   key;
     uint64_t virtual_node_id;
+    int8_t   is_suffix; // 1: this is a suffix of another key, 0: this is just a normal key.
 } index_hash_result_t;
 
 // Defining a function pointer by which the server load information can be retrieved.

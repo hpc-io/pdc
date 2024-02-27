@@ -560,11 +560,12 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     out->has_bulk = 0;
     // printf("Respond to: in->op_type=%d\n", in->op_type );
     if (op_type == OP_INSERT) {
-
+        idx_record->is_key_suffix = in->inserting_suffix;
         // metadata_index_create(attr_key, attr_val, obj_locator, hash_algo);
         idioms_local_index_create(idx_record);
     }
     else if (op_type == OP_DELETE) {
+        idx_record->is_key_suffix = in->inserting_suffix;
         // metadata_index_delete(attr_key, attr_val, obj_locator, hash_algo);
         idioms_local_index_delete(idx_record);
     }

@@ -82,49 +82,6 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
 }
 
 perr_t
-insert_into_value_index(void *value_index, int use_trie, IDIOMS_md_idx_record_t *idx_record)
-{
-    perr_t ret = SUCCEED;
-    if (value_index == NULL) {
-        return FAIL;
-    }
-
-    if (use_trie) { // logic for string values
-        void * attr_val      = strdup(idx_record->value);
-        size_t value_str_len = strlen(idx_record->value);
-        ret = insert_obj_ids_into_value_leaf((art_tree *)value_index, attr_val, use_trie, value_str_len,
-                                             idx_record->obj_ids, idx_record->num_obj_ids);
-
-// insert every suffix if suffix-tree mode is on.
-#ifdef PDC_DART_SFX_TREE
-        int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count; j++) {
-            if (ret == FAIL) {
-                return ret;
-            }
-            char *suffix = substring(attr_val, j, value_str_len);
-            ret = insert_obj_ids_into_value_leaf((art_tree *)value_index, suffix, use_trie, strlen(suffix),
-                                                 idx_record->obj_ids, idx_record->num_obj_ids);
-        }
-#endif
-    }
-    else { // logic for numeric values
-        int    i          = 0;
-        size_t mem_offset = 0;
-        for (i = 0; i < idx_record->value_len; i++) {
-            size_t value_size_by_type = get_size_by_dtype(idx_record->type);
-            void * attr_val           = PDC_calloc(1, value_size_by_type);
-            memcpy(attr_val, idx_record->value + mem_offset, value_size_by_type);
-            mem_offset += value_size_by_type;
-
-            ret = insert_obj_ids_into_value_leaf((rbt_t *)value_index, attr_val, use_trie, value_size_by_type,
-                                                 idx_record->obj_ids, idx_record->num_obj_ids);
-        }
-    }
-    return ret;
-}
-
-perr_t
 insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
                                      IDIOMS_md_idx_record_t *  idx_record)
 {
@@ -134,32 +91,42 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
     }
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
 
-    // printf("key: %s, val %s, leaf_content: %p, use_trie: %d, obj_id: %llu, type:%d"
-    //        "leaf_content->primary_trie: %p, leaf_content->secondary_trie: %p, "
-    //        "leaf_content->primary_rbt: %p\n",
-    //        idx_record->key, idx_record->value, leaf_content, leaf_content->type == PDC_STRING,
-    //        idx_record->obj_ids[0], idx_record->type, leaf_content->primary_trie,
-    //        leaf_content->secondary_trie, leaf_content->primary_rbt);
     if (leaf_content->type == PDC_STRING) {
-        // insert the value into the prefix tree.
-        // printf("inserting into primary trie\n");
-        ret =
-            insert_into_value_index(leaf_content->primary_trie, leaf_content->type == PDC_STRING, idx_record);
-        // FIXME: postpone this to insert_into_value_index and also change the first parameter of that
-        // function to leaf_content.
+        void * attr_val      = strdup(idx_record->value);
+        size_t value_str_len = strlen(idx_record->value);
+
+        ret = insert_obj_ids_into_value_leaf(leaf_content->primary_trie, attr_val,
+                                             leaf_content->type == PDC_STRING, value_str_len,
+                                             idx_record->obj_ids, idx_record->num_obj_ids);
 #ifndef PDC_DART_SFX_TREE
         if (ret == FAIL) {
             return ret;
         }
+        void *reverse_str = reverse_str((char *)(idx_record->value));
         // insert the value into the trie for suffix search.
-        ret = insert_into_value_index(leaf_content->secondary_trie, leaf_content->type == PDC_STRING,
-                                      idx_record);
+        ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, reverse_str,
+                                             leaf_content->type == PDC_STRING, value_str_len,
+                                             idx_record->obj_ids, idx_record->num_obj_ids);
+#else
+        int sub_loop_count = value_str_len;
+        for (int j = 1; j < sub_loop_count; j++) {
+            if (ret == FAIL) {
+                return ret;
+            }
+            char *suffix = substring(attr_val, j, value_str_len);
+            ret          = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, suffix,
+                                                 leaf_content->type == PDC_STRING, strlen(suffix),
+                                                 idx_record->obj_ids, idx_record->num_obj_ids);
+        }
 #endif
     }
     else {
-        // insert the value into the primary index.
-        ret =
-            insert_into_value_index(leaf_content->primary_rbt, leaf_content->type == PDC_STRING, idx_record);
+        // idx_record->value_len should be the size of the value in bytes here.
+        void *attr_val = PDC_calloc(1, idx_record->value_len);
+        memcpy(attr_val, idx_record->value, idx_record->value_len);
+        ret = insert_obj_ids_into_value_leaf((rbt_t *)leaf_content->primary_rbt, attr_val,
+                                             leaf_content->type == PDC_STRING, idx_record->value_len,
+                                             idx_record->obj_ids, idx_record->num_obj_ids);
     }
     return ret;
 }
@@ -233,24 +200,35 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
 
     stopwatch_t index_timer;
     timer_start(&index_timer);
+    art_tree *key_trie =
+        (idx_record->is_key_suffix == 1) ? idioms_g->art_key_suffix_tree_g : idioms_g->art_key_prefix_tree_g;
+    insert_into_key_trie(key_trie, key, len, 0, idx_record);
+    /**
+     * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
+     * Therefore, there is no need to insert the suffixes of the key into the key trie locally.
+     * Different suffixes of the key should be inserted into the key trie on different servers, distributed by
+     * DART.
+     *
+     * Therefore, the following logic is commented off.
+     */
 
-    ret = insert_into_key_trie(idioms_g->art_key_prefix_tree_g, key, len, 0, idx_record);
-#ifndef PDC_DART_SFX_TREE
-    if (ret == FAIL) {
-        return ret;
-    }
-    ret = insert_into_key_trie(idioms_g->art_key_suffix_tree, reverse_str(key), len, 0, idx_record);
-#else
-    // insert every suffix of the key into the trie;
-    int sub_loop_count = len;
-    for (int j = 1; j < sub_loop_count; j++) {
-        char *suffix = substring(key, j, len);
-        ret = insert_into_key_trie(idioms_g->art_key_suffix_tree_g, suffix, strlen(suffix), 1, idx_record);
-        if (ret == FAIL) {
-            return ret;
-        }
-    }
-#endif
+    // #ifndef PDC_DART_SFX_TREE
+    //     if (ret == FAIL) {
+    //         return ret;
+    //     }
+    //     ret = insert_into_key_trie(idioms_g->art_key_suffix_tree, reverse_str(key), len, 0, idx_record);
+    // #else
+    //     // insert every suffix of the key into the trie;
+    //     int sub_loop_count = len;
+    //     for (int j = 1; j < sub_loop_count; j++) {
+    //         char *suffix = substring(key, j, len);
+    //         // TODO: change delete and search functions for suffix/infix query on the suffix trie.
+    //         ret = insert_into_key_trie(idioms_g->art_key_suffix_tree_g, suffix, strlen(suffix), 1,
+    //         idx_record); if (ret == FAIL) {
+    //             return ret;
+    //         }
+    //     }
+    // #endif
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {
         printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
@@ -427,26 +405,35 @@ idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record)
     int   len = strlen(key);
 
     stopwatch_t index_timer;
-
     timer_start(&index_timer);
-
-    ret = delete_from_key_trie(idioms_g->art_key_prefix_tree_g, key, len, idx_record);
-#ifndef PDC_DART_SFX_TREE
-    if (ret == FAIL) {
-        return ret;
-    }
-    ret = delete_from_key_trie(idioms_g->art_key_suffix_tree, reverse_str(key), len, idx_record);
-#else
-    // insert every suffix of the key into the trie;
-    int sub_loop_count = len;
-    for (int j = 1; j < sub_loop_count; j++) {
-        if (ret == FAIL) {
-            return ret;
-        }
-        char *suffix = substring(key, j, len);
-        ret = delete_from_key_trie(idioms_g->art_key_prefix_tree_g, suffix, strlen(suffix), idx_record);
-    }
-#endif
+    art_tree *key_trie =
+        (idx_record->is_key_suffix == 1) ? idioms_g->art_key_suffix_tree_g : idioms_g->art_key_prefix_tree_g;
+    delete_from_key_trie(key_trie, key, len, idx_record);
+    /**
+     * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
+     * Therefore, there is no need to insert the suffixes of the key into the key trie locally.
+     * Different suffixes of the key should be inserted into the key trie on different servers, distributed by
+     * DART.
+     *
+     * Therefore, the following logic is commented off.
+     */
+    // #ifndef PDC_DART_SFX_TREE
+    //     if (ret == FAIL) {
+    //         return ret;
+    //     }
+    //     ret = delete_from_key_trie(idioms_g->art_key_suffix_tree, reverse_str(key), len, idx_record);
+    // #else
+    //     // insert every suffix of the key into the trie;
+    //     int sub_loop_count = len;
+    //     for (int j = 1; j < sub_loop_count; j++) {
+    //         if (ret == FAIL) {
+    //             return ret;
+    //         }
+    //         char *suffix = substring(key, j, len);
+    //         ret = delete_from_key_trie(idioms_g->art_key_prefix_tree_g, suffix, strlen(suffix),
+    //         idx_record);
+    //     }
+    // #endif
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {
         printf("[Server_Side_Delete_%d] Timer to delete a keyword %s : %s from index = %.4f microseconds\n",
