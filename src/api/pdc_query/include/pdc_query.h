@@ -11,7 +11,7 @@ enum pdc_prop_name_t { PDC_OBJ_NAME, PDC_CONT_NAME, PDC_APP_NAME, PDC_USER_ID };
 /*************************************/
 typedef enum { PDC_OP_NONE = 0, PDC_GT = 1, PDC_LT = 2, PDC_GTE = 3, PDC_LTE = 4, PDC_EQ = 5 } pdc_query_op_t;
 
-typedef enum { PDC_QUERY_NONE = 0, PDC_QUERY_AND = 1, PDC_QUERY_OR = 2 } pdc_query_combine_op_t;
+typedef enum { PDC_QUERY_NONE = 0, PDC_QUERY_AND = 1, PDC_QUERY_OR = 2 , PDC_QUERY_NOT} pdc_query_combine_op_t;
 
 typedef enum {
     PDC_QUERY_GET_NONE  = 0,

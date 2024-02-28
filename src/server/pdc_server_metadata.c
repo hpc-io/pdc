@@ -51,6 +51,7 @@
 #include "mercury_hash_table.h"
 #include "pdc_malloc.h"
 #include "string_utils.h"
+#include "pdc_query.h"
 
 #define BLOOM_TYPE_T counting_bloom_t
 #define BLOOM_NEW    new_counting_bloom
@@ -1806,6 +1807,187 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
     return ret_value;
 }
 
+static int
+_is_multi_condition_query(const char *query)
+{
+    if (strstr(query, "&") || strstr(query, "AND") || strstr(query, "|") || strstr(query, "OR") || 
+        strstr(query, "^") || strstr(query, "NOT")) {
+        return 1;
+    }
+    else
+        return 0;
+}
+
+static char *
+_process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t **results, uint64_t *alloc_size, uint32_t *n_meta)
+{
+    pdc_query_op_t op = PDC_OP_NONE;
+    pdc_query_combine_op_t combine_op = PDC_QUERY_NONE;
+    char *curr_cond = NULL;
+    float float_value;
+    double double_value;
+    int int_value, len = 0;
+    char name[128], value[128], dtype[16];
+    HashTableIterator hash_table_iter;
+    HashTablePair pair;
+    pdc_hash_table_entry_head *head;
+    pdc_metadata_t *elt;
+    pdc_kvtag_list_t *kvtag_list_elt;
+
+    while (condition_ptr == ' ')
+        condition_ptr++;
+
+    if (NULL == condition_ptr)
+        goto done;
+
+    // Check if there is a combine operator at the beginning
+    if (strncmp(condition_ptr, "AND", 3) == 0) {
+        combine_op = PDC_QUERY_AND;
+        condition_ptr += 3;
+    }
+    else if (strncmp(condition_ptr, "&&", 2) == 0) {
+        combine_op = PDC_QUERY_AND;
+        condition_ptr += 2;
+    }
+    else if (strncmp(condition_ptr, "OR", 2) == 0) {
+        combine_op = PDC_QUERY_OR;
+        condition_ptr += 2;
+    }
+    else if (strncmp(condition_ptr, "||", 2) == 0) {
+        combine_op = PDC_QUERY_OR;
+        condition_ptr += 2;
+    }
+    else if (strncmp(condition_ptr, "NOT", 3) == 0) {
+        combine_op = PDC_QUERY_NOT;
+        condition_ptr += 3;
+    }
+    else if (strncmp(condition_ptr, "^", 1) == 0) {
+        combine_op = PDC_QUERY_NOT;
+        condition_ptr += 1;
+    }
+
+    while (condition_ptr == ' ')
+        condition_ptr++;
+
+    // "tokenize" the first condition
+    len = 0;
+    while (condition_ptr[len] != NULL && condition_ptr[len] != ' ') {
+        len++;
+    }
+
+    if (len > 0) {
+        curr_cond = (char*)malloc(len);
+        strncpy(curr_cond, condition_ptr, len);
+    }
+    curr_cond[len] = 0;
+
+    /* Author=string(abc) AND vel>double(10) OR loc<=int(-2) */
+    // Parse one condition
+    if (strstr(curr_cond, "<=")) {
+        sscanf(curr_cond, "%s<=%s(%s)", name, dtype, value);
+        op = PDC_LTE;
+    }
+    else if (strstr(curr_cond, ">=")) {
+        sscanf(curr_cond, "%s>=%s(%s)", name, dtype, value);
+        op = PDC_GTE;
+    }
+    else if (strstr(curr_cond, "<")) {
+        sscanf(curr_cond, "%s<%s(%s)", name, dtype, value);
+        op = PDC_LT;
+    }
+    else if (strstr(curr_cond, ">")) {
+        sscanf(curr_cond, "%s>%s(%s)", name, dtype, value);
+        op = PDC_GT;
+    }
+    else if (strstr(curr_cond, "=")) {
+        sscanf(curr_cond, "%s=%s(%s)", name, dtype, value);
+        op = PDC_EQ;
+    }
+    else {
+        printf("==PDC_SERVER[%d]: error parsing condition [%s]\n", pdc_server_rank_g, curr_cond);
+        goto done;
+    }
+
+    if (strcmp(dtype, "string") == 0) {
+        dtype = PDC_STRING;
+    }
+    else if (strcmp(dtype, "int") == 0) {
+        dtype = PDC_INT;
+        int_value = atoi(value);
+    }
+    else if (strcmp(dtype, "double") == 0) {
+        dtype = PDC_DOUBLE;
+        double_value = atof(value);
+    }
+    else if (strcmp(dtype, "float") == 0) {
+        dtype = PDC_FLOAT;
+        float_value = (float)atof(value);
+    }
+    else {
+        printf("==PDC_SERVER[%d]: error parsing datatype [%s]\n", pdc_server_rank_g, dtype);
+        goto done;
+    }
+
+    condition_ptr += len;
+
+    while (condition_ptr == ' ')
+        condition_ptr++;
+
+    // Check if current tag satisfies the condition
+    // now we have name op dtype value
+    hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+    while (hash_table_num_entries(metadata_hash_table_g) != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+        pair = hash_table_iter_next(&hash_table_iter);
+        head = pair.value;
+        DL_FOREACH(head->metadata, elt)
+        {
+            DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
+            {
+
+                // Not matching name or value, no need to check other conditions
+                if (strcmp(kvtag_list_elt->kvtag->name, name) != 0 || kvtag->dtype != dtype)
+                    continue;
+
+                // TODO
+                if (dtype == PDC_STRING) {
+
+                }
+                else if (dtype == PDC_INT) {
+
+                }
+                else if (dtype == PDC_FLOAT) {
+
+                }
+                else if (dtype == PDC_DOUBLE) {
+
+                }
+
+                /* if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) { */
+                /*     if (iter >= alloc_size) { */
+                /*         alloc_size *= 2; */
+                /*         *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t)); */
+                /*     } */
+                /*     (*obj_ids)[iter++] = elt->obj_id; */
+                /* } */
+
+            } // End for each kvtag in list
+        } // End for each metadata from hash table entry
+    } // End looping metadata hash table
+    *n_meta = iter;
+
+
+
+    // Merge results
+    // TODO
+
+done:
+    if (curr_cond)
+        free(curr_cond);
+
+    return condition_ptr;
+}
+
 static perr_t
 PDC_Server_query_kvtag_someta(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids, uint64_t alloc_size)
 {
@@ -1817,45 +1999,60 @@ PDC_Server_query_kvtag_someta(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
     HashTableIterator          hash_table_iter;
     int                        n_entry, is_name_match, is_value_match;
     HashTablePair              pair;
+    const char *               condition_ptr;
 
     if (metadata_hash_table_g != NULL) {
 
-        n_entry = hash_table_num_entries(metadata_hash_table_g);
-        hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+        if (_is_multi_condition_query(in->value) == 1) {
+            condition_ptr = in->value;
+            // Get query results for each condition
+            while (condition_ptr) {
+                // Get results for the first condition, condition_ptr will be point to the next
+                // condition after _process_query_condition
+                condition_ptr = _process_query_condition(condition_ptr, obj_ids, &alloc_size, n_meta);
 
-        while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
-            pair = hash_table_iter_next(&hash_table_iter);
-            head = pair.value;
-            DL_FOREACH(head->metadata, elt)
-            {
-#ifdef PDC_DEBUG_OUTPUT
-                printf("==PDC_SERVER: Matching kvtag [\"%s\":\"%s\"] of object %s on condition in->key: "
-                       "%s, in->value: %s ",
-                       (char *)kvtag_list_elt->kvtag->name, (char *)kvtag_list_elt->kvtag->value,
-                       elt->obj_name, in->name, in->value);
-#endif
-                DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
+            }
+
+        } // End multi condition query
+        else {
+
+            n_entry = hash_table_num_entries(metadata_hash_table_g);
+            hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
+
+            while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+                pair = hash_table_iter_next(&hash_table_iter);
+                head = pair.value;
+                DL_FOREACH(head->metadata, elt)
                 {
-                    if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
 #ifdef PDC_DEBUG_OUTPUT
-                        println("[Found]");
+                    printf("==PDC_SERVER: Matching kvtag [\"%s\":\"%s\"] of object %s on condition in->key: "
+                           "%s, in->value: %s ",
+                           (char *)kvtag_list_elt->kvtag->name, (char *)kvtag_list_elt->kvtag->value,
+                           elt->obj_name, in->name, in->value);
 #endif
-                        if (iter >= alloc_size) {
-                            alloc_size *= 2;
-                            *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
+                    DL_FOREACH(elt->kvtag_list_head, kvtag_list_elt)
+                    {
+                        if (_is_matching_kvtag(in, kvtag_list_elt->kvtag) == TRUE) {
+#ifdef PDC_DEBUG_OUTPUT
+                            println("[Found]");
+#endif
+                            if (iter >= alloc_size) {
+                                alloc_size *= 2;
+                                *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
+                            }
+                            (*obj_ids)[iter++] = elt->obj_id;
                         }
-                        (*obj_ids)[iter++] = elt->obj_id;
-                        // break; // FIXME: shall we break here? or continue to check other kvtags?
-                    }
-                    else {
+                        else {
 #ifdef PDC_DEBUG_OUTPUT
-                        println("[NOT FOUND]");
+                            println("[NOT FOUND]");
 #endif
-                    }
-                } // End for each kvtag in list
-            }     // End for each metadata from hash table entry
-        }         // End looping metadata hash table
-        *n_meta = iter;
+                        }
+                    } // End for each kvtag in list
+                } // End for each metadata from hash table entry
+            } // End looping metadata hash table
+            *n_meta = iter;
+
+        } // End not multi condition query
 #ifdef PDC_DEBUG_OUTPUT
         printf("==PDC_SERVER[%d]: found %d objids \n", pdc_server_rank_g, iter);
 #endif
