@@ -480,7 +480,7 @@ get_server_ids_for_query(DART *dart_g, char *token, dart_op_type_t op_type, uint
     }
     if (op_type == OP_INSERT) {
         return 0;
-    } // For INSERT operation ,we return nothing here.
+    } // For INSERT operation, we return nothing here.
 
     // We first eliminate possibility of INFIX query.
     // Note: if suffix tree mode is ON, we don't have to search all servers.
@@ -616,7 +616,8 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
     char *    tok         = NULL;
     *out                  = NULL;
 
-    // regardless of suffix tree mode, we only need to get the DART hash result for one time.
+    // regardless of suffix tree mode, we only need to get the DART hash result for one time for query
+    // operations.
     int loop_count = 1;
     if (is_index_write_op(op_type)) {
 #ifdef PDC_DART_SFX_TREE

@@ -155,6 +155,9 @@ int art_tree_destroy(art_tree *t);
 inline uint64_t
 art_size(art_tree *t)
 {
+    if (t == NULL) {
+        return 0;
+    }
     return t->size;
 }
 #endif

@@ -80,6 +80,9 @@ rbt_destroy_internal(rbt_node_t *node, rbt_free_value_callback_t free_value_cb)
 void
 rbt_destroy(rbt_t *rbt)
 {
+    if (rbt == NULL) {
+        return;
+    }
     rbt_destroy_internal(rbt->root, rbt->free_value_cb);
     free(rbt);
 }
@@ -781,6 +784,9 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
 uint64_t
 rbt_size(rbt_t *rbt)
 {
+    if (rbt == NULL) {
+        return 0;
+    }
     return rbt->size;
 }
 

@@ -73,6 +73,8 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
     }
 
     for (int j = 0; j < num_obj_ids; j++) {
+        // the set is directly taking the pointer to every entry, which means we have to allocate memory for
+        // every number stored in the set.
         uint64_t *obj_id = (uint64_t *)PDC_calloc(1, sizeof(uint64_t));
         *obj_id          = obj_ids[j];
         set_insert(((value_index_leaf_content_t *)entry)->obj_id_set, (SetValue)obj_id);
@@ -91,48 +93,42 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
     }
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
 
-    if (leaf_content->type == PDC_STRING) {
-        void * attr_val      = strdup(idx_record->value);
+    if (is_PDC_STRING(idx_record->type)) {
+        void * attr_val      = idx_record->value;
         size_t value_str_len = strlen(idx_record->value);
-
-        ret = insert_obj_ids_into_value_leaf(leaf_content->primary_trie, attr_val,
-                                             leaf_content->type == PDC_STRING, value_str_len,
+        ret                  = insert_obj_ids_into_value_leaf(leaf_content->primary_trie, attr_val,
+                                             idx_record->type == PDC_STRING, value_str_len,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
-#ifndef PDC_DART_SFX_TREE
         if (ret == FAIL) {
             return ret;
         }
-        void *reverse_str = reverse_str((char *)(idx_record->value));
+#ifndef PDC_DART_SFX_TREE
+        void *reverse_str = reverse_str((char *)attr_val);
         // insert the value into the trie for suffix search.
         ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, reverse_str,
-                                             leaf_content->type == PDC_STRING, value_str_len,
+                                             idx_record->type == PDC_STRING, value_str_len,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
 #else
         int sub_loop_count = value_str_len;
         for (int j = 1; j < sub_loop_count; j++) {
-            if (ret == FAIL) {
-                return ret;
-            }
             char *suffix = substring(attr_val, j, value_str_len);
             ret          = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, suffix,
-                                                 leaf_content->type == PDC_STRING, strlen(suffix),
+                                                 idx_record->type == PDC_STRING, strlen(suffix),
                                                  idx_record->obj_ids, idx_record->num_obj_ids);
         }
 #endif
     }
-    else {
+    if (is_PDC_NUMERIC(idx_record->type)) {
         // idx_record->value_len should be the size of the value in bytes here.
-        void *attr_val = PDC_calloc(1, idx_record->value_len);
-        memcpy(attr_val, idx_record->value, idx_record->value_len);
-        ret = insert_obj_ids_into_value_leaf((rbt_t *)leaf_content->primary_rbt, attr_val,
-                                             leaf_content->type == PDC_STRING, idx_record->value_len,
+        ret = insert_obj_ids_into_value_leaf((rbt_t *)leaf_content->primary_rbt, idx_record->value,
+                                             idx_record->type == PDC_STRING, idx_record->value_len,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
     }
     return ret;
 }
 
 perr_t
-insert_into_key_trie(art_tree *key_trie, char *key, int len, int is_sfx, IDIOMS_md_idx_record_t *idx_record)
+insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_record_t *idx_record)
 {
     perr_t ret = SUCCEED;
     if (key_trie == NULL) {
@@ -147,8 +143,7 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, int is_sfx, IDIOMS_
     if (key_leaf_content == NULL) {
         key_leaf_content = (key_index_leaf_content_t *)PDC_calloc(1, sizeof(key_index_leaf_content_t));
         // fill the content of the leaf_content node.
-        key_leaf_content->type = idx_record->type;
-        if (key_leaf_content->type == PDC_STRING) {
+        if (is_PDC_STRING(idx_record->type)) {
             // the following gurarantees that both prefix index and suffix index are initialized.
             key_leaf_content->primary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->primary_trie);
@@ -156,32 +151,20 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, int is_sfx, IDIOMS_
             key_leaf_content->secondary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->secondary_trie);
 
-            key_leaf_content->simple_value_type = 3; // string.
+            // idx_record->simple_value_type = 3; // string.
         }
-        else {
-            char *               value_type_str = get_enum_name_by_dtype(idx_record->type);
-            libhl_cmp_callback_t compare_func   = NULL;
-            if (startsWith(value_type_str, "PDC_UINT")) {
-                key_leaf_content->simple_value_type = 0; // UINT64
-                compare_func                        = LIBHL_CMP_CB(PDC_UINT64);
-            }
-            else if (startsWith(value_type_str, "PDC_INT") || startsWith(value_type_str, "PDC_LONG")) {
-                key_leaf_content->simple_value_type = 1; // INT64
-                compare_func                        = LIBHL_CMP_CB(PDC_INT64);
-            }
-            else if (startsWith(value_type_str, "PDC_FLOAT") || startsWith(value_type_str, "PDC_DOUBLE")) {
-                key_leaf_content->simple_value_type = 2; // DOUBLE
-                compare_func                        = LIBHL_CMP_CB(PDC_DOUBLE);
-            }
-            else {
-                printf("ERROR: unsupported data type %s\n", value_type_str);
-                return FAIL;
-            }
-            key_leaf_content->primary_rbt = rbt_create(compare_func, free);
+        if (is_PDC_UINT(idx_record->type)) {
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), free);
         }
-        // insert the key into the the key trie along with the key_leaf_content.
-        art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
+        if (is_PDC_INT(idx_record->type)) {
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), free);
+        }
+        if (is_PDC_FLOAT(idx_record->type)) {
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), free);
+        }
     }
+    // insert the key into the the key trie along with the key_leaf_content.
+    art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
 
     key_leaf_content->virtural_node_id = idx_record->virtual_node_id;
 
@@ -202,7 +185,7 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     timer_start(&index_timer);
     art_tree *key_trie =
         (idx_record->is_key_suffix == 1) ? idioms_g->art_key_suffix_tree_g : idioms_g->art_key_prefix_tree_g;
-    insert_into_key_trie(key_trie, key, len, 0, idx_record);
+    insert_into_key_trie(key_trie, key, len, idx_record);
     /**
      * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
      * Therefore, there is no need to insert the suffixes of the key into the key trie locally.
@@ -211,7 +194,6 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
      *
      * Therefore, the following logic is commented off.
      */
-
     // #ifndef PDC_DART_SFX_TREE
     //     if (ret == FAIL) {
     //         return ret;
@@ -249,7 +231,7 @@ delete_obj_ids_from_value_leaf(void *index, void *attr_val, int is_trie, size_t 
 {
     perr_t ret = SUCCEED;
     if (index == NULL) {
-        return FAIL;
+        return ret;
     }
 
     void *entry     = NULL;
@@ -266,14 +248,18 @@ delete_obj_ids_from_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         return SUCCEED;
     }
 
+    uint64_t *obj_id = (uint64_t *)PDC_calloc(1, sizeof(uint64_t));
     for (int j = 0; j < num_obj_ids; j++) {
         if (ret == FAIL) {
             return ret;
         }
-        uint64_t *obj_id = (uint64_t *)PDC_calloc(1, sizeof(uint64_t));
-        *obj_id          = obj_ids[j];
+        // obj_id here is just for comparison purpose, and no need to allocate memory for it every time.
+        *obj_id = obj_ids[j];
         set_remove(((value_index_leaf_content_t *)entry)->obj_id_set, (SetValue)obj_id);
     }
+
+    free(obj_id);
+
     if (set_num_entries(((value_index_leaf_content_t *)entry)->obj_id_set) == 0) {
         set_free(((value_index_leaf_content_t *)entry)->obj_id_set);
         if (is_trie) {
@@ -288,78 +274,62 @@ delete_obj_ids_from_value_leaf(void *index, void *attr_val, int is_trie, size_t 
 }
 
 perr_t
-delete_from_value_index(void *value_index, int use_trie, IDIOMS_md_idx_record_t *idx_record)
-{
-    perr_t ret = SUCCEED;
-    if (value_index == NULL) {
-        return FAIL;
-    }
-
-    if (use_trie) { // logic for string values
-        void * attr_val      = strdup(idx_record->value);
-        size_t value_str_len = strlen(idx_record->value);
-        ret = delete_obj_ids_from_value_leaf((art_tree *)value_index, attr_val, use_trie, value_str_len,
-                                             idx_record->obj_ids, idx_record->num_obj_ids);
-
-// delete every suffix if suffix-tree mode is on.
-#ifdef PDC_DART_SFX_TREE
-        int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count; j++) {
-            if (ret == FAIL) {
-                return ret;
-            }
-            char *suffix = substring(attr_val, j, value_str_len);
-            ret = delete_obj_ids_from_value_leaf((art_tree *)value_index, suffix, use_trie, strlen(suffix),
-                                                 idx_record->obj_ids, idx_record->num_obj_ids);
-        }
-#endif
-    }
-    else { // logic for numeric values
-        int    i          = 0;
-        size_t mem_offset = 0;
-        for (i = 0; i < idx_record->value_len; i++) {
-            if (ret == FAIL) {
-                return ret;
-            }
-            size_t value_size_by_type = get_size_by_dtype(idx_record->type);
-            void * attr_val           = PDC_calloc(1, value_size_by_type);
-            memcpy(attr_val, idx_record->value + mem_offset, value_size_by_type);
-            mem_offset += value_size_by_type;
-
-            ret = delete_obj_ids_from_value_leaf((rbt_t *)value_index, attr_val, use_trie, value_size_by_type,
-                                                 idx_record->obj_ids, idx_record->num_obj_ids);
-        }
-    }
-    return ret;
-}
-
-perr_t
-delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content, int use_trie,
-                                     IDIOMS_md_idx_record_t *idx_record)
+delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
+                                     IDIOMS_md_idx_record_t *  idx_record)
 {
     perr_t ret = SUCCEED;
     if (leaf_content == NULL) {
         return FAIL;
     }
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
-    if (use_trie) {
+    if (idx_record->type == PDC_STRING) {
         // delete the value from the prefix tree.
-        ret = delete_from_value_index((void *)leaf_content->primary_trie, use_trie, idx_record);
-#ifndef PDC_DART_SFX_TREE
+        void * attr_val      = idx_record->value;
+        size_t value_str_len = strlen(idx_record->value);
+        ret                  = delete_obj_ids_from_value_leaf(leaf_content->primary_trie, attr_val,
+                                             idx_record->type == PDC_STRING, value_str_len,
+                                             idx_record->obj_ids, idx_record->num_obj_ids);
         if (ret == FAIL) {
             return ret;
         }
-        // delete the value from the trie for suffix search.
-        ret = delete_from_value_index((void *)leaf_content->secondary_trie, use_trie, idx_record);
+#ifndef PDC_DART_SFX_TREE
+        void *reverse_str = reverse_str((char *)attr_val);
+        // when suffix tree mode is OFF, the secondary trie is used for indexing reversed value strings.
+        ret = delete_obj_ids_from_value_leaf(leaf_content->secondary_trie, reverse_str,
+                                             idx_record->type == PDC_STRING, value_str_len,
+                                             idx_record->obj_ids, idx_record->num_obj_ids);
+#else
+        // when suffix tree mode is ON, the secondary trie is used for indexing suffixes of the value string.
+        int sub_loop_count = value_str_len;
+        for (int j = 1; j < sub_loop_count; j++) {
+            char *suffix = substring(attr_val, j, value_str_len);
+            ret          = delete_obj_ids_from_value_leaf(leaf_content->secondary_trie, suffix,
+                                                 idx_record->type == PDC_STRING, strlen(suffix),
+                                                 idx_record->obj_ids, idx_record->num_obj_ids);
+        }
 #endif
     }
     else {
-        // delete the value from the primary index.
-        ret = delete_from_value_index((void *)leaf_content->primary_rbt, use_trie, idx_record);
+        // delete the value from the primary rbtree index. here, value_len is the size of the value in bytes.
+        ret = delete_obj_ids_from_value_leaf(leaf_content->primary_rbt, idx_record->value,
+                                             idx_record->type == PDC_STRING, idx_record->value_len,
+                                             idx_record->obj_ids, idx_record->num_obj_ids);
     }
     return ret;
 }
 
+is_key_leaf_cnt_empty(key_index_leaf_content_t *leaf_content)
+{
+    if (leaf_content->primary_trie == NULL && leaf_content->secondary_trie == NULL &&
+        leaf_content->primary_rbt == NULL && leaf_content->secondary_rbt == NULL) {
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ *  @validated
+ */
 perr_t
 delete_from_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_record_t *idx_record)
 {
@@ -374,34 +344,56 @@ delete_from_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
     if (key_leaf_content == NULL) {
         return SUCCEED;
     }
-    char *value_type_str       = get_enum_name_by_dtype(key_leaf_content->type);
-    int   use_trie             = 0;
+
+    // delete the value part from second level index.
+    ret = delete_value_from_second_level_index(key_leaf_content, idx_record);
+    if (ret == FAIL) {
+        return ret;
+    }
+
+    char *value_type_str       = get_enum_name_by_dtype(idx_record->type);
     int   count_in_value_index = 0;
 
-    if (contains(value_type_str, "INT") || contains(value_type_str, "LONG") ||
-        contains(value_type_str, "FLOAT") || contains(value_type_str, "DOUBLE")) {
-        count_in_value_index = rbt_size(key_leaf_content->primary_rbt);
+    if (is_PDC_NUMERIC(idx_record->type)) {
+        if (rbt_size(key_leaf_content->primary_rbt) == 0) {
+            rbt_destroy(key_leaf_content->primary_rbt);
+            key_leaf_content->primary_rbt = NULL;
+        }
+        if (rbt_size(key_leaf_content->secondary_rbt) == 0) {
+            rbt_destroy(key_leaf_content->secondary_rbt);
+            key_leaf_content->secondary_rbt = NULL;
+        }
     }
-    else if (contains(value_type_str, "STRING")) {
-        use_trie             = 1;
-        count_in_value_index = art_size(key_leaf_content->primary_trie);
+    if (is_PDC_STRING(idx_record->type)) {
+        if (art_size(key_leaf_content->primary_trie) == 0) {
+            art_tree_destroy(key_leaf_content->primary_trie);
+            key_leaf_content->primary_trie = NULL;
+        }
+        if (art_size(key_leaf_content->secondary_trie) == 0) {
+            art_tree_destroy(key_leaf_content->secondary_trie);
+            key_leaf_content->secondary_trie = NULL;
+        }
     }
-    if (count_in_value_index == 0) {
+
+    if (is_key_leaf_cnt_empty(key_leaf_content)) {
         // delete the key from the the key trie along with the key_leaf_content.
+        free(key_leaf_content);
         art_delete(key_trie, (unsigned char *)key, len);
         return SUCCEED;
     }
-    // delete the value part from second level index.
-    ret = delete_value_from_second_level_index(key_leaf_content, use_trie, idx_record);
+
     return ret;
 }
 
+/**
+ *  @validated
+ */
 perr_t
 idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record)
 {
     perr_t ret = SUCCEED;
     // get the key and create key_index_leaf_content node for it.
-    char *key = idx_record->key;
+    char *key = idx_record->key; // in a delete function for trie, there is no need to duplicate the string.
     int   len = strlen(key);
 
     stopwatch_t index_timer;
@@ -412,8 +404,8 @@ idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record)
     /**
      * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
      * Therefore, there is no need to insert the suffixes of the key into the key trie locally.
-     * Different suffixes of the key should be inserted into the key trie on different servers, distributed by
-     * DART.
+     * Different suffixes of the key should be inserted into the key trie on different servers,
+     * distributed by DART.
      *
      * Therefore, the following logic is commented off.
      */
@@ -665,7 +657,7 @@ value_string_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
 }
 
 int
-key_index_callback(void *data, const unsigned char *key, uint32_t key_len, void *value)
+key_index_search_callback(void *data, const unsigned char *key, uint32_t key_len, void *value)
 {
     key_index_leaf_content_t *leafcnt    = (key_index_leaf_content_t *)value;
     IDIOMS_md_idx_record_t *  idx_record = (IDIOMS_md_idx_record_t *)(data);
@@ -681,13 +673,20 @@ key_index_callback(void *data, const unsigned char *key, uint32_t key_len, void 
         }
     }
 
-    pdc_c_var_type_t attr_type      = leafcnt->type;
-    char *           value_type_str = get_enum_name_by_dtype(attr_type);
+    pdc_c_var_type_t attr_type = leafcnt->type;
+
+    int query_rst = 0;
+    if (idx_record->type == PDC_STRING) {
+        // perform string search
+        query_rst |= value_string_query(v_query, leafcnt, idx_record);
+    }
 
     if (contains(value_type_str, "STRING")) {
         return value_string_query(v_query, leafcnt, idx_record);
     }
     else {
+        char *value_type_str = get_enum_name_by_dtype(attr_type);
+
         int simple_value_type = -1;
         if (startsWith(value_type_str, "PDC_UINT")) {
             simple_value_type = 0; // UINT64
@@ -775,14 +774,15 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
             leafcnt      = (key_index_leaf_content_t *)art_search(idioms_g->art_key_prefix_tree_g,
                                                              (unsigned char *)tok, strlen(tok));
             if (leafcnt != NULL) {
-                key_index_callback((void *)idx_record, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
+                key_index_search_callback((void *)idx_record, (unsigned char *)tok, strlen(tok),
+                                          (void *)leafcnt);
             }
             break;
         case PATTERN_PREFIX:
             qType_string = "Prefix";
             tok          = substring(k_query, 0, strlen(k_query) - 1);
             art_iter_prefix(idioms_g->art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
-                            key_index_callback, (void *)idx_record);
+                            key_index_search_callback, (void *)idx_record);
             break;
         case PATTERN_SUFFIX:
             qType_string = "Suffix";
@@ -790,12 +790,13 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
 #ifndef PDC_DART_SFX_TREE
             tok = reverse_str(tok);
             art_iter_prefix(idioms_g->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
-                            key_index_callback, (void *)idx_record);
+                            key_index_search_callback, (void *)idx_record);
 #else
-            leafcnt = (key_index_leaf_content_t *)art_search(idioms_g->art_key_prefix_tree_g,
+            leafcnt = (key_index_leaf_content_t *)art_search(idioms_g->art_key_suffix_tree_g,
                                                              (unsigned char *)tok, strlen(tok));
             if (leafcnt != NULL) {
-                key_index_callback((void *)idx_record, (unsigned char *)tok, strlen(tok), (void *)leafcnt);
+                key_index_search_callback((void *)idx_record, (unsigned char *)tok, strlen(tok),
+                                          (void *)leafcnt);
             }
 #endif
             break;
@@ -803,10 +804,10 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
             qType_string = "Infix";
             tok          = substring(k_query, 1, strlen(k_query) - 1);
 #ifndef PDC_DART_SFX_TREE
-            art_iter(idioms_g->art_key_prefix_tree_g, key_index_callback, (void *)idx_record);
+            art_iter(idioms_g->art_key_prefix_tree_g, key_index_search_callback, (void *)idx_record);
 #else
-            art_iter_prefix(idioms_g->art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
-                            key_index_callback, (void *)idx_record);
+            art_iter_prefix(idioms_g->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
+                            key_index_search_callback, (void *)idx_record);
 #endif
             break;
         default:

@@ -37,19 +37,19 @@ typedef struct {
     int8_t           is_key_suffix;
     uint64_t         virtual_node_id;
     pdc_c_var_type_t type;
-    int              simple_value_type; // 0: uint64_t, 1: int64_t, 2: double, 3: char*
-    void *           value;
-    size_t           value_len;
-    uint64_t *       obj_ids;
-    size_t           num_obj_ids;
-    size_t           key_offset;
-    size_t           value_offset;
+    // int              simple_value_type; // 0: uint64_t, 1: int64_t, 2: double, 3: char*
+    void *    value;
+    size_t    value_len;
+    uint64_t *obj_ids;
+    size_t    num_obj_ids;
+    size_t    key_offset;
+    size_t    value_offset;
 } IDIOMS_md_idx_record_t;
 
 typedef struct {
-    uint64_t         virtural_node_id;
-    pdc_c_var_type_t type;
-    int              simple_value_type; // 0: uint64_t, 1: int64_t, 2: double, 3: char*
+    uint64_t virtural_node_id;
+    // pdc_c_var_type_t type;
+    // int simple_value_type; // 0: uint64_t, 1: int64_t, 2: double, 3: char*
     // Also, for key lookup ART, we also maintain the pointer to the value tree
     art_tree *primary_trie;
     art_tree *secondary_trie;

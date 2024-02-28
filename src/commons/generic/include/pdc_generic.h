@@ -214,4 +214,51 @@ get_dtype_by_enum_name(const char *enumName)
     return PDC_UNKNOWN; // assuming PDC_UNKNOWN is the enum value for "unknown"
 }
 
+__attribute__((unused)) static pdc_c_var_type_t
+is_PDC_UINT(pdc_c_var_type_t type)
+{
+    if (type == PDC_UINT || type == PDC_UINT64 || type == PDC_UINT16 || type == PDC_UINT8 ||
+        type == PDC_UINT32 || type == PDC_SIZE_T) {
+        return true;
+    }
+    return false;
+}
+
+__attribute__((unused)) static pdc_c_var_type_t
+is_PDC_INT(pdc_c_var_type_t type)
+{
+    if (type == PDC_INT || type == PDC_INT64 || type == PDC_INT16 || type == PDC_INT8 || type == PDC_INT32 ||
+        type == PDC_LONG) {
+        return true;
+    }
+    return false;
+}
+
+__attribute__((unused)) static pdc_c_var_type_t
+is_PDC_FLOAT(pdc_c_var_type_t type)
+{
+    if (type == PDC_FLOAT || type == PDC_DOUBLE) {
+        return true;
+    }
+    return false;
+}
+
+__attribute__((unused)) static pdc_c_var_type_t
+is_PDC_STRING(pdc_c_var_type_t type)
+{
+    if (type == PDC_CHAR || type == PDC_STRING) {
+        return true;
+    }
+    return false;
+}
+
+__attribute__((unused)) static pdc_c_var_type_t
+is_PDC_NUMERIC(pdc_c_var_type_t type)
+{
+    if (is_PDC_INT(type) || is_PDC_UINT(type) || is_PDC_FLOAT(type)) {
+        return true;
+    }
+    return false;
+}
+
 #endif /* PDC_GENERIC_H */
