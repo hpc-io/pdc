@@ -55,6 +55,7 @@
 #include "pdc_hist_pkg.h"
 #include "pdc_timing.h"
 #include "pdc_region.h"
+#include "pdc_server_query.h"
 
 // Global object region info list in local data server
 data_server_region_t *      dataserver_region_g     = NULL;
@@ -1717,7 +1718,7 @@ PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_
             if (hg_ret != HG_SUCCESS) {
                 error = 1;
                 HG_Destroy(server_send_buf_map_handle);
-                free(tranx_args);
+                /* free(tranx_args); */
                 PGOTO_ERROR(FAIL, "PDC_Server_transfer_region_info(): Could not start HG_Forward()");
             }
         }
@@ -6535,295 +6536,6 @@ compare_coords_3d(const void *a, const void *b)
     return (memcmp(a, b, sizeof(uint64_t) * 3));
 }
 
-/* perr_t QUERY_EVALUATE_SCAN_OPT(uint64_t _n, float *_data, pdc_query_op_t _op, void *_value, */
-/*                                pdc_selection_t *_sel, region_list_t *_region, int _unit_size, */
-/*                                region_list_t *_region_constraint, pdc_query_combine_op_t _combine_op) */
-/* { */
-/*     perr_t ret_value; */
-#define MACRO_QUERY_EVALUATE_SCAN_OPT(TYPE, _n, _data, _op, _value, _sel, _region, _unit_size,               \
-                                      _region_constraint, _combine_op)                                       \
-    ({                                                                                                       \
-        uint64_t idx, iii, jjj, ttt, cur_count = 0, istart, has_dup;                                         \
-        int      is_good, _ndim;                                                                             \
-        TYPE *   edata = (TYPE *)(_data);                                                                    \
-        _ndim          = (_region)->ndim;                                                                    \
-        istart         = (_sel)->nhits * _ndim;                                                              \
-        if (_ndim > 3) {                                                                                     \
-            printf("==PDC_SERVER[%d]: %s - dimension > 3 not supported!\n", pdc_server_rank_g, __func__);    \
-            ret_value = FAIL;                                                                                \
-            goto done;                                                                                       \
-        }                                                                                                    \
-        if ((_combine_op) == PDC_QUERY_NONE || (_combine_op) == PDC_QUERY_OR) {                              \
-            for (iii = 0; iii < (_n); iii++) {                                                               \
-                is_good = 0;                                                                                 \
-                if ((_region_constraint) &&                                                                  \
-                    is_idx_within_region(iii, (_region), (_region_constraint), (_unit_size)) != 1)           \
-                    continue;                                                                                \
-                switch (_op) {                                                                               \
-                    case PDC_GT:                                                                             \
-                        if (edata[iii] > *((TYPE *)(_value)))                                                \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_LT:                                                                             \
-                        if (edata[iii] < *((TYPE *)(_value)))                                                \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_GTE:                                                                            \
-                        if (edata[iii] >= *((TYPE *)(_value)))                                               \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_LTE:                                                                            \
-                        if (edata[iii] <= *((TYPE *)(_value)))                                               \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_EQ:                                                                             \
-                        if (edata[iii] == *((TYPE *)(_value)))                                               \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    default:                                                                                 \
-                        printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g,      \
-                               __func__);                                                                    \
-                        ret_value = FAIL;                                                                    \
-                        goto done;                                                                           \
-                }                                                                                            \
-                if (is_good == 1) {                                                                          \
-                    if ((istart + cur_count + 1) * _ndim > ((_sel)->coords_alloc)) {                         \
-                        ((_sel)->coords_alloc) *= 2;                                                         \
-                        ((_sel)->coords) =                                                                   \
-                            (uint64_t *)realloc(((_sel)->coords), (_sel)->coords_alloc * sizeof(uint64_t));  \
-                        if (NULL == ((_sel)->coords)) {                                                      \
-                            printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g,         \
-                                   __func__);                                                                \
-                            ret_value = FAIL;                                                                \
-                            goto done;                                                                       \
-                        }                                                                                    \
-                    }                                                                                        \
-                    ttt = iii;                                                                               \
-                    if (_ndim == 3) {                                                                        \
-                        (_sel)->coords[istart + cur_count * _ndim + 2] =                                     \
-                            ttt / ((_region)->count[1] / (_unit_size)) *                                     \
-                                ((_region)->count[0] / (_unit_size)) +                                       \
-                            (_region)->start[2] / (_unit_size);                                              \
-                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 2] *                              \
-                               ((_region)->count[1] / (_unit_size)) * ((_region)->count[0] / (_unit_size));  \
-                    }                                                                                        \
-                    if (_ndim == 2) {                                                                        \
-                        (_sel)->coords[istart + cur_count * _ndim + 1] =                                     \
-                            ttt / ((_region)->count[0] / (_unit_size)) + (_region)->start[1] / (_unit_size); \
-                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 1] *                              \
-                               ((_region)->count[0] / (_unit_size));                                         \
-                    }                                                                                        \
-                    (_sel)->coords[istart + cur_count * _ndim] = ttt + (_region)->start[0] / (_unit_size);   \
-                    cur_count++;                                                                             \
-                }                                                                                            \
-            }                                                                                                \
-            ((_sel)->nhits) += cur_count;                                                                    \
-        }                                                                                                    \
-        else if ((_combine_op) == PDC_QUERY_AND) {                                                           \
-            has_dup = 0;                                                                                     \
-            for (idx = 0; idx < (_sel)->nhits; idx++) {                                                      \
-                if ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX) {                                           \
-                    continue;                                                                                \
-                }                                                                                            \
-                if (is_coord_within_region(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size) !=    \
-                    1) {                                                                                     \
-                    continue;                                                                                \
-                }                                                                                            \
-                iii     = coord_to_region_index(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size); \
-                is_good = 0;                                                                                 \
-                /* No need to check for region constraint as a query has one region constraint only */       \
-                switch (_op) {                                                                               \
-                    case PDC_GT:                                                                             \
-                        if (edata[iii] > *((TYPE *)(_value)))                                                \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_LT:                                                                             \
-                        if (edata[iii] < *((TYPE *)(_value)))                                                \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_GTE:                                                                            \
-                        if (edata[iii] >= *((TYPE *)(_value)))                                               \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_LTE:                                                                            \
-                        if (edata[iii] <= *((TYPE *)(_value)))                                               \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    case PDC_EQ:                                                                             \
-                        if (edata[iii] == *((TYPE *)(_value)))                                               \
-                            is_good = 1;                                                                     \
-                        break;                                                                               \
-                    default:                                                                                 \
-                        printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g,      \
-                               __func__);                                                                    \
-                        ret_value = FAIL;                                                                    \
-                        goto done;                                                                           \
-                }                                                                                            \
-                if (is_good != 1) {                                                                          \
-                    /* Invalidate the coord by setting it to max value */                                    \
-                    (_sel)->coords[idx * (_ndim)] = ULLONG_MAX;                                              \
-                    has_dup++;                                                                               \
-                }                                                                                            \
-            }                                                                                                \
-            /* Now get rid of the invalidated elements */                                                    \
-            iii = jjj = 0;                                                                                   \
-            if (has_dup > 0) {                                                                               \
-                for (idx = 0; idx < (_sel)->nhits; idx++) {                                                  \
-                    while ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX && idx < (_sel)->nhits) {             \
-                        iii++;                                                                               \
-                        idx++;                                                                               \
-                    }                                                                                        \
-                    if (idx != jjj && idx < (_sel)->nhits) {                                                 \
-                        memcpy(&(_sel)->coords[jjj * (_ndim)], &(_sel)->coords[idx * (_ndim)],               \
-                               _ndim * sizeof(uint64_t));                                                    \
-                    }                                                                                        \
-                    jjj++;                                                                                   \
-                }                                                                                            \
-                if (iii > (_sel)->nhits)                                                                     \
-                    printf("==PDC_SERVER[%d]: ERROR! invalidated more elements than total\n",                \
-                           pdc_server_rank_g);                                                               \
-                else                                                                                         \
-                    ((_sel)->nhits) -= iii;                                                                  \
-            }                                                                                                \
-        }                                                                                                    \
-    })
-
-#define MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(TYPE, _n, _data, _lo_op, _lo, _hi_op, _hi, _sel, _region,        \
-                                            _unit_size, _region_constraint, _combine_op)                     \
-    ({                                                                                                       \
-        uint64_t idx, iii, jjj, ttt, cur_count = 0, istart, has_dup;                                         \
-        int      is_good, _ndim;                                                                             \
-        TYPE *   edata = (TYPE *)(_data);                                                                    \
-        _ndim          = (_region)->ndim;                                                                    \
-        istart         = (_sel)->nhits * _ndim;                                                              \
-        if (_ndim > 3) {                                                                                     \
-            printf("==PDC_SERVER[%d]: %s - dimension > 3 not supported!\n", pdc_server_rank_g, __func__);    \
-            ret_value = FAIL;                                                                                \
-            goto done;                                                                                       \
-        }                                                                                                    \
-        if ((_combine_op) == PDC_QUERY_NONE || (_combine_op) == PDC_QUERY_OR) {                              \
-            for (iii = 0; iii < (_n); iii++) {                                                               \
-                is_good = 0;                                                                                 \
-                if ((_region_constraint) &&                                                                  \
-                    is_idx_within_region(iii, (_region), (_region_constraint), (_unit_size)) != 1)           \
-                    continue;                                                                                \
-                if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LT) {                                              \
-                    if (edata[iii] > (_lo) && edata[iii] < (_hi))                                            \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LT) {                                        \
-                    if (edata[iii] >= (_lo) && edata[iii] < (_hi))                                           \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                        \
-                    if (edata[iii] > (_lo) && edata[iii] <= (_hi))                                           \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                       \
-                    if (edata[iii] >= (_lo) && edata[iii] <= (_hi))                                          \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else {                                                                                       \
-                    printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);   \
-                    ret_value = FAIL;                                                                        \
-                    goto done;                                                                               \
-                }                                                                                            \
-                if (is_good == 1) {                                                                          \
-                    if ((istart + cur_count + 1) * _ndim > ((_sel)->coords_alloc)) {                         \
-                        ((_sel)->coords_alloc) *= 2;                                                         \
-                        ((_sel)->coords) =                                                                   \
-                            (uint64_t *)realloc(((_sel)->coords), (_sel)->coords_alloc * sizeof(uint64_t));  \
-                        if (NULL == ((_sel)->coords)) {                                                      \
-                            printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g,         \
-                                   __func__);                                                                \
-                            ret_value = FAIL;                                                                \
-                            goto done;                                                                       \
-                        }                                                                                    \
-                    }                                                                                        \
-                    ttt = iii;                                                                               \
-                    if (_ndim == 3) {                                                                        \
-                        (_sel)->coords[istart + cur_count * _ndim + 2] =                                     \
-                            ttt / ((_region)->count[1] / (_unit_size)) *                                     \
-                                ((_region)->count[0] / (_unit_size)) +                                       \
-                            (_region)->start[2] / (_unit_size);                                              \
-                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 2] *                              \
-                               ((_region)->count[1] / (_unit_size)) * ((_region)->count[0] / (_unit_size));  \
-                    }                                                                                        \
-                    if (_ndim == 2) {                                                                        \
-                        (_sel)->coords[istart + cur_count * _ndim + 1] =                                     \
-                            ttt / ((_region)->count[0] / (_unit_size)) + (_region)->start[1] / (_unit_size); \
-                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 1] *                              \
-                               ((_region)->count[0] / (_unit_size));                                         \
-                    }                                                                                        \
-                    (_sel)->coords[istart + cur_count * _ndim] = ttt + (_region)->start[0] / (_unit_size);   \
-                    cur_count++;                                                                             \
-                }                                                                                            \
-            }                                                                                                \
-            ((_sel)->nhits) += cur_count;                                                                    \
-        } /* End if left is NULL */                                                                          \
-        else if ((_combine_op) == PDC_QUERY_AND) {                                                           \
-            has_dup = 0;                                                                                     \
-            for (idx = 0; idx < (_sel)->nhits; idx++) {                                                      \
-                if ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX) {                                           \
-                    continue;                                                                                \
-                }                                                                                            \
-                if (is_coord_within_region(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size) !=    \
-                    1) {                                                                                     \
-                    continue;                                                                                \
-                }                                                                                            \
-                iii     = coord_to_region_index(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size); \
-                is_good = 0;                                                                                 \
-                /* No need to check for region constraint as a query has one region constraint only */       \
-                if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LT) {                                              \
-                    if (edata[iii] > (_lo) && edata[iii] < (_hi))                                            \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LT) {                                        \
-                    if (edata[iii] >= (_lo) && edata[iii] < (_hi))                                           \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                        \
-                    if (edata[iii] > (_lo) && edata[iii] <= (_hi))                                           \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                       \
-                    if (edata[iii] >= (_lo) && edata[iii] <= (_hi))                                          \
-                        is_good = 1;                                                                         \
-                }                                                                                            \
-                else {                                                                                       \
-                    printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);   \
-                    ret_value = FAIL;                                                                        \
-                    goto done;                                                                               \
-                }                                                                                            \
-                if (is_good != 1) {                                                                          \
-                    /* Invalidate the coord by setting it to max value */                                    \
-                    (_sel)->coords[idx * (_ndim)] = ULLONG_MAX;                                              \
-                    has_dup++;                                                                               \
-                }                                                                                            \
-            }                                                                                                \
-            /* Now get rid of the invalidated elements */                                                    \
-            iii = jjj = 0;                                                                                   \
-            if (has_dup > 0) {                                                                               \
-                for (idx = 0; idx < (_sel)->nhits; idx++) {                                                  \
-                    while ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX && idx < (_sel)->nhits) {             \
-                        iii++;                                                                               \
-                        idx++;                                                                               \
-                    }                                                                                        \
-                    if (idx != jjj && idx < (_sel)->nhits) {                                                 \
-                        memcpy(&(_sel)->coords[jjj * (_ndim)], &(_sel)->coords[idx * (_ndim)],               \
-                               (_ndim) * sizeof(uint64_t));                                                  \
-                    }                                                                                        \
-                    jjj++;                                                                                   \
-                }                                                                                            \
-                if (iii > (_sel)->nhits)                                                                     \
-                    printf("==PDC_SERVER[%d]: ERROR! invalidated more elements than total\n",                \
-                           pdc_server_rank_g);                                                               \
-                else                                                                                         \
-                    ((_sel)->nhits) -= iii;                                                                  \
-            }                                                                                                \
-        }                                                                                                    \
-    })
-
 #ifdef ENABLE_FASTBIT
 void
 PDC_gen_fastbit_idx_name(char *out, char *prefix, uint64_t obj_id, int timestep, int ndim, uint64_t *start,
@@ -7242,6 +6954,295 @@ done:
 }
 
 #endif
+/* perr_t QUERY_EVALUATE_SCAN_OPT(uint64_t _n, float *_data, pdc_query_op_t _op, void *_value, */
+/*                                pdc_selection_t *_sel, region_list_t *_region, int _unit_size, */
+/*                                region_list_t *_region_constraint, pdc_query_combine_op_t _combine_op) */
+/* { */
+/*     perr_t ret_value; */
+#define MACRO_QUERY_EVALUATE_SCAN_OPT(TYPE, _n, _data, _op, _value, _sel, _region, _unit_size,               \
+                                      _region_constraint, _combine_op)                                       \
+    ({                                                                                                       \
+        uint64_t idx, iii, jjj, ttt, cur_count = 0, istart, has_dup;                                         \
+        int      is_good, _ndim;                                                                             \
+        TYPE *   edata = (TYPE *)(_data);                                                                    \
+        _ndim          = (_region)->ndim;                                                                    \
+        istart         = (_sel)->nhits * _ndim;                                                              \
+        if (_ndim > 3) {                                                                                     \
+            printf("==PDC_SERVER[%d]: %s - dimension > 3 not supported!\n", pdc_server_rank_g, __func__);    \
+            ret_value = FAIL;                                                                                \
+            goto done;                                                                                       \
+        }                                                                                                    \
+        if ((_combine_op) == PDC_QUERY_NONE || (_combine_op) == PDC_QUERY_OR) {                              \
+            for (iii = 0; iii < (_n); iii++) {                                                               \
+                is_good = 0;                                                                                 \
+                if ((_region_constraint) &&                                                                  \
+                    is_idx_within_region(iii, (_region), (_region_constraint), (_unit_size)) != 1)           \
+                    continue;                                                                                \
+                switch (_op) {                                                                               \
+                    case PDC_GT:                                                                             \
+                        if (edata[iii] > *((TYPE *)(_value)))                                                \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_LT:                                                                             \
+                        if (edata[iii] < *((TYPE *)(_value)))                                                \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_GTE:                                                                            \
+                        if (edata[iii] >= *((TYPE *)(_value)))                                               \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_LTE:                                                                            \
+                        if (edata[iii] <= *((TYPE *)(_value)))                                               \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_EQ:                                                                             \
+                        if (edata[iii] == *((TYPE *)(_value)))                                               \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    default:                                                                                 \
+                        printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g,      \
+                               __func__);                                                                    \
+                        ret_value = FAIL;                                                                    \
+                        goto done;                                                                           \
+                }                                                                                            \
+                if (is_good == 1) {                                                                          \
+                    if ((istart + cur_count + 1) * _ndim > ((_sel)->coords_alloc)) {                         \
+                        ((_sel)->coords_alloc) *= 2;                                                         \
+                        ((_sel)->coords) =                                                                   \
+                            (uint64_t *)realloc(((_sel)->coords), (_sel)->coords_alloc * sizeof(uint64_t));  \
+                        if (NULL == ((_sel)->coords)) {                                                      \
+                            printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g,         \
+                                   __func__);                                                                \
+                            ret_value = FAIL;                                                                \
+                            goto done;                                                                       \
+                        }                                                                                    \
+                    }                                                                                        \
+                    ttt = iii;                                                                               \
+                    if (_ndim == 3) {                                                                        \
+                        (_sel)->coords[istart + cur_count * _ndim + 2] =                                     \
+                            ttt / ((_region)->count[1] / (_unit_size)) *                                     \
+                                ((_region)->count[0] / (_unit_size)) +                                       \
+                            (_region)->start[2] / (_unit_size);                                              \
+                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 2] *                              \
+                               ((_region)->count[1] / (_unit_size)) * ((_region)->count[0] / (_unit_size));  \
+                    }                                                                                        \
+                    if (_ndim == 2) {                                                                        \
+                        (_sel)->coords[istart + cur_count * _ndim + 1] =                                     \
+                            ttt / ((_region)->count[0] / (_unit_size)) + (_region)->start[1] / (_unit_size); \
+                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 1] *                              \
+                               ((_region)->count[0] / (_unit_size));                                         \
+                    }                                                                                        \
+                    (_sel)->coords[istart + cur_count * _ndim] = ttt + (_region)->start[0] / (_unit_size);   \
+                    cur_count++;                                                                             \
+                }                                                                                            \
+            }                                                                                                \
+            ((_sel)->nhits) += cur_count;                                                                    \
+        }                                                                                                    \
+        else if ((_combine_op) == PDC_QUERY_AND) {                                                           \
+            has_dup = 0;                                                                                     \
+            for (idx = 0; idx < (_sel)->nhits; idx++) {                                                      \
+                if ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX) {                                           \
+                    continue;                                                                                \
+                }                                                                                            \
+                if (is_coord_within_region(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size) !=    \
+                    1) {                                                                                     \
+                    continue;                                                                                \
+                }                                                                                            \
+                iii     = coord_to_region_index(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size); \
+                is_good = 0;                                                                                 \
+                /* No need to check for region constraint as a query has one region constraint only */       \
+                switch (_op) {                                                                               \
+                    case PDC_GT:                                                                             \
+                        if (edata[iii] > *((TYPE *)(_value)))                                                \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_LT:                                                                             \
+                        if (edata[iii] < *((TYPE *)(_value)))                                                \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_GTE:                                                                            \
+                        if (edata[iii] >= *((TYPE *)(_value)))                                               \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_LTE:                                                                            \
+                        if (edata[iii] <= *((TYPE *)(_value)))                                               \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    case PDC_EQ:                                                                             \
+                        if (edata[iii] == *((TYPE *)(_value)))                                               \
+                            is_good = 1;                                                                     \
+                        break;                                                                               \
+                    default:                                                                                 \
+                        printf("==PDC_SERVER[%d]: %s - error with operator type!\n", pdc_server_rank_g,      \
+                               __func__);                                                                    \
+                        ret_value = FAIL;                                                                    \
+                        goto done;                                                                           \
+                }                                                                                            \
+                if (is_good != 1) {                                                                          \
+                    /* Invalidate the coord by setting it to max value */                                    \
+                    (_sel)->coords[idx * (_ndim)] = ULLONG_MAX;                                              \
+                    has_dup++;                                                                               \
+                }                                                                                            \
+            }                                                                                                \
+            /* Now get rid of the invalidated elements */                                                    \
+            iii = jjj = 0;                                                                                   \
+            if (has_dup > 0) {                                                                               \
+                for (idx = 0; idx < (_sel)->nhits; idx++) {                                                  \
+                    while ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX && idx < (_sel)->nhits) {             \
+                        iii++;                                                                               \
+                        idx++;                                                                               \
+                    }                                                                                        \
+                    if (idx != jjj && idx < (_sel)->nhits) {                                                 \
+                        memcpy(&(_sel)->coords[jjj * (_ndim)], &(_sel)->coords[idx * (_ndim)],               \
+                               _ndim * sizeof(uint64_t));                                                    \
+                    }                                                                                        \
+                    jjj++;                                                                                   \
+                }                                                                                            \
+                if (iii > (_sel)->nhits)                                                                     \
+                    printf("==PDC_SERVER[%d]: ERROR! invalidated more elements than total\n",                \
+                           pdc_server_rank_g);                                                               \
+                else                                                                                         \
+                    ((_sel)->nhits) -= iii;                                                                  \
+            }                                                                                                \
+        }                                                                                                    \
+    })
+
+#define MACRO_QUERY_RANGE_EVALUATE_SCAN_OPT(TYPE, _n, _data, _lo_op, _lo, _hi_op, _hi, _sel, _region,        \
+                                            _unit_size, _region_constraint, _combine_op)                     \
+    ({                                                                                                       \
+        uint64_t idx, iii, jjj, ttt, cur_count = 0, istart, has_dup;                                         \
+        int      is_good, _ndim;                                                                             \
+        TYPE *   edata = (TYPE *)(_data);                                                                    \
+        _ndim          = (_region)->ndim;                                                                    \
+        istart         = (_sel)->nhits * _ndim;                                                              \
+        if (_ndim > 3) {                                                                                     \
+            printf("==PDC_SERVER[%d]: %s - dimension > 3 not supported!\n", pdc_server_rank_g, __func__);    \
+            ret_value = FAIL;                                                                                \
+            goto done;                                                                                       \
+        }                                                                                                    \
+        if ((_combine_op) == PDC_QUERY_NONE || (_combine_op) == PDC_QUERY_OR) {                              \
+            for (iii = 0; iii < (_n); iii++) {                                                               \
+                is_good = 0;                                                                                 \
+                if ((_region_constraint) &&                                                                  \
+                    is_idx_within_region(iii, (_region), (_region_constraint), (_unit_size)) != 1)           \
+                    continue;                                                                                \
+                if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LT) {                                              \
+                    if (edata[iii] > (_lo) && edata[iii] < (_hi))                                            \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LT) {                                        \
+                    if (edata[iii] >= (_lo) && edata[iii] < (_hi))                                           \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                        \
+                    if (edata[iii] > (_lo) && edata[iii] <= (_hi))                                           \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                       \
+                    if (edata[iii] >= (_lo) && edata[iii] <= (_hi))                                          \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else {                                                                                       \
+                    printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);   \
+                    ret_value = FAIL;                                                                        \
+                    goto done;                                                                               \
+                }                                                                                            \
+                if (is_good == 1) {                                                                          \
+                    if ((istart + cur_count + 1) * _ndim > ((_sel)->coords_alloc)) {                         \
+                        ((_sel)->coords_alloc) *= 2;                                                         \
+                        ((_sel)->coords) =                                                                   \
+                            (uint64_t *)realloc(((_sel)->coords), (_sel)->coords_alloc * sizeof(uint64_t));  \
+                        if (NULL == ((_sel)->coords)) {                                                      \
+                            printf("==PDC_SERVER[%d]: %s - error with malloc!\n", pdc_server_rank_g,         \
+                                   __func__);                                                                \
+                            ret_value = FAIL;                                                                \
+                            goto done;                                                                       \
+                        }                                                                                    \
+                    }                                                                                        \
+                    ttt = iii;                                                                               \
+                    if (_ndim == 3) {                                                                        \
+                        (_sel)->coords[istart + cur_count * _ndim + 2] =                                     \
+                            ttt / ((_region)->count[1] / (_unit_size)) *                                     \
+                                ((_region)->count[0] / (_unit_size)) +                                       \
+                            (_region)->start[2] / (_unit_size);                                              \
+                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 2] *                              \
+                               ((_region)->count[1] / (_unit_size)) * ((_region)->count[0] / (_unit_size));  \
+                    }                                                                                        \
+                    if (_ndim == 2) {                                                                        \
+                        (_sel)->coords[istart + cur_count * _ndim + 1] =                                     \
+                            ttt / ((_region)->count[0] / (_unit_size)) + (_region)->start[1] / (_unit_size); \
+                        ttt -= (_sel)->coords[istart + cur_count * _ndim + 1] *                              \
+                               ((_region)->count[0] / (_unit_size));                                         \
+                    }                                                                                        \
+                    (_sel)->coords[istart + cur_count * _ndim] = ttt + (_region)->start[0] / (_unit_size);   \
+                    cur_count++;                                                                             \
+                }                                                                                            \
+            }                                                                                                \
+            ((_sel)->nhits) += cur_count;                                                                    \
+        } /* End if left is NULL */                                                                          \
+        else if ((_combine_op) == PDC_QUERY_AND) {                                                           \
+            has_dup = 0;                                                                                     \
+            for (idx = 0; idx < (_sel)->nhits; idx++) {                                                      \
+                if ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX) {                                           \
+                    continue;                                                                                \
+                }                                                                                            \
+                if (is_coord_within_region(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size) !=    \
+                    1) {                                                                                     \
+                    continue;                                                                                \
+                }                                                                                            \
+                iii     = coord_to_region_index(_ndim, &(_sel)->coords[idx * (_ndim)], _region, _unit_size); \
+                is_good = 0;                                                                                 \
+                /* No need to check for region constraint as a query has one region constraint only */       \
+                if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LT) {                                              \
+                    if (edata[iii] > (_lo) && edata[iii] < (_hi))                                            \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LT) {                                        \
+                    if (edata[iii] >= (_lo) && edata[iii] < (_hi))                                           \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else if ((_lo_op) == PDC_GT && (_hi_op) == PDC_LTE) {                                        \
+                    if (edata[iii] > (_lo) && edata[iii] <= (_hi))                                           \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else if ((_lo_op) == PDC_GTE && (_hi_op) == PDC_LTE) {                                       \
+                    if (edata[iii] >= (_lo) && edata[iii] <= (_hi))                                          \
+                        is_good = 1;                                                                         \
+                }                                                                                            \
+                else {                                                                                       \
+                    printf("==PDC_SERVER[%d]: %s - error with range op! \n", pdc_server_rank_g, __func__);   \
+                    ret_value = FAIL;                                                                        \
+                    goto done;                                                                               \
+                }                                                                                            \
+                if (is_good != 1) {                                                                          \
+                    /* Invalidate the coord by setting it to max value */                                    \
+                    (_sel)->coords[idx * (_ndim)] = ULLONG_MAX;                                              \
+                    has_dup++;                                                                               \
+                }                                                                                            \
+            }                                                                                                \
+            /* Now get rid of the invalidated elements */                                                    \
+            iii = jjj = 0;                                                                                   \
+            if (has_dup > 0) {                                                                               \
+                for (idx = 0; idx < (_sel)->nhits; idx++) {                                                  \
+                    while ((_sel)->coords[idx * (_ndim)] == ULLONG_MAX && idx < (_sel)->nhits) {             \
+                        iii++;                                                                               \
+                        idx++;                                                                               \
+                    }                                                                                        \
+                    if (idx != jjj && idx < (_sel)->nhits) {                                                 \
+                        memcpy(&(_sel)->coords[jjj * (_ndim)], &(_sel)->coords[idx * (_ndim)],               \
+                               (_ndim) * sizeof(uint64_t));                                                  \
+                    }                                                                                        \
+                    jjj++;                                                                                   \
+                }                                                                                            \
+                if (iii > (_sel)->nhits)                                                                     \
+                    printf("==PDC_SERVER[%d]: ERROR! invalidated more elements than total\n",                \
+                           pdc_server_rank_g);                                                               \
+                else                                                                                         \
+                    ((_sel)->nhits) -= iii;                                                                  \
+            }                                                                                                \
+        }                                                                                                    \
+    })
+
 
 static perr_t
 PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_query_t *left,
@@ -7695,64 +7696,6 @@ done:
 
     fflush(stdout);
     return ret_value;
-}
-
-void
-PDC_query_visit_all_with_cb_arg(pdc_query_t *query, void (*func)(pdc_query_t *, void *), void *arg)
-{
-    if (NULL == query)
-        return;
-
-    func(query, arg);
-
-    PDC_query_visit_all_with_cb_arg(query->left, func, arg);
-    PDC_query_visit_all_with_cb_arg(query->right, func, arg);
-
-    return;
-}
-
-void
-PDC_query_visit(pdc_query_t *query,
-                perr_t (*func)(pdc_query_t *, query_task_t *, pdc_query_t *, pdc_query_combine_op_t),
-                query_task_t *arg, pdc_query_t *left, pdc_query_combine_op_t combine_op)
-{
-    if (NULL == query)
-        return;
-
-    PDC_query_visit(query->left, func, arg, left, combine_op);
-    PDC_query_visit(query->right, func, arg, query->left, query->combine_op);
-
-    if (NULL == query->left && NULL == query->right)
-        func(query, arg, left, combine_op);
-
-    return;
-}
-
-void
-PDC_query_visit_leaf_with_cb_arg(pdc_query_t *query, void (*func)(pdc_query_t *, void *), void *arg)
-{
-    if (NULL == query)
-        return;
-
-    PDC_query_visit_leaf_with_cb_arg(query->left, func, arg);
-    PDC_query_visit_leaf_with_cb_arg(query->right, func, arg);
-
-    if (NULL == query->left && NULL == query->right)
-        func(query, arg);
-
-    return;
-}
-
-void
-has_more_storage_region_to_recv(pdc_query_t *query, void *arg)
-{
-    int *has_more = (int *)arg;
-    if (query == NULL || query->constraint == NULL) {
-        return;
-    }
-
-    if (query->constraint->storage_region_list_head == NULL)
-        *has_more = 1;
 }
 
 perr_t
@@ -8982,6 +8925,18 @@ PDC_Server_distribute_query_workload(query_task_t *task, pdc_query_t *query, int
             PDC_Server_distribute_query_storage_info(task, query->constraint->obj_id, obj_idx, obj_ids, op);
     }
     return;
+}
+
+static void
+has_more_storage_region_to_recv(pdc_query_t *query, void *arg)
+{
+    int *has_more = (int *)arg;
+    if (query == NULL || query->constraint == NULL) {
+        return;
+    }
+
+    if (query->constraint->storage_region_list_head == NULL)
+        *has_more = 1;
 }
 
 hg_return_t

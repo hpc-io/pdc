@@ -1819,7 +1819,7 @@ _is_multi_condition_query(const char *query)
 }
 
 static char *
-_process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t **results, uint64_t *alloc_size, uint32_t *n_meta)
+_process_query_condition(const char* condition_ptr, pdcid_t **results, uint64_t *alloc_size, uint32_t *n_meta)
 {
     pdc_query_op_t op = PDC_OP_NONE;
     pdc_query_combine_op_t combine_op = PDC_QUERY_NONE;
@@ -1827,14 +1827,15 @@ _process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t 
     float float_value;
     double double_value;
     int int_value, len = 0;
-    char name[128], value[128], dtype[16];
+    char name_str[128], value_str[128], dtype_str[16];
     HashTableIterator hash_table_iter;
     HashTablePair pair;
     pdc_hash_table_entry_head *head;
     pdc_metadata_t *elt;
     pdc_kvtag_list_t *kvtag_list_elt;
+    pdc_var_type_t dtype;
 
-    while (condition_ptr == ' ')
+    while (*condition_ptr == ' ')
         condition_ptr++;
 
     if (NULL == condition_ptr)
@@ -1871,7 +1872,7 @@ _process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t 
 
     // "tokenize" the first condition
     len = 0;
-    while (condition_ptr[len] != NULL && condition_ptr[len] != ' ') {
+    while (condition_ptr[len] && condition_ptr[len] != ' ') {
         len++;
     }
 
@@ -1884,23 +1885,23 @@ _process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t 
     /* Author=string(abc) AND vel>double(10) OR loc<=int(-2) */
     // Parse one condition
     if (strstr(curr_cond, "<=")) {
-        sscanf(curr_cond, "%s<=%s(%s)", name, dtype, value);
+        sscanf(curr_cond, "%s<=%s(%s)", name_str, dtype_str, value_str);
         op = PDC_LTE;
     }
     else if (strstr(curr_cond, ">=")) {
-        sscanf(curr_cond, "%s>=%s(%s)", name, dtype, value);
+        sscanf(curr_cond, "%s>=%s(%s)", name_str, dtype_str, value_str);
         op = PDC_GTE;
     }
     else if (strstr(curr_cond, "<")) {
-        sscanf(curr_cond, "%s<%s(%s)", name, dtype, value);
+        sscanf(curr_cond, "%s<%s(%s)", name_str, dtype_str, value_str);
         op = PDC_LT;
     }
     else if (strstr(curr_cond, ">")) {
-        sscanf(curr_cond, "%s>%s(%s)", name, dtype, value);
+        sscanf(curr_cond, "%s>%s(%s)", name_str, dtype_str, value_str);
         op = PDC_GT;
     }
     else if (strstr(curr_cond, "=")) {
-        sscanf(curr_cond, "%s=%s(%s)", name, dtype, value);
+        sscanf(curr_cond, "%s=%s(%s)", name_str, dtype_str, value_str);
         op = PDC_EQ;
     }
     else {
@@ -1908,29 +1909,29 @@ _process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t 
         goto done;
     }
 
-    if (strcmp(dtype, "string") == 0) {
+    if (strcmp(dtype_str, "string") == 0) {
         dtype = PDC_STRING;
     }
-    else if (strcmp(dtype, "int") == 0) {
+    else if (strcmp(dtype_str, "int") == 0) {
         dtype = PDC_INT;
-        int_value = atoi(value);
+        int_value = atoi(value_str);
     }
-    else if (strcmp(dtype, "double") == 0) {
+    else if (strcmp(dtype_str, "double") == 0) {
         dtype = PDC_DOUBLE;
-        double_value = atof(value);
+        double_value = atof(value_str);
     }
-    else if (strcmp(dtype, "float") == 0) {
+    else if (strcmp(dtype_str, "float") == 0) {
         dtype = PDC_FLOAT;
-        float_value = (float)atof(value);
+        float_value = (float)atof(value_str);
     }
     else {
-        printf("==PDC_SERVER[%d]: error parsing datatype [%s]\n", pdc_server_rank_g, dtype);
+        printf("==PDC_SERVER[%d]: error parsing datatype [%s]\n", pdc_server_rank_g, dtype_str);
         goto done;
     }
 
     condition_ptr += len;
 
-    while (condition_ptr == ' ')
+    while (*condition_ptr == ' ')
         condition_ptr++;
 
     // Check if current tag satisfies the condition
@@ -1946,8 +1947,8 @@ _process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t 
             {
 
                 // Not matching name or value, no need to check other conditions
-                if (strcmp(kvtag_list_elt->kvtag->name, name) != 0 || kvtag->dtype != dtype)
-                    continue;
+                /* if (strcmp(kvtag_list_elt->kvtag->name, name_str) != 0 || kvtag->dtype != dtype) */
+                /*     continue; */
 
                 // TODO
                 if (dtype == PDC_STRING) {
@@ -1974,7 +1975,7 @@ _process_query_condition(pdc_kvtag_t *kvtag, const char* condition_ptr, pdcid_t 
             } // End for each kvtag in list
         } // End for each metadata from hash table entry
     } // End looping metadata hash table
-    *n_meta = iter;
+    /* *n_meta = iter; */
 
 
 
