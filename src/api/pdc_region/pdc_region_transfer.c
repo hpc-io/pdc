@@ -928,7 +928,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     *posix_transfer_request_id_ptr = (pdcid_t *)malloc(sizeof(pdcid_t) * size);
 
     for (i = 0; i < size; ++i) {
-        transferinfo     = PDC_find_id(transfer_request_id[i]);
+        transferinfo = PDC_find_id(transfer_request_id[i]);
         if (NULL == transferinfo)
             continue;
         transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
@@ -1589,7 +1589,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
 
     FUNC_ENTER(NULL);
 
-    transferinfo     = PDC_find_id(transfer_request_id);
+    transferinfo = PDC_find_id(transfer_request_id);
     if (NULL == transferinfo) {
         *completed = PDC_TRANSFER_STATUS_COMPLETE;
         goto done;
@@ -1707,7 +1707,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     total_requests        = 0;
     transfer_request_head = NULL;
     for (i = 0; i < size; ++i) {
-        transferinfo     = PDC_find_id(transfer_request_id[i]);
+        transferinfo = PDC_find_id(transfer_request_id[i]);
         if (NULL == transferinfo)
             continue;
         transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
@@ -1850,7 +1850,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     }
 
     for (i = 0; i < size; ++i) {
-        transferinfo     = PDC_find_id(transfer_request_id[i]);
+        transferinfo = PDC_find_id(transfer_request_id[i]);
         if (NULL == transferinfo)
             continue;
         transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
@@ -1910,7 +1910,7 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
 
     FUNC_ENTER(NULL);
 
-    transferinfo     = PDC_find_id(transfer_request_id);
+    transferinfo = PDC_find_id(transfer_request_id);
     if (NULL == transferinfo)
         goto done;
 
