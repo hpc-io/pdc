@@ -55,6 +55,7 @@ typedef struct {
     art_tree *secondary_trie;
     rbt_t *   primary_rbt;
     rbt_t *   secondary_rbt;
+    int8_t    rbt_dtype; // 0: uint64_t, 1: int64_t, 2: double
 } key_index_leaf_content_t;
 
 typedef struct {

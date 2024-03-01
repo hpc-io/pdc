@@ -33,6 +33,49 @@ get_idioms_g()
     return idioms_g;
 }
 
+int
+is_string_query(char *value_query)
+{
+    if (startsWith(value_query, "\"") || endsWith(value_query, "\"")) {
+        return 1;
+    }
+    return 0;
+}
+
+char *
+stripQuotes(const char *str)
+{
+    if (str == NULL) {
+        return NULL;
+    }
+
+    int len = strlen(str);
+    if (len >= 2 && str[0] == '"' && str[len - 1] == '"') {
+        // Call substring to remove the first and last character
+        char *stripped = substring(str, 1, len - 1);
+        return stripped;
+    }
+    else {
+        // No quotes to strip, return a copy of the original string
+        return strdup(str); // strdup allocates memory for the copy
+    }
+}
+
+int
+is_affix_query(char *value_query)
+{
+    if (contains(value_query, "*")) {
+        return 1;
+    }
+    return 0;
+}
+
+int
+is_number_query(char *value_query)
+{
+    return !is_string_query(value_query);
+}
+
 /****************************/
 /* Index Create             */
 /****************************/
@@ -155,12 +198,15 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
         }
         if (is_PDC_UINT(idx_record->type)) {
             key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), free);
+            key_leaf_content->rbt_dtype   = 0;
         }
         if (is_PDC_INT(idx_record->type)) {
             key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), free);
+            key_leaf_content->rbt_dtype   = 1;
         }
         if (is_PDC_FLOAT(idx_record->type)) {
             key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), free);
+            key_leaf_content->rbt_dtype   = 2;
         }
     }
     // insert the key into the the key trie along with the key_leaf_content.
@@ -282,7 +328,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
         return FAIL;
     }
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
-    if (idx_record->type == PDC_STRING) {
+    if (is_PDC_STRING(idx_record->type)) {
         // delete the value from the prefix tree.
         void * attr_val      = idx_record->value;
         size_t value_str_len = strlen(idx_record->value);
@@ -309,7 +355,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
         }
 #endif
     }
-    else {
+    if (is_PDC_NUMERIC(idx_record->type)) {
         // delete the value from the primary rbtree index. here, value_len is the size of the value in bytes.
         ret = delete_obj_ids_from_value_leaf(leaf_content->primary_rbt, idx_record->value,
                                              idx_record->type == PDC_STRING, idx_record->value_len,
@@ -536,13 +582,102 @@ get_number_from_string(char *str, int simple_value_type, void **val_ptr)
     return key_len;
 }
 
+/**
+ *  The following queries are what we need to support
+ * 1. exact query -> key=|value| (key == value)
+ * 5. range query -> key=value~  (key > value)
+ * 6. range query -> key=~value (key < value)
+ * 7. range query -> key=value|~ (key >= value)
+ * 8. range query -> key=~|value (key <= value)
+ * 9. range query -> key=value1|~value2 (value1 <= key < value2)
+ * 10. range query -> key=value1~|value2 (value1 < key <= value2)
+ * 11. range query -> key=value1~value2 (value1 < key < value2)
+ * 11. range query -> key=value1|~|value2 (value1 <= key <= value2)
+ */
 int
 value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
                    IDIOMS_md_idx_record_t *idx_record)
 {
     if (leafcnt->primary_rbt != NULL) {
+        // allocate memory according to the rbt_dtype for value 1 and value 2.
+        void *val1;
+        void *val2;
+        if (startsWith(secondary_query, "|") && startsWith(secondary_query, "|")) {
+            // exact number search
+            char *                      num_str = substring(secondary_query, 1, strlen(secondary_query) - 1);
+            size_t                      klen1   = get_number_from_string(num_str, leafcnt->rbt_dtype, &val1);
+            value_index_leaf_content_t *value_index_leaf = NULL;
+            rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
+            if (value_index_leaf != NULL) {
+                collect_obj_ids(value_index_leaf, idx_record);
+            }
+        }
+        else if (startsWith(secondary_query, "~")) {
+            // find all numbers that are smaller than the given number
+            char * numstr = substring(secondary_query, 1, strlen(secondary_query));
+            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
+            rbt_walk_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
+        }
+        else if (endsWith(secondary_query, "~")) {
+            // find all numbers that are greater than the given number
+            char * numstr = substring(secondary_query, 0, strlen(secondary_query) - 1);
+            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
+            rbt_walk_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
+        }
+        else if (startsWith(secondary_query, "~|")) {
+            // find all numbers that are smaller than or equal to the given number
+            char * numstr = substring(secondary_query, 2, strlen(secondary_query));
+            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
+            rbt_walk_le(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
+        }
+        else if (endsWith(secondary_query, "|~")) {
+            // find all numbers that are greater than or equal to the given number
+            char * numstr = substring(secondary_query, 0, strlen(secondary_query) - 2);
+            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
+            rbt_walk_ge(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
+        }
+        else if (contains(secondary_query, "~")) {
+            int    num_tokens = 0;
+            char **tokens     = NULL;
+            split_string(secondary_query, "~", &tokens, &num_tokens);
+            if (num_tokens != 2) {
+                printf("ERROR: invalid range query: %s\n", secondary_query);
+                return -1;
+            }
+            char * tok1           = tokens[0];
+            char * tok2           = tokens[1];
+            int    beginInclusive = endsWith(tok1, "|");
+            int    endInclusive   = startsWith(tok2, "|");
+            char * numstr1        = beginInclusive ? substring(tok1, 0, strlen(tok1) - 1) : tok1;
+            char * numstr2        = endInclusive ? substring(tok2, 1, strlen(tok2)) : tok2;
+            size_t klen1          = get_number_from_string(numstr1, leafcnt->rbt_dtype, &val1);
+            size_t klen2          = get_number_from_string(numstr2, leafcnt->rbt_dtype, &val2);
 
-        if (contains(secondary_query, "~")) {
+            // find the first number between '~'
+            int   tilde_pos = indexOf(secondary_query, '~');
+            char *tok1      = substring(secondary_query, 0, tilde_pos);
+            // find the second number after '~'
+            char *tok2 = substring(secondary_query, tilde_pos + 1, strlen(secondary_query));
+
+            void * val1;
+            void * val2;
+            size_t klen1 = get_number_from_string(tok1, leafcnt->rbt_dtype, &val1);
+            size_t klen2 = get_number_from_string(tok2, leafcnt->rbt_dtype, &val2);
+
+            rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2, value_rbt_callback, idx_record);
+        }
+        else {
+            value_index_leaf_content_t *value_index_leaf = NULL;
+
+            void * val  = NULL;
+            size_t klen = get_number_from_string(secondary_query, idx_record->simple_value_type, &val);
+            rbt_find(leafcnt->primary_rbt, val, klen, (void **)&value_index_leaf);
+            if (value_index_leaf != NULL) {
+                collect_obj_ids(value_index_leaf, idx_record);
+            }
+        }
+
+        if (contains(secondary_query, "~") || contains(secondary_query, "|")) {
             // find the first number before '~'
             int   tilde_pos = indexOf(secondary_query, '~');
             char *tok1      = substring(secondary_query, 0, tilde_pos);
@@ -551,8 +686,8 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
 
             void * val1;
             void * val2;
-            size_t klen1 = get_number_from_string(tok1, idx_record->simple_value_type, &val1);
-            size_t klen2 = get_number_from_string(tok2, idx_record->simple_value_type, &val2);
+            size_t klen1 = get_number_from_string(tok1, leafcnt->rbt_dtype, &val1);
+            size_t klen2 = get_number_from_string(tok2, leafcnt->rbt_dtype, &val2);
 
             rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2, value_rbt_callback, idx_record);
 
@@ -673,55 +808,40 @@ key_index_search_callback(void *data, const unsigned char *key, uint32_t key_len
         }
     }
 
-    pdc_c_var_type_t attr_type = leafcnt->type;
+    pdc_c_var_type_t attr_type = is_string_query(v_query) ? PDC_STRING : idx_record->type;
 
     int query_rst = 0;
-    if (idx_record->type == PDC_STRING) {
+    if (is_string_query(v_query)) {
         // perform string search
-        query_rst |= value_string_query(v_query, leafcnt, idx_record);
+        char *bare_v_query = stripQuotes(v_query);
+        query_rst |= value_string_query(bare_v_query, leafcnt, idx_record);
     }
 
-    if (contains(value_type_str, "STRING")) {
-        return value_string_query(v_query, leafcnt, idx_record);
+    if (is_number_query(v_query)) {
+        // perform number search
+        query_rst |= value_number_query(v_query, leafcnt, idx_record);
     }
-    else {
-        char *value_type_str = get_enum_name_by_dtype(attr_type);
-
-        int simple_value_type = -1;
-        if (startsWith(value_type_str, "PDC_UINT")) {
-            simple_value_type = 0; // UINT64
-        }
-        else if (startsWith(value_type_str, "PDC_INT") || startsWith(value_type_str, "PDC_LONG")) {
-            simple_value_type = 1; // INT64
-        }
-        else if (startsWith(value_type_str, "PDC_FLOAT") || startsWith(value_type_str, "PDC_DOUBLE")) {
-            simple_value_type = 2; // DOUBLE
-        }
-        else {
-            printf("ERROR: unsupported data type %s\n", value_type_str);
-            return 0;
-        }
-        idx_record->simple_value_type = simple_value_type;
-
-        return value_number_query(v_query, leafcnt, idx_record);
-    }
-    return 0;
+    return query_rst;
 }
 
 /**
  * the query initially is passed via 'key' field.
  * the format can be:
- * 1. exact query -> key=value
- * 2. prefix query -> key=value*
- * 3. suffix query -> key=*value
- * 4. infix query -> key=*value*
- * 5. range query -> key>value
- * 6. range query -> key<value
- * 7. range query -> key>=value
- * 8. range query -> key<=value
- * 9. range query -> key=value1|~value2
- * 10. range query -> key=value1~|value2
- * 11. range query -> key=value1|~|value2
+ * 1. exact query -> key="value"
+ * 2. prefix query -> key="value*"
+ * 3. suffix query -> key="*value"
+ * 4. infix query -> key="*value*"
+ *
+ * TODO: The following queries are what we need to support
+ * 1. exact query -> key=|value| (key == value)
+ * 5. range query -> key=value~  (key > value)
+ * 6. range query -> key=~value (key < value)
+ * 7. range query -> key=value|~ (key >= value)
+ * 8. range query -> key=~|value (key <= value)
+ * 9. range query -> key=value1|~value2 (value1 <= key < value2)
+ * 10. range query -> key=value1~|value2 (value1 < key <= value2)
+ * 11. range query -> key=value1~value2 (value1 < key < value2)
+ * 11. range query -> key=value1|~|value2 (value1 <= key <= value2)
  */
 uint64_t
 idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)

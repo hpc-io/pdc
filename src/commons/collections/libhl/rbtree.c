@@ -89,7 +89,8 @@ rbt_destroy(rbt_t *rbt)
 
 static int
 rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bgk_size, void *end_key,
-                        size_t edk_size, int sorted, rbt_walk_callback cb, void *priv)
+                        size_t edk_size, int sorted, rbt_walk_callback cb, void *priv, int beginInclusive,
+                        int endInclusive)
 {
     if (!node)
         return 0;
@@ -103,11 +104,14 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
 
     if (sorted && node->left) {
         int rrc = rbt_range_walk_internal(rbt, node->left, begin_key, bgk_size, end_key, edk_size, sorted, cb,
-                                          priv);
+                                          priv, beginInclusive, endInclusive);
         if (rrc == 0)
             return rc + 1;
         rc += rrc;
     }
+
+    int cmp_begin = rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size);
+    int cmp_end   = rbt->cmp_keys_cb(node->key, node->klen, end_key, edk_size);
 
     // current node = begin : no need for left child, collect
     // current node < begin : no need for left child
@@ -115,8 +119,34 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
     // current node = end : no need for right child, do not collect
     // current node < end : go for the right child, if current node >= begin, collect
     // current node > end : no need for right child
+
+    int cmp_begin = rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size);
+    int cmp_end   = rbt->cmp_keys_cb(node->key, node->klen, end_key, edk_size);
+
+    // Decide to go left or right based on comparisons and include flags
+    int go_for_left  = cmp_begin > 0 || (beginInclusive && cmp_begin == 0);
+    int go_for_right = cmp_end < 0 || (endInclusive && cmp_end == 0);
+
+    // If the current node is within the range, or matches begin/end based on include flags, call the callback
+    if ((cmp_begin > 0 && cmp_end < 0) || (beginInclusive && cmp_begin == 0) ||
+        (endInclusive && cmp_end == 0)) {
+        cbrc = cb(rbt, node->key, node->klen, node->value, priv);
+    }
+
     int go_for_left  = 1;
     int go_for_right = 1;
+    if (cmp_begin == 0 && beginInclusive) {
+        cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
+        go_for_right = 1;
+    }
+    else if (cmp_begin > 0 && (cmp_end < 0 || (endInclusive && cmp_end == 0))) {
+        cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
+        go_for_right = 1;
+    }
+    else if (cmp_begin < 0) {
+        go_for_left = 1;
+    }
+
     if (rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size) == 0) {
         cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
         go_for_right = 1;
@@ -137,11 +167,12 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
             if (node->left && node->right) {
                 rbt_remove(rbt, node->key, node->klen, NULL);
                 return rbt_range_walk_internal(rbt, node, begin_key, bgk_size, end_key, edk_size, sorted, cb,
-                                               priv);
+                                               priv, beginInclusive, endInclusive);
             }
             else if (node->left || node->right) {
                 return rbt_range_walk_internal(rbt, node->left ? node->left : node->right, begin_key,
-                                               bgk_size, end_key, edk_size, sorted, cb, priv);
+                                               bgk_size, end_key, edk_size, sorted, cb, priv, beginInclusive,
+                                               endInclusive);
             }
             // this node was a leaf
             return 1;
@@ -157,7 +188,7 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
 
     if (!sorted && go_for_left && node->left) {
         int rrc = rbt_range_walk_internal(rbt, node->left, begin_key, bgk_size, end_key, edk_size, sorted, cb,
-                                          priv);
+                                          priv, beginInclusive, endInclusive);
         if (rrc == 0)
             return rc + 1;
         rc += rrc;
@@ -165,7 +196,7 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
 
     if (go_for_right && node->right) {
         int rrc = rbt_range_walk_internal(rbt, node->right, begin_key, bgk_size, end_key, edk_size, sorted,
-                                          cb, priv);
+                                          cb, priv, beginInclusive, endInclusive);
         if (rrc == 0)
             return rc + 1;
         rc += rrc;
@@ -254,12 +285,24 @@ rbt_walk_sorted(rbt_t *rbt, rbt_walk_callback cb, void *priv)
 }
 
 int
-rbt_range_walk(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, size_t edk_size,
-               rbt_walk_callback cb, void *priv)
+rbt_walk_le(rbt_t *rbt, void *key, size_t klen, rbt_walk_callback cb, void *priv)
 {
     int rst = 0;
     if (rbt->root)
-        rst = rbt_range_walk_internal(rbt, rbt->root, begin_key, bgk_size, end_key, edk_size, 0, cb, priv);
+        rst = rbt_range_walk_internal(rbt, rbt->root, NULL, 0, key, klen, 0, cb, priv, 1, 1);
+
+    // rbt->num_of_comparisons += rst;
+    return rst;
+}
+
+int
+rbt_range_walk(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, size_t edk_size,
+               rbt_walk_callback cb, void *priv, int beginInclusive, int endInclusive)
+{
+    int rst = 0;
+    if (rbt->root)
+        rst = rbt_range_walk_internal(rbt, rbt->root, begin_key, bgk_size, end_key, edk_size, 0, cb, priv,
+                                      beginInclusive, endInclusive);
 
     // rbt->num_of_comparisons += rst;
     return rst;
