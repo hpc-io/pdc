@@ -55,7 +55,6 @@
 #include "pdc_hist_pkg.h"
 #include "pdc_timing.h"
 #include "pdc_region.h"
-#include "pdc_server_query.h"
 
 // Global object region info list in local data server
 data_server_region_t *      dataserver_region_g     = NULL;
@@ -9114,6 +9113,52 @@ done:
 
     free(bulk_args);
     return ret;
+}
+
+void
+PDC_query_visit_all_with_cb_arg(pdc_query_t *query, void (*func)(pdc_query_t *, void *), void *arg)
+{
+    if (NULL == query)
+        return;
+
+    func(query, arg);
+
+    PDC_query_visit_all_with_cb_arg(query->left, func, arg);
+    PDC_query_visit_all_with_cb_arg(query->right, func, arg);
+
+    return;
+}
+
+void
+PDC_query_visit(pdc_query_t *query,
+                perr_t (*func)(pdc_query_t *, query_task_t *, pdc_query_t *, pdc_query_combine_op_t),
+                query_task_t *arg, pdc_query_t *left, pdc_query_combine_op_t combine_op)
+{
+    if (NULL == query)
+        return;
+
+    PDC_query_visit(query->left, func, arg, left, combine_op);
+    PDC_query_visit(query->right, func, arg, query->left, query->combine_op);
+
+    if (NULL == query->left && NULL == query->right)
+        func(query, arg, left, combine_op);
+
+    return;
+}
+
+void
+PDC_query_visit_leaf_with_cb_arg(pdc_query_t *query, void (*func)(pdc_query_t *, void *), void *arg)
+{
+    if (NULL == query)
+        return;
+
+    PDC_query_visit_leaf_with_cb_arg(query->left, func, arg);
+    PDC_query_visit_leaf_with_cb_arg(query->right, func, arg);
+
+    if (NULL == query->left && NULL == query->right)
+        func(query, arg);
+
+    return;
 }
 
 hg_return_t

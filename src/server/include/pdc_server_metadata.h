@@ -93,6 +93,16 @@ typedef struct pdc_sqlite3_query_t {
 } pdc_sqlite3_query_t;
 #endif
 
+typedef struct pdc_meta_query_t {
+    char *name;
+    pdc_query_op_t op;
+    pdc_var_type_t dtype;
+    void *value;
+    pdc_query_combine_op_t combine_op;
+
+    struct pdc_meta_query_t *next;
+} pdc_meta_query_t;
+
 /***************************************/
 /* Library-private Function Prototypes */
 /***************************************/
