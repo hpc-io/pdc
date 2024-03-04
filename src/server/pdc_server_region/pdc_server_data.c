@@ -7242,7 +7242,6 @@ done:
         }                                                                                                    \
     })
 
-
 static perr_t
 PDC_Server_query_evaluate_merge_opt(pdc_query_t *query, query_task_t *task, pdc_query_t *left,
                                     pdc_query_combine_op_t combine_op)

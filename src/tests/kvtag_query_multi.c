@@ -166,7 +166,8 @@ main(int argc, char *argv[])
             }
         }
         else {
-            println("Rank %d: obj %llu [%s] [%d], len %d\n", my_rank, obj_ids[i], kvtag.name, *((int*)kvtag.value), kvtag.size);
+            println("Rank %d: obj %llu [%s] [%d], len %d\n", my_rank, obj_ids[i], kvtag.name,
+                    *((int *)kvtag.value), kvtag.size);
             if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
                 printf("fail to add a kvtag to o%d\n", i + my_obj_s);
             }
@@ -187,8 +188,8 @@ main(int argc, char *argv[])
 #endif
 
     sprintf(query, "tag>int(2) AND tag<=int(8) AND tag>=int(5)");
-    query_kvtag.size  = strlen(query) + 1;
-    println("Rank %d: query kvtag [%s] [%s]\n", my_rank, query_kvtag.name, (char*)query_kvtag.value);
+    query_kvtag.size = strlen(query) + 1;
+    println("Rank %d: query kvtag [%s] [%s]\n", my_rank, query_kvtag.name, (char *)query_kvtag.value);
 #ifdef ENABLE_MPI
     if (PDC_Client_query_kvtag_mpi(&query_kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
 #else
@@ -202,8 +203,8 @@ main(int argc, char *argv[])
     }
 
     sprintf(query, "tag>=int(3) AND tag<int(5) OR tag>=int(8)");
-    query_kvtag.size  = strlen(query) + 1;
-    println("Rank %d: query kvtag [%s] [%s]\n", my_rank, query_kvtag.name, (char*)query_kvtag.value);
+    query_kvtag.size = strlen(query) + 1;
+    println("Rank %d: query kvtag [%s] [%s]\n", my_rank, query_kvtag.name, (char *)query_kvtag.value);
 #ifdef ENABLE_MPI
     if (PDC_Client_query_kvtag_mpi(&query_kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
 #else
@@ -215,7 +216,6 @@ main(int argc, char *argv[])
     for (i = 0; i < nres; i++) {
         printf("%llu\n", pdc_ids[i]);
     }
-
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
