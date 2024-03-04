@@ -168,7 +168,7 @@ main(int argc, char *argv[])
                 }
             }
             else {
-                println("Rank %d: [%s] [%d], len %d\n", my_rank, kvtag.name, *((int*)kvtag.value), kvtag.size);
+                println("Rank %d: obj %llu [%s] [%d], len %d\n", my_rank, obj_ids[i], kvtag.name, *((int*)kvtag.value), kvtag.size);
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
