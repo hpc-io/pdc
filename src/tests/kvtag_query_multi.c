@@ -154,28 +154,23 @@ main(int argc, char *argv[])
 
     assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
 
-    // This is for adding #rounds tags to the objects.
     for (i = 0; i < my_add_tag; i++) {
-        for (iter = 0; iter < round; iter++) {
-            sprintf(tag_name, "round_%d", v);
-            v = iter;
+        v = i;
+        sprintf(tag_name, "tag", v);
 
-            if (is_using_dart) {
-                sprintf(value, "%d", v);
-                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, ref_type,
-                                                        (uint64_t)obj_ids[i]) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-                }
-            }
-            else {
-                println("Rank %d: obj %llu [%s] [%d], len %d\n", my_rank, obj_ids[i], kvtag.name, *((int*)kvtag.value), kvtag.size);
-                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-                }
+        if (is_using_dart) {
+            sprintf(value, "%d", v);
+            if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, ref_type,
+                                                    (uint64_t)obj_ids[i]) < 0) {
+                printf("fail to add a kvtag to o%d\n", i + my_obj_s);
             }
         }
-        if (my_rank == 0)
-            println("Rank %d: Added %d kvtag to the %d th object\n", my_rank, round, i);
+        else {
+            println("Rank %d: obj %llu [%s] [%d], len %d\n", my_rank, obj_ids[i], kvtag.name, *((int*)kvtag.value), kvtag.size);
+            if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
+                printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+            }
+        }
     }
 
 #ifdef ENABLE_MPI
@@ -191,33 +186,36 @@ main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
 
-    iter = 0;
-    /* for (iter = 0; iter < round; iter++) { */
-    /*     v = iter; */
-    /*     if (is_using_dart) { */
-    /*         sprintf(value, "%ld", v); */
-    /*         sprintf(exact_query, "%s=%s", query_kvtag.name, value); */
-/* #ifdef ENABLE_MPI */
-    /*         PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, exact_query, ref_type, &nres, &pdc_ids, */
-    /*                                                    MPI_COMM_WORLD); */
-/* #else */
-    /*         PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &nres, &pdc_ids); */
-/* #endif */
-    /*     } */
-    /*     else { */
-            sprintf(query, "round_0<int(10) AND round_1<=int(20) AND round_2>=int(15)");
-            query_kvtag.size  = strlen(query) + 1;
-            println("Rank %d: round %d, query kvtag [%s] [%s]\n", my_rank, iter, query_kvtag.name, (char*)query_kvtag.value);
+    sprintf(query, "tag>int(2) AND tag<=int(8) AND tag>=int(5)");
+    query_kvtag.size  = strlen(query) + 1;
+    println("Rank %d: query kvtag [%s] [%s]\n", my_rank, query_kvtag.name, (char*)query_kvtag.value);
 #ifdef ENABLE_MPI
-            if (PDC_Client_query_kvtag_mpi(&query_kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
+    if (PDC_Client_query_kvtag_mpi(&query_kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
 #else
-            if (PDC_Client_query_kvtag(&query_kvtag, &nres, &pdc_ids) < 0) {
+    if (PDC_Client_query_kvtag(&query_kvtag, &nres, &pdc_ids) < 0) {
 #endif
-                printf("fail to query kvtag [%s] with rank %d\n", query_kvtag.name, my_rank);
-                /* break; */
-            }
-        /* } */
-    /* } */
+        printf("fail to query kvtag [%s] with rank %d\n", query_kvtag.name, my_rank);
+    }
+    println("Query found %d objects", nres);
+    for (i = 0; i < nres; i++) {
+        printf("%llu\n", pdc_ids[i]);
+    }
+
+    sprintf(query, "tag>=int(3) AND tag<int(5) OR tag>=int(8)");
+    query_kvtag.size  = strlen(query) + 1;
+    println("Rank %d: query kvtag [%s] [%s]\n", my_rank, query_kvtag.name, (char*)query_kvtag.value);
+#ifdef ENABLE_MPI
+    if (PDC_Client_query_kvtag_mpi(&query_kvtag, &nres, &pdc_ids, MPI_COMM_WORLD) < 0) {
+#else
+    if (PDC_Client_query_kvtag(&query_kvtag, &nres, &pdc_ids) < 0) {
+#endif
+        printf("fail to query kvtag [%s] with rank %d\n", query_kvtag.name, my_rank);
+    }
+    println("Query found %d objects", nres);
+    for (i = 0; i < nres; i++) {
+        printf("%llu\n", pdc_ids[i]);
+    }
+
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -226,11 +224,6 @@ main(int argc, char *argv[])
 
     if (my_rank == 0)
         println("Total time to query %d objects with tag: %.5f", ntotal, total_time);
-#else
-    println("Query found %d objects", nres);
-    for (i = 0; i < nres; i++) {
-        printf("%llu\n", pdc_ids[i]);
-    }
 #endif
 
     // close a container

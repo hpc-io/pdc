@@ -1981,33 +1981,33 @@ _object_satisfy_query(pdc_kvtag_list_t* kvtag_list, pdc_meta_query_t *query)
                 tag_int = *((int*)kvtag->value);
                 query_int = *((int*)query_elt->value);
 
-                if (query->op == PDC_EQ && tag_int == query_int) { result[count] = TRUE; break; }
-                else if (query->op == PDC_LTE && tag_int <= query_int) { result[count] = TRUE; break; }
-                else if (query->op == PDC_LT && tag_int < query_int)  { result[count] = TRUE; break; }
-                else if (query->op == PDC_GTE && tag_int >= query_int) { result[count] = TRUE; break; }
-                else if (query->op == PDC_GT && tag_int >= query_int) { result[count] = TRUE; break; }
+                if (query_elt->op == PDC_EQ && tag_int == query_int) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_LTE && tag_int <= query_int) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_LT && tag_int < query_int)  { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_GTE && tag_int >= query_int) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_GT && tag_int > query_int) { result[count] = TRUE; break; }
 
             }
             else if (query_elt->dtype == PDC_FLOAT) {
                 tag_float = *((float*)kvtag->value);
                 query_float = *((float*)query_elt->value);
 
-                if (query->op == PDC_EQ && tag_float == query_float) { result[count] = TRUE; break; }
-                else if (query->op == PDC_LTE && tag_float <= query_float) { result[count] = TRUE; break; }
-                else if (query->op == PDC_LT && tag_float < query_float)  { result[count] = TRUE; break; }
-                else if (query->op == PDC_GTE && tag_float >= query_float) { result[count] = TRUE; break; }
-                else if (query->op == PDC_GT && tag_float >= query_float) { result[count] = TRUE; break; }
+                if (query_elt->op == PDC_EQ && tag_float == query_float) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_LTE && tag_float <= query_float) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_LT && tag_float < query_float)  { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_GTE && tag_float >= query_float) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_GT && tag_float > query_float) { result[count] = TRUE; break; }
 
            }
             else if (query_elt->dtype == PDC_DOUBLE) {
                 tag_double = *((double*)kvtag->value);
                 query_double = *((double*)query_elt->value);
 
-                if (query->op == PDC_EQ && tag_double == query_double) { result[count] = TRUE; break; }
-                else if (query->op == PDC_LTE && tag_double <= query_double) { result[count] = TRUE; break; }
-                else if (query->op == PDC_LT && tag_double < query_double)  { result[count] = TRUE; break; }
-                else if (query->op == PDC_GTE && tag_double >= query_double) { result[count] = TRUE; break; }
-                else if (query->op == PDC_GT && tag_double >= query_double) { result[count] = TRUE; break; }
+                if (query_elt->op == PDC_EQ && tag_double == query_double) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_LTE && tag_double <= query_double) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_LT && tag_double < query_double)  { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_GTE && tag_double >= query_double) { result[count] = TRUE; break; }
+                else if (query_elt->op == PDC_GT && tag_double > query_double) { result[count] = TRUE; break; }
             }
 
         } // End for each kvtag in list
@@ -2017,11 +2017,16 @@ _object_satisfy_query(pdc_kvtag_list_t* kvtag_list, pdc_meta_query_t *query)
     // Now we have a boolean array indicating whether the corresponding query constraint can be satisfied 
     // by the current object
     ret = result[0];
+    /* println("%d conditions:\ncondition 0: %d", len, ret); */
     for (i = 1; i < len; i++) {
-        if (combine_ops[i-1] == PDC_QUERY_AND)
+        if (combine_ops[i] == PDC_QUERY_AND) {
             ret = ret && result[i];
-        else if (combine_ops[i-1] == PDC_QUERY_OR)
+            /* println("AND condition %d: %d, res %d", i, result[i], ret); */
+        }
+        else if (combine_ops[i] == PDC_QUERY_OR) {
             ret = ret || result[i];
+            /* println("OR condition %d: %d, res %d", i, result[i], ret); */
+        }
     }
 
     return ret;
@@ -2058,8 +2063,11 @@ _process_metadata_query_multi(char* query_str, pdcid_t **obj_ids, uint64_t *allo
             }
 
         } // End for each metadata from hash table entry
+        /* println("-----OBJ-----"); */
     } // End looping metadata hash table
     *n_meta = iter;
+
+    /* println("============QUERY=============="); */
 
 /* done: */
     return ret_val;
