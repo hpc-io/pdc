@@ -1841,7 +1841,7 @@ _convert_to_sql_string(char *field, char *name, char *output)
 {
     // outputmust have sufficient size
     perr_t ret_value = SUCCEED;
-    char *current_pos;
+    char * current_pos;
 
     if (NULL == name || NULL == output) {
         fprintf(stderr, "==PDC_SERVER[%d]: %s - input/output is NULL\n", pdc_server_rank_g, __func__);
@@ -1865,7 +1865,6 @@ _convert_to_sql_string(char *field, char *name, char *output)
         }
     }
 
-
 done:
     return ret_value;
 }
@@ -1879,7 +1878,7 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
     char *              errMessage = NULL;
     char *              tmp_value, *tmp_name, *current_pos;
     pdc_sqlite3_query_t query_data;
-    pdc_meta_query_t   *query = NULL, *query_elt = NULL;
+    pdc_meta_query_t *  query = NULL, *query_elt = NULL;
 
     if (_is_multi_condition_query(in->value) == 1) {
         // Construct SQL statement
@@ -1905,7 +1904,8 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                 strcat(sql, tmp_char);
                 strcat(sql, " )");
             }
-            else if (query_elt->dtype == PDC_INT || query_elt->dtype == PDC_FLOAT || query_elt->dtype == PDC_DOUBLE) {
+            else if (query_elt->dtype == PDC_INT || query_elt->dtype == PDC_FLOAT ||
+                     query_elt->dtype == PDC_DOUBLE) {
 
                 ret_value = _convert_to_sql_string("name", query_elt->name, tmp_char);
                 strcat(sql, "( ");
@@ -1919,34 +1919,44 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                 else if (query_elt->dtype == PDC_DOUBLE)
                     strcat(sql, " value_double ");
                 else {
-                    fprintf(stderr, "==PDC_SERVER[%d]: %s - Unsupported query datataype\n", pdc_server_rank_g, __func__);
+                    fprintf(stderr, "==PDC_SERVER[%d]: %s - Unsupported query datataype\n", pdc_server_rank_g,
+                            __func__);
                     ret_value = FAIL;
                     goto done;
                 }
 
-                if (query_elt->op == PDC_EQ) { strcat(sql, "="); }
-                else if (query_elt->op == PDC_LTE) { strcat(sql, "<="); }
-                else if (query_elt->op == PDC_LT)  { strcat(sql, "<"); }
-                else if (query_elt->op == PDC_GTE) { strcat(sql, ">="); }
-                else if (query_elt->op == PDC_GT) { strcat(sql, ">"); }
+                if (query_elt->op == PDC_EQ) {
+                    strcat(sql, "=");
+                }
+                else if (query_elt->op == PDC_LTE) {
+                    strcat(sql, "<=");
+                }
+                else if (query_elt->op == PDC_LT) {
+                    strcat(sql, "<");
+                }
+                else if (query_elt->op == PDC_GTE) {
+                    strcat(sql, ">=");
+                }
+                else if (query_elt->op == PDC_GT) {
+                    strcat(sql, ">");
+                }
 
                 if (query_elt->dtype == PDC_INT)
-                    sprintf(tmp_char, "%d", *((int*)query_elt->value));
+                    sprintf(tmp_char, "%d", *((int *)query_elt->value));
                 else if (query_elt->dtype == PDC_FLOAT)
-                    sprintf(tmp_char, "%d", *((float*)query_elt->value));
+                    sprintf(tmp_char, "%d", *((float *)query_elt->value));
                 else if (query_elt->dtype == PDC_DOUBLE)
-                    sprintf(tmp_char, "%d", *((double*)query_elt->value));
+                    sprintf(tmp_char, "%d", *((double *)query_elt->value));
 
                 strcat(sql, tmp_char);
                 strcat(sql, " )");
-
             }
             else {
-                fprintf(stderr, "==PDC_SERVER[%d]: %s - Unsupported query datataype\n", pdc_server_rank_g, __func__);
+                fprintf(stderr, "==PDC_SERVER[%d]: %s - Unsupported query datataype\n", pdc_server_rank_g,
+                        __func__);
                 ret_value = FAIL;
                 goto done;
             }
-
         }
 
         strcat(sql, ";");
@@ -2011,7 +2021,8 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                         current_pos  = strchr(current_pos, '*');
                     }
 
-                    sprintf(sql, "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';",
+                    sprintf(sql,
+                            "SELECT objid FROM objects WHERE name LIKE \'%s\' AND value_text LIKE \'%s\';",
                             tmp_name, tmp_value);
                     if (tmp_value)
                         free(tmp_value);
@@ -2189,7 +2200,8 @@ _object_satisfy_query(pdc_kvtag_list_t *kvtag_list, pdc_meta_query_t *query)
 }
 
 static perr_t
-_process_metadata_query_multi_someta(char* query_str, pdcid_t **obj_ids, uint64_t *alloc_size, uint32_t *n_meta)
+_process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_t *alloc_size,
+                                     uint32_t *n_meta)
 {
     perr_t                     ret_val = SUCCEED;
     uint32_t                   iter    = 0;
