@@ -120,12 +120,9 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
     // current node < end : go for the right child, if current node >= begin, collect
     // current node > end : no need for right child
 
-    int cmp_begin = rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size);
-    int cmp_end   = rbt->cmp_keys_cb(node->key, node->klen, end_key, edk_size);
-
     // Decide to go left or right based on comparisons and include flags
-    int go_for_left  = cmp_begin > 0 || (beginInclusive && cmp_begin == 0);
-    int go_for_right = cmp_end < 0 || (endInclusive && cmp_end == 0);
+    int go_for_left  = cmp_begin > 0; // || (beginInclusive && cmp_begin == 0);
+    int go_for_right = cmp_end < 0;   // || (endInclusive && cmp_end == 0);
 
     // If the current node is within the range, or matches begin/end based on include flags, call the callback
     if ((cmp_begin > 0 && cmp_end < 0) || (beginInclusive && cmp_begin == 0) ||
@@ -133,31 +130,31 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
         cbrc = cb(rbt, node->key, node->klen, node->value, priv);
     }
 
-    int go_for_left  = 1;
-    int go_for_right = 1;
-    if (cmp_begin == 0 && beginInclusive) {
-        cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
-        go_for_right = 1;
-    }
-    else if (cmp_begin > 0 && (cmp_end < 0 || (endInclusive && cmp_end == 0))) {
-        cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
-        go_for_right = 1;
-    }
-    else if (cmp_begin < 0) {
-        go_for_left = 1;
-    }
+    // int go_for_left  = 1;
+    // int go_for_right = 1;
+    // if (cmp_begin == 0 && beginInclusive) {
+    //     cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
+    //     go_for_right = 1;
+    // }
+    // else if (cmp_begin > 0 && (cmp_end < 0 || (endInclusive && cmp_end == 0))) {
+    //     cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
+    //     go_for_right = 1;
+    // }
+    // else if (cmp_begin < 0) {
+    //     go_for_left = 1;
+    // }
 
-    if (rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size) == 0) {
-        cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
-        go_for_right = 1;
-    }
-    else if (rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size) > 0) {
-        if (rbt->cmp_keys_cb(node->key, node->klen, end_key, edk_size) < 0) {
-            cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
-            go_for_right = 1;
-        }
-        go_for_left = 1;
-    }
+    // if (rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size) == 0) {
+    //     cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
+    //     go_for_right = 1;
+    // }
+    // else if (rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size) > 0) {
+    //     if (rbt->cmp_keys_cb(node->key, node->klen, end_key, edk_size) < 0) {
+    //         cbrc         = cb(rbt, node->key, node->klen, node->value, priv);
+    //         go_for_right = 1;
+    //     }
+    //     go_for_left = 1;
+    // }
 
     switch (cbrc) {
         case RBT_WALK_DELETE_AND_STOP:
@@ -285,17 +282,6 @@ rbt_walk_sorted(rbt_t *rbt, rbt_walk_callback cb, void *priv)
 }
 
 int
-rbt_walk_le(rbt_t *rbt, void *key, size_t klen, rbt_walk_callback cb, void *priv)
-{
-    int rst = 0;
-    if (rbt->root)
-        rst = rbt_range_walk_internal(rbt, rbt->root, NULL, 0, key, klen, 0, cb, priv, 1, 1);
-
-    // rbt->num_of_comparisons += rst;
-    return rst;
-}
-
-int
 rbt_range_walk(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, size_t edk_size,
                rbt_walk_callback cb, void *priv, int beginInclusive, int endInclusive)
 {
@@ -310,12 +296,61 @@ rbt_range_walk(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, size
 
 int
 rbt_range_walk_sorted(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, size_t edk_size,
-                      rbt_walk_callback cb, void *priv)
+                      rbt_walk_callback cb, void *priv, int beginInclusive, int endInclusive)
 {
     int rst = 0;
     if (rbt->root)
-        rst = rbt_range_walk_internal(rbt, rbt->root, begin_key, bgk_size, end_key, edk_size, 1, cb, priv);
+        rst = rbt_range_walk_internal(rbt, rbt->root, begin_key, bgk_size, end_key, edk_size, 1, cb, priv,
+                                      beginInclusive, endInclusive);
 
+    // rbt->num_of_comparisons += rst;
+    return rst;
+}
+
+int
+rbt_range_le(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv, int end_inclusive)
+{
+    int rst = 0;
+    if (rbt->root)
+        rst = rbt_range_walk_internal(rbt, rbt->root, NULL, 0, end_key, edk_size, 0, cb, priv, 1,
+                                      end_inclusive);
+
+    // rbt->num_of_comparisons += rst;
+    return rst;
+}
+
+int
+rbt_range_ge(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
+             int begin_inclusive)
+{
+    int rst = 0;
+    if (rbt->root)
+        rst = rbt_range_walk_internal(rbt, rbt->root, begin_key, bgk_size, NULL, 0, 0, cb, priv,
+                                      begin_inclusive, 1);
+    // rbt->num_of_comparisons += rst;
+    return rst;
+}
+
+int
+rbt_range_le_sorted(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv,
+                    int end_inclusive)
+{
+    int rst = 0;
+    if (rbt->root)
+        rst = rbt_range_walk_internal(rbt, rbt->root, NULL, 0, end_key, edk_size, 1, cb, priv, 1,
+                                      end_inclusive);
+    // rbt->num_of_comparisons += rst;
+    return rst;
+}
+
+int
+rbt_range_ge_sorted(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
+                    int begin_inclusive)
+{
+    int rst = 0;
+    if (rbt->root)
+        rst = rbt_range_walk_internal(rbt, rbt->root, begin_key, bgk_size, NULL, 0, 1, cb, priv,
+                                      begin_inclusive, 1);
     // rbt->num_of_comparisons += rst;
     return rst;
 }

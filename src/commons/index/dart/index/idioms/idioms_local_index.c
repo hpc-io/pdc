@@ -364,6 +364,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
     return ret;
 }
 
+int
 is_key_leaf_cnt_empty(key_index_leaf_content_t *leaf_content)
 {
     if (leaf_content->primary_trie == NULL && leaf_content->secondary_trie == NULL &&
@@ -613,28 +614,20 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
             }
         }
         else if (startsWith(secondary_query, "~")) {
+            int endInclusive = secondary_query[1] == '|';
             // find all numbers that are smaller than the given number
-            char * numstr = substring(secondary_query, 1, strlen(secondary_query));
-            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
-            rbt_walk_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
+            int    beginPos = endInclusive ? 2 : 1;
+            char * numstr   = substring(secondary_query, beginPos, strlen(secondary_query));
+            size_t klen1    = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
+            rbt_range_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, endInclusive);
         }
         else if (endsWith(secondary_query, "~")) {
+            int beginInclusive = secondary_query[strlen(secondary_query) - 2] == '|';
+            int endPos         = beginInclusive ? strlen(secondary_query) - 2 : strlen(secondary_query) - 1;
             // find all numbers that are greater than the given number
-            char * numstr = substring(secondary_query, 0, strlen(secondary_query) - 1);
+            char * numstr = substring(secondary_query, 0, endPos);
             size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
-            rbt_walk_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
-        }
-        else if (startsWith(secondary_query, "~|")) {
-            // find all numbers that are smaller than or equal to the given number
-            char * numstr = substring(secondary_query, 2, strlen(secondary_query));
-            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
-            rbt_walk_le(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
-        }
-        else if (endsWith(secondary_query, "|~")) {
-            // find all numbers that are greater than or equal to the given number
-            char * numstr = substring(secondary_query, 0, strlen(secondary_query) - 2);
-            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
-            rbt_walk_ge(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record);
+            rbt_range_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, beginInclusive);
         }
         else if (contains(secondary_query, "~")) {
             int    num_tokens = 0;

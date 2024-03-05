@@ -146,11 +146,13 @@ int rbt_walk_sorted(rbt_t *rbt, rbt_walk_callback cb, void *priv);
  * @param cb   The callback to call for each visited node
  * @param priv A pointer to private data provided passed as argument to the
  *             callback when invoked.
+ * @param begin_inclusive whether the begin_key is inclusive or not
+ * @param end_inclusive whether the end_key is inclusive or not
  * @return The number of visited nodes
  *
  */
 int rbt_range_walk(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, size_t edk_size,
-                   rbt_walk_callback cb, void *priv);
+                   rbt_walk_callback cb, void *priv, int begin_inclusive, int end_inclusive);
 
 /**
  * @brief Walk the node with its key within the given range in the tree in ascending order and call the
@@ -163,10 +165,72 @@ int rbt_range_walk(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, 
  * @param cb   The callback to call for each visited node
  * @param priv A pointer to private data provided passed as argument to the
  *             callback when invoked.
+ * @param begin_inclusive whether the begin_key is inclusive or not
+ * @param end_inclusive whether the end_key is inclusive or not
  * @return The number of visited nodes
  */
 int rbt_range_walk_sorted(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_key, size_t edk_size,
-                          rbt_walk_callback cb, void *priv);
+                          rbt_walk_callback cb, void *priv, int begin_inclusive, int end_inclusive);
+
+/**
+ * @brief Walk the node with its key less than or equal to the given key in the tree and call the callback
+ *
+ * @param rbt  A valid pointer to an initialized rbt_t structure
+ * @param end_key key to end with
+ * @param edk_size size of the key to end with
+ * @param cb   The callback to call for each visited node
+ * @param priv A pointer to private data provided passed as argument to the
+ *            callback when invoked.
+ * @param end_inclusive whether the end_key is inclusive or not
+ * @return The number of visited nodes
+ */
+int rbt_range_lt(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv,
+                 int end_inclusive);
+
+/**
+ * @brief Walk the node with its key greater than or equal to the given key in the tree and call the callback
+ * for each visited node
+ * @param rbt  A valid pointer to an initialized rbt_t structure
+ * @param begin_key key to begin with
+ * @param bgk_size size of the key to  begin with
+ * @param cb   The callback to call for each visited node
+ * @param priv A pointer to private data provided passed as argument to the
+ *           callback when invoked.
+ * @param begin_inclusive whether the begin_key is inclusive or not
+ * @return The number of visited nodes
+ */
+int rbt_range_gt(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
+                 int begin_inclusive);
+
+/**
+ * @brief Walk the node with its key less than or equal to the given key in the tree in ascending order and
+ * call the callback for each visited node
+ * @param rbt  A valid pointer to an initialized rbt_t structure
+ * @param end_key key to end with
+ * @param edk_size size of the key to end with
+ * @param cb   The callback to call for each visited node
+ * @param priv A pointer to private data provided passed as argument to the
+ *            callback when invoked.
+ * @param end_inclusive whether the end_key is inclusive or not
+ * @return The number of visited nodes
+ */
+int rbt_range_lt_sorted(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv,
+                        int end_inclusive);
+
+/**
+ * @brief Walk the node with its key greater than or equal to the given key in the tree in ascending order and
+ * call the callback for each visited node
+ * @param rbt  A valid pointer to an initialized rbt_t structure
+ * @param begin_key key to begin with
+ * @param bgk_size size of the key to  begin with
+ * @param cb   The callback to call for each visited node
+ * @param priv A pointer to private data provided passed as argument to the
+ *           callback when invoked.
+ * @param begin_inclusive whether the begin_key is inclusive or not
+ * @return The number of visited nodes
+ */
+int rbt_range_gt_sorted(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
+                        int begin_inclusive);
 
 /**
  * @brief Return the size of the tree, which is the number of nodes in the tree
