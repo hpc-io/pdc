@@ -308,7 +308,7 @@ rbt_range_walk_sorted(rbt_t *rbt, void *begin_key, size_t bgk_size, void *end_ke
 }
 
 int
-rbt_range_le(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv, int end_inclusive)
+rbt_range_lt(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv, int end_inclusive)
 {
     int rst = 0;
     if (rbt->root)
@@ -320,7 +320,7 @@ rbt_range_le(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, v
 }
 
 int
-rbt_range_ge(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
+rbt_range_gt(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
              int begin_inclusive)
 {
     int rst = 0;
@@ -332,7 +332,7 @@ rbt_range_ge(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb,
 }
 
 int
-rbt_range_le_sorted(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv,
+rbt_range_lt_sorted(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callback cb, void *priv,
                     int end_inclusive)
 {
     int rst = 0;
@@ -344,7 +344,7 @@ rbt_range_le_sorted(rbt_t *rbt, void *end_key, size_t edk_size, rbt_walk_callbac
 }
 
 int
-rbt_range_ge_sorted(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
+rbt_range_gt_sorted(rbt_t *rbt, void *begin_key, size_t bgk_size, rbt_walk_callback cb, void *priv,
                     int begin_inclusive)
 {
     int rst = 0;

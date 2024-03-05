@@ -194,19 +194,19 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
             key_leaf_content->secondary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->secondary_trie);
 
-            // idx_record->simple_value_type = 3; // string.
+            key_leaf_content->val_idx_dtype = 3;
         }
         if (is_PDC_UINT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), free);
-            key_leaf_content->rbt_dtype   = 0;
+            key_leaf_content->primary_rbt   = rbt_create(LIBHL_CMP_CB(PDC_UINT64), free);
+            key_leaf_content->val_idx_dtype = 0;
         }
         if (is_PDC_INT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), free);
-            key_leaf_content->rbt_dtype   = 1;
+            key_leaf_content->primary_rbt   = rbt_create(LIBHL_CMP_CB(PDC_INT64), free);
+            key_leaf_content->val_idx_dtype = 1;
         }
         if (is_PDC_FLOAT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), free);
-            key_leaf_content->rbt_dtype   = 2;
+            key_leaf_content->primary_rbt   = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), free);
+            key_leaf_content->val_idx_dtype = 2;
         }
     }
     // insert the key into the the key trie along with the key_leaf_content.
@@ -594,131 +594,68 @@ get_number_from_string(char *str, int simple_value_type, void **val_ptr)
  * 10. range query -> key=value1~|value2 (value1 < key <= value2)
  * 11. range query -> key=value1~value2 (value1 < key < value2)
  * 11. range query -> key=value1|~|value2 (value1 <= key <= value2)
+ *
+ * When return 0, it is successful.
  */
 int
 value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
                    IDIOMS_md_idx_record_t *idx_record)
 {
-    if (leafcnt->primary_rbt != NULL) {
-        // allocate memory according to the rbt_dtype for value 1 and value 2.
-        void *val1;
-        void *val2;
-        if (startsWith(secondary_query, "|") && startsWith(secondary_query, "|")) {
-            // exact number search
-            char *                      num_str = substring(secondary_query, 1, strlen(secondary_query) - 1);
-            size_t                      klen1   = get_number_from_string(num_str, leafcnt->rbt_dtype, &val1);
-            value_index_leaf_content_t *value_index_leaf = NULL;
-            rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
-            if (value_index_leaf != NULL) {
-                collect_obj_ids(value_index_leaf, idx_record);
-            }
+    if (leafcnt->primary_rbt == NULL) {
+        return 0;
+    }
+
+    // allocate memory according to the val_idx_dtype for value 1 and value 2.
+    void *val1;
+    void *val2;
+    if (startsWith(secondary_query, "|") && startsWith(secondary_query, "|")) {
+        // exact number search
+        char *                      num_str = substring(secondary_query, 1, strlen(secondary_query) - 1);
+        size_t                      klen1   = get_number_from_string(num_str, leafcnt->val_idx_dtype, &val1);
+        value_index_leaf_content_t *value_index_leaf = NULL;
+        rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
+        if (value_index_leaf != NULL) {
+            collect_obj_ids(value_index_leaf, idx_record);
         }
-        else if (startsWith(secondary_query, "~")) {
-            int endInclusive = secondary_query[1] == '|';
-            // find all numbers that are smaller than the given number
-            int    beginPos = endInclusive ? 2 : 1;
-            char * numstr   = substring(secondary_query, beginPos, strlen(secondary_query));
-            size_t klen1    = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
-            rbt_range_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, endInclusive);
+    }
+    else if (startsWith(secondary_query, "~")) {
+        int endInclusive = secondary_query[1] == '|';
+        // find all numbers that are smaller than the given number
+        int    beginPos = endInclusive ? 2 : 1;
+        char * numstr   = substring(secondary_query, beginPos, strlen(secondary_query));
+        size_t klen1    = get_number_from_string(numstr, leafcnt->val_idx_dtype, &val1);
+        rbt_range_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, endInclusive);
+    }
+    else if (endsWith(secondary_query, "~")) {
+        int beginInclusive = secondary_query[strlen(secondary_query) - 2] == '|';
+        int endPos         = beginInclusive ? strlen(secondary_query) - 2 : strlen(secondary_query) - 1;
+        // find all numbers that are greater than the given number
+        char * numstr = substring(secondary_query, 0, endPos);
+        size_t klen1  = get_number_from_string(numstr, leafcnt->val_idx_dtype, &val1);
+        rbt_range_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, beginInclusive);
+    }
+    else if (contains(secondary_query, "~")) {
+        int    num_tokens = 0;
+        char **tokens     = NULL;
+        // the string is not ended or started with '~', and if it contains '~', it is a in-between query.
+        split_string(secondary_query, "~", &tokens, &num_tokens);
+        if (num_tokens != 2) {
+            printf("ERROR: invalid range query: %s\n", secondary_query);
+            return -1;
         }
-        else if (endsWith(secondary_query, "~")) {
-            int beginInclusive = secondary_query[strlen(secondary_query) - 2] == '|';
-            int endPos         = beginInclusive ? strlen(secondary_query) - 2 : strlen(secondary_query) - 1;
-            // find all numbers that are greater than the given number
-            char * numstr = substring(secondary_query, 0, endPos);
-            size_t klen1  = get_number_from_string(numstr, leafcnt->rbt_dtype, &val1);
-            rbt_range_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, beginInclusive);
-        }
-        else if (contains(secondary_query, "~")) {
-            int    num_tokens = 0;
-            char **tokens     = NULL;
-            split_string(secondary_query, "~", &tokens, &num_tokens);
-            if (num_tokens != 2) {
-                printf("ERROR: invalid range query: %s\n", secondary_query);
-                return -1;
-            }
-            char * tok1           = tokens[0];
-            char * tok2           = tokens[1];
-            int    beginInclusive = endsWith(tok1, "|");
-            int    endInclusive   = startsWith(tok2, "|");
-            char * numstr1        = beginInclusive ? substring(tok1, 0, strlen(tok1) - 1) : tok1;
-            char * numstr2        = endInclusive ? substring(tok2, 1, strlen(tok2)) : tok2;
-            size_t klen1          = get_number_from_string(numstr1, leafcnt->rbt_dtype, &val1);
-            size_t klen2          = get_number_from_string(numstr2, leafcnt->rbt_dtype, &val2);
+        char *lo_tok = tokens[0];
+        char *hi_tok = tokens[1];
+        // lo_tok might be ended with '|', and hi_tok might be started with '|', to indicate inclusivity.
+        int    beginInclusive = endsWith(lo_tok, "|");
+        int    endInclusive   = startsWith(hi_tok, "|");
+        char * lo_num_str     = beginInclusive ? substring(lo_tok, 0, strlen(lo_tok) - 1) : lo_tok;
+        char * hi_num_str     = endInclusive ? substring(hi_tok, 1, strlen(hi_tok)) : hi_tok;
+        size_t klen1          = get_number_from_string(lo_num_str, leafcnt->val_idx_dtype, &val1);
+        size_t klen2          = get_number_from_string(hi_num_str, leafcnt->val_idx_dtype, &val2);
 
-            // find the first number between '~'
-            int   tilde_pos = indexOf(secondary_query, '~');
-            char *tok1      = substring(secondary_query, 0, tilde_pos);
-            // find the second number after '~'
-            char *tok2 = substring(secondary_query, tilde_pos + 1, strlen(secondary_query));
-
-            void * val1;
-            void * val2;
-            size_t klen1 = get_number_from_string(tok1, leafcnt->rbt_dtype, &val1);
-            size_t klen2 = get_number_from_string(tok2, leafcnt->rbt_dtype, &val2);
-
-            rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2, value_rbt_callback, idx_record);
-        }
-        else {
-            value_index_leaf_content_t *value_index_leaf = NULL;
-
-            void * val  = NULL;
-            size_t klen = get_number_from_string(secondary_query, idx_record->simple_value_type, &val);
-            rbt_find(leafcnt->primary_rbt, val, klen, (void **)&value_index_leaf);
-            if (value_index_leaf != NULL) {
-                collect_obj_ids(value_index_leaf, idx_record);
-            }
-        }
-
-        if (contains(secondary_query, "~") || contains(secondary_query, "|")) {
-            // find the first number before '~'
-            int   tilde_pos = indexOf(secondary_query, '~');
-            char *tok1      = substring(secondary_query, 0, tilde_pos);
-            // find the second number after '~'
-            char *tok2 = substring(secondary_query, tilde_pos + 1, strlen(secondary_query));
-
-            void * val1;
-            void * val2;
-            size_t klen1 = get_number_from_string(tok1, leafcnt->rbt_dtype, &val1);
-            size_t klen2 = get_number_from_string(tok2, leafcnt->rbt_dtype, &val2);
-
-            rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2, value_rbt_callback, idx_record);
-
-            // char *tok = subrstr(secondary_query, strlen(secondary_query) - 1);
-            // rbt_walk_ge(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-            // rbt_walk_le(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-        }
-        // else if (contains(secondary_query, "+")) {
-        //     char *tok = subrstr(secondary_query, strlen(secondary_query) - 1);
-        //     rbt_walk_gt(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-        //     rbt_walk_lt(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-        // }
-        // else if (startsWith(secondary_query, ">=")) {
-        //     char *tok = substring(secondary_query, 2, strlen(secondary_query));
-        //     rbt_walk_ge(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-        // }
-        // else if (startsWith(secondary_query, "<=")) {
-        //     char *tok = substring(secondary_query, 2, strlen(secondary_query));
-        //     rbt_walk_le(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-        // }
-        // else if (startsWith(secondary_query, ">")) {
-        //     char *tok = substring(secondary_query, 1, strlen(secondary_query));
-        //     rbt_walk_gt(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-        // }
-        // else if (startsWith(secondary_query, "<")) {
-        //     char *tok = substring(secondary_query, 1, strlen(secondary_query));
-        //     rbt_walk_lt(leafcnt->primary_rbt, tok, strlen(tok), value_rbt_callback, idx_record);
-        // }
-        else {
-            value_index_leaf_content_t *value_index_leaf = NULL;
-
-            void * val  = NULL;
-            size_t klen = get_number_from_string(secondary_query, idx_record->simple_value_type, &val);
-            rbt_find(leafcnt->primary_rbt, val, klen, (void **)&value_index_leaf);
-            if (value_index_leaf != NULL) {
-                collect_obj_ids(value_index_leaf, idx_record);
-            }
-        }
+        int num_visited_node = rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2,
+                                              value_rbt_callback, idx_record, beginInclusive, endInclusive);
+        println("[value_number_query] num_visited_node: %d\n", num_visited_node);
     }
     return 0;
 }
@@ -804,9 +741,10 @@ key_index_search_callback(void *data, const unsigned char *key, uint32_t key_len
     pdc_c_var_type_t attr_type = is_string_query(v_query) ? PDC_STRING : idx_record->type;
 
     int query_rst = 0;
-    if (is_string_query(v_query)) {
+    if (is_string_query(v_query)) { // this is a test based on only the v_query string.
         // perform string search
         char *bare_v_query = stripQuotes(v_query);
+        // the value_string_query function should check if the leafcnt matches with the query type or not.
         query_rst |= value_string_query(bare_v_query, leafcnt, idx_record);
     }
 
@@ -1080,15 +1018,15 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
 
     // 2. attr value type
     int8_t *type = (int8_t *)calloc(1, sizeof(int8_t));
-    type[0]      = leafcnt->type;
+    type[0]      = leafcnt->val_idx_dtype;
     append_buffer(buffer, type, sizeof(int8_t));
 
-    // 3. attr value simple type.
-    int8_t *simple_type = (int8_t *)calloc(1, sizeof(int8_t));
-    simple_type[0]      = leafcnt->simple_value_type;
-    append_buffer(buffer, simple_type, sizeof(int8_t));
+    // 3. attr value simple type, we probably don't need simple type.
+    // int8_t *simple_type = (int8_t *)calloc(1, sizeof(int8_t));
+    // simple_type[0]      = leafcnt->simple_value_type;
+    // append_buffer(buffer, simple_type, sizeof(int8_t));
 
-    if (leafcnt->simple_value_type == 3) {
+    if (leafcnt->val_idx_dtype == 3) {
         rst = append_string_value_tree(leafcnt->primary_trie, buffer);
 #ifndef PDC_DART_SFX_TREE
         rst = append_string_value_tree(leafcnt->secondary_trie, buffer);
@@ -1252,16 +1190,16 @@ read_attr_name_node(art_tree *art_key_index, char *dir_path, char *base_name, ui
         int8_t *type;
         size_t  len;
         read_buffer(buffer, (void **)&type, &len);
-        leafcnt->type = type[0];
+        leafcnt->val_idx_dtype = type[0];
 
-        // 3. attr value simple type.
-        int8_t *simple_type;
-        read_buffer(buffer, (void **)&simple_type, &len);
-        leafcnt->simple_value_type = simple_type[0];
+        // // 3. attr value simple type.
+        // int8_t *simple_type;
+        // read_buffer(buffer, (void **)&simple_type, &len);
+        // leafcnt->simple_value_type = simple_type[0];
 
         // 4. read attr values
         void *value_index = NULL;
-        if (leafcnt->simple_value_type == 3) {
+        if (leafcnt->val_idx_dtype == 3) {
             leafcnt->primary_trie = (art_tree *)calloc(1, sizeof(art_tree));
             value_index           = leafcnt->primary_trie;
 #ifndef PDC_DART_SFX_TREE
@@ -1271,23 +1209,23 @@ read_attr_name_node(art_tree *art_key_index, char *dir_path, char *base_name, ui
         }
         else {
             libhl_cmp_callback_t compare_func = NULL;
-            if (leafcnt->simple_value_type == 0) { // UINT64
+            if (leafcnt->val_idx_dtype == 0) { // UINT64
                 compare_func = LIBHL_CMP_CB(PDC_UINT64);
             }
-            else if (leafcnt->simple_value_type == 1) { // INT64
+            else if (leafcnt->val_idx_dtype == 1) { // INT64
                 compare_func = LIBHL_CMP_CB(PDC_INT64);
             }
-            else if (leafcnt->simple_value_type == 2) { // DOUBLE
+            else if (leafcnt->val_idx_dtype == 2) { // DOUBLE
                 compare_func = LIBHL_CMP_CB(PDC_DOUBLE);
             }
             else {
-                printf("ERROR: unsupported data type %d\n", leafcnt->simple_value_type);
+                printf("ERROR: unsupported data type %d\n", leafcnt->val_idx_dtype);
                 return FAIL;
             }
             leafcnt->primary_rbt = (rbt_t *)rbt_create(compare_func, free);
             value_index          = leafcnt->primary_rbt;
         }
-        read_value_tree(value_index, leafcnt->simple_value_type, buffer);
+        read_value_tree(value_index, leafcnt->val_idx_dtype, buffer);
 
         // 5. insert the key into the key trie along with the key_leaf_content.
         art_insert(art_key_index, (const unsigned char *)attr_name, key_len, leafcnt);
