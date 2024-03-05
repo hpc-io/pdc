@@ -76,5 +76,4 @@ void *PDC_free(void *mem);
  */
 size_t PDC_get_global_mem_usage();
 
-
 #endif /* PDC_MALLOC_H */
