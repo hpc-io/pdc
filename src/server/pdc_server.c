@@ -2288,6 +2288,10 @@ server_run(int argc, char *argv[])
         char *errMessage = 0;
         char  sqlite3_path[ADDR_MAX];
         snprintf(sqlite3_path, ADDR_MAX, "/tmp/PDC_sqlite3_%d", pdc_server_rank_g);
+
+        if (is_restart_g != 1)
+            remove_directory(sqlite3_path);
+
         sqlite3_open(sqlite3_path, &sqlite3_db_g);
 
         sqlite3_exec(sqlite3_db_g,
