@@ -41,7 +41,6 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
         }
         input.attr_key = substring(key, 0, strlen(key));
         assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-        printf("Index Deletion Successful!\n");
     }
 }
 
@@ -80,7 +79,6 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
         }
         input.attr_key = substring(key, 0, strlen(key));
         assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-        printf("Index Insertion Successful!\n");
     }
 }
 
@@ -113,7 +111,6 @@ test_PDC_Server_dart_perform_one_server()
 
     for (int i = 0; i < 100; i++) {
         sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
-
         insert_kv_to_index(kv, 10000 + i);
     }
 
@@ -121,6 +118,9 @@ test_PDC_Server_dart_perform_one_server()
     insert_kv_to_index("key000key=\"val000val\"", 10000);
     insert_kv_to_index("key000key=\"val000val\"", 20000);
     insert_kv_to_index("key000key=\"val000val\"", 30000);
+
+    printf("Index Insertion Successful!\n");
+
     // key000key val000val
     query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
     query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
@@ -130,7 +130,7 @@ test_PDC_Server_dart_perform_one_server()
 
     for (int i = 0; i < 100; i++) {
         sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
-        printf("Deleting %s\n", kv);
+        // printf("Deleting %s\n", kv);
         delete_kv_from_index(kv, 10000 + i);
     }
 
@@ -138,6 +138,8 @@ test_PDC_Server_dart_perform_one_server()
     delete_kv_from_index("key000key=\"val000val\"", 10000);
     delete_kv_from_index("key000key=\"val000val\"", 20000);
     delete_kv_from_index("key000key=\"val000val\"", 30000);
+
+    printf("Index Deletion Successful!\n");
 
     query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
     query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
