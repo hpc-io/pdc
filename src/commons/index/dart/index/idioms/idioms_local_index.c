@@ -6,6 +6,8 @@
 #include "bin_file_ops.h"
 #include "pdc_hash_table.h"
 #include "dart_core.h"
+#include "string_utils.h"
+#include "pdc_logger.h"
 
 #define DART_SERVER_DEBUG 0
 
@@ -25,6 +27,9 @@ IDIOMS_init(uint32_t server_id, uint32_t num_servers)
 
     idioms_g->server_id_g   = server_id;
     idioms_g->num_servers_g = num_servers;
+
+    setLogFile(LOG_LEVEL_DEBUG, "stdout");
+    setLogLevel(LOG_LEVEL_DEBUG);
 }
 
 IDIOMS_t *
@@ -146,16 +151,18 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
             return ret;
         }
 #ifndef PDC_DART_SFX_TREE
-        void *reverse_str = reverse_str((char *)attr_val);
+        void *reverted_val = reverse_str((char *)attr_val);
+        // LOG_DEBUG("reverted_val: %s\n", (char *)reverted_val);
         // insert the value into the trie for suffix search.
-        ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, reverse_str,
+        ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, reverted_val,
                                              idx_record->type == PDC_STRING, value_str_len,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
 #else
         int sub_loop_count = value_str_len;
         for (int j = 1; j < sub_loop_count - 1; j++) {
             char *suffix = substring(attr_val, j, value_str_len);
-            ret          = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, suffix,
+            LOG_DEBUG("suffix: %s\n", suffix);
+            ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, suffix,
                                                  idx_record->type == PDC_STRING, value_str_len - j,
                                                  idx_record->obj_ids, idx_record->num_obj_ids);
         }
@@ -211,6 +218,7 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
     }
     // insert the key into the the key trie along with the key_leaf_content.
     art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
+    // LOG_DEBUG("Inserted key %s into the key trie\n", key);
 
     key_leaf_content->virtural_node_id = idx_record->virtual_node_id;
 
@@ -339,9 +347,10 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
             return ret;
         }
 #ifndef PDC_DART_SFX_TREE
-        void *reverse_str = reverse_str((char *)attr_val);
+        void *reverted_val = reverse_str((char *)attr_val);
+        LOG_DEBUG("DEL reverted_val: %s\n", (char *)reverted_val);
         // when suffix tree mode is OFF, the secondary trie is used for indexing reversed value strings.
-        ret = delete_obj_ids_from_value_leaf(leaf_content->secondary_trie, reverse_str,
+        ret = delete_obj_ids_from_value_leaf(leaf_content->secondary_trie, reverted_val,
                                              idx_record->type == PDC_STRING, value_str_len,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
 #else
@@ -425,6 +434,7 @@ delete_from_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
     if (is_key_leaf_cnt_empty(key_leaf_content)) {
         // delete the key from the the key trie along with the key_leaf_content.
         free(key_leaf_content);
+        LOG_DEBUG("Deleted key %s from the key trie\n", key);
         art_delete(key_trie, (unsigned char *)key, len);
         return SUCCEED;
     }
@@ -689,14 +699,15 @@ value_string_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
             tok = substr(secondary_query, 1);
 #ifndef PDC_DART_SFX_TREE
             tok = reverse_str(tok);
+            // LOG_DEBUG("reverted_val_tok: %s\n", tok);
             if (leafcnt->secondary_trie != NULL) {
                 art_iter_prefix(leafcnt->secondary_trie, (unsigned char *)tok, strlen(tok),
                                 value_trie_callback, idx_record);
             }
 #else
-            if (leafcnt->primary_trie != NULL) {
+            if (leafcnt->secondary_trie != NULL) {
                 value_index_leaf_content_t *value_index_leaf = (value_index_leaf_content_t *)art_search(
-                    leafcnt->primary_trie, (unsigned char *)tok, strlen(tok));
+                    leafcnt->secondary_trie, (unsigned char *)tok, strlen(tok));
                 if (value_index_leaf != NULL) {
                     value_trie_callback((void *)idx_record, (unsigned char *)tok, strlen(tok),
                                         (void *)value_index_leaf);
@@ -710,8 +721,8 @@ value_string_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
 #ifndef PDC_DART_SFX_TREE
                 art_iter(leafcnt->primary_trie, value_trie_callback, idx_record);
 #else
-                art_iter_prefix(leafcnt->primary_trie, (unsigned char *)tok, strlen(tok), value_trie_callback,
-                                idx_record);
+                art_iter_prefix(leafcnt->secondary_trie, (unsigned char *)tok, strlen(tok),
+                                value_trie_callback, idx_record);
 #endif
             }
             break;
@@ -840,6 +851,7 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
             tok          = substring(k_query, 1, strlen(k_query));
 #ifndef PDC_DART_SFX_TREE
             tok = reverse_str(tok);
+            // LOG_DEBUG("reversed tok: %s\n", tok);
             art_iter_prefix(idioms_g->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                             key_index_search_callback, (void *)idx_record);
 #else
@@ -855,7 +867,7 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
             qType_string = "Infix";
             tok          = substring(k_query, 1, strlen(k_query) - 1);
 #ifndef PDC_DART_SFX_TREE
-            art_iter(idioms_g->art_key_prefix_tree_g, key_index_search_callback, (void *)idx_record);
+            art_iter(idioms_g->art_key_suffix_tree_g, key_index_search_callback, (void *)idx_record);
 #else
             art_iter_prefix(idioms_g->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                             key_index_search_callback, (void *)idx_record);
