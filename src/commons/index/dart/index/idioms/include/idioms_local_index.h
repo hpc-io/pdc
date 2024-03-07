@@ -18,6 +18,12 @@
 #define IDIOMS_DART_ALPHABET_SIZE        27
 #define IDIOMS_MAX_SERVER_COUNT_TO_ADAPT 1024
 
+/**
+ * 2024-03-07: TODO items
+ * 1. Debugging the Index persistence mechanism
+ * 2. Make sure every IDIOMS API returns a struct that contains the number of index items.
+ */
+
 typedef struct {
     int64_t   index_record_count_g;
     int64_t   search_request_count_g;
@@ -48,6 +54,7 @@ typedef struct {
 
 typedef struct {
     uint64_t virtural_node_id;
+    size_t   indexed_item_count;
     // pdc_c_var_type_t type;
     // int simple_value_type; // 0: uint64_t, 1: int64_t, 2: double, 3: char*
     // Also, for key lookup ART, we also maintain the pointer to the value tree
@@ -59,7 +66,8 @@ typedef struct {
 } key_index_leaf_content_t;
 
 typedef struct {
-    Set *obj_id_set;
+    Set *  obj_id_set;
+    size_t indexed_item_count;
 } value_index_leaf_content_t;
 
 typedef struct {

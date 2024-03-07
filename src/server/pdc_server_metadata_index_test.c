@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include "pdc_server_metadata_index.h"
+#include "idioms_local_index.h"
 #include "pdc_logger.h"
 
 void
@@ -152,6 +153,10 @@ test_PDC_Server_dart_perform_one_server()
     query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
     query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 
+    LOG_INFO("Index Dumping...\n");
+    // save the index to file
+    idioms_metadata_index_dump("/workspaces/pdc/build/bin", 0);
+
     for (int i = 0; i < 1000; i++) {
         sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
         // LOG_DEBUG("Deleting %s\n", kv);
@@ -171,6 +176,17 @@ test_PDC_Server_dart_perform_one_server()
     query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
     query_result_from_kvtag("*33key=\"*l\"", OP_SUFFIX_QUERY);
     query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+
+    idioms_metadata_index_recover("/workspaces/pdc/build/bin", 1, 1, 0);
+
+    LOG_INFO("Index Recovery Done!\n");
+
+    // key000key val000val
+    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 }
 int
 init_default_logger()
@@ -179,7 +195,7 @@ init_default_logger()
     setLogFile(LOG_LEVEL_WARNING, "stdout");
     setLogFile(LOG_LEVEL_INFO, "stdout");
     setLogFile(LOG_LEVEL_DEBUG, "stdout");
-    setLogLevel(LOG_LEVEL_INFO);
+    setLogLevel(LOG_LEVEL_DEBUG);
     return 0;
 }
 
