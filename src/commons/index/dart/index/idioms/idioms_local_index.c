@@ -27,9 +27,6 @@ IDIOMS_init(uint32_t server_id, uint32_t num_servers)
 
     idioms_g->server_id_g   = server_id;
     idioms_g->num_servers_g = num_servers;
-
-    setLogFile(LOG_LEVEL_DEBUG, "stdout");
-    setLogLevel(LOG_LEVEL_DEBUG);
 }
 
 IDIOMS_t *
@@ -159,9 +156,9 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
 #else
         int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count - 1; j++) {
+        for (int j = 1; j < sub_loop_count; j++) {
             char *suffix = substring(attr_val, j, value_str_len);
-            LOG_DEBUG("suffix: %s\n", suffix);
+            // LOG_DEBUG("suffix: %s\n", suffix);
             ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, suffix,
                                                  idx_record->type == PDC_STRING, value_str_len - j,
                                                  idx_record->obj_ids, idx_record->num_obj_ids);
@@ -338,8 +335,9 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
     if (is_PDC_STRING(idx_record->type)) {
         // delete the value from the prefix tree.
-        void * attr_val      = stripQuotes(idx_record->value);
-        size_t value_str_len = strlen(idx_record->value);
+        void *attr_val = stripQuotes(idx_record->value);
+
+        size_t value_str_len = strlen(attr_val);
         ret                  = delete_obj_ids_from_value_leaf(leaf_content->primary_trie, attr_val,
                                              idx_record->type == PDC_STRING, value_str_len,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
@@ -356,7 +354,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
 #else
         // when suffix tree mode is ON, the secondary trie is used for indexing suffixes of the value string.
         int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count - 1; j++) {
+        for (int j = 1; j < sub_loop_count; j++) {
             char *suffix = substring(attr_val, j, value_str_len);
             ret          = delete_obj_ids_from_value_leaf(leaf_content->secondary_trie, suffix,
                                                  idx_record->type == PDC_STRING, value_str_len - j,
@@ -434,7 +432,7 @@ delete_from_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
     if (is_key_leaf_cnt_empty(key_leaf_content)) {
         // delete the key from the the key trie along with the key_leaf_content.
         free(key_leaf_content);
-        LOG_DEBUG("Deleted key %s from the key trie\n", key);
+        // LOG_DEBUG("Deleted key %s from the key trie\n", key);
         art_delete(key_trie, (unsigned char *)key, len);
         return SUCCEED;
     }

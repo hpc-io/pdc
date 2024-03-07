@@ -4,10 +4,6 @@
 #include "pdc_server_metadata_index.h"
 #include "pdc_logger.h"
 
-typedef struct {
-
-} dummy_server_t;
-
 void
 delete_kv_from_index(char *kv, uint64_t obj_id)
 {
@@ -18,7 +14,7 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
         value = substring(kv, indexOf(kv, '=') + 1, strlen(kv));
     }
     else {
-        LOG_DEBUG("Invalid Key Value Pair!\n");
+        LOG_ERROR("Invalid Key Value Pair!\n");
         return;
     }
 
@@ -50,7 +46,7 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
         else {
             input.inserting_suffix = 1;
         }
-        input.attr_key = substring(key, 0, strlen(key));
+        input.attr_key = substring(key, i, strlen(key));
         assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
     }
 
@@ -69,7 +65,7 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
         value = substring(kv, indexOf(kv, '=') + 1, strlen(kv));
     }
     else {
-        LOG_DEBUG("Invalid Key Value Pair!\n");
+        LOG_ERROR("Invalid Key Value Pair!\n");
         return;
     }
 
@@ -102,7 +98,7 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
         else {
             input.inserting_suffix = 1;
         }
-        input.attr_key = substring(key, 0, strlen(key));
+        input.attr_key = substring(key, i, strlen(key));
         assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
     }
 
@@ -121,7 +117,7 @@ query_result_from_kvtag(char *key_value_query, int8_t op_type)
     input->op_type      = op_type;
     input->attr_key     = key_value_query;
     assert(PDC_Server_dart_perform_one_server(input, output, &n_obj_ids, &buf_ptr) == SUCCEED);
-    NLF_LOG_DEBUG("Query Successful! %d Results: ", n_obj_ids);
+    NLF_LOG_INFO("Query Successful! %d Results: ", n_obj_ids);
     for (int i = 0; i < n_obj_ids; i++) {
         printf("%llu, ", buf_ptr[i]);
     }
@@ -147,7 +143,7 @@ test_PDC_Server_dart_perform_one_server()
     insert_kv_to_index("key000key=\"val000val\"", 30000);
     insert_kv_to_index("key433key=\"val433val\"", 30000);
 
-    LOG_DEBUG("Index Insertion Successful!\n");
+    LOG_INFO("Index Insertion Successful!\n");
 
     // key000key val000val
     query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
@@ -168,12 +164,12 @@ test_PDC_Server_dart_perform_one_server()
     delete_kv_from_index("key000key=\"val000val\"", 30000);
     delete_kv_from_index("key433key=\"val433val\"", 30000);
 
-    LOG_DEBUG("Index Deletion Successful!\n");
+    LOG_INFO("Index Deletion Successful!\n");
 
     query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
     query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
     query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
-    query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*33key=\"*l\"", OP_SUFFIX_QUERY);
     query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 }
 int
@@ -183,7 +179,7 @@ init_default_logger()
     setLogFile(LOG_LEVEL_WARNING, "stdout");
     setLogFile(LOG_LEVEL_INFO, "stdout");
     setLogFile(LOG_LEVEL_DEBUG, "stdout");
-    setLogLevel(LOG_LEVEL_DEBUG);
+    setLogLevel(LOG_LEVEL_INFO);
     return 0;
 }
 
