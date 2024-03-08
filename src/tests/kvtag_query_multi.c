@@ -63,7 +63,7 @@ print_usage(char *name)
 {
     printf("%s n_obj n_tag_per_obj selectivity n_condition n_round is_using_dart\n", name);
     printf("Summary: This test will create n_obj objects, and add n_tag_per_obj * 4 tags to each on \n"
-           "it will perform n_round queries against the tags with specified selectivity, \n" 
+           "it will perform n_round queries against the tags with specified selectivity, \n"
            "each query from each client should get the entire result set.\n");
     printf("Parameters:\n");
     printf("  n_obj: number of objects\n");
@@ -77,21 +77,21 @@ print_usage(char *name)
 }
 
 int
-convert_str_to_prefix(char* str, int cut_digit)
+convert_str_to_prefix(char *str, int cut_digit)
 {
     // Convert to a prefix string query by cutting off the string after the leading digit and add * after
     int str_len = strlen(str);
-    int i = str_len - 10;
+    int i       = str_len - 10;
     while (i < str_len) {
         if (str[i] != '0') {
-            str[i+cut_digit] = '*';
-            str[i+cut_digit+1] = '\0';
+            str[i + cut_digit]     = '*';
+            str[i + cut_digit + 1] = '\0';
             break;
         }
         i++;
     }
     return 1;
-}       
+}
 
 int
 main(int argc, char *argv[])
@@ -103,7 +103,7 @@ main(int argc, char *argv[])
     int         i, j, int_val, tag_total_per_dtype, nsel;
     char        obj_name[1024], tag_name[1024], query[1024], value[1024];
     char        tmp_str1[1024], tmp_str2[1024], tmp_str3[1024], tmp_str4[1024];
-    char       *char_ptr;
+    char *      char_ptr;
     double      stime, total_time, double_val, selectivity;
     float       float_val;
     pdc_kvtag_t kvtag;
@@ -130,7 +130,7 @@ main(int argc, char *argv[])
     is_using_dart = atoi(argv[6]);
 
     tag_total_per_dtype = n_obj * ntag_per_obj;
-    nsel = (int) tag_total_per_dtype * selectivity / 100.0;
+    nsel                = (int)tag_total_per_dtype * selectivity / 100.0;
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -177,7 +177,7 @@ main(int argc, char *argv[])
 
             // int
             sprintf(tag_name, "int_val", i);
-            int_val = i;
+            int_val     = i;
             kvtag.name  = tag_name;
             kvtag.value = (void *)&int_val;
             kvtag.type  = PDC_INT;
@@ -201,7 +201,7 @@ main(int argc, char *argv[])
 
             // float
             sprintf(tag_name, "float_val");
-            float_val = (float)i;
+            float_val   = (float)i;
             kvtag.name  = tag_name;
             kvtag.value = (void *)&float_val;
             kvtag.type  = PDC_FLOAT;
@@ -225,7 +225,7 @@ main(int argc, char *argv[])
 
             // double
             sprintf(tag_name, "double_val", i);
-            double_val = (double)i;
+            double_val  = (double)i;
             kvtag.name  = tag_name;
             kvtag.value = (void *)&double_val;
             kvtag.type  = PDC_DOUBLE;
@@ -270,7 +270,6 @@ main(int argc, char *argv[])
                     printf("fail to add a kvtag to obj %d\n", i + my_obj_s);
                 }
             }
-
         }
     }
 
@@ -279,60 +278,59 @@ main(int argc, char *argv[])
 #endif
 
     if (n_condition == 4) {
-        sprintf(tmp_str1, "string_val=string(%010d)", nsel); 
+        sprintf(tmp_str1, "string_val=string(%010d)", nsel);
         convert_str_to_prefix(tmp_str1, 0);
 
         // Use double_val as the real selectivity, select more with int, float, and string
-        sprintf(query, "int_val<=int(%d) AND float_val<float(%f) AND double_val<double(%lf) AND %s)", 
-                        nsel*4, (float)nsel*2, (double)nsel, tmp_str1);
+        sprintf(query, "int_val<=int(%d) AND float_val<float(%f) AND double_val<double(%lf) AND %s)",
+                nsel * 4, (float)nsel * 2, (double)nsel, tmp_str1);
     }
     else if (n_condition == 8) {
 
-        sprintf(tmp_str1, "string_val=string(%010d)", nsel); 
+        sprintf(tmp_str1, "string_val=string(%010d)", nsel);
         convert_str_to_prefix(tmp_str1, -1);
 
-        sprintf(tmp_str2, "string_val=string(%010d)", nsel); 
+        sprintf(tmp_str2, "string_val=string(%010d)", nsel);
         convert_str_to_prefix(tmp_str2, 0);
 
         // Use double_val as the real selectivity, select more with int, float, and string
-        sprintf(query, "int_val>int(0) AND int_val<=int(%d) AND float_val>=float(0.0) AND float_val<float(%f) "
-                       "AND double_val>double(0.0) AND double_val<double(%lf) AND %s) AND %s)", 
-                        nsel*4, (float)nsel*2, (double)nsel, tmp_str1, tmp_str2);
-
+        sprintf(query,
+                "int_val>int(0) AND int_val<=int(%d) AND float_val>=float(0.0) AND float_val<float(%f) "
+                "AND double_val>double(0.0) AND double_val<double(%lf) AND %s) AND %s)",
+                nsel * 4, (float)nsel * 2, (double)nsel, tmp_str1, tmp_str2);
     }
     else if (n_condition == 16) {
-        sprintf(tmp_str1, "string_val=string(%010d)", nsel); 
+        sprintf(tmp_str1, "string_val=string(%010d)", nsel);
         convert_str_to_prefix(tmp_str1, 0);
 
-        sprintf(tmp_str2, "string_val=string(%010d)", nsel); 
+        sprintf(tmp_str2, "string_val=string(%010d)", nsel);
         convert_str_to_prefix(tmp_str2, -1);
 
-        sprintf(tmp_str3, "string_val=string(%010d)", nsel); 
+        sprintf(tmp_str3, "string_val=string(%010d)", nsel);
         convert_str_to_prefix(tmp_str3, -2);
 
-        sprintf(tmp_str4, "string_val=string(%010d)", nsel); 
+        sprintf(tmp_str4, "string_val=string(%010d)", nsel);
         convert_str_to_prefix(tmp_str4, -3);
 
         // Use double_val as the real selectivity, select more with int, float, and string
-        sprintf(query, "int_val>int(0) AND int_val<=int(%d) AND "
-                       "int_val>int(%d) AND int_val<=int(%d) AND "
-                       "float_val>=float(0.0) AND float_val<float(%f) AND "
-                       "float_val>=float(%f) AND float_val<float(%f) "
-                       "AND double_val>double(0.0) AND double_val<double(%lf) AND "
-                       "AND double_val>double(0.0) AND double_val<double(%lf) AND "
-                       "%s) AND %s) AND %s) AND %s)", 
-                        nsel*2, tag_total_per_dtype-nsel*2, tag_total_per_dtype, 
-                        (float)nsel, (float)tag_total_per_dtype - nsel, (float)tag_total_per_dtype, 
-                        (double)nsel/2, (double)tag_total_per_dtype - nsel/2, (double)tag_total_per_dtype, 
-                        tmp_str1, tmp_str2, tmp_str3, tmp_str4);
-
-
+        sprintf(query,
+                "int_val>int(0) AND int_val<=int(%d) AND "
+                "int_val>int(%d) AND int_val<=int(%d) AND "
+                "float_val>=float(0.0) AND float_val<float(%f) AND "
+                "float_val>=float(%f) AND float_val<float(%f) "
+                "AND double_val>double(0.0) AND double_val<double(%lf) AND "
+                "AND double_val>double(0.0) AND double_val<double(%lf) AND "
+                "%s) AND %s) AND %s) AND %s)",
+                nsel * 2, tag_total_per_dtype - nsel * 2, tag_total_per_dtype, (float)nsel,
+                (float)tag_total_per_dtype - nsel, (float)tag_total_per_dtype, (double)nsel / 2,
+                (double)tag_total_per_dtype - nsel / 2, (double)tag_total_per_dtype, tmp_str1, tmp_str2,
+                tmp_str3, tmp_str4);
     }
 
     query_kvtag.name  = tag_name;
     query_kvtag.value = (void *)query;
     query_kvtag.type  = PDC_STRING;
-    query_kvtag.size = strlen(query) + 1;
+    query_kvtag.size  = strlen(query) + 1;
     if (my_rank == 0)
         println("Rank %d: query kvtag [%s] [%s]\n", my_rank, query_kvtag.name, (char *)query_kvtag.value);
 
