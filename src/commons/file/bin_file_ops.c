@@ -3,7 +3,7 @@
 // type 1 int, 2 double, 3 string, 4 uint64, 5 size_t
 
 void
-miqs_append_int(int data, FILE *stream)
+bin_append_int(int data, FILE *stream)
 {
     int    type   = 1;
     size_t length = 1;
@@ -13,7 +13,7 @@ miqs_append_int(int data, FILE *stream)
 }
 
 void
-miqs_append_double(double data, FILE *stream)
+bin_append_double(double data, FILE *stream)
 {
     int    type   = 2;
     size_t length = 1;
@@ -23,14 +23,14 @@ miqs_append_double(double data, FILE *stream)
 }
 
 void
-miqs_append_string(char *data, FILE *stream)
+bin_append_string(char *data, FILE *stream)
 {
     size_t length = strlen(data);
-    miqs_append_string_with_len(data, length, stream);
+    bin_append_string_with_len(data, length, stream);
 }
 
 void
-miqs_append_string_with_len(char *data, size_t len, FILE *stream)
+bin_append_string_with_len(char *data, size_t len, FILE *stream)
 {
     int type = 3;
     fwrite(&type, sizeof(int), 1, stream);
@@ -39,7 +39,7 @@ miqs_append_string_with_len(char *data, size_t len, FILE *stream)
 }
 
 void
-miqs_append_uint64(uint64_t data, FILE *stream)
+bin_append_uint64(uint64_t data, FILE *stream)
 {
     int    type   = 4;
     size_t length = 1;
@@ -49,7 +49,7 @@ miqs_append_uint64(uint64_t data, FILE *stream)
 }
 
 void
-miqs_append_size_t(size_t data, FILE *stream)
+bin_append_size_t(size_t data, FILE *stream)
 {
     int    type   = 5;
     size_t length = 1;
@@ -59,7 +59,7 @@ miqs_append_size_t(size_t data, FILE *stream)
 }
 
 void
-miqs_read_general(int *t, size_t *len, void **data, FILE *stream)
+bin_read_general(int *t, size_t *len, void **data, FILE *stream)
 {
     int    type   = -1;
     size_t length = 0;
@@ -135,12 +135,12 @@ miqs_skip_field(FILE *stream)
 }
 
 void *
-miqs_read_index_numeric_value(int *is_float, FILE *file)
+bin_read_index_numeric_value(int *is_float, FILE *file)
 {
     int    type = 1;
     size_t len  = 1;
     void **data = (void **)calloc(1, sizeof(void *));
-    miqs_read_general(&type, &len, data, file);
+    bin_read_general(&type, &len, data, file);
     if (len == 1) {
         if (type == 1) {
             *is_float = 0;
@@ -153,12 +153,12 @@ miqs_read_index_numeric_value(int *is_float, FILE *file)
 }
 
 int *
-miqs_read_int(FILE *file)
+bin_read_int(FILE *file)
 {
     int    type = 1;
     size_t len  = 1;
     void **data = (void **)calloc(1, sizeof(void *));
-    miqs_read_general(&type, &len, data, file);
+    bin_read_general(&type, &len, data, file);
     if (type == 1 && len == 1) {
         return (int *)*data;
     }
@@ -166,12 +166,12 @@ miqs_read_int(FILE *file)
 }
 
 double *
-miqs_read_double(FILE *file)
+bin_read_double(FILE *file)
 {
     int    type = 2;
     size_t len  = 1;
     void **data = (void **)calloc(1, sizeof(void *));
-    miqs_read_general(&type, &len, data, file);
+    bin_read_general(&type, &len, data, file);
     if (type == 2 && len == 1) {
         return (double *)*data;
     }
@@ -179,12 +179,12 @@ miqs_read_double(FILE *file)
 }
 
 char *
-miqs_read_string(FILE *file)
+bin_read_string(FILE *file)
 {
     int    type = 3;
     size_t len  = 1;
     void **data = (void **)calloc(1, sizeof(void *));
-    miqs_read_general(&type, &len, data, file);
+    bin_read_general(&type, &len, data, file);
     if (type == 3) {
         return (char *)*data;
     }
@@ -192,12 +192,12 @@ miqs_read_string(FILE *file)
 }
 
 uint64_t *
-miqs_read_uint64(FILE *file)
+bin_read_uint64(FILE *file)
 {
     int    type = 4;
     size_t len  = 1;
     void **data = (void **)calloc(1, sizeof(void *));
-    miqs_read_general(&type, &len, data, file);
+    bin_read_general(&type, &len, data, file);
     if (type == 4 && len == 1) {
         return (uint64_t *)*data;
     }
@@ -205,12 +205,12 @@ miqs_read_uint64(FILE *file)
 }
 
 size_t *
-miqs_read_size_t(FILE *file)
+bin_read_size_t(FILE *file)
 {
     int    type = 5;
     size_t len  = 1;
     void **data = (void **)calloc(1, sizeof(void *));
-    miqs_read_general(&type, &len, data, file);
+    bin_read_general(&type, &len, data, file);
     if (type == 5 && len == 1) {
         return (size_t *)*data;
     }
@@ -219,7 +219,7 @@ miqs_read_size_t(FILE *file)
 
 // type: 1, int, 2, float, 3. string, 4. uint64 5. size_t
 void
-miqs_append_type(int type, FILE *stream)
+bin_append_type(int type, FILE *stream)
 {
-    miqs_append_int(type, stream);
+    bin_append_int(type, stream);
 }
