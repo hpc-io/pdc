@@ -170,13 +170,16 @@ main(int argc, char *argv[])
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
 
+    if (my_rank == 0)
+        printf("I will add %d tags to each obj\n", ntag_per_obj);
+
     // Add tag to objects just created
     for (i = 0; i < my_obj; i++) {
         for (j = 0; j < ntag_per_obj; j++) {
 
             // int
             sprintf(tag_name, "int_%d", j);
-            int_val     = i;
+            int_val     = i + my_obj_s;
             kvtag.name  = tag_name;
             kvtag.value = (void *)&int_val;
             kvtag.type  = PDC_INT;
@@ -200,7 +203,7 @@ main(int argc, char *argv[])
 
             // float
             sprintf(tag_name, "float_%d", j);
-            float_val   = (float)i;
+            float_val   = (float)i + my_obj_s;
             kvtag.name  = tag_name;
             kvtag.value = (void *)&float_val;
             kvtag.type  = PDC_FLOAT;
@@ -224,7 +227,7 @@ main(int argc, char *argv[])
 
             // double
             sprintf(tag_name, "double_%d", j);
-            double_val  = (double)i;
+            double_val  = (double)i + my_obj_s;
             kvtag.name  = tag_name;
             kvtag.value = (void *)&double_val;
             kvtag.type  = PDC_DOUBLE;
@@ -248,7 +251,7 @@ main(int argc, char *argv[])
 
             // string
             sprintf(tag_name, "string_%d", j);
-            sprintf(tmp_str1, "%010d", i);
+            sprintf(tmp_str1, "%010d", i + my_obj_s);
             kvtag.name  = tag_name;
             kvtag.value = (void *)tmp_str1;
             kvtag.type  = PDC_STRING;
@@ -275,6 +278,9 @@ main(int argc, char *argv[])
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
+    if (my_rank == 0)
+        printf("Finished adding %d tags\n", n_obj * ntag_per_obj);
+    fflush(stdout);
 
     if (n_condition == 4) {
         sprintf(tmp_str1, "string_0=string(%010d)", nsel);
@@ -341,45 +347,41 @@ main(int argc, char *argv[])
         printf("fail to query kvtag [%s] with rank %d\n", query_kvtag.name, my_rank);
     }
 
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+
+    if (my_rank == 0) {
+        if (nres != nsel) {
+            println("Query result %d does not match expected %d", nres, nsel);
+            for (i = 0; i < nres; i++)
+                printf("%llu\n", pdc_ids[i]);
+        }
+        else
+            println("Total time to query %d objects with tag: %.5f", nres, total_time);
+    }
+#else
     if (nres != nsel)
         println("Query found %d objects does not match %d", nres, nsel);
     else
         println("Query found %d objects", nres);
 
-    for (i = 0; i < nres; i++) {
-        printf("%llu\n", pdc_ids[i]);
-    }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    /* MPI_Reduce(&nres, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD); */
-    total_time = MPI_Wtime() - stime;
-
-    if (my_rank == 0) {
-        if (nres != nsel)
-            println("Query result %d does not match expected %d", nres, nsel);
-        else
-            println("Total time to query %d objects with tag: %.5f", nres, total_time);
-    }
+    if (nres < 20)
+        for (i = 0; i < nres; i++)
+            printf("%llu\n", pdc_ids[i]);
 #endif
 
     // close a container
     if (PDCcont_close(cont) < 0)
         printf("fail to close container c1\n");
-    else
-        printf("successfully close container c1\n");
 
     // close an object property
     if (PDCprop_close(obj_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        printf("successfully close object property\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
         printf("Fail to close property @ line %d\n", __LINE__);
-    else
-        printf("successfully close container property\n");
 
     // close pdc
     if (PDCclose(pdc) < 0)
