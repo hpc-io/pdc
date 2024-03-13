@@ -135,7 +135,7 @@ main(int argc, char *argv[])
 
     if (my_rank == 0)
         printf("n_obj = %d, ntag_per_obj = %d, selectivity = %lf, n_condition = %d, round = %d, "
-               "query_only = %d, is_using_dart = %d\n", 
+               "query_only = %d, is_using_dart = %d\n",
                n_obj, ntag_per_obj, selectivity, n_condition, round, query_only, is_using_dart);
 
     // create a pdc
