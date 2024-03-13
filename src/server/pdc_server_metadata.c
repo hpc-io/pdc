@@ -1876,7 +1876,7 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
     perr_t ret_value = SUCCEED;
 #ifdef ENABLE_SQLITE3
     char                sql[TAG_LEN_MAX] = {0}, tmp_char[TAG_LEN_MAX];
-    char *              errMessage = NULL;
+    char *              errMessage       = NULL;
     char *              tmp_value, *tmp_name, *current_pos;
     pdc_sqlite3_query_t query_data;
     pdc_meta_query_t *  query = NULL, *query_elt = NULL;
