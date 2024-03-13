@@ -1638,10 +1638,11 @@ sqlite_query_kvtag_callback(void *data, int argc, char **argv, char **colName)
         }
         (*query_data->obj_ids)[query_data->nobj] = id;
         query_data->nobj += 1;
-        /* printf("SQLite3 found %s = %llu\n", colName[0], id); */
+        // Debug
+        /* fprintf(stderr, "SQLite3 found [%s] = %llu\n", colName[0], id); */
     }
     else {
-        printf("SQLite3 found nothing\n");
+        fprintf(stderr, "SQLite3 found nothing\n");
         return 0;
     }
 
@@ -1874,7 +1875,7 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
 {
     perr_t ret_value = SUCCEED;
 #ifdef ENABLE_SQLITE3
-    char                sql[TAG_LEN_MAX], tmp_char[TAG_LEN_MAX];
+    char                sql[TAG_LEN_MAX] = {0}, tmp_char[TAG_LEN_MAX];
     char *              errMessage = NULL;
     char *              tmp_value, *tmp_name, *current_pos;
     pdc_sqlite3_query_t query_data;
@@ -1882,18 +1883,19 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
 
     if (_is_multi_condition_query(in->value) == 1) {
         // Construct SQL statement
-        sprintf(sql, "SELECT objid FROM objects WHERE ");
 
         // tag>=int(3) AND tag<int(5) OR tag>=int(8)
         query = _parse_string_to_meta_query(in->value);
         LL_FOREACH(query, query_elt)
         {
             if (query_elt->combine_op == PDC_QUERY_AND)
-                strcat(sql, " AND ");
+                strcat(sql, " INTERSECT ");
             else if (query_elt->combine_op == PDC_QUERY_OR)
-                strcat(sql, " OR ");
-            else if (query_elt->combine_op == PDC_QUERY_NOT)
-                strcat(sql, " NOT ");
+                strcat(sql, " UNION ");
+            /* else if (query_elt->combine_op == PDC_QUERY_NOT) */
+            /*     strcat(sql, " NOT "); */
+
+            strcat(sql, "SELECT objid FROM objects WHERE ");
 
             if (query_elt->dtype == PDC_STRING) {
                 ret_value = _convert_to_sql_string("name", query_elt->name, tmp_char);
@@ -1944,9 +1946,9 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                 if (query_elt->dtype == PDC_INT)
                     sprintf(tmp_char, "%d", *((int *)query_elt->value));
                 else if (query_elt->dtype == PDC_FLOAT)
-                    sprintf(tmp_char, "%d", *((float *)query_elt->value));
+                    sprintf(tmp_char, "%f", *((float *)query_elt->value));
                 else if (query_elt->dtype == PDC_DOUBLE)
-                    sprintf(tmp_char, "%d", *((double *)query_elt->value));
+                    sprintf(tmp_char, "%lf", *((double *)query_elt->value));
 
                 strcat(sql, tmp_char);
                 strcat(sql, " )");
@@ -2051,6 +2053,7 @@ PDC_Server_query_kvtag_sqlite(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
         printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
 
     *n_meta = query_data.nobj;
+
 #else
     printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
     ret_value = FAIL;
