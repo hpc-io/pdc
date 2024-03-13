@@ -342,7 +342,7 @@ main(int argc, char *argv[])
                 (double)nsel * 4, (double)nsel * 2, (double)nsel * 3, tmp_str1, tmp_str2, tmp_str3, tmp_str4);
     }
 
-    query_kvtag.name  = tag_name;
+    query_kvtag.name  = "multi_condition";
     query_kvtag.value = (void *)query;
     query_kvtag.type  = PDC_STRING;
     query_kvtag.size  = strlen(query) + 1;
