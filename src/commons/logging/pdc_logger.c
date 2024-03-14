@@ -22,7 +22,6 @@ setLogFile(PDC_LogLevel level, const char *fileName)
             logFilenames[level][sizeof(logFilenames[level]) - 1] = '\0';
             logFiles[level]                                      = fopen(fileName, "a");
         }
-        logFiles[level] = fopen(fileName, "w");
     }
     else {
         logFiles[level] = stdout;

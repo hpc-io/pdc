@@ -594,12 +594,12 @@ uint64_t
 append_obj_id_set(Set *obj_id_set, FILE *stream)
 {
     uint64_t num_obj_id = set_num_entries(obj_id_set);
-    miqs_append_uint64(num_obj_id, stream);
+    bin_append_uint64(num_obj_id, stream);
     SetIterator iter;
     set_iterate(obj_id_set, &iter);
     while (set_iter_has_more(&iter)) {
         uint64_t *item = (uint64_t *)set_iter_next(&iter);
-        miqs_append_uint64(*item, stream);
+        bin_append_uint64(*item, stream);
     }
     return num_obj_id;
 }
@@ -613,7 +613,7 @@ append_string_value_node(void *fh, const unsigned char *key, uint32_t key_len, v
 {
     FILE *stream = (FILE *)fh;
     // 1. append string value
-    miqs_append_string_with_len((char *)key, (size_t)key_len, stream);
+    bin_append_string_with_len((char *)key, (size_t)key_len, stream);
     // 2. append object ID set.
     Set *obj_id_set = (Set *)value;
     append_obj_id_set(obj_id_set, stream);
@@ -630,10 +630,10 @@ int
 append_string_value_tree(art_tree *art, FILE *stream)
 {
     // 1. type
-    miqs_append_type(3, stream);
+    bin_append_type(3, stream);
     // 2. number of values
     uint64_t num_str_value = art_size(art);
-    miqs_append_uint64(num_str_value, stream);
+    bin_append_uint64(num_str_value, stream);
     // 3. value nodes
     int rst = art_iter(art, append_string_value_node, stream);
     return rst == 0 ? num_str_value : 0;
@@ -651,7 +651,7 @@ append_attr_name_node(void *fh, const unsigned char *key, uint32_t key_len, void
     FILE *stream = (FILE *)fh;
     // 1. attr name
     char *attr_name = (char *)key;
-    miqs_append_string_with_len(attr_name, (size_t)key_len, stream);
+    bin_append_string_with_len(attr_name, (size_t)key_len, stream);
     // 2. attr value region
     key_index_leaf_content *key_index_leaf = (key_index_leaf_content *)value;
     if (key_index_leaf->data_type == STRING) {
@@ -672,7 +672,7 @@ int
 append_attr_root_tree(art_tree *art, FILE *stream)
 {
     uint64_t num_str_value = art_size(art);
-    miqs_append_uint64(num_str_value, stream);
+    bin_append_uint64(num_str_value, stream);
     return art_iter(art, append_attr_name_node, stream);
 }
 
@@ -708,16 +708,16 @@ int
 read_attr_value_node(art_tree *art_value_index, FILE *stream)
 {
     // 1. read value
-    char *val = miqs_read_string(stream);
+    char *val = bin_read_string(stream);
 
     Set *obj_id_set = set_new(ui64_hash, ui64_equal);
     set_register_free_function(obj_id_set, free);
 
     // 2. read object ID set
-    uint64_t *num_obj_id = miqs_read_uint64(stream);
+    uint64_t *num_obj_id = bin_read_uint64(stream);
     uint64_t  i          = 0;
     for (i = 0; i < *num_obj_id; i++) {
-        uint64_t *obj_id = miqs_read_uint64(stream);
+        uint64_t *obj_id = bin_read_uint64(stream);
         set_insert(obj_id_set, obj_id);
     }
     // 3. insert value into art tree
@@ -734,7 +734,7 @@ read_attr_values(art_tree *art_value_index, FILE *stream)
     // key_index_leaf_node->extra_prefix_index = (art_tree *)calloc(1, sizeof(art_tree));
     art_tree_init(art_value_index);
 
-    uint64_t *num_values = miqs_read_uint64(stream);
+    uint64_t *num_values = bin_read_uint64(stream);
     uint64_t  i          = 0;
     for (i = 0; i < *num_values; i++) {
         rst = rst | read_attr_value_node(art_value_index, stream);
@@ -745,10 +745,10 @@ read_attr_values(art_tree *art_value_index, FILE *stream)
 int
 read_attr_name_node(art_tree *art_key_index, FILE *stream)
 {
-    char *                  attr_name = miqs_read_string(stream);
+    char *                  attr_name = bin_read_string(stream);
     key_index_leaf_content *key_index_leaf_node =
         (key_index_leaf_content *)calloc(1, sizeof(key_index_leaf_content));
-    int *                     tv   = miqs_read_int(stream);
+    int *                     tv   = bin_read_int(stream);
     dart_indexed_value_type_t type = (dart_indexed_value_type_t)(*tv);
     key_index_leaf_node->data_type = type;
     art_insert(art_key_index, (const unsigned char *)attr_name, strlen(attr_name), key_index_leaf_node);
@@ -778,7 +778,7 @@ metadata_index_recover(char *checkpiont_dir, uint32_t serverID)
     // 2. read attribute region
     num_kv_pairs_loaded_mdb = 0;
     num_attrs_loaded_mdb    = 0;
-    uint64_t *num_attrs     = miqs_read_uint64(stream);
+    uint64_t *num_attrs     = bin_read_uint64(stream);
     num_attrs_loaded_mdb    = (size_t)num_attrs;
     uint64_t i              = 0;
     int      rst            = 0;
@@ -787,7 +787,7 @@ metadata_index_recover(char *checkpiont_dir, uint32_t serverID)
     }
 
 #ifndef PDC_DART_SFX_TREE
-    num_attrs            = miqs_read_uint64(stream);
+    num_attrs            = bin_read_uint64(stream);
     num_attrs_loaded_mdb = (size_t)num_attrs;
     rst                  = 0;
     for (i = 0; i < *num_attrs; i++) {
