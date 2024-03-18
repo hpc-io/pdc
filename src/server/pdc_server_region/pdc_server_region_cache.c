@@ -42,7 +42,7 @@ static size_t          maximum_cache_size;
 int
 PDC_region_server_cache_init()
 {
-    int server_rank = 0;
+    int   server_rank = 0;
     char *p;
 
     pdc_recycle_close_flag = 0;
@@ -63,8 +63,7 @@ PDC_region_server_cache_init()
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
 #endif
     if (server_rank == 0)
-        fprintf(stderr, "==PDC_SERVER[%d]: max cache size: %llu\n",
-                server_rank, maximum_cache_size);
+        fprintf(stderr, "==PDC_SERVER[%d]: max cache size: %llu\n", server_rank, maximum_cache_size);
 
     obj_cache_list     = NULL;
     obj_cache_list_end = NULL;

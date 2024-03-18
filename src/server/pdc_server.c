@@ -2178,7 +2178,7 @@ PDC_Server_get_env()
 
     tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
     if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
-        pdc_disable_checkpoint_g =1;
+        pdc_disable_checkpoint_g = 1;
         if (pdc_server_rank_g == 0)
             printf("==PDC_SERVER[0]: checkpoint disabled!\n");
     }
