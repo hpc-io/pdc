@@ -16,17 +16,18 @@ main(int argc, char **argv)
 {
     pdcid_t pdc, cont_prop, cont, obj_prop, obj, local_reg, remote_reg, transfer_req, *transfer_batch;
 
-    hid_t file, grp, dset, fapl, dxpl, dspace, mspace;
+    hid_t  file, grp, dset, fapl, dxpl, dspace, mspace;
     herr_t status;
 
     int i, j, count, total_count, rank, nproc, ssi_downsample, rec_downsample, batchsize, iter, opensees_size;
     int start_x[4096], start_y[4096];
-    hsize_t offset[4], size[4], local_offset[4], local_size[4];
-    hsize_t dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
+    hsize_t  offset[4], size[4], local_offset[4], local_size[4];
+    hsize_t  dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
     uint64_t pdc_dims[3], pdc_offset[3], pdc_size[3], pdc_local_offset[3], pdc_local_size[3];
     // 12x, 32x, 32x
-    char *fname, *dname = "vel_0 ijk layout";
-    double *data = NULL, t0, t1, t2, data_max, data_min, *ssi_data = NULL, *rec_data = NULL, *opensees_data = NULL;
+    char *  fname, *dname = "vel_0 ijk layout";
+    double *data = NULL, t0, t1, t2, data_max, data_min, *ssi_data = NULL, *rec_data = NULL,
+           *opensees_data = NULL;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -46,7 +47,7 @@ main(int argc, char **argv)
     if (file < 0)
         fprintf(stderr, "Failed to open file [%s]\n", fname);
 
-    dset = H5Dopen(file, dname, H5P_DEFAULT);
+    dset   = H5Dopen(file, dname, H5P_DEFAULT);
     dspace = H5Dget_space(dset);
     H5Sget_simple_extent_dims(dspace, dims, NULL);
 
@@ -86,11 +87,11 @@ main(int argc, char **argv)
 
     mspace = H5Screate_simple(4, local_size, NULL);
 
-    data = (double*)malloc(sizeof(double) * local_size[0] * local_size[1] * local_size[2]);
+    data = (double *)malloc(sizeof(double) * local_size[0] * local_size[1] * local_size[2]);
 
     if (nproc <= 16)
-        fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", 
-                        rank, offset[0], offset[1], offset[2], size[0], size[1], size[2]);
+        fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0],
+                offset[1], offset[2], size[0], size[1], size[2]);
 
 #ifdef ENABLE_MPI
     t0 = MPI_Wtime();
@@ -116,18 +117,18 @@ main(int argc, char **argv)
     // End of HDF5 operations
 
     for (i = 0; i < 3; i++) {
-        pdc_dims[i] = PDC_SIZE_UNLIMITED;
-        pdc_offset[i] = (uint64_t)offset[i];
-        pdc_size[i] = (uint64_t)size[i];
+        pdc_dims[i]         = PDC_SIZE_UNLIMITED;
+        pdc_offset[i]       = (uint64_t)offset[i];
+        pdc_size[i]         = (uint64_t)size[i];
         pdc_local_offset[i] = (uint64_t)local_offset[i];
-        pdc_local_size[i] = (uint64_t)local_size[i];
+        pdc_local_size[i]   = (uint64_t)local_size[i];
     }
 
     pdc = PDCinit("pdc");
 
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-    cont = PDCcont_create("ssioutput", cont_prop);
-    obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+    cont      = PDCcont_create("ssioutput", cont_prop);
+    obj_prop  = PDCprop_create(PDC_OBJ_CREATE, pdc);
 
     PDCprop_set_obj_dims(obj_prop, 3, pdc_dims);
     PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
