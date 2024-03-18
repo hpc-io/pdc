@@ -96,6 +96,7 @@ char **                   all_addr_strings_g       = NULL;
 int                       is_hash_table_init_g     = 0;
 int                       lustre_stripe_size_mb_g  = 16;
 int                       lustre_total_ost_g       = 0;
+int                       pdc_disable_checkpoint_g = 0;
 
 hg_id_t get_remote_metadata_register_id_g;
 hg_id_t buf_map_server_register_id_g;
@@ -719,15 +720,9 @@ PDC_Server_set_close(void)
 #ifdef PDC_TIMING
         start = MPI_Wtime();
 #endif
-        char *tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
-        if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
-            if (pdc_server_rank_g == 0) {
-                printf("==PDC_SERVER[0]: checkpoint disabled!\n");
-            }
-        }
-        else {
+        if (pdc_disable_checkpoint_g == 0)
             PDC_Server_checkpoint();
-        }
+
 #ifdef PDC_TIMING
         pdc_server_timings->PDCserver_checkpoint += MPI_Wtime() - start;
 #endif
@@ -1203,7 +1198,8 @@ PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info)
 hg_return_t
 PDC_Server_checkpoint_cb()
 {
-    PDC_Server_checkpoint();
+    if (pdc_disable_checkpoint_g == 0)
+        PDC_Server_checkpoint();
 
     return HG_SUCCESS;
 }
@@ -1859,7 +1855,7 @@ PDC_Server_loop(hg_context_t *hg_context)
 #ifdef PDC_ENABLE_CHECKPOINT
         checkpoint_interval++;
         // Avoid calling clock() every operation
-        if (checkpoint_interval % PDC_CHECKPOINT_CHK_OP_INTERVAL == 0) {
+        if (pdc_disable_checkpoint_g == 0 && checkpoint_interval % PDC_CHECKPOINT_CHK_OP_INTERVAL == 0) {
             cur_time            = clock();
             double elapsed_time = ((double)(cur_time - last_checkpoint_time)) / CLOCKS_PER_SEC;
             /* fprintf(stderr, "PDC_SERVER: loop elapsed time %.2f\n", elapsed_time); */
@@ -2178,6 +2174,13 @@ PDC_Server_get_env()
         use_sqlite3_g = 1;
         if (pdc_server_rank_g == 0)
             printf("==PDC_SERVER[%d]: using SQLite3 for kvtag\n", pdc_server_rank_g);
+    }
+
+    tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
+    if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
+        pdc_disable_checkpoint_g =1;
+        if (pdc_server_rank_g == 0)
+            printf("==PDC_SERVER[0]: checkpoint disabled!\n");
     }
 
     if (pdc_server_rank_g == 0) {

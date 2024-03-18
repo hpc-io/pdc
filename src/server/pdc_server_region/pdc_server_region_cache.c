@@ -3,10 +3,10 @@
 
 #ifdef PDC_SERVER_CACHE
 
-#ifdef PDC_SERVER_CACHE_MAX_SIZE
-#define MAX_CACHE_SIZE PDC_SERVER_CACHE_MAX_GB * 1024 * 1024 * 1024
+#ifdef PDC_SERVER_CACHE_MAX_GB
+#define MAX_CACHE_SIZE_GB PDC_SERVER_CACHE_MAX_GB
 #else
-#define MAX_CACHE_SIZE 34359738368
+#define MAX_CACHE_SIZE_GB 32
 #endif
 
 #ifdef PDC_SERVER_CACHE_FLUSH_TIME
@@ -42,6 +42,7 @@ static size_t          maximum_cache_size;
 int
 PDC_region_server_cache_init()
 {
+    int server_rank = 0;
     char *p;
 
     pdc_recycle_close_flag = 0;
@@ -52,11 +53,18 @@ PDC_region_server_cache_init()
 
     p = getenv("PDC_SERVER_CACHE_MAX_SIZE");
     if (p != NULL) {
-        maximum_cache_size = atol(p);
+        maximum_cache_size = atol(p) * 1024llu * 1024llu * 1024llu;
     }
     else {
-        maximum_cache_size = MAX_CACHE_SIZE;
+        maximum_cache_size = MAX_CACHE_SIZE_GB * 1024llu * 1024llu * 1024llu;
     }
+
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+    if (server_rank == 0)
+        fprintf(stderr, "==PDC_SERVER[%d]: max cache size: %llu\n",
+                server_rank, maximum_cache_size);
 
     obj_cache_list     = NULL;
     obj_cache_list_end = NULL;
@@ -685,7 +693,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
     pdc_region_cache *       region_cache_iter, *region_cache_temp;
     struct pdc_region_info * region_cache_info;
     uint64_t                 write_size = 0;
-    char **                  buf, **new_buf, *buf_ptr = NULL;
+    char **                  buf, **new_buf, *buf_ptr = NULL, *env_char;
     uint64_t *               start, *end, *new_start, *new_end;
     int                      merged_request_size = 0;
     int                      server_rank         = 0;
@@ -694,6 +702,11 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
 #ifdef PDC_TIMING
     double start_time = MPI_Wtime();
 #endif
+    env_char = getenv("PDC_SERVER_CACHE_NO_FLUSH");
+    if (env_char && atoi(env_char) != 0) {
+        fprintf(stderr, "==PDC_SERVER[%d]: flushed disabled\n", server_rank);
+        return 0;
+    }
 
     if (obj_cache->ndim == 1 && obj_cache->region_cache_size) {
         // For 1D case, we can merge regions to minimize the number of POSIX calls.
