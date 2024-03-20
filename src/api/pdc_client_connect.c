@@ -8757,6 +8757,8 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     input_param.hash_algo    = hash_algo;
     input_param.attr_key     = query_string;
     input_param.attr_val     = v_query;
+    input_param.attr_vsize   = strlen(v_query);
+    input_param.attr_vtype   = PDC_STRING;
     input_param.obj_ref_type = ref_type;
 
     // TODO: see if timestamp can help
@@ -8817,7 +8819,8 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
 }
 
 perr_t
-PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                    size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                     dart_object_ref_type_t ref_type, uint64_t data)
 {
 
@@ -8827,6 +8830,8 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.hash_algo    = hash_algo;
     input_param.attr_key     = attr_key;
     input_param.attr_val     = attr_val;
+    input_param.attr_vsize   = attr_vsize;
+    input_param.attr_vtype   = attr_vtype;
     input_param.obj_ref_type = ref_type;
     // FIXME: temporarily ugly implementation here, some assignment can be ignored
     // and save some bytes for data transfer.
@@ -8856,7 +8861,8 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
 }
 
 perr_t
-PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                    size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                     dart_object_ref_type_t ref_type, uint64_t data)
 {
     // println("input: attr_key = %s, attr_val = %s", attr_key, attr_val);
@@ -8866,6 +8872,8 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.hash_algo    = hash_algo;
     input_param.attr_key     = attr_key;
     input_param.attr_val     = attr_val;
+    input_param.attr_vsize   = attr_vsize;
+    input_param.attr_vtype   = attr_vtype;
     input_param.obj_ref_type = ref_type;
     // FIXME: temporarily ugly implementation here, some assignment can be ignored
     // and save some bytes for data transfer.
@@ -8879,6 +8887,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     int                  num_servers = 0;
     index_hash_result_t *hash_result = NULL;
     if (hash_algo == DART_HASH) {
+        // suffix-tree mode switch will be set during this call.
         num_servers = DART_hash(dart_g, attr_key, OP_INSERT, dart_retrieve_server_info_cb, &hash_result);
     }
     else if (hash_algo == DHT_FULL_HASH) {

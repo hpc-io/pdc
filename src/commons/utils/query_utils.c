@@ -344,3 +344,24 @@ is_value_in_range(const char *tagslist, const char *tagname, int from, int to)
     int         v          = atoi(value);
     return (v >= from && v <= to);
 }
+
+int
+is_string_query(char *value_query)
+{
+    return is_quoted_string(value_query);
+}
+
+int
+is_affix_query(char *value_query)
+{
+    if (is_string_query(value_query) && contains(value_query, "*")) {
+        return 1;
+    }
+    return 0;
+}
+
+int
+is_number_query(char *value_query)
+{
+    return !is_string_query(value_query);
+}

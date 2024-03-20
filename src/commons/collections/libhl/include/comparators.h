@@ -51,6 +51,13 @@ typedef int (*libhl_cmp_callback_t)(void *k1, size_t k1size, void *k2, size_t k2
         return _k1i - _k2i;                                                                                  \
     }
 
+#define LIBHL_CMP_KEYS_NO_TYPE(_type, _k1, _k1s, _k2, _k2s)                                                  \
+    {                                                                                                        \
+        _type _k1i = *((_type *)_k1);                                                                        \
+        _type _k2i = *((_type *)_k2);                                                                        \
+        return _k1i - _k2i;                                                                                  \
+    }
+
 static int
 libhl_cast_any_to_int(void *k1, size_t k1size, void *k2, size_t k2size)
 {
@@ -112,7 +119,7 @@ libhl_cmp_keys_string(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_int(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(int, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(int, k1, k1size, k2, k2size);
 }
 
 /**
@@ -121,7 +128,7 @@ libhl_cmp_keys_int(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_long(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(long, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(long, k1, k1size, k2, k2size);
 }
 
 /**
@@ -130,7 +137,7 @@ libhl_cmp_keys_long(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_int16(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(int16_t, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(int16_t, k1, k1size, k2, k2size);
 }
 
 /**
@@ -139,7 +146,7 @@ libhl_cmp_keys_int16(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_int32(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(int32_t, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(int32_t, k1, k1size, k2, k2size);
 }
 
 /**
@@ -148,7 +155,7 @@ libhl_cmp_keys_int32(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_int64(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(int64_t, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(int64_t, k1, k1size, k2, k2size);
 }
 
 /**
@@ -157,7 +164,7 @@ libhl_cmp_keys_int64(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_uint16(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(uint16_t, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(uint16_t, k1, k1size, k2, k2size);
 }
 
 /**
@@ -166,7 +173,7 @@ libhl_cmp_keys_uint16(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_uint32(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(uint32_t, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(uint32_t, k1, k1size, k2, k2size);
 }
 
 /**
@@ -175,7 +182,7 @@ libhl_cmp_keys_uint32(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_uint64(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(uint64_t, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(uint64_t, k1, k1size, k2, k2size);
 }
 
 /**
@@ -184,7 +191,7 @@ libhl_cmp_keys_uint64(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_float(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(float, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(float, k1, k1size, k2, k2size);
 }
 
 /**
@@ -193,27 +200,28 @@ libhl_cmp_keys_float(void *k1, size_t k1size, void *k2, size_t k2size)
 static int
 libhl_cmp_keys_double(void *k1, size_t k1size, void *k2, size_t k2size)
 {
-    LIBHL_CMP_KEYS_TYPE(double, k1, k1size, k2, k2size);
+    LIBHL_CMP_KEYS_NO_TYPE(double, k1, k1size, k2, k2size);
 }
 
 static libhl_cmp_callback_t cmp_cb_array[PDC_TYPE_COUNT] = {
-    libhl_cmp_keys_int,
-    libhl_cmp_keys_float,
-    libhl_cmp_keys_double,
-    NULL,                  //"PDC_CHAR",
-    NULL,                  //"PDC_STRING",
-    NULL,                  //"PDC_BOOLEAN",
+    NULL,                  //"PDC_UNKNOWN",
     NULL,                  //"PDC_SHORT",
+    libhl_cmp_keys_int32,  //"PDC_INT",
     NULL,                  //"PDC_UINT",
-    libhl_cmp_keys_int64,  //"PDC_INT64",
-    libhl_cmp_keys_uint64, //"PDC_UINT64",
-    libhl_cmp_keys_int16,  // "PDC_INT16",
+    libhl_cmp_keys_long,   // "PDC_LONG",
     NULL,                  //"PDC_INT8",
     NULL,                  //"PDC_UINT8",
+    libhl_cmp_keys_int16,  // "PDC_INT16",
     libhl_cmp_keys_uint16, // "PDC_UINT16",
     libhl_cmp_keys_int32,  //"PDC_INT32",
     libhl_cmp_keys_uint32, //"PDC_UINT32",
-    libhl_cmp_keys_long,   // "PDC_LONG",
+    libhl_cmp_keys_int64,  //"PDC_INT64",
+    libhl_cmp_keys_uint64, //"PDC_UINT64",
+    libhl_cmp_keys_float,  //"PDC_FLOAT",
+    libhl_cmp_keys_double, //"PDC_DOUBLE",
+    NULL,                  //"PDC_CHAR",
+    NULL,                  //"PDC_STRING",
+    NULL,                  //"PDC_BOOLEAN",
     NULL,                  //"PDC_VOID_PTR",
     NULL,                  //"PDC_SIZE_T",
     NULL,                  //"PDC_BULKI",
@@ -221,27 +229,28 @@ static libhl_cmp_callback_t cmp_cb_array[PDC_TYPE_COUNT] = {
 };
 
 static libhl_cmp_callback_t locate_cb_array[PDC_TYPE_COUNT] = {
-    libhl_cast_int_to_int,
-    libhl_cast_float_to_int,
-    libhl_cast_double_to_int,
-    NULL,                    //"PDC_CHAR",
-    NULL,                    //"PDC_STRING",
-    NULL,                    //"PDC_BOOLEAN",
-    NULL,                    //"PDC_SHORT",
-    NULL,                    //"PDC_UINT",
-    libhl_cast_int64_to_int, //"PDC_INT64",
-    libhl_cast_any_to_int,   //"PDC_UINT64",
-    libhl_cast_int16_to_int, // "PDC_INT16",
-    NULL,                    //"PDC_INT8",
-    NULL,                    //"PDC_UINT8",
-    libhl_cast_any_to_int,   // "PDC_UINT16",
-    libhl_cast_int32_to_int, //"PDC_INT32",
-    libhl_cast_any_to_int,   //"PDC_UINT32",
-    libhl_cast_long_to_int,  // "PDC_LONG",
-    NULL,                    //"PDC_VOID_PTR",
-    NULL,                    //"PDC_SIZE_T",
-    NULL,                    //"PDC_BULKI",
-    NULL,                    //"PDC_BULKI_ENT"
+    NULL,                     //"PDC_UNKNOWN",
+    NULL,                     //"PDC_SHORT",
+    libhl_cast_int32_to_int,  //"PDC_INT",
+    NULL,                     //"PDC_UINT",
+    libhl_cast_long_to_int,   // "PDC_LONG",
+    NULL,                     //"PDC_INT8",
+    NULL,                     //"PDC_UINT8",
+    libhl_cast_int16_to_int,  // "PDC_INT16",
+    libhl_cast_any_to_int,    // "PDC_UINT16",
+    libhl_cast_int32_to_int,  //"PDC_INT32",
+    libhl_cast_any_to_int,    //"PDC_UINT32",
+    libhl_cast_int64_to_int,  //"PDC_INT64",
+    libhl_cast_any_to_int,    //"PDC_UINT64",
+    libhl_cast_float_to_int,  //"PDC_FLOAT",
+    libhl_cast_double_to_int, //"PDC_DOUBLE",
+    NULL,                     //"PDC_CHAR",
+    NULL,                     //"PDC_STRING",
+    NULL,                     //"PDC_BOOLEAN",
+    NULL,                     //"PDC_VOID_PTR",
+    NULL,                     //"PDC_SIZE_T",
+    NULL,                     //"PDC_BULKI",
+    NULL,                     //"PDC_BULKI_ENT"
 };
 
 #define LIBHL_CMP_CB(DT)    cmp_cb_array[DT]

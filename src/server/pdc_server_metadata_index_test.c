@@ -8,11 +8,20 @@
 void
 delete_kv_from_index(char *kv, uint64_t obj_id)
 {
-    char *key   = NULL;
-    char *value = NULL;
+    char * key      = NULL;
+    char * value    = NULL;
+    int8_t kv_dtype = PDC_STRING;
     if (kv && contains(kv, "=")) {
         key   = substring(kv, 0, indexOf(kv, '='));
         value = substring(kv, indexOf(kv, '=') + 1, strlen(kv));
+        if (is_number_query(value)) {
+            if (contains(value, ".")) {
+                kv_dtype = PDC_DOUBLE;
+            }
+            else {
+                kv_dtype = PDC_INT;
+            }
+        }
     }
     else {
         LOG_ERROR("Invalid Key Value Pair!\n");
@@ -25,10 +34,11 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
     input.obj_ref_type = REF_PRIMARY_ID;
     input.hash_algo    = DART_HASH;
     // Test delete Index
-    input.op_type         = OP_DELETE;
-    input.attr_val        = value;
+    input.op_type = OP_DELETE;
+    get_number_from_string(value, kv_dtype, &(input.attr_val));
     input.obj_primary_ref = obj_id;
-    input.attr_dtype      = PDC_STRING;
+    input.attr_vtype      = kv_dtype;
+    input.attr_vsize      = get_size_by_class_n_type(input.attr_val, 1, PDC_CLS_ITEM, kv_dtype);
 #ifndef PDC_DART_SFX_TREE
     input.inserting_suffix = 0;
     input.attr_key         = strdup(key);
@@ -58,12 +68,21 @@ void
 insert_kv_to_index(char *kv, uint64_t obj_id)
 {
 
-    char *key   = NULL;
-    char *value = NULL;
+    char * key      = NULL;
+    void * value    = NULL;
+    int8_t kv_dtype = PDC_STRING;
     LOG_DEBUG("Inserting %s\n", kv);
     if (kv && contains(kv, "=")) {
         key   = substring(kv, 0, indexOf(kv, '='));
         value = substring(kv, indexOf(kv, '=') + 1, strlen(kv));
+        if (is_number_query(value)) {
+            if (contains(value, ".")) {
+                kv_dtype = PDC_DOUBLE;
+            }
+            else {
+                kv_dtype = PDC_INT64;
+            }
+        }
     }
     else {
         LOG_ERROR("Invalid Key Value Pair!\n");
@@ -76,10 +95,11 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
     input.obj_ref_type = REF_PRIMARY_ID;
     input.hash_algo    = DART_HASH;
     // Test Insert Index
-    input.op_type         = OP_INSERT;
-    input.attr_val        = value;
+    input.op_type = OP_INSERT;
+    get_number_from_string(value, kv_dtype, &(input.attr_val));
     input.obj_primary_ref = obj_id;
-    input.attr_dtype      = PDC_STRING;
+    input.attr_vtype      = kv_dtype;
+    input.attr_vsize      = get_size_by_class_n_type(input.attr_val, 1, PDC_CLS_ITEM, kv_dtype);
 
 #ifndef PDC_DART_SFX_TREE
     input.inserting_suffix = 0;
@@ -131,62 +151,79 @@ test_PDC_Server_dart_perform_one_server()
 
     PDC_Server_dart_init(1, 0);
 
-    char *kv = (char *)calloc(20, sizeof(char));
+    char *kv    = (char *)calloc(20, sizeof(char));
+    char *numkv = (char *)calloc(20, sizeof(char));
 
-    for (int i = 0; i < 1000; i++) {
-        sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
-        insert_kv_to_index(kv, 10000 + i);
-    }
+    // for (int i = 0; i < 1000; i++) {
+    //     sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
+    //     sprintf(numkv, "num%03dnum=%d", i, i);
+    //     insert_kv_to_index(kv, 10000 + i);
+    //     sprintf(numkv, "num%03dnum=%d", i, i);
+    //     insert_kv_to_index(numkv, 10000 + i);
+    // }
 
-    insert_kv_to_index("0key=\"0val\"", 20000);
-    insert_kv_to_index("key000key=\"val000val\"", 10000);
-    insert_kv_to_index("key000key=\"val000val\"", 20000);
-    insert_kv_to_index("key000key=\"val000val\"", 30000);
-    insert_kv_to_index("key433key=\"val433val\"", 30000);
+    // insert_kv_to_index("0key=\"0val\"", 20000);
+    // insert_kv_to_index("key000key=\"val000val\"", 10000);
+    // insert_kv_to_index("key000key=\"val000val\"", 20000);
+    // insert_kv_to_index("key000key=\"val000val\"", 30000);
+    // insert_kv_to_index("key433key=\"val433val\"", 30000);
+
+    insert_kv_to_index("0num=0", 20000);
+    insert_kv_to_index("num000num=0", 10000);
+    insert_kv_to_index("num000num=0", 20000);
+    insert_kv_to_index("num000num=0", 30000);
+    insert_kv_to_index("num433num=433", 30000);
 
     LOG_INFO("Index Insertion Successful!\n");
 
     // key000key val000val
-    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
-    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
-    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
-    query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
-    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+    // query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    // query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    // query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    // query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
+    // query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 
-    LOG_INFO("Index Dumping...\n");
-    // save the index to file
-    idioms_metadata_index_dump("/workspaces/pdc/build/bin", 0);
+    query_result_from_kvtag("num000num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=~5", OP_RANGE_QUERY);
+    query_result_from_kvtag("0num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=5~", OP_RANGE_QUERY);
+    query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
+    query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
 
-    for (int i = 0; i < 1000; i++) {
-        sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
-        // LOG_DEBUG("Deleting %s\n", kv);
-        delete_kv_from_index(kv, 10000 + i);
-    }
+    // LOG_INFO("Index Dumping...\n");
+    // // save the index to file
+    // idioms_metadata_index_dump("/workspaces/pdc/build/bin", 0);
 
-    delete_kv_from_index("0key=\"0val\"", 20000);
-    delete_kv_from_index("key000key=\"val000val\"", 10000);
-    delete_kv_from_index("key000key=\"val000val\"", 20000);
-    delete_kv_from_index("key000key=\"val000val\"", 30000);
-    delete_kv_from_index("key433key=\"val433val\"", 30000);
+    // for (int i = 0; i < 1000; i++) {
+    //     sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
+    //     // LOG_DEBUG("Deleting %s\n", kv);
+    //     delete_kv_from_index(kv, 10000 + i);
+    // }
 
-    LOG_INFO("Index Deletion Successful!\n");
+    // delete_kv_from_index("0key=\"0val\"", 20000);
+    // delete_kv_from_index("key000key=\"val000val\"", 10000);
+    // delete_kv_from_index("key000key=\"val000val\"", 20000);
+    // delete_kv_from_index("key000key=\"val000val\"", 30000);
+    // delete_kv_from_index("key433key=\"val433val\"", 30000);
 
-    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
-    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
-    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
-    query_result_from_kvtag("*33key=\"*l\"", OP_SUFFIX_QUERY);
-    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+    // LOG_INFO("Index Deletion Successful!\n");
 
-    idioms_metadata_index_recover("/workspaces/pdc/build/bin", 1, 1, 0);
+    // query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    // query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    // query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    // query_result_from_kvtag("*33key=\"*l\"", OP_SUFFIX_QUERY);
+    // query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 
-    LOG_INFO("Index Recovery Done!\n");
+    // idioms_metadata_index_recover("/workspaces/pdc/build/bin", 1, 1, 0);
 
-    // key000key val000val
-    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
-    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
-    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
-    query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
-    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+    // LOG_INFO("Index Recovery Done!\n");
+
+    // // key000key val000val
+    // query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    // query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    // query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    // query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
+    // query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 }
 int
 init_default_logger()

@@ -117,4 +117,19 @@ int is_value_match_p(const char *tagslist, const char *tagname, const char *patt
  */
 int is_value_in_range(const char *tagslist, const char *tagname, int from, int to);
 
+/**
+ * determine if the value part in the query condition is a string query
+ */
+int is_string_query(char *value_query);
+
+/**
+ * determine if the value part in the query condition is an affix-based query
+ */
+int is_affix_query(char *value_query);
+
+/**
+ * determine if the value part in the query condition is a range query
+ */
+int is_number_query(char *value_query);
+
 #endif // PDC_QUERY_UTILS_H

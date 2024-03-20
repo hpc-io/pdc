@@ -61,6 +61,7 @@ isFactor(char *expression, Condition *condition)
     }
     return 1;
 }
+
 int
 isTerm(char *expression, Condition *condition)
 {

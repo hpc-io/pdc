@@ -193,8 +193,8 @@ add_tag_to_one_object(pid_t obj_id, char *attr_name, char *attr_value, int is_us
         return -1;
     }
     if (is_using_dart) {
-        PDC_Client_insert_obj_ref_into_dart(DART_HASH, kvtag.name, (char *)kvtag.value, REF_PRIMARY_ID,
-                                            (uint64_t)obj_id);
+        PDC_Client_insert_obj_ref_into_dart(DART_HASH, kvtag.name, (char *)kvtag.value, kvtag.size,
+                                            kvtag.type, REF_PRIMARY_ID, (uint64_t)obj_id);
     }
     return 0;
 }
@@ -210,8 +210,8 @@ delete_tag_from_one_object(pid_t obj_id, char *attr_name, char *attr_value, int 
 
     PDCobj_del_tag(obj_id, kvtag.name);
     if (is_using_dart) {
-        PDC_Client_delete_obj_ref_from_dart(DART_HASH, kvtag.name, (char *)kvtag.value, REF_PRIMARY_ID,
-                                            (uint64_t)obj_id);
+        PDC_Client_delete_obj_ref_from_dart(DART_HASH, kvtag.name, (char *)kvtag.value, kvtag.size,
+                                            kvtag.type, REF_PRIMARY_ID, (uint64_t)obj_id);
     }
     return 1;
 }

@@ -18,29 +18,29 @@ typedef enum { false = 0, true = 1 } bool;
 #endif
 
 typedef enum pdc_c_var_type_t {
-    PDC_UNKNOWN    = -1, /* error                                                          */
-    PDC_INT        = 0,  /* integer types     (identical to int32_t)                       */
-    PDC_FLOAT      = 1,  /* floating-point types                                           */
-    PDC_DOUBLE     = 2,  /* double types                                                   */
-    PDC_CHAR       = 3,  /* character types                                                */
-    PDC_STRING     = 4,  /* string types                                                   */
-    PDC_BOOLEAN    = 5,  /* boolean types                                                  */
-    PDC_SHORT      = 6,  /* short types                                                    */
-    PDC_UINT       = 7,  /* unsigned integer types (identical to uint32_t)                 */
-    PDC_INT64      = 8,  /* 64-bit integer types                                           */
-    PDC_UINT64     = 9,  /* 64-bit unsigned integer types                                  */
-    PDC_INT16      = 10, /* 16-bit integer types                                           */
-    PDC_INT8       = 11, /* 8-bit integer types                                            */
-    PDC_UINT8      = 12, /* 8-bit unsigned integer types                                   */
-    PDC_UINT16     = 13, /* 16-bit unsigned integer types                                  */
-    PDC_INT32      = 14, /* 32-bit integer types                                           */
-    PDC_UINT32     = 15, /* 32-bit unsigned integer types                                  */
-    PDC_LONG       = 16, /* long types                                                     */
-    PDC_VOID_PTR   = 17, /* void pointer type                                              */
-    PDC_SIZE_T     = 18, /* size_t type                                                    */
-    PDC_BULKI      = 19, /* BULKI type                                                     */
-    PDC_BULKI_ENT  = 20, /* BULKI_ENTITY type                                              */
-    PDC_TYPE_COUNT = 21  /* this is the number of var types and has to be the last         */
+    PDC_UNKNOWN    = 0,  /* error */
+    PDC_SHORT      = 1,  /* short types */
+    PDC_INT        = 2,  /* integer types (identical to int32_t) */
+    PDC_UINT       = 3,  /* unsigned integer types (identical to uint32_t) */
+    PDC_LONG       = 4,  /* long types */
+    PDC_INT8       = 5,  /* 8-bit integer types */
+    PDC_UINT8      = 6,  /* 8-bit unsigned integer types */
+    PDC_INT16      = 7,  /* 16-bit integer types */
+    PDC_UINT16     = 8,  /* 16-bit unsigned integer types */
+    PDC_INT32      = 9,  /* 32-bit integer types, already listed as PDC_INT */
+    PDC_UINT32     = 10, /* 32-bit unsigned integer types */
+    PDC_INT64      = 11, /* 64-bit integer types */
+    PDC_UINT64     = 12, /* 64-bit unsigned integer types */
+    PDC_FLOAT      = 13, /* floating-point types */
+    PDC_DOUBLE     = 14, /* double types */
+    PDC_CHAR       = 15, /* character types */
+    PDC_STRING     = 16, /* string types */
+    PDC_BOOLEAN    = 17, /* boolean types */
+    PDC_VOID_PTR   = 18, /* void pointer type */
+    PDC_SIZE_T     = 19, /* size_t type */
+    PDC_BULKI      = 20, /* BULKI type */
+    PDC_BULKI_ENT  = 21, /* BULKI_ENTITY type */
+    PDC_TYPE_COUNT = 22  /* this is the number of var types and has to be the last */
 } pdc_c_var_type_t;
 
 // typedef pdc_c_var_type_t PDC_CType;
@@ -55,100 +55,104 @@ typedef enum pdc_c_var_class_t {
 
 // clang-format off
 static size_t DataTypeSizes[PDC_TYPE_COUNT] = {
-    sizeof(int),
-    sizeof(float),
-    sizeof(double),
-    sizeof(char),
-    sizeof(char *),
-    sizeof(bool),
-    sizeof(short),
-    sizeof(unsigned int),
-    sizeof(int64_t),
-    sizeof(uint64_t),
-    sizeof(int16_t),
-    sizeof(int8_t),
-    sizeof(uint8_t),
-    sizeof(uint16_t),
-    sizeof(int32_t),
-    sizeof(uint32_t),
-    sizeof(long),
-    sizeof(void *),
-    sizeof(size_t),
-    sizeof(void *),
-    sizeof(void *)
+    0,                      /* PDC_UNKNOWN, error, size 0 as placeholder */
+    sizeof(short),          /* PDC_SHORT */
+    sizeof(int),            /* PDC_INT */
+    sizeof(unsigned int),   /* PDC_UINT */
+    sizeof(long),           /* PDC_LONG */
+    sizeof(int8_t),         /* PDC_INT8 */
+    sizeof(uint8_t),        /* PDC_UINT8 */
+    sizeof(int16_t),        /* PDC_INT16 */
+    sizeof(uint16_t),       /* PDC_UINT16 */
+    sizeof(int32_t),        /* PDC_INT32, already covered by PDC_INT */
+    sizeof(uint32_t),       /* PDC_UINT32 */
+    sizeof(int64_t),        /* PDC_INT64 */
+    sizeof(uint64_t),       /* PDC_UINT64 */
+    sizeof(float),          /* PDC_FLOAT */
+    sizeof(double),         /* PDC_DOUBLE */
+    sizeof(char),           /* PDC_CHAR */
+    sizeof(char *),         /* PDC_STRING, assuming pointer to char */
+    sizeof(bool),           /* PDC_BOOLEAN, assuming C99 _Bool or C++ bool, typically 1 byte */
+    sizeof(void *),         /* PDC_VOID_PTR */
+    sizeof(size_t),         /* PDC_SIZE_T */
+    sizeof(void *),         /* PDC_BULKI, custom type, size 0 as placeholder */
+    sizeof(void *),         /* PDC_BULKI_ENT, custom type, size 0 as placeholder */
 };
 
 static char *DataTypeNames[PDC_TYPE_COUNT] = {
-    "int",
-    "float",
-    "double",
-    "char",
-    "char*",
-    "bool",
-    "short",
-    "unsigned int",
-    "int64_t",
-    "uint64_t",
-    "int16_t",
-    "int8_t",
-    "uint8_t",
-    "uint16_t",
-    "int32_t",
-    "uint32_t",
-    "long",
-    "void*",
-    "size_t",
-    "BULKI",
-    "BULKI_ENTITY"
+    "Unknown",       /* PDC_UNKNOWN */
+    "short",         /* PDC_SHORT */
+    "int",           /* PDC_INT */
+    "unsigned int",  /* PDC_UINT */
+    "long",          /* PDC_LONG */
+    "int8_t",        /* PDC_INT8 */
+    "uint8_t",       /* PDC_UINT8 */
+    "int16_t",       /* PDC_INT16 */
+    "uint16_t",      /* PDC_UINT16 */
+    "int32_t",       /* PDC_INT32, already covered by PDC_INT */
+    "uint32_t",      /* PDC_UINT32 */
+    "int64_t",       /* PDC_INT64 */
+    "uint64_t",      /* PDC_UINT64 */
+    "float",         /* PDC_FLOAT */
+    "double",        /* PDC_DOUBLE */
+    "char",          /* PDC_CHAR */
+    "char*",         /* PDC_STRING */
+    "bool",          /* PDC_BOOLEAN */
+    "void*",         /* PDC_VOID_PTR */
+    "size_t",        /* PDC_SIZE_T */
+    "BULKI",         /* PDC_BULKI */
+    "BULKI_ENTITY"   /* PDC_BULKI_ENT */
 };
 
 static char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
-    "PDC_INT",
-    "PDC_FLOAT",
-    "PDC_DOUBLE",
-    "PDC_CHAR",
-    "PDC_STRING",
-    "PDC_BOOLEAN",
-    "PDC_SHORT",
-    "PDC_UINT",
-    "PDC_INT64",
-    "PDC_UINT64",
-    "PDC_INT16",
-    "PDC_INT8",
-    "PDC_UINT8",
-    "PDC_UINT16",
-    "PDC_INT32",
-    "PDC_UINT32",
-    "PDC_LONG",
-    "PDC_VOID_PTR",
-    "PDC_SIZE_T",
-    "PDC_BULKI",
-    "PDC_BULKI_ENT"
+    "PDC_UNKNOWN",    /* PDC_UNKNOWN */
+    "PDC_SHORT",      /* PDC_SHORT */
+    "PDC_INT",        /* PDC_INT */
+    "PDC_UINT",       /* PDC_UINT */
+    "PDC_LONG",       /* PDC_LONG */
+    "PDC_INT8",       /* PDC_INT8 */
+    "PDC_UINT8",      /* PDC_UINT8 */
+    "PDC_INT16",      /* PDC_INT16 */
+    "PDC_UINT16",     /* PDC_UINT16 */
+    "PDC_INT32",      /* PDC_INT32, already covered by PDC_INT */
+    "PDC_UINT32",     /* PDC_UINT32 */
+    "PDC_INT64",      /* PDC_INT64 */
+    "PDC_UINT64",     /* PDC_UINT64 */
+    "PDC_FLOAT",      /* PDC_FLOAT */
+    "PDC_DOUBLE",     /* PDC_DOUBLE */
+    "PDC_CHAR",       /* PDC_CHAR */
+    "PDC_STRING",     /* PDC_STRING */
+    "PDC_BOOLEAN",    /* PDC_BOOLEAN */
+    "PDC_VOID_PTR",   /* PDC_VOID_PTR */
+    "PDC_SIZE_T",     /* PDC_SIZE_T */
+    "PDC_BULKI",      /* PDC_BULKI */
+    "PDC_BULKI_ENT"   /* PDC_BULKI_ENT */
 };
 
 __attribute__((unused))
 static char *DataTypeFormat[PDC_TYPE_COUNT] = {
-    "%d",     // int
-    "%f",     // float
-    "%lf",    // double
-    "%c",     // char
-    "%s",     // char*
-    "%d",     // bool (represented as an integer)
-    "%hd",    // short
-    "%u",     // unsigned int
-    "%lld",   // int64_t
-    "%llu",   // uint64_t
-    "%hd",    // int16_t
-    "%hhd",   // int8_t
-    "%hhu",   // uint8_t
-    "%hu",    // uint16_t
-    "%d",     // int32_t
-    "%u",     // uint32_t
-    "%ld",    // long
-    "%p",     // void* (pointer)
-    "%zu",     // size_t
-    "%p",      // BULKI
-    "%p"       // BULKI_ENTITY
+    "<unknown>",      /* PDC_UNKNOWN, no format as it's an error/unknown type */
+    "%hd",     /* PDC_SHORT */
+    "%d",      /* PDC_INT */
+    "%u",      /* PDC_UINT */
+    "%ld",     /* PDC_LONG */
+    "%hhd",    /* PDC_INT8 */
+    "%hhu",    /* PDC_UINT8 */
+    "%hd",     /* PDC_INT16 */
+    "%hu",     /* PDC_UINT16 */
+    "%d",      /* PDC_INT32, already covered by PDC_INT */
+    "%u",      /* PDC_UINT32 */
+    "%lld",    /* PDC_INT64 */
+    "%llu",    /* PDC_UINT64 */
+    "%f",      /* PDC_FLOAT */
+    "%lf",     /* PDC_DOUBLE */
+    "%c",      /* PDC_CHAR */
+    "%s",      /* PDC_STRING */
+    "%d",      /* PDC_BOOLEAN, represented as an integer */
+    "%p",      /* PDC_VOID_PTR */
+    "%zu",     /* PDC_SIZE_T */
+    "%p",      /* PDC_BULKI, assuming pointer or similar for custom type */
+    "%p"       /* PDC_BULKI_ENT, assuming pointer or similar for custom type */
 };
 
 // clang-format on
@@ -214,7 +218,7 @@ get_dtype_by_enum_name(const char *enumName)
     return PDC_UNKNOWN; // assuming PDC_UNKNOWN is the enum value for "unknown"
 }
 
-__attribute__((unused)) static pdc_c_var_type_t
+__attribute__((unused)) static bool
 is_PDC_UINT(pdc_c_var_type_t type)
 {
     if (type == PDC_UINT || type == PDC_UINT64 || type == PDC_UINT16 || type == PDC_UINT8 ||
@@ -224,7 +228,7 @@ is_PDC_UINT(pdc_c_var_type_t type)
     return false;
 }
 
-__attribute__((unused)) static pdc_c_var_type_t
+__attribute__((unused)) static bool
 is_PDC_INT(pdc_c_var_type_t type)
 {
     if (type == PDC_INT || type == PDC_INT64 || type == PDC_INT16 || type == PDC_INT8 || type == PDC_INT32 ||
@@ -234,7 +238,7 @@ is_PDC_INT(pdc_c_var_type_t type)
     return false;
 }
 
-__attribute__((unused)) static pdc_c_var_type_t
+__attribute__((unused)) static bool
 is_PDC_FLOAT(pdc_c_var_type_t type)
 {
     if (type == PDC_FLOAT || type == PDC_DOUBLE) {
@@ -243,7 +247,7 @@ is_PDC_FLOAT(pdc_c_var_type_t type)
     return false;
 }
 
-__attribute__((unused)) static pdc_c_var_type_t
+__attribute__((unused)) static bool
 is_PDC_STRING(pdc_c_var_type_t type)
 {
     if (type == PDC_CHAR || type == PDC_STRING) {
@@ -252,7 +256,7 @@ is_PDC_STRING(pdc_c_var_type_t type)
     return false;
 }
 
-__attribute__((unused)) static pdc_c_var_type_t
+__attribute__((unused)) static bool
 is_PDC_NUMERIC(pdc_c_var_type_t type)
 {
     if (is_PDC_INT(type) || is_PDC_UINT(type) || is_PDC_FLOAT(type)) {
@@ -260,5 +264,14 @@ is_PDC_NUMERIC(pdc_c_var_type_t type)
     }
     return false;
 }
+
+/**
+ * get numeric value from a string.
+ * @param str
+ * @param type
+ * @param val_ptr
+ * @return the size of the value.
+ */
+size_t get_number_from_string(char *str, pdc_c_var_type_t type, void **val_ptr);
 
 #endif /* PDC_GENERIC_H */
