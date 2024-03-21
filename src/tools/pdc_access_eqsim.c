@@ -139,18 +139,18 @@ main(int argc, char **argv)
     pdc_local_offset[0] = 0;
     pdc_local_offset[1] = 0;
     pdc_local_offset[2] = 0;
-    pdc_local_size[0]   = chunk_size[0];
+    pdc_local_size[0]   = dims[0];
     pdc_local_size[1]   = 1;
     pdc_local_size[2]   = 1;
     local_reg           = PDCregion_create(3, pdc_local_offset, pdc_local_size);
 
-    pdc_size[0] = chunk_size[0];
+    pdc_size[0] = dims[0];
     pdc_size[1] = 1;
     pdc_size[2] = 1;
 
     batchsize      = chunk_size[1] * chunk_size[2] / ssi_downsample / ssi_downsample;
     transfer_batch = (pdcid_t *)malloc(sizeof(pdcid_t) * batchsize);
-    ssi_data       = (double *)malloc(sizeof(double) * chunk_size[0] * batchsize);
+    ssi_data       = (double *)malloc(sizeof(double) * dims[0] * batchsize);
 
     for (r = 0; r < round; r++) {
 #ifdef ENABLE_MPI
@@ -166,7 +166,7 @@ main(int argc, char **argv)
                 pdc_offset[2] = j * ssi_downsample + start_y[rank] * chunk_size[2];
                 remote_reg    = PDCregion_create(3, pdc_offset, pdc_size);
 
-                transfer_batch[iter] = PDCregion_transfer_create(&ssi_data[chunk_size[0] * iter], PDC_READ,
+                transfer_batch[iter] = PDCregion_transfer_create(&ssi_data[dims[0] * iter], PDC_READ,
                                                                  obj, local_reg, remote_reg);
                 PDCregion_close(remote_reg);
                 iter++;
@@ -197,18 +197,18 @@ main(int argc, char **argv)
     pdc_local_offset[0] = 0;
     pdc_local_offset[1] = 0;
     pdc_local_offset[2] = 0;
-    pdc_local_size[0]   = chunk_size[0];
+    pdc_local_size[0]   = dims[0];
     pdc_local_size[1]   = 1;
     pdc_local_size[2]   = 1;
     local_reg           = PDCregion_create(3, pdc_local_offset, pdc_local_size);
 
-    pdc_size[0] = chunk_size[0];
+    pdc_size[0] = dims[0];
     pdc_size[1] = 1;
     pdc_size[2] = 1;
 
     batchsize      = chunk_size[1] * chunk_size[2] / rec_downsample / rec_downsample;
     transfer_batch = (pdcid_t *)malloc(sizeof(pdcid_t) * batchsize);
-    rec_data       = (double *)malloc(sizeof(double) * chunk_size[0] * batchsize);
+    rec_data       = (double *)malloc(sizeof(double) * dims[0] * batchsize);
 
     for (r = 0; r < round; r++) {
 #ifdef ENABLE_MPI
@@ -224,7 +224,7 @@ main(int argc, char **argv)
                 pdc_offset[2] = j * rec_downsample + start_y[rank] * chunk_size[2];
                 remote_reg    = PDCregion_create(3, pdc_offset, pdc_size);
 
-                transfer_batch[iter] = PDCregion_transfer_create(&rec_data[chunk_size[0] * iter], PDC_READ,
+                transfer_batch[iter] = PDCregion_transfer_create(&rec_data[dims[0] * iter], PDC_READ,
                                                                  obj, local_reg, remote_reg);
                 PDCregion_close(remote_reg);
                 iter++;
@@ -253,7 +253,7 @@ main(int argc, char **argv)
     pdc_offset[0] = 0;
     pdc_offset[1] = chunk_size[1] / 2 + start_x[rank] * chunk_size[1];
     pdc_offset[2] = chunk_size[2] / 2 + start_y[rank] * chunk_size[2];
-    pdc_size[0]   = chunk_size[0];
+    pdc_size[0]   = dims[0];
     pdc_size[1]   = 1;
     pdc_size[2]   = 1;
     remote_reg    = PDCregion_create(3, pdc_offset, pdc_size);
@@ -261,7 +261,7 @@ main(int argc, char **argv)
     pdc_local_offset[0] = 0;
     pdc_local_offset[1] = 0;
     pdc_local_offset[2] = 0;
-    pdc_local_size[0]   = chunk_size[0];
+    pdc_local_size[0]   = dims[0];
     pdc_local_size[1]   = 1;
     pdc_local_size[2]   = 1;
     local_reg           = PDCregion_create(3, pdc_local_offset, pdc_local_size);
