@@ -166,8 +166,8 @@ main(int argc, char **argv)
                 pdc_offset[2] = j * ssi_downsample + start_y[rank] * chunk_size[2];
                 remote_reg    = PDCregion_create(3, pdc_offset, pdc_size);
 
-                transfer_batch[iter] = PDCregion_transfer_create(&ssi_data[dims[0] * iter], PDC_READ,
-                                                                 obj, local_reg, remote_reg);
+                transfer_batch[iter] = PDCregion_transfer_create(&ssi_data[dims[0] * iter], PDC_READ, obj,
+                                                                 local_reg, remote_reg);
                 PDCregion_close(remote_reg);
                 iter++;
             }
@@ -224,8 +224,8 @@ main(int argc, char **argv)
                 pdc_offset[2] = j * rec_downsample + start_y[rank] * chunk_size[2];
                 remote_reg    = PDCregion_create(3, pdc_offset, pdc_size);
 
-                transfer_batch[iter] = PDCregion_transfer_create(&rec_data[dims[0] * iter], PDC_READ,
-                                                                 obj, local_reg, remote_reg);
+                transfer_batch[iter] = PDCregion_transfer_create(&rec_data[dims[0] * iter], PDC_READ, obj,
+                                                                 local_reg, remote_reg);
                 PDCregion_close(remote_reg);
                 iter++;
             }

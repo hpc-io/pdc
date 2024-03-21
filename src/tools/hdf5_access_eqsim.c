@@ -15,10 +15,11 @@ main(int argc, char **argv)
     hid_t  file, grp, dset, fapl, dxpl, dspace, mspace;
     herr_t status;
 
-    int i, j, r, round=1, count, total_count, rank=0, nproc=1, ssi_downsample, rec_downsample, batchsize, iter, opensees_size;
-    int start_x[4096], start_y[4096];
-    hsize_t  offset[4], size[4], local_offset[4], local_size[4], stride[4];
-    hsize_t  dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
+    int i, j, r, round = 1, count, total_count, rank = 0, nproc = 1, ssi_downsample, rec_downsample,
+                 batchsize, iter, opensees_size;
+    int     start_x[4096], start_y[4096];
+    hsize_t offset[4], size[4], local_offset[4], local_size[4], stride[4];
+    hsize_t dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
     // 12x, 32x, 32x
     char *  fname, *dname = "vel_0 ijk layout";
     double *data = NULL, t0, t1, t2, data_max, data_min, *ssi_data = NULL, *rec_data = NULL,
@@ -101,14 +102,13 @@ main(int argc, char **argv)
 
     /* H5Sclose(mspace); */
 
-
     //=============PATTERN 2===============
     // OpenSees access pattern: 1 rank read subregion 200x200m (32 grids)
-    opensees_size   = 32; // 32 * 6.25m = 200m
-    local_size[0]   = dims[0];
-    local_size[1]   = opensees_size;
-    local_size[2]   = opensees_size;
-    local_size[3]   = 1;
+    opensees_size = 32; // 32 * 6.25m = 200m
+    local_size[0] = dims[0];
+    local_size[1] = opensees_size;
+    local_size[2] = opensees_size;
+    local_size[3] = 1;
 
     offset[0] = 0;
     offset[1] = start_x[rank] * chunk_size[1];
@@ -145,8 +145,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            fprintf(stderr, "Round %d: rank 0 read OpenSees 200x200m data took %.6lf\n", r,
-                    t1 - t0);
+            fprintf(stderr, "Round %d: rank 0 read OpenSees 200x200m data took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
@@ -156,19 +155,19 @@ main(int argc, char **argv)
     //=============PATTERN 3===============
     // Generating movie: all rank downsample in space to 156.25x156.25m (downsample factor 25)
     ssi_downsample = 25;
-    local_size[0] = dims[0];
-    local_size[1] = chunk_size[1] / ssi_downsample;
-    local_size[2] = chunk_size[2] / ssi_downsample;
-    local_size[3] = 1;
+    local_size[0]  = dims[0];
+    local_size[1]  = chunk_size[1] / ssi_downsample;
+    local_size[2]  = chunk_size[2] / ssi_downsample;
+    local_size[3]  = 1;
 
     offset[0] = 0;
     offset[1] = start_x[rank] * chunk_size[1];
     offset[2] = start_y[rank] * chunk_size[2];
     offset[3] = 0;
-    size[0] = dims[0];
-    size[1] = chunk_size[1] / ssi_downsample;
-    size[2] = chunk_size[2] / ssi_downsample;
-    size[3] = 1;
+    size[0]   = dims[0];
+    size[1]   = chunk_size[1] / ssi_downsample;
+    size[2]   = chunk_size[2] / ssi_downsample;
+    size[3]   = 1;
     stride[0] = 1;
     stride[1] = ssi_downsample;
     stride[2] = ssi_downsample;
@@ -177,7 +176,7 @@ main(int argc, char **argv)
     mspace = H5Screate_simple(4, local_size, NULL);
 
     batchsize = chunk_size[1] * chunk_size[2] / ssi_downsample / ssi_downsample;
-    ssi_data = (double *)malloc(sizeof(double) * dims[0] * batchsize);
+    ssi_data  = (double *)malloc(sizeof(double) * dims[0] * batchsize);
 
     for (r = 0; r < round; r++) {
         H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, stride, size, NULL);
@@ -190,8 +189,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            fprintf(stderr, "Round %d: all ranks read ssi_downsample data took %.6lf\n", r,
-                    t1 - t0);
+            fprintf(stderr, "Round %d: all ranks read ssi_downsample data took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
@@ -201,19 +199,19 @@ main(int argc, char **argv)
     //=============PATTERN 4===============
     // Building response: all rank downsample in space to every 1250m (downsample factor 200)
     rec_downsample = 200;
-    local_size[0] = dims[0];
-    local_size[1] = chunk_size[1] / rec_downsample;
-    local_size[2] = chunk_size[2] / rec_downsample;
-    local_size[3] = 1;
+    local_size[0]  = dims[0];
+    local_size[1]  = chunk_size[1] / rec_downsample;
+    local_size[2]  = chunk_size[2] / rec_downsample;
+    local_size[3]  = 1;
 
     offset[0] = 0;
     offset[1] = start_x[rank] * chunk_size[1];
     offset[2] = start_y[rank] * chunk_size[2];
     offset[3] = 0;
-    size[0] = dims[0];
-    size[1] = chunk_size[1] / rec_downsample;
-    size[2] = chunk_size[2] / rec_downsample;
-    size[3] = 1;
+    size[0]   = dims[0];
+    size[1]   = chunk_size[1] / rec_downsample;
+    size[2]   = chunk_size[2] / rec_downsample;
+    size[3]   = 1;
     stride[0] = 1;
     stride[1] = rec_downsample;
     stride[2] = rec_downsample;
@@ -222,7 +220,7 @@ main(int argc, char **argv)
     mspace = H5Screate_simple(4, local_size, NULL);
 
     batchsize = chunk_size[1] * chunk_size[2] / rec_downsample / rec_downsample;
-    rec_data = (double *)malloc(sizeof(double) * dims[0] * batchsize);
+    rec_data  = (double *)malloc(sizeof(double) * dims[0] * batchsize);
 
     for (r = 0; r < round; r++) {
         H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, stride, size, NULL);
@@ -235,8 +233,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            fprintf(stderr, "Round %d: all ranks read rec_downsample data took %.6lf\n", r,
-                    t1 - t0);
+            fprintf(stderr, "Round %d: all ranks read rec_downsample data took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
@@ -253,10 +250,10 @@ main(int argc, char **argv)
     offset[1] = start_x[rank] * chunk_size[1];
     offset[2] = start_y[rank] * chunk_size[2];
     offset[3] = 0;
-    size[0] = dims[0];
-    size[1] = 1;
-    size[2] = 1;
-    size[3] = 1;
+    size[0]   = dims[0];
+    size[1]   = 1;
+    size[2]   = 1;
+    size[3]   = 1;
 
     mspace = H5Screate_simple(4, local_size, NULL);
 
@@ -278,8 +275,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            fprintf(stderr, "Round %d: rank 0 read 1 time-history took %.6lf\n", r,
-                    t1 - t0);
+            fprintf(stderr, "Round %d: rank 0 read 1 time-history took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
