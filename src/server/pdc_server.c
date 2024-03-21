@@ -1100,6 +1100,7 @@ PDC_Server_finalize()
 #ifdef ENABLE_TIMING
 
     double all_bloom_check_time_max, all_bloom_check_time_min, all_insert_time_max, all_insert_time_min;
+    double all_meta_multi_query_min, all_meta_multi_query_max;
     double all_server_bloom_init_time_min, all_server_bloom_init_time_max;
     double all_server_hash_insert_time_min, all_server_hash_insert_time_max;
 
@@ -1119,6 +1120,8 @@ PDC_Server_finalize()
                MPI_COMM_WORLD);
     MPI_Reduce(&server_hash_insert_time_g, &all_server_hash_insert_time_min, 1, MPI_DOUBLE, MPI_MIN, 0,
                MPI_COMM_WORLD);
+    MPI_Reduce(&server_meta_multi_query_time_g, &all_meta_multi_query_min, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_meta_multi_query_time_g, &all_meta_multi_query_max, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 
 #else
     all_bloom_check_time_min        = server_bloom_check_time_g;
@@ -1129,7 +1132,15 @@ PDC_Server_finalize()
     all_server_bloom_init_time_max  = server_bloom_init_time_g;
     all_server_hash_insert_time_max = server_hash_insert_time_g;
     all_server_hash_insert_time_min = server_hash_insert_time_g;
+    all_meta_multi_query_min        = server_meta_multi_query_time_g;
+    all_meta_multi_query_max        = server_meta_multi_query_time_g;
 #endif
+    if (pdc_server_rank_g == 0) {
+        printf("==PDC_SERVER[0]: Metadata Stats (MIN, MAX)\n"
+               "                 Ttotal_insert  (%6.2f, %6.2f)\n"
+               "                 Ttotal_query   (%6.2f, %6.2f)\n",
+               all_insert_time_min, all_insert_time_max, all_meta_multi_query_min, all_meta_multi_query_max);
+    }
 
 #endif
 

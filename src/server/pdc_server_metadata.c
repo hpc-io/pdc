@@ -75,6 +75,7 @@ double   server_update_time_g       = 0.0;
 double   server_hash_insert_time_g  = 0.0;
 double   server_bloom_init_time_g   = 0.0;
 uint32_t n_metadata_g               = 0;
+double   server_meta_multi_query_time_g = 0.0;
 
 pbool_t
 PDC_region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2)
@@ -2215,6 +2216,13 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
     pdc_var_type_t             dtype;
     pdc_meta_query_t *         query = NULL;
 
+#ifdef ENABLE_TIMING
+    struct timeval pdc_timer_start;
+    struct timeval pdc_timer_end;
+    double         total_sec;
+    gettimeofday(&pdc_timer_start, 0);
+#endif
+
     // Convert query string to a tree structure for easier processing
     query = _parse_string_to_meta_query(query_str);
 
@@ -2237,6 +2245,13 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
         /* println("-----OBJ-----"); */
     } // End looping metadata hash table
     *n_meta = iter;
+
+#ifdef ENABLE_TIMING
+    gettimeofday(&pdc_timer_end, 0);
+    total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
+    server_meta_multi_query_time_g += total_sec;
+    fprintf(stderr, "==PDC_SERVER[%d]: %s - time %lf\n", pdc_server_rank_g, __func__, total_sec);
+#endif
 
     /* println("============QUERY=============="); */
 
