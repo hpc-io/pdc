@@ -95,7 +95,8 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
     if (!node)
         return 0;
 
-    if (rbt->cmp_keys_cb(begin_key, bgk_size, end_key, edk_size) >= 0) {
+    if (begin_key != NULL && end_key != NULL &&
+        rbt->cmp_keys_cb(begin_key, bgk_size, end_key, edk_size) >= 0) {
         return 0;
     }
 
@@ -110,8 +111,8 @@ rbt_range_walk_internal(rbt_t *rbt, rbt_node_t *node, void *begin_key, size_t bg
         rc += rrc;
     }
 
-    int cmp_begin = rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size);
-    int cmp_end   = rbt->cmp_keys_cb(node->key, node->klen, end_key, edk_size);
+    int cmp_begin = begin_key != NULL ? rbt->cmp_keys_cb(node->key, node->klen, begin_key, bgk_size) : 1;
+    int cmp_end   = end_key != NULL ? rbt->cmp_keys_cb(node->key, node->klen, end_key, edk_size) : -1;
 
     // current node = begin : no need for left child, collect
     // current node < begin : no need for left child

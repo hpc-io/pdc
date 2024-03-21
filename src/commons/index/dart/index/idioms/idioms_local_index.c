@@ -551,8 +551,8 @@ value_rbt_callback(rbt_t *rbt, void *key, size_t klen, void *value, void *priv)
     value_index_leaf_content_t *value_index_leaf = (value_index_leaf_content_t *)(value);
     IDIOMS_md_idx_record_t *    idx_record       = (IDIOMS_md_idx_record_t *)(priv);
 
-    printf("value_rbt_callback: key: %s, value: %s, value_index_leaf: %p\n", (char *)key,
-           (char *)idx_record->value, value_index_leaf);
+    // printf("value_rbt_callback: key: %s, value: %s, value_index_leaf: %p\n", (char *)key,
+    //        (char *)idx_record->value, value_index_leaf);
 
     if (value_index_leaf != NULL) {
         collect_obj_ids(value_index_leaf, idx_record);
@@ -637,7 +637,7 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
 
         int num_visited_node = rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2,
                                               value_rbt_callback, idx_record, beginInclusive, endInclusive);
-        println("[value_number_query] num_visited_node: %d\n", num_visited_node);
+        // println("[value_number_query] num_visited_node: %d\n", num_visited_node);
     }
     else {
         // exact query by default

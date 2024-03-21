@@ -138,7 +138,7 @@ query_result_from_kvtag(char *key_value_query, int8_t op_type)
     input->op_type      = op_type;
     input->attr_key     = key_value_query;
     assert(PDC_Server_dart_perform_one_server(input, output, &n_obj_ids, &buf_ptr) == SUCCEED);
-    NLF_LOG_INFO("Query Successful! %d Results: ", n_obj_ids);
+    NLF_LOG_INFO("Query %s Successful!  %d Results: ", key_value_query, n_obj_ids);
     for (int i = 0; i < n_obj_ids; i++) {
         printf("%llu, ", buf_ptr[i]);
     }
@@ -170,7 +170,21 @@ test_PDC_Server_dart_perform_one_server()
 
     insert_kv_to_index("0num=0", 20000);
     insert_kv_to_index("num000num=0", 10000);
-    insert_kv_to_index("num000num=0", 20000);
+    insert_kv_to_index("num010num=2", 20000);
+    insert_kv_to_index("num010num=3", 30000);
+    insert_kv_to_index("num010num=5", 50000);
+    insert_kv_to_index("num010num=6", 60000);
+    insert_kv_to_index("num010num=7", 70000);
+    insert_kv_to_index("num010num=9", 90000);
+
+    insert_kv_to_index("num001num=0", 11000);
+    insert_kv_to_index("num011num=2", 21000);
+    insert_kv_to_index("num011num=3", 31000);
+    insert_kv_to_index("num011num=5", 51000);
+    insert_kv_to_index("num011num=6", 61000);
+    insert_kv_to_index("num011num=7", 71000);
+    insert_kv_to_index("num011num=9", 91000);
+
     insert_kv_to_index("num000num=0", 30000);
     insert_kv_to_index("num433num=433", 30000);
 
@@ -183,10 +197,10 @@ test_PDC_Server_dart_perform_one_server()
     // query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
     // query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 
+    query_result_from_kvtag("num01*=5~", OP_RANGE_QUERY);
     query_result_from_kvtag("num000num=0", OP_EXACT_QUERY);
     query_result_from_kvtag("num01*=~5", OP_RANGE_QUERY);
     query_result_from_kvtag("0num=0", OP_EXACT_QUERY);
-    query_result_from_kvtag("num01*=5~", OP_RANGE_QUERY);
     query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
     query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
 

@@ -53,6 +53,12 @@ typedef int (*libhl_cmp_callback_t)(void *k1, size_t k1size, void *k2, size_t k2
 
 #define LIBHL_CMP_KEYS_NO_TYPE(_type, _k1, _k1s, _k2, _k2s)                                                  \
     {                                                                                                        \
+        if (_k1 == NULL && _k2 == NULL)                                                                      \
+            return 0;                                                                                        \
+        if (_k1 == NULL)                                                                                     \
+            return -1;                                                                                       \
+        if (_k2 == NULL)                                                                                     \
+            return 1;                                                                                        \
         _type _k1i = *((_type *)_k1);                                                                        \
         _type _k2i = *((_type *)_k2);                                                                        \
         return _k1i - _k2i;                                                                                  \
