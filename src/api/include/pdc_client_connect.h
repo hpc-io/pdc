@@ -193,6 +193,8 @@ struct _dart_perform_one_thread_param {
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 
+PDC_pe_info_t *PDC_get_pe_info();
+
 uint32_t PDC_get_client_data_server();
 
 /***************************************/

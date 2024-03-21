@@ -3,13 +3,12 @@
 
 #include "pdc_client_connect.h"
 
-typedef struct PDC_metadata_query_pe_info {
-    int client_rank;
-    int client_size;
-    int number_of_servers;
-} PDC_metadata_query_pe_info;
+typedef struct {
+    int       n_res;
+    uint64_t *out;
+    char *    condition;
+} separate_query_result_t;
 
-size_t PDC_metadata_multi_condition_query(char *queryString, PDC_metadata_query_pe_info pe_info,
-                                          uint64_t **object_id_list, uint64_t *count);
+size_t PDC_metadata_multi_condition_query(char *queryString, uint64_t **object_id_list, uint64_t *count);
 
 #endif // PDC_METADATA_CLIENT_H

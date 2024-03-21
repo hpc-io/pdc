@@ -1,4 +1,5 @@
 #include "pdc_metadata_client.h"
+#include "pdc_client_connect.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -60,18 +61,66 @@ splitExpression(const char *expression, char conditions[][CONDITION_LENGTH], int
     *count = index; // Update the count of extracted conditions
 }
 
+/**
+ * the result parameter should be an array of separate_query_result_t, with the size of conditionCount.
+ * since conditionCount is known when calling this function, the caller should know how much memory we
+ * allocated here in this function.
+ */
 void
-parallel_execution_and_merge(char conditions[][CONDITION_LENGTH], int conditionCount,
-                             uint64_t **object_id_list, uint64_t *count)
+send_query_condition_get_separate_result(char conditions[][CONDITION_LENGTH], int conditionCount,
+                                         MPI_Comm world_comm, separate_query_result_t **result)
+{
+    if (conditionCount <= 0) {
+        printf("No conditions to send\n");
+        return;
+    }
+    *result = (separate_query_result_t *)malloc(conditionCount * sizeof(separate_query_result_t));
+    for (int i = 0; i < conditionCount; i++) {
+        // Send each condition to a separate server for execution
+        // The server will execute the condition and return the result to the client
+        char *condition = conditions[i];
+        // We assume non-collective mode by default, and the caller of this fuction is the sender, and we
+        // just send the request.
+        int send = 1;
+        // if this is collective mode, each client will send a different condition to a different server
+        perr_t rst;
+        if (world_comm != NULL) {
+            rst = PDC_Client_search_obj_ref_through_dart_mpi(DART_HASH, condition, REF_PRIMARY_ID, &n_res,
+                                                             &out, world_comm);
+        }
+        int       n_res;
+        uint64_t *out;
+        perr_t    rst =
+            PDC_Client_search_obj_ref_through_dart(DART_HASH, condition, REF_PRIMARY_ID, &n_res, &out);
+        if (rst != SUCCEED) {
+            printf("Error with PDC_Client_search_obj_ref_through_dart\n");
+            return;
+        }
+        (*result)[i] = (separate_query_result_t){n_res, out, condition};
+    }
+}
+
+void
+query_execution_and_local_merge(char conditions[][CONDITION_LENGTH], int conditionCount, int isCollective,
+                                uint64_t **object_id_list, uint64_t *count)
 {
     // step 1: send each condition to a separate server for execution, from a different rank
-    send_query_condition_get_separate_result(conditions, conditionCount, object_id_list, count, only_count);
+    separate_query_result_t *separate_result;
+    send_query_condition_get_separate_result(conditions, conditionCount, isCollective, &separate_result);
     // step 2: merge the results from all servers
+    for (int i = 0; i < conditionCount; i++) {
+        if (separate_result[i].n_res > 0) {
+            *object_id_list = (uint64_t *)malloc(separate_result[i].n_res * sizeof(uint64_t));
+            memcpy(*object_id_list, separate_result[i].out, separate_result[i].n_res * sizeof(uint64_t));
+            *count = separate_result[i].n_res;
+            break;
+        }
+    }
 }
 
 size_t
-PDC_metadata_multi_condition_query(char *queryString, PDC_metadata_query_pe_info pe_info,
-                                   uint64_t **object_id_list, uint64_t *count)
+PDC_metadata_multi_condition_query(char *queryString, int isCollective, uint64_t **object_id_list,
+                                   uint64_t *count)
 {
     char conditions[MAX_CONDITIONS][CONDITION_LENGTH];
     int  conditionCount = 0;
@@ -79,10 +128,13 @@ PDC_metadata_multi_condition_query(char *queryString, PDC_metadata_query_pe_info
     splitExpression(queryString, conditions, &conditionCount);
 
     // strategy 1: parallel execution of each condition
-    parallel_execution_and_merge(conditions, conditionCount, object_id_list, count);
-    // strategy 2: initial execution to pick the most selective condition, then execute the rest in parallel
-    // and merge
-    // selectivity_based_optimized_execution(conditions, conditionCount, object_id_list, count);
+    query_execution_and_local_merge(conditions, conditionCount, isCollective, object_id_list, count);
+    // strategy 2: query_execution_and_parallel_merge(conditions, conditionCount, isCollective,
+    // object_id_list, count);
+    // strategy 3: initial execution to pick the most selective condition, then
+    // execute the rest in parallel and merge selectivity_based_optimized_execution(conditions,
+    // conditionCount, object_id_list, count);
+    // TODO: implement the above strategy
 
     // For now, we just return a dummy object ID list
     *object_id_list = (uint64_t *)malloc(10 * sizeof(uint64_t));
