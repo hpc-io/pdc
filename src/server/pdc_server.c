@@ -1120,8 +1120,10 @@ PDC_Server_finalize()
                MPI_COMM_WORLD);
     MPI_Reduce(&server_hash_insert_time_g, &all_server_hash_insert_time_min, 1, MPI_DOUBLE, MPI_MIN, 0,
                MPI_COMM_WORLD);
-    MPI_Reduce(&server_meta_multi_query_time_g, &all_meta_multi_query_min, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&server_meta_multi_query_time_g, &all_meta_multi_query_max, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&server_meta_multi_query_time_g, &all_meta_multi_query_min, 1, MPI_DOUBLE, MPI_MAX, 0,
+               MPI_COMM_WORLD);
+    MPI_Reduce(&server_meta_multi_query_time_g, &all_meta_multi_query_max, 1, MPI_DOUBLE, MPI_MIN, 0,
+               MPI_COMM_WORLD);
 
 #else
     all_bloom_check_time_min        = server_bloom_check_time_g;

@@ -65,16 +65,16 @@ HashTable *metadata_hash_table_g  = NULL;
 HashTable *container_hash_table_g = NULL;
 
 // Debug statistics var
-int      n_bloom_total_g            = 0;
-int      n_bloom_maybe_g            = 0;
-double   server_bloom_check_time_g  = 0.0;
-double   server_bloom_insert_time_g = 0.0;
-double   server_insert_time_g       = 0.0;
-double   server_delete_time_g       = 0.0;
-double   server_update_time_g       = 0.0;
-double   server_hash_insert_time_g  = 0.0;
-double   server_bloom_init_time_g   = 0.0;
-uint32_t n_metadata_g               = 0;
+int      n_bloom_total_g                = 0;
+int      n_bloom_maybe_g                = 0;
+double   server_bloom_check_time_g      = 0.0;
+double   server_bloom_insert_time_g     = 0.0;
+double   server_insert_time_g           = 0.0;
+double   server_delete_time_g           = 0.0;
+double   server_update_time_g           = 0.0;
+double   server_hash_insert_time_g      = 0.0;
+double   server_bloom_init_time_g       = 0.0;
+uint32_t n_metadata_g                   = 0;
 double   server_meta_multi_query_time_g = 0.0;
 
 pbool_t
