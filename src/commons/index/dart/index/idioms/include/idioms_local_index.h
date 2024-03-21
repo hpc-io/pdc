@@ -95,25 +95,57 @@ typedef struct {
  */
 void IDIOMS_init(uint32_t server_id, uint32_t num_servers);
 
+/**
+ * @brief Get the server information for the metadata index
+ */
 IDIOMS_t *get_idioms_g();
 
+/**
+ * @brief Create local index with the information in idx_record.
+ * @param idx_record  Only the 'key', 'type' and 'value' and 'value_size' fields are used.
+ * @return perr_t SUCCESS on success, FAIL on failure
+ */
 perr_t idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record);
 
+/**
+ * @brief Delete the local index with the information in idx_record.
+ * @param idx_record  Only the 'key', 'type' and 'value' and 'value_size' fields are used.
+ * @return perr_t SUCCESS on success, FAIL on failure
+ */
 perr_t idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record);
 
 /**
- * @brief Search the ART index for the given key
- * @param idioms
- * @param idx_record  Only the 'key', 'type' and 'value' and 'value_size' fields are used.
- *
+ * @brief Search the ART index for the given key.
+ * @param idx_record  'key', 'type' and 'value' and 'value_size' fields are used for input.
  * @return the number of object IDs found.  The object IDs are stored in the 'obj_id' field of the idx_record.
  */
 uint64_t idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record);
 
+/**
+ * @brief Dumping the index to a file.
+ * @param dir_path  The directory path to store the index file.
+ * @param serverID  The server ID.
+ * @return perr_t SUCCESS on success, FAIL on failure
+ */
 perr_t idioms_metadata_index_dump(char *dir_path, uint32_t serverID);
 
+/**
+ * @brief Recovering the index from a file.
+ * @param dir_path  The directory path to store the index file.
+ * @param num_client  The number of clients.
+ * @param num_server  The number of servers.
+ * @param serverID  The server ID.
+ * @return perr_t SUCCESS on success, FAIL on failure
+ */
 perr_t idioms_metadata_index_recover(char *dir_path, int num_client, int num_server, uint32_t serverID);
 
+/**
+ * @brief Initialize the DART space via idioms.
+ * @param dart  The DART space to be initialized.
+ * @param num_client  The number of clients.
+ * @param num_server  The number of servers.
+ * @param max_server_num_to_adapt  The maximum number of servers to adapt.
+ */
 void init_dart_space_via_idioms(DART *dart, int num_client, int num_server, int max_server_num_to_adapt);
 
 #endif // IDIOMS_LOCAL_INDEX_H
