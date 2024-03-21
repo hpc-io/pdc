@@ -1021,14 +1021,21 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
     // int8_t *simple_type = (int8_t *)calloc(1, sizeof(int8_t));
     // simple_type[0]      = leafcnt->simple_value_type;
     // append_buffer(buffer, simple_type, sizeof(int8_t));
-
-    if (leafcnt->val_idx_dtype == 3) {
-        rst = append_string_value_tree(leafcnt->primary_trie, buffer);
-
-        rst = append_string_value_tree(leafcnt->secondary_trie, buffer);
+    if (getCompoundTypeFromBitmap(leafcnt->val_idx_dtype) == PDC_STRING) {
+        if (leafcnt->primary_trie != NULL) {
+            rst |= append_string_value_tree(leafcnt->primary_trie, buffer);
+        }
+        if (leafcnt->secondary_trie != NULL) {
+            rst |= append_string_value_tree(leafcnt->secondary_trie, buffer);
+        }
     }
-    else {
-        rst = append_numeric_value_tree(leafcnt->primary_rbt, buffer);
+    if (getNumericalTypeFromBitmap(leafcnt->val_idx_dtype) != PDC_UNKNOWN) {
+        if (leafcnt->primary_rbt != NULL) {
+            rst |= append_numeric_value_tree(leafcnt->primary_rbt, buffer);
+        }
+        if (leafcnt->secondary_rbt != NULL) {
+            rst |= append_numeric_value_tree(leafcnt->secondary_rbt, buffer);
+        }
     }
     // printf("number of attribute values = %d\n", rst);
     return 0; // return 0 for art iteration to continue;

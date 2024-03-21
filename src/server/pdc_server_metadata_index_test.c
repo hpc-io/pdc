@@ -11,6 +11,10 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
     char * key      = NULL;
     char * value    = NULL;
     int8_t kv_dtype = PDC_STRING;
+
+    dart_perform_one_server_in_t  input;
+    dart_perform_one_server_out_t output;
+
     if (kv && contains(kv, "=")) {
         key   = substring(kv, 0, indexOf(kv, '='));
         value = substring(kv, indexOf(kv, '=') + 1, strlen(kv));
@@ -19,8 +23,14 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
                 kv_dtype = PDC_DOUBLE;
             }
             else {
-                kv_dtype = PDC_INT;
+                kv_dtype = PDC_INT64;
             }
+            get_number_from_string(value, kv_dtype, &(input.attr_val));
+            input.attr_vsize = get_size_by_class_n_type(input.attr_val, 1, PDC_CLS_ITEM, kv_dtype);
+        }
+        else {
+            input.attr_val   = stripQuotes(value);
+            input.attr_vsize = strlen(input.attr_val) + 1;
         }
     }
     else {
@@ -28,17 +38,13 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
         return;
     }
 
-    dart_perform_one_server_in_t  input;
-    dart_perform_one_server_out_t output;
-
     input.obj_ref_type = REF_PRIMARY_ID;
     input.hash_algo    = DART_HASH;
     // Test delete Index
-    input.op_type = OP_DELETE;
-    get_number_from_string(value, kv_dtype, &(input.attr_val));
+    input.op_type         = OP_DELETE;
     input.obj_primary_ref = obj_id;
     input.attr_vtype      = kv_dtype;
-    input.attr_vsize      = get_size_by_class_n_type(input.attr_val, 1, PDC_CLS_ITEM, kv_dtype);
+
 #ifndef PDC_DART_SFX_TREE
     input.inserting_suffix = 0;
     input.attr_key         = strdup(key);
@@ -71,6 +77,10 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
     char * key      = NULL;
     void * value    = NULL;
     int8_t kv_dtype = PDC_STRING;
+
+    dart_perform_one_server_in_t  input;
+    dart_perform_one_server_out_t output;
+
     LOG_DEBUG("Inserting %s\n", kv);
     if (kv && contains(kv, "=")) {
         key   = substring(kv, 0, indexOf(kv, '='));
@@ -82,6 +92,12 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
             else {
                 kv_dtype = PDC_INT64;
             }
+            get_number_from_string(value, kv_dtype, &(input.attr_val));
+            input.attr_vsize = get_size_by_class_n_type(input.attr_val, 1, PDC_CLS_ITEM, kv_dtype);
+        }
+        else {
+            input.attr_val   = stripQuotes(value);
+            input.attr_vsize = strlen(input.attr_val) + 1;
         }
     }
     else {
@@ -89,17 +105,13 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
         return;
     }
 
-    dart_perform_one_server_in_t  input;
-    dart_perform_one_server_out_t output;
-
     input.obj_ref_type = REF_PRIMARY_ID;
     input.hash_algo    = DART_HASH;
     // Test Insert Index
     input.op_type = OP_INSERT;
-    get_number_from_string(value, kv_dtype, &(input.attr_val));
+
     input.obj_primary_ref = obj_id;
     input.attr_vtype      = kv_dtype;
-    input.attr_vsize      = get_size_by_class_n_type(input.attr_val, 1, PDC_CLS_ITEM, kv_dtype);
 
 #ifndef PDC_DART_SFX_TREE
     input.inserting_suffix = 0;
@@ -154,19 +166,19 @@ test_PDC_Server_dart_perform_one_server()
     char *kv    = (char *)calloc(20, sizeof(char));
     char *numkv = (char *)calloc(20, sizeof(char));
 
-    // for (int i = 0; i < 1000; i++) {
-    //     sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
-    //     sprintf(numkv, "num%03dnum=%d", i, i);
-    //     insert_kv_to_index(kv, 10000 + i);
-    //     sprintf(numkv, "num%03dnum=%d", i, i);
-    //     insert_kv_to_index(numkv, 10000 + i);
-    // }
+    for (int i = 0; i < 1000; i++) {
+        sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
+        sprintf(numkv, "num%03dnum=%d", i, i);
+        insert_kv_to_index(kv, 10000 + i);
+        sprintf(numkv, "num%03dnum=%d", i, i);
+        insert_kv_to_index(numkv, 10000 + i);
+    }
 
-    // insert_kv_to_index("0key=\"0val\"", 20000);
-    // insert_kv_to_index("key000key=\"val000val\"", 10000);
-    // insert_kv_to_index("key000key=\"val000val\"", 20000);
-    // insert_kv_to_index("key000key=\"val000val\"", 30000);
-    // insert_kv_to_index("key433key=\"val433val\"", 30000);
+    insert_kv_to_index("0key=\"0val\"", 20000);
+    insert_kv_to_index("key000key=\"val000val\"", 10000);
+    insert_kv_to_index("key000key=\"val000val\"", 20000);
+    insert_kv_to_index("key000key=\"val000val\"", 30000);
+    insert_kv_to_index("key433key=\"val433val\"", 30000);
 
     insert_kv_to_index("0num=0", 20000);
     insert_kv_to_index("num000num=0", 10000);
@@ -191,11 +203,11 @@ test_PDC_Server_dart_perform_one_server()
     LOG_INFO("Index Insertion Successful!\n");
 
     // key000key val000val
-    // query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
-    // query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
-    // query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
-    // query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
-    // query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
 
     query_result_from_kvtag("num01*=5~", OP_RANGE_QUERY);
     query_result_from_kvtag("num000num=0", OP_EXACT_QUERY);
@@ -204,40 +216,76 @@ test_PDC_Server_dart_perform_one_server()
     query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
     query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
 
-    // LOG_INFO("Index Dumping...\n");
-    // // save the index to file
-    // idioms_metadata_index_dump("/workspaces/pdc/build/bin", 0);
+    LOG_INFO("Index Dumping...\n");
+    // save the index to file
+    idioms_metadata_index_dump("/workspaces/pdc/build/bin", 0);
 
-    // for (int i = 0; i < 1000; i++) {
-    //     sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
-    //     // LOG_DEBUG("Deleting %s\n", kv);
-    //     delete_kv_from_index(kv, 10000 + i);
-    // }
+    for (int i = 0; i < 1000; i++) {
+        sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
+        // LOG_DEBUG("Deleting %s\n", kv);
+        delete_kv_from_index(kv, 10000 + i);
+        sprintf(numkv, "num%03dnum=%d", i, i);
+        delete_kv_from_index(numkv, 10000 + i);
+    }
 
-    // delete_kv_from_index("0key=\"0val\"", 20000);
-    // delete_kv_from_index("key000key=\"val000val\"", 10000);
-    // delete_kv_from_index("key000key=\"val000val\"", 20000);
-    // delete_kv_from_index("key000key=\"val000val\"", 30000);
-    // delete_kv_from_index("key433key=\"val433val\"", 30000);
+    delete_kv_from_index("0key=\"0val\"", 20000);
+    delete_kv_from_index("key000key=\"val000val\"", 10000);
+    delete_kv_from_index("key000key=\"val000val\"", 20000);
+    delete_kv_from_index("key000key=\"val000val\"", 30000);
+    delete_kv_from_index("key433key=\"val433val\"", 30000);
 
-    // LOG_INFO("Index Deletion Successful!\n");
+    delete_kv_from_index("0num=0", 20000);
+    delete_kv_from_index("num000num=0", 10000);
+    delete_kv_from_index("num010num=2", 20000);
+    delete_kv_from_index("num010num=3", 30000);
+    delete_kv_from_index("num010num=5", 50000);
+    delete_kv_from_index("num010num=6", 60000);
+    delete_kv_from_index("num010num=7", 70000);
+    delete_kv_from_index("num010num=9", 90000);
 
-    // query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
-    // query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
-    // query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
-    // query_result_from_kvtag("*33key=\"*l\"", OP_SUFFIX_QUERY);
-    // query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+    delete_kv_from_index("num001num=0", 11000);
+    delete_kv_from_index("num011num=2", 21000);
+    delete_kv_from_index("num011num=3", 31000);
+    delete_kv_from_index("num011num=5", 51000);
+    delete_kv_from_index("num011num=6", 61000);
+    delete_kv_from_index("num011num=7", 71000);
+    delete_kv_from_index("num011num=9", 91000);
 
-    // idioms_metadata_index_recover("/workspaces/pdc/build/bin", 1, 1, 0);
+    delete_kv_from_index("num000num=0", 30000);
+    delete_kv_from_index("num433num=433", 30000);
 
-    // LOG_INFO("Index Recovery Done!\n");
+    LOG_INFO("Index Deletion Successful!\n");
 
-    // // key000key val000val
-    // query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
-    // query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
-    // query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
-    // query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
-    // query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*33key=\"*l\"", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+
+    query_result_from_kvtag("num01*=5~", OP_RANGE_QUERY);
+    query_result_from_kvtag("num000num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=~5", OP_RANGE_QUERY);
+    query_result_from_kvtag("0num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
+    query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
+
+    idioms_metadata_index_recover("/workspaces/pdc/build/bin", 1, 1, 0);
+
+    LOG_INFO("Index Recovery Done!\n");
+
+    // key000key val000val
+    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+
+    query_result_from_kvtag("num01*=5~", OP_RANGE_QUERY);
+    query_result_from_kvtag("num000num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=~5", OP_RANGE_QUERY);
+    query_result_from_kvtag("0num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
+    query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
 }
 int
 init_default_logger()
