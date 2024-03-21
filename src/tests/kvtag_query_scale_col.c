@@ -22,6 +22,8 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+/******************************************  DEPRECATED **********************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
