@@ -27,7 +27,8 @@ typedef enum {
     OP_PREFIX_QUERY = 3,
     OP_SUFFIX_QUERY = 4,
     OP_INFIX_QUERY  = 5,
-    OP_DELETE       = 6
+    OP_DELETE       = 6,
+    OP_RANGE_QUERY  = 7,
 } dart_op_type_t;
 
 typedef enum { REF_PRIMARY_ID = 1, REF_SECONDARY_ID = 2, REF_SERVER_ID = 3 } dart_object_ref_type_t;

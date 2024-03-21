@@ -211,8 +211,8 @@ main(int argc, char *argv[])
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
-                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, ref_type,
-                                                        (uint64_t)obj_ids[i]) < 0) {
+                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, kvtag.size,
+                                                        kvtag.type, ref_type, (uint64_t)obj_ids[i]) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
@@ -389,8 +389,8 @@ main(int argc, char *argv[])
             kvtag.type  = PDC_STRING;
             kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
-                PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, ref_type,
-                                                    (uint64_t)obj_ids[i]);
+                PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size,
+                                                    kvtag.type, ref_type, (uint64_t)obj_ids[i]);
             }
             else {
                 PDCobj_del_tag(obj_ids[i], kvtag.name);

@@ -1156,8 +1156,9 @@ typedef struct {
     int8_t            op_type;
     int8_t            hash_algo;
     hg_const_string_t attr_key;
-    hg_const_string_t attr_val;
-    int8_t            attr_dtype;
+    uint32_t          attr_vsize;
+    uint8_t           attr_vtype;
+    void *            attr_val;
     uint64_t          vnode_id;
     int8_t            obj_ref_type;
     uint64_t          obj_primary_ref;
@@ -1209,7 +1210,6 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
     if (struct_data->size) {
         switch (hg_proc_get_op(proc)) {
             case HG_DECODE:
-
                 struct_data->value = malloc(struct_data->size);
                 /* HG_FALLTHROUGH(); */
                 /* FALLTHRU */
@@ -3859,12 +3859,17 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_val);
+    ret = hg_proc_uint32_t(proc, &struct_data->attr_vsize);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_int8_t(proc, &struct_data->attr_dtype);
+    ret = hg_proc_uint8_t(proc, &struct_data->attr_vtype);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_raw(proc, &struct_data->attr_val, struct_data->attr_vsize);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;

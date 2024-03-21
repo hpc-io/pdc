@@ -161,8 +161,8 @@ main(int argc, char *argv[])
             v = iter;
             sprintf(value, "%d", v);
             if (is_using_dart) {
-                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, ref_type,
-                                                        (uint64_t)obj_ids[i]) < 0) {
+                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, strlen(value),
+                                                        PDC_STRING, ref_type, (uint64_t)obj_ids[i]) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
