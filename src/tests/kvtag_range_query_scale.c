@@ -207,9 +207,9 @@ main(int argc, char *argv[])
                 printf("fail to allocate tag_value\n");
                 goto done;
             }
-            kvtag.value[0] = (int64_t)iter;
-            kvtag.type     = PDC_INT64;
-            kvtag.size     = get_size_by_class_n_type(tag_value, 1, PDC_CLS_ITEM, PDC_INT64);
+            memcpy(kvtag.value, &iter, sizeof(int64_t));
+            kvtag.type = PDC_INT64;
+            kvtag.size = get_size_by_class_n_type(kvtag.value, 1, PDC_CLS_ITEM, PDC_INT64);
             if (is_using_dart) {
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
@@ -298,7 +298,7 @@ main(int argc, char *argv[])
                 input.base_tag         = &kvtag;
                 input.key_query_type   = 0;
                 input.range_lo         = 5;
-                input.range_hi         = rount - 5;
+                input.range_hi         = round - 5;
                 input.value_query_type = query_type;
                 input.affix_len        = 12;
 
@@ -393,9 +393,9 @@ main(int argc, char *argv[])
                 printf("fail to allocate tag_value\n");
                 goto done;
             }
-            kvtag.value[0] = (int64_t)iter;
-            kvtag.type     = PDC_INT64;
-            kvtag.size     = (strlen(tag_value) + 1) * sizeof(char);
+            memcpy(kvtag.value, &iter, sizeof(int64_t));
+            kvtag.type = PDC_INT64;
+            kvtag.size = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
                 PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size,
                                                     kvtag.type, ref_type, (uint64_t)obj_ids[i]);
