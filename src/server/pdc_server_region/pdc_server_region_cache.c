@@ -789,8 +789,8 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache)
         if (obj_cache->ndim >= 3)
             write_size *= region_cache_info->size[2];
 
-        printf("==PDC_SERVER[%d]: %s server flushed %.1f / %.1f MB to storage\n", server_rank,
-               __func__, write_size / 1048576.0, total_cache_size / 1048576.0);
+        printf("==PDC_SERVER[%d]: %s server flushed %.1f / %.1f MB to storage\n", server_rank, __func__,
+               write_size / 1048576.0, total_cache_size / 1048576.0);
 
         total_cache_size -= write_size;
         free(region_cache_info->offset);
@@ -866,7 +866,7 @@ PDC_region_cache_clock_cycle(void *ptr)
     struct timeval finish_time;
     int            nflush            = 0;
     double         flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time = 0.0;
-    int            server_rank       = 0;
+    int            server_rank = 0;
 
     char *p = getenv("PDC_SERVER_CACHE_FLUSH_FREQUENCY_S");
     if (p != NULL)
@@ -891,7 +891,8 @@ PDC_region_cache_clock_cycle(void *ptr)
                     elapsed_time = current_time.tv_sec - obj_cache_list->timestamp.tv_sec;
                 if (elapsed_time >= flush_frequency_s) {
                     /* char tmbuf[64]; */
-                    /* strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", localtime(&obj_cache->timestamp.tv_sec)); */
+                    /* strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S",
+                     * localtime(&obj_cache->timestamp.tv_sec)); */
                     /* fprintf(stderr, "Previous %s\n", tmbuf); */
                     /* strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", localtime(&current_time.tv_sec)); */
                     /* fprintf(stderr, "Current %s\n", tmbuf); */
@@ -907,9 +908,10 @@ PDC_region_cache_clock_cycle(void *ptr)
 #endif
                 gettimeofday(&finish_time, NULL);
                 elapsed_time = finish_time.tv_sec - current_time.tv_sec;
-                fprintf(stderr,
-                        "==PDC_SERVER[%d]: %s, flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
-                        server_rank, __func__, nflush, flush_frequency_s, elapsed_time);
+                fprintf(
+                    stderr,
+                    "==PDC_SERVER[%d]: %s, flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
+                    server_rank, __func__, nflush, flush_frequency_s, elapsed_time);
             }
             pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
         }

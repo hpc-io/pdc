@@ -312,7 +312,8 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
              server_rank, server_rank);
     PDC_mkdir(storage_location);
 
-    /* fprintf(stderr, "Rank %d, write to offset %llu, size %llu\n", server_rank, region_info->offset[0], region_info->size[0]); */
+    /* fprintf(stderr, "Rank %d, write to offset %llu, size %llu\n", server_rank, region_info->offset[0],
+     * region_info->size[0]); */
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {

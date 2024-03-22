@@ -154,7 +154,6 @@ main(int argc, char **argv)
     obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx);
     PDCprop_set_obj_type(obj_prop_id22, PDC_INT);
 
-
     for (i = 0; i < numparticles; i++) {
         id1[i] = i;
         id2[i] = i * 2;
