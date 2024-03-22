@@ -3,7 +3,7 @@
 MIN_PROC=16
 MAX_PROC=128
 
-PROG_BASENAME=kvqry
+PROG_BASENAME=kvafxqry
 
 curdir=$(pwd)
 

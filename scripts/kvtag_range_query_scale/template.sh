@@ -64,7 +64,7 @@ mkdir -p $PDC_TMPDIR
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 SERVER=$EXECPATH/pdc_server.exe
-CLIENT=$TOOLPATH/kvtag_query_scale_col
+CLIENT=$TOOLPATH/kvtag_range_query_scale
 CLOSE=$EXECPATH/close_server
 
 chmod +x $EXECPATH/*
