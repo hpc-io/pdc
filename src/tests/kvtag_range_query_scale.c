@@ -272,7 +272,7 @@ main(int argc, char *argv[])
     }
 
     for (comm_type = 1; comm_type >= 0; comm_type--) {
-        for (query_type = 0; query_type < 4; query_type++) {
+        for (query_type = 4; query_type < 6; query_type++) {
             perr_t ret_value;
             int    round_total = 0;
             for (iter = -1; iter < iter_round; iter++) { // -1 is for warm up
@@ -282,20 +282,23 @@ main(int argc, char *argv[])
                     stime = MPI_Wtime();
                 }
 #endif
-                char attr_name[64];
-                char tag_value[64];
+                char     attr_name[64];
+                int64_t *tag_value;
                 snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-                snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
+                tag_value    = malloc(sizeof(int64_t));
+                tag_value[0] = (int64_t)iter;
 
                 kvtag.name  = strdup(attr_name);
-                kvtag.value = (void *)strdup(tag_value);
-                kvtag.type  = PDC_STRING;
-                kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
+                kvtag.value = tag_value;
+                kvtag.type  = PDC_INT64;
+                kvtag.size  = get_size_by_class_n_type(tag_value, 1, PDC_CLS_ITEM, PDC_INT64);
 
                 query_gen_input_t  input;
                 query_gen_output_t output;
                 input.base_tag         = &kvtag;
-                input.key_query_type   = query_type;
+                input.key_query_type   = 0;
+                input.range_lo         = 5;
+                input.range_hi         = rount - 5;
                 input.value_query_type = query_type;
                 input.affix_len        = 12;
 
@@ -354,12 +357,10 @@ main(int argc, char *argv[])
 
             if (my_rank == 0) {
                 char *query_type_str = "EXACT";
-                if (query_type == 1)
-                    query_type_str = "PREFIX";
-                else if (query_type == 2)
-                    query_type_str = "SUFFIX";
-                else if (query_type == 3)
-                    query_type_str = "INFIX";
+                if (query_type == 4)
+                    query_type_str = "EXACT";
+                else if (query_type == 5)
+                    query_type_str = "RANGE";
                 println("[%s Client %s Query with%sINDEX] %d rounds with %d results, time: %.5f ms",
                         comm_type == 0 ? "Single" : "Multi", query_type_str,
                         is_using_dart == 0 ? " NO " : " DART ", round, round_total, total_time * 1000.0);
@@ -386,11 +387,15 @@ main(int argc, char *argv[])
             char attr_name[64];
             char tag_value[64];
             snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
             kvtag.name  = strdup(attr_name);
-            kvtag.value = (void *)strdup(tag_value);
-            kvtag.type  = PDC_STRING;
-            kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
+            kvtag.value = malloc(sizeof(int64_t));
+            if (kvtag.value == NULL) {
+                printf("fail to allocate tag_value\n");
+                goto done;
+            }
+            kvtag.value[0] = (int64_t)iter;
+            kvtag.type     = PDC_INT64;
+            kvtag.size     = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
                 PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size,
                                                     kvtag.type, ref_type, (uint64_t)obj_ids[i]);

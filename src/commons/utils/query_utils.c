@@ -11,38 +11,46 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
     affix_len        = affix_len < token_len ? affix_len : token_len;
     size_t copy_len  = affix_type == 0 ? token_len : affix_len;
     char * source    = affix_type <= 1 ? token_str : &(token_str[token_len - affix_len]);
-    *out_str         = (char *)calloc(copy_len + 3, sizeof(char));
-    strncpy(*out_str, source, copy_len + 1);
+    char * affix_str = (char *)calloc(copy_len + 3, sizeof(char));
+
+    strncpy(affix_str, source, copy_len + 1);
 
     if (affix_type == 0) { // exact
         // nothing to do here.
     }
     else if (affix_type == 1) { // prefix
         // "hello" -> "hell*" or "hell" -> "hell*"
-        (*out_str)[affix_len]     = '*';
-        (*out_str)[affix_len + 1] = '\0';
+        affix_str[affix_len]     = '*';
+        affix_str[affix_len + 1] = '\0';
     }
     else if (affix_type == 2) { // suffix
         // "hello" -> '*ello' or 'hell' -> '*hell'
         for (int k = affix_len; k > 0; k--) {
-            (*out_str)[k] = (*out_str)[k - 1];
+            affix_str[k] = affix_str[k - 1];
         }
-        (*out_str)[0]             = '*';
-        (*out_str)[affix_len + 1] = '\0';
+        affix_str[0]             = '*';
+        affix_str[affix_len + 1] = '\0';
     }
     else if (affix_type == 3) { // infix
         // "hello" -> '*ello*' or 'hell' -> '*hell*'
         for (int k = affix_len; k > 0; k--) {
-            (*out_str)[k] = (*out_str)[k - 1];
+            affix_str[k] = affix_str[k - 1];
         }
-        (*out_str)[0]             = '*';
-        (*out_str)[affix_len + 1] = '*';
-        (*out_str)[affix_len + 2] = '\0';
+        affix_str[0]             = '*';
+        affix_str[affix_len + 1] = '*';
+        affix_str[affix_len + 2] = '\0';
     }
     else {
         printf("Invalid affix type!\n");
         return 0;
     }
+
+    *out_str      = calloc(strlen(affix_str) + 1, sizeof(char));
+    (*out_str)[0] = '"';
+    strcat(*out_str, affix_str);
+    (*out_str)[strlen(affix_str)]     = '"';
+    (*out_str)[strlen(affix_str) + 1] = '\0';
+    free(affix_str);
     return strlen(*out_str);
 }
 
@@ -77,7 +85,7 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
     }
 
     // process value in base_tag
-    if (input->base_tag->type == PDC_STRING) {
+    if (is_PDC_STRING(input->base_tag->type)) {
         value_ptr_len = _gen_affix_for_token((char *)input->base_tag->value, input->value_query_type,
                                              affix_len, &value_ptr);
         if (value_ptr_len == 0) {
@@ -85,7 +93,7 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
             return;
         }
     }
-    else if (input->base_tag->type == PDC_INT) {
+    else if (is_PDC_INT(input->base_tag->type)) {
         if (input->value_query_type == 4) {
             value_ptr_len = snprintf(NULL, 0, "%d", ((int *)input->base_tag->value)[0]);
             value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
