@@ -207,7 +207,8 @@ main(int argc, char *argv[])
                 printf("fail to allocate tag_value\n");
                 goto done;
             }
-            memcpy(kvtag.value, &iter, sizeof(int64_t));
+            int64_t iter_val = iter;
+            memcpy(kvtag.value, &iter_val, sizeof(int64_t));
             kvtag.type = PDC_INT64;
             kvtag.size = get_size_by_class_n_type(kvtag.value, 1, PDC_CLS_ITEM, PDC_INT64);
             if (is_using_dart) {
@@ -393,7 +394,8 @@ main(int argc, char *argv[])
                 printf("fail to allocate tag_value\n");
                 goto done;
             }
-            memcpy(kvtag.value, &iter, sizeof(int64_t));
+            int64_t iter_val = iter;
+            memcpy(kvtag.value, &iter_val, sizeof(int64_t));
             kvtag.type = PDC_INT64;
             kvtag.size = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
