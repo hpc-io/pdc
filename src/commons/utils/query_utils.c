@@ -45,12 +45,14 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
         return 0;
     }
 
-    *out_str      = calloc(strlen(affix_str) + 1, sizeof(char));
-    (*out_str)[0] = '"';
-    strcat(*out_str, affix_str);
-    (*out_str)[strlen(affix_str)]     = '"';
-    (*out_str)[strlen(affix_str) + 1] = '\0';
-    free(affix_str);
+    *out_str = affix_str;
+
+    //  calloc(strlen(affix_str) + 1, sizeof(char));
+    // (*out_str)[0] = '"';
+    // strcat(*out_str, affix_str);
+    // (*out_str)[strlen(affix_str)]     = '"';
+    // (*out_str)[strlen(affix_str) + 1] = '\0';
+    // free(affix_str);
     return strlen(*out_str);
 }
 
@@ -86,8 +88,15 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
 
     // process value in base_tag
     if (is_PDC_STRING(input->base_tag->type)) {
+        char *temp_value;
         value_ptr_len = _gen_affix_for_token((char *)input->base_tag->value, input->value_query_type,
-                                             affix_len, &value_ptr);
+                                             affix_len, &temp_value);
+        value_ptr     = (char *)calloc(value_ptr_len + 3, sizeof(char));
+        value_ptr[0]  = '"';
+        strcat(value_ptr, temp_value);
+        value_ptr[value_ptr_len + 1] = '"';
+        value_ptr[value_ptr_len + 2] = '\0';
+
         if (value_ptr_len == 0) {
             printf("Failed to generate value query!\n");
             return;
