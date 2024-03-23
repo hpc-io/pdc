@@ -53,7 +53,7 @@ NUM_SERVER_PROC_PER_NODE=1
 NUM_CLIENT_PROC_PER_NODE=$((TOTAL_NUM_CLIENT_PROC))
 
 
-PROG_BASENAME=kvqry
+PROG_BASENAME=kvafxqry
 
 for (( i = $MIN_NODE; i <= $MAX_NODE; i*=2 )); do
     mkdir -p $i
