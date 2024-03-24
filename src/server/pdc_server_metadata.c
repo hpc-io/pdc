@@ -1593,6 +1593,46 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+void
+num_query_action_someta(void *cond_exact, void *cond_lo, void *cond_hi, int lo_inclusive, int hi_inclusive,
+                        pdc_c_var_type_t num_type, void *input, void **out, uint64_t *out_len)
+{
+    void *               input_val  = ((pdc_kvtag_t *)input)->value;
+    size_t               input_size = ((pdc_kvtag_t *)input)->size;
+    libhl_cmp_callback_t cmp_func   = LIBHL_CMP_CB(num_type);
+    *out_len                        = 1;
+    *out                            = calloc(1, sizeof(uint64_t));
+    pbool_t ret_value               = FALSE;
+    if (cond_exact != NULL) { // Exact
+        ret_value = cmp_func(input_val, input_size, cond_exact, get_size_by_dtype(num_type)) == 0;
+    }
+    else if (cond_lo == NULL && cond_hi != NULL) { // less than
+        ret_value = (hi_inclusive)
+                        ? cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) <= 0
+                        : cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) < 0;
+    }
+    else if (cond_lo != NULL && cond_hi == NULL) { // greater than
+        ret_value = (lo_inclusive)
+                        ? cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) >= 0
+                        : cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) > 0;
+    }
+    else if (cond_lo != NULL && cond_hi != NULL) { // between
+        pbool_t lo_rst = (lo_inclusive)
+                             ? cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) >= 0
+                             : cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) > 0;
+        pbool_t hi_rst = (hi_inclusive)
+                             ? cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) <= 0
+                             : cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) < 0;
+        ret_value = lo_rst && hi_rst;
+    }
+    else {
+    }
+    *((uint64_t *)(*out)) = (uint64_t)ret_value;
+}
+
+num_query_action_collection_t soMetaNumQueryActions = {num_query_action_someta, num_query_action_someta,
+                                                       num_query_action_someta, num_query_action_someta};
+
 pbool_t
 _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
 {
@@ -1608,7 +1648,6 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
         return FALSE;
     }
     if (in->type == (int8_t)PDC_STRING) {
-        // FIXME: need to address kvtag->type serialization problem.
         char *pattern = (char *)in->value;
         if (!simple_matches(kvtag->value, pattern)) {
             return FALSE;
@@ -1616,8 +1655,13 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
     }
     else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
            // have to support range query.
-        if (memcmp(in->value, kvtag->value, in->size) != 0)
-            return FALSE;
+        uint64_t *out;
+        uint64_t  out_len;
+        parse_and_run_number_value_query(in->value, in->type, &soMetaNumQueryActions, kvtag, &out_len,
+                                         (void **)&out);
+        return (pbool_t)out[0];
+        // if (memcmp(in->value, kvtag->value, in->size) != 0)
+        //     return FALSE;
     }
 
     FUNC_LEAVE(ret_value);

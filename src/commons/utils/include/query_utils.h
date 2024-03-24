@@ -7,6 +7,7 @@
 #define TAG_DELIMITER ","
 #include "string_utils.h"
 #include "pdc_public.h"
+#include "comparators.h"
 
 typedef struct query_gen_input {
     pdc_kvtag_t *base_tag;
@@ -23,6 +24,19 @@ typedef struct query_gen_output {
     char * value_query;
     size_t value_query_len;
 } query_gen_output_t;
+
+typedef enum { NUM_EXACT, NUM_LT, NUM_GT, NUM_BETWEEN } NUM_QUERY_TYPE;
+
+typedef void (*num_query_action)(void *cond_exact, void *cond_lo, void *cond_hi, int lo_inclusive,
+                                 int hi_inclusive, pdc_c_var_type_t num_type, void *input, void **out,
+                                 uint64_t *out_len);
+
+typedef struct {
+    num_query_action exact_action;
+    num_query_action lt_action;
+    num_query_action gt_action;
+    num_query_action between_action;
+} num_query_action_collection_t;
 
 /**
  * Generate query strings for key and value according to the given input.
@@ -131,5 +145,12 @@ int is_affix_query(char *value_query);
  * determine if the value part in the query condition is a range query
  */
 int is_number_query(char *value_query);
+
+/**
+ * parse and run a string query
+ */
+int parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
+                                     num_query_action_collection_t *action_collection, void *input,
+                                     uint64_t *out_len, void **out);
 
 #endif // PDC_QUERY_UTILS_H

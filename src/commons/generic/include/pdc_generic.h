@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #ifndef __cplusplus
 #if __STDC_VERSION__ >= 199901L
@@ -131,28 +132,28 @@ static char *DataTypeEnumNames[PDC_TYPE_COUNT] = {
 
 __attribute__((unused))
 static char *DataTypeFormat[PDC_TYPE_COUNT] = {
-    "<unknown>",      /* PDC_UNKNOWN, no format as it's an error/unknown type */
-    "%hd",     /* PDC_SHORT */
-    "%d",      /* PDC_INT */
-    "%u",      /* PDC_UINT */
-    "%ld",     /* PDC_LONG */
-    "%hhd",    /* PDC_INT8 */
-    "%hhu",    /* PDC_UINT8 */
-    "%hd",     /* PDC_INT16 */
-    "%hu",     /* PDC_UINT16 */
-    "%d",      /* PDC_INT32, already covered by PDC_INT */
-    "%u",      /* PDC_UINT32 */
-    "%lld",    /* PDC_INT64 */
-    "%llu",    /* PDC_UINT64 */
-    "%f",      /* PDC_FLOAT */
-    "%lf",     /* PDC_DOUBLE */
-    "%c",      /* PDC_CHAR */
-    "%s",      /* PDC_STRING */
-    "%d",      /* PDC_BOOLEAN, represented as an integer */
-    "%p",      /* PDC_VOID_PTR */
-    "%zu",     /* PDC_SIZE_T */
-    "%p",      /* PDC_BULKI, assuming pointer or similar for custom type */
-    "%p"       /* PDC_BULKI_ENT, assuming pointer or similar for custom type */
+    "<unknown>",    /* PDC_UNKNOWN, no format as it's an error/unknown type */
+    "%hd",          /* PDC_SHORT */
+    "%d",           /* PDC_INT */
+    "%u",           /* PDC_UINT */
+    "%ld",          /* PDC_LONG */
+    "%" PRId8,      /* PDC_INT8 */
+    "%" PRIu8,      /* PDC_UINT8 */
+    "%" PRId16,     /* PDC_INT16 */
+    "%" PRIu16,     /* PDC_UINT16 */
+    "%d",           /* PDC_INT32, already covered by PDC_INT */
+    "%u",           /* PDC_UINT32 */
+    "%" PRId64,     /* PDC_INT64 */
+    "%" PRIu64,     /* PDC_UINT64 */
+    "%f",           /* PDC_FLOAT */
+    "%lf",          /* PDC_DOUBLE */
+    "%c",           /* PDC_CHAR */
+    "%s",           /* PDC_STRING */
+    "%d",           /* PDC_BOOLEAN, represented as an integer */
+    "%p",           /* PDC_VOID_PTR */
+    "%zu",          /* PDC_SIZE_T */
+    "%p",           /* PDC_BULKI, assuming pointer or similar for custom type */
+    "%p"            /* PDC_BULKI_ENT, assuming pointer or similar for custom type */
 };
 
 // clang-format on
@@ -216,6 +217,15 @@ get_dtype_by_enum_name(const char *enumName)
         }
     }
     return PDC_UNKNOWN; // assuming PDC_UNKNOWN is the enum value for "unknown"
+}
+
+__attribute__((unused)) static char *
+get_format_by_dtype(pdc_c_var_type_t type)
+{
+    if (type < 0 || type >= PDC_TYPE_COUNT) {
+        return NULL;
+    }
+    return DataTypeFormat[type];
 }
 
 __attribute__((unused)) static bool

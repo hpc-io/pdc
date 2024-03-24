@@ -2,6 +2,8 @@
 // Created by Wei Zhang on 7/10/17.
 //
 #include "query_utils.h"
+#include <inttypes.h>
+#include <stdint.h>
 
 int
 _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **out_str)
@@ -102,27 +104,39 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
             return;
         }
     }
-    else if (is_PDC_INT(input->base_tag->type)) {
+    else {
+        if (is_PDC_INT(input->base_tag->type)) {
+            input->base_tag->type = PDC_INT64;
+        }
+        else if (is_PDC_UINT(input->base_tag->type)) {
+            input->base_tag->type = PDC_UINT64;
+        }
+        else if (is_PDC_FLOAT(input->base_tag->type)) {
+            input->base_tag->type = PDC_DOUBLE;
+        }
+        else {
+            printf("Invalid tag type!\n");
+            return;
+        }
+        char *format_str = get_format_by_dtype(input->base_tag->type);
         if (input->value_query_type == 4) {
-            value_ptr_len = snprintf(NULL, 0, "%d", ((int *)input->base_tag->value)[0]);
+            value_ptr_len = snprintf(NULL, 0, format_str, ((int64_t *)input->base_tag->value)[0]);
             value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            snprintf(value_ptr, value_ptr_len + 1, "%d", ((int *)input->base_tag->value)[0]);
+            snprintf(value_ptr, value_ptr_len + 1, format_str, ((int64_t *)input->base_tag->value)[0]);
         }
         else if (input->value_query_type == 5) {
-            size_t lo_len = snprintf(NULL, 0, "%d", input->range_lo);
-            size_t hi_len = snprintf(NULL, 0, "%d", input->range_hi);
+            size_t lo_len = snprintf(NULL, 0, format_str, input->range_lo);
+            size_t hi_len = snprintf(NULL, 0, format_str, input->range_hi);
             value_ptr_len = lo_len + hi_len + 1;
             value_ptr     = (char *)calloc(value_ptr_len + 1, sizeof(char));
-            snprintf(value_ptr, value_ptr_len + 1, "%d~%d", input->range_lo, input->range_hi);
+            char fmt_str[20];
+            snprintf(fmt_str, 20, "%s~%s", format_str, format_str);
+            snprintf(value_ptr, value_ptr_len + 1, fmt_str, input->range_lo, input->range_hi);
         }
         else {
             printf("Invalid value query type for integer!\n");
             return;
         }
-    }
-    else {
-        printf("Invalid tag type!\n");
-        return;
     }
 
     output->key_query       = key_ptr;
@@ -381,4 +395,88 @@ int
 is_number_query(char *value_query)
 {
     return !is_string_query(value_query);
+}
+
+int
+parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
+                                 num_query_action_collection_t *action_collection, void *input,
+                                 uint64_t *out_len, void **out)
+{
+    // allocate memory according to the val_idx_dtype for value 1 and value 2.
+    void *val1;
+    void *val2;
+    if (startsWith(num_val_query, "|") && startsWith(num_val_query, "|")) { // EXACT
+        // exact number search
+        char * num_str = substring(num_val_query, 1, strlen(num_val_query) - 1);
+        size_t klen1   = get_number_from_string(num_str, num_type, &val1);
+
+        action_collection->exact_action(val1, NULL, NULL, 1, 1, num_type, input, out, out_len);
+
+        // value_index_leaf_content_t *value_index_leaf = NULL;
+        // rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
+        // if (value_index_leaf != NULL) {
+        //     collect_obj_ids(value_index_leaf, idx_record);
+        // }
+    }
+    else if (startsWith(num_val_query, "~")) { // LESS THAN
+        int endInclusive = num_val_query[1] == '|';
+        // find all numbers that are smaller than the given number
+        int    beginPos = endInclusive ? 2 : 1;
+        char * numstr   = substring(num_val_query, beginPos, strlen(num_val_query));
+        size_t klen1    = get_number_from_string(numstr, num_type, &val1);
+        action_collection->lt_action(NULL, NULL, val1, 0, endInclusive, num_type, input, out, out_len);
+
+        // rbt_range_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, endInclusive);
+    }
+    else if (endsWith(num_val_query, "~")) { // GEATER THAN
+        int beginInclusive = num_val_query[strlen(num_val_query) - 2] == '|';
+        int endPos         = beginInclusive ? strlen(num_val_query) - 2 : strlen(num_val_query) - 1;
+        // find all numbers that are greater than the given number
+        char * numstr = substring(num_val_query, 0, endPos);
+        size_t klen1  = get_number_from_string(numstr, num_type, &val1);
+
+        action_collection->gt_action(NULL, val1, NULL, beginInclusive, 0, num_type, input, out, out_len);
+        // rbt_range_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, beginInclusive);
+    }
+    else if (contains(num_val_query, "~")) { // BETWEEN
+        int    num_tokens = 0;
+        char **tokens     = NULL;
+        // the string is not ended or started with '~', and if it contains '~', it is a in-between query.
+        split_string(num_val_query, "~", &tokens, &num_tokens);
+        if (num_tokens != 2) {
+            printf("ERROR: invalid range query: %s\n", num_val_query);
+            return -1;
+        }
+        char *lo_tok = tokens[0];
+        char *hi_tok = tokens[1];
+        // lo_tok might be ended with '|', and hi_tok might be started with '|', to indicate inclusivity.
+        int    beginInclusive = endsWith(lo_tok, "|");
+        int    endInclusive   = startsWith(hi_tok, "|");
+        char * lo_num_str     = beginInclusive ? substring(lo_tok, 0, strlen(lo_tok) - 1) : lo_tok;
+        char * hi_num_str     = endInclusive ? substring(hi_tok, 1, strlen(hi_tok)) : hi_tok;
+        size_t klen1          = get_number_from_string(lo_num_str, num_type, &val1);
+        size_t klen2          = get_number_from_string(hi_num_str, num_type, &val2);
+
+        action_collection->between_action(NULL, val1, val2, beginInclusive, endInclusive, num_type, input,
+                                          out, out_len);
+        // int num_visited_node = rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2,
+        //                                       value_rbt_callback, idx_record, beginInclusive,
+        //                                       endInclusive);
+        // println("[value_number_query] num_visited_node: %d\n", num_visited_node);
+    }
+    else {
+        // exact query by default
+        // exact number search
+        char * num_str = strdup(num_val_query);
+        size_t klen1   = get_number_from_string(num_str, num_type, &val1);
+
+        action_collection->exact_action(val1, NULL, NULL, 1, 1, num_type, input, out, out_len);
+        // value_index_leaf_content_t *value_index_leaf = NULL;
+        // rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
+        // if (value_index_leaf != NULL) {
+        //     collect_obj_ids(value_index_leaf, idx_record);
+        // }
+        // free(num_str);
+    }
+    return 0;
 }
