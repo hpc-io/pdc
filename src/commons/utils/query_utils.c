@@ -410,7 +410,7 @@ parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
         char * num_str = substring(num_val_query, 1, strlen(num_val_query) - 1);
         size_t klen1   = get_number_from_string(num_str, num_type, &val1);
 
-        action_collection->exact_action(val1, NULL, NULL, 1, 1, num_type, input, out, out_len);
+        action_collection->exact_action(val1, NULL, NULL, 1, 1, num_type, cb_input, cb_out, cb_out_len);
 
         // value_index_leaf_content_t *value_index_leaf = NULL;
         // rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
@@ -424,7 +424,8 @@ parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
         int    beginPos = endInclusive ? 2 : 1;
         char * numstr   = substring(num_val_query, beginPos, strlen(num_val_query));
         size_t klen1    = get_number_from_string(numstr, num_type, &val1);
-        action_collection->lt_action(NULL, NULL, val1, 0, endInclusive, num_type, input, out, out_len);
+        action_collection->lt_action(NULL, NULL, val1, 0, endInclusive, num_type, cb_input, cb_out,
+                                     cb_out_len);
 
         // rbt_range_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, endInclusive);
     }
@@ -435,7 +436,8 @@ parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
         char * numstr = substring(num_val_query, 0, endPos);
         size_t klen1  = get_number_from_string(numstr, num_type, &val1);
 
-        action_collection->gt_action(NULL, val1, NULL, beginInclusive, 0, num_type, input, out, out_len);
+        action_collection->gt_action(NULL, val1, NULL, beginInclusive, 0, num_type, cb_input, cb_out,
+                                     cb_out_len);
         // rbt_range_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, beginInclusive);
     }
     else if (contains(num_val_query, "~")) { // BETWEEN
@@ -457,8 +459,8 @@ parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
         size_t klen1          = get_number_from_string(lo_num_str, num_type, &val1);
         size_t klen2          = get_number_from_string(hi_num_str, num_type, &val2);
 
-        action_collection->between_action(NULL, val1, val2, beginInclusive, endInclusive, num_type, input,
-                                          out, out_len);
+        action_collection->between_action(NULL, val1, val2, beginInclusive, endInclusive, num_type, cb_input,
+                                          cb_out, cb_out_len);
         // int num_visited_node = rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2,
         //                                       value_rbt_callback, idx_record, beginInclusive,
         //                                       endInclusive);
@@ -470,7 +472,7 @@ parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
         char * num_str = strdup(num_val_query);
         size_t klen1   = get_number_from_string(num_str, num_type, &val1);
 
-        action_collection->exact_action(val1, NULL, NULL, 1, 1, num_type, input, out, out_len);
+        action_collection->exact_action(val1, NULL, NULL, 1, 1, num_type, cb_input, cb_out, cb_out_len);
         // value_index_leaf_content_t *value_index_leaf = NULL;
         // rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
         // if (value_index_leaf != NULL) {

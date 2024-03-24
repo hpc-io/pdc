@@ -160,9 +160,8 @@ int is_number_query(char *value_query);
  * 11. range query -> key=value1~value2 (value1 < key < value2)
  * 12. range query -> key=value1|~|value2 (value1 <= key <= value2)
  */
-int
-parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
-                                 num_query_action_collection_t *action_collection, void *cb_input,
-                                 uint64_t *cb_out_len, void **cb_out)
+int parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
+                                     num_query_action_collection_t *action_collection, void *cb_input,
+                                     uint64_t *cb_out_len, void **cb_out);
 
 #endif // PDC_QUERY_UTILS_H
