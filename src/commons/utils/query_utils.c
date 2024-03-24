@@ -399,8 +399,8 @@ is_number_query(char *value_query)
 
 int
 parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
-                                 num_query_action_collection_t *action_collection, void *input,
-                                 uint64_t *out_len, void **out)
+                                 num_query_action_collection_t *action_collection, void *cb_input,
+                                 uint64_t *cb_out_len, void **cb_out)
 {
     // allocate memory according to the val_idx_dtype for value 1 and value 2.
     void *val1;

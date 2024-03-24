@@ -147,10 +147,22 @@ int is_affix_query(char *value_query);
 int is_number_query(char *value_query);
 
 /**
- * parse and run a string query
+ * parse and run a string query for number value
+ *
+ * The following queries are what we need to support
+ * 1. exact query -> key=|value| (key == value)
+ * 5. range query -> key=value~  (key > value)
+ * 6. range query -> key=~value (key < value)
+ * 7. range query -> key=value|~ (key >= value)
+ * 8. range query -> key=~|value (key <= value)
+ * 9. range query -> key=value1|~value2 (value1 <= key < value2)
+ * 10. range query -> key=value1~|value2 (value1 < key <= value2)
+ * 11. range query -> key=value1~value2 (value1 < key < value2)
+ * 12. range query -> key=value1|~|value2 (value1 <= key <= value2)
  */
-int parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
-                                     num_query_action_collection_t *action_collection, void *input,
-                                     uint64_t *out_len, void **out);
+int
+parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
+                                 num_query_action_collection_t *action_collection, void *cb_input,
+                                 uint64_t *cb_out_len, void **cb_out)
 
 #endif // PDC_QUERY_UTILS_H
