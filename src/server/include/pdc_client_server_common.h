@@ -3869,11 +3869,6 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_raw(proc, struct_data->attr_val, struct_data->attr_vsize);
-    if (ret != HG_SUCCESS) {
-        // HG_LOG_ERROR("Proc error");
-        return ret;
-    }
     ret = hg_proc_uint64_t(proc, &struct_data->vnode_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
@@ -3908,6 +3903,21 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
+    }
+    if (struct_data->attr_vsize) {
+        switch (hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->attr_val = malloc(struct_data->attr_vsize);
+                /* HG_FALLTHROUGH(); */
+                /* FALLTHRU */
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->attr_val, struct_data->attr_vsize);
+                break;
+            case HG_FREE:
+                free(struct_data->attr_val);
+            default:
+                break;
+        }
     }
     return ret;
 }
