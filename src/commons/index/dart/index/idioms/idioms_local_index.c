@@ -192,15 +192,15 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
         if (is_PDC_UINT(idx_record->type)) {
             // TODO: This is a simplified implementation, but we need to have all the CMP_CB functions
             // defined for all numerical types in libhl/comparators.h
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), free);
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), NULL);
             encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_UINT64);
         }
         if (is_PDC_INT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), free);
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), NULL);
             encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_INT64);
         }
         if (is_PDC_FLOAT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), free);
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), NULL);
             encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_DOUBLE);
         }
     }
@@ -301,7 +301,7 @@ delete_obj_ids_from_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         set_remove(((value_index_leaf_content_t *)entry)->obj_id_set, (SetValue)obj_id);
     }
 
-    free(obj_id);
+    // PDC_free(obj_id);
 
     if (set_num_entries(((value_index_leaf_content_t *)entry)->obj_id_set) == 0) {
         set_free(((value_index_leaf_content_t *)entry)->obj_id_set);
