@@ -3869,7 +3869,7 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_raw(proc, &struct_data->attr_val, struct_data->attr_vsize);
+    ret = hg_proc_raw(proc, struct_data->attr_val, struct_data->attr_vsize);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
