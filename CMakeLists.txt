@@ -377,6 +377,11 @@ if(PDC_TIMING)
   set(PDC_TIMING 1)
 endif()
 
+option(PDC_TIMING_OLD "Enable timing (old)." OFF)
+if(PDC_TIMING_OLD)
+  set(ENABLE_TIMING 1)
+endif()
+
 #-----------------------------------------------------------------------------
 # SERVER CACHE option
 #-----------------------------------------------------------------------------

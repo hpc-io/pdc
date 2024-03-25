@@ -1708,7 +1708,7 @@ static int
 _is_multi_condition_query(const char *query)
 {
     if (strstr(query, "&") || strstr(query, "AND") || strstr(query, "|") || strstr(query, "OR") ||
-        strstr(query, "^") || strstr(query, "NOT")) {
+        strstr(query, "^") || strstr(query, "NOT") || strstr(query, "multi")) {
         return 1;
     }
     else
@@ -2250,7 +2250,7 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
     gettimeofday(&pdc_timer_end, 0);
     total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     server_meta_multi_query_time_g += total_sec;
-    fprintf(stderr, "==PDC_SERVER[%d]: %s - time %lf\n", pdc_server_rank_g, __func__, total_sec);
+    fprintf(stderr, "==PDC_SERVER[%d]: %s took %lf\n", pdc_server_rank_g, __func__, total_sec);
 #endif
 
     /* println("============QUERY=============="); */
