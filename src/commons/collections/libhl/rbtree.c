@@ -83,6 +83,11 @@ rbt_destroy(rbt_t *rbt)
     if (rbt == NULL) {
         return;
     }
+    if (rbt->size == 0) {
+        rbt->root = NULL;
+        free(rbt);
+        return;
+    }
     rbt_destroy_internal(rbt->root, rbt->free_value_cb);
     free(rbt);
 }
