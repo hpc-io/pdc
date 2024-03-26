@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <math.h>
 
 #include "mpi.h"
 
@@ -12,18 +13,18 @@ int
 main(int argc, char **argv)
 {
 
-    hid_t  file, grp, dset, fapl, dxpl, dspace, mspace;
+    hid_t  file, grp, dset, fapl, dxpl, dspace, mspace, meta_dset, meta_dspace, meta_mspace;
     herr_t status;
 
     int i, j, r, round = 1, count, total_count, rank = 0, nproc = 1, ssi_downsample, rec_downsample,
-                 batchsize, iter, opensees_size;
+                 batchsize, iter, opensees_size, use_chunk_cache = 0;
     int     start_x[4096], start_y[4096];
-    hsize_t offset[4], size[4], local_offset[4], local_size[4], stride[4];
+    hsize_t offset[4], size[4], local_offset[4], local_size[4], stride[4], data_i;
     hsize_t dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
     // 12x, 32x, 32x
     char *  fname, *dname = "vel_0 ijk layout";
     double *data = NULL, t0, t1, t2, data_max, data_min, *ssi_data = NULL, *rec_data = NULL,
-           *opensees_data = NULL;
+           *opensees_data = NULL, meta_value[4];
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -32,9 +33,16 @@ main(int argc, char **argv)
     fname = argv[1];
     if (argc > 2)
         round = atoi(argv[2]);
+    if (argc > 3)
+        use_chunk_cache = atoi(argv[3]);
+
+    if (rank == 0)
+        fprintf(stderr, "Round %d, use chunk cache %d\n", round, use_chunk_cache);
 
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+    if (use_chunk_cache > 0)
+        H5Pset_cache(fapl, 0, 1228800, 4294967295, 1);
 
     dxpl = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(dxpl, H5FD_MPIO_COLLECTIVE);
@@ -57,50 +65,115 @@ main(int argc, char **argv)
         }
     }
 
-    /* //=============PATTERN 1=============== */
-    /* // Read entire chunks */
-    /* offset[0] = 0; */
-    /* offset[1] = chunk_size[1] * start_x[rank]; */
-    /* offset[2] = chunk_size[2] * start_y[rank]; */
-    /* offset[3] = 0; */
+    //=============Metadata Query=========
+    // Each rank read 4 values, simulating a lat lon range access
+    meta_dset   = H5Dopen(file, "z coordinates", H5P_DEFAULT);
+    meta_dspace = H5Dget_space(meta_dset);
 
-    /* /1* size[0] = chunk_size[0]; *1/ */
-    /* size[0] = dims[0]; */
-    /* size[1] = chunk_size[1]; */
-    /* size[2] = chunk_size[2]; */
-    /* size[3] = 1; */
+    offset[0] = start_x[rank] * 2;
+    offset[1] = start_y[rank] * 2;
+    offset[2] = 0;
 
-    /* H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, NULL, size, NULL); */
+    size[0] = 2;
+    size[1] = 2;
+    size[2] = 1;
 
-    /* local_offset[0] = 0; */
-    /* local_offset[1] = 0; */
-    /* local_offset[2] = 0; */
-    /* local_offset[3] = 0; */
+    H5Sselect_hyperslab(meta_dspace, H5S_SELECT_SET, offset, NULL, size, NULL);
 
-    /* /1* local_size[0] = chunk_size[0]; *1/ */
-    /* local_size[0] = dims[0]; */
-    /* local_size[1] = chunk_size[1]; */
-    /* local_size[2] = chunk_size[2]; */
-    /* local_size[3] = 1; */
+    local_offset[0] = 0;
+    local_offset[1] = 0;
+    local_offset[2] = 0;
 
-    /* mspace = H5Screate_simple(4, local_size, NULL); */
+    local_size[0] = size[0];
+    local_size[1] = size[1];
+    local_size[2] = size[2];
 
-    /* data = (double *)malloc(sizeof(double) * local_size[0] * local_size[1] * local_size[2]); */
+    meta_mspace = H5Screate_simple(3, local_size, NULL);
 
-    /* if (nproc <= 16) */
-    /*     fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], */
-    /*             offset[1], offset[2], size[0], size[1], size[2]); */
+    MPI_Barrier(MPI_COMM_WORLD);
+    t0 = MPI_Wtime();
 
-    /* t0 = MPI_Wtime(); */
+    H5Dread(meta_dset, H5T_NATIVE_DOUBLE, meta_mspace, meta_dspace, dxpl, meta_value);
 
-    /* H5Dread(dset, H5T_NATIVE_DOUBLE, mspace, dspace, dxpl, data); */
+    MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (rank == 0)
+        fprintf(stderr, "Read metadata took %.4lf\n", t1 - t0);
 
-    /* MPI_Barrier(MPI_COMM_WORLD); */
-    /* t1 = MPI_Wtime(); */
-    /* if (rank == 0) */
-    /*     fprintf(stderr, "Read from HDF5 took %.4lf\n", t1 - t0); */
+    H5Dclose(meta_dset);
+    H5Sclose(meta_mspace);
+    H5Sclose(meta_dspace);
 
-    /* H5Sclose(mspace); */
+
+
+    //=============PATTERN 1===============
+    // Read entire chunks
+    offset[0] = 0;
+    offset[1] = chunk_size[1] * start_x[rank];
+    offset[2] = chunk_size[2] * start_y[rank];
+    offset[3] = 0;
+
+    /* size[0] = chunk_size[0]; */
+    size[0] = dims[0];
+    size[1] = chunk_size[1];
+    size[2] = chunk_size[2];
+    size[3] = 1;
+
+    H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, NULL, size, NULL);
+
+    local_offset[0] = 0;
+    local_offset[1] = 0;
+    local_offset[2] = 0;
+    local_offset[3] = 0;
+
+    /* local_size[0] = chunk_size[0]; */
+    local_size[0] = dims[0];
+    local_size[1] = chunk_size[1];
+    local_size[2] = chunk_size[2];
+    local_size[3] = 1;
+
+    mspace = H5Screate_simple(4, local_size, NULL);
+
+    data = (double *)malloc(sizeof(double) * local_size[0] * local_size[1] * local_size[2]);
+
+    if (nproc <= 16)
+        fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0],
+                offset[1], offset[2], size[0], size[1], size[2]);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    t0 = MPI_Wtime();
+
+    H5Dread(dset, H5T_NATIVE_DOUBLE, mspace, dspace, dxpl, data);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (rank == 0)
+        fprintf(stderr, "Read from HDF5 took %.4lf\n", t1 - t0);
+
+    H5Sclose(mspace);
+
+    // Get some statistics of the data
+    int cnt[5] = {0,0,0,0,0};
+    MPI_Barrier(MPI_COMM_WORLD);
+    t0 = MPI_Wtime();
+    for (data_i = 0; data_i < local_size[0] * local_size[1] * local_size[2]; data_i++) {
+        if (fabs(data[data_i]) > 0.1)
+            cnt[0]++;
+        if (fabs(data[data_i]) > 0.2)
+            cnt[1]++;
+        if (fabs(data[data_i]) > 0.3)
+            cnt[2]++;
+        if (fabs(data[data_i]) > 0.4)
+            cnt[3]++;
+        if (fabs(data[data_i]) > 0.5)
+            cnt[4]++;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    t1 = MPI_Wtime();
+    if (rank == 0)
+        fprintf(stderr, "Scanning data took %.4lf\n", t1 - t0);
+    fprintf(stderr, "Rank %d: %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3], cnt[4]);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     //=============PATTERN 2===============
     // OpenSees access pattern: 1 rank read subregion 200x200m (32 grids)

@@ -18,11 +18,13 @@ main(int argc, char **argv)
         opensees_size, round = 1;
     int      start_x[4096], start_y[4096];
     uint64_t pdc_dims[3], pdc_offset[3], pdc_size[3], pdc_local_offset[3], pdc_local_size[3];
+    uint32_t value_size;
     // 12x, 32x, 32x
-    char *   fname;
+    char *   fname, tag_name[128];
     uint64_t dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
     double * data = NULL, t0, t1, t2, data_max, data_min, *ssi_data = NULL, *rec_data = NULL,
-           *opensees_data = NULL;
+           *opensees_data = NULL, *tag_value = NULL;
+    pdc_var_type_t value_type;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -100,6 +102,29 @@ main(int argc, char **argv)
     if (nproc <= 16)
         fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, pdc_offset[0],
                 pdc_offset[1], pdc_offset[2], pdc_size[0], pdc_size[1], pdc_size[2]);
+
+    // Tag retrieval
+    sprintf(tag_name, "%llu-%llu\n", pdc_offset[1], pdc_offset[2]);
+    for (r = 0; r < round; r++) {
+        tag_value = NULL;
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        t0 = MPI_Wtime();
+#endif
+        PDCobj_get_tag(obj, tag_name, (void**)&tag_value, &value_type, &value_size);
+
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+        if (rank == 0)
+            fprintf(stderr, "Round %d: tag retrival query took %.6lf\n", r, t1 - t0);
+#endif
+        if (value_size != 4 * sizeof(double))
+            fprintf(stderr, "Error: Round %d: tag retrival result size %llu / %llu \n", 
+                    r, value_size, 4*sizeof(double));
+        if (tag_value)
+            free(tag_value);
+    }
 
     if (rank == 0)
         opensees_data = (double *)malloc(sizeof(double) * dims[0] * opensees_size * opensees_size);

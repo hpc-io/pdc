@@ -24,10 +24,11 @@ main(int argc, char **argv)
     hsize_t  offset[4], size[4], local_offset[4], local_size[4];
     hsize_t  dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
     uint64_t pdc_dims[3], pdc_offset[3], pdc_size[3], pdc_local_offset[3], pdc_local_size[3];
+    uint32_t value_size;
     // 12x, 32x, 32x
-    char *  fname, *dname = "vel_0 ijk layout";
+    char *  fname, *dname = "vel_0 ijk layout", tag_name[128];
     double *data = NULL, t0, t1, t2, data_max, data_min, *ssi_data = NULL, *rec_data = NULL,
-           *opensees_data = NULL;
+           *opensees_data = NULL, tag_value[4];
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -145,6 +146,18 @@ main(int argc, char **argv)
     remote_reg = PDCregion_create(3, pdc_offset, pdc_size);
 
     local_reg = PDCregion_create(3, pdc_local_offset, pdc_local_size);
+
+    // Create a tag for each region, using its x/y offset as name
+    sprintf(tag_name, "%llu-%llu\n", pdc_offset[1], pdc_offset[2]);
+    // Dummy value
+    tag_value[0] = rank * 0.0;
+    tag_value[1] = rank * 1.0;
+    tag_value[2] = rank * 10.0;
+    tag_value[3] = rank * 11.0;
+    value_size = 4 * sizeof(double);
+
+    if (PDCobj_put_tag(obj, tag_name, tag_value, PDC_DOUBLE, value_size) < 0)
+        fprintf(stderr, "Rank %d fail to put tag @ line  %d!\n", rank, __LINE__);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
