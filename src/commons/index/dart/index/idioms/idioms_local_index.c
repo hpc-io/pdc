@@ -192,15 +192,15 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
         if (is_PDC_UINT(idx_record->type)) {
             // TODO: This is a simplified implementation, but we need to have all the CMP_CB functions
             // defined for all numerical types in libhl/comparators.h
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), PDC_free);
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), PDC_free_void);
             encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_UINT64);
         }
         if (is_PDC_INT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), PDC_free);
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), PDC_free_void);
             encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_INT64);
         }
         if (is_PDC_FLOAT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), PDC_free);
+            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), PDC_free_void);
             encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_DOUBLE);
         }
     }
@@ -406,7 +406,7 @@ delete_from_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
 
     if (is_PDC_NUMERIC(idx_record->type)) {
         if (rbt_size(key_leaf_content->primary_rbt) == 0) {
-            // rbt_destroy(key_leaf_content->primary_rbt);
+            rbt_destroy(key_leaf_content->primary_rbt);
             key_leaf_content->primary_rbt = NULL;
         }
         if (rbt_size(key_leaf_content->secondary_rbt) == 0) {
