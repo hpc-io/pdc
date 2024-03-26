@@ -68,13 +68,22 @@ rbt_destroy_internal(rbt_node_t *node, rbt_free_value_callback_t free_value_cb)
         return;
 
     rbt_destroy_internal(node->left, free_value_cb);
+    node->left = NULL;
     rbt_destroy_internal(node->right, free_value_cb);
+    node->right = NULL;
 
-    free(node->key);
-    if (free_value_cb)
-        free_value_cb(node->value);
+    if (node->key != NULL) {
+        PDC_free(node->key);
+        node->key = NULL;
+        if (free_value_cb) {
+            free_value_cb(node->value);
+            node->value = NULL;
+        }
+    }
 
-    free(node);
+    if (node->key == NULL) {
+        free(node);
+    }
 }
 
 void
@@ -83,12 +92,12 @@ rbt_destroy(rbt_t *rbt)
     if (rbt == NULL) {
         return;
     }
-    if (rbt->size == 0) {
-        rbt->root = NULL;
-        free(rbt);
-        return;
-    }
+    // if (rbt->size == 0) {
+    //     goto done;
+    // }
     rbt_destroy_internal(rbt->root, rbt->free_value_cb);
+done:
+    rbt->root = NULL;
     free(rbt);
 }
 
@@ -628,6 +637,10 @@ rbt_find_internal(rbt_t *rbt, rbt_node_t *node, void *key, size_t klen)
     if (!node)
         return NULL;
 
+    if (node->key == NULL) {
+        return NULL;
+    }
+
     int rc = rbt_compare_keys(rbt, node->key, node->klen, key, klen);
 
     if (rc == 0) {
@@ -807,12 +820,16 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
                 }
             }
             free(n->key);
+            n->key = NULL;
             if (v)
                 *v = prev_value;
-            else if (rbt->free_value_cb)
+            else if (rbt->free_value_cb) {
                 rbt->free_value_cb(prev_value);
+                (&prev_value)[0] = NULL;
+            }
 
-            free(n);
+            // free(n);
+            // (&n)[0]   = NULL;
             rbt->size = rbt->size - 1;
             return 0;
         }
@@ -837,11 +854,15 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
             }
             if (v)
                 *v = node->value;
-            else if (rbt->free_value_cb)
+            else if (rbt->free_value_cb) {
                 rbt->free_value_cb(node->value);
+                node->value = NULL;
+            }
 
             free(node->key);
-            free(node);
+            node->key = NULL;
+            // free(node);
+            // (&node)[0] = NULL;
             rbt->size = rbt->size - 1;
             return 0;
         }
@@ -856,11 +877,15 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
     }
     if (v)
         *v = node->value;
-    else if (rbt->free_value_cb && node->value)
+    else if (rbt->free_value_cb && node->value) {
         rbt->free_value_cb(node->value);
+        node->value = NULL;
+    }
 
     free(node->key);
-    free(node);
+    node->key = NULL;
+    // free(node);
+    // (&node)[0] = NULL;
     rbt->size = rbt->size - 1;
     return 0;
 }
