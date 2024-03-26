@@ -3278,6 +3278,14 @@ PDC_Server_add_kvtag_sqlite3(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t
         sprintf(sql, "INSERT INTO objects (objid, name, value_int) VALUES (%llu, '%s', '%d');", in->obj_id,
                 in->kvtag.name, *((int *)in->kvtag.value));
     }
+    else if (in->kvtag.type == PDC_INT64 && in->kvtag.size == sizeof(int64_t)) {
+        sprintf(sql, "INSERT INTO objects (objid, name, value_int) VALUES (%llu, '%s', '%lld');", in->obj_id,
+                in->kvtag.name, *((int64_t *)in->kvtag.value));
+    }
+    else if (in->kvtag.type == PDC_UINT64 && in->kvtag.size == sizeof(uint64_t)) {
+        sprintf(sql, "INSERT INTO objects (objid, name, value_int) VALUES (%llu, '%s', '%llu');", in->obj_id,
+                in->kvtag.name, *((uint64_t *)in->kvtag.value));
+    }
     else if (in->kvtag.type == PDC_FLOAT && in->kvtag.size == sizeof(float)) {
         sprintf(sql, "INSERT INTO objects (objid, name, value_float) VALUES (%llu, '%s', '%f');", in->obj_id,
                 in->kvtag.name, *((float *)in->kvtag.value));
