@@ -36,7 +36,7 @@ main()
     pdcid_t        pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
     pdc_kvtag_t *  value1, *value2, *value3;
     pdc_var_type_t type1, type2, type3;
-    uint32_t        value_size;
+    uint32_t       value_size;
 
     // create a pdc
     pdc = PDCinit("pdc");

@@ -40,7 +40,7 @@ main()
     double         v3 = 3.45;
     pdc_var_type_t type1, type2, type3;
     void *         value1, *value2, *value3;
-    uint32_t        value_size;
+    uint32_t       value_size;
 
     // create a pdc
     pdc = PDCinit("pdc");

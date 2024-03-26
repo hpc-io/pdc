@@ -37,7 +37,7 @@ main(int argc, char **argv)
 
     char           tag_value[128], tag_value2[128], *tag_value_ret;
     pdc_var_type_t value_type;
-    uint32_t        value_size;
+    uint32_t       value_size;
     strcpy(tag_value, "some tag value");
     strcpy(tag_value2, "some tag value 2 is longer than tag 1");
 

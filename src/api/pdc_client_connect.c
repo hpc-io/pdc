@@ -7850,7 +7850,8 @@ done:
 }
 
 perr_t
-PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, pdc_var_type_t value_type, uint32_t value_size)
+PDCobj_put_tag(pdcid_t obj_id, char *tag_name, void *tag_value, pdc_var_type_t value_type,
+               uint32_t value_size)
 {
     perr_t      ret_value = SUCCEED;
     pdc_kvtag_t kvtag;
