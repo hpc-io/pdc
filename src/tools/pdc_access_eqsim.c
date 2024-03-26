@@ -111,7 +111,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
 #endif
-        PDCobj_get_tag(obj, tag_name, (void**)&tag_value, &value_type, &value_size);
+        PDCobj_get_tag(obj, tag_name, (void **)&tag_value, &value_type, &value_size);
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
@@ -120,8 +120,8 @@ main(int argc, char **argv)
             fprintf(stderr, "Round %d: tag retrival query took %.6lf\n", r, t1 - t0);
 #endif
         if (value_size != 4 * sizeof(double))
-            fprintf(stderr, "Error: Round %d: tag retrival result size %llu / %llu \n", 
-                    r, value_size, 4*sizeof(double));
+            fprintf(stderr, "Error: Round %d: tag retrival result size %llu / %llu \n", r, value_size,
+                    4 * sizeof(double));
         if (tag_value)
             free(tag_value);
     }

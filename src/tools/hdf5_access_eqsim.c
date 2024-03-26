@@ -104,8 +104,6 @@ main(int argc, char **argv)
     H5Sclose(meta_mspace);
     H5Sclose(meta_dspace);
 
-
-
     //=============PATTERN 1===============
     // Read entire chunks
     offset[0] = 0;
@@ -153,7 +151,7 @@ main(int argc, char **argv)
     H5Sclose(mspace);
 
     // Get some statistics of the data
-    int cnt[5] = {0,0,0,0,0};
+    int cnt[5] = {0, 0, 0, 0, 0};
     MPI_Barrier(MPI_COMM_WORLD);
     t0 = MPI_Wtime();
     for (data_i = 0; data_i < local_size[0] * local_size[1] * local_size[2]; data_i++) {

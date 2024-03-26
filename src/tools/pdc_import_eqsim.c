@@ -154,7 +154,7 @@ main(int argc, char **argv)
     tag_value[1] = rank * 1.0;
     tag_value[2] = rank * 10.0;
     tag_value[3] = rank * 11.0;
-    value_size = 4 * sizeof(double);
+    value_size   = 4 * sizeof(double);
 
     if (PDCobj_put_tag(obj, tag_name, tag_value, PDC_DOUBLE, value_size) < 0)
         fprintf(stderr, "Rank %d fail to put tag @ line  %d!\n", rank, __LINE__);
