@@ -4723,24 +4723,26 @@ done:
 
 #ifdef ENABLE_ZFP
 static zfp_field *
-_setup_zfp(struct pdc_region_info *region_info, zfp_stream** zfp)
+_setup_zfp(struct pdc_region_info *region_info, zfp_stream **zfp)
 {
-    zfp_type type = zfp_type_double;
-    zfp_field* field;
+    zfp_type   type = zfp_type_double;
+    zfp_field *field;
 
     if (region_info->unit == 8)
         type = zfp_type_double;
     else if (region_info->unit == 4)
         type = zfp_type_int32;
     else
-        fprintf(stderr, "==PDC_SERVER[%d]: unit has size %u not expected!\n", pdc_server_rank_g, region_info->unit);
+        fprintf(stderr, "==PDC_SERVER[%d]: unit has size %u not expected!\n", pdc_server_rank_g,
+                region_info->unit);
 
     if (region_info->ndim == 1)
         field = zfp_field_1d(region_info->buf, type, region_info->size[0]);
     else if (region_info->ndim == 2)
         field = zfp_field_2d(region_info->buf, type, region_info->size[0], region_info->size[1]);
     else if (region_info->ndim == 3)
-        field = zfp_field_3d(region_info->buf, type, region_info->size[0], region_info->size[1], region_info->size[2]);
+        field = zfp_field_3d(region_info->buf, type, region_info->size[0], region_info->size[1],
+                             region_info->size[2]);
 
     *zfp = zfp_stream_open(NULL);
     // TODO: precision mode for now
@@ -5049,11 +5051,11 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
         /* fprintf(stderr, "==PDC_SERVER[%d]: %s posix write for position %d with write size %u\n", */
         /*         pdc_server_rank_g, __func__, 0, (unsigned)write_size); */
 #ifdef ENABLE_ZFP
-        zfp_field* field;
-        zfp_stream* zfp;
-        size_t bufsize;
-        void* buffer;
-        bitstream* stream;
+        zfp_field * field;
+        zfp_stream *zfp;
+        size_t      bufsize;
+        void *      buffer;
+        bitstream * stream;
 
         field = _setup_zfp(region_info, &zfp);
         if (field == NULL)
@@ -5072,8 +5074,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // Compress the data and overwrite the write_size for the following posix write
                 size_t compress_size = zfp_compress(zfp, field);
                 fprintf(stderr, "==PDC_SERVER[%d]: zfp compressed size %lu / %llu CR=%.2lf\n",
-                        pdc_server_rank_g, compress_size, write_size, (double)write_size/compress_size);
-                buf = buffer;
+                        pdc_server_rank_g, compress_size, write_size, (double)write_size / compress_size);
+                buf        = buffer;
                 write_size = compress_size;
             }
         }
@@ -5214,13 +5216,12 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                     pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
 #endif
 
-
 #ifdef ENABLE_ZFP
                     // Uncompress the data
-                    zfp_field* field;
-                    zfp_stream* zfp;
-                    size_t bufsize, decompress_size;
-                    bitstream* stream;
+                    zfp_field * field;
+                    zfp_stream *zfp;
+                    size_t      bufsize, decompress_size;
+                    bitstream * stream;
 
                     field = _setup_zfp(region_info, &zfp);
                     if (field == NULL)
@@ -5234,7 +5235,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                         if (region_info->ndim >= 3)
                             decompress_size *= region_info->size[2];
                         if (decompress_size == 0)
-                            fprintf(stderr, "==PDC_SERVER[%d]: zfp_stream_maximum_size returned 0!\n", pdc_server_rank_g);
+                            fprintf(stderr, "==PDC_SERVER[%d]: zfp_stream_maximum_size returned 0!\n",
+                                    pdc_server_rank_g);
 
                         void *decompress_buffer = malloc(decompress_size);
                         if (decompress_buffer == 0)
@@ -5245,7 +5247,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                             // Decompress the data
                             decompress_size = zfp_decompress(zfp, field);
                             if (decompress_size == 0)
-                                fprintf(stderr, "==PDC_SERVER[%d]: zfp_decompress failed!\n", pdc_server_rank_g);
+                                fprintf(stderr, "==PDC_SERVER[%d]: zfp_decompress failed!\n",
+                                        pdc_server_rank_g);
                             free(tmp_buf);
                             tmp_buf = decompress_buffer;
                         }
@@ -5254,7 +5257,6 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                     zfp_stream_close(zfp);
                     stream_close(stream);
 #endif
-
 
                     memcpy_overlap_subregion(region_info->ndim, unit, tmp_buf, overlap_region->start,
                                              overlap_region->count, buf, region_info->offset,
