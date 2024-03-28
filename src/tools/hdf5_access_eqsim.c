@@ -170,7 +170,7 @@ main(int argc, char **argv)
     t1 = MPI_Wtime();
     if (rank == 0)
         fprintf(stderr, "Scanning data took %.4lf\n", t1 - t0);
-    fprintf(stderr, "Rank %d: %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3], cnt[4]);
+    fprintf(stderr, "Rank %d: %d, %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3], cnt[4]);
     MPI_Barrier(MPI_COMM_WORLD);
 
     //=============PATTERN 2===============

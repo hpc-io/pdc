@@ -2109,7 +2109,7 @@ PDC_Server_get_env()
         data_sieving_g = atoi(tmp_env_char);
     }
     else {
-        data_sieving_g = 0;
+        data_sieving_g = 1;
     }
 
     // Get number of OST per file
