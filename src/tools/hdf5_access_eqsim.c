@@ -18,10 +18,10 @@ main(int argc, char **argv)
 
     int i, j, r, round = 1, count, total_count, rank = 0, nproc = 1, ssi_downsample, rec_downsample,
                  batchsize, iter, opensees_size, use_chunk_cache = 0;
-    int     start_x[4096], start_y[4096];
-    hsize_t offset[4], size[4], local_offset[4], local_size[4], stride[4], data_i;
+    int     start_x[4096], start_y[4096], devide_factor = 1, readt;
+    hsize_t offset[4], size[4], stride[4], data_i;
     hsize_t dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
-    // 12x, 32x, 32x
+    // dims is 12x, 32x, 32x of chunk size
     char *  fname, *dname = "vel_0 ijk layout";
     double *data = NULL, t0, t1, t2, data_max, data_min, *ssi_data = NULL, *rec_data = NULL,
            *opensees_data = NULL, meta_value[4];
@@ -35,9 +35,15 @@ main(int argc, char **argv)
         round = atoi(argv[2]);
     if (argc > 3)
         use_chunk_cache = atoi(argv[3]);
+    if (argc > 4)
+        devide_factor = atoi(argv[4]);
+
+    // Data size is more than 4GB per rank, need to reduce the first direction read size by
+    // a factor of 4
+    readt = ceil(1.0 * dims[0] / chunk_size[0]) * chunk_size[0] / devide_factor;
 
     if (rank == 0)
-        fprintf(stderr, "Round %d, use chunk cache %d\n", round, use_chunk_cache);
+        fprintf(stderr, "Round %d, use chunk cache %d, devide factor %d\n", round, use_chunk_cache, devide_factor);
 
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
@@ -70,8 +76,8 @@ main(int argc, char **argv)
     meta_dset   = H5Dopen(file, "z coordinates", H5P_DEFAULT);
     meta_dspace = H5Dget_space(meta_dset);
 
-    offset[0] = start_x[rank] * 2;
-    offset[1] = start_y[rank] * 2;
+    offset[0] = start_x[rank/devide_factor] * 2;
+    offset[1] = start_y[rank/devide_factor] * 2;
     offset[2] = 0;
 
     size[0] = 2;
@@ -80,15 +86,7 @@ main(int argc, char **argv)
 
     H5Sselect_hyperslab(meta_dspace, H5S_SELECT_SET, offset, NULL, size, NULL);
 
-    local_offset[0] = 0;
-    local_offset[1] = 0;
-    local_offset[2] = 0;
-
-    local_size[0] = size[0];
-    local_size[1] = size[1];
-    local_size[2] = size[2];
-
-    meta_mspace = H5Screate_simple(3, local_size, NULL);
+    meta_mspace = H5Screate_simple(3, size, NULL);
 
     MPI_Barrier(MPI_COMM_WORLD);
     t0 = MPI_Wtime();
@@ -105,34 +103,25 @@ main(int argc, char **argv)
     H5Sclose(meta_dspace);
 
     //=============PATTERN 1===============
-    // Read entire chunks
-    offset[0] = 0;
-    offset[1] = chunk_size[1] * start_x[rank];
-    offset[2] = chunk_size[2] * start_y[rank];
+    // Read entire chunks, can be used for caching
+    offset[0] = (rank % devide_factor) * readt;
+    offset[1] = chunk_size[1] * start_x[rank/devide_factor];
+    offset[2] = chunk_size[2] * start_y[rank/devide_factor];
     offset[3] = 0;
 
-    /* size[0] = chunk_size[0]; */
-    size[0] = dims[0];
+    if (rank % devide_factor == devide_factor - 1)
+        size[0] = dims[0] - readt * (devide_factor - 1);
+    else
+        size[0] = readt;
     size[1] = chunk_size[1];
     size[2] = chunk_size[2];
     size[3] = 1;
 
     H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, NULL, size, NULL);
 
-    local_offset[0] = 0;
-    local_offset[1] = 0;
-    local_offset[2] = 0;
-    local_offset[3] = 0;
+    mspace = H5Screate_simple(4, size, NULL);
 
-    /* local_size[0] = chunk_size[0]; */
-    local_size[0] = dims[0];
-    local_size[1] = chunk_size[1];
-    local_size[2] = chunk_size[2];
-    local_size[3] = 1;
-
-    mspace = H5Screate_simple(4, local_size, NULL);
-
-    data = (double *)malloc(sizeof(double) * local_size[0] * local_size[1] * local_size[2]);
+    data = (double *)malloc(sizeof(double) * size[0] * size[1] * size[2]);
 
     if (nproc <= 16)
         fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0],
@@ -154,7 +143,7 @@ main(int argc, char **argv)
     int cnt[5] = {0, 0, 0, 0, 0};
     MPI_Barrier(MPI_COMM_WORLD);
     t0 = MPI_Wtime();
-    for (data_i = 0; data_i < local_size[0] * local_size[1] * local_size[2]; data_i++) {
+    for (data_i = 0; data_i < size[0] * size[1] * size[2]; data_i++) {
         if (fabs(data[data_i]) > 0.1)
             cnt[0]++;
         if (fabs(data[data_i]) > 0.2)
@@ -176,21 +165,20 @@ main(int argc, char **argv)
     //=============PATTERN 2===============
     // OpenSees access pattern: 1 rank read subregion 200x200m (32 grids)
     opensees_size = 32; // 32 * 6.25m = 200m
-    local_size[0] = dims[0];
-    local_size[1] = opensees_size;
-    local_size[2] = opensees_size;
-    local_size[3] = 1;
 
-    offset[0] = 0;
-    offset[1] = start_x[rank] * chunk_size[1];
-    offset[2] = start_y[rank] * chunk_size[2];
+    offset[0] = (rank % devide_factor) * readt;
+    offset[1] = chunk_size[1] * start_x[rank/devide_factor];
+    offset[2] = chunk_size[2] * start_y[rank/devide_factor];
     offset[3] = 0;
-    size[0]   = dims[0];
+    if (rank % devide_factor == devide_factor - 1)
+        size[0] = dims[0] - readt * (devide_factor - 1);
+    else
+        size[0] = readt;
     size[1]   = opensees_size;
     size[2]   = opensees_size;
     size[3]   = 1;
 
-    mspace = H5Screate_simple(4, local_size, NULL);
+    mspace = H5Screate_simple(4, size, NULL);
 
     if (nproc <= 16)
         fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0],
@@ -226,16 +214,15 @@ main(int argc, char **argv)
     //=============PATTERN 3===============
     // Generating movie: all rank downsample in space to 156.25x156.25m (downsample factor 25)
     ssi_downsample = 25;
-    local_size[0]  = dims[0];
-    local_size[1]  = chunk_size[1] / ssi_downsample;
-    local_size[2]  = chunk_size[2] / ssi_downsample;
-    local_size[3]  = 1;
 
-    offset[0] = 0;
-    offset[1] = start_x[rank] * chunk_size[1];
-    offset[2] = start_y[rank] * chunk_size[2];
+    offset[0] = (rank % devide_factor) * readt;
+    offset[1] = start_x[rank/devide_factor] * chunk_size[1];
+    offset[2] = start_y[rank/devide_factor] * chunk_size[2];
     offset[3] = 0;
-    size[0]   = dims[0];
+    if (rank % devide_factor == devide_factor - 1)
+        size[0] = dims[0] - readt * (devide_factor - 1);
+    else
+        size[0] = readt;
     size[1]   = chunk_size[1] / ssi_downsample;
     size[2]   = chunk_size[2] / ssi_downsample;
     size[3]   = 1;
@@ -244,7 +231,7 @@ main(int argc, char **argv)
     stride[2] = ssi_downsample;
     stride[3] = 1;
 
-    mspace = H5Screate_simple(4, local_size, NULL);
+    mspace = H5Screate_simple(4, size, NULL);
 
     batchsize = chunk_size[1] * chunk_size[2] / ssi_downsample / ssi_downsample;
     ssi_data  = (double *)malloc(sizeof(double) * dims[0] * batchsize);
@@ -270,16 +257,15 @@ main(int argc, char **argv)
     //=============PATTERN 4===============
     // Building response: all rank downsample in space to every 1250m (downsample factor 200)
     rec_downsample = 200;
-    local_size[0]  = dims[0];
-    local_size[1]  = chunk_size[1] / rec_downsample;
-    local_size[2]  = chunk_size[2] / rec_downsample;
-    local_size[3]  = 1;
 
-    offset[0] = 0;
-    offset[1] = start_x[rank] * chunk_size[1];
-    offset[2] = start_y[rank] * chunk_size[2];
+    offset[0] = (rank % devide_factor) * readt;
+    offset[1] = start_x[rank/devide_factor] * chunk_size[1];
+    offset[2] = start_y[rank/devide_factor] * chunk_size[2];
     offset[3] = 0;
-    size[0]   = dims[0];
+    if (rank % devide_factor == devide_factor - 1)
+        size[0] = dims[0] - readt * (devide_factor - 1);
+    else
+        size[0] = readt;
     size[1]   = chunk_size[1] / rec_downsample;
     size[2]   = chunk_size[2] / rec_downsample;
     size[3]   = 1;
@@ -288,7 +274,7 @@ main(int argc, char **argv)
     stride[2] = rec_downsample;
     stride[3] = 1;
 
-    mspace = H5Screate_simple(4, local_size, NULL);
+    mspace = H5Screate_simple(4, size, NULL);
 
     batchsize = chunk_size[1] * chunk_size[2] / rec_downsample / rec_downsample;
     rec_data  = (double *)malloc(sizeof(double) * dims[0] * batchsize);
@@ -312,21 +298,20 @@ main(int argc, char **argv)
 
     //=============PATTERN 5===============
     // Single rank singele time history access
-    local_size[0] = dims[0];
-    local_size[1] = 1;
-    local_size[2] = 1;
-    local_size[3] = 1;
 
-    offset[0] = 0;
-    offset[1] = start_x[rank] * chunk_size[1];
-    offset[2] = start_y[rank] * chunk_size[2];
+    offset[0] = (rank % devide_factor) * readt;
+    offset[1] = start_x[rank/devide_factor] * chunk_size[1];
+    offset[2] = start_y[rank/devide_factor] * chunk_size[2];
     offset[3] = 0;
-    size[0]   = dims[0];
+    if (rank % devide_factor == devide_factor - 1)
+        size[0] = dims[0] - readt * (devide_factor - 1);
+    else
+        size[0] = readt;
     size[1]   = 1;
     size[2]   = 1;
     size[3]   = 1;
 
-    mspace = H5Screate_simple(4, local_size, NULL);
+    mspace = H5Screate_simple(4, size, NULL);
 
     rec_data = (double *)malloc(sizeof(double) * dims[0] * batchsize);
 
