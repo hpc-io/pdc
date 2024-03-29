@@ -4879,7 +4879,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
                     if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                         (ssize_t)overlap_region->data_size) {
-                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g, __LINE__);
+                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g,
+                               __LINE__);
                     }
 #ifdef PDC_TIMING
                     pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
@@ -5206,7 +5207,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 if (pread(region->fd, buf + (overlap_offset[0] - region_info->offset[0]) * unit,
                           overlap_size[0] * unit,
                           overlap_region->offset + pos) != (ssize_t)(overlap_size[0] * unit)) {
-                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g, __LINE__);
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g,
+                           __LINE__);
                 }
 #ifdef PDC_TIMING
                 pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
@@ -5229,7 +5231,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
                     if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                         (ssize_t)overlap_region->data_size) {
-                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g, __LINE__);
+                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g,
+                               __LINE__);
                     }
 #ifdef PDC_TIMING
                     pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;

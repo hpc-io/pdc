@@ -171,8 +171,8 @@ main(int argc, char **argv)
     if (rank == 0)
         fprintf(stderr, "Scanning data took %.4lf\n", t1 - t0);
 
-    fprintf(stderr, "Rank %d: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
-            rank, cnt[0], cnt[1], cnt[2], cnt[3], cnt[4], cnt[5], cnt[6], cnt[7], cnt[8], cnt[9]);
+    fprintf(stderr, "Rank %d: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3],
+            cnt[4], cnt[5], cnt[6], cnt[7], cnt[8], cnt[9]);
     MPI_Barrier(MPI_COMM_WORLD);
 
     //=============PATTERN 2===============

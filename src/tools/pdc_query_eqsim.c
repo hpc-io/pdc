@@ -160,20 +160,19 @@ main(int argc, char **argv)
     if (PDCobj_put_tag(obj, tag_name, tag_value, PDC_DOUBLE, value_size) < 0)
         fprintf(stderr, "Rank %d fail to put tag @ line  %d!\n", rank, __LINE__);
 
-
     // Query the created object
-    pdc_metadata_t *       metadata;
-    uint32_t       metadata_server_id;
+    pdc_metadata_t *metadata;
+    uint32_t        metadata_server_id;
     PDC_Client_query_metadata_name_timestep("run1", 0, &metadata, &metadata_server_id);
     if (metadata == NULL || metadata->obj_id == 0) {
         printf("Error with metadata!\n");
     }
 
-    int ndim = 3;
+    int                    ndim = 3;
     struct pdc_region_info region;
-    region.ndim = ndim;
+    region.ndim   = ndim;
     region.offset = pdc_offset;
-    region.size = pdc_size;
+    region.size   = pdc_size;
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -190,15 +189,15 @@ main(int argc, char **argv)
 #endif
 
     // Construct query constraints
-    double query_val = 0.5;
-    pdc_query_t *q = PDCquery_create(obj, PDC_GT, PDC_INT, &query_val);
+    double       query_val = 0.5;
+    pdc_query_t *q         = PDCquery_create(obj, PDC_GT, PDC_INT, &query_val);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     t0 = MPI_Wtime();
 #endif
 
-    pdc_selection_t        sel;
+    pdc_selection_t sel;
 
     if (rank == 0)
         PDCquery_get_selection(q, &sel);
