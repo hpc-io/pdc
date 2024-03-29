@@ -2150,7 +2150,7 @@ PDC_Server_get_env()
 
     tmp_env_char = getenv("PDC_GEN_HIST");
     if (tmp_env_char != NULL)
-        gen_hist_g = 1;
+        gen_hist_g = atoi(tmp_env_char);
 
     tmp_env_char = getenv("PDC_GEN_FASTBIT_IDX");
     if (tmp_env_char != NULL)

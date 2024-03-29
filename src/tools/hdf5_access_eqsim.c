@@ -141,7 +141,7 @@ main(int argc, char **argv)
     H5Sclose(mspace);
 
     // Get some statistics of the data
-    int cnt[5] = {0, 0, 0, 0, 0};
+    int cnt[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
     MPI_Barrier(MPI_COMM_WORLD);
     t0 = MPI_Wtime();
     for (data_i = 0; data_i < size[0] * size[1] * size[2]; data_i++) {
@@ -155,12 +155,24 @@ main(int argc, char **argv)
             cnt[3]++;
         if (fabs(data[data_i]) > 0.5)
             cnt[4]++;
+        if (fabs(data[data_i]) > 0.5)
+            cnt[5]++;
+        if (fabs(data[data_i]) > 0.7)
+            cnt[6]++;
+        if (fabs(data[data_i]) > 0.8)
+            cnt[7]++;
+        if (fabs(data[data_i]) > 0.9)
+            cnt[8]++;
+        if (fabs(data[data_i]) > 1.0)
+            cnt[9]++;
     }
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (rank == 0)
         fprintf(stderr, "Scanning data took %.4lf\n", t1 - t0);
-    fprintf(stderr, "Rank %d: %d, %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3], cnt[4]);
+
+    fprintf(stderr, "Rank %d: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n",
+            rank, cnt[0], cnt[1], cnt[2], cnt[3], cnt[4], cnt[5], cnt[6], cnt[7], cnt[8], cnt[9]);
     MPI_Barrier(MPI_COMM_WORLD);
 
     //=============PATTERN 2===============

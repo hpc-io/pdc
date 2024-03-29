@@ -90,6 +90,7 @@ set(PROGRAMS
   pdc_ls
   pdc_import_eqsim
   pdc_access_eqsim
+  pdc_query_eqsim
   hdf5_access_eqsim
   )
 

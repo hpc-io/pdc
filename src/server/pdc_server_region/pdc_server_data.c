@@ -302,6 +302,25 @@ PDC_Server_get_obj_region(pdcid_t obj_id)
     FUNC_LEAVE(ret_value);
 }
 
+pdc_data_server_io_list_t *
+PDC_Server_get_obj_region_tang(pdcid_t obj_id)
+{
+    pdc_data_server_io_list_t *ret_value = NULL;
+    pdc_data_server_io_list_t *elt       = NULL;
+
+    FUNC_ENTER(NULL);
+
+    if (pdc_data_server_write_list_head_g != NULL) {
+        DL_FOREACH(pdc_data_server_write_list_head_g, elt)
+        {
+            if (elt->obj_id == obj_id)
+                ret_value = elt;
+        }
+    }
+
+    FUNC_LEAVE(ret_value);
+}
+
 perr_t
 PDC_Server_clear_obj_region()
 {
@@ -4860,7 +4879,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
                     if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                         (ssize_t)overlap_region->data_size) {
-                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g, __LINE__);
                     }
 #ifdef PDC_TIMING
                     pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
@@ -5187,7 +5206,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 if (pread(region->fd, buf + (overlap_offset[0] - region_info->offset[0]) * unit,
                           overlap_size[0] * unit,
                           overlap_region->offset + pos) != (ssize_t)(overlap_size[0] * unit)) {
-                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g, __LINE__);
                 }
 #ifdef PDC_TIMING
                 pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
@@ -5210,7 +5229,7 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
                     if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                         (ssize_t)overlap_region->data_size) {
-                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g, __LINE__);
                     }
 #ifdef PDC_TIMING
                     pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
@@ -7902,7 +7921,7 @@ attach_local_storage_region_to_query(pdc_query_t *query)
 
 {
     /* pdc_metadata_t *meta; */
-    data_server_region_t *obj_reg;
+    pdc_data_server_io_list_t *obj_reg;
 
     if (NULL == query->constraint) {
         printf("==PDC_SERVER[%d]: %s - query->constraint is NULL!\n", pdc_server_rank_g, __func__);
@@ -7918,12 +7937,12 @@ attach_local_storage_region_to_query(pdc_query_t *query)
     /* } */
     /* query->constraint->storage_region_list_head = meta->storage_region_list_head; */
 
-    obj_reg = PDC_Server_get_obj_region(query->constraint->obj_id);
+    obj_reg = PDC_Server_get_obj_region_tang(query->constraint->obj_id);
     if (obj_reg == NULL) {
         printf("==PDC_SERVER[%d]: %s - cannot find region from object!\n", pdc_server_rank_g, __func__);
     }
     else
-        query->constraint->storage_region_list_head = obj_reg->region_storage_head;
+        query->constraint->storage_region_list_head = obj_reg->region_list_head;
 
     return SUCCEED;
 }
