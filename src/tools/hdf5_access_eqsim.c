@@ -13,7 +13,7 @@ int
 main(int argc, char **argv)
 {
 
-    hid_t  file, grp, dset, fapl, dxpl, dspace, mspace, meta_dset, meta_dspace, meta_mspace;
+    hid_t  file, grp, dset, fapl, dxpl, dapl, dspace, mspace, meta_dset, meta_dspace, meta_mspace;
     herr_t status;
 
     int i, j, r, round = 1, count, total_count, rank = 0, nproc = 1, ssi_downsample, rec_downsample,
@@ -48,19 +48,15 @@ main(int argc, char **argv)
 
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
-    if (use_chunk_cache > 0)
-        H5Pset_cache(fapl, 0, 1228800, 4294967295, 1);
 
     dxpl = H5Pcreate(H5P_DATASET_XFER);
     H5Pset_dxpl_mpio(dxpl, H5FD_MPIO_COLLECTIVE);
 
+    dapl = H5Pcreate(H5P_DATASET_ACCESS);
+
     file = H5Fopen(fname, H5F_ACC_RDONLY, fapl);
     if (file < 0)
         fprintf(stderr, "Failed to open file [%s]\n", fname);
-
-    dset   = H5Dopen(file, dname, H5P_DEFAULT);
-    dspace = H5Dget_space(dset);
-    H5Sget_simple_extent_dims(dspace, dims, NULL);
 
     // Assign chunks to each rank
     count = 0;
@@ -89,15 +85,17 @@ main(int argc, char **argv)
 
     meta_mspace = H5Screate_simple(3, size, NULL);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    t0 = MPI_Wtime();
+    for (r = 0; r < round; r++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        t0 = MPI_Wtime();
 
-    H5Dread(meta_dset, H5T_NATIVE_DOUBLE, meta_mspace, meta_dspace, dxpl, meta_value);
+        H5Dread(meta_dset, H5T_NATIVE_DOUBLE, meta_mspace, meta_dspace, dxpl, meta_value);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    t1 = MPI_Wtime();
-    if (rank == 0)
-        fprintf(stderr, "Read metadata took %.4lf\n", t1 - t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+        if (rank == 0)
+            fprintf(stderr, "Round %d: read metadata took %.4lf\n", r, t1 - t0);
+    }
 
     H5Dclose(meta_dset);
     H5Sclose(meta_mspace);
@@ -118,8 +116,6 @@ main(int argc, char **argv)
     size[2] = chunk_size[2];
     size[3] = 1;
 
-    H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, NULL, size, NULL);
-
     mspace = H5Screate_simple(4, size, NULL);
 
     data = (double *)malloc(sizeof(double) * size[0] * size[1] * size[2]);
@@ -128,48 +124,67 @@ main(int argc, char **argv)
         fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0],
                 offset[1], offset[2], size[0], size[1], size[2]);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    t0 = MPI_Wtime();
+    for (r = 0; r < round; r++) {
+        if (r == round-1 && use_chunk_cache > 0)
+            H5Pset_chunk_cache(dapl, 1228800, 4294967295, 1);
 
-    H5Dread(dset, H5T_NATIVE_DOUBLE, mspace, dspace, dxpl, data);
+        dset   = H5Dopen(file, dname, dapl);
+        dspace = H5Dget_space(dset);
+        H5Sget_simple_extent_dims(dspace, dims, NULL);
+        H5Sselect_hyperslab(dspace, H5S_SELECT_SET, offset, NULL, size, NULL);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    t1 = MPI_Wtime();
-    if (rank == 0)
-        fprintf(stderr, "Read from HDF5 took %.4lf\n", t1 - t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+        t0 = MPI_Wtime();
+
+        H5Dread(dset, H5T_NATIVE_DOUBLE, mspace, dspace, dxpl, data);
+
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+        if (rank == 0)
+            fprintf(stderr, "Round %d, Read from HDF5 took %.4lf\n", r, t1 - t0);
+
+        if (r != round - 1) {
+            // leave dset open for following patterns
+            H5Dclose(dset);
+            H5Sclose(dspace);
+        }
+    }
 
     H5Sclose(mspace);
 
     // Get some statistics of the data
     int cnt[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    MPI_Barrier(MPI_COMM_WORLD);
-    t0 = MPI_Wtime();
-    for (data_i = 0; data_i < size[0] * size[1] * size[2]; data_i++) {
-        if (fabs(data[data_i]) > 0.1)
-            cnt[0]++;
-        if (fabs(data[data_i]) > 0.2)
-            cnt[1]++;
-        if (fabs(data[data_i]) > 0.3)
-            cnt[2]++;
-        if (fabs(data[data_i]) > 0.4)
-            cnt[3]++;
-        if (fabs(data[data_i]) > 0.5)
-            cnt[4]++;
-        if (fabs(data[data_i]) > 0.5)
-            cnt[5]++;
-        if (fabs(data[data_i]) > 0.7)
-            cnt[6]++;
-        if (fabs(data[data_i]) > 0.8)
-            cnt[7]++;
-        if (fabs(data[data_i]) > 0.9)
-            cnt[8]++;
-        if (fabs(data[data_i]) > 1.0)
-            cnt[9]++;
+    for (r = 0; r < round; r++) {
+        MPI_Barrier(MPI_COMM_WORLD);
+        t0 = MPI_Wtime();
+        for (data_i = 0; data_i < size[0] * size[1] * size[2]; data_i++) {
+            if (fabs(data[data_i]) > 0.1)
+                cnt[0]++;
+            if (fabs(data[data_i]) > 0.2)
+                cnt[1]++;
+            if (fabs(data[data_i]) > 0.3)
+                cnt[2]++;
+            if (fabs(data[data_i]) > 0.4)
+                cnt[3]++;
+            if (fabs(data[data_i]) > 0.5)
+                cnt[4]++;
+            if (fabs(data[data_i]) > 0.5)
+                cnt[5]++;
+            if (fabs(data[data_i]) > 0.7)
+                cnt[6]++;
+            if (fabs(data[data_i]) > 0.8)
+                cnt[7]++;
+            if (fabs(data[data_i]) > 0.9)
+                cnt[8]++;
+            if (fabs(data[data_i]) > 1.0)
+                cnt[9]++;
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+
+        if (rank == 0)
+            fprintf(stderr, "Round %d: Scanning data took %.4lf\n", r, t1 - t0);
     }
-    MPI_Barrier(MPI_COMM_WORLD);
-    t1 = MPI_Wtime();
-    if (rank == 0)
-        fprintf(stderr, "Scanning data took %.4lf\n", t1 - t0);
 
     fprintf(stderr, "Rank %d: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3],
             cnt[4], cnt[5], cnt[6], cnt[7], cnt[8], cnt[9]);
