@@ -125,7 +125,7 @@ main(int argc, char **argv)
                 offset[1], offset[2], size[0], size[1], size[2]);
 
     for (r = 0; r < round; r++) {
-        if (r == round-1 && use_chunk_cache > 0)
+        if (r == round - 1 && use_chunk_cache > 0)
             H5Pset_chunk_cache(dapl, 1228800, 4294967295, 1);
 
         dset   = H5Dopen(file, dname, dapl);
