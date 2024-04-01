@@ -53,6 +53,8 @@ main(int argc, char **argv)
     H5Pset_dxpl_mpio(dxpl, H5FD_MPIO_COLLECTIVE);
 
     dapl = H5Pcreate(H5P_DATASET_ACCESS);
+    if (use_chunk_cache > 0)
+        H5Pset_chunk_cache(dapl, 1228800, 4294967295, 1);
 
     file = H5Fopen(fname, H5F_ACC_RDONLY, fapl);
     if (file < 0)
@@ -70,7 +72,7 @@ main(int argc, char **argv)
 
     //=============Metadata Query=========
     // Each rank read 4 values, simulating a lat lon range access
-    meta_dset   = H5Dopen(file, "z coordinates", H5P_DEFAULT);
+    meta_dset   = H5Dopen(file, "z coordinates", dapl);
     meta_dspace = H5Dget_space(meta_dset);
 
     offset[0] = start_x[rank / devide_factor] * 2;
@@ -368,6 +370,7 @@ main(int argc, char **argv)
 
     H5Sclose(dspace);
 
+    H5Pclose(dapl);
     H5Pclose(fapl);
     H5Pclose(dxpl);
     H5Dclose(dset);

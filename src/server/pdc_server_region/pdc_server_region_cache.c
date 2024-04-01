@@ -864,9 +864,9 @@ PDC_region_cache_clock_cycle(void *ptr)
     pdc_obj_cache *obj_cache, *obj_cache_iter;
     struct timeval current_time;
     struct timeval finish_time;
-    int            nflush            = 0;
-    double         flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time = 0.0;
-    int            server_rank = 0;
+    int nflush = 0;
+    int flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time = 0.0;
+    int server_rank = 0;
 
     char *p = getenv("PDC_SERVER_CACHE_FLUSH_FREQUENCY_S");
     if (p != NULL)
@@ -876,30 +876,15 @@ PDC_region_cache_clock_cycle(void *ptr)
         obj_cache_iter = NULL;
     }
     while (1) {
-        nflush = 0;
-        usleep(1000);
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
             pthread_mutex_lock(&pdc_obj_cache_list_mutex);
             gettimeofday(&current_time, NULL);
             obj_cache_iter = obj_cache_list;
-            nflush         = 0;
+            nflush = 0;
             while (obj_cache_iter != NULL) {
                 obj_cache = obj_cache_iter;
-                // flush every *flush_frequency_s seconds
-                if (obj_cache->timestamp.tv_sec > 0)
-                    elapsed_time = current_time.tv_sec - obj_cache_list->timestamp.tv_sec;
-                if (elapsed_time >= flush_frequency_s) {
-                    /* char tmbuf[64]; */
-                    /* strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S",
-                     * localtime(&obj_cache->timestamp.tv_sec)); */
-                    /* fprintf(stderr, "Previous %s\n", tmbuf); */
-                    /* strftime(tmbuf, sizeof tmbuf, "%Y-%m-%d %H:%M:%S", localtime(&current_time.tv_sec)); */
-                    /* fprintf(stderr, "Current %s\n", tmbuf); */
-                    nflush += PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
-                    // Update latest flush time
-                    gettimeofday(&obj_cache_list->timestamp, NULL);
-                }
+                nflush += PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
                 obj_cache_iter = obj_cache_iter->next;
             }
             if (nflush > 0) {
@@ -913,13 +898,18 @@ PDC_region_cache_clock_cycle(void *ptr)
                     "==PDC_SERVER[%d]: %s, flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
                     server_rank, __func__, nflush, flush_frequency_s, elapsed_time);
             }
+            else
+                fprintf(stderr, "==PDC_SERVER[%d]: %s, no cached data flushed\n", server_rank, __func__);
+
             pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
         }
         else {
             pthread_mutex_unlock(&pdc_cache_mutex);
             break;
         }
+
         pthread_mutex_unlock(&pdc_cache_mutex);
+        sleep(flush_frequency_s);
     }
     return 0;
 }

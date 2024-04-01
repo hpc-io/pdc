@@ -189,7 +189,7 @@ main(int argc, char **argv)
 #endif
 
     // Construct query constraints
-    double       query_val = 0.5;
+    double       query_val = 0.9;
     pdc_query_t *q         = PDCquery_create(obj, PDC_GT, PDC_INT, &query_val);
 
 #ifdef ENABLE_MPI
