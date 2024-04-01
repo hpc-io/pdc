@@ -864,9 +864,9 @@ PDC_region_cache_clock_cycle(void *ptr)
     pdc_obj_cache *obj_cache, *obj_cache_iter;
     struct timeval current_time;
     struct timeval finish_time;
-    int nflush = 0;
-    int flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time = 0.0;
-    int server_rank = 0;
+    int            nflush            = 0;
+    int            flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time = 0.0;
+    int            server_rank = 0;
 
     char *p = getenv("PDC_SERVER_CACHE_FLUSH_FREQUENCY_S");
     if (p != NULL)
@@ -881,7 +881,7 @@ PDC_region_cache_clock_cycle(void *ptr)
             pthread_mutex_lock(&pdc_obj_cache_list_mutex);
             gettimeofday(&current_time, NULL);
             obj_cache_iter = obj_cache_list;
-            nflush = 0;
+            nflush         = 0;
             while (obj_cache_iter != NULL) {
                 obj_cache = obj_cache_iter;
                 nflush += PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
