@@ -269,6 +269,56 @@ test_PDC_Server_dart_perform_one_server()
     query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
     query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
 
+    for (int i = 0; i < 1000; i++) {
+        sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
+        sprintf(numkv, "num%03dnum=%d", i, i);
+        insert_kv_to_index(kv, 10000 + i);
+        sprintf(numkv, "num%03dnum=%d", i, i);
+        insert_kv_to_index(numkv, 10000 + i);
+    }
+
+    insert_kv_to_index("0key=\"0val\"", 20000);
+    insert_kv_to_index("key000key=\"val000val\"", 10000);
+    insert_kv_to_index("key000key=\"val000val\"", 20000);
+    insert_kv_to_index("key000key=\"val000val\"", 30000);
+    insert_kv_to_index("key433key=\"val433val\"", 30000);
+
+    insert_kv_to_index("0num=0", 20000);
+    insert_kv_to_index("num000num=0", 10000);
+    insert_kv_to_index("num010num=2", 20000);
+    insert_kv_to_index("num010num=3", 30000);
+    insert_kv_to_index("num010num=5", 50000);
+    insert_kv_to_index("num010num=6", 60000);
+    insert_kv_to_index("num010num=7", 70000);
+    insert_kv_to_index("num010num=9", 90000);
+
+    insert_kv_to_index("num001num=0", 11000);
+    insert_kv_to_index("num011num=2", 21000);
+    insert_kv_to_index("num011num=3", 31000);
+    insert_kv_to_index("num011num=5", 51000);
+    insert_kv_to_index("num011num=6", 61000);
+    insert_kv_to_index("num011num=7", 71000);
+    insert_kv_to_index("num011num=9", 91000);
+
+    insert_kv_to_index("num000num=0", 30000);
+    insert_kv_to_index("num433num=433", 30000);
+
+    LOG_INFO("Index Insertion Successful!\n");
+
+    // key000key val000val
+    query_result_from_kvtag("key000key=\"val000val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("0key=\"0val\"", OP_EXACT_QUERY);
+    query_result_from_kvtag("key01*=\"val01*\"", OP_PREFIX_QUERY);
+    query_result_from_kvtag("*33key=\"*33val\"", OP_SUFFIX_QUERY);
+    query_result_from_kvtag("*43*=\"*43*\"", OP_INFIX_QUERY);
+
+    query_result_from_kvtag("num01*=5~", OP_RANGE_QUERY);
+    query_result_from_kvtag("num000num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=~5", OP_RANGE_QUERY);
+    query_result_from_kvtag("0num=0", OP_EXACT_QUERY);
+    query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
+    query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
+
     idioms_metadata_index_recover("/workspaces/pdc/build/bin", 1, 1, 0);
 
     LOG_INFO("Index Recovery Done!\n");
