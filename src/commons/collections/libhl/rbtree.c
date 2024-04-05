@@ -96,7 +96,7 @@ rbt_destroy(rbt_t *rbt)
     //     goto done;
     // }
     rbt_destroy_internal(rbt->root, rbt->free_value_cb);
-done:
+    // done:
     rbt->root = NULL;
     free(rbt);
 }
@@ -631,26 +631,26 @@ rbt_add(rbt_t *rbt, void *k, size_t klen, void *v)
     return rc;
 }
 
-static rbt_node_t *
-rbt_find_internal(rbt_t *rbt, rbt_node_t *node, void *key, size_t klen)
+static rbt_node_t **
+rbt_find_internal(rbt_t *rbt, rbt_node_t **node, void *key, size_t klen)
 {
-    if (!node)
+    if (node == NULL || !(*node))
         return NULL;
 
-    if (node->key == NULL) {
+    if ((*node)->key == NULL) {
         return NULL;
     }
 
-    int rc = rbt_compare_keys(rbt, node->key, node->klen, key, klen);
+    int rc = rbt_compare_keys(rbt, (*node)->key, (*node)->klen, key, klen);
 
     if (rc == 0) {
         return node;
     }
     else if (rc > 0) {
-        return rbt_find_internal(rbt, node->left, key, klen);
+        return rbt_find_internal(rbt, &((*node)->left), key, klen);
     }
     else {
-        return rbt_find_internal(rbt, node->right, key, klen);
+        return rbt_find_internal(rbt, &((*node)->right), key, klen);
     }
 
     return NULL;
@@ -659,11 +659,11 @@ rbt_find_internal(rbt_t *rbt, rbt_node_t *node, void *key, size_t klen)
 int
 rbt_find(rbt_t *rbt, void *k, size_t klen, void **v)
 {
-    rbt_node_t *node = rbt_find_internal(rbt, rbt->root, k, klen);
-    if (!node)
+    rbt_node_t **node = rbt_find_internal(rbt, &(rbt->root), k, klen);
+    if (node == NULL || !(*node))
         return -1;
 
-    *v = node->value;
+    *v = (*node)->value;
     return 0;
 }
 
@@ -673,30 +673,30 @@ rbt_sibling(rbt_node_t *node)
     return (node == node->parent->left) ? node->parent->right : node->parent->left;
 }
 
-static inline rbt_node_t *
+static inline rbt_node_t **
 rbt_find_next(rbt_node_t *node)
 {
     if (!node->right)
         return NULL;
 
-    rbt_node_t *next = node->right;
+    rbt_node_t **next = &(node->right);
 
-    while (next->left)
-        next = next->left;
+    while ((*next)->left)
+        next = &((*next)->left);
 
     return next;
 }
 
-static inline rbt_node_t *
+static inline rbt_node_t **
 rbt_find_prev(rbt_node_t *node)
 {
     if (!node->left)
         return NULL;
 
-    rbt_node_t *prev = node->left;
+    rbt_node_t **prev = &(node->left);
 
-    while (prev->right)
-        prev = prev->right;
+    while ((*prev)->right)
+        prev = &((*prev)->right);
 
     return prev;
 }
@@ -770,81 +770,101 @@ rbt_paint_onremove(rbt_t *rbt, rbt_node_t *node)
     }
 }
 
+void
+rbt_free_node(rbt_t *rbt, rbt_node_t **node_ptr, void **node_v, void **rtn_v)
+{
+    free((*node_ptr)->key);
+    (*node_ptr)->key = NULL;
+    if (rtn_v)
+        *rtn_v = *node_v;
+    else if (rbt->free_value_cb) {
+        rbt->free_value_cb(*node_v);
+        *node_v = NULL;
+    }
+    free(*node_ptr);
+    *node_ptr = NULL;
+}
+
 int
 rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
 {
-    rbt_node_t *node = rbt_find_internal(rbt, rbt->root, k, klen);
-    if (!node)
+    rbt_node_t **node = rbt_find_internal(rbt, &(rbt->root), k, klen);
+    if (node == NULL || !(*node))
         return -1;
 
-    if (node->left || node->right) {
+    if ((*node)->left || (*node)->right) {
         // the node is not a leaf
         // now check if it has two children or just one
-        if (node->left && node->right) {
+        if ((*node)->left && (*node)->right) {
             // two children case
-            rbt_node_t *n        = NULL;
-            static int  prevnext = 0;
-            int         isprev   = (prevnext++ % 2 == 0);
+            rbt_node_t **n        = NULL;
+            static int   prevnext = 0;
+            int          isprev   = (prevnext++ % 2 == 0);
             if (isprev)
-                n = rbt_find_prev(node);
+                n = rbt_find_prev((*node));
             else
-                n = rbt_find_next(node);
-            void *new_key = PDC_realloc(node->key, n->klen);
-            mem_usage_by_all_rbtrees += n->klen;
+                n = rbt_find_next((*node));
+            void *new_key = PDC_realloc((*node)->key, (*n)->klen);
+            mem_usage_by_all_rbtrees += (*n)->klen;
             if (!new_key)
                 return -1;
-            node->key = new_key;
-            memcpy(node->key, n->key, n->klen);
-            void *prev_value = node->value;
-            node->value      = n->value;
+            (*node)->key = new_key;
+            memcpy((*node)->key, (*n)->key, (*n)->klen);
+            void *prev_value = (*node)->value;
+            (*node)->value   = (*n)->value;
             if (isprev) {
-                if (n == node->left) {
-                    node->left = n->left;
+                if (*n == (*node)->left) {
+                    (*node)->left = (*n)->left;
                 }
                 else {
-                    n->parent->right = n->left;
+                    (*n)->parent->right = (*n)->left;
                 }
-                if (n->left) {
-                    n->left->parent = node;
+                if (n && *n && (*n)->left) {
+                    (*n)->left->parent = *node;
                 }
             }
             else {
-                if (n == node->right) {
-                    node->right = n->right;
+                if ((*n) == (*node)->right) {
+                    (*node)->right = (*n)->right;
                 }
                 else {
-                    n->parent->left = n->right;
+                    (*n)->parent->left = (*n)->right;
                 }
-                if (n->right) {
-                    n->right->parent = node;
+                if (n && *n && (*n)->right) {
+                    (*n)->right->parent = *node;
                 }
-            }
-            free(n->key);
-            n->key = NULL;
-            if (v)
-                *v = prev_value;
-            else if (rbt->free_value_cb) {
-                rbt->free_value_cb(prev_value);
-                (&prev_value)[0] = NULL;
             }
 
-            // free(n);
-            // (&n)[0]   = NULL;
+            if (n && *n) {
+                rbt_free_node(rbt, n, &prev_value, v);
+            }
+
+            // free((*n)->key);
+            // (*n)->key = NULL;
+            // if (v)
+            //     *v = prev_value;
+            // else if (rbt->free_value_cb) {
+            //     rbt->free_value_cb(prev_value);
+            //     (&prev_value)[0] = NULL;
+            // }
+
+            // free((*n));
+            // *n        = NULL;
             rbt->size = rbt->size - 1;
             return 0;
         }
         else {
             // one child case
-            rbt_node_t *child = node->right ? node->right : node->left;
+            rbt_node_t *child = (*node)->right ? (*node)->right : (*node)->left;
             // replace node with child
-            child->parent = node->parent;
+            child->parent = (*node)->parent;
             if (child->parent) {
-                if (node == node->parent->left)
-                    node->parent->left = child;
+                if ((*node) == (*node)->parent->left)
+                    (*node)->parent->left = child;
                 else
-                    node->parent->right = child;
+                    (*node)->parent->right = child;
             }
-            if (IS_BLACK(node)) {
+            if (IS_BLACK((*node))) {
                 if (IS_RED(child)) {
                     PAINT_BLACK(child);
                 }
@@ -852,40 +872,49 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
                     rbt_paint_onremove(rbt, child);
                 }
             }
-            if (v)
-                *v = node->value;
-            else if (rbt->free_value_cb) {
-                rbt->free_value_cb(node->value);
-                node->value = NULL;
+
+            if (node && *node) {
+                rbt_free_node(rbt, node, &((*node)->value), v);
             }
 
-            free(node->key);
-            node->key = NULL;
-            // free(node);
-            // (&node)[0] = NULL;
+            // if (v)
+            //     *v = (*node)->value;
+            // else if (rbt->free_value_cb) {
+            //     rbt->free_value_cb((*node)->value);
+            //     (*node)->value = NULL;
+            // }
+
+            // free((*node)->key);
+            // (*node)->key = NULL;
+            // free((*node));
+            // *node     = NULL;
             rbt->size = rbt->size - 1;
             return 0;
         }
     }
 
     // if it's not the root node we need to update the parent
-    if (node->parent) {
-        if (node == node->parent->left)
-            node->parent->left = NULL;
+    if ((*node)->parent) {
+        if (*node == (*node)->parent->left)
+            (*node)->parent->left = NULL;
         else
-            node->parent->right = NULL;
-    }
-    if (v)
-        *v = node->value;
-    else if (rbt->free_value_cb && node->value) {
-        rbt->free_value_cb(node->value);
-        node->value = NULL;
+            (*node)->parent->right = NULL;
     }
 
-    free(node->key);
-    node->key = NULL;
-    // free(node);
-    // (&node)[0] = NULL;
+    if (node && *node) {
+        rbt_free_node(rbt, node, &((*node)->value), v);
+    }
+    // if (v)
+    //     *v = (*node)->value;
+    // else if (rbt->free_value_cb && (*node)->value) {
+    //     rbt->free_value_cb((*node)->value);
+    //     (*node)->value = NULL;
+    // }
+
+    // free(node->key);
+    // node->key = NULL;
+    // // free(node);
+    // // (&node)[0] = NULL;
     rbt->size = rbt->size - 1;
     return 0;
 }
