@@ -218,7 +218,8 @@ main(int argc, char *argv[])
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
                 /* if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, kvtag.size, */
-                /*                                         kvtag.type, ref_type, (uint64_t)obj_ids[i]) < 0) { */
+                /*                                         kvtag.type, ref_type, (uint64_t)obj_ids[i]) < 0) {
+                 */
                 /*     printf("fail to add a kvtag to o%d\n", i + my_obj_s); */
                 /* } */
             }
@@ -295,7 +296,7 @@ main(int argc, char *argv[])
                 kvtag.value = tag_value;
                 kvtag.type  = PDC_INT64;
                 /* kvtag.size  = get_size_by_class_n_type(tag_value, 1, PDC_CLS_ITEM, PDC_INT64); */
-                kvtag.size  = sizeof(int64_t);
+                kvtag.size = sizeof(int64_t);
 
                 query_gen_input_t  input;
                 query_gen_output_t output;
@@ -310,19 +311,25 @@ main(int argc, char *argv[])
                 if (is_using_dart) {
                     gen_query_key_value(&input, &output);
                     char *query_string = gen_query_str(&output);
-/* #ifdef ENABLE_MPI */
-/*                     ret_value = (comm_type == 0) */
-/*                                     ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, */
-/*                                                                              ref_type, &nres, &pdc_ids) */
-/*                                     : PDC_Client_search_obj_ref_through_dart_mpi( */
-/*                                           hash_algo, query_string, ref_type, &nres, &pdc_ids, MPI_COMM_WORLD); */
-/* #else */
-/*                     ret_value = PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type, */
-/*                                                                        &nres, &pdc_ids); */
-/* #endif */
+                    /* #ifdef ENABLE_MPI */
+                    /*                     ret_value = (comm_type == 0) */
+                    /*                                     ? PDC_Client_search_obj_ref_through_dart(hash_algo,
+                     * query_string, */
+                    /*                                                                              ref_type,
+                     * &nres, &pdc_ids) */
+                    /*                                     : PDC_Client_search_obj_ref_through_dart_mpi( */
+                    /*                                           hash_algo, query_string, ref_type, &nres,
+                     * &pdc_ids, MPI_COMM_WORLD); */
+                    /* #else */
+                    /*                     ret_value = PDC_Client_search_obj_ref_through_dart(hash_algo,
+                     * query_string, ref_type, */
+                    /*                                                                        &nres,
+                     * &pdc_ids); */
+                    /* #endif */
                 }
                 else {
-                    sprintf(query_condition, "%s>int(%lld) AND %s<int(%lld)", attr_name, input.range_lo, attr_name, input.range_hi);
+                    sprintf(query_condition, "%s>int(%lld) AND %s<int(%lld)", attr_name, input.range_lo,
+                            attr_name, input.range_hi);
                     kvtag.name  = "multi_condition";
                     kvtag.value = query_condition;
                     /* fprintf(stderr, "    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name,
@@ -402,7 +409,8 @@ main(int argc, char *argv[])
             kvtag.type = PDC_INT64;
             kvtag.size = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
-                /* PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size, */
+                /* PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size,
+                 */
                 /*                                     kvtag.type, ref_type, (uint64_t)obj_ids[i]); */
             }
             else {

@@ -2252,8 +2252,8 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
     gettimeofday(&pdc_timer_end, 0);
     total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     server_meta_multi_query_time_g += total_sec;
-    fprintf(stderr, "==PDC_SERVER[%d]: scanned %lu objs, %lu tags, found %d results,  %s took %lf\n", 
-                     pdc_server_rank_g, __func__, nobj, ntags, iter, total_sec);
+    fprintf(stderr, "==PDC_SERVER[%d]: scanned %lu objs, %lu tags, found %d results,  %s took %lf\n",
+            pdc_server_rank_g, __func__, nobj, ntags, iter, total_sec);
 #endif
 
     /* println("============QUERY=============="); */

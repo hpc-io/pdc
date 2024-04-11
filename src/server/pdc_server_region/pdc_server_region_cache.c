@@ -400,7 +400,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
 {
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
     struct pdc_region_info *region_cache_info;
-    int server_rank = 0, debug = 1;
+    int                     server_rank = 0, debug = 1;
 
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
@@ -408,7 +408,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
 
     if (debug) {
         printf("==PDC_SERVER[%d]: add a region to server cache, obj_id %llu, buf_size %lu, offset[0] %llu\n",
-                server_rank, obj_id, buf_size, offset[0]);
+               server_rank, obj_id, buf_size, offset[0]);
     }
 
     if (obj_ndim != ndim && obj_ndim > 0) {
