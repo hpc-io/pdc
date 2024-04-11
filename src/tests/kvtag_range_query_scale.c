@@ -248,8 +248,8 @@ main(int argc, char *argv[])
 #endif
 
     if (my_rank == 0) {
-        println("[TAG Creation] Rank %d: Added %d kvtag to %d objects, time: %.5f ms, total_insert_count=%d",
-                my_rank, round, my_obj, total_time * 1000.0, total_insert * proc_num);
+        println("[TAG Creation] Rank %d: Added %d kvtag to %d objects, time: %.5f ms, dart_insert_count=%d",
+                my_rank, round, my_obj, total_time * 1000.0, get_dart_insert_count());
     }
 
 #ifdef ENABLE_MPI

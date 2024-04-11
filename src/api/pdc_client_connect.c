@@ -70,6 +70,7 @@ int                    is_client_debug_g      = 0;
 pdc_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
 int                    pdc_client_mpi_rank_g  = 0;
 int                    pdc_client_mpi_size_g  = 1;
+int                    dart_insert_count      = 0;
 
 // FIXME: this is a temporary solution for printing out debug info, like memory usage.
 int memory_debug_g = 0; // when it is no longer 0, stop printing debug info.
@@ -8630,6 +8631,12 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
     return total_num_results;
 }
 
+int
+get_dart_insert_count()
+{
+    return dart_insert_count;
+}
+
 uint64_t
 dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
                         dart_perform_one_server_in_t *dart_in, Set *output_set)
@@ -8658,6 +8665,7 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
             dart_in->vnode_id         = (*hash_result)[i].virtual_node_id;
             dart_in->attr_key         = strdup((*hash_result)[i].key);
             dart_in->inserting_suffix = (*hash_result)[i].is_suffix;
+            dart_insert_count++;
         }
 
         _dart_send_request_to_one_server(server_id, dart_in, &(lookup_args[i]), &(dart_request_handles[i]));
