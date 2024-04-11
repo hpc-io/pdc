@@ -2208,7 +2208,7 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
                                      uint32_t *n_meta)
 {
     perr_t                     ret_val = SUCCEED;
-    uint32_t                   iter    = 0;
+    uint32_t                   iter = 0, nobj = 0, ntags = 0;
     HashTableIterator          hash_table_iter;
     HashTablePair              pair;
     pdc_hash_table_entry_head *head;
@@ -2216,15 +2216,15 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
     pdc_var_type_t             dtype;
     pdc_meta_query_t *         query = NULL;
 
+    // Convert query string to a tree structure for easier processing
+    query = _parse_string_to_meta_query(query_str);
+
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start;
     struct timeval pdc_timer_end;
     double         total_sec;
     gettimeofday(&pdc_timer_start, 0);
 #endif
-
-    // Convert query string to a tree structure for easier processing
-    query = _parse_string_to_meta_query(query_str);
 
     // Iterate over all objects
     hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
@@ -2240,8 +2240,10 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
                 }
                 (*obj_ids)[iter++] = elt->obj_id;
             }
+            ntags++;
 
         } // End for each metadata from hash table entry
+        nobj++;
         /* println("-----OBJ-----"); */
     } // End looping metadata hash table
     *n_meta = iter;
@@ -2250,7 +2252,8 @@ _process_metadata_query_multi_someta(char *query_str, pdcid_t **obj_ids, uint64_
     gettimeofday(&pdc_timer_end, 0);
     total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     server_meta_multi_query_time_g += total_sec;
-    fprintf(stderr, "==PDC_SERVER[%d]: %s took %lf\n", pdc_server_rank_g, __func__, total_sec);
+    fprintf(stderr, "==PDC_SERVER[%d]: scanned %lu objs, %lu tags, found %d results,  %s took %lf\n", 
+                     pdc_server_rank_g, __func__, nobj, ntags, iter, total_sec);
 #endif
 
     /* println("============QUERY=============="); */

@@ -98,6 +98,7 @@ set(PROGRAMS
 #  kvtag_get
  kvtag_query
  kvtag_query_scale
+ kvtag_range_query_scale
 #  obj_transformation
   region_transfer_query
   region_transfer

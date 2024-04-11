@@ -400,6 +400,17 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
 {
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
     struct pdc_region_info *region_cache_info;
+    int server_rank = 0, debug = 1;
+
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+
+    if (debug) {
+        printf("==PDC_SERVER[%d]: add a region to server cache, obj_id %llu, buf_size %lu, offset[0] %llu\n",
+                server_rank, obj_id, buf_size, offset[0]);
+    }
+
     if (obj_ndim != ndim && obj_ndim > 0) {
         printf("PDC_region_cache_register reports obj_ndim != ndim, %d != %d\n", obj_ndim, ndim);
         return FAIL;
@@ -475,10 +486,6 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
     if (total_cache_size > maximum_cache_size) {
-        int server_rank = 0;
-#ifdef ENABLE_MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-#endif
         printf("==PDC_SERVER[%d]: server cache full %.1f / %.1f MB, will flush to storage\n", server_rank,
                total_cache_size / 1048576.0, maximum_cache_size / 1048576.0);
         PDC_region_cache_flush_all();
