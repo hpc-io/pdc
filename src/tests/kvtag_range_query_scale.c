@@ -199,7 +199,7 @@ main(int argc, char *argv[])
     int my_obj_after_selectivity = my_obj * selectivity / 100;
     for (i = 0; i < my_obj_after_selectivity; i++) {
         for (iter = 0; iter < round; iter++) {
-            char attr_name[64];
+            char *attr_name = (char *)calloc(64, sizeof(char));
             // snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
             snprintf(attr_name, 63, "attr_name");
             kvtag.name  = strdup(attr_name);
@@ -284,7 +284,7 @@ main(int argc, char *argv[])
                     stime = MPI_Wtime();
                 }
 #endif
-                char     attr_name[64];
+                char *   attr_name = (char *)calloc(64, sizeof(char));
                 int64_t *tag_value;
                 // snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
                 snprintf(attr_name, 63, "attr_name");
@@ -390,7 +390,7 @@ main(int argc, char *argv[])
             char attr_name[64];
             char tag_value[64];
             // snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-            snprintf(attr_name, 63, "dattr_name");
+            snprintf(attr_name, 63, "attr_name");
             kvtag.name  = strdup(attr_name);
             kvtag.value = malloc(sizeof(int64_t));
             if (kvtag.value == NULL) {
