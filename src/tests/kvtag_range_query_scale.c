@@ -192,6 +192,8 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #endif
+
+    int total_insert = 0;
     // This is for adding #rounds tags to the objects.
     // Each rank will add #rounds tags to #my_obj objects.
     // With the selectivity, we should be able to control how many objects will be attached with the #round
@@ -220,6 +222,7 @@ main(int argc, char *argv[])
                                                         kvtag.type, ref_type, (uint64_t)obj_ids[i]) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
+                total_insert++;
             }
             else {
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
@@ -245,8 +248,8 @@ main(int argc, char *argv[])
 #endif
 
     if (my_rank == 0) {
-        println("[TAG Creation] Rank %d: Added %d kvtag to %d objects, time: %.5f ms", my_rank, round, my_obj,
-                total_time * 1000.0);
+        println("[TAG Creation] Rank %d: Added %d kvtag to %d objects, time: %.5f ms, total_insert_count=%d",
+                my_rank, round, my_obj, total_time * 1000.0, total_insert * proc_num);
     }
 
 #ifdef ENABLE_MPI

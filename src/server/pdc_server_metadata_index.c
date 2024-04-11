@@ -12,6 +12,7 @@ art_tree *art_key_prefix_tree_g   = NULL;
 art_tree *art_key_suffix_tree_g   = NULL;
 size_t    num_kv_pairs_loaded_mdb = 0;
 size_t    num_attrs_loaded_mdb    = 0;
+int       index_insert_count      = 0;
 
 /****************************/
 /* Initialize DART */
@@ -565,6 +566,8 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
         idx_record->is_key_suffix = in->inserting_suffix;
         // metadata_index_create(attr_key, attr_val, obj_locator, hash_algo);
         idioms_local_index_create(idx_record);
+        index_insert_count++;
+        printf("[Server]Index insert count = %d\n", index_insert_count);
     }
     else if (op_type == OP_DELETE) {
         idx_record->is_key_suffix = in->inserting_suffix;
