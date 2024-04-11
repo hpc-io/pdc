@@ -300,8 +300,8 @@ main(int argc, char *argv[])
                 query_gen_output_t output;
                 input.base_tag         = &kvtag;
                 input.key_query_type   = 0;
-                input.range_lo         = 5;
-                input.range_hi         = round - 5;
+                input.range_lo         = iter;
+                input.range_hi         = iter + 5;
                 input.value_query_type = query_type;
                 input.affix_len        = 12;
 
