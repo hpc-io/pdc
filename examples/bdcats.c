@@ -101,11 +101,11 @@ main(int argc, char **argv)
     if (cont_id == 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    // open objects
+        // open objects
 #ifdef ENABLE_MPI
     obj_xx = PDCobj_open_col("obj-var-xx", pdc_id);
 #else
-    obj_xx = PDCobj_open("obj-var-xx", pdc_id);
+    obj_xx   = PDCobj_open("obj-var-xx", pdc_id);
 #endif
     if (obj_xx == 0) {
         printf("Error when open object %s\n", "obj-var-xx");
@@ -114,7 +114,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     obj_yy = PDCobj_open_col("obj-var-yy", pdc_id);
 #else
-    obj_yy = PDCobj_open("obj-var-xx", pdc_id);
+    obj_yy   = PDCobj_open("obj-var-xx", pdc_id);
 #endif
     if (obj_yy == 0) {
         printf("Error when open object %s\n", "obj-var-yy");
@@ -123,7 +123,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     obj_zz = PDCobj_open_col("obj-var-zz", pdc_id);
 #else
-    obj_zz = PDCobj_open("obj-var-xx", pdc_id);
+    obj_zz   = PDCobj_open("obj-var-xx", pdc_id);
 #endif
     if (obj_zz == 0) {
         printf("Error when open object %s\n", "obj-var-zz");
@@ -132,7 +132,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     obj_pxx = PDCobj_open_col("obj-var-pxx", pdc_id);
 #else
-    obj_pxx = PDCobj_open("obj-var-xx", pdc_id);
+    obj_pxx  = PDCobj_open("obj-var-xx", pdc_id);
 #endif
     if (obj_pxx == 0) {
         printf("Error when open object %s\n", "obj-var-pxx");
@@ -141,7 +141,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     obj_pyy = PDCobj_open_col("obj-var-pyy", pdc_id);
 #else
-    obj_pyy = PDCobj_open("obj-var-xx", pdc_id);
+    obj_pyy  = PDCobj_open("obj-var-xx", pdc_id);
 #endif
     if (obj_pyy == 0) {
         printf("Error when open object %s\n", "obj-var-pyy");
@@ -150,7 +150,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     obj_pzz = PDCobj_open_col("obj-var-pzz", pdc_id);
 #else
-    obj_pzz = PDCobj_open("obj-var-xx", pdc_id);
+    obj_pzz  = PDCobj_open("obj-var-xx", pdc_id);
 #endif
     if (obj_pzz == 0) {
         printf("Error when open object %s\n", "obj-var-pzz");
