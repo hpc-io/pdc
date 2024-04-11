@@ -796,10 +796,10 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
     char *k_query = get_key(query, KV_DELIM);
     char *v_query = get_value(query, KV_DELIM);
 
-    if (DART_SERVER_DEBUG) {
-        println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", idioms_g->server_id_g, k_query,
-                v_query);
-    }
+    // if (DART_SERVER_DEBUG) {
+    println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", idioms_g->server_id_g, k_query,
+            v_query);
+    // }
 
     idx_record->key   = k_query;
     idx_record->value = v_query;
