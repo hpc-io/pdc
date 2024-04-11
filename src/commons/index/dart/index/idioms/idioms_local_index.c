@@ -11,7 +11,7 @@
 #include "pdc_logger.h"
 #include <unistd.h>
 
-#define DART_SERVER_DEBUG 1
+#define DART_SERVER_DEBUG 0
 
 #define KV_DELIM '='
 
@@ -255,10 +255,10 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     //     }
     // #endif
     timer_pause(&index_timer);
-    if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
-               idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
-    }
+    // if (DART_SERVER_DEBUG) {
+    printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
+           idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
+    // }
     idioms_g->time_to_create_index_g += timer_delta_us(&index_timer);
     idioms_g->index_record_count_g++;
     idioms_g->insert_request_count_g++;
@@ -864,11 +864,10 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
     // }
 
     timer_pause(&index_timer);
-    if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
-               qType_string, idioms_g->server_id_g, query, idx_record->num_obj_ids,
-               timer_delta_us(&index_timer));
-    }
+    // if (DART_SERVER_DEBUG) {
+    printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
+           qType_string, idioms_g->server_id_g, query, idx_record->num_obj_ids, timer_delta_us(&index_timer));
+    // }
     idioms_g->time_to_search_index_g += timer_delta_us(&index_timer);
     idioms_g->search_request_count_g += 1;
     return result_count;
