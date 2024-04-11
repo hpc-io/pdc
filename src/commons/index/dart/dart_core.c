@@ -630,6 +630,7 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
         loop_count = 2;
 #endif
     }
+    printf("[DART_hash] key = %s\n", key);
     int iter      = 0;
     int is_suffix = 0;
     for (iter = 0; iter < loop_count; iter++) {
