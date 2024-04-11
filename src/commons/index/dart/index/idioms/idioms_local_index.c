@@ -11,7 +11,7 @@
 #include "pdc_logger.h"
 #include <unistd.h>
 
-#define DART_SERVER_DEBUG 0
+#define DART_SERVER_DEBUG 1
 
 #define KV_DELIM '='
 
