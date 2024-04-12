@@ -24,15 +24,15 @@ is_index_write_op(dart_op_type_t op_type)
 }
 
 void
-dart_space_init(DART *dart, int num_client, int num_server, int alphabet_size, int extra_tree_height,
-                int replication_factor, int max_server_num_to_adapt)
+dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height, int replication_factor,
+                int max_server_num_to_adapt)
 {
     if (dart == NULL) {
         dart = (DART *)calloc(1, sizeof(DART));
     }
     dart->alphabet_size = alphabet_size;
-    // initialize clients;
-    dart->num_client = num_client;
+    // // initialize clients;
+    // dart->num_client = num_client;
     // initialize servers;
     dart->num_server = num_server;
 
@@ -47,6 +47,7 @@ dart_space_init(DART *dart, int num_client, int num_server, int alphabet_size, i
     dart_thpool_g            = thpool_init(num_server);
     dart->suffix_tree_mode   = 1;
 }
+
 /**
  * A utility function for dummies.
  * Get server id by given virtual node id.

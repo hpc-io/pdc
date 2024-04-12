@@ -16,6 +16,8 @@ size_t    num_attrs_loaded_mdb    = 0;
 uint32_t midx_server_id_g  = 0;
 uint32_t midx_num_server_g = 0;
 
+IDIOMS_t *idioms_g = NULL;
+
 /****************************/
 /* Initialize DART */
 /****************************/
@@ -33,7 +35,7 @@ PDC_Server_dart_init(uint32_t num_server, uint32_t server_id)
     midx_num_server_g = num_server;
     midx_server_id_g  = server_id;
 
-    IDIOMS_init(server_id, num_server);
+    idioms_g = IDIOMS_init(server_id, num_server);
 }
 
 /****************************/
@@ -47,8 +49,8 @@ PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_server_i
     FUNC_ENTER(NULL);
     uint32_t serverId = in->serverId;
 
-    out->indexed_word_count = get_idioms_g()->index_record_count_g;
-    out->request_count      = get_idioms_g()->search_request_count_g;
+    out->indexed_word_count = idioms_g->index_record_count_g;
+    out->request_count      = idioms_g->search_request_count_g;
 
     FUNC_LEAVE(ret_value);
 }
@@ -571,19 +573,19 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
         idx_record->is_key_suffix = in->inserting_suffix;
 
         // metadata_index_create(attr_key, attr_val, obj_locator, hash_algo);
-        idioms_local_index_create(idx_record);
+        idioms_local_index_create(idioms_g, idx_record);
     }
     else if (op_type == OP_DELETE) {
         idx_record->is_key_suffix = in->inserting_suffix;
         // metadata_index_delete(attr_key, attr_val, obj_locator, hash_algo);
-        idioms_local_index_delete(idx_record);
+        idioms_local_index_delete(idioms_g, idx_record);
     }
     else {
         // char *query  = (char *)in->attr_key;
         // result       = metadata_index_search(query, hash_algo, n_obj_ids_ptr, buf_ptrs);
         idx_record->num_obj_ids = 0;
 
-        idioms_local_index_search(idx_record);
+        idioms_local_index_search(idioms_g, idx_record);
         *n_obj_ids_ptr = idx_record->num_obj_ids;
         *buf_ptrs      = idx_record->obj_ids;
 
@@ -775,7 +777,7 @@ metadata_index_dump(char *checkpiont_dir, uint32_t serverID)
 // }
 
 perr_t
-metadata_index_recover(char *checkpiont_dir, uint32_t serverID)
+metadata_index_recover(char *checkpiont_dir, int num_server, uint32_t serverID)
 {
     perr_t ret_value = SUCCEED;
 

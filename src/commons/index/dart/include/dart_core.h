@@ -80,7 +80,7 @@ typedef dart_server (*get_server_info_callback)(uint32_t server_id);
  *
  *
  */
-void dart_space_init(DART *dart, int num_client, int num_server, int alphabet_size, int extra_tree_height,
+void dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height,
                      int replication_factor, int max_server_num_to_adapt);
 
 /**

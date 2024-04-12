@@ -1497,8 +1497,8 @@ PDC_Client_init()
         int extra_tree_height  = 0;
         int replication_factor = 3; // pdc_server_num_g / 10;
         replication_factor     = replication_factor > 0 ? replication_factor : 2;
-        dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE,
-                        extra_tree_height, replication_factor, 1024);
+        dart_space_init(dart_g, pdc_server_num_g, DART_ALPHABET_SIZE, extra_tree_height, replication_factor,
+                        1024);
 
         server_time_total_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
         server_call_count_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));

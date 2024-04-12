@@ -17,26 +17,21 @@
 
 #define KV_DELIM '='
 
-IDIOMS_t *idioms_g = NULL;
-
-void
-IDIOMS_init(uint32_t server_id, uint32_t num_servers)
-{
-    idioms_g                        = (IDIOMS_t *)calloc(1, sizeof(IDIOMS_t));
-    idioms_g->art_key_prefix_tree_g = (art_tree *)calloc(1, sizeof(art_tree));
-    art_tree_init(idioms_g->art_key_prefix_tree_g);
-
-    idioms_g->art_key_suffix_tree_g = (art_tree *)calloc(1, sizeof(art_tree));
-    art_tree_init(idioms_g->art_key_suffix_tree_g);
-
-    idioms_g->server_id_g   = server_id;
-    idioms_g->num_servers_g = num_servers;
-}
+// IDIOMS_t *idioms_g = NULL;
 
 IDIOMS_t *
-get_idioms_g()
+IDIOMS_init(uint32_t server_id, uint32_t num_servers)
 {
-    return idioms_g;
+    IDIOMS_t *idioms              = (IDIOMS_t *)calloc(1, sizeof(IDIOMS_t));
+    idioms->art_key_prefix_tree_g = (art_tree *)calloc(1, sizeof(art_tree));
+    art_tree_init(idioms->art_key_prefix_tree_g);
+
+    idioms->art_key_suffix_tree_g = (art_tree *)calloc(1, sizeof(art_tree));
+    art_tree_init(idioms->art_key_suffix_tree_g);
+
+    idioms->server_id_g   = server_id;
+    idioms->num_servers_g = num_servers;
+    return idioms;
 }
 
 void
@@ -218,7 +213,7 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
 }
 
 perr_t
-idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
+idioms_local_index_create(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
 {
     perr_t ret = SUCCEED;
     // get the key and create key_index_leaf_content node for it.
@@ -228,7 +223,7 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     stopwatch_t index_timer;
     timer_start(&index_timer);
     art_tree *key_trie =
-        (idx_record->is_key_suffix == 1) ? idioms_g->art_key_suffix_tree_g : idioms_g->art_key_prefix_tree_g;
+        (idx_record->is_key_suffix == 1) ? idioms->art_key_suffix_tree_g : idioms->art_key_prefix_tree_g;
     insert_into_key_trie(key_trie, key, len, idx_record);
     /**
      * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
@@ -260,7 +255,7 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
 
     if (DART_SERVER_DEBUG) {
         printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
-               idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
+               idioms->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
         char value_str[64];
         if (idx_record->type == PDC_STRING) {
             snprintf(value_str, 64, "%s", idx_record->value);
@@ -280,13 +275,12 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
         printf("[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64
                " into Server %" PRIu32 " in %.4f microseconds, insert_request_count_g = %" PRId64
                ", index_record_count_g = %" PRId64 "\n",
-               idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms_g->server_id_g,
-               timer_delta_us(&index_timer), idioms_g->insert_request_count_g,
-               idioms_g->index_record_count_g);
+               idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms->server_id_g,
+               timer_delta_us(&index_timer), idioms->insert_request_count_g, idioms->index_record_count_g);
     }
-    idioms_g->time_to_create_index_g += timer_delta_us(&index_timer);
-    idioms_g->index_record_count_g++;
-    idioms_g->insert_request_count_g++;
+    idioms->time_to_create_index_g += timer_delta_us(&index_timer);
+    idioms->index_record_count_g++;
+    idioms->insert_request_count_g++;
 
     return ret;
 }
@@ -466,7 +460,7 @@ delete_from_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
  *  @validated
  */
 perr_t
-idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record)
+idioms_local_index_delete(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
 {
     perr_t ret = SUCCEED;
     // get the key and create key_index_leaf_content node for it.
@@ -476,7 +470,7 @@ idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record)
     stopwatch_t index_timer;
     timer_start(&index_timer);
     art_tree *key_trie =
-        (idx_record->is_key_suffix == 1) ? idioms_g->art_key_suffix_tree_g : idioms_g->art_key_prefix_tree_g;
+        (idx_record->is_key_suffix == 1) ? idioms->art_key_suffix_tree_g : idioms->art_key_prefix_tree_g;
     delete_from_key_trie(key_trie, key, len, idx_record);
     /**
      * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
@@ -506,11 +500,11 @@ idioms_local_index_delete(IDIOMS_md_idx_record_t *idx_record)
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {
         printf("[Server_Side_Delete_%d] Timer to delete a keyword %s : %s from index = %.4f microseconds\n",
-               idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
+               idioms->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
     }
-    idioms_g->time_to_delete_index_g += timer_delta_us(&index_timer);
-    idioms_g->index_record_count_g--;
-    idioms_g->delete_request_count_g++;
+    idioms->time_to_delete_index_g += timer_delta_us(&index_timer);
+    idioms->index_record_count_g--;
+    idioms->delete_request_count_g++;
     return ret;
 }
 
@@ -797,12 +791,12 @@ key_index_search_callback(void *data, const unsigned char *key, uint32_t key_len
  * 11. range query -> key=value1|~|value2 (value1 <= key <= value2)
  */
 uint64_t
-idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
+idioms_local_index_search(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
 {
     uint64_t    result_count = 0;
     stopwatch_t index_timer;
-    if (idioms_g == NULL) {
-        println("[Server_Side_Query_%d] idioms_g is NULL.", idioms_g->server_id_g);
+    if (idioms == NULL) {
+        println("[Server_Side_Query_%d] idioms is NULL.", idioms->server_id_g);
         return result_count;
     }
     if (idx_record == NULL) {
@@ -814,7 +808,7 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
 
     if (NULL == kdelim_ptr) {
         if (DART_SERVER_DEBUG) {
-            println("[Server_Side_Query_%d]query string '%s' is not valid.", idioms_g->server_id_g, query);
+            println("[Server_Side_Query_%d]query string '%s' is not valid.", idioms->server_id_g, query);
         }
         return result_count;
     }
@@ -823,7 +817,7 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
     char *v_query = get_value(query, KV_DELIM);
 
     if (DART_SERVER_DEBUG) {
-        println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", idioms_g->server_id_g, k_query,
+        println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", idioms->server_id_g, k_query,
                 v_query);
     }
 
@@ -844,7 +838,7 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
         case PATTERN_EXACT:
             qType_string = "Exact";
             tok          = k_query;
-            leafcnt      = (key_index_leaf_content_t *)art_search(idioms_g->art_key_prefix_tree_g,
+            leafcnt      = (key_index_leaf_content_t *)art_search(idioms->art_key_prefix_tree_g,
                                                              (unsigned char *)tok, strlen(tok));
             if (leafcnt != NULL) {
                 key_index_search_callback((void *)idx_record, (unsigned char *)tok, strlen(tok),
@@ -854,7 +848,7 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
         case PATTERN_PREFIX:
             qType_string = "Prefix";
             tok          = substring(k_query, 0, strlen(k_query) - 1);
-            art_iter_prefix(idioms_g->art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
+            art_iter_prefix(idioms->art_key_prefix_tree_g, (unsigned char *)tok, strlen(tok),
                             key_index_search_callback, (void *)idx_record);
             break;
         case PATTERN_SUFFIX:
@@ -863,10 +857,10 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
 #ifndef PDC_DART_SFX_TREE
             tok = reverse_str(tok);
             // LOG_DEBUG("reversed tok: %s\n", tok);
-            art_iter_prefix(idioms_g->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
+            art_iter_prefix(idioms->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                             key_index_search_callback, (void *)idx_record);
 #else
-            leafcnt = (key_index_leaf_content_t *)art_search(idioms_g->art_key_suffix_tree_g,
+            leafcnt = (key_index_leaf_content_t *)art_search(idioms->art_key_suffix_tree_g,
                                                              (unsigned char *)tok, strlen(tok));
             if (leafcnt != NULL) {
                 key_index_search_callback((void *)idx_record, (unsigned char *)tok, strlen(tok),
@@ -878,9 +872,9 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
             qType_string = "Infix";
             tok          = substring(k_query, 1, strlen(k_query) - 1);
 #ifndef PDC_DART_SFX_TREE
-            art_iter(idioms_g->art_key_suffix_tree_g, key_index_search_callback, (void *)idx_record);
+            art_iter(idioms->art_key_suffix_tree_g, key_index_search_callback, (void *)idx_record);
 #else
-            art_iter_prefix(idioms_g->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
+            art_iter_prefix(idioms->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                             key_index_search_callback, (void *)idx_record);
 #endif
             break;
@@ -892,11 +886,11 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {
         printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
-               qType_string, idioms_g->server_id_g, query, idx_record->num_obj_ids,
+               qType_string, idioms->server_id_g, query, idx_record->num_obj_ids,
                timer_delta_us(&index_timer));
     }
-    idioms_g->time_to_search_index_g += timer_delta_us(&index_timer);
-    idioms_g->search_request_count_g += 1;
+    idioms->time_to_search_index_g += timer_delta_us(&index_timer);
+    idioms->search_request_count_g += 1;
     return result_count;
 }
 
@@ -1100,7 +1094,7 @@ append_attr_root_tree(art_tree *art, char *dir_path, char *base_name, uint32_t s
 }
 
 perr_t
-idioms_metadata_index_dump(char *dir_path, uint32_t serverID)
+idioms_metadata_index_dump(IDIOMS_t *idioms, char *dir_path, uint32_t serverID)
 {
     perr_t ret_value = SUCCEED;
 
@@ -1108,9 +1102,9 @@ idioms_metadata_index_dump(char *dir_path, uint32_t serverID)
     timer_start(&timer);
 
     // 2. append attribute region
-    append_attr_root_tree(idioms_g->art_key_prefix_tree_g, dir_path, "idioms_prefix", serverID);
+    append_attr_root_tree(idioms->art_key_prefix_tree_g, dir_path, "idioms_prefix", serverID);
 
-    append_attr_root_tree(idioms_g->art_key_suffix_tree_g, dir_path, "idioms_suffix", serverID);
+    append_attr_root_tree(idioms->art_key_suffix_tree_g, dir_path, "idioms_suffix", serverID);
 
     timer_pause(&timer);
     println("[IDIOMS_Index_Dump_%d] Timer to dump index = %.4f microseconds\n", serverID,
@@ -1293,8 +1287,18 @@ read_attr_name_node(art_tree *art_key_index, char *dir_path, char *base_name, ui
     return rst;
 }
 
+void
+init_dart_space_via_idioms(DART *dart, int num_server, int max_server_num_to_adapt)
+{
+    int extra_tree_height  = 0;
+    int replication_factor = 3;
+    replication_factor     = replication_factor > 0 ? replication_factor : 2;
+    dart_space_init(dart, num_server, IDIOMS_DART_ALPHABET_SIZE, extra_tree_height, replication_factor,
+                    num_server);
+}
+
 perr_t
-idioms_metadata_index_recover(char *dir_path, int num_client, int num_server, uint32_t serverID)
+idioms_metadata_index_recover(IDIOMS_t *idioms, char *dir_path, int num_server, uint32_t serverID)
 {
     perr_t ret_value = SUCCEED;
 
@@ -1302,7 +1306,7 @@ idioms_metadata_index_recover(char *dir_path, int num_client, int num_server, ui
     timer_start(&timer);
 
     DART *dart_info = (DART *)calloc(1, sizeof(DART));
-    init_dart_space_via_idioms(dart_info, num_client, num_server, IDIOMS_MAX_SERVER_COUNT_TO_ADAPT);
+    init_dart_space_via_idioms(dart_info, num_server, IDIOMS_MAX_SERVER_COUNT_TO_ADAPT);
 
     uint64_t *vid_array = NULL;
     size_t    num_vids  = get_vnode_ids_by_serverID(dart_info, serverID, &vid_array);
@@ -1312,10 +1316,10 @@ idioms_metadata_index_recover(char *dir_path, int num_client, int num_server, ui
     // load the attribute region for each vnode
     for (size_t vid = 0; vid < num_vids; vid++) {
         for (size_t sid = 0; sid < num_server; sid++) {
-            read_attr_name_node(idioms_g->art_key_prefix_tree_g, dir_path, "idioms_prefix", sid,
+            read_attr_name_node(idioms->art_key_prefix_tree_g, dir_path, "idioms_prefix", sid,
                                 vid_array[vid]);
 
-            read_attr_name_node(idioms_g->art_key_suffix_tree_g, dir_path, "idioms_suffix", sid,
+            read_attr_name_node(idioms->art_key_suffix_tree_g, dir_path, "idioms_suffix", sid,
                                 vid_array[vid]);
         }
     }
@@ -1324,14 +1328,4 @@ idioms_metadata_index_recover(char *dir_path, int num_client, int num_server, ui
     println("[IDIOMS_Index_Recover_%d] Timer to recover index = %.4f microseconds\n", serverID,
             timer_delta_us(&timer));
     return ret_value;
-}
-
-void
-init_dart_space_via_idioms(DART *dart, int num_client, int num_server, int max_server_num_to_adapt)
-{
-    int extra_tree_height  = 0;
-    int replication_factor = 3;
-    replication_factor     = replication_factor > 0 ? replication_factor : 2;
-    dart_space_init(dart, num_client, num_server, IDIOMS_DART_ALPHABET_SIZE, extra_tree_height,
-                    replication_factor, num_server);
 }

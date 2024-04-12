@@ -218,7 +218,7 @@ test_PDC_Server_dart_perform_one_server()
 
     LOG_INFO("Index Dumping...\n");
     // save the index to file
-    idioms_metadata_index_dump("/workspaces/pdc/build/bin", 0);
+    metadata_index_dump("/workspaces/pdc/build/bin", 0);
 
     for (int i = 0; i < 1000; i++) {
         sprintf(kv, "key%03dkey=\"val%03dval\"", i, i);
@@ -319,7 +319,7 @@ test_PDC_Server_dart_perform_one_server()
     query_result_from_kvtag("num01*=5~9", OP_RANGE_QUERY);
     query_result_from_kvtag("num01*=5|~|9", OP_RANGE_QUERY);
 
-    idioms_metadata_index_recover("/workspaces/pdc/build/bin", 1, 1, 0);
+    metadata_index_recover("/workspaces/pdc/build/bin", 1, 0);
 
     LOG_INFO("Index Recovery Done!\n");
 
