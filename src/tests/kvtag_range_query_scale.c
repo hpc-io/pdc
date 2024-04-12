@@ -229,6 +229,8 @@ main(int argc, char *argv[])
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
+            printf("Rank %d: Added kvtag \"%s\": %" PRId64 " -> %" PRIu64 "\n", my_rank, kvtag.name,
+                   *((int64_t *)kvtag.value), obj_ids[i]);
             free(kvtag.name);
             free(kvtag.value);
             // TODO: this is for checking the correctness of the query results.
