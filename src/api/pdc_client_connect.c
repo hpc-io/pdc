@@ -8701,10 +8701,10 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
         // }
     }
 
-    println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
-            "%.4f ms. ",
-            pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
-            num_servers, total_n_meta, timer_delta_ms(&timer));
+    // println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
+    //         "%.4f ms. ",
+    //         pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
+    //         num_servers, total_n_meta, timer_delta_ms(&timer));
     // free(dart_request_handles);
 done:
     FUNC_LEAVE(ret_value);
