@@ -205,16 +205,17 @@ main(int argc, char *argv[])
             char tag_value[64];
             snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
             snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
-            kvtag.name  = strdup(attr_name);
-            kvtag.value = (void *)strdup(tag_value);
-            kvtag.type  = PDC_STRING;
-            kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
+            kvtag.name      = strdup(attr_name);
+            kvtag.value     = (void *)strdup(tag_value);
+            kvtag.type      = PDC_STRING;
+            kvtag.size      = (strlen(tag_value) + 1) * sizeof(char);
+            pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
             if (is_using_dart) {
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, kvtag.size,
-                                                        kvtag.type, ref_type, (uint64_t)obj_ids[i]) < 0) {
+                                                        kvtag.type, ref_type, meta_id) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
@@ -386,13 +387,14 @@ main(int argc, char *argv[])
             char tag_value[64];
             snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
             snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
-            kvtag.name  = strdup(attr_name);
-            kvtag.value = (void *)strdup(tag_value);
-            kvtag.type  = PDC_STRING;
-            kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
+            kvtag.name      = strdup(attr_name);
+            kvtag.value     = (void *)strdup(tag_value);
+            kvtag.type      = PDC_STRING;
+            kvtag.size      = (strlen(tag_value) + 1) * sizeof(char);
+            pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
             if (is_using_dart) {
                 PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size,
-                                                    kvtag.type, ref_type, (uint64_t)obj_ids[i]);
+                                                    kvtag.type, ref_type, meta_id);
             }
             else {
                 PDCobj_del_tag(obj_ids[i], kvtag.name);

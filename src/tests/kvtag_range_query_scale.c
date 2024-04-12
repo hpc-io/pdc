@@ -119,7 +119,7 @@ creating_objects(pdcid_t **obj_ids, int my_obj, int my_obj_s, pdcid_t cont, pdci
     *obj_ids          = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
     for (int i = 0; i < my_obj; i++) {
         sprintf(obj_name, "obj%" PRId64 "%d", timestamp, my_obj_s + i);
-        printf("Rank %d: Creating object %s\n", my_rank, obj_name);
+        // printf("Rank %d: Creating object %s\n", my_rank, obj_name);
         (*obj_ids)[i] = PDCobj_create(cont, obj_name, obj_prop);
         if ((*obj_ids)[i] <= 0) {
             printf("[Client %d] Fail to create object @ line  %d!\n", my_rank, __LINE__);
