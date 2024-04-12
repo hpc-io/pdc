@@ -258,36 +258,35 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     // #endif
     timer_pause(&index_timer);
 
-    // if (DART_SERVER_DEBUG) {
-    // printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
-    //        idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
-    // }
+    if (DART_SERVER_DEBUG) {
+        printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
+               idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
+        char value_str[64];
+        if (idx_record->type == PDC_STRING) {
+            snprintf(value_str, 64, "%s", idx_record->value);
+        }
+        else if (is_PDC_UINT(idx_record->type)) {
+            snprintf(value_str, 64, "%" PRIu64, *((uint64_t *)idx_record->value));
+        }
+        else if (is_PDC_INT(idx_record->type)) {
+            snprintf(value_str, 64, "%" PRId64, *((int64_t *)idx_record->value));
+        }
+        else if (is_PDC_FLOAT(idx_record->type)) {
+            snprintf(value_str, 64, "%f", *((double *)idx_record->value));
+        }
+        else {
+            snprintf(value_str, 64, "[UnknownValue]");
+        }
+        printf("[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64
+               " into Server %" PRIu32 " in %.4f microseconds, insert_request_count_g = %" PRId64
+               ", index_record_count_g = %" PRId64 "\n",
+               idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms_g->server_id_g,
+               timer_delta_us(&index_timer), idioms_g->insert_request_count_g,
+               idioms_g->index_record_count_g);
+    }
     idioms_g->time_to_create_index_g += timer_delta_us(&index_timer);
     idioms_g->index_record_count_g++;
     idioms_g->insert_request_count_g++;
-
-    // char value_str[64];
-    // if (idx_record->type == PDC_STRING) {
-    //     snprintf(value_str, 64, "%s", idx_record->value);
-    // }
-    // else if (is_PDC_UINT(idx_record->type)) {
-    //     snprintf(value_str, 64, "%" PRIu64, *((uint64_t *)idx_record->value));
-    // }
-    // else if (is_PDC_INT(idx_record->type)) {
-    //     snprintf(value_str, 64, "%" PRId64, *((int64_t *)idx_record->value));
-    // }
-    // else if (is_PDC_FLOAT(idx_record->type)) {
-    //     snprintf(value_str, 64, "%f", *((double *)idx_record->value));
-    // }
-    // else {
-    //     snprintf(value_str, 64, "[UnknownValue]");
-    // }
-
-    // printf("[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64
-    //        " into Server %" PRIu32 " in %.4f microseconds, insert_request_count_g = %" PRId64
-    //        ", index_record_count_g = %" PRId64 "\n",
-    //        idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms_g->server_id_g,
-    //        timer_delta_us(&index_timer), idioms_g->insert_request_count_g, idioms_g->index_record_count_g);
 
     return ret;
 }
@@ -823,10 +822,10 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
     char *k_query = get_key(query, KV_DELIM);
     char *v_query = get_value(query, KV_DELIM);
 
-    // if (DART_SERVER_DEBUG) {
-    println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", idioms_g->server_id_g, k_query,
-            v_query);
-    // }
+    if (DART_SERVER_DEBUG) {
+        println("[Server_Side_Query_%d] k_query = '%s' | v_query = '%s' ", idioms_g->server_id_g, k_query,
+                v_query);
+    }
 
     idx_record->key   = k_query;
     idx_record->value = v_query;
@@ -891,10 +890,11 @@ idioms_local_index_search(IDIOMS_md_idx_record_t *idx_record)
     // }
 
     timer_pause(&index_timer);
-    // if (DART_SERVER_DEBUG) {
-    printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
-           qType_string, idioms_g->server_id_g, query, idx_record->num_obj_ids, timer_delta_us(&index_timer));
-    // }
+    if (DART_SERVER_DEBUG) {
+        printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
+               qType_string, idioms_g->server_id_g, query, idx_record->num_obj_ids,
+               timer_delta_us(&index_timer));
+    }
     idioms_g->time_to_search_index_g += timer_delta_us(&index_timer);
     idioms_g->search_request_count_g += 1;
     return result_count;

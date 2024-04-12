@@ -6450,7 +6450,7 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     stopwatch_t server_timer;
     timer_start(&server_timer);
 
-    printf("==PDC_SERVER: dart_perform_one_server_cb(): key = %s\n", in.attr_key);
+    // printf("==PDC_SERVER: dart_perform_one_server_cb(): key = %s\n", in.attr_key);
 
     PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, buf_ptrs);
 
