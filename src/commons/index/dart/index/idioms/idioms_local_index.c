@@ -283,11 +283,11 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     idioms_g->index_record_count_g++;
     idioms_g->insert_request_count_g++;
 
-    printf(
-        "[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" into Server %" PRIu32
-        " in %.4f microseconds, insert_request_count_g = %" PRId64 ", index_record_count_g = %" PRId64 "\n",
-        idx_record->src_client_id, key, value_str, idioms_g->server_id_g, timer_delta_us(&index_timer),
-        idioms_g->insert_request_count_g, idioms_g->index_record_count_g);
+    printf("[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64
+           " into Server %" PRIu32 " in %.4f microseconds, insert_request_count_g = %" PRId64
+           ", index_record_count_g = %" PRId64 "\n",
+           idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms_g->server_id_g,
+           timer_delta_us(&index_timer), idioms_g->insert_request_count_g, idioms_g->index_record_count_g);
 
     return ret;
 }
