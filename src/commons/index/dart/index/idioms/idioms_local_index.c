@@ -258,23 +258,6 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     // #endif
     timer_pause(&index_timer);
 
-    char value_str[64];
-    if (idx_record->type == PDC_STRING) {
-        snprintf(value_str, 64, "%s", idx_record->value);
-    }
-    else if (is_PDC_UINT(idx_record->type)) {
-        snprintf(value_str, 64, "%" PRIu64, *((uint64_t *)idx_record->value));
-    }
-    else if (is_PDC_INT(idx_record->type)) {
-        snprintf(value_str, 64, "%" PRId64, *((int64_t *)idx_record->value));
-    }
-    else if (is_PDC_FLOAT(idx_record->type)) {
-        snprintf(value_str, 64, "%f", *((double *)idx_record->value));
-    }
-    else {
-        snprintf(value_str, 64, "[UnknownValue]");
-    }
-
     // if (DART_SERVER_DEBUG) {
     // printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
     //        idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
@@ -283,11 +266,28 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     idioms_g->index_record_count_g++;
     idioms_g->insert_request_count_g++;
 
-    printf("[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64
-           " into Server %" PRIu32 " in %.4f microseconds, insert_request_count_g = %" PRId64
-           ", index_record_count_g = %" PRId64 "\n",
-           idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms_g->server_id_g,
-           timer_delta_us(&index_timer), idioms_g->insert_request_count_g, idioms_g->index_record_count_g);
+    // char value_str[64];
+    // if (idx_record->type == PDC_STRING) {
+    //     snprintf(value_str, 64, "%s", idx_record->value);
+    // }
+    // else if (is_PDC_UINT(idx_record->type)) {
+    //     snprintf(value_str, 64, "%" PRIu64, *((uint64_t *)idx_record->value));
+    // }
+    // else if (is_PDC_INT(idx_record->type)) {
+    //     snprintf(value_str, 64, "%" PRId64, *((int64_t *)idx_record->value));
+    // }
+    // else if (is_PDC_FLOAT(idx_record->type)) {
+    //     snprintf(value_str, 64, "%f", *((double *)idx_record->value));
+    // }
+    // else {
+    //     snprintf(value_str, 64, "[UnknownValue]");
+    // }
+
+    // printf("[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64
+    //        " into Server %" PRIu32 " in %.4f microseconds, insert_request_count_g = %" PRId64
+    //        ", index_record_count_g = %" PRId64 "\n",
+    //        idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms_g->server_id_g,
+    //        timer_delta_us(&index_timer), idioms_g->insert_request_count_g, idioms_g->index_record_count_g);
 
     return ret;
 }
