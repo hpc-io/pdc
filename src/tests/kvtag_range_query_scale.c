@@ -179,6 +179,12 @@ main(int argc, char *argv[])
     // creating objects
     creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop, my_rank);
 
+    printf("Rank %d: Created %d objects : ", my_rank, my_obj);
+    for (i = 0; i < my_obj; i++) {
+        printf("%" PRIu64 " ", obj_ids[i]);
+    }
+    printf("\n");
+
     if (my_rank == 0)
         println("All clients created %d objects", n_obj);
 
