@@ -260,14 +260,30 @@ idioms_local_index_create(IDIOMS_md_idx_record_t *idx_record)
     // #endif
     timer_pause(&index_timer);
     index_insert_count++;
+    char value_str[64];
+    if (idx_record->type == PDC_STRING) {
+        snprintf(value_str, 64, "%s", idx_record->value);
+    }
+    else if (is_PDC_UINT(idx_record->type)) {
+        snprintf(value_str, 64, "%" PRIu64, *((uint64_t *)idx_record->value));
+    }
+    else if (is_PDC_INT(idx_record->type)) {
+        snprintf(value_str, 64, "%" PRId64, *((int64_t *)idx_record->value));
+    }
+    else if (is_PDC_FLOAT(idx_record->type)) {
+        snprintf(value_str, 64, "%f", *((double *)idx_record->value));
+    }
+    else {
+        snprintf(value_str, 64, "[UnknownValue]");
+    }
     printf("[idioms_local_index_create] Client " PRIu32
            " inserted a kvtag \"%s\" : \"%s\" into Server " PRIu32 " in %.4f microseconds, total insert "
            "count = " PRIu32 "\n",
-           idx_record->src_client_id, key, idx_record->value, idioms_g->server_id_g,
-           timer_delta_us(&index_timer), index_insert_count);
+           idx_record->src_client_id, key, value_str, idioms_g->server_id_g, timer_delta_us(&index_timer),
+           index_insert_count);
     // if (DART_SERVER_DEBUG) {
-    printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
-           idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
+    // printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
+    //        idioms_g->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
     // }
     idioms_g->time_to_create_index_g += timer_delta_us(&index_timer);
     idioms_g->index_record_count_g++;
