@@ -180,12 +180,6 @@ main(int argc, char *argv[])
     // creating objects
     creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop, my_rank);
 
-    printf("Rank %d: Created %d objects : ", my_rank, my_obj);
-    for (i = 0; i < my_obj; i++) {
-        printf("%" PRIu64 " ", obj_ids[i]);
-    }
-    printf("\n");
-
     if (my_rank == 0)
         println("All clients created %d objects", n_obj);
 
@@ -219,14 +213,16 @@ main(int argc, char *argv[])
             }
             int64_t iter_val = iter;
             memcpy(kvtag.value, &iter_val, sizeof(int64_t));
-            kvtag.type = PDC_INT64;
-            kvtag.size = get_size_by_class_n_type(kvtag.value, 1, PDC_CLS_ITEM, PDC_INT64);
+            kvtag.type      = PDC_INT64;
+            kvtag.size      = get_size_by_class_n_type(kvtag.value, 1, PDC_CLS_ITEM, PDC_INT64);
+            pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
             if (is_using_dart) {
-                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-                }
+                // if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
+                //     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+                // }
+                // NOTE: object ID is a local ID, we need to get the global object metadata ID
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, kvtag.size,
-                                                        kvtag.type, ref_type, (uint64_t)obj_ids[i]) < 0) {
+                                                        kvtag.type, ref_type, meta_id) < 0) {
                     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
                 }
                 total_insert++;
@@ -237,7 +233,7 @@ main(int argc, char *argv[])
                 }
             }
             printf("Rank %d: Added kvtag \"%s\": %" PRId64 " -> %" PRIu64 "\n", my_rank, kvtag.name,
-                   *((int64_t *)kvtag.value), obj_ids[i]);
+                   *((int64_t *)kvtag.value), meta_id);
             free(kvtag.name);
             free(kvtag.value);
             // TODO: this is for checking the correctness of the query results.
@@ -414,8 +410,9 @@ main(int argc, char *argv[])
             kvtag.type = PDC_INT64;
             kvtag.size = (strlen(tag_value) + 1) * sizeof(char);
             if (is_using_dart) {
+                pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
                 PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size,
-                                                    kvtag.type, ref_type, (uint64_t)obj_ids[i]);
+                                                    kvtag.type, ref_type, meta_id);
             }
             else {
                 PDCobj_del_tag(obj_ids[i], kvtag.name);
