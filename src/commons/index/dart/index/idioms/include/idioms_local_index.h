@@ -50,6 +50,7 @@ typedef struct {
     size_t    num_obj_ids;
     size_t    key_offset;
     size_t    value_offset;
+    uint32_t  src_client_id;
 } IDIOMS_md_idx_record_t;
 
 typedef struct {

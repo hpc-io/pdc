@@ -12,7 +12,9 @@ art_tree *art_key_prefix_tree_g   = NULL;
 art_tree *art_key_suffix_tree_g   = NULL;
 size_t    num_kv_pairs_loaded_mdb = 0;
 size_t    num_attrs_loaded_mdb    = 0;
-int       index_insert_count      = 0;
+
+uint32_t midx_server_id_g  = 0;
+uint32_t midx_num_server_g = 0;
 
 /****************************/
 /* Initialize DART */
@@ -28,6 +30,8 @@ PDC_Server_dart_init(uint32_t num_server, uint32_t server_id)
 
     // art_tree_init(art_key_prefix_tree_g);
     // art_tree_init(art_key_suffix_tree_g);
+    midx_num_server_g = num_server;
+    midx_server_id_g  = server_id;
 
     IDIOMS_init(server_id, num_server);
 }
@@ -544,6 +548,7 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     idx_record->virtual_node_id        = in->vnode_id;
     idx_record->type                   = in->attr_vtype;
     idx_record->value_len              = in->attr_vsize;
+    idx_record->src_client_id          = in->src_client_id;
 
     uint64_t obj_locator = in->obj_primary_ref;
     if (ref_type == REF_PRIMARY_ID) {
@@ -564,10 +569,9 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     // printf("Respond to: in->op_type=%d\n", in->op_type );
     if (op_type == OP_INSERT) {
         idx_record->is_key_suffix = in->inserting_suffix;
+
         // metadata_index_create(attr_key, attr_val, obj_locator, hash_algo);
         idioms_local_index_create(idx_record);
-        index_insert_count++;
-        printf("[Server]Index insert count = %d\n", index_insert_count);
     }
     else if (op_type == OP_DELETE) {
         idx_record->is_key_suffix = in->inserting_suffix;

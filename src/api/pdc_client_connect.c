@@ -8648,6 +8648,8 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
     uint32_t            total_n_meta         = 0;
     dart_op_type_t      op_type              = dart_in->op_type;
 
+    dart_in->src_client_id = pdc_client_mpi_rank_g;
+
     FUNC_ENTER(NULL);
 
     stopwatch_t timer;

@@ -1166,6 +1166,7 @@ typedef struct {
     uint64_t obj_server_ref;
     int8_t   inserting_suffix;
     int64_t  timestamp;
+    uint32_t src_client_id;
 } dart_perform_one_server_in_t;
 
 /* Define dart_perform_one_server_out_t */
@@ -3900,6 +3901,11 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int64_t(proc, &struct_data->timestamp);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->src_client_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
