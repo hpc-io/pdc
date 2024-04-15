@@ -217,9 +217,9 @@ main(int argc, char *argv[])
             kvtag.size      = get_size_by_class_n_type(kvtag.value, 1, PDC_CLS_ITEM, PDC_INT64);
             pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
             if (is_using_dart) {
-                // if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                //     printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-                // }
+                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
+                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+                }
                 // NOTE: object ID is a local ID, we need to get the global object metadata ID
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, kvtag.size,
                                                         kvtag.type, ref_type, meta_id) < 0) {
@@ -237,7 +237,7 @@ main(int argc, char *argv[])
             free(kvtag.name);
             free(kvtag.value);
             // TODO: this is for checking the correctness of the query results.
-            // my_cnt_round[iter]++;
+            my_cnt_round[iter]++;
         }
         // TODO: why n_obj has to be larger than 1000?
         if (my_rank == 0 /*&& n_obj > 1000 */) {
@@ -259,8 +259,8 @@ main(int argc, char *argv[])
 
 #ifdef ENABLE_MPI
     // TODO: This is for checking the correctness of the query results.
-    // for (i = 0; i < round; i++)
-    //     MPI_Allreduce(&my_cnt_round[i], &total_cnt_round[i], 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    for (i = 0; i < round; i++)
+        MPI_Allreduce(&my_cnt_round[i], &total_cnt_round[i], 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -349,12 +349,13 @@ main(int argc, char *argv[])
                 }
 
                 // TODO: This is for checking the correctness of the query results.
-                // if (iter >= 0) {
-                //     if (nres != total_cnt_round[iter])
-                //         printf("Rank %d: query %d, comm %d, round %d - results %d do not match expected
-                //         %d\n",
-                //                my_rank, query_type, comm_type, iter, nres, total_cnt_round[iter]);
-                // }
+                if (iter >= 0) {
+                    if (nres != total_cnt_round[iter])
+                        printf("Rank %d: query %d, comm %d, round %d - results %d do not match expected
+                                   % d\n ",
+                                   my_rank,
+                               query_type, comm_type, iter, nres, total_cnt_round[iter]);
+                }
 
                 round_total += nres;
                 free(kvtag.name);
