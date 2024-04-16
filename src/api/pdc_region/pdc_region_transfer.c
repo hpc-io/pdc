@@ -1350,6 +1350,12 @@ merge_transfer_request_ids(pdcid_t *transfer_request_id, int size, pdcid_t *merg
             return FAIL;
         }
 
+        // Check if every requests are REGION_LOCAL
+        if (all_transfer_request[i]->region_partition != PDC_REGION_LOCAL) {
+            flag = 1;
+            break;
+        }
+
         // Check if every requests are write operations
         if (all_transfer_request[i]->access_type != PDC_WRITE) {
             flag = 1;
