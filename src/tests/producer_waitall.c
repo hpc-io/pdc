@@ -6,32 +6,33 @@
 #include "mpi.h"
 #include "pdc.h"
 
-
 /**
  * write -> read -> wait_all()
  *
  */
 
-int mpi_rank, mpi_size;
+int      mpi_rank, mpi_size;
 MPI_Comm mpi_comm;
 
-void write_read_wait_all(pdcid_t obj_id, int iterations) {
+void
+write_read_wait_all(pdcid_t obj_id, int iterations)
+{
     pdcid_t region_local, region_remote;
     pdcid_t transfer_request;
     perr_t  ret;
 
-    int      ndim = 1;
-    uint64_t offset_local = 0;
+    int      ndim          = 1;
+    uint64_t offset_local  = 0;
     uint64_t offset_remote = 0;
-    uint64_t chunk_size = 2880;
+    uint64_t chunk_size    = 2880;
 
-    char* data_out = (char*) malloc(chunk_size * sizeof(char));
-    memset(data_out, 'a', chunk_size*sizeof(char));
+    char *data_out = (char *)malloc(chunk_size * sizeof(char));
+    memset(data_out, 'a', chunk_size * sizeof(char));
 
     double stime = MPI_Wtime();
 
-    pdcid_t* tids = (pdcid_t*)malloc(sizeof(pdcid_t) * (iterations));
-    for(int i = 0; i < iterations; i++) {
+    pdcid_t *tids = (pdcid_t *)malloc(sizeof(pdcid_t) * (iterations));
+    for (int i = 0; i < iterations; i++) {
         region_local  = PDCregion_create(ndim, &offset_local, &chunk_size);
         region_remote = PDCregion_create(ndim, &offset_remote, &chunk_size);
         offset_remote += chunk_size;
@@ -48,7 +49,7 @@ void write_read_wait_all(pdcid_t obj_id, int iterations) {
 
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
-    
+
     // Tang
     ret = PDCregion_transfer_start_all(tids, iterations);
     if (ret != SUCCEED)
@@ -70,28 +71,28 @@ void write_read_wait_all(pdcid_t obj_id, int iterations) {
     stime = MPI_Wtime();
 
     fflush(stdout);
-    char* data_in = (char*) malloc(chunk_size * sizeof(char));
-    offset_local  = 0;
-    offset_remote = 0;
-    region_local  = PDCregion_create(ndim, &offset_local, &chunk_size);
-    region_remote = PDCregion_create(ndim, &offset_remote, &chunk_size);
+    char *data_in    = (char *)malloc(chunk_size * sizeof(char));
+    offset_local     = 0;
+    offset_remote    = 0;
+    region_local     = PDCregion_create(ndim, &offset_local, &chunk_size);
+    region_remote    = PDCregion_create(ndim, &offset_remote, &chunk_size);
     pdcid_t read_tid = PDCregion_transfer_create(data_in, PDC_READ, obj_id, region_local, region_remote);
-    ret = PDCregion_transfer_start(read_tid);
-    ret = PDCregion_transfer_wait(read_tid);
-    ret = PDCregion_transfer_close(read_tid);
+    ret              = PDCregion_transfer_start(read_tid);
+    ret              = PDCregion_transfer_wait(read_tid);
+    ret              = PDCregion_transfer_close(read_tid);
     /* printf("rank %d read success!\n", mpi_rank); */
     fprintf(stderr, "Rank %d: wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
     fflush(stdout);
 
     // Write more
     MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
-    int N = 10;
-    pdcid_t *tids2 = (pdcid_t*) malloc(sizeof(pdcid_t) * N);
-    offset_local  = 0;
-    offset_remote = iterations*chunk_size;  // start from the end of the last write
-    for(int i = 0; i < N; i++) {
-        region_local  = PDCregion_create(ndim, &offset_local,  &chunk_size);
+    stime          = MPI_Wtime();
+    int      N     = 10;
+    pdcid_t *tids2 = (pdcid_t *)malloc(sizeof(pdcid_t) * N);
+    offset_local   = 0;
+    offset_remote  = iterations * chunk_size; // start from the end of the last write
+    for (int i = 0; i < N; i++) {
+        region_local  = PDCregion_create(ndim, &offset_local, &chunk_size);
         region_remote = PDCregion_create(ndim, &offset_remote, &chunk_size);
         offset_remote += chunk_size;
         tids2[i] = PDCregion_transfer_create(data_out, PDC_WRITE, obj_id, region_local, region_remote);
@@ -127,12 +128,12 @@ void write_read_wait_all(pdcid_t obj_id, int iterations) {
 
     fprintf(stderr, "Rank %d: wait all tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-    for(int i = 0; i < iterations; i++) {
+    for (int i = 0; i < iterations; i++) {
         ret = PDCregion_transfer_close(tids[i]);
         if (ret != SUCCEED)
             printf("region transfer close failed\n");
     }
-    for(int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) {
         ret = PDCregion_transfer_close(tids2[i]);
         if (ret != SUCCEED)
             printf("region transfer close failed\n");
@@ -144,12 +145,14 @@ void write_read_wait_all(pdcid_t obj_id, int iterations) {
     free(tids2);
 }
 
-int main(int argc, char** argv) {
+int
+main(int argc, char **argv)
+{
 
     pdcid_t pdc_id, cont_prop, cont_id;
     pdcid_t obj_prop, obj_id;
 
-    uint64_t  dims[1] = {PDC_SIZE_UNLIMITED};
+    uint64_t dims[1] = {PDC_SIZE_UNLIMITED};
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
