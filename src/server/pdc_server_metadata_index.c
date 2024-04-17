@@ -1,5 +1,6 @@
 #include "pdc_server_metadata_index.h"
 #include "idioms_local_index.h"
+#include "idioms_persistence.h"
 
 #define DART_SERVER_DEBUG 0
 
