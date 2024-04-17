@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include "bulki_serde.h"
 
 /****************************/
 /* Index Dump               */
@@ -158,44 +159,64 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
     key_index_leaf_content_t *leafcnt      = (key_index_leaf_content_t *)value;
     HashTable *               vnode_buf_ht = (HashTable *)data; // data is the parameter passed in
     // the hash table is used to store the buffer struct related to each vnode id.
-    index_buffer_t *buffer = hash_table_lookup(vnode_buf_ht, &(leafcnt->virtural_node_id));
-    if (buffer == NULL) {
-        buffer                  = (index_buffer_t *)calloc(1, sizeof(index_buffer_t));
-        buffer->buffer_capacity = 1024;
-        buffer->buffer          = calloc(1, buffer->buffer_capacity);
-        // note that the first 8 bytes are reserved for the number of keys, in the type of uint64_t.
-        hash_table_insert(vnode_buf_ht, &(leafcnt->virtural_node_id), buffer);
+    BULKI *bulki = hash_table_lookup(vnode_buf_ht, &(leafcnt->virtural_node_id));
+    // index_buffer_t *buffer = hash_table_lookup(vnode_buf_ht, &(leafcnt->virtural_node_id));
+    if (bulki == NULL) {
+        bulki                         = BULKI_init(1); // one key-value pair
+        uint64_t *num_keys            = malloc(sizeof(uint64_t));
+        *num_keys                     = 0;
+        BULKI_Entity *num_keys_entity = BULKI_ENTITY(num_keys, 1, PDC_UINT64, PDC_CLS_ITEM);
+        BULKI_add(bulki, num_keys_entity, empty_BULKI_Entity(PDC_BULKI_ENT, PDC_CLS_ARRAY));
+        hash_table_insert(vnode_buf_ht, &(leafcnt->virtural_node_id), bulki);
     }
-    int rst = 0;
-    // 1. append attr name
-    append_buffer(buffer, (void *)key, key_len);
-    buffer->num_keys++;
 
-    // 2. attr value type
-    int8_t *type = (int8_t *)calloc(1, sizeof(int8_t));
-    type[0]      = leafcnt->val_idx_dtype;
-    append_buffer(buffer, type, sizeof(int8_t));
+    // increase the number of keys by 1.
+    BULKI_Entity keyEnt        = bulki->header->keys[0];
+    *((uint64_t *)keyEnt.data) = *((uint64_t *)keyEnt.data) + 1;
 
-    // 3. attr value simple type, we probably don't need simple type.
-    // int8_t *simple_type = (int8_t *)calloc(1, sizeof(int8_t));
-    // simple_type[0]      = leafcnt->simple_value_type;
-    // append_buffer(buffer, simple_type, sizeof(int8_t));
+    // append the attr name now to the data region
+    BULKI_ENTITY_append_BULKI_Entity(bulki->data->values, BULKI_ENTITY(key, 1, PDC_STRING, PDC_CLS_ITEM));
+
+    // append the value type
     if (getCompoundTypeFromBitmap(leafcnt->val_idx_dtype) == PDC_STRING) {
         if (leafcnt->primary_trie != NULL) {
-            rst |= append_string_value_tree(leafcnt->primary_trie, buffer);
+            append_string_value_tree(leafcnt->primary_trie, bulki->data);
         }
         if (leafcnt->secondary_trie != NULL) {
-            rst |= append_string_value_tree(leafcnt->secondary_trie, buffer);
+            append_string_value_tree(leafcnt->secondary_trie, bulki->data);
         }
     }
-    if (getNumericalTypeFromBitmap(leafcnt->val_idx_dtype) != PDC_UNKNOWN) {
-        if (leafcnt->primary_rbt != NULL) {
-            rst |= append_numeric_value_tree(leafcnt->primary_rbt, buffer);
-        }
-        if (leafcnt->secondary_rbt != NULL) {
-            rst |= append_numeric_value_tree(leafcnt->secondary_rbt, buffer);
-        }
-    }
+
+    // int rst = 0;
+    // // 1. append attr name
+    // append_buffer(buffer, (void *)key, key_len);
+    // buffer->num_keys++;
+
+    // // 2. attr value type
+    // int8_t *type = (int8_t *)calloc(1, sizeof(int8_t));
+    // type[0]      = leafcnt->val_idx_dtype;
+    // append_buffer(buffer, type, sizeof(int8_t));
+
+    // // 3. attr value simple type, we probably don't need simple type.
+    // // int8_t *simple_type = (int8_t *)calloc(1, sizeof(int8_t));
+    // // simple_type[0]      = leafcnt->simple_value_type;
+    // // append_buffer(buffer, simple_type, sizeof(int8_t));
+    // if (getCompoundTypeFromBitmap(leafcnt->val_idx_dtype) == PDC_STRING) {
+    //     if (leafcnt->primary_trie != NULL) {
+    //         rst |= append_string_value_tree(leafcnt->primary_trie, buffer);
+    //     }
+    //     if (leafcnt->secondary_trie != NULL) {
+    //         rst |= append_string_value_tree(leafcnt->secondary_trie, buffer);
+    //     }
+    // }
+    // if (getNumericalTypeFromBitmap(leafcnt->val_idx_dtype) != PDC_UNKNOWN) {
+    //     if (leafcnt->primary_rbt != NULL) {
+    //         rst |= append_numeric_value_tree(leafcnt->primary_rbt, buffer);
+    //     }
+    //     if (leafcnt->secondary_rbt != NULL) {
+    //         rst |= append_numeric_value_tree(leafcnt->secondary_rbt, buffer);
+    //     }
+    // }
     // printf("number of attribute values = %d\n", rst);
     return 0; // return 0 for art iteration to continue;
 }

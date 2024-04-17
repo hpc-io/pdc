@@ -351,10 +351,9 @@ main(int argc, char *argv[])
                 // TODO: This is for checking the correctness of the query results.
                 if (iter >= 0) {
                     if (nres != total_cnt_round[iter])
-                        printf("Rank %d: query %d, comm %d, round %d - results %d do not match expected
-                                   % d\n ",
-                                   my_rank,
-                               query_type, comm_type, iter, nres, total_cnt_round[iter]);
+                        printf(
+                            "Rank %d: query %d, comm %d, round %d - results %d do not match expected %d\n ",
+                            my_rank, query_type, comm_type, iter, nres, total_cnt_round[iter]);
                 }
 
                 round_total += nres;
