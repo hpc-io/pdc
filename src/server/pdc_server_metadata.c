@@ -1926,10 +1926,15 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
 
     char *v_query = (char *)in->value;
+    printf("==PDC_SERVER[%d] before stripQuotes: Querying kvtag with key [%s], value [%s]\n",
+           pdc_server_rank_g, in->name, (char *)in->value);
     if (is_string_query(v_query)) {
         in->value = stripQuotes(v_query);
         in->type  = PDC_STRING;
     }
+
+    printf("==PDC_SERVER[%d] after stripQuotes: Querying kvtag with key [%s], value [%s]\n",
+           pdc_server_rank_g, in->name, (char *)in->value);
 
     if (use_rocksdb_g == 1) {
         ret_value = PDC_Server_query_kvtag_rocksdb(in, n_meta, obj_ids, alloc_size);
