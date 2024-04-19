@@ -28,9 +28,9 @@ if(MERCURY_FOUND)
   )
 
   find_library(MERCURY_UTIL_LIBRARY
-    NAMES
-    mercury_util
-    HINTS ${MERCURY_DIR}
+      NAMES
+      mercury_util
+      HINTS ${MERCURY_DIR}
   )
 
   set(MERCURY_LIBRARIES ${MERCURY_LIBRARY} ${MERCURY_NA_LIBRARY} ${MERCURY_UTIL_LIBRARY})

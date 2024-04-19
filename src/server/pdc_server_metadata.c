@@ -969,7 +969,7 @@ PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete
                 continue;
 
             if (cont_entry->cont_id == target_obj_id) {
-                hash_table_remove(container_hash_table_g, &pair.key);
+                hash_table_remove(container_hash_table_g, pair.key);
                 out->ret  = 1;
                 ret_value = SUCCEED;
                 goto done;
@@ -1889,7 +1889,12 @@ PDC_Server_query_kvtag_someta(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
                             *obj_ids = (void *)realloc(*obj_ids, alloc_size * sizeof(uint64_t));
                         }
                         (*obj_ids)[iter++] = elt->obj_id;
-                        break;
+                        // break; // FIXME: shall we break here? or continue to check other kvtags?
+                    }
+                    else {
+#ifdef PDC_DEBUG_OUTPUT
+                        println("[NOT FOUND]");
+#endif
                     }
                 } // End for each kvtag in list
             }     // End for each metadata from hash table entry
@@ -2805,7 +2810,7 @@ PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *tag)
     FUNC_ENTER(NULL);
 
     PDC_kvtag_dup(tag, &newtag);
-    new_list_item        = PDC_CALLOC(1, pdc_kvtag_list_t);
+    new_list_item        = (pdc_kvtag_list_t *)PDC_calloc(1, sizeof(pdc_kvtag_list_t));
     new_list_item->kvtag = newtag;
     DL_APPEND(*list_head, new_list_item);
 

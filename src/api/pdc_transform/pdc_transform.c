@@ -93,7 +93,8 @@ PDCobj_transform_register(char *func, pdcid_t obj_id, int current_state, int nex
     if ((ftnPtr = ftnHandle) == NULL)
         PGOTO_ERROR(FAIL, "Transforms function lookup failed");
 
-    if ((thisFtn = PDC_MALLOC(struct _pdc_region_transform_ftn_info)) == NULL)
+    if ((thisFtn = (struct _pdc_region_transform_ftn_info *)PDC_malloc(
+             sizeof(struct _pdc_region_transform_ftn_info))) == NULL)
         PGOTO_ERROR(FAIL, "PDC register_obj_transforms memory allocation failed");
 
     memset(thisFtn, 0, sizeof(struct _pdc_region_transform_ftn_info));
@@ -206,7 +207,8 @@ PDCbuf_map_transform_register(char *func, void *buf, pdcid_t src_region_id, pdci
     if ((ftnPtr = ftnHandle) == NULL)
         PGOTO_ERROR(FAIL, "Transforms function lookup failed\n");
 
-    if ((thisFtn = PDC_MALLOC(struct _pdc_region_transform_ftn_info)) == NULL)
+    if ((thisFtn = (struct _pdc_region_transform_ftn_info *)PDC_malloc(
+             sizeof(struct _pdc_region_transform_ftn_info))) == NULL)
         PGOTO_ERROR(FAIL, "PDC register_obj_transforms memory allocation failed");
 
     thisFtn->ftnPtr    = (size_t(*)())ftnPtr;
