@@ -1925,6 +1925,12 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
     *n_meta  = 0;
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
 
+    char *v_query = (char *)in->value;
+    if (is_string_query(v_query)) {
+        in->value = stripQuotes(v_query);
+        in->type  = PDC_STRING;
+    }
+
     if (use_rocksdb_g == 1) {
         ret_value = PDC_Server_query_kvtag_rocksdb(in, n_meta, obj_ids, alloc_size);
         if (ret_value != SUCCEED) {
