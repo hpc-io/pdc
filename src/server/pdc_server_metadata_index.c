@@ -586,6 +586,9 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
         // result       = metadata_index_search(query, hash_algo, n_obj_ids_ptr, buf_ptrs);
         idx_record->num_obj_ids = 0;
 
+        printf("attr_key=%s, attr_val=%s, attr_vsize=%d, attr_dtype=%d\n", attr_key, attr_val, attr_vsize,
+               attr_dtype);
+
         idioms_local_index_search(idioms_g, idx_record);
         *n_obj_ids_ptr = idx_record->num_obj_ids;
         *buf_ptrs      = idx_record->obj_ids;

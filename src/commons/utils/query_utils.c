@@ -10,6 +10,12 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
 {
 
     size_t token_len = strlen(token_str);
+
+    if (affix_len == 0) {
+        *out_str = strdup(token_str);
+        return token_len;
+    }
+
     affix_len        = affix_len < token_len ? affix_len : token_len;
     size_t copy_len  = affix_type == 0 ? token_len : affix_len;
     char * source    = affix_type <= 1 ? token_str : &(token_str[token_len - affix_len]);
@@ -17,10 +23,7 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
 
     strncpy(affix_str, source, copy_len + 1);
 
-    if (affix_type == 0) { // exact
-        // nothing to do here.
-    }
-    else if (affix_type == 1) { // prefix
+    if (affix_type == 1) { // prefix
         // "hello" -> "hell*" or "hell" -> "hell*"
         affix_str[affix_len]     = '*';
         affix_str[affix_len + 1] = '\0';
@@ -90,11 +93,11 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
 
     // process value in base_tag
     if (is_PDC_STRING(input->base_tag->type)) {
-        char *temp_value;
-        value_ptr_len = _gen_affix_for_token((char *)input->base_tag->value, input->value_query_type,
+        char *temp_value = NULL;
+        value_ptr_len    = _gen_affix_for_token((char *)input->base_tag->value, input->value_query_type,
                                              affix_len, &temp_value);
-        value_ptr     = (char *)calloc(value_ptr_len + 3, sizeof(char));
-        value_ptr[0]  = '"';
+        value_ptr        = (char *)calloc(value_ptr_len + 3, sizeof(char));
+        value_ptr[0]     = '"';
         strcat(value_ptr, temp_value);
         value_ptr[value_ptr_len + 1] = '"';
         value_ptr[value_ptr_len + 2] = '\0';
