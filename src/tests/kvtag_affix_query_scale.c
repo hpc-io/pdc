@@ -316,7 +316,7 @@ main(int argc, char *argv[])
                 else {
                     kvtag.name  = output.key_query;
                     kvtag.value = output.value_query;
-                    printf("    Rank %d: key [%s] value [%s]\n", my_rank, kvtag.name, kvtag.value);
+                    kvtag.size  = (strlen(kvtag.value) + 1) * sizeof(char);
 
 #ifdef ENABLE_MPI
                     ret_value = (comm_type == 0)
