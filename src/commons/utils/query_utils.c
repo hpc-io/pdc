@@ -11,7 +11,7 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
 
     size_t token_len = strlen(token_str);
 
-    if (affix_len == 0) {
+    if (affix_type == 0) {
         *out_str = strdup(token_str);
         return token_len;
     }
