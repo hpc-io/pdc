@@ -1,5 +1,6 @@
 #include "pdc_server_metadata_index.h"
 #include "idioms_local_index.h"
+#include "idioms_persistence.h"
 
 #define DART_SERVER_DEBUG 0
 
@@ -713,6 +714,8 @@ metadata_index_dump(char *checkpiont_dir, uint32_t serverID)
     //            timer_delta_us(&timer));
 
     //     fflush(stdout);
+    ret_value = idioms_metadata_index_dump(idioms_g, checkpiont_dir, serverID);
+
     return ret_value;
 }
 
@@ -818,5 +821,7 @@ metadata_index_recover(char *checkpiont_dir, int num_server, uint32_t serverID)
     //     pdc_server_rank_g,
     //            timer_delta_us(&timer));
     //     fflush(stdout);
+
+    ret_value = idioms_metadata_index_recover(idioms_g, checkpiont_dir, num_server, serverID);
     return ret_value;
 }

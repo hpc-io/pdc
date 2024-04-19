@@ -1,3 +1,13 @@
+---
+name: Installation Problem
+about: Report an installation issue
+title: ''
+labels: 'type: bug'
+assignees: ''
+
+---
+
+
 **Issue Description**
 
 This is what I have tried so far:
