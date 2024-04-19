@@ -67,7 +67,7 @@ PDC_class_create(const char *pdc_name)
 
     FUNC_ENTER(NULL);
 
-    p = PDC_MALLOC(struct _pdc_class);
+    p = (struct _pdc_class *)PDC_malloc(sizeof(struct _pdc_class));
     if (!p)
         PGOTO_ERROR(FAIL, "PDC class property memory allocation failed\n");
 
@@ -89,7 +89,7 @@ PDCinit(const char *pdc_name)
 
     FUNC_ENTER(NULL);
 
-    if (NULL == (pdc_id_list_g = PDC_CALLOC(1, struct pdc_id_list)))
+    if (NULL == (pdc_id_list_g = (struct pdc_id_list *)PDC_calloc(1, sizeof(struct pdc_id_list))))
         PGOTO_ERROR(FAIL, "PDC global id list: memory allocation failed");
 
     if (PDC_class_init() < 0)
@@ -130,7 +130,7 @@ PDC_class__close(struct _pdc_class *p)
 #endif
 
     free(p->name);
-    p = PDC_FREE(struct _pdc_class, p);
+    p = (struct _pdc_class *)(intptr_t)PDC_free(p);
 
     FUNC_LEAVE(ret_value);
 }
@@ -214,7 +214,7 @@ PDCclose(pdcid_t pdcid)
 
     PDC_class_end();
 
-    pdc_id_list_g = PDC_FREE(struct pdc_id_list, pdc_id_list_g);
+    pdc_id_list_g = (struct pdc_id_list *)(intptr_t)PDC_free(pdc_id_list_g);
 
     // Finalize METADATA
     PDC_Client_finalize();

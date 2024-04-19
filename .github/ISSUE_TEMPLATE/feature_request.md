@@ -1,3 +1,12 @@
+---
+name: Feature Request
+about: Request a new feature in PDC
+title: ''
+labels: 'type: new feature'
+assignees: ''
+
+---
+
 **What does this feature solve or improve?**
 
 A clear and concise description of what the problem is.

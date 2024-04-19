@@ -81,7 +81,7 @@ PDC_register_type(PDC_type_t type_id, PDC_free_t free_func)
     /* Initialize the type */
     if (NULL == (pdc_id_list_g->PDC_id_type_list_g)[type_id]) {
         /* Allocate the type information for new type */
-        if (NULL == (type_ptr = PDC_CALLOC(1, struct PDC_id_type)))
+        if (NULL == (type_ptr = (struct PDC_id_type *)PDC_calloc(1, sizeof(struct PDC_id_type))))
             PGOTO_ERROR(FAIL, "ID type allocation failed");
         (pdc_id_list_g->PDC_id_type_list_g)[type_id] = type_ptr;
     }
@@ -120,7 +120,7 @@ PDC_id_register(PDC_type_t type, void *object)
     type_ptr = (pdc_id_list_g->PDC_id_type_list_g)[type];
     if (NULL == type_ptr || type_ptr->init_count <= 0)
         PGOTO_ERROR(ret_value, "invalid type");
-    if (NULL == (id_ptr = PDC_MALLOC(struct _pdc_id_info)))
+    if (NULL == (id_ptr = (struct _pdc_id_info *)PDC_malloc(sizeof(struct _pdc_id_info))))
         PGOTO_ERROR(ret_value, "memory allocation failed");
 
     /* Create the struct & it's ID */
@@ -172,7 +172,7 @@ PDC_dec_ref(pdcid_t id)
             PDC_MUTEX_LOCK(type_ptr->ids);
             /* Remove the node from the type */
             PDC_LIST_REMOVE(id_ptr, entry);
-            id_ptr = PDC_FREE(struct _pdc_id_info, id_ptr);
+            id_ptr = (struct _pdc_id_info *)(intptr_t)PDC_free(id_ptr);
             /* Decrement the number of IDs in the type */
             (type_ptr->id_count)--;
             ret_value = 0;
@@ -267,7 +267,7 @@ PDC_id_list_clear(PDC_type_t type)
         if (!type_ptr->free_func || (type_ptr->free_func)((void *)id_ptr->obj_ptr) >= 0) {
             PDC_MUTEX_LOCK(type_ptr->ids);
             PDC_LIST_REMOVE(id_ptr, entry);
-            id_ptr = PDC_FREE(struct _pdc_id_info, id_ptr);
+            id_ptr = (struct _pdc_id_info *)(intptr_t)PDC_free(id_ptr);
             (type_ptr->id_count)--;
             PDC_MUTEX_UNLOCK(type_ptr->ids);
         }
@@ -289,7 +289,7 @@ PDC_destroy_type(PDC_type_t type)
     type_ptr = (pdc_id_list_g->PDC_id_type_list_g)[type];
     if (type_ptr == NULL)
         PGOTO_ERROR(FAIL, "type was not initialized correctly");
-    type_ptr = PDC_FREE(struct PDC_id_type, type_ptr);
+    type_ptr = (struct PDC_id_type *)(intptr_t)PDC_free(type_ptr);
 
 done:
     fflush(stdout);

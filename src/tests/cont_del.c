@@ -80,7 +80,7 @@ main(int argc, char **argv)
     }
 
     printf("trying to open a deleted container, should fail\n");
-    cont = PDCcont_open("VPIC_cont", pdc);
+    cont = PDCcont_open(cont_name, pdc);
     if (cont > 0)
         printf("Error: opened a container that was just deleted @ line  %d!\n", __LINE__);
 

@@ -453,7 +453,8 @@ PDCobj_analysis_register(char *func, pdcid_t iterIn, pdcid_t iterOut)
     if ((ftnPtr = ftnHandle) == NULL)
         PGOTO_ERROR(FAIL, "Analysis function lookup failed");
 
-    if ((thisFtn = PDC_MALLOC(struct _pdc_region_analysis_ftn_info)) == NULL)
+    if ((thisFtn = (struct _pdc_region_analysis_ftn_info *)PDC_malloc(
+             sizeof(struct _pdc_region_analysis_ftn_info))) == NULL)
         PGOTO_ERROR(FAIL, "PDC register_obj_analysis memory allocation failed");
 
     thisFtn->ftnPtr = (int (*)())ftnPtr;

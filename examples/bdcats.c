@@ -101,43 +101,75 @@ main(int argc, char **argv)
     if (cont_id == 0)
         printf("Fail to create container @ line  %d!\n", __LINE__);
 
-    // open objects
-    obj_xx = PDCobj_open("obj-var-xx", pdc_id);
+        // open objects
+#ifdef ENABLE_MPI
+    obj_xx = PDCobj_open_col("obj-var-xx", pdc_id);
+#else
+    obj_xx   = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_xx == 0) {
         printf("Error when open object %s\n", "obj-var-xx");
         exit(-1);
     }
-    obj_yy = PDCobj_open("obj-var-yy", pdc_id);
+#ifdef ENABLE_MPI
+    obj_yy = PDCobj_open_col("obj-var-yy", pdc_id);
+#else
+    obj_yy   = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_yy == 0) {
         printf("Error when open object %s\n", "obj-var-yy");
         exit(-1);
     }
-    obj_zz = PDCobj_open("obj-var-zz", pdc_id);
+#ifdef ENABLE_MPI
+    obj_zz = PDCobj_open_col("obj-var-zz", pdc_id);
+#else
+    obj_zz   = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_zz == 0) {
         printf("Error when open object %s\n", "obj-var-zz");
         exit(-1);
     }
-    obj_pxx = PDCobj_open("obj-var-pxx", pdc_id);
+#ifdef ENABLE_MPI
+    obj_pxx = PDCobj_open_col("obj-var-pxx", pdc_id);
+#else
+    obj_pxx  = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_pxx == 0) {
         printf("Error when open object %s\n", "obj-var-pxx");
         exit(-1);
     }
-    obj_pyy = PDCobj_open("obj-var-pyy", pdc_id);
+#ifdef ENABLE_MPI
+    obj_pyy = PDCobj_open_col("obj-var-pyy", pdc_id);
+#else
+    obj_pyy  = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_pyy == 0) {
         printf("Error when open object %s\n", "obj-var-pyy");
         exit(-1);
     }
-    obj_pzz = PDCobj_open("obj-var-pzz", pdc_id);
+#ifdef ENABLE_MPI
+    obj_pzz = PDCobj_open_col("obj-var-pzz", pdc_id);
+#else
+    obj_pzz  = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_pzz == 0) {
         printf("Error when open object %s\n", "obj-var-pzz");
         exit(-1);
     }
-    obj_id11 = PDCobj_open("id11", pdc_id);
+#ifdef ENABLE_MPI
+    obj_id11 = PDCobj_open_col("id11", pdc_id);
+#else
+    obj_id11 = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_id11 == 0) {
         printf("Error when open object %s\n", "id11");
         exit(-1);
     }
-    obj_id22 = PDCobj_open("id22", pdc_id);
+#ifdef ENABLE_MPI
+    obj_id22 = PDCobj_open_col("id22", pdc_id);
+#else
+    obj_id22 = PDCobj_open("obj-var-xx", pdc_id);
+#endif
     if (obj_id22 == 0) {
         printf("Error when open object %s\n", "id22");
         exit(-1);
