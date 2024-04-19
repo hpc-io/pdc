@@ -46,18 +46,12 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
         affix_str[affix_len + 2] = '\0';
     }
     else {
-        printf("Invalid affix type!\n");
+        printf("Invalid affix type %d!\n", affix_type);
         return 0;
     }
 
     *out_str = affix_str;
 
-    //  calloc(strlen(affix_str) + 1, sizeof(char));
-    // (*out_str)[0] = '"';
-    // strcat(*out_str, affix_str);
-    // (*out_str)[strlen(affix_str)]     = '"';
-    // (*out_str)[strlen(affix_str) + 1] = '\0';
-    // free(affix_str);
     return strlen(*out_str);
 }
 
