@@ -64,7 +64,13 @@ typedef struct {
 } BULKI_KV_Pair_Iterator;
 
 /**
- * @brief Append a BULKI structure to the BULKI_Entity structure
+ * @brief Append a BULKI structure to the BULKI_Entity structure that are returned by
+ * `empty_BULKI_Array_Entity` call. You need to make sure the content the src structure is the final version
+ * before calling this function. Any change to the content of src after calling this function will not be
+ * reflected in the serialized data structure. If you need to change the content of src after calling this
+ * function, you need to iterate through all the BULKI structure in the dest structure and update them. We do
+ * not recommend this because we do not assume the BULKI elements in the internal array would be unique to
+ * each other.
  * @param bulki_entity Pointer to the BULKI_Entity structure
  * @param bulki Pointer to the BULKI structure
  * @return Pointer to the BULKI_Entity structure
@@ -73,6 +79,13 @@ BULKI_Entity *BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src);
 
 /**
  * @brief Append a BULKI_Entity structure to the BULKI_Entity structure
+ * You need to make sure the content the src structure is the final version before calling this function.
+ * Any change to the content of src after calling this function will not be reflected in the serialized data
+ * structure.
+ * If you need to change the content of src after calling this
+ * function, you need to iterate through all the BULKI_Entity structure in the dest structure and update them.
+ * We do not recommend this because we do not assume the BULKI_Entity elements in the internal array would be
+ * unique to each other.
  * @param bulki_entity Pointer to the BULKI_Entity structure
  * @param ent Pointer to the BULKI_Entity structure
  * @return Pointer to the BULKI_Entity structure
@@ -93,7 +106,9 @@ BULKI_Entity *empty_BULKI_Array_Entity();
 
 /**
  * @brief Create a BULKI_Entity structure with data of base type.
- *
+ * It is okay to change the content of `data` after this call if `data` is a BULKI or BULKI_Entity structure.
+ * But to make sure you won't change teh content of `data` or the content of the result BULKI_Entity structure
+ * after any `BULKI_put` call or `BULKI_ENTITY_append_*` call.
  * @param data Pointer to the Entity data
  * @param count Number of elements in the array
  * @param pdc_type Data type of each element in the array
@@ -131,7 +146,11 @@ int BULKI_equal(BULKI *bulki1, BULKI *bulki2);
 
 /**
  * @brief Put a key-value pair to the serialized data structure. If the key already exists, update the value.
- *
+ * You need to make sure the content in both key and value are the final version before calling this function.
+ * Any change to the key or value after calling this function will not be reflected in the serialized data
+ * structure.
+ * If you really have to change the content of key or value after calling this function, you need to call
+ * BULKI_put again to update the serialized data structure.
  * @param data Pointer to the BULKI structure
  * @param key Pointer to the BULKI_Entity structure representing the key
  * @param value Pointer to the BULKI_Entity structure representing the value
