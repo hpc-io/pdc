@@ -313,12 +313,36 @@ perlmutter-cache-parallel-region-all:
         - ctest -L parallel_region_transfer_all
         - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
 
+perlmutter-metrics-build:
+    stage: build
+    rules:
+        - if: '$METRICS == "true"'
+    allow_failure: false
+    tags:
+        - perlmutter
+    variables:
+        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SUPERCOMPUTER: "perlmutter"
+        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+    script:
+        - module load libfabric/1.15.2.0
+        - module list
+        - mkdir -p ${PDC_BUILD_PATH}/perlmutter/metrics
+        - cd ${PDC_BUILD_PATH}/perlmutter/metrics
+        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/metrics
+        - make -j
+        - make install
+    artifacts:
+        paths:
+            - ${PDC_BUILD_PATH}/perlmutter/metrics
+            - ${PDC_INSTALL_PATH}/perlmutter/metrics
+
 perlmutter-metrics:
     stage: metrics
     rules:
         - if: '$METRICS == "true"'
     needs:
-        - perlmutter-cache-build
+        - perlmutter-metrics-build
     tags:
         - perlmutter
     variables:
@@ -330,9 +354,9 @@ perlmutter-metrics:
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-metrics"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-metrics"
         PDC_CLIENT_LOOKUP: "NONE"
-        PDC_SERVER: "${PDC_BUILD_PATH}/perlmutter/cache/bin/pdc_server.exe"
-        PDC_SERVER_CLOSE: "${PDC_BUILD_PATH}/perlmutter/cache/bin/close_server"
-        PDC_CLIENT: "${PDC_BUILD_PATH}/perlmutter/cache/bin/vpicio_mts"
+        PDC_SERVER: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/pdc_server.exe"
+        PDC_SERVER_CLOSE: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/close_server"
+        PDC_CLIENT: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/vpicio_mts"
         PDC_JOB_OUTPUT: "pdc-metrics.log"
     script: 
         - hostname
