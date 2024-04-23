@@ -20,35 +20,6 @@
 
 // ********************* Index Dump and Load *********************
 
-// The buffer will contain:
-// |buffer_size|buffer_region|
-// And each buffer_region will contain
-// |num_keys|key_1|value_region|key_2|value_region|
-// each value_region will contain
-// |type_code_1|num_values_1|value_11|ID_set_region|value_12|ID_set_region|...|type_code_2|num_values_2|value_21|ID_set_region|value_22|ID_set_region|value22|ID_set_region|...
-// each ID_set_region will contain
-// |num_obj_id|obj_id_1|obj_id_2|...|obj_id_n|
-void *
-append_buffer(index_buffer_t *buffer, void *new_buf, uint64_t new_buf_size)
-{
-    if (sizeof(uint64_t) + buffer->buffer_size + new_buf_size > buffer->buffer_capacity) {
-        size_t new_capacity = (buffer->buffer_size + new_buf_size + sizeof(uint64_t)) * 2;
-        void * new_buffer   = realloc(buffer->buffer, buffer->buffer_capacity);
-        if (new_buffer == NULL) {
-            printf("ERROR: realloc failed\n");
-            return NULL;
-        }
-        buffer->buffer_capacity = new_capacity;
-        buffer->buffer          = new_buffer;
-    }
-    // append the size of the new buffer
-    memcpy(buffer->buffer + buffer->buffer_size, &new_buf_size, sizeof(uint64_t));
-    buffer->buffer_size += sizeof(uint64_t);
-    memcpy(buffer->buffer + buffer->buffer_size, new_buf, new_buf_size);
-    buffer->buffer_size += new_buf_size;
-    return buffer->buffer;
-}
-
 /**
  * This is a object ID set
  * |number of object IDs = n|object ID 1|...|object ID n|
@@ -163,45 +134,41 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
     if (data_entity == NULL) {
         // initilize data entity
         data_entity = BULKI_ENTITY(BULKI_init(4), 1, PDC_BULKI, PDC_CLS_ITEM);
-        // add the kv pair to the bulki structure
-        BULKI_put(kv_bulki, key_entity, data_entity);
     }
 
-    BULKI *tree_bulki = ((BULKI *)BULKI_get(kv_bulki, key_entity)->data);
+    BULKI *tree_bulki = ((BULKI *)data_entity->data);
     // append the value type
     if (_getCompoundTypeFromBitmap(leafcnt->val_idx_dtype) == PDC_STRING) {
         if (leafcnt->primary_trie != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
+            rst |= append_string_value_tree(leafcnt->primary_trie, v_id_bulki);
             BULKI_put(tree_bulki, BULKI_ENTITY("primary_trie", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
-            // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
-            rst |= append_string_value_tree(leafcnt->primary_trie, v_id_bulki);
         }
         if (leafcnt->secondary_trie != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
+            rst |= append_string_value_tree(leafcnt->secondary_trie, v_id_bulki);
             BULKI_put(tree_bulki, BULKI_ENTITY("secondary_trie", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
-            // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
-            rst |= append_string_value_tree(leafcnt->secondary_trie, v_id_bulki);
         }
     }
 
     if (_getNumericalTypeFromBitmap(leafcnt->val_idx_dtype) != PDC_UNKNOWN) {
         if (leafcnt->primary_rbt != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
+            rst |= append_numeric_value_tree(leafcnt->primary_rbt, v_id_bulki);
             BULKI_put(tree_bulki, BULKI_ENTITY("primary_rbt", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
-            // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
-            rst |= append_numeric_value_tree(leafcnt->primary_rbt, v_id_bulki);
         }
         if (leafcnt->secondary_rbt != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
+            rst |= append_numeric_value_tree(leafcnt->secondary_rbt, v_id_bulki);
             BULKI_put(tree_bulki, BULKI_ENTITY("secondary_rbt", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
-            // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
-            rst |= append_numeric_value_tree(leafcnt->secondary_rbt, v_id_bulki);
         }
     }
+    // add the kv pair to the bulki structure
+    BULKI_put(kv_bulki, key_entity, data_entity);
     return 0; // return 0 for art iteration to continue;
 }
 
@@ -257,20 +224,24 @@ idioms_metadata_index_dump(IDIOMS_t *idioms, char *dir_path, uint32_t serverID)
 // *********************** Index Loading ***********************************
 
 int
-fill_set_from_BULKI_Entity(Set *obj_id_set, BULKI_Entity *data_entity)
+fill_set_from_BULKI_Entity(value_index_leaf_content_t *value_index_leaf, BULKI_Entity *data_entity,
+                           int64_t *index_record_count)
 {
     BULKI_Entity_Iterator *it = Bent_iterator_init(data_entity, NULL, PDC_UNKNOWN);
     while (Bent_iterator_has_next_Bent(it)) {
         BULKI_Entity *id_entity = Bent_iterator_next_Bent(it);
         uint64_t *    obj_id    = calloc(1, sizeof(uint64_t));
         memcpy(obj_id, id_entity->data, sizeof(uint64_t));
-        set_insert(obj_id_set, obj_id);
+        set_insert(value_index_leaf->obj_id_set, obj_id);
+        value_index_leaf->indexed_item_count++;
+        (*index_record_count)++;
     }
     return 0;
 }
 
 int
-read_attr_value_node(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v_id_bulki)
+read_attr_value_node(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v_id_bulki,
+                     int64_t *index_record_count)
 {
     int                     rst = 0;
     BULKI_KV_Pair_Iterator *it  = BULKI_KV_Pair_iterator_init(v_id_bulki);
@@ -278,35 +249,41 @@ read_attr_value_node(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BUL
         BULKI_KV_Pair *kv_pair     = BULKI_KV_Pair_iterator_next(it);
         BULKI_Entity * key_entity  = &(kv_pair->key);
         BULKI_Entity * data_entity = &(kv_pair->value);
-        Set *          obj_id_set  = set_new(ui64_hash, ui64_equal);
-        set_register_free_function(obj_id_set, free);
-        fill_set_from_BULKI_Entity(obj_id_set, data_entity);
+
+        value_index_leaf_content_t *value_index_leaf =
+            (value_index_leaf_content_t *)calloc(1, sizeof(value_index_leaf_content_t));
+        value_index_leaf->obj_id_set = set_new(ui64_hash, ui64_equal);
+        set_register_free_function(value_index_leaf->obj_id_set, free);
+
+        fill_set_from_BULKI_Entity(value_index_leaf, data_entity, index_record_count);
+
         if (value_tree_idx == 0 && key_entity->pdc_type == PDC_STRING) {
             art_tree *value_index_art = (art_tree *)leaf_cnt->primary_trie;
             art_insert(value_index_art, (const unsigned char *)key_entity->data, strlen(key_entity->data),
-                       obj_id_set);
+                       value_index_leaf);
             leaf_cnt->indexed_item_count++;
         }
         if (value_tree_idx == 1 && key_entity->pdc_type == PDC_STRING) {
             art_tree *value_index_art = (art_tree *)leaf_cnt->secondary_trie;
             art_insert(value_index_art, (const unsigned char *)key_entity->data, strlen(key_entity->data),
-                       obj_id_set);
+                       value_index_leaf);
         }
         if (value_tree_idx == 2 && key_entity->pdc_type != PDC_STRING) {
             rbt_t *value_index_rbt = (rbt_t *)leaf_cnt->primary_rbt;
-            rbt_add(value_index_rbt, key_entity->data, key_entity->size, obj_id_set);
+            rbt_add(value_index_rbt, key_entity->data, key_entity->size, value_index_leaf);
             leaf_cnt->indexed_item_count++;
         }
         if (value_tree_idx == 3 && key_entity->pdc_type != PDC_STRING) {
             rbt_t *value_index_rbt = (rbt_t *)leaf_cnt->secondary_rbt;
-            rbt_add(value_index_rbt, key_entity->data, key_entity->size, obj_id_set);
+            rbt_add(value_index_rbt, key_entity->data, key_entity->size, value_index_leaf);
         }
     }
     return rst;
 }
 
 int
-read_value_tree(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v_id_bulki)
+read_value_tree(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v_id_bulki,
+                int64_t *index_record_count)
 {
     int rst = 0;
 
@@ -315,20 +292,20 @@ read_value_tree(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v
             leaf_cnt->primary_trie = (art_tree *)calloc(1, sizeof(art_tree));
             art_tree_init(leaf_cnt->primary_trie);
             _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), PDC_STRING);
-            rst = read_attr_value_node(leaf_cnt, 0, v_id_bulki);
+            rst = read_attr_value_node(leaf_cnt, 0, v_id_bulki, index_record_count);
             break;
         case 1:
             leaf_cnt->secondary_trie = (art_tree *)calloc(1, sizeof(art_tree));
             art_tree_init(leaf_cnt->secondary_trie);
             _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), PDC_STRING);
-            rst = read_attr_value_node(leaf_cnt, 1, v_id_bulki);
+            rst = read_attr_value_node(leaf_cnt, 1, v_id_bulki, index_record_count);
             break;
         case 2:
             if (v_id_bulki->numKeys > 0) {
                 leaf_cnt->primary_rbt =
                     (rbt_t *)rbt_create_by_dtype(v_id_bulki->header->keys[0].pdc_type, PDC_free_void);
                 _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), rbt_get_dtype(leaf_cnt->primary_rbt));
-                rst = read_attr_value_node(leaf_cnt, 2, v_id_bulki);
+                rst = read_attr_value_node(leaf_cnt, 2, v_id_bulki, index_record_count);
             }
             break;
         case 3:
@@ -336,7 +313,7 @@ read_value_tree(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v
                 leaf_cnt->secondary_rbt =
                     (rbt_t *)rbt_create_by_dtype(v_id_bulki->header->keys[0].pdc_type, PDC_free_void);
                 _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), rbt_get_dtype(leaf_cnt->secondary_rbt));
-                rst = read_attr_value_node(leaf_cnt, 3, v_id_bulki);
+                rst = read_attr_value_node(leaf_cnt, 3, v_id_bulki, index_record_count);
             }
             break;
         default:
@@ -346,8 +323,7 @@ read_value_tree(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v
 }
 
 int
-read_attr_name_node(art_tree *art_key_index, char *dir_path, char *base_name, uint32_t serverID,
-                    uint64_t vnode_id)
+read_attr_name_node(IDIOMS_t *idioms, char *dir_path, char *base_name, uint32_t serverID, uint64_t vnode_id)
 {
     int  rst = 0;
     char file_name[1024];
@@ -362,6 +338,18 @@ read_attr_name_node(art_tree *art_key_index, char *dir_path, char *base_name, ui
         return FAIL;
     }
     BULKI *bulki = BULKI_deserialize_from_file(stream);
+
+    art_tree *art_key_index = NULL;
+    if (strcmp(base_name, "idioms_prefix") == 0) {
+        art_key_index = idioms->art_key_prefix_tree_g;
+    }
+    else if (strcmp(base_name, "idioms_suffix") == 0) {
+        art_key_index = idioms->art_key_suffix_tree_g;
+    }
+    else {
+        LOG_ERROR("Unknown base_name: %s\n", base_name);
+        return FAIL;
+    }
 
     LOG_INFO("Loaded Index from file_name: %s\n", file_name);
 
@@ -382,28 +370,28 @@ read_attr_name_node(art_tree *art_key_index, char *dir_path, char *base_name, ui
             BULKI_get(tree_bulki, BULKI_ENTITY("primary_trie", 1, PDC_STRING, PDC_CLS_ITEM));
         if (primary_trie_ent != NULL) {
             BULKI *v_id_bulki = (BULKI *)primary_trie_ent->data;
-            read_value_tree(leafcnt, 0, v_id_bulki);
+            read_value_tree(leafcnt, 0, v_id_bulki, &(idioms->index_record_count_g));
         }
         // restore secondary trie
         BULKI_Entity *secondary_trie_ent =
             BULKI_get(tree_bulki, BULKI_ENTITY("secondary_trie", 1, PDC_STRING, PDC_CLS_ITEM));
         if (secondary_trie_ent != NULL) {
             BULKI *v_id_bulki = (BULKI *)secondary_trie_ent->data;
-            read_value_tree(leafcnt, 1, v_id_bulki);
+            read_value_tree(leafcnt, 1, v_id_bulki, &(idioms->index_record_count_g));
         }
         // restore primary rbt
         BULKI_Entity *primary_rbt_ent =
             BULKI_get(tree_bulki, BULKI_ENTITY("primary_rbt", 1, PDC_STRING, PDC_CLS_ITEM));
         if (primary_rbt_ent != NULL) {
             BULKI *v_id_bulki = (BULKI *)primary_rbt_ent->data;
-            read_value_tree(leafcnt, 2, v_id_bulki);
+            read_value_tree(leafcnt, 2, v_id_bulki, &(idioms->index_record_count_g));
         }
         // restore secondary rbt
         BULKI_Entity *secondary_rbt_ent =
             BULKI_get(tree_bulki, BULKI_ENTITY("secondary_rbt", 1, PDC_STRING, PDC_CLS_ITEM));
         if (secondary_rbt_ent != NULL) {
             BULKI *v_id_bulki = (BULKI *)secondary_rbt_ent->data;
-            read_value_tree(leafcnt, 3, v_id_bulki);
+            read_value_tree(leafcnt, 3, v_id_bulki, &(idioms->index_record_count_g));
         }
     }
     return rst;
@@ -423,10 +411,8 @@ idioms_metadata_index_recover(IDIOMS_t *idioms, char *dir_path, int num_server, 
     // load the attribute region for each vnode
     for (size_t vid = 0; vid < num_vids; vid++) {
         for (size_t sid = 0; sid < num_server; sid++) {
-            read_attr_name_node(idioms->art_key_prefix_tree_g, dir_path, "idioms_prefix", sid,
-                                vid_array[vid]);
-            read_attr_name_node(idioms->art_key_suffix_tree_g, dir_path, "idioms_suffix", sid,
-                                vid_array[vid]);
+            read_attr_name_node(idioms, dir_path, "idioms_prefix", sid, vid_array[vid]);
+            read_attr_name_node(idioms, dir_path, "idioms_suffix", sid, vid_array[vid]);
         }
     }
     timer_pause(&timer);
