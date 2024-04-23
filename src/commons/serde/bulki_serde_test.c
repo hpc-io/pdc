@@ -11,19 +11,19 @@ test_base_type()
     int           intVal     = 42;
     BULKI_Entity *intKey     = BULKI_ENTITY(intKey_str, 1, PDC_STRING, PDC_CLS_ITEM);
     BULKI_Entity *intValue   = BULKI_ENTITY(&intVal, 1, PDC_INT, PDC_CLS_ITEM);
-    BULKI_add(bulki, intKey, intValue);
+    BULKI_put(bulki, intKey, intValue);
 
     char *        doubleKey_str = "double";
     double        doubleVal     = 3.14159;
     BULKI_Entity *doubleKey     = BULKI_ENTITY(doubleKey_str, 1, PDC_STRING, PDC_CLS_ITEM);
     BULKI_Entity *doubleValue   = BULKI_ENTITY(&doubleVal, 1, PDC_DOUBLE, PDC_CLS_ITEM);
-    BULKI_add(bulki, doubleKey, doubleValue);
+    BULKI_put(bulki, doubleKey, doubleValue);
 
     char *        strKey_str = "string";
     char *        strVal     = "Hello, World!";
     BULKI_Entity *strKey     = BULKI_ENTITY(strKey_str, 1, PDC_STRING, PDC_CLS_ITEM);
     BULKI_Entity *strValue   = BULKI_ENTITY(strVal, 1, PDC_STRING, PDC_CLS_ITEM);
-    BULKI_add(bulki, strKey, strValue);
+    BULKI_put(bulki, strKey, strValue);
 
     // Serialize the data
     void *buffer = BULKI_serialize(bulki);
@@ -67,6 +67,32 @@ test_base_type()
 }
 
 int
+test_put_replace()
+{
+    // Initialize a serialized data structure
+    BULKI *bulki = BULKI_init(2);
+
+    // Create and append key-value pairs for different data types
+    BULKI_put(bulki, BULKI_ENTITY("key1", 1, PDC_STRING, PDC_CLS_ITEM),
+              BULKI_ENTITY("value1", 1, PDC_STRING, PDC_CLS_ITEM));
+
+    BULKI_put(bulki, BULKI_ENTITY("key2", 1, PDC_STRING, PDC_CLS_ITEM),
+              BULKI_ENTITY("value2", 1, PDC_STRING, PDC_CLS_ITEM));
+
+    uint64_t u64value = 7987;
+    BULKI_put(bulki, BULKI_ENTITY("key1", 1, PDC_STRING, PDC_CLS_ITEM),
+              BULKI_ENTITY(&u64value, 1, PDC_UINT64, PDC_CLS_ITEM));
+
+    BULKI_Entity *dataEnt = BULKI_get(bulki, BULKI_ENTITY("key1", 1, PDC_STRING, PDC_CLS_ITEM));
+    int           equal   = BULKI_Entity_equal(dataEnt, BULKI_ENTITY(&u64value, 1, PDC_UINT64, PDC_CLS_ITEM));
+    printf("first value is desired after replacing the original value: %d\n", equal);
+    dataEnt = BULKI_get(bulki, BULKI_ENTITY("key2", 1, PDC_STRING, PDC_CLS_ITEM));
+    equal   = BULKI_Entity_equal(dataEnt, BULKI_ENTITY("value2", 1, PDC_STRING, PDC_CLS_ITEM));
+    printf("second value not changed after replace put: %d\n", equal);
+    return equal;
+}
+
+int
 test_base_array_entitiy()
 {
     // Initialize a serialized data structure
@@ -80,7 +106,7 @@ test_base_array_entitiy()
     BULKI_Entity *intArr     = empty_Bent_Array_Entity();
     BULKI_ENTITY_append_BULKI_Entity(intArr, BULKI_ENTITY(&intVal, 1, PDC_INT, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(intArr, BULKI_ENTITY(&intObjID, 1, PDC_UINT64, PDC_CLS_ITEM));
-    BULKI_add(bulki, intKey, intArr);
+    BULKI_put(bulki, intKey, intArr);
 
     char *        doubleKey_str = "double";
     double        doubleVal     = 3.14159;
@@ -89,7 +115,7 @@ test_base_array_entitiy()
     BULKI_Entity *doubleArr     = empty_Bent_Array_Entity();
     BULKI_ENTITY_append_BULKI_Entity(doubleArr, BULKI_ENTITY(&doubleVal, 1, PDC_DOUBLE, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(doubleArr, BULKI_ENTITY(&doubleObjID, 1, PDC_UINT64, PDC_CLS_ITEM));
-    BULKI_add(bulki, doubleKey, doubleArr);
+    BULKI_put(bulki, doubleKey, doubleArr);
 
     char *strKey_str = "string";
     char *strVal     = "Hello, World!";
@@ -98,7 +124,7 @@ test_base_array_entitiy()
     BULKI_Entity *strArr = empty_Bent_Array_Entity();
     BULKI_ENTITY_append_BULKI_Entity(strArr, BULKI_ENTITY(strVal, 1, PDC_STRING, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(strArr, BULKI_ENTITY(&intObjID, 1, PDC_UINT64, PDC_CLS_ITEM));
-    BULKI_add(bulki, strKey, strArr);
+    BULKI_put(bulki, strKey, strArr);
 
     char *        mixedKey_str = "mixed";
     BULKI_Entity *mixedKey     = BULKI_ENTITY(mixedKey_str, 1, PDC_STRING, PDC_CLS_ITEM);
@@ -107,7 +133,7 @@ test_base_array_entitiy()
     BULKI_ENTITY_append_BULKI_Entity(mixedArr, BULKI_ENTITY(&doubleVal, 1, PDC_DOUBLE, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(mixedArr, BULKI_ENTITY(strVal, 1, PDC_STRING, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(mixedArr, BULKI_ENTITY(&intObjID, 1, PDC_UINT64, PDC_CLS_ITEM));
-    BULKI_add(bulki, mixedKey, mixedArr);
+    BULKI_put(bulki, mixedKey, mixedArr);
 
     // Initialize a serialized data structure
     BULKI *bulki2 = BULKI_init(2);
@@ -119,7 +145,7 @@ test_base_array_entitiy()
     BULKI_Entity *intArr2     = empty_BULKI_Array_Entity();
     BULKI_ENTITY_append_BULKI(intArr2, bulki);
     BULKI_ENTITY_append_BULKI(intArr2, bulki);
-    BULKI_add(bulki2, intKey2, intArr2);
+    BULKI_put(bulki2, intKey2, intArr2);
 
     // Serialize the data
     void *buffer = BULKI_serialize(bulki2);
@@ -160,7 +186,7 @@ test_embedded_entitiy()
     BULKI_Entity *intArr     = empty_Bent_Array_Entity();
     BULKI_ENTITY_append_BULKI_Entity(intArr, BULKI_ENTITY(&intVal, 1, PDC_INT, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(intArr, BULKI_ENTITY(&intObjID, 1, PDC_UINT64, PDC_CLS_ITEM));
-    BULKI_add(bulki, intKey, intArr);
+    BULKI_put(bulki, intKey, intArr);
 
     char *        doubleKey_str = "double";
     double        doubleVal     = 3.14159;
@@ -169,7 +195,7 @@ test_embedded_entitiy()
     BULKI_Entity *doubleArr     = empty_Bent_Array_Entity();
     BULKI_ENTITY_append_BULKI_Entity(doubleArr, BULKI_ENTITY(&doubleVal, 1, PDC_DOUBLE, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(doubleArr, BULKI_ENTITY(&doubleObjID, 1, PDC_UINT64, PDC_CLS_ITEM));
-    BULKI_add(bulki, doubleKey, doubleArr);
+    BULKI_put(bulki, doubleKey, doubleArr);
 
     char *strKey_str = "string";
     char *strVal     = "Hello, World!";
@@ -178,7 +204,7 @@ test_embedded_entitiy()
     BULKI_Entity *strArr = empty_Bent_Array_Entity();
     BULKI_ENTITY_append_BULKI_Entity(strArr, BULKI_ENTITY(strVal, 1, PDC_STRING, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(strArr, BULKI_ENTITY(&intObjID, 1, PDC_UINT64, PDC_CLS_ITEM));
-    BULKI_add(bulki, strKey, strArr);
+    BULKI_put(bulki, strKey, strArr);
 
     // Serialize the data
     void *buffer = BULKI_serialize(bulki);
@@ -221,7 +247,7 @@ test_bulki_in_entitiy()
 
     printf("EMPTY BULKI in BULKI Entity = %d \n", equal);
 
-    BULKI_add(bulki, BULKI_ENTITY("key", 1, PDC_STRING, PDC_CLS_ITEM),
+    BULKI_put(bulki, BULKI_ENTITY("key", 1, PDC_STRING, PDC_CLS_ITEM),
               BULKI_ENTITY("value", 1, PDC_STRING, PDC_CLS_ITEM));
 
     buffer         = BULKI_Entity_serialize(nestEntity);
@@ -234,7 +260,7 @@ test_bulki_in_entitiy()
     BULKI_ENTITY_append_BULKI_Entity(secondValue, BULKI_ENTITY("secondValue1", 1, PDC_STRING, PDC_CLS_ITEM));
     BULKI_ENTITY_append_BULKI_Entity(secondValue, BULKI_ENTITY("secondValue2", 1, PDC_STRING, PDC_CLS_ITEM));
 
-    BULKI_add(bulki, BULKI_ENTITY("key2", 1, PDC_STRING, PDC_CLS_ITEM), secondValue);
+    BULKI_put(bulki, BULKI_ENTITY("key2", 1, PDC_STRING, PDC_CLS_ITEM), secondValue);
 
     buffer         = BULKI_Entity_serialize(nestEntity);
     des_nestEntity = BULKI_Entity_deserialize(buffer);
@@ -249,6 +275,7 @@ int
 main(int argc, char *argv[])
 {
     printf("test_base_type RST = %d\n", test_base_type());
+    printf("test_put_replace RST = %d\n", test_put_replace());
     printf("test_base_array_entitiy RST = %d\n", test_base_array_entitiy());
     printf("test_embedded_entitiy RST = %d\n", test_embedded_entitiy());
     printf("test_nested_entitiy RST = %d\n", test_bulki_in_entitiy());

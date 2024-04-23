@@ -302,10 +302,21 @@ BULKI_equal(BULKI *bulki1, BULKI *bulki2)
 }
 
 void
-BULKI_add(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
+BULKI_put(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
 {
     if (bulki == NULL || key == NULL || value == NULL) {
         printf("Error: bulki, key, or value is NULL\n");
+        return;
+    }
+    // search for existing key
+    BULKI_Entity *existing_value = BULKI_get(bulki, key);
+    if (existing_value != NULL) {
+        bulki->header->headerSize -= key->size;
+        bulki->data->dataSize -= existing_value->size;
+        memcpy(existing_value, value, sizeof(BULKI_Entity));
+        bulki->header->headerSize += key->size;
+        bulki->data->dataSize += value->size;
+        get_BULKI_size(bulki);
         return;
     }
     if (bulki->numKeys >= bulki->capacity) {

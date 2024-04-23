@@ -78,9 +78,9 @@ append_value_tree_node(void *v_id_bulki, void *key, uint32_t key_size, pdc_c_var
         BULKI_ENTITY(key, key_type == PDC_STRING ? 1 : key_size, key_type, PDC_CLS_ITEM);
 
     BULKI_Entity *id_set_entity = BULKI_get(bulki, key_entity);
+
     if (id_set_entity == NULL) {
         id_set_entity = empty_Bent_Array_Entity();
-        BULKI_add(bulki, key_entity, id_set_entity);
     }
 
     value_index_leaf_content_t *value_index_leaf = (value_index_leaf_content_t *)(value);
@@ -88,6 +88,8 @@ append_value_tree_node(void *v_id_bulki, void *key, uint32_t key_size, pdc_c_var
         Set *obj_id_set = (Set *)value_index_leaf->obj_id_set;
         append_obj_id_set(obj_id_set, id_set_entity);
     }
+
+    BULKI_put(bulki, key_entity, id_set_entity);
 
     return 0; // return 0 for art iteration to continue;
 }
@@ -162,7 +164,7 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
         // initilize data entity
         data_entity = BULKI_ENTITY(BULKI_init(4), 1, PDC_BULKI, PDC_CLS_ITEM);
         // add the kv pair to the bulki structure
-        BULKI_add(kv_bulki, key_entity, data_entity);
+        BULKI_put(kv_bulki, key_entity, data_entity);
     }
 
     BULKI *tree_bulki = ((BULKI *)BULKI_get(kv_bulki, key_entity)->data);
@@ -170,14 +172,14 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
     if (_getCompoundTypeFromBitmap(leafcnt->val_idx_dtype) == PDC_STRING) {
         if (leafcnt->primary_trie != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
-            BULKI_add(tree_bulki, BULKI_ENTITY("primary_trie", 1, PDC_STRING, PDC_CLS_ITEM),
+            BULKI_put(tree_bulki, BULKI_ENTITY("primary_trie", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
             // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
             rst |= append_string_value_tree(leafcnt->primary_trie, v_id_bulki);
         }
         if (leafcnt->secondary_trie != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
-            BULKI_add(tree_bulki, BULKI_ENTITY("secondary_trie", 1, PDC_STRING, PDC_CLS_ITEM),
+            BULKI_put(tree_bulki, BULKI_ENTITY("secondary_trie", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
             // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
             rst |= append_string_value_tree(leafcnt->secondary_trie, v_id_bulki);
@@ -187,14 +189,14 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
     if (_getNumericalTypeFromBitmap(leafcnt->val_idx_dtype) != PDC_UNKNOWN) {
         if (leafcnt->primary_rbt != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
-            BULKI_add(tree_bulki, BULKI_ENTITY("primary_rbt", 1, PDC_STRING, PDC_CLS_ITEM),
+            BULKI_put(tree_bulki, BULKI_ENTITY("primary_rbt", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
             // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
             rst |= append_numeric_value_tree(leafcnt->primary_rbt, v_id_bulki);
         }
         if (leafcnt->secondary_rbt != NULL) {
             BULKI *v_id_bulki = BULKI_init(1);
-            BULKI_add(tree_bulki, BULKI_ENTITY("secondary_rbt", 1, PDC_STRING, PDC_CLS_ITEM),
+            BULKI_put(tree_bulki, BULKI_ENTITY("secondary_rbt", 1, PDC_STRING, PDC_CLS_ITEM),
                       BULKI_ENTITY(v_id_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
             // BULKI_ENTITY_append_BULKI(data_entity, v_id_bulki);
             rst |= append_numeric_value_tree(leafcnt->secondary_rbt, v_id_bulki);
@@ -268,7 +270,7 @@ fill_set_from_BULKI_Entity(Set *obj_id_set, BULKI_Entity *data_entity)
 }
 
 int
-read_attr_value_node(void *value_index, int value_tree_idx, BULKI *v_id_bulki)
+read_attr_value_node(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v_id_bulki)
 {
     int                     rst = 0;
     BULKI_KV_Pair_Iterator *it  = BULKI_KV_Pair_iterator_init(v_id_bulki);
@@ -279,13 +281,24 @@ read_attr_value_node(void *value_index, int value_tree_idx, BULKI *v_id_bulki)
         Set *          obj_id_set  = set_new(ui64_hash, ui64_equal);
         set_register_free_function(obj_id_set, free);
         fill_set_from_BULKI_Entity(obj_id_set, data_entity);
-        if ((value_tree_idx == 0 || value_tree_idx == 1) && key_entity->pdc_type == PDC_STRING) {
-            art_tree *value_index_art = (art_tree *)value_index;
-            art_insert(value_index_art, (const unsigned char *)key_entity->data, key_entity->size,
+        if (value_tree_idx == 0 && key_entity->pdc_type == PDC_STRING) {
+            art_tree *value_index_art = (art_tree *)leaf_cnt->primary_trie;
+            art_insert(value_index_art, (const unsigned char *)key_entity->data, strlen(key_entity->data),
+                       obj_id_set);
+            leaf_cnt->indexed_item_count++;
+        }
+        if (value_tree_idx == 1 && key_entity->pdc_type == PDC_STRING) {
+            art_tree *value_index_art = (art_tree *)leaf_cnt->secondary_trie;
+            art_insert(value_index_art, (const unsigned char *)key_entity->data, strlen(key_entity->data),
                        obj_id_set);
         }
-        else if (value_tree_idx == 2 || value_tree_idx == 3) {
-            rbt_t *value_index_rbt = (rbt_t *)value_index;
+        if (value_tree_idx == 2 && key_entity->pdc_type != PDC_STRING) {
+            rbt_t *value_index_rbt = (rbt_t *)leaf_cnt->primary_rbt;
+            rbt_add(value_index_rbt, key_entity->data, key_entity->size, obj_id_set);
+            leaf_cnt->indexed_item_count++;
+        }
+        if (value_tree_idx == 3 && key_entity->pdc_type != PDC_STRING) {
+            rbt_t *value_index_rbt = (rbt_t *)leaf_cnt->secondary_rbt;
             rbt_add(value_index_rbt, key_entity->data, key_entity->size, obj_id_set);
         }
     }
@@ -302,20 +315,20 @@ read_value_tree(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v
             leaf_cnt->primary_trie = (art_tree *)calloc(1, sizeof(art_tree));
             art_tree_init(leaf_cnt->primary_trie);
             _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), PDC_STRING);
-            rst = read_attr_value_node(leaf_cnt->primary_trie, 0, v_id_bulki);
+            rst = read_attr_value_node(leaf_cnt, 0, v_id_bulki);
             break;
         case 1:
             leaf_cnt->secondary_trie = (art_tree *)calloc(1, sizeof(art_tree));
             art_tree_init(leaf_cnt->secondary_trie);
             _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), PDC_STRING);
-            rst = read_attr_value_node(leaf_cnt->secondary_trie, 1, v_id_bulki);
+            rst = read_attr_value_node(leaf_cnt, 1, v_id_bulki);
             break;
         case 2:
             if (v_id_bulki->numKeys > 0) {
                 leaf_cnt->primary_rbt =
                     (rbt_t *)rbt_create_by_dtype(v_id_bulki->header->keys[0].pdc_type, PDC_free_void);
                 _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), rbt_get_dtype(leaf_cnt->primary_rbt));
-                rst = read_attr_value_node(leaf_cnt->primary_rbt, 2, v_id_bulki);
+                rst = read_attr_value_node(leaf_cnt, 2, v_id_bulki);
             }
             break;
         case 3:
@@ -323,7 +336,7 @@ read_value_tree(key_index_leaf_content_t *leaf_cnt, int value_tree_idx, BULKI *v
                 leaf_cnt->secondary_rbt =
                     (rbt_t *)rbt_create_by_dtype(v_id_bulki->header->keys[0].pdc_type, PDC_free_void);
                 _encodeTypeToBitmap(&(leaf_cnt->val_idx_dtype), rbt_get_dtype(leaf_cnt->secondary_rbt));
-                rst = read_attr_value_node(leaf_cnt->secondary_rbt, 3, v_id_bulki);
+                rst = read_attr_value_node(leaf_cnt, 3, v_id_bulki);
             }
             break;
         default:

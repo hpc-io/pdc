@@ -130,13 +130,13 @@ int BULKI_Entity_equal(BULKI_Entity *be1, BULKI_Entity *be2);
 int BULKI_equal(BULKI *bulki1, BULKI *bulki2);
 
 /**
- * @brief Append a key-value pair to the serialized data structure
+ * @brief Put a key-value pair to the serialized data structure. If the key already exists, update the value.
  *
  * @param data Pointer to the BULKI structure
  * @param key Pointer to the BULKI_Entity structure representing the key
  * @param value Pointer to the BULKI_Entity structure representing the value
  */
-void BULKI_add(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value);
+void BULKI_put(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value);
 
 /**
  * @brief Delete a key-value pair from the serialized data structure
