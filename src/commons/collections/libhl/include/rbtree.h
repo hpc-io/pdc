@@ -45,6 +45,30 @@ typedef void (*rbt_free_value_callback_t)(void *v);
 rbt_t *rbt_create(libhl_cmp_callback_t cmp_keys_cb, rbt_free_value_callback_t free_value_cb);
 
 /**
+ * @brief Create a new red/black tree
+ * @param dtype         The data type of the keys
+ * @param free_value_cb The callback used to release values when a node
+ *                      is removed or overwritten
+ * @return              A valid and initialized red/black tree (empty)
+ */
+rbt_t *rbt_create_by_dtype(pdc_c_var_type_t dtype, rbt_free_value_callback_t free_value_cb);
+
+/**
+ * @brief Set the dtype to rbt
+ * @param rbt   A valid pointer to an initialized rbt_t structure
+ * @param dtype The data type of the keys
+ * @return
+ */
+void rbt_set_dtype(rbt_t *rbt, pdc_c_var_type_t dtype);
+
+/**
+ * @brief Get the dtype of rbt
+ * @param rbt   A valid pointer to an initialized rbt_t structure
+ * @return dtype
+ */
+pdc_c_var_type_t rbt_get_dtype(rbt_t *rbt);
+
+/**
  * @brief Release all the resources used by a red/black tree
  * @param rbt A valid pointer to an initialized rbt_t structure
  */

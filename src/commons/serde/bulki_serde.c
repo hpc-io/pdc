@@ -167,6 +167,24 @@ BULKI_serialize(BULKI *data)
     return buffer;
 }
 
+void
+BULKI_Entity_serialize_to_file(BULKI_Entity *entity, FILE *fp)
+{
+    void *buffer = BULKI_Entity_serialize(entity);
+    fwrite(buffer, get_BULKI_Entity_size(entity), 1, fp);
+    free(buffer);
+    fclose(fp);
+}
+
+void
+BULKI_serialize_to_file(BULKI *bulki, FILE *fp)
+{
+    void *buffer = BULKI_serialize(bulki);
+    fwrite(buffer, get_BULKI_size(bulki), 1, fp);
+    free(buffer);
+    fclose(fp);
+}
+
 /********************** Deserialize ************************** */
 
 BULKI_Entity *
@@ -205,6 +223,9 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
     if (entity->pdc_class == PDC_CLS_ITEM) {
         if (entity->pdc_type == PDC_BULKI) { // BULKI
             entity->data = BULKI_deserialize_from_buffer(buffer, offset);
+        }
+        else if (entity->pdc_type == PDC_BULKI_ENT) {
+            entity->data = BULKI_Entity_deserialize_from_buffer(buffer, offset);
         }
         else { // all base types
             entity->data = malloc(entity->size - sizeof(uint8_t) * 2 - sizeof(uint64_t) * 2);
@@ -328,4 +349,36 @@ BULKI_deserialize(void *buffer)
 {
     size_t offset = 0;
     return BULKI_deserialize_from_buffer(buffer, &offset);
+}
+
+BULKI_Entity *
+BULKI_Entity_deserialize_from_file(FILE *fp)
+{
+    fseek(fp, 0, SEEK_END);
+    size_t fsize = ftell(fp);
+    fseek(fp, 0, SEEK_SET); /* same as rewind(f); */
+    // read the file into the buffer
+    void *buffer = malloc(fsize + 1);
+    fread(buffer, fsize, 1, fp);
+    // printf("Read %ld bytes\n", fsize);
+    fclose(fp);
+    BULKI_Entity *rst = BULKI_Entity_deserialize(buffer);
+    free(buffer);
+    return rst;
+}
+
+BULKI *
+BULKI_deserialize_from_file(FILE *fp)
+{
+    fseek(fp, 0, SEEK_END);
+    size_t fsize = ftell(fp);
+    fseek(fp, 0, SEEK_SET); /* same as rewind(f); */
+    // read the file into the buffer
+    void *buffer = malloc(fsize + 1);
+    fread(buffer, fsize, 1, fp);
+    // printf("Read %ld bytes\n", fsize);
+    fclose(fp);
+    BULKI *rst = BULKI_deserialize(buffer);
+    free(buffer);
+    return rst;
 }

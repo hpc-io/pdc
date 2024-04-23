@@ -5,7 +5,6 @@
 #include "idioms_local_index.h"
 #include "bin_file_ops.h"
 #include "pdc_hash_table.h"
-#include "dart_core.h"
 #include "string_utils.h"
 #include "query_utils.h"
 #include "pdc_logger.h"
@@ -16,8 +15,6 @@
 #define DART_SERVER_DEBUG 0
 
 #define KV_DELIM '='
-
-// IDIOMS_t *idioms_g = NULL;
 
 IDIOMS_t *
 IDIOMS_init(uint32_t server_id, uint32_t num_servers)
@@ -31,36 +28,11 @@ IDIOMS_init(uint32_t server_id, uint32_t num_servers)
 
     idioms->server_id_g   = server_id;
     idioms->num_servers_g = num_servers;
+
+    idioms->dart_info_g = (DART *)calloc(1, sizeof(DART));
+    _init_dart_space_via_idioms(idioms->dart_info_g, idioms->num_servers_g, IDIOMS_MAX_SERVER_COUNT_TO_ADAPT);
+
     return idioms;
-}
-
-void
-encodeTypeToBitmap(uint8_t *bitmap, enum pdc_c_var_type_t type)
-{
-    if (bitmap == NULL) {
-        return;
-    }
-    if (type >= PDC_STRING) {                      // Non-numerical types
-        *bitmap |= ((type - PDC_STRING + 1) << 4); // Shift by 4 to set in the higher 4 bits
-    }
-    else {                        // Numerical types
-        *bitmap |= (type & 0x0F); // Ensure only lower 4 bits are used for numerical types
-    }
-}
-
-// Function to get numerical type from the bitmap
-enum pdc_c_var_type_t
-getNumericalTypeFromBitmap(uint8_t bitmap)
-{
-    return (enum pdc_c_var_type_t)(bitmap & 0x0F); // Extract lower 4 bits
-}
-
-// Function to get string (non-numerical) type from the bitmap
-enum pdc_c_var_type_t
-getCompoundTypeFromBitmap(uint8_t bitmap)
-{
-    return (enum pdc_c_var_type_t)(((bitmap >> 4) & 0x0F) + PDC_STRING -
-                                   1); // Extract higher 4 bits and adjust index
 }
 
 /****************************/
@@ -123,7 +95,7 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
     }
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
 
-    if (getCompoundTypeFromBitmap(leaf_content->val_idx_dtype) == PDC_STRING &&
+    if (_getCompoundTypeFromBitmap(leaf_content->val_idx_dtype) == PDC_STRING &&
         is_PDC_STRING(idx_record->type)) {
         void * attr_val      = stripQuotes(idx_record->value);
         size_t value_str_len = strlen(attr_val);
@@ -151,7 +123,7 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
         }
 #endif
     }
-    if (getNumericalTypeFromBitmap(leaf_content->val_idx_dtype) != PDC_UNKNOWN &&
+    if (_getNumericalTypeFromBitmap(leaf_content->val_idx_dtype) != PDC_UNKNOWN &&
         is_PDC_NUMERIC(idx_record->type)) {
         ret = insert_obj_ids_into_value_leaf((rbt_t *)leaf_content->primary_rbt, idx_record->value,
                                              idx_record->type == PDC_STRING, idx_record->value_len,
@@ -184,21 +156,21 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
             key_leaf_content->secondary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
             art_tree_init((art_tree *)key_leaf_content->secondary_trie);
 
-            encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), idx_record->type);
+            _encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), idx_record->type);
         }
         if (is_PDC_UINT(idx_record->type)) {
             // TODO: This is a simplified implementation, but we need to have all the CMP_CB functions
             // defined for all numerical types in libhl/comparators.h
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_UINT64), PDC_free_void);
-            encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_UINT64);
+            key_leaf_content->primary_rbt = rbt_create_by_dtype(PDC_UINT64, PDC_free_void);
+            _encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_UINT64);
         }
         if (is_PDC_INT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_INT64), PDC_free_void);
-            encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_INT64);
+            key_leaf_content->primary_rbt = rbt_create_by_dtype(PDC_INT64, PDC_free_void);
+            _encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_INT64);
         }
         if (is_PDC_FLOAT(idx_record->type)) {
-            key_leaf_content->primary_rbt = rbt_create(LIBHL_CMP_CB(PDC_DOUBLE), PDC_free_void);
-            encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_DOUBLE);
+            key_leaf_content->primary_rbt = rbt_create_by_dtype(PDC_DOUBLE, PDC_free_void);
+            _encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_DOUBLE);
         }
     }
     // insert the key into the the key trie along with the key_leaf_content.
@@ -345,7 +317,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
         return FAIL;
     }
     char *value_type_str = get_enum_name_by_dtype(idx_record->type);
-    if (getCompoundTypeFromBitmap(leaf_content->val_idx_dtype) == PDC_STRING &&
+    if (_getCompoundTypeFromBitmap(leaf_content->val_idx_dtype) == PDC_STRING &&
         is_PDC_STRING(idx_record->type)) {
         // delete the value from the prefix tree.
         void *attr_val = stripQuotes(idx_record->value);
@@ -376,7 +348,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
         }
 #endif
     }
-    if (getNumericalTypeFromBitmap(leaf_content->val_idx_dtype) != PDC_UNKNOWN &&
+    if (_getNumericalTypeFromBitmap(leaf_content->val_idx_dtype) != PDC_UNKNOWN &&
         is_PDC_NUMERIC(idx_record->type)) {
         // delete the value from the primary rbtree index. here, value_len is the size of the value in
         // bytes.
@@ -609,7 +581,7 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
         // exact number search
         char * num_str = substring(secondary_query, 1, strlen(secondary_query) - 1);
         size_t klen1 =
-            get_number_from_string(num_str, getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
+            get_number_from_string(num_str, _getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
         value_index_leaf_content_t *value_index_leaf = NULL;
         rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
         if (value_index_leaf != NULL) {
@@ -622,7 +594,7 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
         int    beginPos = endInclusive ? 2 : 1;
         char * numstr   = substring(secondary_query, beginPos, strlen(secondary_query));
         size_t klen1 =
-            get_number_from_string(numstr, getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
+            get_number_from_string(numstr, _getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
         rbt_range_lt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, endInclusive);
     }
     else if (endsWith(secondary_query, "~")) {
@@ -631,7 +603,7 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
         // find all numbers that are greater than the given number
         char * numstr = substring(secondary_query, 0, endPos);
         size_t klen1 =
-            get_number_from_string(numstr, getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
+            get_number_from_string(numstr, _getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
         rbt_range_gt(leafcnt->primary_rbt, val1, klen1, value_rbt_callback, idx_record, beginInclusive);
     }
     else if (contains(secondary_query, "~")) {
@@ -651,9 +623,9 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
         char * lo_num_str     = beginInclusive ? substring(lo_tok, 0, strlen(lo_tok) - 1) : lo_tok;
         char * hi_num_str     = endInclusive ? substring(hi_tok, 1, strlen(hi_tok)) : hi_tok;
         size_t klen1 =
-            get_number_from_string(lo_num_str, getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
+            get_number_from_string(lo_num_str, _getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
         size_t klen2 =
-            get_number_from_string(hi_num_str, getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val2);
+            get_number_from_string(hi_num_str, _getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val2);
 
         int num_visited_node = rbt_range_walk(leafcnt->primary_rbt, val1, klen1, val2, klen2,
                                               value_rbt_callback, idx_record, beginInclusive, endInclusive);
@@ -664,7 +636,7 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
         // exact number search
         char * num_str = strdup(secondary_query);
         size_t klen1 =
-            get_number_from_string(num_str, getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
+            get_number_from_string(num_str, _getNumericalTypeFromBitmap(leafcnt->val_idx_dtype), &val1);
         value_index_leaf_content_t *value_index_leaf = NULL;
         rbt_find(leafcnt->primary_rbt, val1, klen1, (void **)&value_index_leaf);
         if (value_index_leaf != NULL) {

@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include "rbtree.h"
 #include "pdc_malloc.h"
+#include "comparators.h"
 
 #define IS_BLACK(_n) (!(_n) || (_n)->color == RBTREE_COLOR_BLACK)
 #define IS_RED(_n)   ((_n) && (_n)->color == RBTREE_COLOR_RED)
@@ -41,10 +42,27 @@ typedef struct _rbt_node_s {
 struct _rbt_s {
     rbt_node_t *              root;
     uint64_t                  size;
+    pdc_c_var_type_t          dtype;
     libhl_cmp_callback_t      cmp_keys_cb;
     rbt_free_value_callback_t free_value_cb;
     double                    time_for_rotate;
 };
+
+rbt_t *
+rbt_create_by_dtype(pdc_c_var_type_t dtype, rbt_free_value_callback_t free_value_cb)
+{
+    rbt_t *rbt = calloc(1, sizeof(rbt_t));
+    // INIT_PERF_INFO_FIELDS(rbt, rbt_t);
+    // rbt->time_for_rotate = 0;
+    // mem_usage_by_all_rbtrees += sizeof(rbt_t);
+
+    if (!rbt)
+        return NULL;
+    rbt->dtype         = dtype;
+    rbt->free_value_cb = free_value_cb;
+    rbt->cmp_keys_cb   = LIBHL_CMP_CB(dtype);
+    return rbt;
+}
 
 rbt_t *
 rbt_create(libhl_cmp_callback_t cmp_keys_cb, rbt_free_value_callback_t free_value_cb)
@@ -58,7 +76,20 @@ rbt_create(libhl_cmp_callback_t cmp_keys_cb, rbt_free_value_callback_t free_valu
         return NULL;
     rbt->free_value_cb = free_value_cb;
     rbt->cmp_keys_cb   = cmp_keys_cb;
+    rbt->dtype         = PDC_UNKNOWN; // if created via this function, we must set the dtype later.
     return rbt;
+}
+
+void
+rbt_set_dtype(rbt_t *rbt, pdc_c_var_type_t dtype)
+{
+    rbt->dtype = dtype;
+}
+
+pdc_c_var_type_t
+rbt_get_dtype(rbt_t *rbt)
+{
+    return rbt->dtype;
 }
 
 static inline void

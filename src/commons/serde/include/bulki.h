@@ -19,14 +19,14 @@
 typedef struct {
     pdc_c_var_class_t pdc_class; /**< Class of the value */
     pdc_c_var_type_t  pdc_type;  /**< Data type of the value */
-    size_t            count;     /**< Number of elements in the array */
-    size_t            size;      // size in byte of the data.
+    uint64_t          count;     /**< Number of elements in the array */
+    uint64_t          size;      // size in byte of the data.
     void *            data;      /**< Pointer to the value data */
 } BULKI_Entity;
 
 typedef struct {
     BULKI_Entity *keys;       /**< Array of keys */
-    size_t        headerSize; /**< Total bytes of the header region */
+    uint64_t      headerSize; /**< Total bytes of the header region */
 } BULKI_Header;
 
 typedef struct {
@@ -42,6 +42,26 @@ typedef struct {
     uint64_t capacity; /**< The predefined number of keys in Bulki. If numKeys >= capacity, array expansion is
                           needed  */
 } BULKI;
+
+typedef struct {
+    BULKI_Entity *entity_array;   // Points to the array being iterated
+    uint64_t      current_idx;    // Current index in the array
+    uint64_t      total_size;     // Total number of elements in the array
+    void *        bent_filter;    // Optional filter to apply during iteration, it can be NULL/an insteance of
+                                  // BULKI/an instance of BULKI_Entity
+    pdc_c_var_type_t filter_type; // The type of the filter
+} BULKI_Entity_Iterator;
+
+typedef struct {
+    BULKI_Entity key;
+    BULKI_Entity value;
+} BULKI_KV_Pair;
+
+typedef struct {
+    BULKI *  bulki;
+    uint64_t current_idx;
+    uint64_t total_size;
+} BULKI_KV_Pair_Iterator;
 
 /**
  * @brief Append a BULKI structure to the BULKI_Entity structure
@@ -60,13 +80,16 @@ BULKI_Entity *BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src);
 BULKI_Entity *BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src);
 
 /**
- * @brief create an empty BULKI_Entity structure, usually used as a wrapper for either a BULKI or a
- * BULKI_Entity structure
- * @param pdc_type Data type of the value
- * @param pdc_class Class of the value
+ * @brief create an empty BULKI_Entity structure, usually used as a wrapper for BULKI_Entity structure. Since
+ * this will be used as a wrapper, we consider this to be an array of BULKI_Entity.
  * @return Pointer to the created BULKI_Entity structure
  */
-BULKI_Entity *empty_BULKI_Entity();
+BULKI_Entity *empty_Bent_Array_Entity();
+
+/**
+ * @brief create an empty BULKI structure, usually used as a wrapper for either a BULKI
+ */
+BULKI_Entity *empty_BULKI_Array_Entity();
 
 /**
  * @brief Create a BULKI_Entity structure with data of base type.
@@ -123,6 +146,72 @@ void BULKI_add(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value);
  * @return the deleted BULKI_Entity value. If the key is not found, return NULL.
  */
 BULKI_Entity *BULKI_delete(BULKI *bulki, BULKI_Entity *key);
+
+/**
+ * @brief Initialize the iterator with an optional BULKI_Entity as a filter
+ * @param entity_array Pointer to the BULKI_Entity array
+ * @param filter This can be NULL/an instance of BULKI/an instance of BULKI_Entity
+ * @param filter_type The type of the filter, must be PDC_BULKI, PDC_BULKI_ENTITY
+ * @return Pointer to the Bent_Iterator structure
+ */
+BULKI_Entity_Iterator *Bent_iterator_init(BULKI_Entity *array, void *filter, pdc_c_var_type_t filter_type);
+
+/**
+ * @brief Test if the iterator has more BULKI structures to return
+ * @param iter Pointer to the Bent_Iterator structure
+ * @return 1 if there are more BULKI structures to return, 0 otherwise
+ */
+int Bent_iterator_has_next_BULKI(BULKI_Entity_Iterator *it);
+
+/**
+ * @brief Test if the iterator has more BULKI_Entity structures to return
+ * @param iter Pointer to the Bent_Iterator structure
+ * @return 1 if there are more BULKI_Entity structures to return, 0 otherwise
+ */
+int Bent_iterator_has_next_Bent(BULKI_Entity_Iterator *it);
+
+/**
+ * @brief Get the next BULKI from the iterator
+ * @param iter Pointer to the Bent_Iterator structure
+ * @return Pointer to the next BULKI structure
+ */
+BULKI *Bent_iterator_next_BULKI(BULKI_Entity_Iterator *it);
+
+/**
+ * @brief Get the next BULKI_Entity from the iterator
+ * @param iter Pointer to the Bent_Iterator structure
+ * @return Pointer to the next BULKI_Entity structure
+ */
+BULKI_Entity *Bent_iterator_next_Bent(BULKI_Entity_Iterator *it);
+
+/**
+ * @brief Initialize the iterator with a BULKI structure
+ * @param bulki Pointer to the BULKI structure
+ * @return Pointer to the BULKI_KV_Pair_Iterator structure
+ */
+BULKI_KV_Pair_Iterator *BULKI_KV_Pair_iterator_init(BULKI *bulki);
+
+/**
+ * @brief Test if the iterator has more BULKI_KV_Pair structures to return
+ * @param iter Pointer to the BULKI_KV_Pair_Iterator structure
+ * @return 1 if there are more BULKI_KV_Pair structures to return, 0 otherwise
+ */
+int BULKI_KV_Pair_iterator_has_next(BULKI_KV_Pair_Iterator *it);
+
+/**
+ * @brief Get the next BULKI_KV_Pair from the iterator
+ * @param iter Pointer to the BULKI_KV_Pair_Iterator structure
+ * @return Pointer to the next BULKI_KV_Pair structure
+ */
+BULKI_KV_Pair *BULKI_KV_Pair_iterator_next(BULKI_KV_Pair_Iterator *it);
+
+/**
+ * @brief Get the value of a key from the serialized data structure
+ * @param data Pointer to the BULKI structure
+ * @param key Pointer to the BULKI_Entity structure representing the key
+ * @return Pointer to the BULKI_Entity structure representing the value
+ */
+BULKI_Entity *BULKI_get(BULKI *bulki, BULKI_Entity *key);
 
 /**
  * @brief Print the contents of BULKI or BULKI_Entity structure.

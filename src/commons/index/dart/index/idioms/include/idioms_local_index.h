@@ -25,6 +25,11 @@
  */
 
 typedef struct {
+    art_tree *art_key_prefix_tree_g;
+    art_tree *art_key_suffix_tree_g;
+    DART *    dart_info_g;
+    uint32_t  server_id_g;
+    uint32_t  num_servers_g;
     int64_t   index_record_count_g;
     int64_t   search_request_count_g;
     int64_t   insert_request_count_g;
@@ -32,10 +37,6 @@ typedef struct {
     double    time_to_create_index_g;
     double    time_to_search_index_g;
     double    time_to_delete_index_g;
-    art_tree *art_key_prefix_tree_g;
-    art_tree *art_key_suffix_tree_g;
-    uint32_t  server_id_g;
-    uint32_t  num_servers_g;
 } IDIOMS_t;
 
 typedef struct {
@@ -91,6 +92,45 @@ typedef struct {
     size_t buffer_capacity;
     size_t num_keys;
 } index_buffer_t;
+
+static void
+_init_dart_space_via_idioms(DART *dart, int num_server, int max_server_num_to_adapt)
+{
+    int extra_tree_height  = 0;
+    int replication_factor = 3;
+    replication_factor     = replication_factor > 0 ? replication_factor : 2;
+    dart_space_init(dart, num_server, IDIOMS_DART_ALPHABET_SIZE, extra_tree_height, replication_factor,
+                    num_server);
+}
+
+static void
+_encodeTypeToBitmap(uint8_t *bitmap, enum pdc_c_var_type_t type)
+{
+    if (bitmap == NULL) {
+        return;
+    }
+    if (type >= PDC_STRING) {                      // Non-numerical types
+        *bitmap |= ((type - PDC_STRING + 1) << 4); // Shift by 4 to set in the higher 4 bits
+    }
+    else {                        // Numerical types
+        *bitmap |= (type & 0x0F); // Ensure only lower 4 bits are used for numerical types
+    }
+}
+
+// Function to get numerical type from the bitmap
+static enum pdc_c_var_type_t
+_getNumericalTypeFromBitmap(uint8_t bitmap)
+{
+    return (enum pdc_c_var_type_t)(bitmap & 0x0F); // Extract lower 4 bits
+}
+
+// Function to get string (non-numerical) type from the bitmap
+static enum pdc_c_var_type_t
+_getCompoundTypeFromBitmap(uint8_t bitmap)
+{
+    return (enum pdc_c_var_type_t)(((bitmap >> 4) & 0x0F) + PDC_STRING -
+                                   1); // Extract higher 4 bits and adjust index
+}
 
 /**
  * @brief Initialize the ART root index

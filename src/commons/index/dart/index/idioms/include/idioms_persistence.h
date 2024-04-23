@@ -1,7 +1,6 @@
 #ifndef IDIOMS_PERSISTENCE_H
 #define IDIOMS_PERSISTENCE_H
 
-
 #include "idioms_local_index.h"
 
 /**
@@ -13,7 +12,7 @@
 perr_t idioms_metadata_index_dump(IDIOMS_t *idioms, char *dir_path, uint32_t serverID);
 
 /**
- * @brief Recovering the index from a file.
+ * @brief Recovering the index from a file. Please initialize idioms before calling this function.
  * @param dir_path  The directory path to store the index file.
  * @param num_server  The number of servers.
  * @param serverID  The server ID.
@@ -29,6 +28,5 @@ perr_t idioms_metadata_index_recover(IDIOMS_t *idioms, char *dir_path, int num_s
 //  * @param max_server_num_to_adapt  The maximum number of servers to adapt.
 //  */
 // void init_dart_space_via_idioms(DART *dart, int num_client, int num_server, int max_server_num_to_adapt);
-
 
 #endif // IDIOMS_PERSISTENCE_H
