@@ -1441,17 +1441,14 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     if (size > PDC_MERGE_TRANSFER_MIN_COUNT) {
         merged_request_id = PDC_MALLOC(pdcid_t);
         merge_transfer_request_ids(transfer_request_id, size, merged_request_id, &merged_size);
-        size = merged_size;
-        prepare_start_all_requests(merged_request_id, size, &write_transfer_requests, &read_transfer_requests,
-                                   &write_size, &read_size, &posix_transfer_request_id, &posix_size);
+        if (merged_size == 1)
+            size = merged_size;
     }
-    else {
-        // Split write and read requests. Handle them separately.
-        // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
-        prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests,
-                                   &read_transfer_requests, &write_size, &read_size,
-                                   &posix_transfer_request_id, &posix_size);
-    }
+
+    // Split write and read requests. Handle them separately.
+    // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+    prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests, &read_transfer_requests,
+                               &write_size, &read_size, &posix_transfer_request_id, &posix_size);
     /*
         printf("PDCregion_transfer_start_all: checkpoint %d, write_size = %d, read_size = %d\n", __LINE__,
                write_size, read_size);
@@ -1840,7 +1837,9 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
 
     transferinfo = (struct _pdc_id_info **)PDC_malloc(size * sizeof(struct _pdc_id_info *));
 
+#ifdef ENABLE_MPI
     t0 = MPI_Wtime();
+#endif
 
     // Tang
     // Check if we merged the previous request
@@ -1897,7 +1896,9 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         }
     }
 
+#ifdef ENABLE_MPI
     t1 = MPI_Wtime();
+#endif
     /* fprintf(stderr, "Part 1 took %.6f\n", t1-t0); */
 
     transfer_requests = (pdc_transfer_request_wait_all_pkg **)malloc(
@@ -1917,8 +1918,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         // transfer_requests[i]->data_server_id, transfer_requests[i]->metadata_id);
     }
 
+#ifdef ENABLE_MPI
     t0 = MPI_Wtime();
     /* fprintf(stderr, "Part 2 took %.6f\n", t0-t1); */
+#endif
 
     metadata_ids = (uint64_t *)malloc(sizeof(uint64_t) * total_requests);
     index        = 0;
@@ -1964,8 +1967,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         }
     }
 
+#ifdef ENABLE_MPI
     t1 = MPI_Wtime();
     /* fprintf(stderr, "Part 3 took %.6f\n", t1-t0); */
+#endif
 
     if (total_requests) {
         // Freed at the wait operation (inside PDC_client_connect call)
@@ -2012,8 +2017,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         }
     }
 
+#ifdef ENABLE_MPI
     t0 = MPI_Wtime();
     /* fprintf(stderr, "Part 4 took %.6f\n", t0-t1); */
+#endif
 
     for (i = 0; i < size; ++i) {
         if (NULL == transferinfo[i])
@@ -2052,8 +2059,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         remove_local_transfer_request(transfer_request->obj_pointer, transfer_request_id[i]);
     }
 
+#ifdef ENABLE_MPI
     t1 = MPI_Wtime();
     /* fprintf(stderr, "Part 5 took %.6f\n", t1-t0); */
+#endif
 
     for (i = 0; i < total_requests; ++i) {
         free(transfer_requests[i]);
