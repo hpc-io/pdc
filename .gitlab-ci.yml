@@ -10,6 +10,9 @@ stages:
 perlmutter-no-cache-build:
     stage: build
     when: manual
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     allow_failure: false
     tags:
         - perlmutter
@@ -33,6 +36,9 @@ perlmutter-no-cache-build:
 perlmutter-cache-build:
     stage: build
     when: manual
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     allow_failure: false
     tags:
         - perlmutter
@@ -60,6 +66,9 @@ perlmutter-cache-build:
 
 perlmutter-no-cache-parallel-pdc:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -80,6 +89,9 @@ perlmutter-no-cache-parallel-pdc:
 
 perlmutter-no-cache-parallel-obj:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -101,6 +113,9 @@ perlmutter-no-cache-parallel-obj:
 
 perlmutter-no-cache-parallel-cont:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -122,6 +137,9 @@ perlmutter-no-cache-parallel-cont:
 
 perlmutter-no-cache-parallel-prop:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -143,6 +161,9 @@ perlmutter-no-cache-parallel-prop:
 
 perlmutter-no-cache-parallel-region:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -164,6 +185,9 @@ perlmutter-no-cache-parallel-region:
 
 perlmutter-no-cache-parallel-region-all:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -190,6 +214,9 @@ perlmutter-no-cache-parallel-region-all:
 
 perlmutter-cache-parallel-pdc:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -210,6 +237,9 @@ perlmutter-cache-parallel-pdc:
 
 perlmutter-cache-parallel-obj:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -231,6 +261,9 @@ perlmutter-cache-parallel-obj:
 
 perlmutter-cache-parallel-cont:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -252,6 +285,9 @@ perlmutter-cache-parallel-cont:
 
 perlmutter-cache-parallel-prop:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -273,6 +309,9 @@ perlmutter-cache-parallel-prop:
 
 perlmutter-cache-parallel-region:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -294,6 +333,9 @@ perlmutter-cache-parallel-region:
 
 perlmutter-cache-parallel-region-all:
     stage: test
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -315,6 +357,9 @@ perlmutter-cache-parallel-region-all:
 
 perlmutter-metrics-build:
     stage: build
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
         - if: '$METRICS == "true"'
     allow_failure: false
@@ -339,6 +384,9 @@ perlmutter-metrics-build:
 
 perlmutter-metrics:
     stage: metrics
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://software.nersc.gov/
     rules:
         - if: '$METRICS == "true"'
     needs:
