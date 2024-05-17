@@ -9,7 +9,9 @@ stages:
 
 perlmutter-no-cache-build:
     stage: build
-    when: manual
+    rules:
+    - if: '$METRICS == null'
+        when: manual
     id_tokens:
         SITE_ID_TOKEN:
             aud: https://software.nersc.gov/
@@ -35,7 +37,9 @@ perlmutter-no-cache-build:
 
 perlmutter-cache-build:
     stage: build
-    when: manual
+    rules:
+    - if: '$METRICS == null'
+        when: manual
     id_tokens:
         SITE_ID_TOKEN:
             aud: https://software.nersc.gov/
