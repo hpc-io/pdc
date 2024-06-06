@@ -297,9 +297,9 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
         goto done;
     }
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
-    if (transfer_request->metadata_id == NULL) {
-        goto done;
-    }
+    /* if (transfer_request->metadata_id == NULL) { */
+    /*     goto done; */
+    /* } */
 
     // Check for consistency
     /*
@@ -309,9 +309,12 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
             PDCregion_transfer_wait(transfer_request_id);
         }
     */
-    free(transfer_request->local_region_offset);
-    free(transfer_request->metadata_id);
-    free(transfer_request);
+    if (transfer_request->local_region_offset)
+        free(transfer_request->local_region_offset);
+    if (transfer_request->metadata_id)
+        free(transfer_request->metadata_id);
+    if (transfer_request)
+        free(transfer_request);
 
     /* When the reference count reaches zero the resources are freed */
     if (PDC_dec_ref(transfer_request_id) < 0)
@@ -1441,8 +1444,10 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     if (size > PDC_MERGE_TRANSFER_MIN_COUNT) {
         merged_request_id = PDC_MALLOC(pdcid_t);
         merge_transfer_request_ids(transfer_request_id, size, merged_request_id, &merged_size);
-        if (merged_size == 1)
+        if (merged_size == 1) {
             size = merged_size;
+            transfer_request_id = merged_request_id;
+        }
     }
 
     // Split write and read requests. Handle them separately.
@@ -1460,13 +1465,13 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     */
 
     // Start write requests
-    printf("==PDC_CLIENT[%d]: PDC_Client_start_all_requests write_size %d\n", pdc_client_mpi_rank_g,
-           write_size);
+    /* printf("==PDC_CLIENT[%d]: PDC_Client_start_all_requests write_size %d\n", pdc_client_mpi_rank_g, */
+    /*        write_size); */
     PDC_Client_start_all_requests(write_transfer_requests, write_size);
     // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
     // Start read requests
-    printf("==PDC_CLIENT[%d]: PDC_Client_start_all_requests read_size %d\n", pdc_client_mpi_rank_g,
-           read_size);
+    /* printf("==PDC_CLIENT[%d]: PDC_Client_start_all_requests read_size %d\n", pdc_client_mpi_rank_g, */
+    /*        read_size); */
     PDC_Client_start_all_requests(read_transfer_requests, read_size);
     /*
         fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
@@ -1803,6 +1808,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
         }
         free(transfer_request->metadata_id);
         transfer_request->metadata_id = NULL;
+        transfer_request->is_done = 1;
         remove_local_transfer_request(transfer_request->obj_pointer, transfer_request_id);
     }
     else {
@@ -1865,10 +1871,11 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         if (!transfer_request->metadata_id) {
             fprintf(stderr,
                     "PDCregion_transfer_wait_all [rank %d] @ line %d: Attempt to wait for a transfer request "
-                    "that has not been started.\n",
-                    pdc_client_mpi_rank_g, __LINE__);
-            ret_value = FAIL;
-            goto done;
+                    "that has not been started. %d/%d\n",
+                    pdc_client_mpi_rank_g, __LINE__, i, size);
+            /* ret_value = FAIL; */
+            continue;
+            /* goto done; */
         }
         total_requests += transfer_request->n_obj_servers;
         for (j = 0; j < transfer_request->n_obj_servers; ++j) {
