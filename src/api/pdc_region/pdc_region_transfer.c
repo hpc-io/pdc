@@ -1419,9 +1419,9 @@ merge_transfer_request_ids(pdcid_t *transfer_request_id, int size, pdcid_t *merg
 
         /* *merged_request_id = */
         /*     PDCregion_transfer_create(new_buf, PDC_WRITE, obj_id, new_local_reg, new_remote_reg); */
-        *merged_request_id =
-            PDCregion_transfer_create(new_buf, all_transfer_request[0]->access_type, obj_id, new_local_reg, new_remote_reg);
-        *merged_size = 1;
+        *merged_request_id = PDCregion_transfer_create(new_buf, all_transfer_request[0]->access_type, obj_id,
+                                                       new_local_reg, new_remote_reg);
+        *merged_size       = 1;
         // Add new xfer id to the first request for later wait_all use
         all_transfer_request[0]->merged_request_id = *merged_request_id;
     }
@@ -1824,11 +1824,11 @@ done:
 perr_t
 PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
 {
-    perr_t ret_value = SUCCEED;
-    int index, i, j, merged_xfer = 0, ori_size = size, is_first = 1;
-    size_t unit;
-    int total_requests, n_objs;
-    uint64_t *metadata_ids, merge_off = 0, cur_off = 0;
+    perr_t                              ret_value = SUCCEED;
+    int                                 index, i, j, merged_xfer = 0, ori_size = size, is_first = 1;
+    size_t                              unit;
+    int                                 total_requests, n_objs;
+    uint64_t *                          metadata_ids, merge_off = 0, cur_off = 0;
     pdc_transfer_request_wait_all_pkg **transfer_requests, *transfer_request_head, *transfer_request_end,
         *temp;
 
