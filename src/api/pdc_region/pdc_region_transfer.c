@@ -1361,11 +1361,11 @@ merge_transfer_request_ids(pdcid_t *transfer_request_id, int size, pdcid_t *merg
             break;
         }
 
-        // Check if every requests are write operations
-        if (all_transfer_request[i]->access_type != PDC_WRITE) {
-            flag = 1;
-            break;
-        }
+        /* // Check if every requests are write operations */
+        /* if (all_transfer_request[i]->access_type != PDC_WRITE) { */
+        /*     flag = 1; */
+        /*     break; */
+        /* } */
 
         // Check if every requests are on the same object
         if (i == 0)
@@ -1417,8 +1417,10 @@ merge_transfer_request_ids(pdcid_t *transfer_request_id, int size, pdcid_t *merg
             }
         }
 
+        /* *merged_request_id = */
+        /*     PDCregion_transfer_create(new_buf, PDC_WRITE, obj_id, new_local_reg, new_remote_reg); */
         *merged_request_id =
-            PDCregion_transfer_create(new_buf, PDC_WRITE, obj_id, new_local_reg, new_remote_reg);
+            PDCregion_transfer_create(new_buf, all_transfer_request[0]->access_type, obj_id, new_local_reg, new_remote_reg);
         *merged_size = 1;
         // Add new xfer id to the first request for later wait_all use
         all_transfer_request[0]->merged_request_id = *merged_request_id;
@@ -1822,16 +1824,16 @@ done:
 perr_t
 PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
 {
-    perr_t                              ret_value = SUCCEED;
-    int                                 index, i, j;
-    size_t                              unit;
-    int                                 total_requests, n_objs;
-    uint64_t *                          metadata_ids;
+    perr_t ret_value = SUCCEED;
+    int index, i, j, merged_xfer = 0, ori_size = size, is_first = 1;
+    size_t unit;
+    int total_requests, n_objs;
+    uint64_t *metadata_ids, merge_off = 0, cur_off = 0;
     pdc_transfer_request_wait_all_pkg **transfer_requests, *transfer_request_head, *transfer_request_end,
         *temp;
 
     struct _pdc_id_info **transferinfo;
-    pdc_transfer_request *transfer_request;
+    pdc_transfer_request *transfer_request, *merged_request;
     pdcid_t *             my_transfer_request_id = transfer_request_id;
 
     double t0, t1;
@@ -1855,6 +1857,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         if (transfer_request->merged_request_id != 0) {
             my_transfer_request_id = &transfer_request->merged_request_id;
             size                   = 1;
+            merged_xfer            = 1;
         }
     }
 
@@ -2028,6 +2031,26 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     t0 = MPI_Wtime();
     /* fprintf(stderr, "Part 4 took %.6f\n", t0-t1); */
 #endif
+    // Deal with merged read requests, need to copy a large buffer to each of the original request buf
+    // TODO: Currently only supports 1D merging, so only consider 1D for now
+    if (merged_xfer == 1) {
+        merged_request = (pdc_transfer_request *)(PDC_find_id(my_transfer_request_id[0])->obj_ptr);
+        for (i = 0; i < ori_size; ++i) {
+            transfer_request = (pdc_transfer_request *)(PDC_find_id(transfer_request_id[i])->obj_ptr);
+            if (transfer_request->access_type == PDC_READ) {
+                if (is_first == 1)
+                    merge_off = transfer_request->remote_region_offset[0];
+                cur_off = transfer_request->remote_region_offset[0] - merge_off;
+                if (!transfer_request->new_buf)
+                    transfer_request->new_buf = PDC_malloc(transfer_request->total_data_size);
+
+                memcpy(transfer_request->new_buf, merged_request->read_bulk_buf[0] + merge_off,
+                       transfer_request->total_data_size);
+
+                is_first = 0;
+            }
+        }
+    }
 
     for (i = 0; i < size; ++i) {
         if (NULL == transferinfo[i])
