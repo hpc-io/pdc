@@ -1445,7 +1445,7 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
         merged_request_id = PDC_MALLOC(pdcid_t);
         merge_transfer_request_ids(transfer_request_id, size, merged_request_id, &merged_size);
         if (merged_size == 1) {
-            size = merged_size;
+            size                = merged_size;
             transfer_request_id = merged_request_id;
         }
     }
@@ -1808,7 +1808,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
         }
         free(transfer_request->metadata_id);
         transfer_request->metadata_id = NULL;
-        transfer_request->is_done = 1;
+        transfer_request->is_done     = 1;
         remove_local_transfer_request(transfer_request->obj_pointer, transfer_request_id);
     }
     else {
