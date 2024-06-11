@@ -78,6 +78,15 @@ typedef struct {
 BULKI_Entity *BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src);
 
 /**
+ * @brief Get the BULKI structure from the BULKI_Entity array by the given index.
+ * @param bulki_entity Pointer to the BULKI_Entity structure
+ * @param idx Index of the BULKI structure to get
+ *
+ * @return Pointer to the BULKI structure
+ */
+BULKI *BULKI_ENTITY_get_BULKI(BULKI_Entity *bulki_entity, size_t idx);
+
+/**
  * @brief Append a BULKI_Entity structure to the BULKI_Entity structure
  * You need to make sure the content the src structure is the final version before calling this function.
  * Any change to the content of src after calling this function will not be reflected in the serialized data
@@ -91,6 +100,15 @@ BULKI_Entity *BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src);
  * @return Pointer to the BULKI_Entity structure
  */
 BULKI_Entity *BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src);
+
+/**
+ * @brief Get the BULKI_Entity structure from the BULKI_Entity array by the given index.
+ * @param bulk_entity Pointer to the BULKI_Entity structure
+ * @param idx Index of the BULKI_Entity structure to get
+ *
+ * @return Pointer to the BULKI_Entity structure
+ */
+BULKI_Entity *BULKI_ENTITY_get_BULKI_Entity(BULKI_Entity *bulk_entity, size_t idx);
 
 /**
  * @brief create an empty BULKI_Entity structure, usually used as a wrapper for BULKI_Entity structure. Since

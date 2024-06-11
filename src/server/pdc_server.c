@@ -46,7 +46,7 @@
 
 #include "pdc_config.h"
 #include "pdc_utlist.h"
-#include "pdc_hash-table.h"
+#include "pdc_hash_table.h"
 #include "pdc_interface.h"
 #include "pdc_analysis_pkg.h"
 #include "pdc_client_server_common.h"

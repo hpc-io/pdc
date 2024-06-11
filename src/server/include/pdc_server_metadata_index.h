@@ -11,7 +11,7 @@
 #include "pdc_hash.h"
 #include "pdc_compare.h"
 #include "dart_core.h"
-#include "pdc_hash-table.h"
+#include "pdc_hash_table.h"
 #include "bin_file_ops.h"
 
 /**

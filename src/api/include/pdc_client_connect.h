@@ -1035,7 +1035,7 @@ DART *get_dart_g();
  *
  *
  */
-dart_server dart_retrieve_server_info_cb(uint32_t serverId);
+void dart_retrieve_server_info_cb(dart_server *target_server);
 
 /**
  * Search through dart index with key-value pair.
