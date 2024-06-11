@@ -106,8 +106,8 @@ pdc_region_close(struct pdc_region_info *op)
     free(op->size);
     free(op->offset);
     if (op->obj != NULL)
-        op->obj = PDC_FREE(struct _pdc_obj_info, op->obj);
-    op = PDC_FREE(struct pdc_region_info, op);
+        op->obj = (struct _pdc_obj_info *)(intptr_t)PDC_free(op->obj);
+    op = (struct pdc_region_info *)(intptr_t)PDC_free(op);
 
     FUNC_LEAVE(ret_value);
 }
@@ -184,7 +184,7 @@ PDCregion_create(psize_t ndims, uint64_t *offset, uint64_t *size)
 
     FUNC_ENTER(NULL);
 
-    p = PDC_MALLOC(struct pdc_region_info);
+    p = (struct pdc_region_info *)PDC_malloc(sizeof(struct pdc_region_info));
     if (!p)
         PGOTO_ERROR(ret_value, "PDC region memory allocation failed");
     p->ndim     = ndims;

@@ -215,7 +215,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     obj2 = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
     // remote_meta_id = obj2->obj_info_pub->meta_id;
 
-    p                   = PDC_MALLOC(pdc_transfer_request);
+    p                   = (pdc_transfer_request *)PDC_malloc(sizeof(pdc_transfer_request));
     p->obj_pointer      = obj2;
     p->mem_type         = obj2->obj_pt->obj_prop_pub->type;
     p->local_obj_id     = obj_id;
@@ -973,6 +973,11 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                                     &(transfer_request->n_obj_servers), &(transfer_request->obj_servers),
                                     &(transfer_request->sub_offsets), &(transfer_request->output_offsets),
                                     &(transfer_request->output_sizes), &(transfer_request->output_buf));
+            if (transfer_request->n_obj_servers == 0) {
+                printf("PDC_Client %d, %s: error with static region partition, no server is selected!\n",
+                       pdc_client_mpi_rank_g, __func__);
+                return FAIL;
+            }
             for (j = 0; j < transfer_request->n_obj_servers; ++j) {
                 request_pkgs =
                     (pdc_transfer_request_start_all_pkg *)malloc(sizeof(pdc_transfer_request_start_all_pkg));
@@ -1454,8 +1459,9 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 
     // Split write and read requests. Handle them separately.
     // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
-    prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests, &read_transfer_requests,
-                               &write_size, &read_size, &posix_transfer_request_id, &posix_size);
+    ret_value = prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests,
+                                           &read_transfer_requests, &write_size, &read_size,
+                                           &posix_transfer_request_id, &posix_size);
     /*
         printf("PDCregion_transfer_start_all: checkpoint %d, write_size = %d, read_size = %d\n", __LINE__,
                write_size, read_size);
@@ -1593,12 +1599,18 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
 
     if (transfer_request->region_partition == PDC_REGION_STATIC) {
         // Identify which part of the region is going to which data server.
-        static_region_partition(transfer_request->new_buf, transfer_request->remote_region_ndim, unit,
-                                transfer_request->access_type, transfer_request->obj_dims,
-                                transfer_request->remote_region_offset, transfer_request->remote_region_size,
-                                1, &(transfer_request->n_obj_servers), &(transfer_request->obj_servers),
-                                &(transfer_request->sub_offsets), &(transfer_request->output_offsets),
-                                &(transfer_request->output_sizes), &(transfer_request->output_buf));
+        ret_value = static_region_partition(
+            transfer_request->new_buf, transfer_request->remote_region_ndim, unit,
+            transfer_request->access_type, transfer_request->obj_dims, transfer_request->remote_region_offset,
+            transfer_request->remote_region_size, 1, &(transfer_request->n_obj_servers),
+            &(transfer_request->obj_servers), &(transfer_request->sub_offsets),
+            &(transfer_request->output_offsets), &(transfer_request->output_sizes),
+            &(transfer_request->output_buf));
+        if (transfer_request->n_obj_servers == 0) {
+            printf("PDC_Client %d, %s: error with static region partition, no server is selected!\n",
+                   pdc_client_mpi_rank_g, __func__);
+            return FAIL;
+        }
         /*
                 printf("n_obj_servers = %d\n", transfer_request->n_obj_servers);
                 for ( i = 0; i < transfer_request->n_obj_servers; ++i ) {

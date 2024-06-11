@@ -98,7 +98,7 @@ main(int argc, char **argv)
         printf("Writing %" PRIu64 " number of particles for %llu steps with %d clients.\n", numparticles,
                steps, size);
 
-    dims[0] = numparticles;
+    dims[0] = numparticles * size;
 
     x = (float *)malloc(numparticles * sizeof(float));
     y = (float *)malloc(numparticles * sizeof(float));
