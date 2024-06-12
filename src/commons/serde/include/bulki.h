@@ -105,6 +105,13 @@ BULKI_Entity *empty_Bent_Array_Entity();
 BULKI_Entity *empty_BULKI_Array_Entity();
 
 /**
+ *
+ */
+BULKI_Entity *BULKI_singleton_ENTITY(void *data, pdc_c_var_type_t pdc_type);
+
+BULKI_Entity *BULKI_array_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type);
+
+/**
  * @brief Create a BULKI_Entity structure with data of base type.
  * It is okay to change the content of `data` after this call if `data` is a BULKI or BULKI_Entity structure.
  * But to make sure you won't change teh content of `data` or the content of the result BULKI_Entity structure
@@ -118,6 +125,23 @@ BULKI_Entity *empty_BULKI_Array_Entity();
  */
 BULKI_Entity *BULKI_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type,
                            pdc_c_var_class_t pdc_class);
+
+/**
+ * @brief A wrapper of BULKI_ENTITY((void *)single_data, 1, pdc_type, PDC_CLS_ITEM)
+ * @param data Pointer to the data
+ * @param pdc_type Data type of the single element
+ * @return Pointer to the created BULKI_Entity structure
+ */
+BULKI_Entity *BULKI_singleton_ENTITY(void *data, pdc_c_var_type_t pdc_type);
+
+/**
+ * @brief A wrapper of BULKI_ENTITY((void*)array_data, array_len, pdc_type, PDC_CLS_ARRAY)
+ * @param data Pointer to the data
+ * @param count Number of elements in the array
+ * @param pdc_type Data type of each element in the array
+ * @return Pointer to the created BULKI_Entity structure
+ */
+BULKI_Entity *BULKI_array_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type);
 
 /**
  * @brief Initialize a Bulki data structure

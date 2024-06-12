@@ -211,6 +211,18 @@ BULKI_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type, pdc_c_var_cl
     return bulki_entity;
 }
 
+BULKI_Entity *
+BULKI_singleton_ENTITY(void *data, pdc_c_var_type_t pdc_type)
+{
+    return BULKI_ENTITY(data, 1, pdc_type, PDC_CLS_ITEM);
+}
+
+BULKI_Entity *
+BULKI_array_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type)
+{
+    return BULKI_ENTITY(data, count, pdc_type, PDC_CLS_ARRAY);
+}
+
 BULKI *
 BULKI_init(int initial_field_count)
 {

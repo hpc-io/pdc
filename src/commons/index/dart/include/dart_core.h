@@ -44,11 +44,9 @@ typedef struct {
     int         dart_tree_height;
     int         replication_factor;
     int         client_request_count;
-    uint32_t    num_client;
     uint32_t    num_server;
     uint64_t    num_vnode;
     dart_vnode *vnodes;
-    int         suffix_tree_mode;
 } DART;
 
 typedef struct {
@@ -80,8 +78,10 @@ typedef dart_server (*get_server_info_callback)(uint32_t server_id);
  *
  *
  */
-void dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height,
-                     int replication_factor, int max_server_num_to_adapt);
+void dart_space_init(DART *dart, int num_server);
+
+void __dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height,
+                       int replication_factor, int max_server_num_to_adapt);
 
 /**
  * This function make the client request counter increment by 1.

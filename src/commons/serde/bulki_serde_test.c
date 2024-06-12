@@ -13,6 +13,13 @@ test_base_type()
     BULKI_Entity *intValue   = BULKI_ENTITY(&intVal, 1, PDC_INT, PDC_CLS_ITEM);
     BULKI_put(bulki, intKey, intValue);
 
+    int *intArrVal          = (int *)malloc(3 * sizeof(int));
+    intArrVal[0]            = 9; // x
+    intArrVal[1]            = 8; // y
+    intArrVal[2]            = 7; // z
+    BULKI_Entity *intArrKey = BULKI_ENTITY(intArrVal, 3, PDC_INT, PDC_CLS_ARRAY);
+    BULKI_put(bulki, intArrKey, intValue);
+
     char *        doubleKey_str = "double";
     double        doubleVal     = 3.14159;
     BULKI_Entity *doubleKey     = BULKI_ENTITY(doubleKey_str, 1, PDC_STRING, PDC_CLS_ITEM);

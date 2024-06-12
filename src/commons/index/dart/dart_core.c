@@ -3,6 +3,24 @@
 #include "dart_math.h"
 #include "dart_core.h"
 
+#ifdef PDC_DART_MAX_SERVER_NUM_TO_ADAPT
+#define DART_MAX_SERVER_NUM_TO_ADAPT PDC_DART_MAX_SERVER_NUM_TO_ADAPT
+#else
+#define DART_MAX_SERVER_NUM_TO_ADAPT 8192
+#endif
+
+#ifdef PDC_DART_ALPHABET_SIZE
+#define DART_ALPHABET_SIZE PDC_DART_ALPHABET_SIZE
+#else
+#define DART_ALPHABET_SIZE 27
+#endif
+
+#ifdef PDC_DART_REPLICATION_FACTOR
+#define DART_REPLICATION_FACTOR PDC_DART_REPLICATION_FACTOR
+#else
+#define DART_REPLICATION_FACTOR 3
+#endif
+
 threadpool dart_thpool_g;
 
 threadpool
@@ -24,15 +42,20 @@ is_index_write_op(dart_op_type_t op_type)
 }
 
 void
-dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height, int replication_factor,
-                int max_server_num_to_adapt)
+dart_space_init(DART *dart, int num_server)
+{
+    __dart_space_init(dart, num_server, DART_ALPHABET_SIZE, 0, DART_REPLICATION_FACTOR,
+                      DART_MAX_SERVER_NUM_TO_ADAPT);
+}
+
+void
+__dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height,
+                  int replication_factor, int max_server_num_to_adapt)
 {
     if (dart == NULL) {
         dart = (DART *)calloc(1, sizeof(DART));
     }
     dart->alphabet_size = alphabet_size;
-    // // initialize clients;
-    // dart->num_client = num_client;
     // initialize servers;
     dart->num_server = num_server;
 
@@ -45,7 +68,6 @@ dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_he
     dart->num_vnode          = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
     dart->replication_factor = replication_factor;
     dart_thpool_g            = thpool_init(num_server);
-    dart->suffix_tree_mode   = 1;
 }
 
 /**

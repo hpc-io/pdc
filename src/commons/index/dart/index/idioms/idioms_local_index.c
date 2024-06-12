@@ -30,7 +30,7 @@ IDIOMS_init(uint32_t server_id, uint32_t num_servers)
     idioms->num_servers_g = num_servers;
 
     idioms->dart_info_g = (DART *)calloc(1, sizeof(DART));
-    _init_dart_space_via_idioms(idioms->dart_info_g, idioms->num_servers_g, IDIOMS_MAX_SERVER_COUNT_TO_ADAPT);
+    _init_dart_space_via_idioms(idioms->dart_info_g, idioms->num_servers_g);
 
     return idioms;
 }

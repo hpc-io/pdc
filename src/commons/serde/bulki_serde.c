@@ -5,14 +5,14 @@
  * This function serializes the entire BULKI structure.
  * 
  * The overview of the serialized binary data layout is:
- * +---------------------+---------------------+---------------------+---------------------+---------------------+----------------------+----------------------+----------------------+
- * |   Total Size        |   Number of Keys    | Size of the Header  |   Size of the Data  |   Header Region     | Data Offset          |   Data Region        | Data Offset          |
- * |     (uint64_t)      |     (uint64_t)      |     (uint64_t)      |   (uint64_t)        |   (uint64_t)        |   (uint64_t)         |   (uint64_t)         |   (uint64_t)         |
- * +---------------------+---------------------+---------------------+---------------------+---------------------+----------------------+----------------------+----------------------+
+ * +---------------------+---------------------+---------------------+---------------------+---------------------+----------------------+
+ * |   Total Size        |   Number of Keys    | Size of the Header  |   Size of the Data  |   Header Region     | Data Region          |
+ * |     (uint64_t)      |     (uint64_t)      |     (uint64_t)      |   (uint64_t)        |   (uint64_t)        |   (uint64_t)         |
+ * +---------------------+---------------------+---------------------+---------------------+---------------------+----------------------+
  * 
- * The first 3 field is called meta-header, which provides metadata about the total size of BULKI, number of keys, size of the header region and the size of the data region.
+ * The first 4 fields are called meta-header, which provides metadata about the total size of BULKI, number of keys, size of the header region and the size of the data region.
  * 
- * The header region contains multiple BULKI entities, each of which is a key. 
+ * The header/data region contains multiple BULKI entities. 
  * Each BULKI entity contains the following fields:
  * +-------------------------+-----------------------------+---------------------------+--------------------------+-----------------------------+
  * | size                    |     Entitiy class           | Entitiy type              | count                    | data                        |

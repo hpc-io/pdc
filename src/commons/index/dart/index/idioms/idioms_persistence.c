@@ -177,7 +177,7 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
  *
  */
 int
-append_attr_root_tree(art_tree *art, char *dir_path, char *base_name, uint32_t serverID)
+dump_attr_root_tree(art_tree *art, char *dir_path, char *base_name, uint32_t serverID)
 {
     HashTable *vid_buf_hash =
         hash_table_new(pdc_default_uint64_hash_func_ptr, pdc_default_uint64_equal_func_ptr);
@@ -202,6 +202,25 @@ append_attr_root_tree(art_tree *art, char *dir_path, char *base_name, uint32_t s
     return rst;
 }
 
+dump_dart_info(DART *dart, char *dir_path, uint32_t serverID)
+{
+    if (serverID == 0) {
+        char file_name[1024];
+        sprintf(file_name, "%s/%s.bin", dir_path, "dart_info");
+        LOG_INFO("Writing DART info to file_name: %s\n", file_name);
+        FILE *stream = fopen(file_name, "wb");
+
+        int      alphabet_size;
+        int      dart_tree_height;
+        int      replication_factor;
+        int      client_request_count;
+        uint32_t num_server;
+        int      suffix_tree_mode;
+
+        DART_serialize_to_file(dart, stream);
+    }
+}
+
 perr_t
 idioms_metadata_index_dump(IDIOMS_t *idioms, char *dir_path, uint32_t serverID)
 {
@@ -210,10 +229,11 @@ idioms_metadata_index_dump(IDIOMS_t *idioms, char *dir_path, uint32_t serverID)
     stopwatch_t timer;
     timer_start(&timer);
 
-    // 2. append attribute region
-    append_attr_root_tree(idioms->art_key_prefix_tree_g, dir_path, "idioms_prefix", serverID);
+    // dump DART info
+    dump_dart_info(idioms->dart_info_g, dir_path, serverID);
 
-    append_attr_root_tree(idioms->art_key_suffix_tree_g, dir_path, "idioms_suffix", serverID);
+    dump_attr_root_tree(idioms->art_key_prefix_tree_g, dir_path, "idioms_prefix", serverID);
+    dump_attr_root_tree(idioms->art_key_suffix_tree_g, dir_path, "idioms_suffix", serverID);
 
     timer_pause(&timer);
     println("[IDIOMS_Index_Dump_%d] Timer to dump index = %.4f microseconds\n", serverID,

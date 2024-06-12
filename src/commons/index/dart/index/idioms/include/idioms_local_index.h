@@ -15,9 +15,6 @@
 #include "bulki_serde.h"
 #include "rbtree.h"
 
-#define IDIOMS_DART_ALPHABET_SIZE        27
-#define IDIOMS_MAX_SERVER_COUNT_TO_ADAPT 1024
-
 /**
  * 2024-03-07: TODO items
  * 1. Debugging the Index persistence mechanism
@@ -94,13 +91,9 @@ typedef struct {
 } index_buffer_t;
 
 static void
-_init_dart_space_via_idioms(DART *dart, int num_server, int max_server_num_to_adapt)
+_init_dart_space_via_idioms(DART *dart, int num_server)
 {
-    int extra_tree_height  = 0;
-    int replication_factor = 3;
-    replication_factor     = replication_factor > 0 ? replication_factor : 2;
-    dart_space_init(dart, num_server, IDIOMS_DART_ALPHABET_SIZE, extra_tree_height, replication_factor,
-                    num_server);
+    dart_space_init(dart, num_server);
 }
 
 static void
