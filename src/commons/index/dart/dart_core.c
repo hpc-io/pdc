@@ -48,6 +48,45 @@ dart_space_init(DART *dart, int num_server)
                       DART_MAX_SERVER_NUM_TO_ADAPT);
 }
 
+dart_determine_query_token_by_key_query(char *k_query, char **out_token, dart_op_type_t *out_op_type)
+{
+    if (out_token == NULL || out_op_type == NULL) {
+        return;
+    }
+    char *         affix;
+    pattern_type_t dart_query_type = determine_pattern_type(k_query);
+    switch (dart_query_type) {
+        case PATTERN_EXACT:
+            *out_token   = strdup(k_query);
+            *out_op_type = OP_EXACT_QUERY;
+            break;
+        case PATTERN_PREFIX:
+            affix        = subrstr(k_query, strlen(k_query) - 1);
+            *out_token   = strdup(affix);
+            *out_op_type = OP_PREFIX_QUERY;
+            break;
+        case PATTERN_SUFFIX:
+            affix = substr(k_query, 1);
+#ifndef PDC_DART_SFX_TREE
+            *out_token = reverse_str(affix);
+#else
+            *out_token = strdup(affix);
+#endif
+            *out_op_type = OP_SUFFIX_QUERY;
+            break;
+        case PATTERN_MIDDLE:
+            affix        = substring(k_query, 1, strlen(k_query) - 1);
+            *out_token   = strdup(affix);
+            *out_op_type = OP_INFIX_QUERY;
+            break;
+        default:
+            break;
+    }
+    if (affix != NULL) {
+        free(affix);
+    }
+}
+
 void
 __dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height,
                   int replication_factor, int max_server_num_to_adapt)
@@ -391,8 +430,12 @@ get_reconciled_vnode_id_with_power_of_two_choice_rehashing_2(DART *dart, uint64_
     int reconcile_serverId = get_server_id_by_vnode_id(dart, reconciled_vnode_idx);
     if (get_server_cb != NULL) {
         // Check both physical server to see which one has smaller number of indexed keywords on it.
-        dart_server origin_server     = get_server_cb(serverId);
-        dart_server reconciled_server = get_server_cb(reconcile_serverId);
+        dart_server origin_server;
+        origin_server.id = serverId;
+        get_server_cb(&origin_server);
+        dart_server reconciled_server;
+        reconciled_server.id = reconcile_serverId;
+        get_server_cb(&reconciled_server);
         // printf("For keyword %s, choosing between %d and %d\n", word, serverId, reconcile_serverId);
 
         if (origin_server.indexed_word_count > reconciled_server.indexed_word_count) {
@@ -662,7 +705,7 @@ DART_hash(DART *dart_g, char *key, dart_op_type_t op_type, get_server_info_callb
         // when suffix tree mode is ON, we store suffixes of the key to the suffix trie.
         is_suffix = iter > 0 ? 1 : 0;
 #else
-        tok        = iter > 0 ? reverse_str(key) : strdup(key);
+        tok = iter > 0 ? reverse_str(key) : strdup(key);
         // when suffix tree mode is OFF, we store reversed string to the suffix trie.
         is_suffix = iter > 0 ? 1 : 0;
 #endif

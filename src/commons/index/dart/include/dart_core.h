@@ -67,11 +67,13 @@ typedef struct {
     int8_t   is_suffix; // 1: this is a suffix of another key, 0: this is just a normal key.
 } index_hash_result_t;
 
+void dart_determine_query_token_by_key_query(char *key_query, char **out_token, dart_op_type_t *out_op_type);
+
 // Defining a function pointer by which the server load information can be retrieved.
 // The returning data type should be dart_server, which is a struct.
 // The parameter should be a uint32_t.
 // The function name can be anything.
-typedef dart_server (*get_server_info_callback)(uint32_t server_id);
+typedef void (*get_server_info_callback)(dart_server *server_ptr);
 
 /**
  * Initialize the DART space.

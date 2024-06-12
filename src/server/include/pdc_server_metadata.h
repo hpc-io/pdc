@@ -32,7 +32,7 @@
 #include "mercury_proc_string.h"
 #include "mercury_atomic.h"
 
-#include "pdc_hash-table.h"
+#include "pdc_hash_table.h"
 
 #include "pdc_server_common.h"
 #include "pdc_client_server_common.h"

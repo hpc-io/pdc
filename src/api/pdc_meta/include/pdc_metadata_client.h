@@ -2,6 +2,7 @@
 #define PDC_METADATA_CLIENT_H
 
 #include "pdc_client_connect.h"
+#include "pdc_client_server_common.h"
 
 typedef struct {
     int       n_res;

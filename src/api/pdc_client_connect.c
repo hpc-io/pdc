@@ -8405,45 +8405,41 @@ client_dart_get_server_info_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
-dart_server
-dart_retrieve_server_info_cb(uint32_t serverId)
+void
+dart_retrieve_server_info_cb(dart_server *server_ptr)
 {
-    dart_server ret;
 
-    perr_t srv_lookup_rst = PDC_Client_try_lookup_server(serverId, 0);
+    perr_t srv_lookup_rst = PDC_Client_try_lookup_server(server_ptr->id, 0);
     if (srv_lookup_rst == FAIL) {
-        println("the server %d cannot be connected. ", serverId);
+        println("the server %d cannot be connected. ", server_ptr->id);
         goto done;
     }
 
     // Mercury comm here.
     hg_handle_t dart_get_server_info_handle;
-    HG_Create(send_context_g, pdc_server_info_g[serverId].addr, dart_get_server_info_g,
+    HG_Create(send_context_g, pdc_server_info_g[server_ptr->id].addr, dart_get_server_info_g,
               &dart_get_server_info_handle);
     dart_get_server_info_in_t in;
-    in.serverId = serverId;
+    in.serverId = server_ptr->id;
     struct client_genetic_lookup_args lookup_args;
     hg_return_t                       hg_ret =
         HG_Forward(dart_get_server_info_handle, client_dart_get_server_info_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr,
                 "dart_get_server_info_g(): Could not start HG_Forward() on serverId = %ld with host = %s\n",
-                serverId, pdc_server_info_g[serverId].addr_string);
+                server_ptr->id, pdc_server_info_g[server_ptr->id].addr_string);
         HG_Destroy(dart_get_server_info_handle);
-        return ret;
+        return;
     }
 
     // Wait for response from server
     hg_atomic_set32(&atomic_work_todo_g, 1);
     PDC_Client_check_response(&send_context_g);
 
-    ret.id                 = serverId;
-    ret.indexed_word_count = lookup_args.int64_value1;
-    ret.request_count      = lookup_args.int64_value2;
+    server_ptr->indexed_word_count = lookup_args.int64_value1;
+    server_ptr->request_count      = lookup_args.int64_value2;
 done:
     HG_Destroy(dart_get_server_info_handle);
-
-    return ret;
 }
 
 DART *
@@ -8722,39 +8718,10 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     char *         k_query = get_key(query_string, '=');
     char *         v_query = get_value(query_string, '=');
     char *         tok     = NULL;
-    char *         affix   = NULL;
     dart_op_type_t dart_op;
 
-    pattern_type_t dart_query_type = determine_pattern_type(k_query);
-    switch (dart_query_type) {
-        case PATTERN_EXACT:
-            tok     = strdup(k_query);
-            dart_op = OP_EXACT_QUERY;
-            break;
-        case PATTERN_PREFIX:
-            affix   = subrstr(k_query, strlen(k_query) - 1);
-            tok     = strdup(affix);
-            dart_op = OP_PREFIX_QUERY;
-            break;
-        case PATTERN_SUFFIX:
-            affix = substr(k_query, 1);
-#ifndef PDC_DART_SFX_TREE
-            tok = reverse_str(affix);
-#else
-            tok = strdup(affix);
-#endif
-            dart_op = OP_SUFFIX_QUERY;
-            break;
-        case PATTERN_MIDDLE:
-            // tok = (char *)calloc(strlen(k_query)-2, sizeof(char));
-            // strncpy(tok, &k_query[1], strlen(k_query)-2);
-            affix   = substring(k_query, 1, strlen(k_query) - 1);
-            tok     = strdup(affix);
-            dart_op = OP_INFIX_QUERY;
-            break;
-        default:
-            break;
-    }
+    dart_determine_query_token_by_key_query(k_query, &tok, &dart_op);
+
     if (tok == NULL) {
         printf("==PDC_CLIENT[%d]: Error with tok\n", pdc_client_mpi_rank_g);
         ret_value = FAIL;
@@ -8764,7 +8731,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     out[0] = NULL;
 
     dart_perform_one_server_in_t input_param;
-    input_param.op_type      = dart_query_type;
+    input_param.op_type      = dart_op;
     input_param.hash_algo    = hash_algo;
     input_param.attr_key     = query_string;
     input_param.attr_val     = v_query;
@@ -8815,8 +8782,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // done:
     free(k_query);
     free(v_query);
-    if (affix != NULL)
-        free(affix);
+
     if (tok != NULL)
         free(tok);
 
