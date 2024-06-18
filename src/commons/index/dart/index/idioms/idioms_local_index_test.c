@@ -52,8 +52,7 @@ init_clients(int num_clients)
 
     // simulate the initialization of the DART space
     for (int i = 0; i < num_clients; i++) {
-        dart_space_init(clients[i].dart, clients[i].num_servers, clients[i].DART_ALPHABET_SIZE,
-                        clients[i].extra_tree_height, clients[i].replication_factor, clients[i].num_servers);
+        dart_space_init(clients[i].dart, clients[i].num_servers);
     }
 }
 

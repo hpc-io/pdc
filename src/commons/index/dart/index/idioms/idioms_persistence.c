@@ -208,16 +208,22 @@ dump_dart_info(DART *dart, char *dir_path, uint32_t serverID)
         char file_name[1024];
         sprintf(file_name, "%s/%s.bin", dir_path, "dart_info");
         LOG_INFO("Writing DART info to file_name: %s\n", file_name);
-        FILE *stream = fopen(file_name, "wb");
+        FILE *        stream   = fopen(file_name, "wb");
+        BULKI_Entity *dart_ent = empty_Bent_Array_Entity();
+        BULKI_ENTITY_append_BULKI_Entity(dart_ent,
+                                         BULKI_ENTITY(&(dart->alphabet_size), 1, PDC_INT, PDC_CLS_ITEM));
+        BULKI_ENTITY_append_BULKI_Entity(dart_ent,
+                                         BULKI_ENTITY(&(dart->dart_tree_height), 1, PDC_INT, PDC_CLS_ITEM));
+        BULKI_ENTITY_append_BULKI_Entity(dart_ent,
+                                         BULKI_ENTITY(&(dart->replication_factor), 1, PDC_INT, PDC_CLS_ITEM));
+        BULKI_ENTITY_append_BULKI_Entity(
+            dart_ent, BULKI_ENTITY(&(dart->client_request_count), 1, PDC_INT, PDC_CLS_ITEM));
+        BULKI_ENTITY_append_BULKI_Entity(dart_ent,
+                                         BULKI_ENTITY(&(dart->num_server), 1, PDC_UINT32, PDC_CLS_ITEM));
+        BULKI_ENTITY_append_BULKI_Entity(dart_ent,
+                                         BULKI_ENTITY(&(dart->num_vnode), 1, PDC_UINT64, PDC_CLS_ITEM));
 
-        int      alphabet_size;
-        int      dart_tree_height;
-        int      replication_factor;
-        int      client_request_count;
-        uint32_t num_server;
-        int      suffix_tree_mode;
-
-        DART_serialize_to_file(dart, stream);
+        BULKI_Entity_serialize_to_file(dart_ent, stream);
     }
 }
 
@@ -415,6 +421,61 @@ read_attr_name_node(IDIOMS_t *idioms, char *dir_path, char *base_name, uint32_t 
         }
     }
     return rst;
+}
+
+void
+load_dart_info(DART *dart, char *dir_path, uint32_t serverID)
+{
+    if (serverID == 0) {
+        char file_name[1024];
+        sprintf(file_name, "%s/%s.bin", dir_path, "dart_info");
+        FILE *stream = fopen(file_name, "rb");
+        if (stream == NULL) {
+            return;
+        }
+        BULKI_Entity *         dart_ent = BULKI_Entity_deserialize_from_file(stream);
+        BULKI_Entity_Iterator *it       = Bent_iterator_init(dart_ent, NULL, PDC_UNKNOWN);
+        int                    i        = 0;
+        while (Bent_iterator_has_next_Bent(it)) {
+            BULKI_Entity *entry = Bent_iterator_next_Bent(it);
+            switch (i) {
+                case 0:
+                    if (entry->pdc_type == PDC_INT) {
+                        dart->alphabet_size = *(int *)entry->data;
+                    }
+                    break;
+                case 1:
+                    if (entry->pdc_type == PDC_INT) {
+                        dart->dart_tree_height = *(int *)entry->data;
+                    }
+                    break;
+                case 2:
+                    if (entry->pdc_type == PDC_INT) {
+                        dart->replication_factor = *(int *)entry->data;
+                    }
+                    break;
+                case 3:
+                    if (entry->pdc_type == PDC_INT) {
+                        dart->client_request_count = *(int *)entry->data;
+                    }
+                    break;
+                case 4:
+
+                    if (entry->pdc_type == PDC_UINT32) {
+                        dart->num_server = *(uint32_t *)entry->data;
+                    }
+                    break;
+
+                case 5:
+
+                    if (entry->pdc_type == PDC_UINT64) {
+                        dart->num_vnode = *(uint64_t *)entry->data;
+                    }
+                    break;
+            }
+            i++;
+        }
+    }
 }
 
 perr_t

@@ -123,10 +123,20 @@ BULKI_Entity *empty_Bent_Array_Entity();
 BULKI_Entity *empty_BULKI_Array_Entity();
 
 /**
- *
+ * @brief Create a BULKI_Entity structure with data of base type.
+ * @param data Pointer to the Entity data
+ * @param pdc_type Data type of the data
+ * @return Pointer to the created BULKI_Entity structure
  */
 BULKI_Entity *BULKI_singleton_ENTITY(void *data, pdc_c_var_type_t pdc_type);
 
+/**
+ * @brief Create a BULKI_Entity structure with data of base type, and the count of elements in the array
+ * @param data Pointer to the Entity data
+ * @param count Number of elements in the array
+ * @param pdc_type Data type of each element in the array
+ * @return Pointer to the created BULKI_Entity structure
+ */
 BULKI_Entity *BULKI_array_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type);
 
 /**

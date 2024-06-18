@@ -48,6 +48,29 @@ dart_space_init(DART *dart, int num_server)
                       DART_MAX_SERVER_NUM_TO_ADAPT);
 }
 
+void
+__dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height,
+                  int replication_factor, int max_server_num_to_adapt)
+{
+    if (dart == NULL) {
+        dart = (DART *)calloc(1, sizeof(DART));
+    }
+    dart->alphabet_size = alphabet_size;
+    // initialize servers;
+    dart->num_server = num_server;
+
+    double physical_node_num =
+        max_server_num_to_adapt == 0 ? (double)num_server : (double)max_server_num_to_adapt;
+
+    dart->dart_tree_height =
+        (int)ceil(log_with_base((double)dart->alphabet_size, physical_node_num)) + 1 + extra_tree_height;
+    // calculate number of all leaf nodes
+    dart->num_vnode          = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
+    dart->replication_factor = replication_factor;
+    dart_thpool_g            = thpool_init(num_server);
+}
+
+void
 dart_determine_query_token_by_key_query(char *k_query, char **out_token, dart_op_type_t *out_op_type)
 {
     if (out_token == NULL || out_op_type == NULL) {
@@ -85,28 +108,6 @@ dart_determine_query_token_by_key_query(char *k_query, char **out_token, dart_op
     if (affix != NULL) {
         free(affix);
     }
-}
-
-void
-__dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_height,
-                  int replication_factor, int max_server_num_to_adapt)
-{
-    if (dart == NULL) {
-        dart = (DART *)calloc(1, sizeof(DART));
-    }
-    dart->alphabet_size = alphabet_size;
-    // initialize servers;
-    dart->num_server = num_server;
-
-    double physical_node_num =
-        max_server_num_to_adapt == 0 ? (double)num_server : (double)max_server_num_to_adapt;
-
-    dart->dart_tree_height =
-        (int)ceil(log_with_base((double)dart->alphabet_size, physical_node_num)) + 1 + extra_tree_height;
-    // calculate number of all leaf nodes
-    dart->num_vnode          = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
-    dart->replication_factor = replication_factor;
-    dart_thpool_g            = thpool_init(num_server);
 }
 
 /**
