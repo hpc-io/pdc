@@ -6,8 +6,11 @@ typedef enum { IDIOMS_INSERT = 1, IDIOMS_DELETE = 2, IDIOMS_QUERY = 3 } IDIOMS_O
 
 typedef struct {
     IDIOMS_t *idioms;
-    void *    buffer;
-    size_t    buffer_size;
+    void *    buffer_in;
+    size_t    buffer_in_size;
+    void *    buffer_out;
+    size_t    buffer_out_size;
+    int       id;
 } dummy_server_t;
 
 typedef struct {
@@ -17,8 +20,11 @@ typedef struct {
     int    extra_tree_height;
     int    replication_factor;
     int    dart_insert_count;
-    void * buffer;
-    size_t buffer_size;
+    void * buffer_in;
+    size_t buffer_in_size;
+    void * buffer_out;
+    size_t buffer_out_size;
+    int    id;
 } dummy_client_t;
 
 dummy_server_t *servers;
@@ -31,23 +37,25 @@ init_servers(int num_servers)
     servers = (dummy_server_t *)malloc(num_servers * sizeof(dummy_server_t));
     // initialize each server, simulating the initialization of every single process
     for (int i = 0; i < num_servers; i++) {
+        servers[i].id     = i;
         servers[i].idioms = IDIOMS_init(i, num_servers);
     }
 }
 
 void
-init_clients(int num_clients)
+init_clients(int num_clients, int num_servers)
 {
     // create an array of dummy_client_t
     clients = (dummy_client_t *)malloc(num_clients * sizeof(dummy_client_t));
     // initialize each client, simulating the initialization of every single process
     for (int i = 0; i < num_clients; i++) {
+        clients[i].id                 = i;
         clients[i].dart               = (DART *)calloc(1, sizeof(DART));
-        clients[i].num_servers        = 3;
+        clients[i].num_servers        = num_servers;
         clients[i].DART_ALPHABET_SIZE = 27;
         clients[i].extra_tree_height  = 0;
-        clients[i].replication_factor = 3; // pdc_server_num_g / 10;
         clients[i].replication_factor = clients[i].replication_factor > 0 ? clients[i].replication_factor : 2;
+        clients[i].replication_factor = 1; // pdc_server_num_g / 10;
     }
 
     // simulate the initialization of the DART space
@@ -79,8 +87,8 @@ client_generate_request(dummy_client_t *client, IDIOMS_OP_TYPE op_type, char *ke
         BULKI_ENTITY_append_BULKI_Entity(bentArr, value_ent);                                     // 2. value
         BULKI_ENTITY_append_BULKI_Entity(bentArr, BULKI_ENTITY(id, 1, PDC_UINT64, PDC_CLS_ITEM)); // 3. id
     }
-    client->buffer_size = get_BULKI_Entity_size(bentArr);
-    client->buffer      = BULKI_Entity_serialize(bentArr);
+    client->buffer_out_size = get_BULKI_Entity_size(bentArr);
+    client->buffer_out      = BULKI_Entity_serialize(bentArr);
 }
 
 void
@@ -115,20 +123,20 @@ void
 sending_request_to_server(dummy_client_t *client, dummy_server_t *server)
 {
     // memcpy to simulate the sending of the request to the server
-    server->buffer_size = client->buffer_size;
-    server->buffer      = (void *)malloc(server->buffer_size);
-    memcpy(server->buffer, client->buffer, server->buffer_size);
-    free(client->buffer);
+    server->buffer_in_size = client->buffer_out_size;
+    server->buffer_in      = (void *)malloc(server->buffer_in_size);
+    memcpy(server->buffer_in, client->buffer_out, server->buffer_in_size);
+    free(client->buffer_out);
 }
 
 void
 get_response_from_server(dummy_client_t *client, dummy_server_t *server)
 {
     // memcpy to simulate the receiving of the response from the server
-    client->buffer_size = server->buffer_size;
-    client->buffer      = (void *)malloc(client->buffer_size);
-    memcpy(client->buffer, server->buffer, client->buffer_size);
-    free(server->buffer);
+    client->buffer_in_size = server->buffer_out_size;
+    client->buffer_in      = (void *)malloc(client->buffer_in_size);
+    memcpy(client->buffer_in, server->buffer_out, client->buffer_in_size);
+    free(server->buffer_out);
 }
 
 perr_t
@@ -176,8 +184,10 @@ server_perform_delete(dummy_server_t *server, char *key, BULKI_Entity *value_ent
 void
 server_perform_operation(dummy_server_t *server)
 {
-    BULKI_Entity * resultBent  = empty_Bent_Array_Entity();
-    BULKI_Entity * bentArr     = BULKI_Entity_deserialize(server->buffer);
+    // printf("Perform operation on server %d\n", server->id);
+    BULKI_Entity *resultBent = empty_Bent_Array_Entity();
+    BULKI_Entity *bentArr    = BULKI_Entity_deserialize(server->buffer_in);
+    free(server->buffer_in);
     BULKI_Entity * opType_ent  = BULKI_ENTITY_get_BULKI_Entity(bentArr, 0);
     BULKI_Entity * key_ent     = BULKI_ENTITY_get_BULKI_Entity(bentArr, 1);
     char *         key         = (char *)key_ent->data;
@@ -204,15 +214,16 @@ server_perform_operation(dummy_server_t *server)
         BULKI_ENTITY_append_BULKI_Entity(resultBent,
                                          BULKI_ENTITY(obj_id_list, count, PDC_UINT64, PDC_CLS_ARRAY));
     }
-    server->buffer_size = get_BULKI_Entity_size(resultBent);
-    server->buffer      = BULKI_Entity_serialize(resultBent);
+    server->buffer_out_size = get_BULKI_Entity_size(resultBent);
+    server->buffer_out      = BULKI_Entity_serialize(resultBent);
 }
 
 perr_t
 client_parse_response(dummy_client_t *client, uint64_t **obj_id_list, uint64_t *count)
 {
-    BULKI_Entity *resultBent = BULKI_Entity_deserialize(client->buffer);
-    int           result     = *(int *)BULKI_ENTITY_get_BULKI_Entity(resultBent, 0)->data;
+    BULKI_Entity *resultBent = BULKI_Entity_deserialize(client->buffer_in);
+    free(client->buffer_in);
+    int result = *(int *)BULKI_ENTITY_get_BULKI_Entity(resultBent, 0)->data;
     if (result == SUCCEED && obj_id_list != NULL && count != NULL) {
         BULKI_Entity *obj_id_bent = BULKI_ENTITY_get_BULKI_Entity(resultBent, 1);
         if (obj_id_bent != NULL && obj_id_bent->count > 0) {
@@ -220,7 +231,7 @@ client_parse_response(dummy_client_t *client, uint64_t **obj_id_list, uint64_t *
             *count       = obj_id_bent->count;
         }
     }
-    free(client->buffer);
+    free(client->buffer_in);
     return result;
 }
 
@@ -229,8 +240,8 @@ client_insert_data(dummy_client_t *client, int id)
 {
     char key[40];
     char value[40];
-    sprintf(key, "%d_key_%d", id, id);
-    sprintf(value, "%d_value_%d", id, id);
+    sprintf(key, "%d_%d", id, id);
+    sprintf(value, "%d_%d", id, id);
     uint64_t u64_id = (uint64_t)id;
     // generate a request for each client
     index_hash_result_t *hash_result       = NULL;
@@ -248,14 +259,26 @@ client_insert_data(dummy_client_t *client, int id)
 }
 
 void
+client_print_result(uint64_t *rst_ids, uint64_t rst_count)
+{
+    printf("Result count : %" PRIu64 " | ", rst_count);
+    for (int i = 0; i < rst_count; i++) {
+        printf("%lu ", rst_ids[i]);
+    }
+    printf("|\n");
+}
+
+void
 client_perform_search(dummy_client_t *client, int id)
 {
-    char query[40];
+    char query[100];
     // exact search
-    sprintf(query, "%d_key_%d=%d_value_%d", id, id, id, id);
+    sprintf(query, "%d_%d=\"%d_%d\"", id, id, id, id);
     // generate a request for each client
     index_hash_result_t *hash_result       = NULL;
     int                  num_selected_srvs = client_select_server(client, query, IDIOMS_QUERY, &hash_result);
+    uint64_t *           rst_ids           = NULL;
+    uint64_t             rst_count         = 0;
     for (int s = 0; s < num_selected_srvs; s++) {
         client_generate_request(client, IDIOMS_QUERY, query, NULL, NULL);
         sending_request_to_server(client, &servers[hash_result[s].server_id]);
@@ -264,13 +287,18 @@ client_perform_search(dummy_client_t *client, int id)
         uint64_t *obj_id_list = NULL;
         uint64_t  count       = 0;
         perr_t    result      = client_parse_response(client, &obj_id_list, &count);
-        char *    result_str  = result == SUCCEED ? "SUCCEED" : "FAILED";
-        printf("Search result: %s | ", result_str);
-        for (int i = 0; i < count; i++) {
-            printf("%lu ", ((uint64_t *)obj_id_list)[i]);
+        if (result == SUCCEED && count > 0) {
+            rst_count += count;
+            if (rst_ids == NULL) {
+                rst_ids = (uint64_t *)malloc(rst_count * sizeof(uint64_t));
+            }
+            else {
+                rst_ids = (uint64_t *)realloc(rst_ids, rst_count * sizeof(uint64_t));
+            }
+            memcpy(rst_ids + rst_count - count, obj_id_list, count * sizeof(uint64_t));
         }
-        printf("|\n");
     }
+    client_print_result(rst_ids, rst_count);
 }
 
 void
@@ -278,8 +306,8 @@ client_delete_data(dummy_client_t *client, int id)
 {
     char key[20];
     char value[20];
-    sprintf(key, "%d_key_%d", id, id);
-    sprintf(value, "%d_value_%d", id, id);
+    sprintf(key, "%d_%d", id, id);
+    sprintf(value, "%d_%d", id, id);
     uint64_t u64_id = (uint64_t)id;
     // generate a request for each client
     BULKI_Entity *value_ent = BULKI_ENTITY(value, 1, PDC_STRING, PDC_CLS_ITEM);
@@ -308,7 +336,7 @@ main(int argc, char *argv[])
     init_servers(num_servers);
 
     // create an array of dummy_client_t
-    init_clients(num_clients);
+    init_clients(num_clients, num_servers);
 
     // insert data
     for (int i = 0; i < num_clients; i++) {
@@ -319,7 +347,11 @@ main(int argc, char *argv[])
         }
     }
 
-    // search data
+    // client_insert_data(&clients[0], 10);
+
+    // client_perform_search(&clients[0], 10);
+
+    // // search data
     for (int i = 0; i < num_clients; i++) {
         for (int id = 10000; id < 20000; id++) {
             if (id % num_clients != i)
@@ -328,7 +360,7 @@ main(int argc, char *argv[])
         }
     }
 
-    // delete data
+    // // delete data
     for (int i = 0; i < num_clients; i++) {
         for (int id = 10000; id < 20000; id++) {
             if (id % num_clients != i)
@@ -337,7 +369,7 @@ main(int argc, char *argv[])
         }
     }
 
-    // search data
+    // // search data
     for (int i = 0; i < num_clients; i++) {
         for (int id = 10000; id < 20000; id++) {
             if (id % num_clients != i)

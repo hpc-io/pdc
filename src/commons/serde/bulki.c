@@ -176,7 +176,8 @@ BULKI_ENTITY_get_BULKI(BULKI_Entity *bulki_entity, size_t idx)
         return NULL;
     }
     if (idx >= bulki_entity->count) {
-        printf("Error: index is out of bound\n");
+        printf("idx = %d, count = %d Warning: index for bulki_entity is out of bound\n", idx,
+               bulki_entity->count);
         return NULL;
     }
     return &((BULKI *)bulki_entity->data)[idx];
@@ -201,21 +202,22 @@ BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src)
 }
 
 BULKI_Entity *
-BULKI_ENTITY_get_BULKI_Entity(BULKI_Entity *bulk_entity, size_t idx)
+BULKI_ENTITY_get_BULKI_Entity(BULKI_Entity *bulki_entity, size_t idx)
 {
-    if (bulk_entity == NULL) {
+    if (bulki_entity == NULL) {
         printf("Error: bulki_entity is NULL\n");
         return NULL;
     }
-    if (bulk_entity->pdc_class != PDC_CLS_ARRAY || bulk_entity->pdc_type != PDC_BULKI_ENT) {
+    if (bulki_entity->pdc_class != PDC_CLS_ARRAY || bulki_entity->pdc_type != PDC_BULKI_ENT) {
         printf("Error: bulki_entity is not an array of BULKI_Entity structure\n");
         return NULL;
     }
-    if (idx >= bulk_entity->count) {
-        printf("Error: index is out of bound\n");
+    if (idx >= bulki_entity->count) {
+        // printf("idx = %d, count = %d Warning: index for bulki_entity is out of bound\n", idx,
+        // bulki_entity->count);
         return NULL;
     }
-    return &((BULKI_Entity *)bulk_entity->data)[idx];
+    return &((BULKI_Entity *)bulki_entity->data)[idx];
 }
 
 BULKI_Entity *

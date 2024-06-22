@@ -202,6 +202,7 @@ dump_attr_root_tree(art_tree *art, char *dir_path, char *base_name, uint32_t ser
     return rst;
 }
 
+void
 dump_dart_info(DART *dart, char *dir_path, uint32_t serverID)
 {
     if (serverID == 0) {
@@ -485,6 +486,8 @@ idioms_metadata_index_recover(IDIOMS_t *idioms, char *dir_path, int num_server, 
 
     stopwatch_t timer;
     timer_start(&timer);
+
+    load_dart_info(idioms->dart_info_g, dir_path, serverID);
 
     uint64_t *vid_array = NULL;
     size_t    num_vids  = get_vnode_ids_by_serverID(idioms->dart_info_g, serverID, &vid_array);

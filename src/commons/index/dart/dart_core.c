@@ -67,7 +67,7 @@ __dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_
     // calculate number of all leaf nodes
     dart->num_vnode          = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
     dart->replication_factor = replication_factor;
-    dart_thpool_g            = thpool_init(num_server);
+    // dart_thpool_g            = thpool_init(num_server);
 }
 
 void
@@ -76,7 +76,8 @@ dart_determine_query_token_by_key_query(char *k_query, char **out_token, dart_op
     if (out_token == NULL || out_op_type == NULL) {
         return;
     }
-    char *         affix;
+    char *affix = NULL;
+
     pattern_type_t dart_query_type = determine_pattern_type(k_query);
     switch (dart_query_type) {
         case PATTERN_EXACT:
