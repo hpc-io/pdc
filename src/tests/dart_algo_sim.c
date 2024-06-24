@@ -28,10 +28,11 @@ int32_t request_count_g;
 
 dart_server *all_servers;
 
-dart_server
-virtual_dart_retrieve_server_info_cb(uint32_t server_id)
+void
+virtual_dart_retrieve_server_info_cb(dart_server *server_ptr)
 {
-    return all_servers[server_id];
+    server_ptr->indexed_word_count = server_ptr->indexed_word_count + 1;
+    server_ptr->request_count      = server_ptr->request_count + 1;
 }
 
 // void
