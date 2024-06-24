@@ -54,7 +54,7 @@ main(int argc, char **argv)
     char *   value = "1234";
     uint64_t data  = 12341234;
     // if (rank == 0) {
-    PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, data);
+    PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, strlen(value), PDC_STRING, ref_type, data);
     println("[Client_Side_Insert] Insert '%s=%s' for ref %llu", key, value, data);
 
     // This is for testing exact search

@@ -193,6 +193,8 @@ struct _dart_perform_one_thread_param {
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 
+// PDC_pe_info_t *PDC_get_pe_info();
+
 uint32_t PDC_get_client_data_server();
 
 /***************************************/
@@ -1033,7 +1035,7 @@ DART *get_dart_g();
  *
  *
  */
-dart_server dart_retrieve_server_info_cb(uint32_t serverId);
+void dart_retrieve_server_info_cb(dart_server *target_server);
 
 /**
  * Search through dart index with key-value pair.
@@ -1075,12 +1077,15 @@ perr_t PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, ch
  * \param hash_algo     [IN]    name of the hashing algorithm
  * \param attr_key [IN]    Name of the attribute
  * \param attr_value [IN]   Value of the attribute
+ * \param attr_vsize [IN]    Size of the attribute value
+ * \param attr_vtype [IN]    Type of the attribute value
  * \param ref_type  [IN]    The reference type of the object, e.g. PRIMARY_ID, SECONDARY_ID, SERVER_ID
  * \param data      [IN]    Associated value along with the key-value pair.
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                           size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                            dart_object_ref_type_t ref_type, uint64_t data);
 
 /**
@@ -1089,17 +1094,22 @@ perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *att
  * \param hash_algo     [IN]    name of the hashing algorithm
  * \param attr_key [IN]    Name of the attribute
  * \param attr_value [IN]   Value of the attribute
+ * \param attr_vsize [IN]    Size of the attribute value
+ * \param attr_vtype [IN]    Type of the attribute value
  * \param ref_type  [IN]    The reference type of the object, e.g. PRIMARY_ID, SECONDARY_ID, SERVER_ID
  * \param data      [IN]    Associated value along with the key-value pair.
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                           size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                            dart_object_ref_type_t ref_type, uint64_t data);
 
 /**
  * Report the average profiling time of the server if the info is available.
  */
 void report_avg_server_profiling_rst();
+
+int get_dart_insert_count();
 
 #endif /* PDC_CLIENT_CONNECT_H */

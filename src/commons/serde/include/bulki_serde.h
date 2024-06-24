@@ -13,30 +13,113 @@
 #define MAX_BUFFER_SIZE 1000
 
 /**
- * @brief get the total size of BULKI structure instance
+ * @brief Serialize a BULKI_Entity structure to a buffer
  *
- * @param data Pointer to the BULKI structure instance
+ * @param entity Pointer to the BULKI_Entity structure
+ * @param buffer Pointer to the buffer
+ * @param offset Pointer to the offset
  *
- * @return total size of the BULKI structure instance
+ * @return Pointer to the buffer
  */
-uint64_t get_total_size_for_serialized_data(BULKI *data);
+void *BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *offset);
 
 /**
- * @brief Serialize the data in the serialized data structure and return the buffer
+ * @brief Serialize a BULKI structure to a buffer
+ *
+ * @param bulki Pointer to the BULKI structure
+ * @param buffer Pointer to the buffer
+ * @param offset Pointer to the offset
+ *
+ * @return Pointer to the buffer
+ */
+void *BULKI_serialize_to_buffer(BULKI *bulki, void *buffer, size_t *offset);
+
+/**
+ * @brief Serialize a BULKI_Entity structure to a buffer
+ *
+ * @param entity Pointer to the BULKI_Entity structure
+ *
+ * @return Pointer to the buffer
+ */
+void *BULKI_Entity_serialize(BULKI_Entity *entity);
+
+/**
+ * @brief Serialize a BULKI structure to a buffer
  *
  * @param data Pointer to the BULKI structure
  *
- * @return Pointer to the buffer containing the serialized data
+ * @return Pointer to the buffer
  */
-void *BULKI_serde_serialize(BULKI *data);
+void *BULKI_serialize(BULKI *data);
 
 /**
- * @brief Deserialize the buffer and return the deserialized data structure
- *
- * @param buffer Pointer to the buffer containing the serialized data
- *
- * @return Pointer to the deserialized BULKI structure
+ * @brief Serialize a BULKI_Entity structure to a file and then close the file
+ * @param bulki_entity  The BULKI_Entity structure
+ * @param fp  The file pointer
+ * @return
  */
-BULKI *BULKI_serde_deserialize(void *buffer);
+void BULKI_Entity_serialize_to_file(BULKI_Entity *bulki_entity, FILE *fp);
+
+/**
+ * @brief Serialize a BULKI structure to a file and then close the file
+ * @param bulki  The BULKI structure
+ * @param fp  The file pointer
+ * @return
+ */
+void BULKI_serialize_to_file(BULKI *bulki, FILE *fp);
+
+/********************** Deserialize ************************** */
+
+/**
+ * @brief Deserialize a BULKI_Entity structure from a buffer
+ *
+ * @param buffer Pointer to the buffer
+ * @param offset Pointer to the offset
+ *
+ * @return Pointer to the BULKI_Entity structure
+ */
+BULKI *BULKI_deserialize_from_buffer(void *buffer, size_t *offset);
+
+/**
+ * @brief Deserialize a BULKI structure from a buffer
+ *
+ * @param buffer Pointer to the buffer
+ *
+ * @return Pointer to the BULKI structure
+ */
+BULKI *BULKI_deserialize(void *buffer);
+
+/**
+ * @brief Deserialize a BULKI structure from a buffer
+ *
+ * @param buffer Pointer to the buffer
+ * @param offset Pointer to the offset
+ *
+ * @return Pointer to the BULKI structure
+ */
+BULKI_Entity *BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset);
+
+/**
+ * @brief Deserialize a BULKI structure from a buffer
+ *
+ * @param buffer Pointer to the buffer
+ *
+ * @return Pointer to the BULKI structure
+ */
+BULKI_Entity *BULKI_Entity_deserialize(void *buffer);
+
+/**
+ * @brief Deserialize a BULKI_Entity structure from a file
+ * @param fp  The file pointer
+ * @return Pointer to the BULKI_Entity structure
+ */
+BULKI_Entity *BULKI_Entity_deserialize_from_file(FILE *fp);
+
+/**
+ * @brief Deserialize a BULKI structure from a file
+ * @param fp  The file pointer
+ * @return Pointer to the BULKI structure
+ */
+BULKI *BULKI_deserialize_from_file(FILE *fp);
 
 #endif /* BULKI_SERDE_H */

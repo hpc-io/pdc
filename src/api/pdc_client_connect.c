@@ -70,6 +70,7 @@ int                    is_client_debug_g      = 0;
 pdc_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
 int                    pdc_client_mpi_rank_g  = 0;
 int                    pdc_client_mpi_size_g  = 1;
+int                    dart_insert_count      = 0;
 
 // FIXME: this is a temporary solution for printing out debug info, like memory usage.
 int memory_debug_g = 0; // when it is no longer 0, stop printing debug info.
@@ -1492,12 +1493,8 @@ PDC_Client_init()
         srand(time(NULL));
 
         /* Initialize DART space */
-        dart_g                 = (DART *)calloc(1, sizeof(DART));
-        int extra_tree_height  = 0;
-        int replication_factor = pdc_server_num_g / 10;
-        replication_factor     = replication_factor > 0 ? replication_factor : 2;
-        dart_space_init(dart_g, pdc_client_mpi_size_g, pdc_server_num_g, DART_ALPHABET_SIZE,
-                        extra_tree_height, replication_factor);
+        dart_g = (DART *)calloc(1, sizeof(DART));
+        dart_space_init(dart_g, pdc_server_num_g);
 
         server_time_total_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
         server_call_count_g = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
@@ -8408,45 +8405,41 @@ client_dart_get_server_info_cb(const struct hg_cb_info *callback_info)
     FUNC_LEAVE(ret_value);
 }
 
-dart_server
-dart_retrieve_server_info_cb(uint32_t serverId)
+void
+dart_retrieve_server_info_cb(dart_server *server_ptr)
 {
-    dart_server ret;
 
-    perr_t srv_lookup_rst = PDC_Client_try_lookup_server(serverId, 0);
+    perr_t srv_lookup_rst = PDC_Client_try_lookup_server(server_ptr->id, 0);
     if (srv_lookup_rst == FAIL) {
-        println("the server %d cannot be connected. ", serverId);
+        println("the server %d cannot be connected. ", server_ptr->id);
         goto done;
     }
 
     // Mercury comm here.
     hg_handle_t dart_get_server_info_handle;
-    HG_Create(send_context_g, pdc_server_info_g[serverId].addr, dart_get_server_info_g,
+    HG_Create(send_context_g, pdc_server_info_g[server_ptr->id].addr, dart_get_server_info_g,
               &dart_get_server_info_handle);
     dart_get_server_info_in_t in;
-    in.serverId = serverId;
+    in.serverId = server_ptr->id;
     struct client_genetic_lookup_args lookup_args;
     hg_return_t                       hg_ret =
         HG_Forward(dart_get_server_info_handle, client_dart_get_server_info_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
         fprintf(stderr,
                 "dart_get_server_info_g(): Could not start HG_Forward() on serverId = %ld with host = %s\n",
-                serverId, pdc_server_info_g[serverId].addr_string);
+                server_ptr->id, pdc_server_info_g[server_ptr->id].addr_string);
         HG_Destroy(dart_get_server_info_handle);
-        return ret;
+        return;
     }
 
     // Wait for response from server
     hg_atomic_set32(&atomic_work_todo_g, 1);
     PDC_Client_check_response(&send_context_g);
 
-    ret.id                 = serverId;
-    ret.indexed_word_count = lookup_args.int64_value1;
-    ret.request_count      = lookup_args.int64_value2;
+    server_ptr->indexed_word_count = lookup_args.int64_value1;
+    server_ptr->request_count      = lookup_args.int64_value2;
 done:
     HG_Destroy(dart_get_server_info_handle);
-
-    return ret;
 }
 
 DART *
@@ -8630,6 +8623,12 @@ _aggregate_dart_results_from_all_servers(struct bulk_args_t *lookup_args, Set *o
     return total_num_results;
 }
 
+int
+get_dart_insert_count()
+{
+    return dart_insert_count;
+}
+
 uint64_t
 dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
                         dart_perform_one_server_in_t *dart_in, Set *output_set)
@@ -8640,6 +8639,8 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
     int                 num_requests         = 0;
     uint32_t            total_n_meta         = 0;
     dart_op_type_t      op_type              = dart_in->op_type;
+
+    dart_in->src_client_id = pdc_client_mpi_rank_g;
 
     FUNC_ENTER(NULL);
 
@@ -8655,7 +8656,10 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
         lookup_args[i].op_type = op_type;
 
         if (is_index_write_op(op_type)) {
-            dart_in->attr_key = strdup((*hash_result)[i].key);
+            dart_in->vnode_id         = (*hash_result)[i].virtual_node_id;
+            dart_in->attr_key         = strdup((*hash_result)[i].key);
+            dart_in->inserting_suffix = (*hash_result)[i].is_suffix;
+            dart_insert_count++;
         }
 
         _dart_send_request_to_one_server(server_id, dart_in, &(lookup_args[i]), &(dart_request_handles[i]));
@@ -8688,6 +8692,11 @@ dart_perform_on_servers(index_hash_result_t **hash_result, int num_servers,
         //     }
         // }
     }
+
+    // println("[CLIENT %d] (dart_perform_on_servers) %s on %d servers and get %d results, time : "
+    //         "%.4f ms. ",
+    //         pdc_client_mpi_rank_g, is_index_write_op(op_type) ? "write dart index" : "read dart index",
+    //         num_servers, total_n_meta, timer_delta_ms(&timer));
     // free(dart_request_handles);
 done:
     FUNC_LEAVE(ret_value);
@@ -8709,39 +8718,10 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     char *         k_query = get_key(query_string, '=');
     char *         v_query = get_value(query_string, '=');
     char *         tok     = NULL;
-    char *         affix   = NULL;
     dart_op_type_t dart_op;
 
-    pattern_type_t dart_query_type = determine_pattern_type(k_query);
-    switch (dart_query_type) {
-        case PATTERN_EXACT:
-            tok     = strdup(k_query);
-            dart_op = OP_EXACT_QUERY;
-            break;
-        case PATTERN_PREFIX:
-            affix   = subrstr(k_query, strlen(k_query) - 1);
-            tok     = strdup(affix);
-            dart_op = OP_PREFIX_QUERY;
-            break;
-        case PATTERN_SUFFIX:
-            affix = substr(k_query, 1);
-#ifndef PDC_DART_SFX_TREE
-            tok = reverse_str(affix);
-#else
-            tok = strdup(affix);
-#endif
-            dart_op = OP_SUFFIX_QUERY;
-            break;
-        case PATTERN_MIDDLE:
-            // tok = (char *)calloc(strlen(k_query)-2, sizeof(char));
-            // strncpy(tok, &k_query[1], strlen(k_query)-2);
-            affix   = substring(k_query, 1, strlen(k_query) - 1);
-            tok     = strdup(affix);
-            dart_op = OP_INFIX_QUERY;
-            break;
-        default:
-            break;
-    }
+    dart_determine_query_token_by_key_query(k_query, &tok, &dart_op);
+
     if (tok == NULL) {
         printf("==PDC_CLIENT[%d]: Error with tok\n", pdc_client_mpi_rank_g);
         ret_value = FAIL;
@@ -8751,10 +8731,12 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     out[0] = NULL;
 
     dart_perform_one_server_in_t input_param;
-    input_param.op_type      = dart_query_type;
+    input_param.op_type      = dart_op;
     input_param.hash_algo    = hash_algo;
     input_param.attr_key     = query_string;
     input_param.attr_val     = v_query;
+    input_param.attr_vsize   = strlen(v_query);
+    input_param.attr_vtype   = PDC_STRING;
     input_param.obj_ref_type = ref_type;
 
     // TODO: see if timestamp can help
@@ -8800,8 +8782,7 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
     // done:
     free(k_query);
     free(v_query);
-    if (affix != NULL)
-        free(affix);
+
     if (tok != NULL)
         free(tok);
 
@@ -8815,7 +8796,8 @@ PDC_Client_search_obj_ref_through_dart(dart_hash_algo_t hash_algo, char *query_s
 }
 
 perr_t
-PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                    size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                     dart_object_ref_type_t ref_type, uint64_t data)
 {
 
@@ -8825,6 +8807,8 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.hash_algo    = hash_algo;
     input_param.attr_key     = attr_key;
     input_param.attr_val     = attr_val;
+    input_param.attr_vsize   = attr_vsize;
+    input_param.attr_vtype   = attr_vtype;
     input_param.obj_ref_type = ref_type;
     // FIXME: temporarily ugly implementation here, some assignment can be ignored
     // and save some bytes for data transfer.
@@ -8854,7 +8838,8 @@ PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, 
 }
 
 perr_t
-PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                    size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                     dart_object_ref_type_t ref_type, uint64_t data)
 {
     // println("input: attr_key = %s, attr_val = %s", attr_key, attr_val);
@@ -8864,6 +8849,8 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     input_param.hash_algo    = hash_algo;
     input_param.attr_key     = attr_key;
     input_param.attr_val     = attr_val;
+    input_param.attr_vsize   = attr_vsize;
+    input_param.attr_vtype   = attr_vtype;
     input_param.obj_ref_type = ref_type;
     // FIXME: temporarily ugly implementation here, some assignment can be ignored
     // and save some bytes for data transfer.
@@ -8877,6 +8864,7 @@ PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, 
     int                  num_servers = 0;
     index_hash_result_t *hash_result = NULL;
     if (hash_algo == DART_HASH) {
+        // suffix-tree mode switch will be set during this call.
         num_servers = DART_hash(dart_g, attr_key, OP_INSERT, dart_retrieve_server_info_cb, &hash_result);
     }
     else if (hash_algo == DHT_FULL_HASH) {

@@ -216,13 +216,15 @@ main(int argc, char **argv)
 
         for (i = 0; i < word_count; i++) {
             int data = i;
-            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
         }
 
         for (i = 0; i < word_count; i++) {
             int data = i;
-            PDC_Client_delete_obj_ref_from_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_delete_obj_ref_from_dart(index_type, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
         }
 
@@ -235,7 +237,8 @@ main(int argc, char **argv)
         for (i = 0; i < word_count; i++) {
             timer_start(&detailed_timer);
             int data = i;
-            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
             timer_pause(&detailed_timer);
             if (round == 1)
@@ -547,7 +550,8 @@ main(int argc, char **argv)
         for (i = 0; i < word_count; i++) {
             timer_start(&detailed_timer);
             int data = i;
-            PDC_Client_delete_obj_ref_from_dart(hash_algo, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_delete_obj_ref_from_dart(hash_algo, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
             timer_pause(&detailed_timer);
             if (round == 1)

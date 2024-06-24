@@ -3,7 +3,7 @@
 #REGSBATCH -q regular
 #DBGSBATCH -q debug
 #SBATCH -N NODENUM
-#REGSBATCH -t 2:00:00
+#REGSBATCH -t 3:00:00
 #DBGSBATCH -t 0:30:00
 #SBATCH -C cpu
 #SBATCH -J JOBNAME
@@ -64,7 +64,7 @@ mkdir -p $PDC_TMPDIR
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 SERVER=$EXECPATH/pdc_server.exe
-CLIENT=$TOOLPATH/kvtag_query_scale_col
+CLIENT=$TOOLPATH/kvtag_range_query_scale
 CLOSE=$EXECPATH/close_server
 
 chmod +x $EXECPATH/*
@@ -103,6 +103,14 @@ echo ""
 echo "================="
 echo "$i Closing server"
 echo "================="
-stdbuf -i0 -o0 -e0 srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores $CLOSE
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NSERVER -c 2 --mem=25600 --cpu_bind=cores $CLOSE
+
+
+echo ""
+echo "============="
+echo "$i restart server"
+echo "============="
+stdbuf -i0 -o0 -e0 srun -N $N_NODE -n $NSERVER -c $NUM_THREAD_PER_SERVER_PROC  --cpu_bind=cores $SERVER restart &
+sleep 5
 
 date

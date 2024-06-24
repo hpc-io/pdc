@@ -56,7 +56,7 @@ add_library(pdc_server_lib
                pdc_client_server_common.c
                dablooms/pdc_dablooms.c
                dablooms/pdc_murmur.c
-               pdc_hash-table.c
+            #    pdc_hash-table.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_analysis/pdc_server_analysis.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_data.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_cache.c

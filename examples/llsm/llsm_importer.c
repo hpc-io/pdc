@@ -36,18 +36,22 @@ getDoubleTimestamp()
 }
 
 int
-parse_console_args(int argc, char *argv[], char **file_name)
+parse_console_args(int argc, char *argv[], char **file_name, int *flag_m)
 {
     int c, parse_code = -1;
 
-    while ((c = getopt(argc, argv, "f:")) != -1) {
+    while ((c = getopt(argc, argv, "f:m")) != -1) {
         switch (c) {
             case 'f':
                 *file_name = optarg;
                 parse_code = 0;
                 break;
+            case 'm':
+                *flag_m    = 1;
+                parse_code = 0;
+                break;
             default:
-                fprintf(stderr, "Usage: %s [-f filename]\n", argv[0]);
+                fprintf(stderr, "Usage: %s [-m] [-f filename]\n", argv[0]);
                 parse_code = -1;
                 exit(EXIT_FAILURE);
         }
@@ -273,8 +277,9 @@ main(int argc, char *argv[])
     int                   bcast_count  = 512;
     double                duration = 0, start = 0;
     char                  csv_field_types[] = {'s', 's', 'f', 'f', 'f', 'f', 'f', 'f'};
+    int flag_m = 0; // flag for metadata. if 1, then only read metadata from CSV without reading images.
     // parse console argument
-    int parse_code = parse_console_args(argc, argv, &file_name);
+    int parse_code = parse_console_args(argc, argv, &file_name, &flag_m);
     if (parse_code) {
         return parse_code;
     }

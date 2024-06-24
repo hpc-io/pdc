@@ -7,6 +7,7 @@
 #define TAG_DELIMITER ","
 #include "string_utils.h"
 #include "pdc_public.h"
+#include "comparators.h"
 
 typedef struct query_gen_input {
     pdc_kvtag_t *base_tag;
@@ -23,6 +24,19 @@ typedef struct query_gen_output {
     char * value_query;
     size_t value_query_len;
 } query_gen_output_t;
+
+typedef enum { NUM_EXACT, NUM_LT, NUM_GT, NUM_BETWEEN } NUM_QUERY_TYPE;
+
+typedef void (*num_query_action)(void *cond_exact, void *cond_lo, void *cond_hi, int lo_inclusive,
+                                 int hi_inclusive, pdc_c_var_type_t num_type, void *input, void **out,
+                                 uint64_t *out_len);
+
+typedef struct {
+    num_query_action exact_action;
+    num_query_action lt_action;
+    num_query_action gt_action;
+    num_query_action between_action;
+} num_query_action_collection_t;
 
 /**
  * Generate query strings for key and value according to the given input.
@@ -116,5 +130,38 @@ int is_value_match_p(const char *tagslist, const char *tagname, const char *patt
  * @return
  */
 int is_value_in_range(const char *tagslist, const char *tagname, int from, int to);
+
+/**
+ * determine if the value part in the query condition is a string query
+ */
+int is_string_query(char *value_query);
+
+/**
+ * determine if the value part in the query condition is an affix-based query
+ */
+int is_affix_query(char *value_query);
+
+/**
+ * determine if the value part in the query condition is a range query
+ */
+int is_number_query(char *value_query);
+
+/**
+ * parse and run a string query for number value
+ *
+ * The following queries are what we need to support
+ * 1. exact query -> key=|value| (key == value)
+ * 5. range query -> key=value~  (key > value)
+ * 6. range query -> key=~value (key < value)
+ * 7. range query -> key=value|~ (key >= value)
+ * 8. range query -> key=~|value (key <= value)
+ * 9. range query -> key=value1|~value2 (value1 <= key < value2)
+ * 10. range query -> key=value1~|value2 (value1 < key <= value2)
+ * 11. range query -> key=value1~value2 (value1 < key < value2)
+ * 12. range query -> key=value1|~|value2 (value1 <= key <= value2)
+ */
+int parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
+                                     num_query_action_collection_t *action_collection, void *cb_input,
+                                     uint64_t *cb_out_len, void **cb_out);
 
 #endif // PDC_QUERY_UTILS_H

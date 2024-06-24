@@ -153,9 +153,12 @@ endforeach(program)
 if(BUILD_MPI_TESTING)
   set(MPI_PROGRAMS
     kvtag_query_scale_col
+    kvtag_range_query_scale
+    kvtag_affix_query_scale
     # kvtag_query_mpi
     kvtag_add_get_benchmark
     kvtag_add_get_scale
+    llsm_idioms_bench
   )
 
   foreach(program ${MPI_PROGRAMS})
