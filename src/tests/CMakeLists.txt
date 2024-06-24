@@ -96,7 +96,6 @@ set(PROGRAMS
  kvtag_add_get
 #  kvtag_get
  kvtag_query
- kvtag_query_scale
 #  obj_transformation
   region_transfer_query
   region_transfer
@@ -152,7 +151,6 @@ endforeach(program)
 
 if(BUILD_MPI_TESTING)
   set(MPI_PROGRAMS
-    kvtag_query_scale_col
     kvtag_range_query_scale
     kvtag_affix_query_scale
     # kvtag_query_mpi
