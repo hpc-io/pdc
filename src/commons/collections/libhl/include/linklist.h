@@ -1,4 +1,4 @@
-/** 
+/**
  * @file linklist.h
  * @author Andrea Guzzo
  * @date 22/09/2013
@@ -37,9 +37,8 @@ typedef int (*list_comparator_callback_t)(void *v1, void *v2);
  */
 typedef struct _linked_list_s linked_list_t;
 
-
 /********************************************************************
- * Common API 
+ * Common API
  ********************************************************************/
 
 /* List creation and destruction routines */
@@ -97,9 +96,8 @@ void list_lock(linked_list_t *list);
 void list_unlock(linked_list_t *list);
 
 /********************************************************************
- * Value-based API 
+ * Value-based API
  ********************************************************************/
-
 
 /* List access routines */
 
@@ -146,7 +144,6 @@ void *list_shift_value(linked_list_t *list);
  */
 int list_insert_value(linked_list_t *list, void *val, size_t pos);
 
-
 /**
  * @brief Set the value at a specific position
  * @param list : A valid pointer to a linked_list_t structure
@@ -165,7 +162,6 @@ void *list_set_value(linked_list_t *list, size_t pos, void *val);
  * @param val : The new value
  */
 void *list_subst_value(linked_list_t *list, size_t pos, void *val);
-
 
 /**
  * @brief Pick the value at a specific position
@@ -194,7 +190,7 @@ void *list_fetch_value(linked_list_t *list, size_t pos);
  * @param srcPos : The actual position of the value we want to move
  * @param dstPos : The new position where to move the value to
  * @return : 0 if success, -1 otherwise
- */ 
+ */
 int list_move_value(linked_list_t *list, size_t srcPos, size_t dstPos);
 
 /**
@@ -205,7 +201,6 @@ int list_move_value(linked_list_t *list, size_t srcPos, size_t dstPos);
  * @return 0 if success, -1 otherwise
  */
 int list_swap_values(linked_list_t *list, size_t pos1, size_t pos2);
-
 
 /**
  * @brief Callback for the value iterator
@@ -223,31 +218,30 @@ typedef int (*item_handler_t)(void *item, size_t idx, void *user);
 int list_foreach_value(linked_list_t *list, item_handler_t item_handler, void *user);
 
 /********************************************************************
- * Tag-based API 
+ * Tag-based API
  ********************************************************************/
 
 /**
  * @brief Tagged Value
  *
- * This structure represent a tagged_value_t and is the main datatype 
- * you will have to handle when working with the tagged-based api. 
+ * This structure represent a tagged_value_t and is the main datatype
+ * you will have to handle when working with the tagged-based api.
  * If user extract such structure from the list (removing it from the list)
  * then he MUST release its resources trough a call to destroy_tagged_value
  * when finished using it.
- * If a new tagged_value must be created and inserted in a list, then 
- * list_create_tagged_value() should be used to allocate resources and obtain 
+ * If a new tagged_value must be created and inserted in a list, then
+ * list_create_tagged_value() should be used to allocate resources and obtain
  * a pointer to a tagged_value_t structure.
- */ 
+ */
 typedef struct _tagged_value_s {
-    char *tag;
-    void *value;
+    char * tag;
+    void * value;
     size_t vlen;
-    char type;
+    char   type;
 #define TV_TYPE_STRING 0
 #define TV_TYPE_BINARY 1
 #define TV_TYPE_LIST   2
 } tagged_value_t;
-
 
 /* List creation and destruction routines */
 
@@ -269,8 +263,8 @@ tagged_value_t *list_create_tagged_value(char *tag, void *val, size_t len);
  * @param val : The value
  * @return A newly created tagged value with the provided tag and value
  *
- * Only the tag will be copied, the value will just point 
- * to the provided value without it being copied 
+ * Only the tag will be copied, the value will just point
+ * to the provided value without it being copied
  */
 tagged_value_t *list_create_tagged_value_nocopy(char *tag, void *val);
 
@@ -346,7 +340,7 @@ tagged_value_t *list_pick_tagged_value(linked_list_t *list, size_t pos);
  * @param pos : The position (offset) of the requested tagged value
  * @return : The tagged value stored at pos if any, NULL otherwise
  *
- * Note this is a read-write access and the tagged value will be removed from 
+ * Note this is a read-write access and the tagged value will be removed from
  * the list before returning it.
  * The tagged value will not be released
  */
@@ -372,7 +366,7 @@ tagged_value_t *list_get_tagged_value(linked_list_t *list, char *tag);
  * @param len: the length of the value
  * @param copy: leave a copy or not.
  * @return The previous tagged_value_t matching the given tag if any; NULL otherwise
- * @note If a tagged value with the same tag is already contained in the list, 
+ * @note If a tagged value with the same tag is already contained in the list,
  *       this function will replace the old tagged_value_t structure with the
  *       new one preserving the position in the list.\n
  *       If no matching tagged_value_t structure is found, then the new one
@@ -380,12 +374,11 @@ tagged_value_t *list_get_tagged_value(linked_list_t *list, char *tag);
  */
 tagged_value_t *list_set_tagged_value(linked_list_t *list, char *tag, void *value, size_t len, int copy);
 
-
 /**
  * @brief Get all value pointers for all tagged values matching a specific tag
  * @param list : A valid pointer to a linked_list_t structure holding tagged values
  * @param tag  : The tag of the values we are looking for
- * @param values : a valid pointer to a linked_list_t structure where to put the 
+ * @param values : a valid pointer to a linked_list_t structure where to put the
  *               value pointers held by the tagged_value_t items matching the provided tag
  * @return The number of tagged values matching the tag and added to the values linked list
  *
@@ -403,14 +396,13 @@ size_t list_get_tagged_values(linked_list_t *list, char *tag, linked_list_t *val
  */
 void list_sort(linked_list_t *list, list_comparator_callback_t comparator);
 
-
 // size_t get_mem_usage_by_all_linkedlist();
 
 /********************************************************************
- * Slice API 
+ * Slice API
  ********************************************************************/
 
-typedef struct  _slice_s slice_t;
+typedef struct _slice_s slice_t;
 
 slice_t *slice_create(linked_list_t *list, size_t offset, size_t length);
 
