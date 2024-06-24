@@ -2113,7 +2113,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
-/*
+#ifdef ENABLE_MULTITHREAD
 static HG_THREAD_RETURN_TYPE
 pdc_region_write_out_progress(void *arg)
 {
@@ -2169,9 +2169,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-*/
 // enter this function, transfer is done, data is pushed to buffer
-/*
 static hg_return_t
 obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_info)
 {
@@ -2216,9 +2214,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-*/
 
-/*
 static HG_THREAD_RETURN_TYPE
 pdc_region_read_from_progress(void *arg)
 {
@@ -2268,7 +2264,8 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-*/
+#endif
+
 // enter this function, transfer is done, data is in data server
 static hg_return_t
 transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
@@ -6568,6 +6565,8 @@ HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
 HG_TEST_THREAD_CB(get_sel_data_rpc)
 HG_TEST_THREAD_CB(send_read_sel_obj_id_rpc)
+HG_TEST_THREAD_CB(dart_get_server_info)
+HG_TEST_THREAD_CB(dart_perform_one_server)
 
 PDC_FUNC_DECLARE_REGISTER(gen_obj_id)
 PDC_FUNC_DECLARE_REGISTER(gen_cont_id)
