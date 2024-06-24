@@ -146,18 +146,26 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
 
     // create leaf_content node if not exist.
     if (key_leaf_content == NULL) {
+        // create key_leaf_content node for the key.
         key_leaf_content = (key_index_leaf_content_t *)PDC_calloc(1, sizeof(key_index_leaf_content_t));
-        // fill the content of the leaf_content node.
-        if (is_PDC_STRING(idx_record->type)) {
-            // the following gurarantees that both prefix index and suffix index are initialized.
-            key_leaf_content->primary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
-            art_tree_init((art_tree *)key_leaf_content->primary_trie);
+        // insert the key into the the key trie along with the key_leaf_content.
+        art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
+        // LOG_DEBUG("Inserted key %s into the key trie\n", key);
+    }
 
-            key_leaf_content->secondary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
-            art_tree_init((art_tree *)key_leaf_content->secondary_trie);
+    // fill the content of the leaf_content node, if necessary.
+    if (key_leaf_content->primary_trie == NULL && key_leaf_content->secondary_trie == NULL &&
+        is_PDC_STRING(idx_record->type)) {
+        // the following gurarantees that both prefix index and suffix index are initialized.
+        key_leaf_content->primary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
+        art_tree_init((art_tree *)key_leaf_content->primary_trie);
 
-            _encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), idx_record->type);
-        }
+        key_leaf_content->secondary_trie = (art_tree *)PDC_calloc(1, sizeof(art_tree));
+        art_tree_init((art_tree *)key_leaf_content->secondary_trie);
+
+        _encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), idx_record->type);
+    }
+    if (key_leaf_content->primary_rbt == NULL) {
         if (is_PDC_UINT(idx_record->type)) {
             // TODO: This is a simplified implementation, but we need to have all the CMP_CB functions
             // defined for all numerical types in libhl/comparators.h
@@ -173,9 +181,6 @@ insert_into_key_trie(art_tree *key_trie, char *key, int len, IDIOMS_md_idx_recor
             _encodeTypeToBitmap(&(key_leaf_content->val_idx_dtype), PDC_DOUBLE);
         }
     }
-    // insert the key into the the key trie along with the key_leaf_content.
-    art_insert(key_trie, (unsigned char *)key, len, (void *)key_leaf_content);
-    // LOG_DEBUG("Inserted key %s into the key trie\n", key);
 
     key_leaf_content->virtural_node_id = idx_record->virtual_node_id;
 

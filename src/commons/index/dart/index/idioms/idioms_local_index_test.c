@@ -1,6 +1,7 @@
 #include "idioms_local_index.h"
 #include "dart_core.h"
 #include "bulki.h"
+#include "assert.h"
 
 typedef enum { IDIOMS_INSERT = 1, IDIOMS_DELETE = 2, IDIOMS_QUERY = 3 } IDIOMS_OP_TYPE;
 
@@ -185,9 +186,8 @@ void
 server_perform_operation(dummy_server_t *server)
 {
     // printf("Perform operation on server %d\n", server->id);
-    BULKI_Entity *resultBent = empty_Bent_Array_Entity();
-    BULKI_Entity *bentArr    = BULKI_Entity_deserialize(server->buffer_in);
-    free(server->buffer_in);
+    BULKI_Entity * resultBent  = empty_Bent_Array_Entity();
+    BULKI_Entity * bentArr     = BULKI_Entity_deserialize(server->buffer_in);
     BULKI_Entity * opType_ent  = BULKI_ENTITY_get_BULKI_Entity(bentArr, 0);
     BULKI_Entity * key_ent     = BULKI_ENTITY_get_BULKI_Entity(bentArr, 1);
     char *         key         = (char *)key_ent->data;
@@ -216,14 +216,14 @@ server_perform_operation(dummy_server_t *server)
     }
     server->buffer_out_size = get_BULKI_Entity_size(resultBent);
     server->buffer_out      = BULKI_Entity_serialize(resultBent);
+    free(server->buffer_in);
 }
 
 perr_t
 client_parse_response(dummy_client_t *client, uint64_t **obj_id_list, uint64_t *count)
 {
     BULKI_Entity *resultBent = BULKI_Entity_deserialize(client->buffer_in);
-    free(client->buffer_in);
-    int result = *(int *)BULKI_ENTITY_get_BULKI_Entity(resultBent, 0)->data;
+    int           result     = *(int *)BULKI_ENTITY_get_BULKI_Entity(resultBent, 0)->data;
     if (result == SUCCEED && obj_id_list != NULL && count != NULL) {
         BULKI_Entity *obj_id_bent = BULKI_ENTITY_get_BULKI_Entity(resultBent, 1);
         if (obj_id_bent != NULL && obj_id_bent->count > 0) {
@@ -235,27 +235,39 @@ client_parse_response(dummy_client_t *client, uint64_t **obj_id_list, uint64_t *
     return result;
 }
 
-void
+perr_t
 client_insert_data(dummy_client_t *client, int id)
 {
     char key[40];
     char value[40];
     sprintf(key, "%d_%d", id, id);
-    sprintf(value, "%d_%d", id, id);
+    sprintf(value, "%d_%d_%d", id, id, id);
     uint64_t u64_id = (uint64_t)id;
+    perr_t   result = SUCCEED;
     // generate a request for each client
     index_hash_result_t *hash_result       = NULL;
     int                  num_selected_srvs = client_select_server(client, key, IDIOMS_INSERT, &hash_result);
     for (int s = 0; s < num_selected_srvs; s++) {
+        // client insert string value
         BULKI_Entity *value_ent = BULKI_ENTITY(value, 1, PDC_STRING, PDC_CLS_ITEM);
         client_generate_request(client, IDIOMS_INSERT, key, value_ent, &u64_id);
         sending_request_to_server(client, &servers[hash_result[s].server_id]);
         server_perform_operation(&servers[hash_result[s].server_id]);
         get_response_from_server(client, &servers[hash_result[s].server_id]);
-        perr_t result     = client_parse_response(client, NULL, NULL);
-        char * result_str = result == SUCCEED ? "SUCCEED" : "FAILED";
-        printf("Insert result: %s\n", result_str);
+        result |= client_parse_response(client, NULL, NULL);
+
+        // client insert numeric value
+        int32_t       i32_id     = (int32_t)id;
+        BULKI_Entity *value_ent2 = BULKI_ENTITY(&i32_id, 1, PDC_INT32, PDC_CLS_ITEM);
+        client_generate_request(client, IDIOMS_INSERT, key, value_ent2, &u64_id);
+        sending_request_to_server(client, &servers[hash_result[s].server_id]);
+        server_perform_operation(&servers[hash_result[s].server_id]);
+        get_response_from_server(client, &servers[hash_result[s].server_id]);
+        result |= client_parse_response(client, NULL, NULL);
     }
+    char *result_str = result == SUCCEED ? "SUCCEED" : "FAILED";
+    printf("Insert result: %s\n", result_str);
+    return result;
 }
 
 void
@@ -268,17 +280,17 @@ client_print_result(uint64_t *rst_ids, uint64_t rst_count)
     printf("|\n");
 }
 
-void
-client_perform_search(dummy_client_t *client, int id)
+uint64_t
+client_perform_search(dummy_client_t *client, char *query, uint64_t **rst_ids)
 {
-    char query[100];
-    // exact search
-    sprintf(query, "%d_%d=\"%d_%d\"", id, id, id, id);
+    if (rst_ids == NULL) {
+        return 0;
+    }
     // generate a request for each client
     index_hash_result_t *hash_result       = NULL;
     int                  num_selected_srvs = client_select_server(client, query, IDIOMS_QUERY, &hash_result);
-    uint64_t *           rst_ids           = NULL;
-    uint64_t             rst_count         = 0;
+    *rst_ids                               = NULL;
+    uint64_t rst_count                     = 0;
     for (int s = 0; s < num_selected_srvs; s++) {
         client_generate_request(client, IDIOMS_QUERY, query, NULL, NULL);
         sending_request_to_server(client, &servers[hash_result[s].server_id]);
@@ -289,39 +301,146 @@ client_perform_search(dummy_client_t *client, int id)
         perr_t    result      = client_parse_response(client, &obj_id_list, &count);
         if (result == SUCCEED && count > 0) {
             rst_count += count;
-            if (rst_ids == NULL) {
-                rst_ids = (uint64_t *)malloc(rst_count * sizeof(uint64_t));
+            if (*rst_ids == NULL) {
+                *rst_ids = (uint64_t *)malloc(rst_count * sizeof(uint64_t));
             }
             else {
-                rst_ids = (uint64_t *)realloc(rst_ids, rst_count * sizeof(uint64_t));
+                *rst_ids = (uint64_t *)realloc(*rst_ids, rst_count * sizeof(uint64_t));
             }
-            memcpy(rst_ids + rst_count - count, obj_id_list, count * sizeof(uint64_t));
+            memcpy(*rst_ids + rst_count - count, obj_id_list, count * sizeof(uint64_t));
         }
     }
-    client_print_result(rst_ids, rst_count);
+    client_print_result(*rst_ids, rst_count);
+    return rst_count;
 }
 
-void
+perr_t
 client_delete_data(dummy_client_t *client, int id)
 {
     char key[20];
     char value[20];
     sprintf(key, "%d_%d", id, id);
-    sprintf(value, "%d_%d", id, id);
+    sprintf(value, "%d_%d_%d", id, id, id);
     uint64_t u64_id = (uint64_t)id;
     // generate a request for each client
-    BULKI_Entity *value_ent = BULKI_ENTITY(value, 1, PDC_STRING, PDC_CLS_ITEM);
-    client_generate_request(client, IDIOMS_DELETE, key, value_ent, &u64_id);
     index_hash_result_t *hash_result       = NULL;
     int                  num_selected_srvs = client_select_server(client, key, IDIOMS_DELETE, &hash_result);
+    perr_t               result            = SUCCEED;
     for (int s = 0; s < num_selected_srvs; s++) {
+        // delete string value
+        BULKI_Entity *value_ent = BULKI_ENTITY(value, 1, PDC_STRING, PDC_CLS_ITEM);
+        client_generate_request(client, IDIOMS_DELETE, key, value_ent, &u64_id);
         sending_request_to_server(client, &servers[hash_result[s].server_id]);
         server_perform_operation(&servers[hash_result[s].server_id]);
         get_response_from_server(client, &servers[hash_result[s].server_id]);
-        perr_t result     = client_parse_response(client, NULL, NULL);
-        char * result_str = result == SUCCEED ? "SUCCEED" : "FAILED";
-        printf("Delete result: %s\n", result_str);
+        result |= client_parse_response(client, NULL, NULL);
+
+        // delete numeric value
+        int32_t       i32_id     = (int32_t)id;
+        BULKI_Entity *value_ent2 = BULKI_ENTITY(&i32_id, 1, PDC_INT32, PDC_CLS_ITEM);
+        client_generate_request(client, IDIOMS_DELETE, key, value_ent2, &u64_id);
+        sending_request_to_server(client, &servers[hash_result[s].server_id]);
+        server_perform_operation(&servers[hash_result[s].server_id]);
+        get_response_from_server(client, &servers[hash_result[s].server_id]);
+        result |= client_parse_response(client, NULL, NULL);
     }
+    char *result_str = result == SUCCEED ? "SUCCEED" : "FAILED";
+    printf("Delete result: %s\n", result_str);
+    return result;
+}
+
+void
+basic_test()
+{
+    perr_t insert_rst = client_insert_data(&clients[0], 10);
+    assert(insert_rst == SUCCEED);
+
+    char query[100];
+    // exact query
+    sprintf(query, "%d_%d=\"%d_%d_%d\"", 10, 10, 10, 10, 10);
+    uint64_t *rst_ids   = NULL;
+    uint64_t  rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 1);
+    assert(rst_ids[0] == 10);
+
+    // prefix search
+    sprintf(query, "%d_%d=\"%d_*\"", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 1);
+    assert(rst_ids[0] == 10);
+
+    // suffix search
+    sprintf(query, "%d_%d=\"*_%d\"", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 1);
+    assert(rst_ids[0] == 10);
+
+    // infix search
+    sprintf(query, "%d_%d=\"*_%d_*\"", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 1);
+    assert(rst_ids[0] == 10);
+
+    // numeric exact query
+    sprintf(query, "%d_%d=|%d|", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count >= 1);
+    assert(rst_ids[0] == 10);
+
+    // numeric range query
+    sprintf(query, "%d_%d=%d|~|%d", 10, 10, 9, 11);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 1);
+    assert(rst_ids[0] == 10);
+
+    perr_t delete_rst = client_delete_data(&clients[0], 10);
+    assert(delete_rst == SUCCEED);
+
+    sprintf(query, "%d_%d=\"%d_%d\"", 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 0);
+    assert(rst_ids == NULL);
+
+    // prefix search
+    sprintf(query, "%d_%d=\"%d_*\"", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 0);
+    assert(rst_ids == NULL);
+
+    // suffix search
+    sprintf(query, "%d_%d=\"*_%d\"", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 0);
+    assert(rst_ids == NULL);
+
+    // infix search
+    sprintf(query, "%d_%d=\"*_%d_*\"", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 0);
+    assert(rst_ids == NULL);
+
+    // numeric exact query
+    sprintf(query, "%d_%d=|%d|", 10, 10, 10);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 0);
+    assert(rst_ids == NULL);
+
+    // numeric range query
+    sprintf(query, "%d_%d=%d|~|%d", 10, 10, 9, 11);
+    rst_ids   = NULL;
+    rst_count = client_perform_search(&clients[0], query, &rst_ids);
+    assert(rst_count == 0);
+    assert(rst_ids == NULL);
 }
 
 int
@@ -338,45 +457,43 @@ main(int argc, char *argv[])
     // create an array of dummy_client_t
     init_clients(num_clients, num_servers);
 
-    // insert data
-    for (int i = 0; i < num_clients; i++) {
-        for (int id = 10000; id < 20000; id++) {
-            if (id % num_clients != i)
-                continue;
-            client_insert_data(&clients[i], id);
-        }
-    }
+    basic_test();
 
-    // client_insert_data(&clients[0], 10);
+    // // insert data
+    // for (int i = 0; i < num_clients; i++) {
+    //     for (int id = 10000; id < 20000; id++) {
+    //         if (id % num_clients != i)
+    //             continue;
+    //         client_insert_data(&clients[i], id);
+    //     }
+    // }
 
-    // client_perform_search(&clients[0], 10);
+    // // // search data
+    // for (int i = 0; i < num_clients; i++) {
+    //     for (int id = 10000; id < 20000; id++) {
+    //         if (id % num_clients != i)
+    //             continue;
+    //         client_perform_search(&clients[i], id);
+    //     }
+    // }
 
-    // // search data
-    for (int i = 0; i < num_clients; i++) {
-        for (int id = 10000; id < 20000; id++) {
-            if (id % num_clients != i)
-                continue;
-            client_perform_search(&clients[i], id);
-        }
-    }
+    // // // delete data
+    // for (int i = 0; i < num_clients; i++) {
+    //     for (int id = 10000; id < 20000; id++) {
+    //         if (id % num_clients != i)
+    //             continue;
+    //         client_delete_data(&clients[i], id);
+    //     }
+    // }
 
-    // // delete data
-    for (int i = 0; i < num_clients; i++) {
-        for (int id = 10000; id < 20000; id++) {
-            if (id % num_clients != i)
-                continue;
-            client_delete_data(&clients[i], id);
-        }
-    }
-
-    // // search data
-    for (int i = 0; i < num_clients; i++) {
-        for (int id = 10000; id < 20000; id++) {
-            if (id % num_clients != i)
-                continue;
-            client_perform_search(&clients[i], id);
-        }
-    }
+    // // // search data
+    // for (int i = 0; i < num_clients; i++) {
+    //     for (int id = 10000; id < 20000; id++) {
+    //         if (id % num_clients != i)
+    //             continue;
+    //         client_perform_search(&clients[i], id);
+    //     }
+    // }
 
     return 0;
 }
