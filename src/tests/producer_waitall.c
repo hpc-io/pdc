@@ -97,7 +97,6 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     }
     fprintf(stderr, "Rank %4d: create tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-
     stime = MPI_Wtime();
 
     ret = PDCregion_transfer_start_all(tids2, N);
@@ -108,7 +107,6 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     /* ret = PDCregion_transfer_wait_all(tids, (iterations)); */
     /* if (ret != SUCCEED) */
     /*     printf("Failed to transfer wait\n"); */
-
 
     stime = MPI_Wtime();
     /* printf("rank %d call wait_all on tids2.\n", mpi_rank); */
