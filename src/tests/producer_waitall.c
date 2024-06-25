@@ -45,32 +45,27 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     }
 
     /* printf("rank %d call wait_all on tids.\n", mpi_rank); */
-    fprintf(stderr, "Rank %d: create took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    fprintf(stderr, "Rank %4d: create took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    /* MPI_Barrier(MPI_COMM_WORLD); */
     stime = MPI_Wtime();
 
-    // Tang
     ret = PDCregion_transfer_start_all(tids, iterations);
     if (ret != SUCCEED)
         printf("Failed to start transfer\n");
 
-    fprintf(stderr, "Rank %d: start all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    fprintf(stderr, "Rank %4d: start all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-    MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
     ret = PDCregion_transfer_wait_all(tids, iterations);
     if (ret != SUCCEED)
-        printf("Failed to start all transfer\n");
+        printf("Failed to wait all transfer\n");
 
     /* printf("rank %d read before wait_all()\n", mpi_rank); */
-    fprintf(stderr, "Rank %d: wait all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    /* MPI_Barrier(MPI_COMM_WORLD); */
+    fprintf(stderr, "Rank %4d: wait all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
-
-    fflush(stdout);
     char *data_in    = (char *)malloc(chunk_size * sizeof(char));
     offset_local     = 0;
     offset_remote    = 0;
@@ -81,11 +76,9 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     ret              = PDCregion_transfer_wait(read_tid);
     ret              = PDCregion_transfer_close(read_tid);
     /* printf("rank %d read success!\n", mpi_rank); */
-    fprintf(stderr, "Rank %d: wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
-    fflush(stdout);
+    fprintf(stderr, "Rank %4d: wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     // Write more
-    MPI_Barrier(MPI_COMM_WORLD);
     stime          = MPI_Wtime();
     int      N     = 10;
     pdcid_t *tids2 = (pdcid_t *)malloc(sizeof(pdcid_t) * N);
@@ -102,31 +95,28 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
         /* if (ret != SUCCEED) */
         /*     printf("Failed to start transfer\n"); */
     }
-    fprintf(stderr, "Rank %d: create tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    fprintf(stderr, "Rank %4d: create tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+
     stime = MPI_Wtime();
 
     ret = PDCregion_transfer_start_all(tids2, N);
     if (ret != SUCCEED)
         printf("Failed to start transfer\n");
 
-    fprintf(stderr, "Rank %d: start tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
-    fflush(stdout);
+    fprintf(stderr, "Rank %4d: start tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
     /* ret = PDCregion_transfer_wait_all(tids, (iterations)); */
     /* if (ret != SUCCEED) */
     /*     printf("Failed to transfer wait\n"); */
 
-    MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
 
+    stime = MPI_Wtime();
     /* printf("rank %d call wait_all on tids2.\n", mpi_rank); */
-    fflush(stdout);
     ret = PDCregion_transfer_wait_all(tids2, (N));
     if (ret != SUCCEED)
         printf("Failed to transfer wait\n");
 
-    fprintf(stderr, "Rank %d: wait all tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    fprintf(stderr, "Rank %4d: wait all tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     for (int i = 0; i < iterations; i++) {
         ret = PDCregion_transfer_close(tids[i]);
@@ -188,10 +178,11 @@ main(int argc, char **argv)
     obj_id = PDCobj_create(cont_id, obj_name, obj_prop);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    fflush(stdout);
     double stime = MPI_Wtime();
-    write_read_wait_all(obj_id, 5000);
-    fprintf(stderr, "Rank %d: Write read wait all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    write_read_wait_all(obj_id, 1000);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    fprintf(stderr, "Rank %4d: Write read wait all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     if (PDCobj_close(obj_id) < 0) {
         printf("fail to close obj_id\n");
