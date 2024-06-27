@@ -792,7 +792,7 @@ done:
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
-        fflush(stdout);
+    fflush(stdout);
 
     FUNC_LEAVE(ret_value);
 }
@@ -1200,7 +1200,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     perr_t          ret_value = SUCCEED;
     pdc_metadata_t *metadata;
     uint32_t *      hash_key, i;
-    int unlocked = 0;
+    int             unlocked = 0;
 
     // DEBUG
     int debug_flag = 0;
