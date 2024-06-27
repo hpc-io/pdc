@@ -711,7 +711,7 @@ PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *o
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     unlocked = 0;
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     if (metadata_hash_table_g != NULL) {
@@ -765,7 +765,7 @@ PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *o
 
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
 #endif
 
@@ -790,7 +790,7 @@ PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *o
 done:
 #ifdef ENABLE_MULTITHREAD
     if (unlocked == 0)
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
         fflush(stdout);
 
@@ -829,7 +829,7 @@ PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 #ifdef ENABLE_MULTITHREAD
     int unlocked = 0;
     // Obtain lock for hash table
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     if (metadata_hash_table_g != NULL) {
@@ -893,7 +893,7 @@ PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
 #endif
 
@@ -917,8 +917,8 @@ PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 
 done:
 #ifdef ENABLE_MULTITHREAD
-    /* if (unlocked == 0) */
-    /*     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -952,7 +952,7 @@ PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     int unlocked = 0;
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     if (container_hash_table_g != NULL) {
@@ -1026,7 +1026,7 @@ PDC_Server_delete_metadata_by_id(metadata_delete_by_id_in_t *in, metadata_delete
 done:
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
 #endif
 
@@ -1058,8 +1058,8 @@ done:
 #endif
 
 #ifdef ENABLE_MULTITHREAD
-    /* if (unlocked == 0) */
-    /*     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     FUNC_LEAVE(ret_value);
@@ -1102,7 +1102,7 @@ PDC_delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_ou
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     int unlocked = 0;
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     if (metadata_hash_table_g != NULL) {
@@ -1155,7 +1155,7 @@ PDC_delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_ou
 
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
 #endif
 
@@ -1187,8 +1187,8 @@ PDC_delete_metadata_from_hash_table(metadata_delete_in_t *in, metadata_delete_ou
 
 done:
 #ifdef ENABLE_MULTITHREAD
-    /* if (unlocked == 0) */
-    /*     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     FUNC_LEAVE(ret_value);
@@ -1200,11 +1200,8 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     perr_t          ret_value = SUCCEED;
     pdc_metadata_t *metadata;
     uint32_t *      hash_key, i;
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
     int unlocked = 0;
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
-#endif
+
     // DEBUG
     int debug_flag = 0;
 
@@ -1265,15 +1262,13 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     pdc_hash_table_entry_head *lookup_value;
     pdc_metadata_t *           found_identical;
 
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
-    unlocked = 0;
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
-#endif
-
     if (debug_flag == 1)
         printf("checking hash table with key=%d\n", *hash_key);
 
+#ifdef ENABLE_MULTITHREAD
+    // Obtain lock for hash table
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
     if (metadata_hash_table_g != NULL) {
         // lookup
         lookup_value = hash_table_lookup(metadata_hash_table_g, hash_key);
@@ -1323,7 +1318,7 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
 #endif
 
@@ -1358,8 +1353,8 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
 
 done:
 #ifdef ENABLE_MULTITHREAD
-    /* if (unlocked == 0) */
-    /*     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     FUNC_LEAVE(ret_value);
@@ -2912,7 +2907,7 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     unlocked = 0;
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     if (use_rocksdb_g == 1) {
@@ -2940,7 +2935,7 @@ PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
 done:
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
 #endif
 
@@ -2963,8 +2958,8 @@ done:
 #endif
 
 #ifdef ENABLE_MULTITHREAD
-    /* if (unlocked == 0) */
-    /*     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
     fflush(stdout);
 
@@ -3165,7 +3160,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
     unlocked = 0;
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     if (use_rocksdb_g == 1) {
@@ -3194,7 +3189,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 done:
 #ifdef ENABLE_MULTITHREAD
     // ^ Release hash table lock
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
     unlocked = 1;
 #endif
 
@@ -3217,8 +3212,8 @@ done:
 #endif
 
 #ifdef ENABLE_MULTITHREAD
-    /* if (unlocked == 0) */
-    /*     hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    if (unlocked == 0)
+        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
     fflush(stdout);
 
@@ -3366,7 +3361,7 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 
 #ifdef ENABLE_MULTITHREAD
     // Obtain lock for hash table
-    /* hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
     if (use_rocksdb_g) {
@@ -3393,7 +3388,7 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t *out)
 
 done:
 #ifdef ENABLE_MULTITHREAD
-    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
 
 #ifdef ENABLE_TIMING
