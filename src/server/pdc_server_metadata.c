@@ -790,9 +790,9 @@ PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *o
 done:
 #ifdef ENABLE_MULTITHREAD
     if (unlocked == 0)
-        /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
+    /* hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g); */
 #endif
-    fflush(stdout);
+        fflush(stdout);
 
     FUNC_LEAVE(ret_value);
 }
