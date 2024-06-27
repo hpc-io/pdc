@@ -393,23 +393,23 @@ PDC_obj_close(struct _pdc_obj_info *op)
     perr_t                      ret_value = SUCCEED;
     pdcid_t *                   transfer_request_id;
     pdc_local_transfer_request *temp, *previous;
-    int                         i;
+    int                         i, n;
 
     FUNC_ENTER(NULL);
 
     if (op->local_transfer_request_size) {
         transfer_request_id = (pdcid_t *)malloc(sizeof(pdcid_t) * op->local_transfer_request_size);
         temp                = op->local_transfer_request_head;
-        i                   = 0;
+        n                   = 0;
         while (temp != NULL) {
-            transfer_request_id[i] = temp->local_id;
+            transfer_request_id[n] = temp->local_id;
             previous               = temp;
             temp                   = temp->next;
             free(previous);
-            ++i;
+            ++n;
         }
-        PDCregion_transfer_wait_all(transfer_request_id, op->local_transfer_request_size);
-        for (i = 0; i < op->local_transfer_request_size; ++i) {
+        PDCregion_transfer_wait_all(transfer_request_id, n);
+        for (i = 0; i < n; ++i) {
             PDCregion_transfer_close(transfer_request_id[i]);
         }
         free(transfer_request_id);
