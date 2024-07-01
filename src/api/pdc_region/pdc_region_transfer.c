@@ -1449,7 +1449,7 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     // TODO: Tang
     // Merge the transfer_request_ids when they are operating on the same obj and have contiguous off, len
     if (size > PDC_MERGE_TRANSFER_MIN_COUNT) {
-        merged_request_id = PDC_MALLOC(pdcid_t);
+        merged_request_id = PDC_malloc(sizeof(pdcid_t));
         merge_transfer_request_ids(transfer_request_id, size, merged_request_id, &merged_size);
         if (merged_size == 1) {
             size                = merged_size;
