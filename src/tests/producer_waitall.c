@@ -50,10 +50,6 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     /* MPI_Barrier(MPI_COMM_WORLD); */
     stime = MPI_Wtime();
 
-<<<<<<< HEAD
-=======
-    // Tang
->>>>>>> 2e50a46a (Committing clang-format changes)
     ret = PDCregion_transfer_start_all(tids, iterations);
     if (ret != SUCCEED)
         printf("Failed to start transfer\n");
@@ -70,13 +66,6 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     /* MPI_Barrier(MPI_COMM_WORLD); */
     fprintf(stderr, "Rank %4d: wait all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-<<<<<<< HEAD
-=======
-    MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
-
-    fflush(stdout);
->>>>>>> 2e50a46a (Committing clang-format changes)
     char *data_in    = (char *)malloc(chunk_size * sizeof(char));
     offset_local     = 0;
     offset_remote    = 0;
@@ -90,10 +79,6 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     fprintf(stderr, "Rank %4d: wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     // Write more
-<<<<<<< HEAD
-=======
-    MPI_Barrier(MPI_COMM_WORLD);
->>>>>>> 2e50a46a (Committing clang-format changes)
     stime          = MPI_Wtime();
     int      N     = 10;
     pdcid_t *tids2 = (pdcid_t *)malloc(sizeof(pdcid_t) * N);
