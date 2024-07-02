@@ -104,7 +104,9 @@ create_objects(pdcid_t **obj_ids, int my_csv_rows, int csv_expand_factor, pdcid_
         // create `csv_expansion_factor` data objects for each csv row.
         for (int obj_idx = 0; obj_idx < csv_expand_factor; obj_idx++) {
             sprintf(obj_name, "obj%" PRId64 "%d", timestamp, obj_created);
-            (*obj_ids)[obj_created] = PDCobj_create(cont, obj_name, obj_prop);
+
+            pdcid_t obj_id          = PDCobj_create(cont, obj_name, obj_prop);
+            (*obj_ids)[obj_created] = obj_id;
 
             if ((*obj_ids)[obj_created] <= 0) {
                 printf("[Client %d] Fail to create object @ line  %d!\n", my_rank, __LINE__);
@@ -122,7 +124,8 @@ done:
 int
 split_line(char *line, char delimiter, char **tokens, int max_tokens)
 {
-    int   count = 0;
+    int count = 0;
+
     char *token;
 
     token = strtok(line, &delimiter);
@@ -188,13 +191,15 @@ add_tag_to_one_object(pid_t obj_id, char *attr_name, char *attr_value, int is_us
     kvtag.type  = PDC_STRING;
     kvtag.size  = (strlen(kvtag.value) + 1) * sizeof(char);
 
+    struct _pdc_obj_info *obj_prop = PDC_obj_get_info(obj_id);
+    uint64_t              meta_id  = obj_prop->obj_info_pub->meta_id;
     if (PDCobj_put_tag(obj_id, kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
         printf("Fail to add tag to object %" PRIu64 "\n", obj_id);
         return -1;
     }
     if (is_using_dart) {
         PDC_Client_insert_obj_ref_into_dart(DART_HASH, kvtag.name, (char *)kvtag.value, kvtag.size,
-                                            kvtag.type, REF_PRIMARY_ID, (uint64_t)obj_id);
+                                            kvtag.type, REF_PRIMARY_ID, (uint64_t)meta_id);
     }
     return 0;
 }
@@ -209,9 +214,12 @@ delete_tag_from_one_object(pid_t obj_id, char *attr_name, char *attr_value, int 
     kvtag.size  = (strlen(kvtag.value) + 1) * sizeof(char);
 
     PDCobj_del_tag(obj_id, kvtag.name);
+    struct _pdc_obj_info *obj_prop = PDC_obj_get_info(obj_id);
+    uint64_t              meta_id  = obj_prop->obj_info_pub->meta_id;
+
     if (is_using_dart) {
         PDC_Client_delete_obj_ref_from_dart(DART_HASH, kvtag.name, (char *)kvtag.value, kvtag.size,
-                                            kvtag.type, REF_PRIMARY_ID, (uint64_t)obj_id);
+                                            kvtag.type, REF_PRIMARY_ID, (uint64_t)meta_id);
     }
     return 1;
 }
