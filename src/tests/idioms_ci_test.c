@@ -28,9 +28,19 @@
 #include <getopt.h>
 #include <time.h>
 #include <inttypes.h>
+#include <assert.h>
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "string_utils.h"
+
+dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
+dart_hash_algo_t       hash_algo = DART_HASH;
+
+int
+compare_uint64(const void *a, const void *b)
+{
+    return (*(uint64_t *)a - *(uint64_t *)b);
+}
 
 void
 print_usage(char *name)
@@ -75,43 +85,210 @@ done:
 }
 
 perr_t
-creating_objects(pdcid_t **obj_ids, int my_obj, int my_obj_s, pdcid_t cont, pdcid_t obj_prop, int my_rank)
+insert_index_records(int world_rank, int world_size)
 {
-    perr_t  ret_value = FAIL;
-    char    obj_name[128];
-    int64_t timestamp = get_timestamp_ms();
-    *obj_ids          = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
-    for (int i = 0; i < my_obj; i++) {
-        sprintf(obj_name, "obj%" PRId64 "%d", timestamp, my_obj_s + i);
-        (*obj_ids)[i] = PDCobj_create(cont, obj_name, obj_prop);
-        if ((*obj_ids)[i] <= 0) {
-            printf("[Client %d] Fail to create object @ line  %d!\n", my_rank, __LINE__);
-            goto done;
+    perr_t ret_value = SUCCEED;
+    for (i = 0; i < 1000; i++) {
+        if (i % world_size != world_rank) {
+            continue;
         }
+        char *key   = (char *)calloc(64, sizeof(char));
+        void *value = (char *)calloc(64, sizeof(char));
+        snprintf(key, 63, "str%03dstr", i);
+        snprintf(value, 63, "str%03dstr", i);
+        if (PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, strlen(value) + 1, PDC_STRING,
+                                                ref_type, i) < 0) {
+            printf("CLIENT %d failed to create index record %s %s %" PRIu64 "\n", world_rank, key, value, i);
+            ret_value |= FAIL;
+        }
+        free(key);
+        free(value);
+
+        key = (char *)calloc(16, sizeof(char));
+        sprintf(key, "int%s", "key");
+        value               = (int64_t *)calloc(1, sizeof(int64_t));
+        *((int64_t *)value) = i;
+        if (PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT, ref_type,
+                                                i) < 0) {
+            printf("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value, i);
+            ret_value |= FAIL;
+        }
+        free(key);
+        free(value);
     }
-    ret_value = SUCCEED;
-done:
     return ret_value;
+}
+
+int
+validate_query_result(int query_series, int nres, uint64_t *pdc_ids)
+{
+    int i;
+    int step_failed = -1;
+    switch (query_series) {
+        case 0:
+            if (nres != 1) {
+                printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                step_failed = 0;
+            }
+            if (pdc_ids[0] != 109) {
+                printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                step_failed = 0;
+            }
+            break;
+        case 1:
+            if (nres != 10) {
+                printf("fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                step_failed = 1;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != i + 90) {
+                    printf("fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                    step_failed = 1;
+                    break;
+                }
+            }
+            break;
+        case 2:
+            if (nres != 10) {
+                printf("fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                step_failed = 2;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != i * 10 + 9) {
+                    printf("fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                    step_failed = 2;
+                    break;
+                }
+            }
+            break;
+        case 3:
+            if (nres != 20) {
+                printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+                step_failed = 3;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            uint64_t[20] expected = {9,  90,  91,  92,  93,  94,  95,  96,  97,  98,
+                                     99, 109, 209, 309, 409, 509, 609, 709, 809, 909};
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != expected[i]) {
+                    printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+                    step_failed = 3;
+                    break;
+                }
+            }
+            break;
+        case 4:
+            if (nres != 1) {
+                printf("fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                step_failed = 4;
+            }
+            if (pdc_ids[0] != 109) {
+                printf("fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                step_failed = 4;
+            }
+            break;
+        case 5:
+            if (nres != 10) {
+                printf("fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                step_failed = 5;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != i + 90) {
+                    printf("fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                    step_failed = 5;
+                    break;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    return step_failed;
+}
+
+int
+search_through_index(int world_rank, int world_size)
+{
+    int       nres;
+    uint64_t *pdc_ids;
+    int       query_seires = world_rank % 6;
+    int       step_failed  = -1;
+    switch (query_seires) {
+        case 0:
+            // exact string query
+            if (PDC_Client_search_obj_ref_through_dart(hash_algo, "str109str=\"str109str\"", ref_type, &nres,
+                                                       &pdc_ids) < 0) {
+                printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                step_failed = 0;
+            };
+            break;
+        case 1:
+            // prefix string query
+            if (PDC_Client_search_obj_ref_through_dart(hash_algo, "str09*=\"str09*\"", ref_type, &nres,
+                                                       &pdc_ids) < 0) {
+                printf("fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                step_failed = 1;
+            }
+            break;
+        case 2:
+            // suffix string query
+            if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09str=\"*09str\"", ref_type, &nres,
+                                                       &pdc_ids) < 0) {
+                printf("fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                step_failed = 2;
+            }
+            break;
+        case 3:
+            // infix string query
+            if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09*=\"*09*\"", ref_type, &nres,
+                                                       &pdc_ids) < 0) {
+                printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+                step_failed = 3;
+            }
+            break;
+        case 4:
+            // exact integer query
+            if (PDC_Client_search_obj_ref_through_dart(hash_algo, "intkey=109", ref_type, &nres, &pdc_ids) <
+                0) {
+                printf("fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                step_failed = 4;
+            }
+            break;
+        case 5:
+            // range integer query
+            if (PDC_Client_search_obj_ref_through_dart(hash_algo, "intkey=90|~|99", ref_type, &nres,
+                                                       &pdc_ids) < 0) {
+                printf("fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                step_failed = 5;
+            }
+            break;
+        default:
+            break;
+    }
+    if (step_failed < 0) {
+        step_failed = validate_query_result(query_seires, nres, pdc_ids);
+    }
+    return step_failed;
 }
 
 int
 main(int argc, char *argv[])
 {
-    pdcid_t     pdc, cont_prop, cont, obj_prop;
-    pdcid_t *   obj_ids;
-    int         n_obj, my_obj, my_obj_s;
-    int         proc_num, my_rank, i, v, iter, round, selectivity, is_using_dart, query_type, comm_type;
-    double      stime, total_time;
-    pdc_kvtag_t kvtag;
-    uint64_t *  pdc_ids;
-    int         nres, ntotal;
-    int *       my_cnt_round;
-    int *       total_cnt_round;
+    pdcid_t pdc, cont_prop, cont, obj_prop;
+    int     world_size, world_rank, i;
+    double  stime, total_time;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
-    MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
 #endif
 
     // prepare container
@@ -121,233 +298,58 @@ main(int argc, char *argv[])
     }
 
     if (my_rank == 0) {
-        println("Each client will create about %d obj", my_obj);
+        println("Initialization Done!");
     }
 
-    // creating objects
-    creating_objects(&obj_ids, my_obj, my_obj_s, cont, obj_prop, my_rank);
-
-    if (my_rank == 0)
-        println("All clients created %d objects", n_obj);
-
-    dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
-    dart_hash_algo_t       hash_algo = DART_HASH;
-
-    my_cnt_round    = (int *)calloc(round, sizeof(int));
-    total_cnt_round = (int *)calloc(round, sizeof(int));
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
-#endif
-    // This is for adding #rounds tags to the objects.
-    // Each rank will add #rounds tags to #my_obj objects.
-    // With the selectivity, we should be able to control how many objects will be attached with the #round
-    // tags. So that, each of these #round tags can roughly the same selectivity.
-    int my_obj_after_selectivity = my_obj * selectivity / 100;
-    for (i = 0; i < my_obj_after_selectivity; i++) {
-        for (iter = 0; iter < round; iter++) {
-            char attr_name[64];
-            char tag_value[64];
-            snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
-            kvtag.name      = strdup(attr_name);
-            kvtag.value     = (void *)strdup(tag_value);
-            kvtag.type      = PDC_STRING;
-            kvtag.size      = (strlen(tag_value) + 1) * sizeof(char);
-            pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
-            if (is_using_dart) {
-                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-                }
-                if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, kvtag.size,
-                                                        kvtag.type, ref_type, meta_id) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-                }
-            }
-            else {
-                if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
-                }
-            }
-            free(kvtag.name);
-            free(kvtag.value);
-            // TODO: this is for checking the correctness of the query results.
-            // my_cnt_round[iter]++;
-        }
-        // TODO: why n_obj has to be larger than 1000?
-        if (my_rank == 0 /*&& n_obj > 1000 */) {
-            println("Rank %d: Added %d kvtag to the %d / %d th object, I'm applying selectivity %d to %d "
-                    "objects.\n",
-                    my_rank, round, i + 1, my_obj_after_selectivity, selectivity, my_obj);
-        }
-    }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    total_time = MPI_Wtime() - stime;
-#endif
-
-    if (my_rank == 0) {
-        println("[TAG Creation] Rank %d: Added %d kvtag to %d objects, time: %.5f ms", my_rank, round, my_obj,
-                total_time * 1000.0);
-    }
-
-#ifdef ENABLE_MPI
-    // TODO: This is for checking the correctness of the query results.
-    // for (i = 0; i < round; i++)
-    //     MPI_Allreduce(&my_cnt_round[i], &total_cnt_round[i], 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-
-    MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-    if (bypass_query) {
-        if (my_rank == 0) {
-            println("Rank %d: All queries are bypassed.", my_rank);
-            report_avg_server_profiling_rst();
-        }
-        goto done;
-    }
-
-    // For the queries, we issue #round queries.
-    // The selectivity of each exact query should be #selectivity / 100 * #n_obj.
-    // Namely, if you have 1M objects, selectivity is 10, then each query should return 100K objects.
-    int iter_round = round;
-    if (comm_type == 0 && is_using_dart == 0) {
-        iter_round = 2;
-    }
-
-    for (comm_type = 1; comm_type >= 0; comm_type--) {
-        for (query_type = 0; query_type < 4; query_type++) {
-            perr_t ret_value;
-            int    round_total = 0;
-            for (iter = -1; iter < iter_round; iter++) { // -1 is for warm up
-#ifdef ENABLE_MPI
-                if (iter == 0) {
-                    MPI_Barrier(MPI_COMM_WORLD);
-                    stime = MPI_Wtime();
-                }
-#endif
-                char attr_name[64];
-                char tag_value[64];
-                snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-                snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
-
-                kvtag.name  = strdup(attr_name);
-                kvtag.value = (void *)strdup(tag_value);
-                kvtag.type  = PDC_STRING;
-                kvtag.size  = (strlen(tag_value) + 1) * sizeof(char);
-
-                query_gen_input_t  input;
-                query_gen_output_t output;
-                input.base_tag         = &kvtag;
-                input.key_query_type   = query_type;
-                input.value_query_type = query_type;
-                input.affix_len        = 12;
-
-                gen_query_key_value(&input, &output);
-
-                pdc_ids = NULL;
-                if (is_using_dart) {
-                    char *query_string = gen_query_str(&output);
-#ifdef ENABLE_MPI
-                    ret_value = (comm_type == 0)
-                                    ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string,
-                                                                             ref_type, &nres, &pdc_ids)
-                                    : PDC_Client_search_obj_ref_through_dart_mpi(
-                                          hash_algo, query_string, ref_type, &nres, &pdc_ids, MPI_COMM_WORLD);
-#else
-                    ret_value = PDC_Client_search_obj_ref_through_dart(hash_algo, query_string, ref_type,
-                                                                       &nres, &pdc_ids);
-#endif
-                }
-                else {
-                    kvtag.name  = output.key_query;
-                    kvtag.value = output.value_query;
-                    kvtag.size  = (strlen(kvtag.value) + 1) * sizeof(char);
-
-#ifdef ENABLE_MPI
-                    ret_value = (comm_type == 0)
-                                    ? PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids)
-                                    : PDC_Client_query_kvtag_mpi(&kvtag, &nres, &pdc_ids, MPI_COMM_WORLD);
-#else
-                    ret_value = PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids);
-#endif
-                }
-                if (ret_value < 0) {
-                    printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
-                    break;
-                }
-
-                // TODO: This is for checking the correctness of the query results.
-                // if (iter >= 0) {
-                //     if (nres != total_cnt_round[iter])
-                //         printf("Rank %d: query %d, comm %d, round %d - results %d do not match expected
-                //         %d\n",
-                //                my_rank, query_type, comm_type, iter, nres, total_cnt_round[iter]);
-                // }
-
-                round_total += nres;
-                free(kvtag.name);
-                free(kvtag.value);
-            }
-
-#ifdef ENABLE_MPI
-            MPI_Barrier(MPI_COMM_WORLD);
-            // MPI_Reduce(&round_total, &ntotal, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-            total_time = MPI_Wtime() - stime;
-
-            if (my_rank == 0) {
-                char *query_type_str = "EXACT";
-                if (query_type == 1)
-                    query_type_str = "PREFIX";
-                else if (query_type == 2)
-                    query_type_str = "SUFFIX";
-                else if (query_type == 3)
-                    query_type_str = "INFIX";
-                println("[%s Client %s Query with%sINDEX] %d rounds with %d results, time: %.5f ms",
-                        comm_type == 0 ? "Single" : "Multi", query_type_str,
-                        is_using_dart == 0 ? " NO " : " DART ", round, round_total, total_time * 1000.0);
-            }
-#endif
-        } // end query type
-    }     // end comm type
-
-    if (my_rank == 0) {
-        println("Rank %d: All queries are done.", my_rank);
-        report_avg_server_profiling_rst();
-    }
-
-    // delete all tags
+    // No need to create any object for testing only the index.
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #endif
 
-    my_obj_after_selectivity = my_obj * selectivity / 100;
-    for (i = 0; i < my_obj_after_selectivity; i++) {
-        for (iter = 0; iter < round; iter++) {
-            char attr_name[64];
-            char tag_value[64];
-            snprintf(attr_name, 63, "%03d%03dattr_name%03d%03d", iter, iter, iter, iter);
-            snprintf(tag_value, 63, "%03d%03dtag_value%03d%03d", iter, iter, iter, iter);
-            kvtag.name      = strdup(attr_name);
-            kvtag.value     = (void *)strdup(tag_value);
-            kvtag.type      = PDC_STRING;
-            kvtag.size      = (strlen(tag_value) + 1) * sizeof(char);
-            pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
-            if (is_using_dart) {
-                PDC_Client_delete_obj_ref_from_dart(hash_algo, kvtag.name, (char *)kvtag.value, kvtag.size,
-                                                    kvtag.type, ref_type, meta_id);
-            }
-            else {
-                PDCobj_del_tag(obj_ids[i], kvtag.name);
-            }
-            free(kvtag.name);
-            free(kvtag.value);
-        }
+    // insert into index
+    // insert 1000 string type index records
+    // format of key and value: "str%03dstr".
+    // exact: "str109str=str109str", result should be 1 number, 109.
+    // prefix: "str09*=str09*", result should be 10 different numbers, from 090 to 099.
+    // suffix: "*09str=*09str", result should be 10 different numbers, from 009 to 909.
+    // infix: "*09*=*09*", result should be 20 different numbers, including 090, 091, 092, 093, 094, 095,
+    // 096, 097, 098, 099 and 009, 109, 209, 309, 409, 509, 609, 709, 809, 909.
+
+    // insert 1000 integer index records
+    // format of the key: "intkey".
+    // exact number query "intkey=109", result should be 1 number, 109.
+    // range query "intkey=90|~|99", result should be 10 different numbers, from 090 to 099.
+
+    // delete the index records
+    // perform the same query, there should be no result.
+
+    perr_t ret_value = insert_index_records(world_rank, world_size);
+    if (ret_value == FAIL) {
+        printf("CLIENT %d failed to insert index records\n", world_rank);
     }
+    assert(ret_value == SUCCEED);
+
+    int step_failed       = search_through_index(world_rank, world_size);
+    char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
+    if (step_failed >= 0) {
+        printf("CLIENT %d failed to search index for query type %s\n", world_rank, query_types[step_failed]);
+    }
+    assert(step_failed < 0);
+
+    perr_t ret_value = delete_index_records(world_rank, world_size);
+    if (ret_value == FAIL) {
+        printf("CLIENT %d failed to delete index records\n", world_rank);
+    }
+    assert(ret_value == SUCCEED);
+
+    int step_failed       = search_through_index(world_rank, world_size);
+    char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
+    if (step_failed >= 0) {
+        printf("CLIENT %d failed to search index for query type %s\n", world_rank, query_types[step_failed]);
+    }
+    assert(step_failed < 0);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
