@@ -119,6 +119,51 @@ insert_index_records(int world_rank, int world_size)
     return ret_value;
 }
 
+perr_t
+delete_index_records(int world_rank, int world_size)
+{
+    perr_t ret_value = SUCCEED;
+    for (i = 0; i < 1000; i++) {
+        if (i % world_size != world_rank) {
+            continue;
+        }
+        char *key   = (char *)calloc(64, sizeof(char));
+        void *value = (char *)calloc(64, sizeof(char));
+        snprintf(key, 63, "str%03dstr", i);
+        snprintf(value, 63, "str%03dstr", i);
+        if (PDC_Client_delete_obj_ref_from_dart(hash_algo, key, value, strlen(value) + 1, PDC_STRING,
+                                                ref_type, i) < 0) {
+            printf("CLIENT %d failed to create index record %s %s %" PRIu64 "\n", world_rank, key, value, i);
+            ret_value |= FAIL;
+        }
+        free(key);
+        free(value);
+
+        key = (char *)calloc(16, sizeof(char));
+        sprintf(key, "int%s", "key");
+        value               = (int64_t *)calloc(1, sizeof(int64_t));
+        *((int64_t *)value) = i;
+        if (PDC_Client_delete_obj_ref_from_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT, ref_type,
+                                                i) < 0) {
+            printf("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value, i);
+            ret_value |= FAIL;
+        }
+        free(key);
+        free(value);
+    }
+    return ret_value;
+}
+
+int
+validate_empty_result(int query_series, int nres, uint64_t *pdc_ids)
+{
+    if (nres > 0) {
+        printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+        return query_series;
+    }
+    return -1;
+}
+
 int
 validate_query_result(int query_series, int nres, uint64_t *pdc_ids)
 {
@@ -214,7 +259,7 @@ validate_query_result(int query_series, int nres, uint64_t *pdc_ids)
 }
 
 int
-search_through_index(int world_rank, int world_size)
+search_through_index(int world_rank, int world_size, int (*validator)(int q, int n, uint64_t *ids))
 {
     int       nres;
     uint64_t *pdc_ids;
@@ -273,7 +318,7 @@ search_through_index(int world_rank, int world_size)
             break;
     }
     if (step_failed < 0) {
-        step_failed = validate_query_result(query_seires, nres, pdc_ids);
+        step_failed = validator(query_seires, nres, pdc_ids);
     }
     return step_failed;
 }
@@ -325,39 +370,84 @@ main(int argc, char *argv[])
     // delete the index records
     // perform the same query, there should be no result.
 
+    // we are performing 1000 insertion operations for string value and 1000 times for numerical values.
     perr_t ret_value = insert_index_records(world_rank, world_size);
     if (ret_value == FAIL) {
         printf("CLIENT %d failed to insert index records\n", world_rank);
     }
     assert(ret_value == SUCCEED);
 
-    int step_failed       = search_through_index(world_rank, world_size);
-    char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
-    if (step_failed >= 0) {
-        printf("CLIENT %d failed to search index for query type %s\n", world_rank, query_types[step_failed]);
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+    stime      = MPI_Wtime();
+#endif
+    // print performance and timing information
+    if (world_rank == 0) {
+        printf("Index Insertion 2000 times, time: %.5f ms, TPS = %.5f\n", total_time * 1000.0,
+               2000.0 / total_time);
     }
-    assert(step_failed < 0);
 
+    // perform 1000 times query test, each test will be performed by a different client,
+    // and depending on the rank of the client, each client is performing a different type of query.
+    // So totally, there will be 1000 * N queries issued, where N is the number of clients.
+    for (i = 0; i < 1000; i++) {
+        int step_failed       = search_through_index(world_rank, world_size, validate_query_result);
+        char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
+        if (step_failed >= 0) {
+            printf("CLIENT %d failed to search index for query type %s\n", world_rank,
+                   query_types[step_failed]);
+        }
+        assert(step_failed < 0);
+    }
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+    stime      = MPI_Wtime();
+#endif
+    // print performance and timing information
+    if (world_rank == 0) {
+        printf("Index Query %d times, time: %.5f ms, TPS = %.5f\n", 1000 * world_size, total_time * 1000.0,
+               1000.0 * world_size / total_time);
+    }
+
+    // delete the index records.
     perr_t ret_value = delete_index_records(world_rank, world_size);
     if (ret_value == FAIL) {
         printf("CLIENT %d failed to delete index records\n", world_rank);
     }
     assert(ret_value == SUCCEED);
 
-    int step_failed       = search_through_index(world_rank, world_size);
-    char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
-    if (step_failed >= 0) {
-        printf("CLIENT %d failed to search index for query type %s\n", world_rank, query_types[step_failed]);
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    total_time = MPI_Wtime() - stime;
+    stime      = MPI_Wtime();
+#endif
+    // print performance and timing information
+    if (world_rank == 0) {
+        printf("Index Deletion 2000 times, time: %.5f ms, TPS = %.5f\n", total_time * 1000.0,
+               2000.0 / total_time);
     }
-    assert(step_failed < 0);
+
+    for (i = 0; i < 1000; i++) {
+        int step_failed       = search_through_index(world_rank, world_size, validate_empty_result);
+        char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
+        if (step_failed >= 0) {
+            printf("CLIENT %d failed to search index for query type %s\n", world_rank,
+                   query_types[step_failed]);
+        }
+        assert(step_failed < 0);
+    }
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
 #endif
-    if (my_rank == 0) {
-        println("[TAG Deletion] Rank %d: Deleted %d kvtag from %d objects, time: %.5f ms", my_rank, round,
-                my_obj, total_time * 1000.0);
+    // print performance and timing information
+    if (world_rank == 0) {
+        printf("EMPTY Query %d times, time: %.5f ms, TPS = %.5f\n", 1000 * world_size, total_time * 1000.0,
+               1000.0 * world_size / total_time);
     }
 
 done:
