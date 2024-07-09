@@ -53,7 +53,7 @@ print_usage(char *name)
 }
 
 perr_t
-prepare_container(pdcid_t *pdc, pdcid_t *cont_prop, pdcid_t *cont, pdcid_t *obj_prop, int my_rank)
+prepare_container(pdcid_t *pdc, pdcid_t *cont_prop, pdcid_t *cont, pdcid_t *obj_prop, int world_rank)
 {
     perr_t ret_value = FAIL;
     // create a pdc
@@ -62,20 +62,20 @@ prepare_container(pdcid_t *pdc, pdcid_t *cont_prop, pdcid_t *cont, pdcid_t *obj_
     // create a container property
     *cont_prop = PDCprop_create(PDC_CONT_CREATE, *pdc);
     if (*cont_prop <= 0) {
-        printf("[Client %d] Fail to create container property @ line  %d!\n", my_rank, __LINE__);
+        printf("[Client %d] Fail to create container property @ line  %d!\n", world_rank, __LINE__);
         goto done;
     }
     // create a container
     *cont = PDCcont_create("c1", *cont_prop);
     if (*cont <= 0) {
-        printf("[Client %d] Fail to create container @ line  %d!\n", my_rank, __LINE__);
+        printf("[Client %d] Fail to create container @ line  %d!\n", world_rank, __LINE__);
         goto done;
     }
 
     // create an object property
     *obj_prop = PDCprop_create(PDC_OBJ_CREATE, *pdc);
     if (*obj_prop <= 0) {
-        printf("[Client %d] Fail to create object property @ line  %d!\n", my_rank, __LINE__);
+        printf("[Client %d] Fail to create object property @ line  %d!\n", world_rank, __LINE__);
         goto done;
     }
 
@@ -87,6 +87,7 @@ done:
 perr_t
 insert_index_records(int world_rank, int world_size)
 {
+    int    i;
     perr_t ret_value = SUCCEED;
     for (i = 0; i < 1000; i++) {
         if (i % world_size != world_rank) {
@@ -122,6 +123,7 @@ insert_index_records(int world_rank, int world_size)
 perr_t
 delete_index_records(int world_rank, int world_size)
 {
+    int    i;
     perr_t ret_value = SUCCEED;
     for (i = 0; i < 1000; i++) {
         if (i % world_size != world_rank) {
@@ -155,8 +157,9 @@ delete_index_records(int world_rank, int world_size)
 }
 
 int
-validate_empty_result(int query_series, int nres, uint64_t *pdc_ids)
+validate_empty_result(int world_rank, int nres, uint64_t *pdc_ids)
 {
+    int query_series = world_rank % 6;
     if (nres > 0) {
         printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
         return query_series;
@@ -165,10 +168,11 @@ validate_empty_result(int query_series, int nres, uint64_t *pdc_ids)
 }
 
 int
-validate_query_result(int query_series, int nres, uint64_t *pdc_ids)
+validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
 {
     int i;
-    int step_failed = -1;
+    int query_series = world_rank % 6;
+    int step_failed  = -1;
     switch (query_series) {
         case 0:
             if (nres != 1) {
@@ -217,7 +221,7 @@ validate_query_result(int query_series, int nres, uint64_t *pdc_ids)
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
-            uint64_t[20] expected = {9,  90,  91,  92,  93,  94,  95,  96,  97,  98,
+            uint64_t expected[20] = {9,  90,  91,  92,  93,  94,  95,  96,  97,  98,
                                      99, 109, 209, 309, 409, 509, 609, 709, 809, 909};
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != expected[i]) {
@@ -259,7 +263,7 @@ validate_query_result(int query_series, int nres, uint64_t *pdc_ids)
 }
 
 int
-search_through_index(int world_rank, int world_size, int (*validator)(int q, int n, uint64_t *ids))
+search_through_index(int world_rank, int world_size, int (*validator)(int r, int n, uint64_t *ids))
 {
     int       nres;
     uint64_t *pdc_ids;
@@ -318,7 +322,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int q, int
             break;
     }
     if (step_failed < 0) {
-        step_failed = validator(query_seires, nres, pdc_ids);
+        step_failed = validator(world_rank, nres, pdc_ids);
     }
     return step_failed;
 }
@@ -337,12 +341,12 @@ main(int argc, char *argv[])
 #endif
 
     // prepare container
-    if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, my_rank) < 0) {
+    if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, world_rank) < 0) {
         println("fail to prepare container @ line %d", __LINE__);
         goto done;
     }
 
-    if (my_rank == 0) {
+    if (world_rank == 0) {
         println("Initialization Done!");
     }
 
@@ -392,8 +396,8 @@ main(int argc, char *argv[])
     // and depending on the rank of the client, each client is performing a different type of query.
     // So totally, there will be 1000 * N queries issued, where N is the number of clients.
     for (i = 0; i < 1000; i++) {
-        int step_failed       = search_through_index(world_rank, world_size, validate_query_result);
-        char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
+        int  step_failed        = search_through_index(world_rank, world_size, validate_query_result);
+        char query_types[6][20] = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
         if (step_failed >= 0) {
             printf("CLIENT %d failed to search index for query type %s\n", world_rank,
                    query_types[step_failed]);
@@ -413,7 +417,7 @@ main(int argc, char *argv[])
     }
 
     // delete the index records.
-    perr_t ret_value = delete_index_records(world_rank, world_size);
+    ret_value = delete_index_records(world_rank, world_size);
     if (ret_value == FAIL) {
         printf("CLIENT %d failed to delete index records\n", world_rank);
     }
@@ -431,8 +435,8 @@ main(int argc, char *argv[])
     }
 
     for (i = 0; i < 1000; i++) {
-        int step_failed       = search_through_index(world_rank, world_size, validate_empty_result);
-        char[][6] query_types = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
+        int  step_failed        = search_through_index(world_rank, world_size, validate_empty_result);
+        char query_types[6][20] = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
         if (step_failed >= 0) {
             printf("CLIENT %d failed to search index for query type %s\n", world_rank,
                    query_types[step_failed]);
@@ -453,38 +457,38 @@ main(int argc, char *argv[])
 done:
     // close a container
     if (PDCcont_close(cont) < 0) {
-        if (my_rank == 0) {
+        if (world_rank == 0) {
             printf("fail to close container c1\n");
         }
     }
     else {
-        if (my_rank == 0)
+        if (world_rank == 0)
             printf("successfully close container c1\n");
     }
 
     // close an object property
     if (PDCprop_close(obj_prop) < 0) {
-        if (my_rank == 0)
+        if (world_rank == 0)
             printf("Fail to close property @ line %d\n", __LINE__);
     }
     else {
-        if (my_rank == 0)
+        if (world_rank == 0)
             printf("successfully close object property\n");
     }
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        if (my_rank == 0)
+        if (world_rank == 0)
             printf("Fail to close property @ line %d\n", __LINE__);
     }
     else {
-        if (my_rank == 0)
+        if (world_rank == 0)
             printf("successfully close container property\n");
     }
 
     // close pdc
     if (PDCclose(pdc) < 0) {
-        if (my_rank == 0)
+        if (world_rank == 0)
             printf("fail to close PDC\n");
     }
 

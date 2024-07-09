@@ -153,10 +153,10 @@ if(BUILD_MPI_TESTING)
   set(MPI_PROGRAMS
     kvtag_range_query_scale
     kvtag_affix_query_scale
-    # kvtag_query_mpi
     kvtag_add_get_benchmark
     kvtag_add_get_scale
     llsm_idioms_bench
+    idioms_ci_test
   )
 
   foreach(program ${MPI_PROGRAMS})
@@ -262,6 +262,7 @@ add_test(NAME obj_buf           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME obj_tags          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
 add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get)
 add_test(NAME kvtag_query     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
+add_test(NAME idioms_ci_test     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
 add_test(NAME obj_info          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_info )
 add_test(NAME obj_put_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
 add_test(NAME obj_get_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_get_data )
@@ -343,6 +344,7 @@ set_tests_properties(obj_buf            PROPERTIES LABELS serial )
 set_tests_properties(obj_tags           PROPERTIES LABELS serial )
 set_tests_properties(kvtag_add_get      PROPERTIES LABELS serial )
 set_tests_properties(kvtag_query        PROPERTIES LABELS serial )
+set_tests_properties(idioms_ci_test     PROPERTIES LABELS serial )
 set_tests_properties(obj_info           PROPERTIES LABELS serial )
 set_tests_properties(obj_put_data       PROPERTIES LABELS serial )
 set_tests_properties(obj_get_data       PROPERTIES LABELS serial )
@@ -486,6 +488,7 @@ if(BUILD_MPI_TESTING)
 #   add_test(NAME obj_dim_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_dim ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_buf_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_buf ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_tags ${MPI_RUN_CMD} 4 6 )
+    add_test(NAME idioms_ci_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./idioms_ci_test ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_info ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_put_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_put_data ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_get_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_get_data ${MPI_RUN_CMD} 4 6 )
@@ -567,6 +570,7 @@ if(BUILD_MPI_TESTING)
 #   set_tests_properties(obj_dim_mpi                          PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_buf_mpi                          PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_tags_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
+    set_tests_properties(idioms_ci_mpi                        PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_info_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_put_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_get_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
