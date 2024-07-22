@@ -19,15 +19,15 @@ perlmutter-no-cache-build:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
         - module load libfabric/1.15.2.0
         - module list
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/no-cache
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
-        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/no-cache
+        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/no-cache
         - make -j
         - make install
     artifacts:
@@ -47,15 +47,15 @@ perlmutter-cache-build:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
         - module load libfabric/1.15.2.0
         - module list
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/cache
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
-        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/cache
+        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/cache
         - make -j
         - make install
     artifacts:
@@ -80,9 +80,9 @@ perlmutter-no-cache-parallel-pdc:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-pdc"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-pdc"
     script:        
@@ -104,9 +104,9 @@ perlmutter-no-cache-parallel-obj:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-obj"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-obj"
     script:        
@@ -128,9 +128,9 @@ perlmutter-no-cache-parallel-cont:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-cont"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-cont"
     script:        
@@ -152,9 +152,9 @@ perlmutter-no-cache-parallel-prop:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-prop"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-prop"
     script:        
@@ -176,9 +176,9 @@ perlmutter-no-cache-parallel-region:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-region"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-region"
     script:        
@@ -200,9 +200,9 @@ perlmutter-no-cache-parallel-region-all:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-region-all"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-region-all"
     script:        
@@ -228,9 +228,9 @@ perlmutter-cache-parallel-pdc:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-pdc"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-pdc"
     script:        
@@ -252,9 +252,9 @@ perlmutter-cache-parallel-obj:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-obj"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-obj"
     script:        
@@ -276,9 +276,9 @@ perlmutter-cache-parallel-cont:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-cont"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-cont"
     script:        
@@ -300,9 +300,9 @@ perlmutter-cache-parallel-prop:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-prop"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-prop"
     script:        
@@ -324,9 +324,9 @@ perlmutter-cache-parallel-region:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-region"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-region"
     script:        
@@ -348,9 +348,9 @@ perlmutter-cache-parallel-region-all:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-region-all"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-region-all"
     script:        
@@ -370,15 +370,15 @@ perlmutter-metrics-build:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
         - module load libfabric/1.15.2.0
         - module list
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/metrics
         - cd ${PDC_BUILD_PATH}/perlmutter/metrics
-        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A m2621 --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/metrics
+        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/metrics
         - make -j
         - make install
     artifacts:
@@ -398,9 +398,9 @@ perlmutter-metrics:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A m2621 --qos=${PDC_QUEUE} --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=${PDC_QUEUE} --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
-        MERCURY_DIR: "/global/cfs/cdirs/m2621/pdc-perlmutter/mercury/install"
+        MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-metrics"
         PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-metrics"
         PDC_CLIENT_LOOKUP: "NONE"
