@@ -23,8 +23,7 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
 
     int      ndim          = 1;
     uint64_t offset_local  = 0;
-    uint64_t offset_remote = 0;
-    uint64_t chunk_size    = 2880;
+    uint64_t offset_remote = 0; uint64_t chunk_size    = 2880;
 
     char *data_out = (char *)malloc(chunk_size * sizeof(char));
     memset(data_out, 'a', chunk_size * sizeof(char));
@@ -47,7 +46,8 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     /* printf("rank %d call wait_all on tids.\n", mpi_rank); */
     fprintf(stderr, "Rank %4d: create took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
-    /* MPI_Barrier(MPI_COMM_WORLD); */
+    MPI_Barrier(MPI_COMM_WORLD);
+
     stime = MPI_Wtime();
 
     ret = PDCregion_transfer_start_all(tids, iterations);
@@ -58,13 +58,17 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
 
     stime = MPI_Wtime();
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     ret = PDCregion_transfer_wait_all(tids, iterations);
     if (ret != SUCCEED)
         printf("Failed to wait all transfer\n");
 
+
     /* printf("rank %d read before wait_all()\n", mpi_rank); */
-    /* MPI_Barrier(MPI_COMM_WORLD); */
     fprintf(stderr, "Rank %4d: wait all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+
+    MPI_Barrier(MPI_COMM_WORLD);
 
     char *data_in    = (char *)malloc(chunk_size * sizeof(char));
     offset_local     = 0;
@@ -76,7 +80,7 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     ret              = PDCregion_transfer_wait(read_tid);
     ret              = PDCregion_transfer_close(read_tid);
     /* printf("rank %d read success!\n", mpi_rank); */
-    fprintf(stderr, "Rank %4d: wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    fprintf(stderr, "Rank %4d: create wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     // Write more
     stime          = MPI_Wtime();
@@ -97,6 +101,7 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     }
     fprintf(stderr, "Rank %4d: create tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
+    MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
     ret = PDCregion_transfer_start_all(tids2, N);
@@ -108,6 +113,7 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     /* if (ret != SUCCEED) */
     /*     printf("Failed to transfer wait\n"); */
 
+    MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
     /* printf("rank %d call wait_all on tids2.\n", mpi_rank); */
     ret = PDCregion_transfer_wait_all(tids2, (N));
@@ -115,6 +121,9 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
         printf("Failed to transfer wait\n");
 
     fprintf(stderr, "Rank %4d: wait all tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    stime = MPI_Wtime();
 
     for (int i = 0; i < iterations; i++) {
         ret = PDCregion_transfer_close(tids[i]);
@@ -126,6 +135,8 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
         if (ret != SUCCEED)
             printf("region transfer close failed\n");
     }
+
+    fprintf(stderr, "Rank %4d: close all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     free(data_in);
     free(data_out);
