@@ -59,13 +59,13 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    float *x, *y, *z, *px, *py, *pz;
-    int *id1, *id2;
-    int x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
-    uint64_t  numparticles, dims[1], offset_local[1], offset_remote[1], mysize[1];
-    double    t0, t1;
-    char cur_time[64];
-    time_t t;
+    float *    x, *y, *z, *px, *py, *pz;
+    int *      id1, *id2;
+    int        x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
+    uint64_t   numparticles, dims[1], offset_local[1], offset_remote[1], mysize[1];
+    double     t0, t1;
+    char       cur_time[64];
+    time_t     t;
     struct tm *tm;
 
     pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
@@ -86,14 +86,14 @@ main(int argc, char **argv)
         sleeptime    = atoi(argv[3]);
     }
     if (rank == 0)
-        printf("Writing %" PRIu64 " number of particles for %d steps with %d clients.\n", 
-                numparticles, steps, size);
+        printf("Writing %" PRIu64 " number of particles for %d steps with %d clients.\n", numparticles, steps,
+               size);
 
     dims[0] = numparticles * size;
 
-    x = (float *)malloc(numparticles * sizeof(float));
-    y = (float *)malloc(numparticles * sizeof(float));
-    z = (float *)malloc(numparticles * sizeof(float));
+    x  = (float *)malloc(numparticles * sizeof(float));
+    y  = (float *)malloc(numparticles * sizeof(float));
+    z  = (float *)malloc(numparticles * sizeof(float));
     px = (float *)malloc(numparticles * sizeof(float));
     py = (float *)malloc(numparticles * sizeof(float));
     pz = (float *)malloc(numparticles * sizeof(float));
@@ -144,15 +144,14 @@ main(int argc, char **argv)
     mysize[0]        = numparticles;
 
     // create local and remote region
-    region_local   = PDCregion_create(ndim, offset_local, mysize);
-    region_remote  = PDCregion_create(ndim, offset_remote, mysize);
+    region_local  = PDCregion_create(ndim, offset_local, mysize);
+    region_remote = PDCregion_create(ndim, offset_remote, mysize);
 
     for (int iter = 0; iter < steps; iter++) {
 
-
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        t = time(NULL);
+        t  = time(NULL);
         tm = localtime(&t);
         strftime(cur_time, sizeof(cur_time), "%c", tm);
         if (rank == 0)
@@ -208,49 +207,57 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-        t = time(NULL);
+        t  = time(NULL);
         tm = localtime(&t);
         strftime(cur_time, sizeof(cur_time), "%c", tm);
         if (rank == 0)
             printf("%s Obj create time: %.5e\n", cur_time, t1 - t0);
 #endif
 
-        transfer_requests[0] = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_local, region_remote);
+        transfer_requests[0] =
+            PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_local, region_remote);
         if (transfer_requests[0] == 0) {
             printf("x transfer request creation failed\n");
             return FAIL;
         }
-        transfer_requests[1] = PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy, region_local, region_remote);
+        transfer_requests[1] =
+            PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy, region_local, region_remote);
         if (transfer_requests[1] == 0) {
             printf("y transfer request creation failed\n");
             return FAIL;
         }
-        transfer_requests[2] = PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz, region_local, region_remote);
+        transfer_requests[2] =
+            PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz, region_local, region_remote);
         if (transfer_requests[2] == 0) {
             printf("z transfer request creation failed\n");
             return FAIL;
         }
-        transfer_requests[3] = PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx, region_local, region_remote);
+        transfer_requests[3] =
+            PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx, region_local, region_remote);
         if (transfer_requests[3] == 0) {
             printf("px transfer request creation failed\n");
             return FAIL;
         }
-        transfer_requests[4] = PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy, region_local, region_remote);
+        transfer_requests[4] =
+            PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy, region_local, region_remote);
         if (transfer_requests[4] == 0) {
             printf("py transfer request creation failed\n");
             return FAIL;
         }
-        transfer_requests[5] = PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz, region_local, region_remote);
+        transfer_requests[5] =
+            PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz, region_local, region_remote);
         if (transfer_requests[5] == 0) {
             printf("pz transfer request creation failed\n");
             return FAIL;
         }
-        transfer_requests[6] = PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_local, region_remote);
+        transfer_requests[6] =
+            PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_local, region_remote);
         if (transfer_requests[6] == 0) {
             printf("id1 transfer request creation failed\n");
             return FAIL;
         }
-        transfer_requests[7] = PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_local, region_remote);
+        transfer_requests[7] =
+            PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_local, region_remote);
         if (transfer_requests[7] == 0) {
             printf("id2 transfer request creation failed\n");
             return FAIL;
@@ -259,7 +266,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
-        t = time(NULL);
+        t  = time(NULL);
         tm = localtime(&t);
         strftime(cur_time, sizeof(cur_time), "%c", tm);
         if (rank == 0)
@@ -271,11 +278,10 @@ main(int argc, char **argv)
             return FAIL;
         }
 
-
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-        t = time(NULL);
+        t  = time(NULL);
         tm = localtime(&t);
         strftime(cur_time, sizeof(cur_time), "%c", tm);
         if (rank == 0)
@@ -283,13 +289,13 @@ main(int argc, char **argv)
 #endif
         // Emulate compute with sleep
         if (iter != steps - 1) {
-            t = time(NULL);
+            t  = time(NULL);
             tm = localtime(&t);
             strftime(cur_time, sizeof(cur_time), "%c", tm);
             if (rank == 0)
                 printf("%s Sleep start: %llu.00\n", cur_time, sleeptime);
             sleep(sleeptime);
-            t = time(NULL);
+            t  = time(NULL);
             tm = localtime(&t);
             strftime(cur_time, sizeof(cur_time), "%c", tm);
             if (rank == 0)
@@ -309,7 +315,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-        t = time(NULL);
+        t  = time(NULL);
         tm = localtime(&t);
         strftime(cur_time, sizeof(cur_time), "%c", tm);
         if (rank == 0)
@@ -326,7 +332,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
-        t = time(NULL);
+        t  = time(NULL);
         tm = localtime(&t);
         strftime(cur_time, sizeof(cur_time), "%c", tm);
         if (rank == 0)

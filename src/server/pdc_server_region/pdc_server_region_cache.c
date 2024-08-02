@@ -21,7 +21,6 @@
 #define PDC_IDLE_CACHE_FLUSH_TIME_INT 2
 #endif
 
-
 typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
     struct pdc_region_cache *next;
@@ -415,7 +414,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
                           size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim,
                           size_t unit)
 {
-    int server_rank = 0;
+    int                     server_rank = 0;
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
     struct pdc_region_info *region_cache_info;
     if (obj_ndim != ndim && obj_ndim > 0) {
@@ -424,7 +423,7 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
     }
 
 #ifdef ENABLE_MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
 #endif
 
     /* time_t t = time(NULL); */
@@ -632,7 +631,8 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     /*     t = time(NULL); */
     /*     tm = localtime(&t); */
     /*     strftime(cur_time, sizeof(cur_time), "%c", tm); */
-    /*     printf("%s ==PDC_SERVER[%d]: %s write is fully contained with cached region\n", cur_time, server_rank, __func__); */
+    /*     printf("%s ==PDC_SERVER[%d]: %s write is fully contained with cached region\n", cur_time,
+     * server_rank, __func__); */
     /* } */
 
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
@@ -892,10 +892,10 @@ PDC_region_cache_clock_cycle(void *ptr)
     struct timeval finish_time;
     int            nflush = 0, nflush_obj = 0;
     double         flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time;
-    int            server_rank = 0;
-    time_t t;
-    struct tm *tm;
-    char cur_time[64];
+    int            server_rank       = 0;
+    time_t         t;
+    struct tm *    tm;
+    char           cur_time[64];
 
     char *p = getenv("PDC_SERVER_CACHE_FLUSH_FREQUENCY_S");
     if (p != NULL)
@@ -921,7 +921,7 @@ PDC_region_cache_clock_cycle(void *ptr)
             /* pthread_mutex_lock(&pdc_obj_cache_list_mutex); */
             gettimeofday(&current_time, NULL);
             obj_cache_iter = obj_cache_list;
-            nflush = 0;
+            nflush         = 0;
             while (obj_cache_iter != NULL) {
                 pthread_mutex_lock(&pdc_obj_cache_list_mutex);
                 obj_cache = obj_cache_iter;
@@ -938,11 +938,12 @@ PDC_region_cache_clock_cycle(void *ptr)
                 if (elapsed_time >= pdc_idle_flush_time_g) {
                     nflush_obj = PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
                     if (nflush_obj > 0) {
-                        t = time(NULL);
+                        t  = time(NULL);
                         tm = localtime(&t);
                         strftime(cur_time, sizeof(cur_time), "%c", tm);
                         fprintf(stderr,
-                                "%s ==PDC_SERVER[%d]: server without cache activity for over %ds, start flush %llu\n",
+                                "%s ==PDC_SERVER[%d]: server without cache activity for over %ds, start "
+                                "flush %llu\n",
                                 cur_time, server_rank, pdc_idle_flush_time_g, obj_cache->obj_id);
                         nflush += nflush_obj;
                     }
@@ -955,9 +956,9 @@ PDC_region_cache_clock_cycle(void *ptr)
                 gettimeofday(&finish_time, NULL);
                 elapsed_time = finish_time.tv_sec - current_time.tv_sec +
                                (finish_time.tv_usec - current_time.tv_usec) / 1000000.0;
-		t = time(NULL);
-		tm = localtime(&t);
-		strftime(cur_time, sizeof(cur_time), "%c", tm);
+                t  = time(NULL);
+                tm = localtime(&t);
+                strftime(cur_time, sizeof(cur_time), "%c", tm);
                 fprintf(stderr,
                         "%s ==PDC_SERVER[%d]: flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
                         cur_time, server_rank, nflush, flush_frequency_s, elapsed_time);

@@ -936,16 +936,17 @@ done:
 perr_t
 PDC_Client_send_rpc(int server_id)
 {
-    perr_t ret_value = SUCCEED;
-    hg_return_t hg_ret    = 0;
+    perr_t                         ret_value = SUCCEED;
+    hg_return_t                    hg_ret    = 0;
     struct _pdc_client_lookup_args lookup_args;
-    hg_handle_t handle;
-    send_rpc_in_t in;
+    hg_handle_t                    handle;
+    send_rpc_in_t                  in;
 
     FUNC_ENTER(NULL);
 
     if (server_id < 0 || server_id >= pdc_server_num_g)
-        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: %s invalid server ID %d", pdc_client_mpi_rank_g, __func__, server_id);
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: %s invalid server ID %d", pdc_client_mpi_rank_g, __func__,
+                    server_id);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -973,7 +974,6 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-
 
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
@@ -3163,7 +3163,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
     HG_Destroy(client_send_transfer_request_all_handle);
- 
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);

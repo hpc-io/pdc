@@ -1257,7 +1257,8 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
             bulk_buf_ref[0] = n_objs;
             // printf("checkpoint @ line %d, index = %d, dataserver_id = %d, n_objs = %d\n", __LINE__, index,
             // transfer_requests[index]->data_server_id, n_objs);
-            /* printf("==PDC_CLIENT[%d]: %s 1 send to server %d\n", pdc_client_mpi_rank_g, __func__, transfer_requests[index]->data_server_id); */
+            /* printf("==PDC_CLIENT[%d]: %s 1 send to server %d\n", pdc_client_mpi_rank_g, __func__,
+             * transfer_requests[index]->data_server_id); */
             PDC_Client_transfer_request_all(n_objs, transfer_requests[index]->transfer_request->access_type,
                                             transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size,
                                             metadata_id + index);
@@ -1293,11 +1294,12 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         bulk_buf_ref[0] = n_objs;
         // printf("checkpoint @ line %d, index = %d, dataserver_id = %d, n_objs = %d\n", __LINE__, index,
         // transfer_requests[index]->data_server_id, n_objs);
-        /* printf("==PDC_CLIENT[%d]: %s 2 send to server %d\n", pdc_client_mpi_rank_g, __func__, transfer_requests[index]->data_server_id); */
+        /* printf("==PDC_CLIENT[%d]: %s 2 send to server %d\n", pdc_client_mpi_rank_g, __func__,
+         * transfer_requests[index]->data_server_id); */
         PDC_Client_transfer_request_all(n_objs, transfer_requests[index]->transfer_request->access_type,
                                         transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size,
                                         metadata_id + index);
- 
+
         // printf("transfer request towards data server %d\n", transfer_requests[index]->data_server_id);
         for (j = index; j < size; ++j) {
             // All requests share the same bulk buffer, reference counter is also shared among all
@@ -1319,9 +1321,10 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     // TODO: Tang workaround, send an RPC to the target server to trigger bulk transfer on the server
     /* usleep((pdc_client_mpi_rank_g % 64) * 1000); */
     int data_server_id = transfer_requests[index]->data_server_id;
-    /* printf("==PDC_CLIENT[%d]: %s send rpc to server %d\n", pdc_client_mpi_rank_g, __func__, data_server_id); */
+    /* printf("==PDC_CLIENT[%d]: %s send rpc to server %d\n", pdc_client_mpi_rank_g, __func__,
+     * data_server_id); */
     PDC_Client_send_rpc(data_server_id);
-  
+
     free(read_bulk_buf);
     free(metadata_id);
 

@@ -1857,7 +1857,7 @@ HG_TEST_RPC_CB(send_rpc, handle)
 {
     send_rpc_in_t  in;
     send_rpc_out_t out;
-    hg_return_t ret_value = HG_SUCCESS;
+    hg_return_t    ret_value = HG_SUCCESS;
 
     FUNC_ENTER(NULL);
 

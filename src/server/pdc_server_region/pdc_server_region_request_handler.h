@@ -342,9 +342,9 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
 #endif
-    time_t t = time(NULL);
+    time_t     t  = time(NULL);
     struct tm *tm = localtime(&t);
-    char cur_time[64];
+    char       cur_time[64];
     strftime(cur_time, sizeof(cur_time), "%c", tm);
     printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__);
 

@@ -1769,7 +1769,7 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_send_rpc_in_t(hg_proc_t proc, void *data)
 {
-    hg_return_t            ret;
+    hg_return_t    ret;
     send_rpc_in_t *struct_data = (send_rpc_in_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->value);
@@ -1784,7 +1784,7 @@ hg_proc_send_rpc_in_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_send_rpc_out_t(hg_proc_t proc, void *data)
 {
-    hg_return_t            ret;
+    hg_return_t     ret;
     send_rpc_out_t *struct_data = (send_rpc_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->value);
