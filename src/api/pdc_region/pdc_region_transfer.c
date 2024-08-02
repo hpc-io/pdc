@@ -1239,6 +1239,10 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     int *     bulk_buf_ref;
 
     FUNC_ENTER(NULL);
+
+    if (size == 0)
+        goto done;
+
     metadata_id   = (uint64_t *)malloc(sizeof(uint64_t) * size);
     read_bulk_buf = (char **)malloc(sizeof(char *) * size);
     index         = 0;
@@ -1253,6 +1257,7 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
             bulk_buf_ref[0] = n_objs;
             // printf("checkpoint @ line %d, index = %d, dataserver_id = %d, n_objs = %d\n", __LINE__, index,
             // transfer_requests[index]->data_server_id, n_objs);
+            /* printf("==PDC_CLIENT[%d]: %s 1 send to server %d\n", pdc_client_mpi_rank_g, __func__, transfer_requests[index]->data_server_id); */
             PDC_Client_transfer_request_all(n_objs, transfer_requests[index]->transfer_request->access_type,
                                             transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size,
                                             metadata_id + index);
@@ -1288,9 +1293,11 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         bulk_buf_ref[0] = n_objs;
         // printf("checkpoint @ line %d, index = %d, dataserver_id = %d, n_objs = %d\n", __LINE__, index,
         // transfer_requests[index]->data_server_id, n_objs);
+        /* printf("==PDC_CLIENT[%d]: %s 2 send to server %d\n", pdc_client_mpi_rank_g, __func__, transfer_requests[index]->data_server_id); */
         PDC_Client_transfer_request_all(n_objs, transfer_requests[index]->transfer_request->access_type,
                                         transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size,
                                         metadata_id + index);
+ 
         // printf("transfer request towards data server %d\n", transfer_requests[index]->data_server_id);
         for (j = index; j < size; ++j) {
             // All requests share the same bulk buffer, reference counter is also shared among all
@@ -1308,9 +1315,17 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
             // transfer_requests[j]->transfer_request->obj_id, transfer_requests[j]->index, metadata_id[j]);
         }
     }
+
+    // TODO: Tang workaround, send an RPC to the target server to trigger bulk transfer on the server
+    /* usleep((pdc_client_mpi_rank_g % 64) * 1000); */
+    int data_server_id = transfer_requests[index]->data_server_id;
+    /* printf("==PDC_CLIENT[%d]: %s send rpc to server %d\n", pdc_client_mpi_rank_g, __func__, data_server_id); */
+    PDC_Client_send_rpc(data_server_id);
+  
     free(read_bulk_buf);
     free(metadata_id);
 
+done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -1340,18 +1355,22 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     */
 
     // Start write requests
-    PDC_Client_start_all_requests(write_transfer_requests, write_size);
+    if (write_size > 0)
+        PDC_Client_start_all_requests(write_transfer_requests, write_size);
     // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
     // Start read requests
-    PDC_Client_start_all_requests(read_transfer_requests, read_size);
+    if (read_size > 0)
+        PDC_Client_start_all_requests(read_transfer_requests, read_size);
     /*
         fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
         MPI_Barrier(MPI_COMM_WORLD);
     */
 
     // For POSIX consistency, we block here until the data is received by the server
-    PDCregion_transfer_wait_all(posix_transfer_request_id, posix_size);
-    free(posix_transfer_request_id);
+    if (posix_size > 0) {
+        PDCregion_transfer_wait_all(posix_transfer_request_id, posix_size);
+        free(posix_transfer_request_id);
+    }
 
     // Clean up memory
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);

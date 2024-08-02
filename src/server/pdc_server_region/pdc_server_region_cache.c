@@ -15,6 +15,13 @@
 #define PDC_CACHE_FLUSH_TIME_INT 30
 #endif
 
+#ifdef PDC_SERVER_IDLE_CACHE_FLUSH_TIME
+#define PDC_IDLE_CACHE_FLUSH_TIME_INT PDC_SERVER_IDLE_CACHE_FLUSH_TIME
+#else
+#define PDC_IDLE_CACHE_FLUSH_TIME_INT 2
+#endif
+
+
 typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
     struct pdc_region_cache *next;
@@ -38,6 +45,8 @@ static pthread_mutex_t pdc_cache_mutex;
 static int             pdc_recycle_close_flag;
 static size_t          total_cache_size;
 static size_t          maximum_cache_size;
+static struct timeval  last_cache_activity_timeval_g;
+static int             pdc_idle_flush_time_g;
 
 int
 PDC_region_server_cache_init()
@@ -47,19 +56,27 @@ PDC_region_server_cache_init()
     pdc_recycle_close_flag = 0;
     pthread_mutex_init(&pdc_obj_cache_list_mutex, NULL);
     pthread_mutex_init(&pdc_cache_mutex, NULL);
-    pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
     total_cache_size = 0;
 
     p = getenv("PDC_SERVER_CACHE_MAX_SIZE");
-    if (p != NULL) {
+    if (p != NULL)
         maximum_cache_size = atol(p);
-    }
-    else {
+    else
         maximum_cache_size = MAX_CACHE_SIZE;
-    }
+
+    p = getenv("PDC_SERVER_IDLE_CACHE_FLUSH_TIME");
+    if (p != NULL)
+        pdc_idle_flush_time_g = atol(p);
+    else
+        pdc_idle_flush_time_g = PDC_IDLE_CACHE_FLUSH_TIME_INT;
 
     obj_cache_list     = NULL;
     obj_cache_list_end = NULL;
+
+    pthread_create(&pdc_recycle_thread, NULL, &PDC_region_cache_clock_cycle, NULL);
+
+    gettimeofday(&last_cache_activity_timeval_g, NULL);
+
     return 0;
 }
 
@@ -398,12 +415,23 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
                           size_t buf_size, const uint64_t *offset, const uint64_t *size, int ndim,
                           size_t unit)
 {
+    int server_rank = 0;
     pdc_obj_cache *         obj_cache_iter, *obj_cache = NULL;
     struct pdc_region_info *region_cache_info;
     if (obj_ndim != ndim && obj_ndim > 0) {
-        printf("PDC_region_cache_register reports obj_ndim != ndim, %d != %d\n", obj_ndim, ndim);
+        printf("%s reports obj_ndim != ndim, %d != %d\n", __func__, obj_ndim, ndim);
         return FAIL;
     }
+
+#ifdef ENABLE_MPI
+        MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+
+    /* time_t t = time(NULL); */
+    /* struct tm *tm = localtime(&t); */
+    /* char cur_time[64]; */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: %s for %llu\n", cur_time, server_rank, __func__, obj_id); */
 
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
 
@@ -472,13 +500,11 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
     memcpy(region_cache_info->buf, buf, sizeof(char) * buf_size);
     total_cache_size += buf_size;
 
+    gettimeofday(&last_cache_activity_timeval_g, NULL);
+
     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
     if (total_cache_size > maximum_cache_size) {
-        int server_rank = 0;
-#ifdef ENABLE_MPI
-        MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-#endif
         printf("==PDC_SERVER[%d]: server cache full %.1f / %.1f MB, will flush to storage\n", server_rank,
                total_cache_size / 1048576.0, maximum_cache_size / 1048576.0);
         PDC_region_cache_flush_all();
@@ -522,9 +548,7 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     pdc_obj_cache *   obj_cache, *obj_cache_iter;
     pdc_region_cache *region_cache_iter;
     uint64_t *        overlap_offset, *overlap_size;
-    // char *            buf_merged;
-    // uint64_t *        offset_merged, size_merged;
-    // int               merge_status;
+    int               server_rank = 0;
 
     perr_t ret_value = SUCCEED;
 
@@ -533,7 +557,15 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     double start = MPI_Wtime();
 #endif
 
-    // Write 1GB at a time
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+
+    /* time_t t = time(NULL); */
+    /* struct tm *tm = localtime(&t); */
+    /* char cur_time[64]; */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: %s for %llu\n", cur_time, server_rank, __func__, obj_id); */
 
     uint64_t write_size = 0;
     if (region_info->ndim >= 1)
@@ -596,6 +628,12 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
         PDC_region_cache_register(obj_id, obj_ndim, obj_dims, buf, write_size, region_info->offset,
                                   region_info->size, region_info->ndim, unit);
     }
+    /* else { */
+    /*     t = time(NULL); */
+    /*     tm = localtime(&t); */
+    /*     strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /*     printf("%s ==PDC_SERVER[%d]: %s write is fully contained with cached region\n", cur_time, server_rank, __func__); */
+    /* } */
 
     // PDC_Server_data_write_out2(obj_id, region_info, buf, unit);
 #ifdef PDC_TIMING
@@ -852,9 +890,12 @@ PDC_region_cache_clock_cycle(void *ptr)
     pdc_obj_cache *obj_cache, *obj_cache_iter;
     struct timeval current_time;
     struct timeval finish_time;
-    int            nflush            = 0;
+    int            nflush = 0, nflush_obj = 0;
     double         flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time;
-    int            server_rank       = 0;
+    int            server_rank = 0;
+    time_t t;
+    struct tm *tm;
+    char cur_time[64];
 
     char *p = getenv("PDC_SERVER_CACHE_FLUSH_FREQUENCY_S");
     if (p != NULL)
@@ -863,44 +904,72 @@ PDC_region_cache_clock_cycle(void *ptr)
     if (ptr == NULL) {
         obj_cache_iter = NULL;
     }
+
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+
+    /* t = time(NULL); */
+    /* tm = localtime(&t); */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: %s start \n", cur_time, server_rank); */
+
     while (1) {
         nflush = 0;
         pthread_mutex_lock(&pdc_cache_mutex);
         if (!pdc_recycle_close_flag) {
-            pthread_mutex_lock(&pdc_obj_cache_list_mutex);
+            /* pthread_mutex_lock(&pdc_obj_cache_list_mutex); */
             gettimeofday(&current_time, NULL);
             obj_cache_iter = obj_cache_list;
-            nflush         = 0;
+            nflush = 0;
             while (obj_cache_iter != NULL) {
+                pthread_mutex_lock(&pdc_obj_cache_list_mutex);
                 obj_cache = obj_cache_iter;
-                // flush every *flush_frequency_s seconds
-                elapsed_time = current_time.tv_sec - obj_cache->timestamp.tv_sec +
-                               (current_time.tv_usec - obj_cache->timestamp.tv_usec) / 1000000.0;
+                /* // flush every *flush_frequency_s seconds */
+                /* elapsed_time = current_time.tv_sec - obj_cache->timestamp.tv_sec + */
+                /*                (current_time.tv_usec - obj_cache->timestamp.tv_usec) / 1000000.0; */
+                /* /1* if (current_time.tv_sec - obj_cache->timestamp.tv_sec > flush_frequency_s) { *1/ */
+                /* if (elapsed_time >= flush_frequency_s) { */
+                /*     nflush += PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache); */
+                /* } */
+                elapsed_time = current_time.tv_sec - last_cache_activity_timeval_g.tv_sec +
+                               (current_time.tv_usec - last_cache_activity_timeval_g.tv_usec) / 1000000.0;
                 /* if (current_time.tv_sec - obj_cache->timestamp.tv_sec > flush_frequency_s) { */
-                if (elapsed_time >= flush_frequency_s) {
-                    nflush += PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
+                if (elapsed_time >= pdc_idle_flush_time_g) {
+                    nflush_obj = PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
+                    if (nflush_obj > 0) {
+                        t = time(NULL);
+                        tm = localtime(&t);
+                        strftime(cur_time, sizeof(cur_time), "%c", tm);
+                        fprintf(stderr,
+                                "%s ==PDC_SERVER[%d]: server without cache activity for over %ds, start flush %llu\n",
+                                cur_time, server_rank, pdc_idle_flush_time_g, obj_cache->obj_id);
+                        nflush += nflush_obj;
+                    }
                 }
                 obj_cache_iter = obj_cache_iter->next;
-            }
+                pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
+                usleep(10000);
+            } // End while obj_cache_iter
             if (nflush > 0) {
-#ifdef ENABLE_MPI
-                MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-#endif
                 gettimeofday(&finish_time, NULL);
                 elapsed_time = finish_time.tv_sec - current_time.tv_sec +
                                (finish_time.tv_usec - current_time.tv_usec) / 1000000.0;
+		t = time(NULL);
+		tm = localtime(&t);
+		strftime(cur_time, sizeof(cur_time), "%c", tm);
                 fprintf(stderr,
-                        "==PDC_SERVER[%d]: flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
-                        server_rank, nflush, flush_frequency_s, elapsed_time);
+                        "%s ==PDC_SERVER[%d]: flushed %d regions to storage (full/every %.0fs), took %.4fs\n",
+                        cur_time, server_rank, nflush, flush_frequency_s, elapsed_time);
             }
-            pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
-        }
+            /* pthread_mutex_unlock(&pdc_obj_cache_list_mutex); */
+        } // End if pdc_recycle_close_flag
         else {
             pthread_mutex_unlock(&pdc_cache_mutex);
             break;
         }
         pthread_mutex_unlock(&pdc_cache_mutex);
-        usleep(500);
+        usleep(10000);
     }
     return 0;
 }

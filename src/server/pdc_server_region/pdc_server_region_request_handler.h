@@ -170,9 +170,18 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     transfer_request_all_data                    request_data;
     hg_return_t                                  ret = HG_SUCCESS;
     struct pdc_region_info *                     remote_reg_info;
-    int                                          i;
+    int                                          i, server_rank;
 
     FUNC_ENTER(NULL);
+
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+    /* time_t t = time(NULL); */
+    /* struct tm *tm = localtime(&t); */
+    /* char cur_time[64]; */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__); */
 
 #ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
@@ -182,7 +191,6 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     start = MPI_Wtime();
 #endif
 
-    // printf("entering transfer_request_all_bulk_transfer_write_cb\n");
     remote_reg_info     = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
     request_data.n_objs = local_bulk_args->in.n_objs;
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_WRITE);
@@ -244,6 +252,11 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     pdc_server_timings->PDCreg_transfer_request_inner_write_all_bulk_rpc += end - start;
     pdc_timestamp_register(pdc_transfer_request_inner_write_all_bulk_timestamps, start, end);
 #endif
+
+    /* t = time(NULL); */
+    /* tm = localtime(&t); */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, server_rank, __func__); */
 
     FUNC_LEAVE(ret);
 }
@@ -322,8 +335,18 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     hg_return_t                              ret             = HG_SUCCESS;
     struct pdc_region_info *                 remote_reg_info;
     uint64_t                                 obj_dims[3];
+    int                                      server_rank;
 
     FUNC_ENTER(NULL);
+
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+    time_t t = time(NULL);
+    struct tm *tm = localtime(&t);
+    char cur_time[64];
+    strftime(cur_time, sizeof(cur_time), "%c", tm);
+    printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__);
 
 #ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
@@ -332,8 +355,6 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
                            end);
     start = MPI_Wtime();
 #endif
-
-    // printf("entering transfer bulk callback\n");
 
     remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
 
@@ -548,9 +569,18 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     transfer_request_all_in_t                    in;
     transfer_request_all_out_t                   out;
     hg_return_t                                  ret_value = HG_SUCCESS;
-    int                                          i;
+    int                                          i, server_rank;
 
     FUNC_ENTER(NULL);
+
+#ifdef ENABLE_MPI
+    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
+#endif
+    /* time_t t = time(NULL); */
+    /* struct tm *tm = localtime(&t); */
+    /* char cur_time[64]; */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__); */
 
 #ifdef PDC_TIMING
     double start = MPI_Wtime(), end;
@@ -622,6 +652,11 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
         pdc_timestamp_register(pdc_transfer_request_start_all_write_timestamps, start, end);
     }
 #endif
+
+    /* t = time(NULL); */
+    /* tm = localtime(&t); */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, server_rank, __func__); */
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);

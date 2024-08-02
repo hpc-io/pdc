@@ -88,6 +88,7 @@ set(PROGRAMS
   delete_obj
   vpicio
   vpicio_mts
+  vpicio_mts_all
   bdcats
   vpicio_old
   bdcats_old

@@ -2009,6 +2009,7 @@ PDC_Server_mercury_register()
     PDC_metadata_add_kvtag_register(hg_class_g);
     PDC_metadata_get_kvtag_register(hg_class_g);
     PDC_metadata_del_kvtag_register(hg_class_g);
+    PDC_send_rpc_register(hg_class_g);
 
     // bulk
     PDC_query_partial_register(hg_class_g);

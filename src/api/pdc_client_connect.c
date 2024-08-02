@@ -154,6 +154,7 @@ static hg_id_t data_server_write_check_register_id_g;
 static hg_id_t data_server_write_register_id_g;
 static hg_id_t server_checkpoint_rpc_register_id_g;
 static hg_id_t send_shm_register_id_g;
+static hg_id_t send_rpc_register_id_g;
 
 // bulk
 static hg_id_t query_partial_register_id_g;
@@ -904,6 +905,76 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static hg_return_t
+send_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    struct _pdc_client_lookup_args *client_lookup_args = (struct _pdc_client_lookup_args *)callback_info->arg;
+    hg_handle_t                     handle             = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    metadata_add_tag_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        client_lookup_args->ret = -1;
+        PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output",
+                    pdc_client_mpi_rank_g);
+    }
+    client_lookup_args->ret = output.ret;
+
+done:
+    fflush(stdout);
+    hg_atomic_decr32(&atomic_work_todo_g);
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_send_rpc(int server_id)
+{
+    perr_t ret_value = SUCCEED;
+    hg_return_t hg_ret    = 0;
+    struct _pdc_client_lookup_args lookup_args;
+    hg_handle_t handle;
+    send_rpc_in_t in;
+
+    FUNC_ENTER(NULL);
+
+    if (server_id < 0 || server_id >= pdc_server_num_g)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: %s invalid server ID %d", pdc_client_mpi_rank_g, __func__, server_id);
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, send_rpc_register_id_g, &handle);
+
+    in.value = pdc_client_mpi_rank_g;
+
+    hg_ret = HG_Forward(handle, send_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - HG_Forward Error!", pdc_client_mpi_rank_g);
+
+    // No need to wait
+    // Wait for response from server
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+
+    PDC_Client_check_response(&send_context_g);
+
+done:
+    fflush(stdout);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
@@ -1291,6 +1362,7 @@ drc_access_again:
     data_server_write_register_id_g        = PDC_data_server_write_register(*hg_class);
     server_checkpoint_rpc_register_id_g    = PDC_server_checkpoint_rpc_register(*hg_class);
     send_shm_register_id_g                 = PDC_send_shm_register(*hg_class);
+    send_rpc_register_id_g                 = PDC_send_rpc_register(*hg_class);
 
     // bulk
     query_partial_register_id_g = PDC_query_partial_register(*hg_class);
@@ -3091,6 +3163,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
     HG_Destroy(client_send_transfer_request_all_handle);
+ 
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);

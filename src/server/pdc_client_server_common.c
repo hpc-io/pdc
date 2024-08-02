@@ -1852,6 +1852,28 @@ HG_TEST_RPC_CB(metadata_delete, handle)
 }
 
 /* static hg_return_t */
+// send_rpc_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(send_rpc, handle)
+{
+    send_rpc_in_t  in;
+    send_rpc_out_t out;
+    hg_return_t ret_value = HG_SUCCESS;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+    /* fprintf(stderr, "==PDC_Server[]: %s received value from client %d\n", __func__, in.value); */
+
+    out.value = 1;
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
 // metadata_add_tag_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_add_tag, handle)
 {
@@ -1928,7 +1950,14 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
-    PDC_Server_add_kvtag(&in, &out);
+    if (strcmp(in.kvtag.name, "PDC_NOOP") != 0) {
+        PDC_Server_add_kvtag(&in, &out);
+    }
+    else {
+        printf("==PDC_SERVER[]: received NOOP\n");
+        out.ret = 1;
+    }
+
     ret_value = HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);
@@ -6563,6 +6592,7 @@ HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
 HG_TEST_THREAD_CB(send_data_query_rpc)
+HG_TEST_THREAD_CB(send_rpc)
 
 HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
@@ -6582,6 +6612,7 @@ PDC_FUNC_DECLARE_REGISTER(notify_region_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_query)
 PDC_FUNC_DECLARE_REGISTER(container_query)
 PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
+PDC_FUNC_DECLARE_REGISTER(send_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
