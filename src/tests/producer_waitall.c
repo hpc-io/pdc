@@ -23,7 +23,8 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
 
     int      ndim          = 1;
     uint64_t offset_local  = 0;
-    uint64_t offset_remote = 0; uint64_t chunk_size    = 2880;
+    uint64_t offset_remote = 0;
+    uint64_t chunk_size    = 2880;
 
     char *data_out = (char *)malloc(chunk_size * sizeof(char));
     memset(data_out, 'a', chunk_size * sizeof(char));
@@ -63,7 +64,6 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     ret = PDCregion_transfer_wait_all(tids, iterations);
     if (ret != SUCCEED)
         printf("Failed to wait all transfer\n");
-
 
     /* printf("rank %d read before wait_all()\n", mpi_rank); */
     fprintf(stderr, "Rank %4d: wait all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
