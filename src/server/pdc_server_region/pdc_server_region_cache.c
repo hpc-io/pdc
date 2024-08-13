@@ -890,7 +890,7 @@ PDC_region_cache_clock_cycle(void *ptr)
     pdc_obj_cache *obj_cache, *obj_cache_iter;
     struct timeval current_time;
     struct timeval finish_time;
-    int            nflush = 0;
+    int            nflush            = 0;
     double         flush_frequency_s = PDC_CACHE_FLUSH_TIME_INT, elapsed_time;
     int            server_rank       = 0;
     time_t         t;
@@ -945,7 +945,8 @@ PDC_region_cache_clock_cycle(void *ptr)
                     /* tm = localtime(&t); */
                     /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
                     /* fprintf(stderr, */
-                    /*         "%s ==PDC_SERVER[%d]: stop flush to allow processing new RPCs\n", cur_time, server_rank); */
+                    /*         "%s ==PDC_SERVER[%d]: stop flush to allow processing new RPCs\n", cur_time,
+                     * server_rank); */
 
                     usleep(10000);
                     break;
@@ -961,9 +962,8 @@ PDC_region_cache_clock_cycle(void *ptr)
                 t  = time(NULL);
                 tm = localtime(&t);
                 strftime(cur_time, sizeof(cur_time), "%c", tm);
-                fprintf(stderr,
-                        "%s ==PDC_SERVER[%d]: flushed %d regions to storage, took %.4fs\n",
-                        cur_time, server_rank, nflush, elapsed_time);
+                fprintf(stderr, "%s ==PDC_SERVER[%d]: flushed %d regions to storage, took %.4fs\n", cur_time,
+                        server_rank, nflush, elapsed_time);
             }
             /* pthread_mutex_unlock(&pdc_obj_cache_list_mutex); */
         } // End if pdc_recycle_close_flag

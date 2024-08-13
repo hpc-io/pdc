@@ -636,7 +636,6 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
         /* tm = localtime(&t); */
         /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
         /* printf("%s ==PDC_SERVER[x]: %s done bulk\n", cur_time, __func__); */
-
     }
     else {
         // Read operation has to receive region metadata first. There will be another bulk transfer triggered

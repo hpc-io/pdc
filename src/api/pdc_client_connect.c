@@ -192,7 +192,7 @@ pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
 static uint64_t object_selection_query_counter_g = 0;
 
 static pthread_t hg_progress_tid_g;
-static int hg_progress_shutdown_flag_g = 0;
+static int       hg_progress_shutdown_flag_g = 0;
 
 /*
  *
@@ -258,9 +258,9 @@ done:
 static void *
 hg_progress_fn(void *foo)
 {
-    hg_return_t ret;
-    unsigned int actual_count;
-    hg_context_t *hg_context = (hg_context_t*) foo;
+    hg_return_t   ret;
+    unsigned int  actual_count;
+    hg_context_t *hg_context = (hg_context_t *)foo;
 
     /* char cur_time[64]; */
     /* time_t t = time(NULL); */
@@ -270,20 +270,20 @@ hg_progress_fn(void *foo)
 
     while (!hg_progress_shutdown_flag_g) {
         do {
-	    /* t = time(NULL); */
+            /* t = time(NULL); */
             /* tm = localtime(&t); */
             /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
             /* printf("[%s] before HG_Trigger\n", cur_time); */
 
             ret = HG_Trigger(hg_context, 0, 1, &actual_count);
 
-	    /* t = time(NULL); */
+            /* t = time(NULL); */
             /* tm = localtime(&t); */
             /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
             /* printf("[%s] after HG_Trigger\n", cur_time); */
         } while ((ret == HG_SUCCESS) && actual_count && !hg_progress_shutdown_flag_g);
 
-	/* t = time(NULL); */
+        /* t = time(NULL); */
         /* tm = localtime(&t); */
         /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
         /* printf("[%s] before HG_Progress\n", cur_time); */
@@ -291,7 +291,7 @@ hg_progress_fn(void *foo)
         if (!hg_progress_shutdown_flag_g)
             HG_Progress(hg_context, 100);
 
-	/* t = time(NULL); */
+        /* t = time(NULL); */
         /* tm = localtime(&t); */
         /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
         /* printf("[%s] after HG_Progress\n", cur_time); */
@@ -3218,7 +3218,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
     HG_Destroy(client_send_transfer_request_all_handle);
- 
+
     hg_progress_shutdown_flag_g = 0;
     pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
 done:
