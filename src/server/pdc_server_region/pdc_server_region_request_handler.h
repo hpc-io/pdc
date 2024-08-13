@@ -342,11 +342,11 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
 #endif
-    time_t     t  = time(NULL);
-    struct tm *tm = localtime(&t);
-    char       cur_time[64];
-    strftime(cur_time, sizeof(cur_time), "%c", tm);
-    printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__);
+    /* time_t t = time(NULL); */
+    /* struct tm *tm = localtime(&t); */
+    /* char cur_time[64]; */
+    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__); */
 
 #ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
@@ -621,10 +621,22 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    &(local_bulk_args->in.total_buf_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
+
+        /* t = time(NULL); */
+        /* tm = localtime(&t); */
+        /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+        /* printf("%s ==PDC_SERVER[x]: %s start bulk \n", cur_time, __func__); */
+
         ret_value =
             HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_write_cb, local_bulk_args,
                              HG_BULK_PULL, info->addr, in.local_bulk_handle, 0, local_bulk_args->bulk_handle,
                              0, local_bulk_args->in.total_buf_size, HG_OP_ID_IGNORE);
+
+        /* t = time(NULL); */
+        /* tm = localtime(&t); */
+        /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+        /* printf("%s ==PDC_SERVER[x]: %s done bulk\n", cur_time, __func__); */
+
     }
     else {
         // Read operation has to receive region metadata first. There will be another bulk transfer triggered

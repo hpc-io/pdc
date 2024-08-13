@@ -1320,11 +1320,10 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
 
     // TODO: Tang workaround, send an RPC to the target server to trigger bulk transfer on the server
     /* usleep((pdc_client_mpi_rank_g % 64) * 1000); */
-    int data_server_id = transfer_requests[index]->data_server_id;
-    /* printf("==PDC_CLIENT[%d]: %s send rpc to server %d\n", pdc_client_mpi_rank_g, __func__,
-     * data_server_id); */
-    PDC_Client_send_rpc(data_server_id);
-
+    /* int data_server_id = transfer_requests[index]->data_server_id; */
+    /* printf("==PDC_CLIENT[%d]: %s send rpc to server %d\n", pdc_client_mpi_rank_g, __func__, data_server_id); */
+    /* PDC_Client_send_rpc(data_server_id); */
+  
     free(read_bulk_buf);
     free(metadata_id);
 

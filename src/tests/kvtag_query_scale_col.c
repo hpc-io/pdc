@@ -31,6 +31,7 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 #include "string_utils.h"
+#include "mpi.h"
 
 int
 assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
