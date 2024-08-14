@@ -939,6 +939,7 @@ PDC_region_cache_clock_cycle(void *ptr)
                     nflush = PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache);
                 }
                 else {
+                    obj_cache_iter = obj_cache_iter->next;
                     pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
                     /* t = time(NULL); */
