@@ -549,7 +549,6 @@ PDC_get_rank()
 #else
     return 0;
 #endif
-
 }
 
 inline void
@@ -560,16 +559,9 @@ PDC_get_time_str(char *cur_time)
     assert(cur_time);
 
     clock_gettime(CLOCK_REALTIME, &ts);
-    sprintf(cur_time, "%04d-%02d-%02d %02d:%02d:%02d.%06ld",
-            1900 + localtime(&ts.tv_sec)->tm_year,
-            localtime(&ts.tv_sec)->tm_mon + 1,
-            localtime(&ts.tv_sec)->tm_mday,
-            localtime(&ts.tv_sec)->tm_hour,
-            localtime(&ts.tv_sec)->tm_min,
-            localtime(&ts.tv_sec)->tm_sec,
-            ts.tv_nsec / 1000);
+    sprintf(cur_time, "%04d-%02d-%02d %02d:%02d:%02d.%06ld", 1900 + localtime(&ts.tv_sec)->tm_year,
+            localtime(&ts.tv_sec)->tm_mon + 1, localtime(&ts.tv_sec)->tm_mday, localtime(&ts.tv_sec)->tm_hour,
+            localtime(&ts.tv_sec)->tm_min, localtime(&ts.tv_sec)->tm_sec, ts.tv_nsec / 1000);
 
     return;
 }
-
-

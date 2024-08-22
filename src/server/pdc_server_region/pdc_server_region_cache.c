@@ -540,8 +540,8 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     pdc_obj_cache *   obj_cache, *obj_cache_iter;
     pdc_region_cache *region_cache_iter;
     uint64_t *        overlap_offset, *overlap_size;
-    perr_t ret_value = SUCCEED;
-    char cur_time[64];
+    perr_t            ret_value = SUCCEED;
+    char              cur_time[64];
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
@@ -721,7 +721,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
     int                      merged_request_size = 0;
     uint64_t                 unit;
     struct pdc_region_info **obj_regions;
-    char cur_time[64];
+    char                     cur_time[64];
 #ifdef PDC_TIMING
     double start_time = MPI_Wtime();
 #endif
@@ -799,7 +799,8 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         /* PDC_get_time_str(cur_time); */
-        /* printf("%s ==PDC_SERVER[%d.%d]: %s going to write out\n", cur_time, PDC_get_rank(), flag, __func__); */
+        /* printf("%s ==PDC_SERVER[%d.%d]: %s going to write out\n", cur_time, PDC_get_rank(), flag,
+         * __func__); */
 
         region_cache_info = region_cache_iter->region_cache_info;
         PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims, region_cache_info,
@@ -812,8 +813,8 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
             write_size *= region_cache_info->size[2];
 
         PDC_get_time_str(cur_time);
-        printf("%s ==PDC_SERVER[%d.%d]: %s server flushed %.1f / %.1f MB to storage\n", cur_time, PDC_get_rank(),
-               flag, __func__, write_size / 1048576.0, total_cache_size / 1048576.0);
+        printf("%s ==PDC_SERVER[%d.%d]: %s server flushed %.1f / %.1f MB to storage\n", cur_time,
+               PDC_get_rank(), flag, __func__, write_size / 1048576.0, total_cache_size / 1048576.0);
 
         total_cache_size -= write_size;
         free(region_cache_info->offset);
@@ -932,7 +933,8 @@ PDC_region_cache_clock_cycle(void *ptr)
                 if (elapsed_time >= pdc_idle_flush_time_g) {
 
                     /* PDC_get_time_str(cur_time); */
-                    /* fprintf(stderr, "%s ==PDC_SERVER[%d.1]: %s going to flush with idle time\n", cur_time, PDC_get_rank(), __func__); */
+                    /* fprintf(stderr, "%s ==PDC_SERVER[%d.1]: %s going to flush with idle time\n", cur_time,
+                     * PDC_get_rank(), __func__); */
 
                     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
                     nflush = PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache, 1);
@@ -944,8 +946,8 @@ PDC_region_cache_clock_cycle(void *ptr)
 
                     if (nflush > 0) {
                         PDC_get_time_str(cur_time);
-                        fprintf(stderr, "%s ==PDC_SERVER[%d.1]: flushed %d regions to storage, took %.4fs\n", cur_time,
-                                PDC_get_rank(), nflush, elapsed_time);
+                        fprintf(stderr, "%s ==PDC_SERVER[%d.1]: flushed %d regions to storage, took %.4fs\n",
+                                cur_time, PDC_get_rank(), nflush, elapsed_time);
                     }
                 }
                 else {
@@ -953,7 +955,7 @@ PDC_region_cache_clock_cycle(void *ptr)
                     /* pthread_mutex_unlock(&pdc_obj_cache_list_mutex); */
 
                     /* PDC_get_time_str(cur_time); */
-                    /* fprintf(stderr, "%s ==PDC_SERVER[%d]: stop flush to allow processing new RPCs\n", */ 
+                    /* fprintf(stderr, "%s ==PDC_SERVER[%d]: stop flush to allow processing new RPCs\n", */
                     /*         cur_time,PDC_get_rank()); */
 
                     usleep(300000);

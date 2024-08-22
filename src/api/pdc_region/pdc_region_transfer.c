@@ -931,8 +931,8 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
         transferinfo     = PDC_find_id(transfer_request_id[i]);
         transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
         if (transfer_request->metadata_id != NULL) {
-            printf("PDC Client %d: %s attempt to start existing transfer request @ line %d\n", 
-                    pdc_client_mpi_rank_g, __func__, __LINE__);
+            printf("PDC Client %d: %s attempt to start existing transfer request @ line %d\n",
+                   pdc_client_mpi_rank_g, __func__, __LINE__);
             return FAIL;
         }
         if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {

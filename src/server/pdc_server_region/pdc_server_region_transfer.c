@@ -81,7 +81,7 @@ PDC_finish_request(uint64_t transfer_request_id)
     perr_t                          ret_value = SUCCEED;
     transfer_request_wait_out_t     out;
     transfer_request_wait_all_out_t out_all;
-    char cur_time[64];
+    char                            cur_time[64];
 
     FUNC_ENTER(NULL);
 
@@ -100,7 +100,8 @@ PDC_finish_request(uint64_t transfer_request_id)
                     if (ptr->out_type) {
 
                         /* PDC_get_time_str(cur_time); */
-                        /* printf("%s ==PDC_SERVER[%d]: enter %s, out_all ret\n", cur_time, PDC_get_rank(), __func__); */
+                        /* printf("%s ==PDC_SERVER[%d]: enter %s, out_all ret\n", cur_time, PDC_get_rank(),
+                         * __func__); */
 
                         out_all.ret = 1;
                         ret_value   = HG_Respond(ptr->handle, NULL, NULL, &out_all);
@@ -108,7 +109,8 @@ PDC_finish_request(uint64_t transfer_request_id)
                     else {
 
                         /* PDC_get_time_str(cur_time); */
-                        /* printf("%s ==PDC_SERVER[%d]: enter %s, out ret\n", cur_time, PDC_get_rank(), __func__); */
+                        /* printf("%s ==PDC_SERVER[%d]: enter %s, out ret\n", cur_time, PDC_get_rank(),
+                         * __func__); */
 
                         out.ret   = 1;
                         ret_value = HG_Respond(ptr->handle, NULL, NULL, &out);
@@ -275,7 +277,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     char     storage_location[ADDR_MAX];
     ssize_t  io_size;
     uint64_t i, j;
-    char cur_time[64];
+    char     cur_time[64];
 
     FUNC_ENTER(NULL);
 

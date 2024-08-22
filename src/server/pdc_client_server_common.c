@@ -63,7 +63,7 @@ hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
 
-struct timeval  last_cache_activity_timeval_g;
+struct timeval last_cache_activity_timeval_g;
 
 #include "pdc_server_region_request_handler.h"
 

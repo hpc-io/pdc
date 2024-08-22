@@ -193,6 +193,6 @@ int PDC_timing_report(const char *prefix);
 #endif
 
 extern int pdc_timing_rank_g;
-void PDC_get_time_str(char *cur_time);
-int PDC_get_rank();
+void       PDC_get_time_str(char *cur_time);
+int        PDC_get_rank();
 #endif

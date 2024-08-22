@@ -3149,7 +3149,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 #endif
     if (!(access_type == PDC_WRITE || access_type == PDC_READ)) {
         ret_value = FAIL;
-        printf("Invalid PDC type in function %s @ %d\n", __func__,  __LINE__);
+        printf("Invalid PDC type in function %s @ %d\n", __func__, __LINE__);
         goto done;
     }
     in.n_objs         = n_objs;
@@ -3181,7 +3181,8 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
                         &transfer_args, &in);
 
     /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__, data_server_id); */
+    /* printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__,
+     * data_server_id); */
 
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
