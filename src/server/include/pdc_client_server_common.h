@@ -46,6 +46,7 @@ hg_thread_mutex_t lock_list_mutex_g;
 hg_thread_mutex_t meta_buf_map_mutex_g;
 hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
+extern struct timeval last_cache_activity_timeval_g;
 
 #define PAGE_SIZE                    4096
 #define ADDR_MAX                     1024
@@ -814,6 +815,7 @@ typedef struct transfer_request_all_in_t {
     uint64_t total_buf_size;
     int32_t  n_objs;
     uint8_t  access_type;
+    int      client_id;
 } transfer_request_all_in_t;
 
 /* Define transfer_request_all_out_t */
@@ -2841,6 +2843,11 @@ hg_proc_transfer_request_all_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;

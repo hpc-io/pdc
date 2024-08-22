@@ -931,9 +931,8 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
         transferinfo     = PDC_find_id(transfer_request_id[i]);
         transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
         if (transfer_request->metadata_id != NULL) {
-            printf("PDC Client PDCregion_transfer_start_all attempt to start existing transfer request @ "
-                   "line %d\n",
-                   __LINE__);
+            printf("PDC Client %d: %s attempt to start existing transfer request @ line %d\n", 
+                    pdc_client_mpi_rank_g, __func__, __LINE__);
             return FAIL;
         }
         if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
@@ -960,7 +959,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                                     &(transfer_request->sub_offsets), &(transfer_request->output_offsets),
                                     &(transfer_request->output_sizes), &(transfer_request->output_buf));
             if (transfer_request->n_obj_servers == 0) {
-                printf("PDC_Client %d, %s: error with static region partition, no server is selected!\n",
+                printf("PDC_Client %d: %s error with static region partition, no server is selected!\n",
                        pdc_client_mpi_rank_g, __func__);
                 return FAIL;
             }
@@ -1070,6 +1069,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     else {
         *write_size_ptr = 0;
     }
+
     if (read_size) {
         read_transfer_request = (pdc_transfer_request_start_all_pkg **)malloc(
             sizeof(pdc_transfer_request_start_all_pkg *) * read_size);
@@ -1240,6 +1240,10 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
 
     FUNC_ENTER(NULL);
 
+    /* char cur_time[64]; */
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+
     if (size == 0)
         goto done;
 
@@ -1318,13 +1322,6 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         }
     }
 
-    // TODO: Tang workaround, send an RPC to the target server to trigger bulk transfer on the server
-    /* usleep((pdc_client_mpi_rank_g % 64) * 1000); */
-    /* int data_server_id = transfer_requests[index]->data_server_id; */
-    /* printf("==PDC_CLIENT[%d]: %s send rpc to server %d\n", pdc_client_mpi_rank_g, __func__,
-     * data_server_id); */
-    /* PDC_Client_send_rpc(data_server_id); */
-
     free(read_bulk_buf);
     free(metadata_id);
 
@@ -1342,8 +1339,14 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     pdcid_t *                            posix_transfer_request_id;
 
     FUNC_ENTER(NULL);
+
+    /* char cur_time[64]; */
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+
     // Split write and read requests. Handle them separately.
     // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+    // [Tang] NOTE: prepare_start_all_requests include several metadata RPC operations
     ret_value = prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests,
                                            &read_transfer_requests, &write_size, &read_size,
                                            &posix_transfer_request_id, &posix_size);
@@ -1356,6 +1359,10 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
        read_transfer_requests[i]->data_server_id, read_transfer_requests[i]->transfer_request->obj_id);
         }
     */
+#ifdef ENABLE_MPI
+    // [Tang] TODO: change to user provided comm
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
     // Start write requests
     if (write_size > 0)

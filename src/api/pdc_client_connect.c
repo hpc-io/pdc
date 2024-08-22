@@ -263,42 +263,31 @@ hg_progress_fn(void *foo)
     hg_context_t *hg_context = (hg_context_t *)foo;
 
     /* char cur_time[64]; */
-    /* time_t t = time(NULL); */
-    /* struct tm *tm = localtime(&t); */
-    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* PDC_get_time_str(cur_time); */
     /* printf("[%s] enter %s\n", cur_time, __func__); */
 
     while (!hg_progress_shutdown_flag_g) {
         do {
-            /* t = time(NULL); */
-            /* tm = localtime(&t); */
-            /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+            /* PDC_get_time_str(cur_time); */
             /* printf("[%s] before HG_Trigger\n", cur_time); */
 
             ret = HG_Trigger(hg_context, 0, 1, &actual_count);
 
-            /* t = time(NULL); */
-            /* tm = localtime(&t); */
-            /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+            /* PDC_get_time_str(cur_time); */
             /* printf("[%s] after HG_Trigger\n", cur_time); */
         } while ((ret == HG_SUCCESS) && actual_count && !hg_progress_shutdown_flag_g);
 
-        /* t = time(NULL); */
-        /* tm = localtime(&t); */
-        /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+        /* PDC_get_time_str(cur_time); */
         /* printf("[%s] before HG_Progress\n", cur_time); */
 
         if (!hg_progress_shutdown_flag_g)
             HG_Progress(hg_context, 100);
 
-        /* t = time(NULL); */
-        /* tm = localtime(&t); */
-        /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+        /* PDC_get_time_str(cur_time); */
         /* printf("[%s] after HG_Progress\n", cur_time); */
     }
 
-    /* tm = localtime(&t); */
-    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+    /* PDC_get_time_str(cur_time); */
     /* printf("[%s] after HG_Progress\n", cur_time); */
 
     return (NULL);
@@ -602,6 +591,10 @@ client_send_transfer_request_all_rpc_cb(const struct hg_cb_info *callback_info)
     transfer_request_all_out_t             output;
 
     FUNC_ENTER(NULL);
+
+    /* char cur_time[64]; */
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
 
     region_transfer_args = (struct _pdc_transfer_request_all_args *)callback_info->arg;
     handle               = callback_info->info.forward.handle;
@@ -3145,18 +3138,24 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     struct _pdc_transfer_request_all_args transfer_args;
 
     FUNC_ENTER(NULL);
+
+    /* char cur_time[64]; */
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
     if (!(access_type == PDC_WRITE || access_type == PDC_READ)) {
         ret_value = FAIL;
-        printf("Invalid PDC type in function PDC_Client_transfer_request_all @ %d\n", __LINE__);
+        printf("Invalid PDC type in function %s @ %d\n", __func__,  __LINE__);
         goto done;
     }
     in.n_objs         = n_objs;
     in.access_type    = access_type;
     in.total_buf_size = bulk_size;
+    in.client_id      = pdc_client_mpi_rank_g;
 
     // Compute metadata server id
     // meta_server_id    = PDC_get_server_by_obj_id(obj_id[0], pdc_server_num_g);
@@ -3180,6 +3179,10 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 
     hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
                         &transfer_args, &in);
+
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__, data_server_id); */
+
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
         pdc_timings.PDCtransfer_request_start_all_read_rpc += MPI_Wtime() - start;
@@ -3193,8 +3196,22 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_all(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     hg_atomic_set32(&atomic_work_todo_g, 1);
     PDC_Client_check_response(&send_context_g);
+
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s PDC_CLIENT[%d] %s: received response\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    hg_progress_shutdown_flag_g = 0;
+    pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3219,8 +3236,9 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 
     HG_Destroy(client_send_transfer_request_all_handle);
 
-    hg_progress_shutdown_flag_g = 0;
-    pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s PDC_CLIENT[%d] leave %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);

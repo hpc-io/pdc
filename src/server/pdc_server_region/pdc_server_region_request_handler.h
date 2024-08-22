@@ -170,18 +170,16 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     transfer_request_all_data                    request_data;
     hg_return_t                                  ret = HG_SUCCESS;
     struct pdc_region_info *                     remote_reg_info;
-    int                                          i, server_rank;
+    int                                          i;
+    char                                         cur_time[64];
 
     FUNC_ENTER(NULL);
 
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-#endif
-    /* time_t t = time(NULL); */
-    /* struct tm *tm = localtime(&t); */
-    /* char cur_time[64]; */
-    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__); */
+
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__); */
+
+    gettimeofday(&last_cache_activity_timeval_g, NULL);
 
 #ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
@@ -195,6 +193,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     request_data.n_objs = local_bulk_args->in.n_objs;
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_WRITE);
     // print_bulk_data(&request_data);
+
 #ifndef PDC_SERVER_CACHE
     data_server_region_t **temp_ptrs =
         (data_server_region_t **)malloc(sizeof(data_server_region_t *) * request_data.n_objs);
@@ -203,6 +202,10 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
         PDC_Server_register_obj_region_by_pointer(temp_ptrs + i, request_data.obj_id[i], 1);
     }
 #endif
+
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s ==PDC_SERVER[%d]: %s before (cache) writing\n", cur_time, PDC_get_rank(), __func__); */
+
     for (i = 0; i < request_data.n_objs; ++i) {
         remote_reg_info->ndim   = request_data.remote_ndim[i];
         remote_reg_info->offset = request_data.remote_offset[i];
@@ -216,6 +219,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info,
                                        (void *)request_data.data_buf[i], request_data.unit[i], 1);
 #endif
+
 #if 0
         uint64_t j;
         fprintf(stderr, "server write array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]);
@@ -228,6 +232,10 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
         pthread_mutex_unlock(&transfer_request_status_mutex);
     }
+
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s ==PDC_SERVER[%d]: %s after (cache) writing\n", cur_time, PDC_get_rank(), __func__); */
+
 #ifndef PDC_SERVER_CACHE
     for (i = 0; i < request_data.n_objs; ++i) {
         PDC_Server_unregister_obj_region_by_pointer(temp_ptrs[i], 1);
@@ -253,10 +261,8 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     pdc_timestamp_register(pdc_transfer_request_inner_write_all_bulk_timestamps, start, end);
 #endif
 
-    /* t = time(NULL); */
-    /* tm = localtime(&t); */
-    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
-    /* printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, server_rank, __func__); */
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, PDC_get_rank(), __func__); */
 
     FUNC_LEAVE(ret);
 }
@@ -335,18 +341,12 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     hg_return_t                              ret             = HG_SUCCESS;
     struct pdc_region_info *                 remote_reg_info;
     uint64_t                                 obj_dims[3];
-    int                                      server_rank;
 
     FUNC_ENTER(NULL);
 
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-#endif
-    /* time_t t = time(NULL); */
-    /* struct tm *tm = localtime(&t); */
     /* char cur_time[64]; */
-    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__); */
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__); */
 
 #ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
@@ -569,24 +569,21 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     transfer_request_all_in_t                    in;
     transfer_request_all_out_t                   out;
     hg_return_t                                  ret_value = HG_SUCCESS;
-    int                                          i, server_rank;
+    int                                          i;
+    char                                         cur_time[64];
 
     FUNC_ENTER(NULL);
-
-#ifdef ENABLE_MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-#endif
-    /* time_t t = time(NULL); */
-    /* struct tm *tm = localtime(&t); */
-    /* char cur_time[64]; */
-    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, server_rank, __func__); */
 
 #ifdef PDC_TIMING
     double start = MPI_Wtime(), end;
 #endif
 
     HG_Get_input(handle, &in);
+
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s ==PDC_SERVER[%d]: enter %s process CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__, in.client_id); */
+
+    gettimeofday(&last_cache_activity_timeval_g, NULL);
 
     info            = HG_Get_info(handle);
     local_bulk_args = (struct transfer_request_all_local_bulk_args *)malloc(
@@ -598,11 +595,12 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     local_bulk_args->in                  = in;
     local_bulk_args->transfer_request_id = (uint64_t *)malloc(sizeof(uint64_t) * in.n_objs);
 
-    pthread_mutex_lock(&transfer_request_id_mutex);
+    // [Tang]TODO is this necessary?
+    /* pthread_mutex_lock(&transfer_request_id_mutex); */
     for (i = 0; i < in.n_objs; ++i) {
         local_bulk_args->transfer_request_id[i] = PDC_transfer_request_id_register();
     }
-    pthread_mutex_unlock(&transfer_request_id_mutex);
+    /* pthread_mutex_unlock(&transfer_request_id_mutex); */
 
     pthread_mutex_lock(&transfer_request_status_mutex);
     // Metadata ID is in ascending order. We only need to return the first value, the client knows the size.
@@ -622,9 +620,7 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
                                    &(local_bulk_args->in.total_buf_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
 
-        /* t = time(NULL); */
-        /* tm = localtime(&t); */
-        /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+        /* PDC_get_time_str(cur_time); */
         /* printf("%s ==PDC_SERVER[x]: %s start bulk \n", cur_time, __func__); */
 
         ret_value =
@@ -632,9 +628,7 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
                              HG_BULK_PULL, info->addr, in.local_bulk_handle, 0, local_bulk_args->bulk_handle,
                              0, local_bulk_args->in.total_buf_size, HG_OP_ID_IGNORE);
 
-        /* t = time(NULL); */
-        /* tm = localtime(&t); */
-        /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
+        /* PDC_get_time_str(cur_time); */
         /* printf("%s ==PDC_SERVER[x]: %s done bulk\n", cur_time, __func__); */
     }
     else {
@@ -664,10 +658,8 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     }
 #endif
 
-    /* t = time(NULL); */
-    /* tm = localtime(&t); */
-    /* strftime(cur_time, sizeof(cur_time), "%c", tm); */
-    /* printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, server_rank, __func__); */
+    /* PDC_get_time_str(cur_time); */
+    /* printf("%s ==PDC_SERVER[%d]: leaving %s responded CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__, in.client_id); */
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -831,9 +823,9 @@ HG_TEST_RPC_CB(transfer_request, handle)
     if (in.remote_region.ndim >= 3) {
         total_mem_size *= in.remote_region.count_2;
     }
-    pthread_mutex_lock(&transfer_request_id_mutex);
+    /* pthread_mutex_lock(&transfer_request_id_mutex); */
     out.metadata_id = PDC_transfer_request_id_register();
-    pthread_mutex_unlock(&transfer_request_id_mutex);
+    /* pthread_mutex_unlock(&transfer_request_id_mutex); */
     pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_commit_request(out.metadata_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);

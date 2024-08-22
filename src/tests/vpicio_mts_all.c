@@ -32,6 +32,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
+#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -151,11 +152,9 @@ main(int argc, char **argv)
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
-        t  = time(NULL);
-        tm = localtime(&t);
-        strftime(cur_time, sizeof(cur_time), "%c", tm);
+        PDC_get_time_str(cur_time);
         if (rank == 0)
-            printf("\n%s #Step  %d\n", cur_time, iter);
+            printf("\n[%s] #Step  %d\n", cur_time, iter);
         t0 = MPI_Wtime();
 #endif
         PDCprop_set_obj_time_step(obj_prop_float, iter);
@@ -207,11 +206,9 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-        t  = time(NULL);
-        tm = localtime(&t);
-        strftime(cur_time, sizeof(cur_time), "%c", tm);
+        PDC_get_time_str(cur_time);
         if (rank == 0)
-            printf("%s Obj create time: %.5e\n", cur_time, t1 - t0);
+            printf("[%s] Obj create time: %.5e\n", cur_time, t1 - t0);
 #endif
 
         transfer_requests[0] =
@@ -266,11 +263,9 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
-        t  = time(NULL);
-        tm = localtime(&t);
-        strftime(cur_time, sizeof(cur_time), "%c", tm);
+        PDC_get_time_str(cur_time);
         if (rank == 0)
-            printf("%s Transfer create time: %.5e\n", cur_time, t0 - t1);
+            printf("[%s] Transfer create time: %.5e\n", cur_time, t0 - t1);
 #endif
 
         if (PDCregion_transfer_start_all(transfer_requests, 8) != SUCCEED) {
@@ -281,25 +276,19 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-        t  = time(NULL);
-        tm = localtime(&t);
-        strftime(cur_time, sizeof(cur_time), "%c", tm);
+        PDC_get_time_str(cur_time);
         if (rank == 0)
-            printf("%s Transfer start time: %.5e\n", cur_time, t1 - t0);
+            printf("[%s] Transfer start time: %.5e\n", cur_time, t1 - t0);
 #endif
         // Emulate compute with sleep
         if (iter != steps - 1) {
-            t  = time(NULL);
-            tm = localtime(&t);
-            strftime(cur_time, sizeof(cur_time), "%c", tm);
+            PDC_get_time_str(cur_time);
             if (rank == 0)
-                printf("%s Sleep start: %llu.00\n", cur_time, sleeptime);
+                printf("[%s] Sleep start: %llu.00\n", cur_time, sleeptime);
             sleep(sleeptime);
-            t  = time(NULL);
-            tm = localtime(&t);
-            strftime(cur_time, sizeof(cur_time), "%c", tm);
+            PDC_get_time_str(cur_time);
             if (rank == 0)
-                printf("%s Sleep end: %llu.00\n", cur_time, sleeptime);
+                printf("[%s] Sleep end: %llu.00\n", cur_time, sleeptime);
         }
 
 #ifdef ENABLE_MPI
@@ -315,11 +304,9 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
-        t  = time(NULL);
-        tm = localtime(&t);
-        strftime(cur_time, sizeof(cur_time), "%c", tm);
+        PDC_get_time_str(cur_time);
         if (rank == 0)
-            printf("%s Transfer wait time: %.5e\n", cur_time, t1 - t0);
+            printf("[%s] Transfer wait time: %.5e\n", cur_time, t1 - t0);
 #endif
 
         for (int j = 0; j < 8; j++) {
@@ -332,11 +319,9 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
-        t  = time(NULL);
-        tm = localtime(&t);
-        strftime(cur_time, sizeof(cur_time), "%c", tm);
+        PDC_get_time_str(cur_time);
         if (rank == 0)
-            printf("%s Transfer close time: %.5e\n", cur_time, t0 - t1);
+            printf("[%s] Transfer close time: %.5e\n", cur_time, t0 - t1);
 #endif
 
         if (PDCobj_close(obj_xx) != SUCCEED) {

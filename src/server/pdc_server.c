@@ -1880,7 +1880,7 @@ PDC_Server_loop(hg_context_t *hg_context)
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_cas32(&close_server_g, 1, 1))
             break;
-        hg_ret = HG_Progress(hg_context, 1000);
+        hg_ret = HG_Progress(hg_context, 200);
 
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
