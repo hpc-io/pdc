@@ -175,8 +175,8 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
     FUNC_ENTER(NULL);
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__); */
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__);
 
     gettimeofday(&last_cache_activity_timeval_g, NULL);
 
@@ -202,8 +202,8 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     }
 #endif
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: %s before (cache) writing\n", cur_time, PDC_get_rank(), __func__); */
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: %s before (cache) writing\n", cur_time, PDC_get_rank(), __func__);
 
     for (i = 0; i < request_data.n_objs; ++i) {
         remote_reg_info->ndim   = request_data.remote_ndim[i];
@@ -232,8 +232,8 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
         pthread_mutex_unlock(&transfer_request_status_mutex);
     }
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: %s after (cache) writing\n", cur_time, PDC_get_rank(), __func__); */
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: %s after (cache) writing\n", cur_time, PDC_get_rank(), __func__);
 
 #ifndef PDC_SERVER_CACHE
     for (i = 0; i < request_data.n_objs; ++i) {
@@ -260,8 +260,8 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     pdc_timestamp_register(pdc_transfer_request_inner_write_all_bulk_timestamps, start, end);
 #endif
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, PDC_get_rank(), __func__); */
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, PDC_get_rank(), __func__);
 
     FUNC_LEAVE(ret);
 }
@@ -343,9 +343,9 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
     FUNC_ENTER(NULL);
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__); */
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__);
 
 #ifdef PDC_TIMING
     double end = MPI_Wtime(), start;
@@ -579,9 +579,9 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
 
     HG_Get_input(handle, &in);
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s process CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__,
-     * in.client_id); */
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: enter %s process CLIENT[%d]\n", 
+            cur_time, PDC_get_rank(), __func__, in.client_id);
 
     gettimeofday(&last_cache_activity_timeval_g, NULL);
 
@@ -620,16 +620,16 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
                                    &(local_bulk_args->in.total_buf_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
 
-        /* PDC_get_time_str(cur_time); */
-        /* printf("%s ==PDC_SERVER[x]: %s start bulk \n", cur_time, __func__); */
+        PDC_get_time_str(cur_time);
+        printf("%s ==PDC_SERVER[x]: %s start bulk \n", cur_time, __func__);
 
         ret_value =
             HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_write_cb, local_bulk_args,
                              HG_BULK_PULL, info->addr, in.local_bulk_handle, 0, local_bulk_args->bulk_handle,
                              0, local_bulk_args->in.total_buf_size, HG_OP_ID_IGNORE);
 
-        /* PDC_get_time_str(cur_time); */
-        /* printf("%s ==PDC_SERVER[x]: %s done bulk\n", cur_time, __func__); */
+        PDC_get_time_str(cur_time);
+        printf("%s ==PDC_SERVER[x]: %s done bulk\n", cur_time, __func__);
     }
     else {
         // Read operation has to receive region metadata first. There will be another bulk transfer triggered
@@ -658,9 +658,9 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     }
 #endif
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: leaving %s responded CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__,
-     * in.client_id); */
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: leaving %s responded CLIENT[%d]\n",
+            cur_time, PDC_get_rank(), __func__, in.client_id);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);

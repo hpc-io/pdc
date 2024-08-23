@@ -1240,9 +1240,11 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
 
     FUNC_ENTER(NULL);
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
 
     if (size == 0)
         goto done;
@@ -1340,9 +1342,11 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 
     FUNC_ENTER(NULL);
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
 
     // Split write and read requests. Handle them separately.
     // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
@@ -1360,8 +1364,10 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
         }
     */
 #ifdef ENABLE_MPI
+    MPI_Comm world_comm;
+    MPI_Comm_dup(MPI_COMM_WORLD, &world_comm);
     // [Tang] TODO: change to user provided comm
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(world_comm);
 #endif
 
     // Start write requests
@@ -1385,7 +1391,11 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     // Clean up memory
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);
     // fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+#ifdef ENABLE_MPI
     // MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Comm_free(&world_comm);
+#endif
+
     FUNC_LEAVE(ret_value);
 }
 

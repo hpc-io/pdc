@@ -329,6 +329,8 @@ main(int argc, char **argv)
         }
     }
 
+    MPI_Barrier(MPI_COMM_WORLD);
+
     // close object
     for (i = 0; i < OBJ_NUM; ++i) {
         if (PDCobj_close(obj[i]) < 0) {

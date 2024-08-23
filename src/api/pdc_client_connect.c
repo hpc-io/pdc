@@ -592,9 +592,11 @@ client_send_transfer_request_all_rpc_cb(const struct hg_cb_info *callback_info)
 
     FUNC_ENTER(NULL);
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
 
     region_transfer_args = (struct _pdc_transfer_request_all_args *)callback_info->arg;
     handle               = callback_info->info.forward.handle;
@@ -3139,9 +3141,11 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 
     FUNC_ENTER(NULL);
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
 
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
@@ -3177,12 +3181,15 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
 
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+
     hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
                         &transfer_args, &in);
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__,
-     * data_server_id); */
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__, data_server_id);
+#endif
 
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
@@ -3201,18 +3208,23 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    hg_atomic_set32(&atomic_work_todo_g, 1);
-    PDC_Client_check_response(&send_context_g);
+    /* PDC_Client_check_response(&send_context_g); */
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] %s: received response\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+    hg_progress_shutdown_flag_g = 0;
+    pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
+
+    while (hg_atomic_get32(&atomic_work_todo_g) > 0) {
+        usleep(100000);
+    }
+
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] %s: received response\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
-
-    hg_progress_shutdown_flag_g = 0;
-    pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3237,8 +3249,10 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 
     HG_Destroy(client_send_transfer_request_all_handle);
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s PDC_CLIENT[%d] leave %s\n", cur_time, pdc_client_mpi_rank_g, __func__); */
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] leave %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
 
 done:
     fflush(stdout);
@@ -3533,6 +3547,8 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
         PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server @ line %d",
                     pdc_client_mpi_rank_g, __LINE__);
 
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_register_id_g,
                        &client_send_transfer_request_handle);
 
@@ -3561,8 +3577,15 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
-    hg_atomic_set32(&atomic_work_todo_g, 1);
-    PDC_Client_check_response(&send_context_g);
+    /* hg_atomic_set32(&atomic_work_todo_g, 1); */
+    /* PDC_Client_check_response(&send_context_g); */
+
+    hg_progress_shutdown_flag_g = 0;
+    pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
+
+    while (hg_atomic_get32(&atomic_work_todo_g) > 0) {
+        usleep(100000);
+    }
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3641,6 +3664,10 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     struct _pdc_transfer_request_wait_args transfer_args;
 
     FUNC_ENTER(NULL);
+
+    hg_progress_shutdown_flag_g = 1;
+    pthread_join(hg_progress_tid_g, NULL);
+
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;

@@ -421,9 +421,11 @@ PDC_region_cache_register(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dim
         return FAIL;
     }
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: %s for %llu\n", cur_time, PDC_get_rank(), __func__, obj_id); */
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: %s for %llu\n", cur_time, PDC_get_rank(), __func__, obj_id);
+#endif
 
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
 
@@ -556,13 +558,12 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     if (region_info->ndim >= 3)
         write_size *= region_info->size[2];
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s for %llu\n", cur_time, PDC_get_rank(), __func__, obj_id); */
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: enter %s for %llu\n", cur_time, PDC_get_rank(), __func__, obj_id);
+#endif
 
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
-
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: %s after lock\n", cur_time, PDC_get_rank(), __func__); */
 
     obj_cache = NULL;
     // Look up for the object in the cache list
@@ -630,8 +631,10 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
     pdc_server_timings->PDCcache_write += MPI_Wtime() - start;
 #endif
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, PDC_get_rank(), __func__); */
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, PDC_get_rank(), __func__);
+#endif
 
     // done:
     fflush(stdout);
@@ -799,8 +802,8 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         /* PDC_get_time_str(cur_time); */
-        /* printf("%s ==PDC_SERVER[%d.%d]: %s going to write out\n", cur_time, PDC_get_rank(), flag,
-         * __func__); */
+        /* printf("%s ==PDC_SERVER[%d.%d]: %s going to write out\n", */
+        /*         cur_time, PDC_get_rank(), flag, __func__); */
 
         region_cache_info = region_cache_iter->region_cache_info;
         PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims, region_cache_info,
@@ -812,9 +815,11 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
         if (obj_cache->ndim >= 3)
             write_size *= region_cache_info->size[2];
 
-        PDC_get_time_str(cur_time);
-        printf("%s ==PDC_SERVER[%d.%d]: %s server flushed %.1f / %.1f MB to storage\n", cur_time,
-               PDC_get_rank(), flag, __func__, write_size / 1048576.0, total_cache_size / 1048576.0);
+        if (write_size > 0) {
+            PDC_get_time_str(cur_time);
+            printf("%s ==PDC_SERVER[%d.%d]: %s server flushed %.1f / %.1f MB to storage\n", cur_time,
+                   PDC_get_rank(), flag, __func__, write_size / 1048576.0, total_cache_size / 1048576.0);
+        }
 
         total_cache_size -= write_size;
         free(region_cache_info->offset);
@@ -861,9 +866,11 @@ PDC_region_cache_flush(uint64_t obj_id)
         return 1;
     }
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: %s going to flush\n", cur_time, PDC_get_rank(), __func__); */
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s ==PDC_SERVER[%d]: %s going to flush\n", cur_time, PDC_get_rank(), __func__);
+#endif
 
     PDC_region_cache_flush_by_pointer(obj_id, obj_cache, 0);
     return 0;
@@ -878,9 +885,11 @@ PDC_region_cache_flush_all()
     obj_cache_iter = obj_cache_list;
     while (obj_cache_iter != NULL) {
 
-        /* char cur_time[64]; */
-        /* PDC_get_time_str(cur_time); */
-        /* printf("%s ==PDC_SERVER[%d]: %s going to flush\n", cur_time, PDC_get_rank(), __func__); */
+#ifdef TANG_DEBUG
+        char cur_time[64];
+        PDC_get_time_str(cur_time);
+        printf("%s ==PDC_SERVER[%d]: %s going to flush\n", cur_time, PDC_get_rank(), __func__);
+#endif
 
         PDC_region_cache_flush_by_pointer(obj_cache_iter->obj_id, obj_cache_iter, 0);
         obj_cache_temp = obj_cache_iter;
@@ -933,8 +942,8 @@ PDC_region_cache_clock_cycle(void *ptr)
                 if (elapsed_time >= pdc_idle_flush_time_g) {
 
                     /* PDC_get_time_str(cur_time); */
-                    /* fprintf(stderr, "%s ==PDC_SERVER[%d.1]: %s going to flush with idle time\n", cur_time,
-                     * PDC_get_rank(), __func__); */
+                    /* printf("%s ==PDC_SERVER[%d.1]: %s going to flush with idle time\n", */ 
+                    /*         cur_time, PDC_get_rank(), __func__); */
 
                     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
                     nflush = PDC_region_cache_flush_by_pointer(obj_cache->obj_id, obj_cache, 1);
@@ -946,7 +955,7 @@ PDC_region_cache_clock_cycle(void *ptr)
 
                     if (nflush > 0) {
                         PDC_get_time_str(cur_time);
-                        fprintf(stderr, "%s ==PDC_SERVER[%d.1]: flushed %d regions to storage, took %.4fs\n",
+                        printf("%s ==PDC_SERVER[%d.1]: flushed %d regions to storage, took %.4fs\n",
                                 cur_time, PDC_get_rank(), nflush, elapsed_time);
                     }
                 }
@@ -1049,9 +1058,11 @@ PDC_region_fetch(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims, struct
     }
     if (!flag) {
         if (obj_cache != NULL) {
+#ifdef TANG_DEBUG
             char cur_time[64];
-            /* PDC_get_time_str(cur_time); */
-            /* printf("%s ==PDC_SERVER[%d]: %s going to flush\n", cur_time, PDC_get_rank(), __func__); */
+            PDC_get_time_str(cur_time);
+            printf("%s ==PDC_SERVER[%d]: %s going to flush\n", cur_time, PDC_get_rank(), __func__);
+#endif
 
             PDC_region_cache_flush_by_pointer(obj_id, obj_cache, 0);
         }
