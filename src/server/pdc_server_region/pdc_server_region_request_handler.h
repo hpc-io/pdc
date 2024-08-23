@@ -580,8 +580,8 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     HG_Get_input(handle, &in);
 
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: enter %s process CLIENT[%d]\n", 
-            cur_time, PDC_get_rank(), __func__, in.client_id);
+    printf("%s ==PDC_SERVER[%d]: enter %s process CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__,
+           in.client_id);
 
     gettimeofday(&last_cache_activity_timeval_g, NULL);
 
@@ -659,8 +659,8 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
 #endif
 
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: leaving %s responded CLIENT[%d]\n",
-            cur_time, PDC_get_rank(), __func__, in.client_id);
+    printf("%s ==PDC_SERVER[%d]: leaving %s responded CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__,
+           in.client_id);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);

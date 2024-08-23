@@ -3188,7 +3188,8 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 
 #ifdef TANG_DEBUG
     PDC_get_time_str(cur_time);
-    printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__, data_server_id);
+    printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__,
+           data_server_id);
 #endif
 
 #ifdef PDC_TIMING

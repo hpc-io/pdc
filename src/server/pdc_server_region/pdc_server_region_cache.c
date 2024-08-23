@@ -942,7 +942,7 @@ PDC_region_cache_clock_cycle(void *ptr)
                 if (elapsed_time >= pdc_idle_flush_time_g) {
 
                     /* PDC_get_time_str(cur_time); */
-                    /* printf("%s ==PDC_SERVER[%d.1]: %s going to flush with idle time\n", */ 
+                    /* printf("%s ==PDC_SERVER[%d.1]: %s going to flush with idle time\n", */
                     /*         cur_time, PDC_get_rank(), __func__); */
 
                     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
@@ -955,8 +955,8 @@ PDC_region_cache_clock_cycle(void *ptr)
 
                     if (nflush > 0) {
                         PDC_get_time_str(cur_time);
-                        printf("%s ==PDC_SERVER[%d.1]: flushed %d regions to storage, took %.4fs\n",
-                                cur_time, PDC_get_rank(), nflush, elapsed_time);
+                        printf("%s ==PDC_SERVER[%d.1]: flushed %d regions to storage, took %.4fs\n", cur_time,
+                               PDC_get_rank(), nflush, elapsed_time);
                     }
                 }
                 else {
