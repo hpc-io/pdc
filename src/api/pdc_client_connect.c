@@ -3578,11 +3578,11 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
-    /* hg_atomic_set32(&atomic_work_todo_g, 1); */
-    /* PDC_Client_check_response(&send_context_g); */
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    PDC_Client_check_response(&send_context_g);
 
-    hg_progress_shutdown_flag_g = 0;
-    pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
+    /* hg_progress_shutdown_flag_g = 0; */
+    /* pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g); */
 
     while (hg_atomic_get32(&atomic_work_todo_g) > 0) {
         usleep(100000);
@@ -3666,8 +3666,8 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
 
     FUNC_ENTER(NULL);
 
-    hg_progress_shutdown_flag_g = 1;
-    pthread_join(hg_progress_tid_g, NULL);
+    /* hg_progress_shutdown_flag_g = 1; */
+    /* pthread_join(hg_progress_tid_g, NULL); */
 
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
