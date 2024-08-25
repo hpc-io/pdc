@@ -192,7 +192,7 @@ pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
 static uint64_t object_selection_query_counter_g = 0;
 
 static pthread_t hg_progress_tid_g;
-static int       hg_progress_shutdown_flag_g = 0;
+static int       hg_progress_shutdown_flag_g = -1;
 
 /*
  *
@@ -262,11 +262,13 @@ hg_progress_fn(void *foo)
     unsigned int  actual_count;
     hg_context_t *hg_context = (hg_context_t *)foo;
 
-    /* char cur_time[64]; */
-    /* PDC_get_time_str(cur_time); */
-    /* printf("[%s] enter %s\n", cur_time, __func__); */
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("[%s] enter %s\n", cur_time, __func__);
+#endif
 
-    while (!hg_progress_shutdown_flag_g) {
+    while (hg_progress_shutdown_flag_g != 1) {
         do {
             /* PDC_get_time_str(cur_time); */
             /* printf("[%s] before HG_Trigger\n", cur_time); */
@@ -275,20 +277,22 @@ hg_progress_fn(void *foo)
 
             /* PDC_get_time_str(cur_time); */
             /* printf("[%s] after HG_Trigger\n", cur_time); */
-        } while ((ret == HG_SUCCESS) && actual_count && !hg_progress_shutdown_flag_g);
+        } while ((ret == HG_SUCCESS) && actual_count && hg_progress_shutdown_flag_g != 1);
 
         /* PDC_get_time_str(cur_time); */
         /* printf("[%s] before HG_Progress\n", cur_time); */
 
-        if (!hg_progress_shutdown_flag_g)
+        if (hg_progress_shutdown_flag_g != 1)
             HG_Progress(hg_context, 100);
 
         /* PDC_get_time_str(cur_time); */
         /* printf("[%s] after HG_Progress\n", cur_time); */
     }
 
-    /* PDC_get_time_str(cur_time); */
-    /* printf("[%s] after HG_Progress\n", cur_time); */
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("[%s] leaving %s\n", cur_time, __func__);
+#endif
 
     return (NULL);
 }
@@ -3211,8 +3215,10 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 
     /* PDC_Client_check_response(&send_context_g); */
 
-    hg_progress_shutdown_flag_g = 0;
-    pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
+    if (hg_progress_shutdown_flag_g == -1) {
+        hg_progress_shutdown_flag_g = 0;
+        pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
+    }
 
     while (hg_atomic_get32(&atomic_work_todo_g) > 0) {
         usleep(100000);
@@ -3418,6 +3424,7 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     // Join the thread of trasfer start all
     hg_progress_shutdown_flag_g = 1;
     pthread_join(hg_progress_tid_g, NULL);
+    hg_progress_shutdown_flag_g = -1;
 
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
