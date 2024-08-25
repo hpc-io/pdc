@@ -1678,6 +1678,13 @@ PDC_Client_finalize()
     if (pdc_server_info_g != NULL)
         free(pdc_server_info_g);
 
+    // Join the thread of trasfer start all
+    if (hg_progress_shutdown_flag_g == 0) {
+        hg_progress_shutdown_flag_g = 1;
+        pthread_join(hg_progress_tid_g, NULL);
+        hg_progress_shutdown_flag_g = -1;
+    }
+
 #ifndef ENABLE_MPI
     for (i = 0; i < pdc_server_num_g; i++) {
         printf("  Server%3d, %d\n", i, debug_server_id_count[i]);
@@ -3422,9 +3429,11 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
 
     FUNC_ENTER(NULL);
     // Join the thread of trasfer start all
-    hg_progress_shutdown_flag_g = 1;
-    pthread_join(hg_progress_tid_g, NULL);
-    hg_progress_shutdown_flag_g = -1;
+    if (hg_progress_shutdown_flag_g == 0) {
+        hg_progress_shutdown_flag_g = 1;
+        pthread_join(hg_progress_tid_g, NULL);
+        hg_progress_shutdown_flag_g = -1;
+    }
 
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
