@@ -34,7 +34,7 @@ PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, in
 {
     pdcid_t               ret_value = SUCCEED;
     struct _pdc_obj_info *p         = NULL;
-    struct _pdc_id_info * id_info   = NULL;
+    struct _pdc_id_info  *id_info   = NULL;
     int                   rank;
 
     FUNC_ENTER(NULL);
@@ -63,7 +63,7 @@ perr_t
 PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id)
 {
     perr_t                ret_value = FAIL;
-    struct _pdc_id_info * objinfo;
+    struct _pdc_id_info  *objinfo;
     struct _pdc_obj_info *obj;
     int                   client_rank, client_size;
 
@@ -93,7 +93,7 @@ pdcid_t
 PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id)
 {
     pdcid_t               ret_value = 0;
-    struct _pdc_id_info * objinfo;
+    struct _pdc_id_info  *objinfo;
     struct _pdc_obj_info *obj;
     int                   client_rank, client_size;
 

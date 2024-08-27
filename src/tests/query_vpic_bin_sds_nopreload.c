@@ -20,7 +20,7 @@ main(void)
     // Construct query constraints
     pdc_selection_t sel;
     double          get_sel_time, get_data_time;
-    float *         energy_data = NULL, *x_data = NULL, *y_data = NULL;
+    float          *energy_data = NULL, *x_data = NULL, *y_data = NULL;
 
     float energy_lo = 1.2, energy_hi = 1.3;
     float x_lo = 308, x_hi = 309;

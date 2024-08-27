@@ -44,6 +44,8 @@
 #include "pdc_analysis_pkg.h"
 #include <mpi.h>
 
+/* #define TANG_DEBUG 1 */
+
 // pdc region transfer class. Contains essential information for performing non-blocking PDC client I/O
 // perations.
 typedef struct pdc_transfer_request {
@@ -71,7 +73,7 @@ typedef struct pdc_transfer_request {
     // For each of the contig buffer sent to a server, we have a bulk buffer.
     char **bulk_buf;
     // Reference counter for bulk_buf, if 0, we free it.
-    int **                 bulk_buf_ref;
+    int                  **bulk_buf_ref;
     pdc_region_partition_t region_partition;
 
     // Consistency semantics required by user
@@ -120,7 +122,7 @@ typedef struct pdc_transfer_request_start_all_pkg {
     int index;
     // Data buffer. This data buffer is contiguous according to the remote region. We assume this is after
     // transformation of local regions
-    char *                                     buf;
+    char                                      *buf;
     struct pdc_transfer_request_start_all_pkg *next;
 } pdc_transfer_request_start_all_pkg;
 
@@ -134,7 +136,7 @@ typedef struct pdc_transfer_request_wait_all_pkg {
     // Record the index of the metadata_id in the current transfer_request
     int index;
     // Pointer to the transfer request
-    pdc_transfer_request *                    transfer_request;
+    pdc_transfer_request                     *transfer_request;
     struct pdc_transfer_request_wait_all_pkg *next;
 } pdc_transfer_request_wait_all_pkg;
 
@@ -188,12 +190,12 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
                           pdcid_t remote_reg)
 {
     pdcid_t                 ret_value = SUCCEED;
-    struct _pdc_id_info *   objinfo2;
-    struct _pdc_obj_info *  obj2;
-    pdc_transfer_request *  p;
-    struct _pdc_id_info *   reginfo1, *reginfo2;
+    struct _pdc_id_info    *objinfo2;
+    struct _pdc_obj_info   *obj2;
+    pdc_transfer_request   *p;
+    struct _pdc_id_info    *reginfo1, *reginfo2;
     struct pdc_region_info *reg1, *reg2;
-    uint64_t *              ptr;
+    uint64_t               *ptr;
     uint64_t                unit;
     int                     j;
 
@@ -277,7 +279,7 @@ done:
 perr_t
 PDCregion_transfer_close(pdcid_t transfer_request_id)
 {
-    struct _pdc_id_info * transferinfo;
+    struct _pdc_id_info  *transferinfo;
     pdc_transfer_request *transfer_request;
     perr_t                ret_value = SUCCEED;
     FUNC_ENTER(NULL);
@@ -306,7 +308,11 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
     /* When the reference count reaches zero the resources are freed */
     if (PDC_dec_ref(transfer_request_id) < 0)
         PGOTO_ERROR(FAIL, "PDC transfer request: problem of freeing id");
+
 done:
+    PDC_Client_transfer_pthread_cnt_add(-1);
+    PDC_Client_transfer_pthread_terminate();
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -521,7 +527,7 @@ pack_region_buffer(char *buf, uint64_t *obj_dims, size_t total_data_size, int lo
 {
     uint64_t i, j;
     perr_t   ret_value = SUCCEED;
-    char *   ptr;
+    char    *ptr;
 
     FUNC_ENTER(NULL);
 
@@ -590,7 +596,7 @@ pack_region_metadata_query(pdc_transfer_request_start_all_pkg **transfer_request
 {
     perr_t   ret_value = SUCCEED;
     int      i;
-    char *   ptr;
+    char    *ptr;
     uint64_t total_buf_size;
     uint8_t  region_partition;
 
@@ -638,13 +644,13 @@ unpack_region_metadata_query(char *buf, pdc_transfer_request_start_all_pkg **tra
 {
     perr_t                              ret_value = SUCCEED;
     pdc_transfer_request_start_all_pkg *transfer_request_head, *transfer_request_end;
-    pdc_transfer_request *              local_request;
+    pdc_transfer_request               *local_request;
     int                                 size;
     int                                 i, j, index;
     int                                 counter;
-    char *                              ptr;
+    char                               *ptr;
     uint64_t                            region_size;
-    uint64_t *                          sub_offset;
+    uint64_t                           *sub_offset;
     FUNC_ENTER(NULL);
 
     local_request         = NULL;
@@ -756,10 +762,10 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
     perr_t                               ret_value = SUCCEED;
     int                                  i, j, index, size, output_size, remain_size, n_objs;
     pdc_transfer_request_start_all_pkg **transfer_requests;
-    pdc_transfer_request_start_all_pkg * transfer_request_head, *transfer_request_front_head,
+    pdc_transfer_request_start_all_pkg  *transfer_request_head, *transfer_request_front_head,
         *transfer_request_end, **transfer_request_output, *previous = NULL;
     uint64_t total_buf_size, output_buf_size, query_id;
-    char *   buf, *output_buf;
+    char    *buf, *output_buf;
 
     FUNC_ENTER(NULL);
     transfer_request_output     = NULL;
@@ -916,7 +922,7 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
         *read_request_pkgs, *write_request_pkgs_end, *read_request_pkgs_end, *request_pkgs,
         **transfer_request_output;
     int                   write_size, read_size, output_size;
-    struct _pdc_id_info * transferinfo;
+    struct _pdc_id_info  *transferinfo;
     pdc_transfer_request *transfer_request;
     int                   set_output_buf = 0;
 
@@ -1119,7 +1125,7 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
                              char **read_bulk_buf)
 {
     perr_t ret_value = SUCCEED;
-    char * bulk_buf, *ptr, *ptr2;
+    char  *bulk_buf, *ptr, *ptr2;
     size_t total_buf_size, obj_data_size, total_obj_data_size, unit, data_size, metadata_size;
     int    i, j;
 
@@ -1233,10 +1239,10 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     int       index, i, j;
     int       n_objs;
     uint64_t *metadata_id;
-    char **   read_bulk_buf;
-    char *    bulk_buf;
+    char    **read_bulk_buf;
+    char     *bulk_buf;
     size_t    bulk_buf_size;
-    int *     bulk_buf_ref;
+    int      *bulk_buf_ref;
 
     FUNC_ENTER(NULL);
 
@@ -1338,7 +1344,7 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     perr_t                               ret_value  = SUCCEED;
     int                                  write_size = 0, read_size = 0, posix_size = 0;
     pdc_transfer_request_start_all_pkg **write_transfer_requests = NULL, **read_transfer_requests = NULL;
-    pdcid_t *                            posix_transfer_request_id;
+    pdcid_t                             *posix_transfer_request_id;
 
     FUNC_ENTER(NULL);
 
@@ -1349,13 +1355,13 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 #endif
 
     // Split write and read requests. Handle them separately.
-    // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+    // printf("%s: checkpoint %d\n", __func__, __LINE__);
     // [Tang] NOTE: prepare_start_all_requests include several metadata RPC operations
     ret_value = prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests,
                                            &read_transfer_requests, &write_size, &read_size,
                                            &posix_transfer_request_id, &posix_size);
     /*
-        printf("PDCregion_transfer_start_all: checkpoint %d, write_size = %d, read_size = %d\n", __LINE__,
+        printf("%s: checkpoint %d, write_size = %d, read_size = %d\n", __func__, __LINE__,
                write_size, read_size);
         int i;
         for ( i = 0; i < read_size; ++i ) {
@@ -1363,37 +1369,44 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
        read_transfer_requests[i]->data_server_id, read_transfer_requests[i]->transfer_request->obj_id);
         }
     */
+    PDC_Client_transfer_pthread_cnt_add(size);
+    /* PDC_Client_transfer_pthread_create(); */
+
 #ifdef ENABLE_MPI
-    MPI_Comm world_comm;
-    MPI_Comm_dup(MPI_COMM_WORLD, &world_comm);
     // [Tang] TODO: change to user provided comm
-    MPI_Barrier(world_comm);
+    /* MPI_Comm world_comm; */
+    /* MPI_Comm_dup(MPI_COMM_WORLD, &world_comm); */
+    /* MPI_Barrier(world_comm); */
+    MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // Start write requests
     if (write_size > 0)
         PDC_Client_start_all_requests(write_transfer_requests, write_size);
-    // printf("PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+    // printf("%s: checkpoint %d\n", __func__, __LINE__);
     // Start read requests
     if (read_size > 0)
         PDC_Client_start_all_requests(read_transfer_requests, read_size);
     /*
-        fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+        fprintf(stderr, "%s: checkpoint %d\n", __func__, __LINE__);
         MPI_Barrier(MPI_COMM_WORLD);
     */
 
     // For POSIX consistency, we block here until the data is received by the server
     if (posix_size > 0) {
+        fprintf(stderr, "==PDC_CLIENT[%d]: %s wait for posix requests\n", pdc_client_mpi_rank_g, __func__);
         PDCregion_transfer_wait_all(posix_transfer_request_id, posix_size);
         free(posix_transfer_request_id);
     }
 
     // Clean up memory
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);
-    // fprintf(stderr, "PDCregion_transfer_start_all: checkpoint %d\n", __LINE__);
+    // fprintf(stderr, "%s: checkpoint %d\n", __func__, __LINE__);
+
 #ifdef ENABLE_MPI
-    // MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Comm_free(&world_comm);
+    MPI_Barrier(MPI_COMM_WORLD);
+    /* MPI_Barrier(world_comm); */
+    /* MPI_Comm_free(&world_comm); */
 #endif
 
     FUNC_LEAVE(ret_value);
@@ -1460,7 +1473,7 @@ perr_t
 PDCregion_transfer_start(pdcid_t transfer_request_id)
 {
     perr_t                ret_value = SUCCEED;
-    struct _pdc_id_info * transferinfo;
+    struct _pdc_id_info  *transferinfo;
     pdc_transfer_request *transfer_request;
     size_t                unit;
     int                   i;
@@ -1485,6 +1498,9 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
         PDCregion_transfer_start_all(&transfer_request_id, 1);
         goto done;
     }
+
+    PDC_Client_transfer_pthread_cnt_add(1);
+    /* PDC_Client_transfer_pthread_create(); */
 
     attach_local_transfer_request(transfer_request->obj_pointer, transfer_request_id);
 
@@ -1575,7 +1591,7 @@ release_region_buffer(char *buf, uint64_t *obj_dims, int local_ndim, uint64_t *l
     int      k;
 
     perr_t ret_value = SUCCEED;
-    char * ptr;
+    char  *ptr;
     FUNC_ENTER(NULL);
     if (local_ndim == 2) {
         if (access_type == PDC_READ) {
@@ -1629,7 +1645,7 @@ perr_t
 PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed)
 {
     perr_t                ret_value = SUCCEED;
-    struct _pdc_id_info * transferinfo;
+    struct _pdc_id_info  *transferinfo;
     pdc_transfer_request *transfer_request;
     size_t                unit;
     int                   i;
@@ -1734,11 +1750,11 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     int                                 index, i, j;
     size_t                              unit;
     int                                 total_requests, n_objs;
-    uint64_t *                          metadata_ids;
+    uint64_t                           *metadata_ids;
     pdc_transfer_request_wait_all_pkg **transfer_requests, *transfer_request_head, *transfer_request_end,
         *temp;
 
-    struct _pdc_id_info * transferinfo;
+    struct _pdc_id_info  *transferinfo;
     pdc_transfer_request *transfer_request;
 
     FUNC_ENTER(NULL);
@@ -1746,7 +1762,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         goto done;
     }
 
-    // printf("entered PDCregion_transfer_wait_all @ line %d\n", __LINE__);
+    // printf("entered %s @ line %d\n", __func__, __LINE__);
     total_requests        = 0;
     transfer_request_head = NULL;
     for (i = 0; i < size; ++i) {
@@ -1754,9 +1770,9 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
         if (!transfer_request->metadata_id) {
             fprintf(stderr,
-                    "PDCregion_transfer_wait_all [rank %d] @ line %d: Attempt to wait for a transfer request "
+                    "%s [rank %d] @ line %d: Attempt to wait for a transfer request "
                     "that has not been started.\n",
-                    pdc_client_mpi_rank_g, __LINE__);
+                    __func__, pdc_client_mpi_rank_g, __LINE__);
             ret_value = FAIL;
             goto done;
         }
@@ -1942,7 +1958,7 @@ perr_t
 PDCregion_transfer_wait(pdcid_t transfer_request_id)
 {
     perr_t                ret_value = SUCCEED;
-    struct _pdc_id_info * transferinfo;
+    struct _pdc_id_info  *transferinfo;
     pdc_transfer_request *transfer_request;
     size_t                unit;
     int                   i;

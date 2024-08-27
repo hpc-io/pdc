@@ -20,10 +20,10 @@ main(int argc, char **argv)
     uint64_t               readsize;
     pdcid_t                pdc, cont_prop, cont;
     struct pdc_region_info region;
-    pdc_metadata_t *       metadata;
+    pdc_metadata_t        *metadata;
     uint64_t               my_readsize;
     int                    ndim = 1;
-    void *                 buf;
+    void                  *buf;
 
     struct timeval ht_total_start;
     struct timeval ht_total_end;

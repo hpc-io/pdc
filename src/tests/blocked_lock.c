@@ -47,7 +47,7 @@ main(int argc, char **argv)
     pdcid_t obj2;
     pdcid_t r1, r2;
     perr_t  ret;
-    float * x;
+    float  *x;
     int     x_dim        = 64;
     long    numparticles = 8388608;
     //    const int my_data_size = 992;

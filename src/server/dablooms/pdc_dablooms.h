@@ -10,7 +10,7 @@ const char *dablooms_version(void);
 
 typedef struct {
     size_t bytes;
-    char * array;
+    char  *array;
 } bitmap_t;
 
 bitmap_t *bitmap_resize(bitmap_t *bitmap, size_t new_size);
@@ -33,12 +33,12 @@ typedef struct {
     unsigned int             capacity;
     long                     offset;
     unsigned int             counts_per_func;
-    uint32_t *               hashes;
+    uint32_t                *hashes;
     size_t                   nfuncs;
     size_t                   size;
     size_t                   num_bytes;
     double                   error_rate;
-    bitmap_t *               bitmap;
+    bitmap_t                *bitmap;
 } counting_bloom_t;
 
 int free_counting_bloom(counting_bloom_t *bloom);
@@ -65,7 +65,7 @@ typedef struct {
     double                  error_rate;
     /* int fd; */
     counting_bloom_t **blooms;
-    bitmap_t *         bitmap;
+    bitmap_t          *bitmap;
 } scaling_bloom_t;
 
 /* scaling_bloom_t *new_scaling_bloom(unsigned int capacity, double error_rate, const char *filename); */

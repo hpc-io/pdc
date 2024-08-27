@@ -34,7 +34,7 @@
 uint64_t
 atoui64(char *arg)
 {
-    char *   endptr;
+    char    *endptr;
     uint64_t num = strtoull(arg, &endptr, 10);
 
     if (*endptr != '\0') {
@@ -326,7 +326,7 @@ int
 main(int argc, char *argv[])
 {
     pdcid_t   pdc, cont_prop, cont, obj_prop;
-    pdcid_t * obj_ids;
+    pdcid_t  *obj_ids;
     uint64_t  n_obj, n_obj_incr, my_obj, my_obj_s;
     uint64_t  n_attr, n_attr_len, n_query, my_query, my_query_s;
     uint64_t  n_servers, n_clients;
@@ -335,7 +335,7 @@ main(int argc, char *argv[])
     double    stime = 0.0, step_elapse = 0.0;
     double    total_object_time = 0.0, total_tag_time = 0.0, total_query_time = 0.0;
     uint64_t  total_object_count = 0, total_tag_count = 0, total_query_count = 0;
-    void **   query_rst_cache;
+    void    **query_rst_cache;
     uint64_t *value_size;
 
 #ifdef ENABLE_MPI

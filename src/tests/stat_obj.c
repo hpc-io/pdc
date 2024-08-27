@@ -52,16 +52,16 @@ main(int argc, char **argv)
     long long      ht_total_elapsed;
     double         ht_total_sec;
 
-    char **         obj_names;
-    char *          env_str;
-    int *           obj_ts;
+    char          **obj_names;
+    char           *env_str;
+    int            *obj_ts;
     char            name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name",
-                             "INVALID!",         "INVALID!", "Four Obj Names"};
+                                        "INVALID!",         "INVALID!", "Four Obj Names"};
     char            filename[1024], pdc_server_tmp_dir_g[128];
     int             n_entry;
-    char *          tmp_dir;
+    char           *tmp_dir;
     pdc_metadata_t  entry;
-    uint32_t *      hash_key;
+    uint32_t       *hash_key;
     int             j, read_count = 0, tmp_count;
     int             progress_factor;
     pdc_metadata_t *res;

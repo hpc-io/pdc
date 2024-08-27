@@ -65,18 +65,18 @@ main(int argc, char **argv)
     struct timeval ht_total_end;
     long long      ht_total_elapsed;
     double         ht_total_sec;
-    float *        x, *y, *z;
-    float *        px, *py, *pz;
-    int *          id1, *id2;
+    float         *x, *y, *z;
+    float         *px, *py, *pz;
+    int           *id1, *id2;
     int            x_dim = 64;
     int            y_dim = 64;
     int            z_dim = 64;
     uint64_t       numparticles, i;
     uint64_t       dims[1];
     int            ndim = 1;
-    uint64_t *     offset;
-    uint64_t *     offset_remote;
-    uint64_t *     mysize;
+    uint64_t      *offset;
+    uint64_t      *offset_remote;
+    uint64_t      *mysize;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

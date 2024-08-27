@@ -13,8 +13,8 @@ int
 main(int argc, char **argv)
 {
     uint64_t        nhits;
-    char *          var_name;
-    pdc_query_t *   qpreload_x;
+    char           *var_name;
+    pdc_query_t    *qpreload_x;
     pdc_metadata_t *meta;
     pdcid_t         pdc, id;
     float           preload_value = -2000000000.0;

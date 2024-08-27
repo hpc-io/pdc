@@ -138,10 +138,10 @@ main(int argc, char **argv)
                 ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL);
                 break;
             }
-            case 3: {
-                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC);
-                break;
-            }
+            /* case 3: { */
+            /*     ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC); */
+            /*     break; */
+            /* } */
             default: {
             }
         }

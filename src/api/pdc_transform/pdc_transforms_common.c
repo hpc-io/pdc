@@ -41,7 +41,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
     transform_ftn_in_t                     in;
     transform_ftn_out_t                    out       = {0, 0, 0, -1};
     struct _pdc_region_transform_ftn_info *thisFtn   = NULL;
-    void *                                 ftnHandle = NULL;
+    void                                  *ftnHandle = NULL;
 
     FUNC_ENTER(NULL);
 

@@ -49,15 +49,15 @@ extern int           pdc_server_rank_g;
 extern int           pdc_server_size_g;
 extern char          pdc_server_tmp_dir_g[TMP_DIR_STRING_LEN];
 extern uint32_t      n_metadata_g;
-extern HashTable *   metadata_hash_table_g;
-extern HashTable *   container_hash_table_g;
-extern hg_class_t *  hg_class_g;
+extern HashTable    *metadata_hash_table_g;
+extern HashTable    *container_hash_table_g;
+extern hg_class_t   *hg_class_g;
 extern hg_context_t *hg_context_g;
 extern int           is_debug_g;
 
 extern hg_id_t                   get_metadata_by_id_register_id_g;
 extern hg_id_t                   send_client_storage_meta_rpc_register_id_g;
-extern pdc_client_info_t *       pdc_client_info_g;
+extern pdc_client_info_t        *pdc_client_info_g;
 extern pdc_remote_server_info_t *pdc_remote_server_info_g;
 extern double                    total_mem_usage_g;
 extern int                       is_hash_table_init_g;
@@ -70,7 +70,7 @@ extern int                       use_sqlite3_g;
 /****************************/
 typedef struct pdc_hash_table_entry_head {
     int             n_obj;
-    void *          bloom;
+    void           *bloom;
     pdc_metadata_t *metadata;
 } pdc_hash_table_entry_head;
 
@@ -80,7 +80,7 @@ typedef struct pdc_cont_hash_table_entry_t {
     int               n_obj;
     int               n_deleted;
     int               n_allocated;
-    uint64_t *        obj_ids;
+    uint64_t         *obj_ids;
     char              tags[TAG_LEN_MAX];
     pdc_kvtag_list_t *kvtag_list_head;
 } pdc_cont_hash_table_entry_t;

@@ -34,9 +34,9 @@ typedef struct server_lookup_args_t {
     int             server_id;
     uint32_t        client_id;
     int             ret_int;
-    char *          ret_string;
-    void *          void_buf;
-    char *          server_addr;
+    char           *ret_string;
+    void           *void_buf;
+    char           *server_addr;
     pdc_metadata_t *meta;
     region_list_t **region_lists;
     uint32_t        n_loc;
@@ -49,7 +49,7 @@ struct transfer_buf_map {
 };
 
 typedef struct pdc_remote_server_info_t {
-    char *    addr_string;
+    char     *addr_string;
     int       addr_valid;
     hg_addr_t addr;
 } pdc_remote_server_info_t;

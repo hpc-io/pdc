@@ -240,8 +240,8 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
 
     int                     len          = strlen(attr_name);
     key_index_leaf_content *leaf_content = NULL;
-    art_tree *              nm_trie      = NULL;
-    unsigned char *         nm_key       = NULL;
+    art_tree               *nm_trie      = NULL;
+    unsigned char          *nm_key       = NULL;
 
 #ifndef PDC_DART_SFX_TREE
     int rr = 0;
@@ -252,7 +252,7 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
     int sub_loop_count = len; // should be 'len', but we already iterate all suffixes at client side
     nm_trie            = art_key_prefix_tree_g;
     for (int j = 0; j < sub_loop_count; j++) {
-        nm_key         = (unsigned char *)substring(attr_name, j, len);
+        nm_key = (unsigned char *)substring(attr_name, j, len);
 #endif
         key_index_leaf_content *leafcnt =
             (key_index_leaf_content *)art_search(nm_trie, nm_key, strlen((const char *)nm_key));
@@ -290,7 +290,7 @@ create_index_for_attr_name(char *attr_name, char *attr_value, void *data)
 #endif
             create_prefix_index_for_attr_value((void **)&secondary_trie, val_key, data);
         } // this matches with the 'r' loop or 'jj' loop
-    }     // this matches with the 'rr' loop or 'j' loop
+    } // this matches with the 'rr' loop or 'j' loop
     return nm_trie;
 }
 
@@ -366,8 +366,8 @@ delete_index_for_attr_name(char *attr_name, char *attr_value, void *data)
 {
     int                     len          = strlen(attr_name);
     key_index_leaf_content *leaf_content = NULL;
-    art_tree *              nm_trie      = NULL;
-    unsigned char *         nm_key       = NULL;
+    art_tree               *nm_trie      = NULL;
+    unsigned char          *nm_key       = NULL;
 
 #ifndef PDC_DART_SFX_TREE
     int rr = 0;
@@ -407,7 +407,7 @@ delete_index_for_attr_name(char *attr_name, char *attr_value, void *data)
             }
             // TODO: deal with index for range query.
         } // this matches with the 'r' loop or 'jj' loop
-    }     // this matches with the 'rr' loop or 'j' loop
+    } // this matches with the 'rr' loop or 'j' loop
 }
 
 perr_t
@@ -471,7 +471,7 @@ level_two_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
         }
     }
     if (value != NULL) {
-        Set *       obj_id_set = (Set *)value;
+        Set        *obj_id_set = (Set *)value;
         SetIterator value_set_iter;
         set_iterate(obj_id_set, &value_set_iter);
 
@@ -493,7 +493,7 @@ level_two_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
 int
 level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, void *value)
 {
-    key_index_leaf_content *  leafcnt = (key_index_leaf_content *)value;
+    key_index_leaf_content   *leafcnt = (key_index_leaf_content *)value;
     pdc_art_iterator_param_t *param   = (pdc_art_iterator_param_t *)(data);
 
     if (param->level_one_infix != NULL) {
@@ -512,7 +512,7 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
     else {
         // DO TEXT QUERY HERE.
         pattern_type_t level_two_ptn_type = determine_pattern_type(secondary_query);
-        char *         tok                = NULL;
+        char          *tok                = NULL;
         switch (level_two_ptn_type) {
             case PATTERN_EXACT:
                 tok = secondary_query;
@@ -539,7 +539,7 @@ level_one_art_callback(void *data, const unsigned char *key, uint32_t key_len, v
                 tok            = reverse_str(tok);
                 secondary_trie = (art_tree *)leafcnt->extra_suffix_index;
 #else
-                secondary_trie         = (art_tree *)leafcnt->extra_prefix_index;
+                secondary_trie = (art_tree *)leafcnt->extra_prefix_index;
 #endif
                 if (secondary_trie != NULL) {
 #ifndef PDC_DART_SFX_TREE
@@ -696,8 +696,8 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
     perr_t                 result    = SUCCEED;
     dart_op_type_t         op_type   = in->op_type;
     dart_hash_algo_t       hash_algo = in->hash_algo;
-    char *                 attr_key  = (char *)in->attr_key;
-    char *                 attr_val  = (char *)in->attr_val;
+    char                  *attr_key  = (char *)in->attr_key;
+    char                  *attr_val  = (char *)in->attr_val;
     dart_object_ref_type_t ref_type  = in->obj_ref_type;
 
     uint64_t obj_locator = in->obj_primary_ref;

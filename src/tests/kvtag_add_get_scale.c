@@ -68,14 +68,14 @@ int
 main(int argc, char *argv[])
 {
     pdcid_t     pdc, cont_prop, cont, obj_prop;
-    pdcid_t *   obj_ids;
+    pdcid_t    *obj_ids;
     int         n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
     int         obj_1percent = 0, tag_1percent = 0, query_1percent = 0;
     int         proc_num, my_rank, i, v;
     char        obj_name[128];
     double      stime, total_time, percent_time;
     pdc_kvtag_t kvtag;
-    void **     values;
+    void      **values;
     pdc_var_type_t value_type;
     size_t         value_size;
 #ifdef ENABLE_MPI

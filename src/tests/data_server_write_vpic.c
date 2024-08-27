@@ -69,7 +69,7 @@ main(int argc, char **argv)
 
     pdcid_t                obj_ids[NUM_VAR];
     struct pdc_region_info obj_regions[NUM_VAR];
-    pdc_metadata_t *       obj_metas[NUM_VAR];
+    pdc_metadata_t        *obj_metas[NUM_VAR];
 
     pdcid_t obj_prop_float, obj_prop_int;
 
@@ -80,7 +80,7 @@ main(int argc, char **argv)
     uint64_t int_dims[NDIM]   = {int_bytes * size};
 
     uint64_t myoffset[NDIM], mysize[NDIM];
-    void *   mydata[NUM_VAR];
+    void    *mydata[NUM_VAR];
 
     int write_var = NUM_VAR;
 

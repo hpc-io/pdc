@@ -14,10 +14,10 @@ main(void)
 {
     pdc_metadata_t *x_meta, *y_meta, *energy_meta;
     pdcid_t         pdc, x_id, y_id, energy_id;
-    pdc_query_t *   ql, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
+    pdc_query_t    *ql, *q2_lo, *q2_hi, *q2, *q12, *q3_lo, *q3_hi, *q3, *q;
     pdc_selection_t sel;
     double          get_sel_time, get_data_time;
-    float *         energy_data = NULL, *x_data = NULL, *y_data = NULL;
+    float          *energy_data = NULL, *x_data = NULL, *y_data = NULL;
     float           energy_lo0 = 3.0;
     float           x_lo = 300, x_hi = 310;
     float           y_lo = 140, y_hi = 150;

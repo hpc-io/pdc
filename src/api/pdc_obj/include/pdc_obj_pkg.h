@@ -42,12 +42,12 @@ typedef struct pdc_local_transfer_request {
 } pdc_local_transfer_request;
 
 struct _pdc_obj_info {
-    struct pdc_obj_info *       obj_info_pub;
+    struct pdc_obj_info        *obj_info_pub;
     _pdc_obj_location_t         location;
-    void *                      metadata;
-    struct _pdc_cont_info *     cont;
-    struct _pdc_obj_prop *      obj_pt;
-    struct region_map_list *    region_list_head;
+    void                       *metadata;
+    struct _pdc_cont_info      *cont;
+    struct _pdc_obj_prop       *obj_pt;
+    struct region_map_list     *region_list_head;
     pdc_local_transfer_request *local_transfer_request_head;
     pdc_local_transfer_request *local_transfer_request_end;
     int                         local_transfer_request_size;

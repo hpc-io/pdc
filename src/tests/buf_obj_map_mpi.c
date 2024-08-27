@@ -52,7 +52,7 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    float *   x;
+    float    *x;
     int       x_dim        = 64;
     long      numparticles = 4;
     uint64_t  dims[1]      = {numparticles}; // {8388608};
@@ -96,7 +96,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
     obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0, comm);
 #else
-    obj2     = PDCobj_create(cont_id, "obj-var-xx", obj_prop2);
+    obj2 = PDCobj_create(cont_id, "obj-var-xx", obj_prop2);
 #endif
     if (obj2 == 0) {
         printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");

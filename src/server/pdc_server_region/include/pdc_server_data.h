@@ -47,11 +47,11 @@ struct buf_map_server_lookup_args_t {
     int                      server_id;
     uint32_t                 client_id;
     int                      ret_int;
-    char *                   ret_string;
-    void *                   void_buf;
-    char *                   server_addr;
-    pdc_metadata_t *         meta;
-    region_list_t **         region_lists;
+    char                    *ret_string;
+    void                    *void_buf;
+    char                    *server_addr;
+    pdc_metadata_t          *meta;
+    region_list_t          **region_lists;
     uint32_t                 n_loc;
     struct transfer_buf_map *buf_map_args;
 } buf_map_server_lookup_args_t;
@@ -60,11 +60,11 @@ struct obj_map_server_lookup_args_t {
     int                      server_id;
     uint32_t                 client_id;
     int                      ret_int;
-    char *                   ret_string;
-    void *                   void_buf;
-    char *                   server_addr;
-    pdc_metadata_t *         meta;
-    region_list_t **         region_lists;
+    char                    *ret_string;
+    void                    *void_buf;
+    char                    *server_addr;
+    pdc_metadata_t          *meta;
+    region_list_t          **region_lists;
     uint32_t                 n_loc;
     struct transfer_obj_map *obj_map_args;
 } obj_map_server_lookup_args_t;
@@ -78,11 +78,11 @@ struct buf_unmap_server_lookup_args_t {
     int                        server_id;
     uint32_t                   client_id;
     int                        ret_int;
-    char *                     ret_string;
-    void *                     void_buf;
-    char *                     server_addr;
-    pdc_metadata_t *           meta;
-    region_list_t **           region_lists;
+    char                      *ret_string;
+    void                      *void_buf;
+    char                      *server_addr;
+    pdc_metadata_t            *meta;
+    region_list_t            **region_lists;
     uint32_t                   n_loc;
     struct transfer_buf_unmap *buf_unmap_args;
 } buf_unmap_server_lookup_args_t;
@@ -91,11 +91,11 @@ struct obj_unmap_server_lookup_args_t {
     int                        server_id;
     uint32_t                   client_id;
     int                        ret_int;
-    char *                     ret_string;
-    void *                     void_buf;
-    char *                     server_addr;
-    pdc_metadata_t *           meta;
-    region_list_t **           region_lists;
+    char                      *ret_string;
+    void                      *void_buf;
+    char                      *server_addr;
+    pdc_metadata_t            *meta;
+    region_list_t            **region_lists;
     uint32_t                   n_loc;
     struct transfer_obj_unmap *obj_unmap_args;
 } obj_unmap_server_lookup_args_t;
@@ -138,13 +138,13 @@ struct transfer_buf_unmap_args {
 /****************************/
 typedef struct notify_multi_io_args_t {
     hg_bulk_t      bulk_handle;
-    void *         buf_sizes;
-    void *         buf_ptrs;
+    void          *buf_sizes;
+    void          *buf_ptrs;
     region_list_t *region_list;
 } notify_multi_io_args_t;
 
 typedef struct bulk_xfer_data_t {
-    void **    buf_ptrs;
+    void     **buf_ptrs;
     hg_size_t *buf_sizes;
     int        n_alloc;
     int        idx;
@@ -173,13 +173,13 @@ typedef struct accumulate_storage_meta_t {
 } accumulate_storage_meta_t;
 
 typedef struct storage_meta_query_one_name_args_t {
-    char *         name;
+    char          *name;
     int            n_res;
     int            seq_id;
     region_list_t *req_region;
     region_list_t *overlap_storage_region_list;
     perr_t (*cb)();
-    void *                     cb_args;
+    void                      *cb_args;
     accumulate_storage_meta_t *accu_meta;
 } storage_meta_query_one_name_args_t;
 
@@ -187,24 +187,24 @@ typedef struct server_read_check_out_t {
     int            ret;
     int            is_cache_to_bb;
     region_list_t *region;
-    char *         shm_addr;
+    char          *shm_addr;
 } server_read_check_out_t;
 
 // Data query
 typedef struct query_task_t {
-    pdc_query_t *      query;
+    pdc_query_t       *query;
     int                query_id;
     int                manager;
     int                client_id;
     int                n_sent_server;
     int                n_unique_obj;
-    uint64_t *         obj_ids;
+    uint64_t          *obj_ids;
     int                n_recv_obj;
     int                ndim;
     pdc_query_get_op_t get_op;
-    region_list_t *    region_constraint;
+    region_list_t     *region_constraint;
     uint64_t           total_elem;
-    int *              invalid_region_ids;
+    int               *invalid_region_ids;
     int                ninvalid_region;
     int                prev_server_id;
     int                next_server_id;
@@ -213,17 +213,17 @@ typedef struct query_task_t {
     int        is_done;
     int        n_recv;
     uint64_t   nhits;
-    uint64_t * coords;
+    uint64_t  *coords;
     uint64_t **coords_arr;
-    uint64_t * n_hits_from_server;
+    uint64_t  *n_hits_from_server;
 
     // Data read
     int       n_read_data_region;
-    void **   data_arr;
+    void    **data_arr;
     uint64_t *my_read_coords;
     uint64_t  my_nread_coords;
     uint64_t  my_read_obj_id;
-    void *    my_data;
+    void     *my_data;
     int       client_seq_id;
 
     struct query_task_t *prev;
@@ -272,21 +272,21 @@ extern int                       buffer_write_request_total_g;
 extern int                       buffer_write_request_num_g;
 extern int                       buffer_read_request_num_g;
 extern int                       is_server_direct_io_g;
-extern pdc_task_list_t *         pdc_server_agg_task_head_g;
-extern pdc_task_list_t *         pdc_server_s2s_task_head_g;
+extern pdc_task_list_t          *pdc_server_agg_task_head_g;
+extern pdc_task_list_t          *pdc_server_s2s_task_head_g;
 extern int                       pdc_server_task_id_g;
-extern hg_class_t *              hg_class_g;
-extern hg_context_t *            hg_context_g;
+extern hg_class_t               *hg_class_g;
+extern hg_context_t             *hg_context_g;
 extern pdc_remote_server_info_t *pdc_remote_server_info_g;
 extern int                       is_debug_g;
 extern int                       n_read_from_bb_g;
 extern int                       read_from_bb_size_g;
 extern int                       gen_hist_g;
 
-extern pdc_data_server_io_list_t * pdc_data_server_read_list_head_g;
-extern pdc_data_server_io_list_t * pdc_data_server_write_list_head_g;
+extern pdc_data_server_io_list_t  *pdc_data_server_read_list_head_g;
+extern pdc_data_server_io_list_t  *pdc_data_server_write_list_head_g;
 extern update_storage_meta_list_t *pdc_update_storage_meta_list_head_g;
-extern pdc_client_info_t *         pdc_client_info_g;
+extern pdc_client_info_t          *pdc_client_info_g;
 extern int                         pdc_client_num_g;
 extern double                      total_mem_usage_g;
 extern int                         lustre_stripe_size_mb_g;
@@ -309,7 +309,7 @@ extern hg_id_t send_data_query_region_register_id_g;
 extern hg_id_t send_read_sel_obj_id_rpc_register_id_g;
 extern hg_id_t send_nhits_register_id_g;
 extern hg_id_t send_bulk_rpc_register_id_g;
-extern char *  gBinningOption;
+extern char   *gBinningOption;
 extern int     gen_fastbit_idx_g;
 extern int     use_fastbit_idx_g;
 
@@ -663,7 +663,7 @@ perr_t PDC_Server_close_shm(region_list_t *region, int is_remove);
  */
 perr_t PDC_Server_update_region_storage_meta_bulk_with_cb(bulk_xfer_data_t *bulk_data, perr_t (*cb)(),
                                                           update_storage_meta_list_t *meta_list_target,
-                                                          int *                       n_updated);
+                                                          int                        *n_updated);
 
 /**
  * **********

@@ -67,16 +67,16 @@ main(int argc, char **argv)
     double         ht_total_sec;
 
     char           name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name",
-                             "INVALID!",         "INVALID!", "Four Obj Names"};
+                                       "INVALID!",         "INVALID!", "Four Obj Names"};
     char           filename[128], pdc_server_tmp_dir_g[128];
-    char *         env_str;
-    char **        obj_names;
-    int *          obj_ts;
-    char *         tmp_dir;
+    char          *env_str;
+    char         **obj_names;
+    int           *obj_ts;
+    char          *tmp_dir;
     int            n_entry;
     int            use_name = -1;
     pdc_metadata_t entry;
-    uint32_t *     hash_key;
+    uint32_t      *hash_key;
     int            j, read_count = 0, tmp_count;
 
 #ifdef ENABLE_MPI

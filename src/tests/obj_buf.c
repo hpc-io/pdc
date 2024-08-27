@@ -33,7 +33,7 @@ main(int argc, char **argv)
     pdcid_t pdc, cont_prop, cont, obj_prop, obj1;
     int     rank = 0, size = 1;
     int     myArray[] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-    void ** rbuf;
+    void  **rbuf;
     int     ret_value = 0;
     char    cont_name[128], obj_name1[128];
 

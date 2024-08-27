@@ -57,9 +57,9 @@ main(int argc, char **argv)
     pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
     perr_t  ret;
 
-    float *   x, *y, *z;
-    float *   px, *py, *pz;
-    int *     id1, *id2;
+    float    *x, *y, *z;
+    float    *px, *py, *pz;
+    int      *id1, *id2;
     uint64_t  numparticles;
     int       ndim = 1;
     uint64_t *offset;

@@ -51,7 +51,7 @@ int
 print_data(int ndim, uint64_t *start, uint64_t *count, void *data)
 {
     uint64_t i, j;
-    char *   data_1d, **data_2d, ***data_3d;
+    char    *data_1d, **data_2d, ***data_3d;
 
     if (ndim == 1) {
         data_1d = (char *)data;
@@ -79,8 +79,8 @@ int
 data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t *truth_start, void *truth_data)
 {
     uint64_t i, j, k;
-    char *   data_1d, **data_2d, ***data_3d;
-    char *   truth_data_1d, **truth_data_2d, ***truth_data_3d;
+    char    *data_1d, **data_2d, ***data_3d;
+    char    *truth_data_1d, **truth_data_2d, ***truth_data_3d;
 
     if (ndim == 1) {
         data_1d       = (char *)data;
@@ -134,13 +134,13 @@ test1d(char *obj_name)
     uint64_t               dims[3];
     uint64_t               i = 0;
     pdcid_t                obj_id;
-    pdc_metadata_t *       metadata;
+    pdc_metadata_t        *metadata;
     struct pdc_region_info region_a, region_b, region_c, region_d, read_region;
     uint64_t storage_offset_a, storage_offset_b, storage_offset_c, storage_offset_d, read_offset;
     uint64_t storage_size_a, storage_size_b, storage_size_c, storage_size_d, read_size;
     uint32_t ndim = 1;
     uint64_t total_size;
-    char *   data, *data0, *data1, *data2, *data3, *read_data;
+    char    *data, *data0, *data1, *data2, *data3, *read_data;
     uint64_t data_offset_real[3];
     uint64_t data_start[3] = {0, 0, 0};
     int      is_correct = 0, is_all_correct = 0;
@@ -254,7 +254,7 @@ int
 test2d(char *obj_name)
 {
     pdcid_t                obj_id;
-    pdc_metadata_t *       metadata;
+    pdc_metadata_t        *metadata;
     struct pdc_region_info region_a, region_b, region_c, region_d, read_region;
     uint64_t               storage_offset_a[3], storage_offset_b[3], storage_offset_c[3], storage_offset_d[3],
         read_offset[3];
@@ -264,8 +264,8 @@ test2d(char *obj_name)
     uint64_t data_start[3] = {0, 0, 0};
     uint64_t data_offset_real[3];
     int      is_correct = 0, is_all_correct = 0;
-    char *   data, *read_data;
-    char **  data_2d, **data_a_2d, **data_b_2d, **data_c_2d, **data_d_2d, **read_data_2d;
+    char    *data, *read_data;
+    char   **data_2d, **data_a_2d, **data_b_2d, **data_c_2d, **data_d_2d, **read_data_2d;
     uint32_t ndim = 2;
 
     prob_domain[0] = 25 * size;
@@ -439,7 +439,7 @@ test3d(char *obj_name)
     uint32_t ndim = 3;
 
     pdcid_t                obj_id;
-    pdc_metadata_t *       metadata;
+    pdc_metadata_t        *metadata;
     struct pdc_region_info region_a;
     struct pdc_region_info region_b;
     struct pdc_region_info region_c;

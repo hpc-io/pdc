@@ -69,11 +69,11 @@ main(int argc, char **argv)
     char            obj_name[512];
     char            obj_prefix[4][10] = {"x", "y", "z", "energy"};
     char            tmp_str[128];
-    char *          env_str;
+    char           *env_str;
     pdc_metadata_t *res = NULL;
     int             progress_factor;
     char            name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name",
-                             "INVALID!",         "INVALID!", "Four Obj Names"};
+                                        "INVALID!",         "INVALID!", "Four Obj Names"};
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

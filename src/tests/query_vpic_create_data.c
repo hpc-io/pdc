@@ -58,19 +58,19 @@ main(int argc, char **argv)
     pdcid_t  pdc_id, cont_prop, cont_id;
     uint64_t nparticles  = NPARTICLES, j;
     int      write_var   = NUM_VAR, i;
-    char *   obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
+    char    *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
     uint64_t float_bytes, int_bytes;
 
     pdcid_t                obj_ids[NUM_VAR];
     struct pdc_region_info obj_regions[NUM_VAR];
-    pdc_metadata_t *       obj_metas[NUM_VAR];
+    pdc_metadata_t        *obj_metas[NUM_VAR];
     pdcid_t                obj_prop_float, obj_prop_int;
 
     struct timeval pdc_timer_start;
     struct timeval pdc_timer_end;
     double         write_time = 0.0, total_size = 0.0;
     uint64_t       myoffset[NDIM], mysize[NDIM];
-    void *         mydata[NUM_VAR];
+    void          *mydata[NUM_VAR];
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

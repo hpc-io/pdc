@@ -81,12 +81,12 @@ main(int argc, char **argv)
     uint64_t float_dims[NDIM];
     uint64_t int_dims[NDIM];
     uint64_t myoffset[NDIM], mysize[NDIM];
-    void *   mydata[NUM_VAR_MAX];
+    void    *mydata[NUM_VAR_MAX];
 
     pdcid_t                obj_prop_float, obj_prop_int;
     pdcid_t                obj_ids[TS_MAX][NUM_VAR_MAX];
     struct pdc_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
-    pdc_metadata_t *       obj_metas[TS_MAX][NUM_VAR_MAX];
+    pdc_metadata_t        *obj_metas[TS_MAX][NUM_VAR_MAX];
     struct pdc_request     request[TS_MAX][NUM_VAR_MAX];
 
     struct timeval pdc_timer_start;

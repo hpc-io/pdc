@@ -82,10 +82,10 @@ main(int argc, char **argv)
     int      n_particles;
     uint64_t float_bytes, int_bytes;
     uint64_t myoffset[NDIM], mysize[NDIM];
-    void *   mydata[NUM_VAR_MAX];
+    void    *mydata[NUM_VAR_MAX];
 
     struct pdc_region_info obj_regions[TS_MAX][NUM_VAR_MAX];
-    pdc_metadata_t *       obj_metas[TS_MAX][NUM_VAR_MAX];
+    pdc_metadata_t        *obj_metas[TS_MAX][NUM_VAR_MAX];
     struct pdc_request     request[TS_MAX][NUM_VAR_MAX];
 
     struct timeval pdc_timer_start;

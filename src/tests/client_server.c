@@ -190,7 +190,7 @@ main(int argc, char **argv)
     size = 1;
 #endif
 
-    hg_class_t *  hg_class   = NULL;
+    hg_class_t   *hg_class   = NULL;
     hg_context_t *hg_context = NULL;
     hg_return_t   hg_ret     = 0;
 

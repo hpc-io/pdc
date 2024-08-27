@@ -22,8 +22,8 @@
 pdc_query_t *
 PDCquery_create(pdcid_t obj_id, pdc_query_op_t op, pdc_var_type_t type, void *value)
 {
-    pdc_query_t *         ret_value = NULL;
-    pdc_query_t *         query;
+    pdc_query_t          *ret_value = NULL;
+    pdc_query_t          *query;
     int                   type_size;
     struct _pdc_obj_info *obj_prop;
     uint64_t              meta_id;

@@ -74,10 +74,10 @@ main(int argc, char *argv[])
 {
     hg_hash_table_t *hash_table = NULL;
 
-    int *                  key1, *key2;
+    int                   *key1, *key2;
     hash_value_metadata_t *value1, *value2;
     const int              num = 100;
-    int *                  keys[num];
+    int                   *keys[num];
     int                    i;
     hash_value_metadata_t *values[num];
     hash_value_metadata_t *lookup_value = NULL;

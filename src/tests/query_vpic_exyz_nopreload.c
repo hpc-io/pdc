@@ -22,9 +22,9 @@ main(int argc, char **argv)
 
     pdc_selection_t sel;
     double          get_sel_time, get_data_time;
-    float *         energy_data = NULL, *x_data = NULL, *y_data = NULL, *z_data = NULL;
+    float          *energy_data = NULL, *x_data = NULL, *y_data = NULL, *z_data = NULL;
     uint64_t        nhits, i;
-    pdc_query_t *   qpreload_energy, *qpreload_x, *qpreload, *q1_lo, *q1_hi, *q1, *q2_lo, *q2_hi, *q2, *q;
+    pdc_query_t    *qpreload_energy, *qpreload_x, *qpreload, *q1_lo, *q1_hi, *q1, *q2_lo, *q2_hi, *q2, *q;
 
     struct timeval pdc_timer_start;
     struct timeval pdc_timer_end;

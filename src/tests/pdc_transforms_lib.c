@@ -567,7 +567,7 @@ pdc_transform_increment(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t
 {
     int     i;
     int64_t nval, nbytes;
-    void *  destBuff;
+    void   *destBuff;
     size_t  typesize = 1;
     if (srcType >= 0) {
         if ((srcType == PDC_INT) || (srcType == PDC_UINT) || (srcType == PDC_FLOAT))
@@ -625,7 +625,7 @@ pdc_transform_compress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t 
     int     doshuffle = BLOSC_BITSHUFFLE;
     int     nval, i, typesize;
     int64_t destsize, nbytes, csize;
-    void *  destBuff;
+    void   *destBuff;
 
     if ((srcType == PDC_INT) || (srcType == PDC_UINT) || (srcType == PDC_FLOAT))
         typesize = sizeof(int);
@@ -667,7 +667,7 @@ pdc_transform_decompress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_
 {
     int    i;
     size_t typesize, destsize, dsize;
-    void * destBuff = *dataOut;
+    void  *destBuff = *dataOut;
 
     fprintf(stdout, "\n[TRANSFORM] Entering pdc_transform_decompress\n");
 

@@ -35,11 +35,11 @@ main()
 {
     pdcid_t        pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
     pdc_kvtag_t    kvtag1, kvtag2, kvtag3;
-    char *         v1 = "value1";
+    char          *v1 = "value1";
     int            v2 = 2;
     double         v3 = 3.45;
     pdc_var_type_t type1, type2, type3;
-    void *         value1, *value2, *value3;
+    void          *value1, *value2, *value3;
     psize_t        value_size;
 
     // create a pdc

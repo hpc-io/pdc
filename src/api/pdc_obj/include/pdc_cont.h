@@ -33,7 +33,7 @@ typedef struct _pdc_id_info cont_handle;
 /* Library Public Struct */
 /**************************/
 struct pdc_cont_info {
-    char *   name;
+    char    *name;
     pdcid_t  local_id;
     uint64_t meta_id;
 };

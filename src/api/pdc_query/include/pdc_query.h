@@ -39,7 +39,7 @@ typedef struct pdc_query_constraint_t {
     pdc_query_op_t op2;
     double         value2;
 
-    void *  storage_region_list_head;
+    void   *storage_region_list_head;
     pdcid_t origin_server;
     int     n_sent;
     int     n_recv;
@@ -47,12 +47,12 @@ typedef struct pdc_query_constraint_t {
 
 typedef struct pdc_query_t {
     pdc_query_constraint_t *constraint;
-    struct pdc_query_t *    left;
-    struct pdc_query_t *    right;
+    struct pdc_query_t     *left;
+    struct pdc_query_t     *right;
     pdc_query_combine_op_t  combine_op;
     struct pdc_region_info *region;            // used only on client
-    void *                  region_constraint; // used only on server
-    pdc_selection_t *       sel;
+    void                   *region_constraint; // used only on server
+    pdc_selection_t        *sel;
 } pdc_query_t;
 
 // Request structure for async read/write
@@ -62,9 +62,9 @@ struct pdc_request {
     int                     n_client;
     int                     n_update;
     pdc_access_t            access_type;
-    void *                  metadata;
+    void                   *metadata;
     struct pdc_region_info *region;
-    void *                  buf;
+    void                   *buf;
 
     char *shm_base;
     char  shm_addr[128];
@@ -72,11 +72,11 @@ struct pdc_request {
     int   shm_size;
 
     int       n_buf_arr;
-    void ***  buf_arr;
-    int *     buf_arr_idx;
-    char **   shm_base_arr;
-    char **   shm_addr_arr;
-    int *     shm_fd_arr;
+    void   ***buf_arr;
+    int      *buf_arr_idx;
+    char    **shm_base_arr;
+    char    **shm_addr_arr;
+    int      *shm_fd_arr;
     uint64_t *shm_size_arr;
 
     void *storage_meta;

@@ -18,7 +18,7 @@ main(int argc, const char *argv[])
 {
     int      rank = 0, size = 1;
     uint64_t size_MB  = 0;
-    char *   obj_name = "test";
+    char    *obj_name = "test";
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);

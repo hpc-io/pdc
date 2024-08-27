@@ -39,7 +39,7 @@ main(int argc, char **argv)
     uint64_t *offset, *local_offset;
     uint64_t *mysize;
     int       i, j;
-    char *    mydata, *obj_data;
+    char     *mydata, *obj_data;
     char      obj_name[128], cont_name[128];
 
     uint64_t my_data_size;

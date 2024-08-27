@@ -35,11 +35,11 @@ struct pdc_region_info {
     pdcid_t               local_id;
     struct _pdc_obj_info *obj;
     size_t                ndim;
-    uint64_t *            offset;
-    uint64_t *            size;
+    uint64_t             *offset;
+    uint64_t             *size;
     bool                  mapping;
     int                   registered_op;
-    void *                buf;
+    void                 *buf;
     size_t                unit;
 };
 

@@ -31,7 +31,7 @@
 /* Library Private Struct */
 /**************************/
 struct _pdc_cont_info {
-    struct pdc_cont_info * cont_info_pub;
+    struct pdc_cont_info  *cont_info_pub;
     struct _pdc_cont_prop *cont_pt;
 };
 
