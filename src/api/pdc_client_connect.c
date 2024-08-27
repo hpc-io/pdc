@@ -266,7 +266,7 @@ hg_progress_fn(void *foo)
 #ifdef TANG_DEBUG
     char cur_time[64];
     PDC_get_time_str(cur_time);
-    printf("[%s] enter %s\n", cur_time, __func__);
+    printf("[%s] enter %s \n", cur_time, __func__);
 #endif
 
     while (hg_progress_flag_g != 1) {
