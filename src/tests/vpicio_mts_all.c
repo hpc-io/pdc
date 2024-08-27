@@ -124,7 +124,8 @@ main(int argc, char **argv)
     PDCprop_set_obj_user_id(obj_prop_float, getuid());
     PDCprop_set_obj_app_name(obj_prop_float, "VPICIO");
     PDCprop_set_obj_tags(obj_prop_float, "tag0=1");
-    PDCprop_set_obj_transfer_region_type(obj_prop_float, PDC_REGION_LOCAL);
+    /* PDCprop_set_obj_transfer_region_type(obj_prop_float, PDC_REGION_LOCAL); */
+    PDCprop_set_obj_transfer_region_type(obj_prop_float, PDC_REGION_STATIC);
 
     obj_prop_int = PDCprop_obj_dup(obj_prop_float);
     PDCprop_set_obj_type(obj_prop_int, PDC_INT);
