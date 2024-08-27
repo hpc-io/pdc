@@ -63,7 +63,6 @@
 #include <inttypes.h>
 #include <math.h>
 #include <sys/time.h>
-
 #include "pdc_timing.h"
 
 /* #define TANG_DEBUG 1 */
