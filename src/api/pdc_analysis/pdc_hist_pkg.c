@@ -5,7 +5,7 @@
 #define MACRO_SAMPLE_MIN_MAX(TYPE, n, data, sample_pct, min, max)                                            \
     ({                                                                                                       \
         uint64_t i, sample_n, iter = 0;                                                                      \
-        TYPE    *ldata = (TYPE *)data;                                                                       \
+        TYPE *   ldata = (TYPE *)data;                                                                       \
         (min)          = ldata[0];                                                                           \
         (max)          = ldata[0];                                                                           \
         sample_n       = (n) * (sample_pct);                                                                 \
@@ -161,7 +161,7 @@ done:
     ({                                                                                                       \
         uint64_t i;                                                                                          \
         int      lo, mid = 0, hi;                                                                            \
-        TYPE    *ldata = (TYPE *)(_data);                                                                    \
+        TYPE *   ldata = (TYPE *)(_data);                                                                    \
         if ((hist)->incr > 0) {                                                                              \
             for (i = 0; i < (n); i++) {                                                                      \
                 if (ldata[i] < (hist)->range[1]) {                                                           \

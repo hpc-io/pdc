@@ -135,15 +135,15 @@ int
 main(int argc, char *argv[])
 {
     pdcid_t     pdc, cont_prop, cont, obj_prop;
-    pdcid_t    *obj_ids;
+    pdcid_t *   obj_ids;
     int         n_obj, my_obj, my_obj_s;
     int         proc_num, my_rank, i, v, iter, round, selectivity, is_using_dart, query_type, comm_type;
     double      stime, total_time;
     pdc_kvtag_t kvtag;
-    uint64_t   *pdc_ids;
+    uint64_t *  pdc_ids;
     int         nres, ntotal;
-    int        *my_cnt_round;
-    int        *total_cnt_round;
+    int *       my_cnt_round;
+    int *       total_cnt_round;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -282,9 +282,9 @@ main(int argc, char *argv[])
                 if (is_using_dart) {
                     char *query_string = gen_query_str(&output);
                     ret_value          = (comm_type == 0)
-                                             ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string,
-                                                                                      ref_type, &nres, &pdc_ids)
-                                             : PDC_Client_search_obj_ref_through_dart_mpi(
+                                    ? PDC_Client_search_obj_ref_through_dart(hash_algo, query_string,
+                                                                             ref_type, &nres, &pdc_ids)
+                                    : PDC_Client_search_obj_ref_through_dart_mpi(
                                           hash_algo, query_string, ref_type, &nres, &pdc_ids, MPI_COMM_WORLD);
                 }
                 else {
@@ -331,7 +331,7 @@ main(int argc, char *argv[])
             }
 #endif
         } // end query type
-    } // end comm type
+    }     // end comm type
 
     if (my_rank == 0) {
         println("Rank %d: All queries are done.", my_rank);

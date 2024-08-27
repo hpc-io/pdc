@@ -29,7 +29,7 @@ query_result_from_kvtag(char *key_value_query, int8_t op_type)
     dart_perform_one_server_in_t  input;
     dart_perform_one_server_out_t output;
     uint64_t                      n_obj_ids = 0;
-    uint64_t                     *buf_ptr   = NULL;
+    uint64_t *                    buf_ptr   = NULL;
     input.op_type                           = op_type;
     input.attr_key                          = key_value_query;
     assert(PDC_Server_dart_perform_one_server(&input, &output, &n_obj_ids, &buf_ptr) == SUCCEED);

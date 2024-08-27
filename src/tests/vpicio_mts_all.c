@@ -60,8 +60,8 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    float     *x, *y, *z, *px, *py, *pz;
-    int       *id1, *id2;
+    float *    x, *y, *z, *px, *py, *pz;
+    int *      id1, *id2;
     int        x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
     uint64_t   numparticles, dims[1], offset_local[1], offset_remote[1], mysize[1];
     double     t0, t1;

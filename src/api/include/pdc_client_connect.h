@@ -60,23 +60,23 @@ struct _pdc_client_lookup_args {
     uint32_t    client_id;
     int         ret;
     int         is_init;
-    char       *ret_string;
-    char       *client_addr;
+    char *      ret_string;
+    char *      client_addr;
 
     uint32_t      user_id;
-    const char   *app_name;
+    const char *  app_name;
     int           time_step;
     uint32_t      hash_value;
-    const char   *tags;
+    const char *  tags;
     hg_request_t *request;
 };
 
 struct _pdc_client_transform_args {
     size_t                                 size;
-    void                                  *data;
-    void                                  *transform_result;
+    void *                                 data;
+    void *                                 transform_result;
     struct _pdc_region_transform_ftn_info *this_transform;
-    struct pdc_region_info                *region_info;
+    struct pdc_region_info *               region_info;
     int                                    type_extent;
     int                                    transform_state;
     int                                    ret;
@@ -148,8 +148,8 @@ struct _pdc_query_result_list {
     int       query_id;
     uint64_t  nhits;
     uint64_t *coords;
-    void     *data;
-    void    **data_arr;
+    void *    data;
+    void **   data_arr;
     uint64_t *data_arr_size;
     uint64_t  recv_data_nhits;
 
@@ -187,8 +187,8 @@ struct client_genetic_lookup_args {
 struct _dart_perform_one_thread_param {
     int                           server_id;
     dart_perform_one_server_in_t *dart_in;
-    uint64_t                    **dart_out;
-    size_t                       *dart_out_size;
+    uint64_t **                   dart_out;
+    size_t *                      dart_out_size;
 };
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)

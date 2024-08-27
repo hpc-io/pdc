@@ -59,12 +59,12 @@ main(int argc, char **argv)
     char *obj_names[] = {"x", "y", "z", "px", "py", "pz", "id1", "id2"};
 
     struct pdc_region_info obj_regions[NUM_VAR];
-    pdc_metadata_t        *obj_metas[NUM_VAR];
+    pdc_metadata_t *       obj_metas[NUM_VAR];
 
     uint64_t float_bytes = NPARTICLES * sizeof(float);
     uint64_t int_bytes   = NPARTICLES * sizeof(int);
     uint64_t myoffset[NDIM], mysize[NDIM];
-    void    *mydata[NUM_VAR];
+    void *   mydata[NUM_VAR];
 
     int read_var = NUM_VAR;
 
@@ -214,7 +214,7 @@ main(int argc, char **argv)
             verify = 0;
             break;
         } // end if
-    } // end of
+    }     // end of
     if (verify == 1) {
         if (rank == 0)
             printf("SUCCEED\n");

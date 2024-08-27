@@ -404,7 +404,7 @@ main(int argc, char **argv)
     word_count             = atoi(argv[7]);
     prefix_len             = atoi(argv[8]);
     char **input_word_list = NULL;
-    int   *req_count       = NULL;
+    int *  req_count       = NULL;
 
     int i = 0;
 
@@ -432,7 +432,7 @@ main(int argc, char **argv)
     void (*keyword_insert[])(char *, int) = {DHT_INITIAL_keyword_insert, DHT_FULL_keyword_insert,
                                              dart_keyword_insert};
     int (*keyword_search[])(char *, int)  = {DHT_INITIAL_keyword_search, DHT_FULL_keyword_search,
-                                             dart_keyword_search};
+                                            dart_keyword_search};
 
     if (INPUT_TYPE == INPUT_DICTIONARY) {
         // Init dart space.

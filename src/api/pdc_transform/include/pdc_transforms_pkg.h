@@ -53,8 +53,8 @@ struct _pdc_region_transform_ftn_info {
     pdc_obj_transform_t      op_type;
     pdc_data_movement_t      when;
     _pdc_analysis_language_t lang;
-    void                    *data;
-    void                    *result;
+    void *                   data;
+    void *                   result;
 };
 
 /***************************************/

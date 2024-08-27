@@ -73,9 +73,9 @@ main(int argc, char **argv)
     int              use_name = -1;
     uint64_t         dims[3]  = {100, 200, 700};
     pdcid_t          test_obj = -1;
-    char            *env_str;
+    char *           env_str;
     char             name_mode[6][32] = {"Random Obj Names", "INVALID!", "One Obj Name",
-                                         "INVALID!",         "INVALID!", "Four Obj Names"};
+                             "INVALID!",         "INVALID!", "Four Obj Names"};
     pdc_metadata_t **out;
     int              n_obj;
 

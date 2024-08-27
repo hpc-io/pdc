@@ -78,13 +78,13 @@ int
 main(int argc, char *argv[])
 {
     pdcid_t     pdc, cont_prop, cont, obj_prop;
-    pdcid_t    *obj_ids;
+    pdcid_t *   obj_ids;
     int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
     int         proc_num = 1, my_rank = 0, i, v, iter, round, selectivity, is_using_dart;
     char        obj_name[128];
     double      stime, total_time;
     pdc_kvtag_t kvtag;
-    uint64_t   *pdc_ids;
+    uint64_t *  pdc_ids;
     int         nres, ntotal;
 
 #ifdef ENABLE_MPI
