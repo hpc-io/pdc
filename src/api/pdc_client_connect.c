@@ -65,7 +65,6 @@
 #include <sys/time.h>
 #include "pdc_timing.h"
 
-
 /* #define TANG_DEBUG 1 */
 
 int                    is_client_debug_g      = 0;
