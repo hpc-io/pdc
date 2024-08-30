@@ -3283,7 +3283,8 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 #endif
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(comm);
+    if (comm != 0)
+        MPI_Barrier(comm);
 #endif
 
     PDC_Client_transfer_pthread_create();
@@ -3312,7 +3313,8 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 #endif
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(comm);
+    if (comm != 0)
+        MPI_Barrier(comm);
 #endif
 
 #ifdef PDC_TIMING
