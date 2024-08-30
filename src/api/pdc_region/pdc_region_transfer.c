@@ -1969,7 +1969,6 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     t0 = MPI_Wtime();
 #endif
 
-    // Tang
     // Check if we merged the previous request
     if (size > PDC_MERGE_TRANSFER_MIN_COUNT) {
         transferinfo[0]  = PDC_find_id(transfer_request_id[0]);
