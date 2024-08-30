@@ -196,6 +196,7 @@ In `src/commons/serde`, we implement the `BULKI` module for serialization and de
 BULKI is a data serialization and deserialization framework that supports dynamic and nested data structure.
 Every BULKI is considered a container of KEY-VALUE pairs, where every key/value is a BULKI_Entity
 BULKI_Entity is a container of one of the following:
+
 1. singleton of primitive data types, e.g. int, float, double, etc.
 2. array of primitive data types, e.g. int[3], float[32], double[22], etc.
 3. singleton of BULKI_Entity
