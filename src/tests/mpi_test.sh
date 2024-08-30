@@ -5,7 +5,7 @@
 
 extra_cmd=""
 
-if [[ "$SUPERCOMPUTER" == "perlmutter" ]]; then
+if [[ "$NERSC_HOST" == "perlmutter" ]]; then
     extra_cmd="--mem=25600 --cpu_bind=cores --overlap"
 fi
 
