@@ -1545,7 +1545,7 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
 perr_t
 PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 {
-    perr_t ret_value  = SUCCEED;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
@@ -1558,7 +1558,7 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
 perr_t
 PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm)
 {
-    perr_t ret_value  = SUCCEED;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
@@ -1649,8 +1649,7 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
     if (transfer_request->metadata_id != NULL) {
-        printf("PDC_Client %s attempt to start existing transfer request @ line %d\n",
-               __func__, __LINE__);
+        printf("PDC_Client %s attempt to start existing transfer request @ line %d\n", __func__, __LINE__);
         ret_value = FAIL;
         goto done;
     }
@@ -1752,7 +1751,7 @@ done:
 perr_t
 PDCregion_transfer_start(pdcid_t transfer_request_id)
 {
-    perr_t ret_value  = SUCCEED;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
@@ -1765,7 +1764,7 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
 perr_t
 PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm)
 {
-    perr_t ret_value  = SUCCEED;
+    perr_t ret_value = SUCCEED;
 
     FUNC_ENTER(NULL);
 
