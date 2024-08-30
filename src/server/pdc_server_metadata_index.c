@@ -94,7 +94,7 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
         *n_obj_ids_ptr = idx_record->num_obj_ids;
         *buf_ptrs      = idx_record->obj_ids;
 
-        if (attr_key[0] == '*' && attr_key[strlen(attr_key) - 1] == '*') {
+        if (attr_key[0] == '*') {
             printf("server_id = %d, attr_key=%s, attr_val=%s, attr_vsize=%d, attr_dtype=%d\n",
                    midx_server_id_g, attr_key, attr_val, attr_vsize, attr_dtype);
             printf("result = ");
