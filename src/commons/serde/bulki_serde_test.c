@@ -279,11 +279,91 @@ test_bulki_in_entitiy()
 }
 
 int
+bulki_small_json_serialization_test()
+{
+    // Initialize the BULKI structure
+    BULKI *dataset = BULKI_init(10); // Assuming initial field count is 10
+
+    // Create and insert "dataset_name" key-value pair
+    BULKI_Entity *key1   = BULKI_singleton_ENTITY("dataset_name", PDC_STRING);
+    BULKI_Entity *value1 = BULKI_singleton_ENTITY("BOSS", PDC_STRING);
+    BULKI_put(dataset, key1, value1);
+
+    // Create and insert "dataset_description" key-value pair
+    BULKI_Entity *key2   = BULKI_singleton_ENTITY("dataset_description", PDC_STRING);
+    BULKI_Entity *value2 = BULKI_singleton_ENTITY("LLSM dataset", PDC_STRING);
+    BULKI_put(dataset, key2, value2);
+
+    // Create and insert "source_URL" key-value pair
+    BULKI_Entity *key3   = BULKI_singleton_ENTITY("source_URL", PDC_STRING);
+    BULKI_Entity *value3 = BULKI_singleton_ENTITY(" ", PDC_STRING);
+    BULKI_put(dataset, key3, value3);
+
+    // Create and insert "collector" key-value pair
+    BULKI_Entity *key4   = BULKI_singleton_ENTITY("collector", PDC_STRING);
+    BULKI_Entity *value4 = BULKI_singleton_ENTITY("Wei Zhang", PDC_STRING);
+    BULKI_put(dataset, key4, value4);
+
+    BULKI_Entity *key5   = BULKI_singleton_ENTITY("objects", PDC_STRING);
+    BULKI_Entity *value5 = empty_BULKI_Array_Entity();
+
+    BULKI *object1 = BULKI_init(4); // 3 fields: name, type, full_path, properties
+    BULKI_put(object1, BULKI_singleton_ENTITY("name", PDC_STRING),
+              BULKI_singleton_ENTITY("3551-55156-1-coadd", PDC_STRING));
+    BULKI_put(object1, BULKI_singleton_ENTITY("type", PDC_STRING),
+              BULKI_singleton_ENTITY("file", PDC_STRING));
+    BULKI_put(object1, BULKI_singleton_ENTITY("full_path", PDC_STRING),
+              BULKI_singleton_ENTITY("/pscratch/sd/h/houhun/h5boss_v2/3551-55156.hdf5", PDC_STRING));
+
+    BULKI_Entity *property_array = empty_BULKI_Array_Entity();
+
+    BULKI *       property1 = BULKI_init(2); // 2 fields: name, value
+    BULKI_Entity *name      = BULKI_singleton_ENTITY("AIRMASS", PDC_STRING);
+    BULKI_Entity *data      = BULKI_ENTITY(&(float){1.19428}, 1, PDC_FLOAT, PDC_CLS_ITEM);
+    BULKI_put(property1, name, data);
+
+    // BULKI *       property2 = BULKI_init(2); // 2 fields: name, value
+    BULKI_Entity *name2 = BULKI_singleton_ENTITY("ALT", PDC_STRING);
+    BULKI_Entity *data2 = BULKI_ENTITY(&(float){54.0012}, 1, PDC_FLOAT, PDC_CLS_ITEM);
+    BULKI_put(property1, name2, data2);
+
+    // BULKI *       property3 = BULKI_init(2); // 2 fields: name, value
+    BULKI_Entity *name3 = BULKI_singleton_ENTITY("ARCOFFX", PDC_STRING);
+    BULKI_Entity *data3 = BULKI_ENTITY(&(float){0.001891}, 1, PDC_FLOAT, PDC_CLS_ITEM);
+    BULKI_put(property1, name3, data3);
+
+    // BULKI *       property4 = BULKI_init(2); // 2 fields: name, value
+    BULKI_Entity *name4 = BULKI_singleton_ENTITY("ARCOFFY", PDC_STRING);
+    BULKI_Entity *data4 = BULKI_ENTITY(&(float){0.001101}, 1, PDC_FLOAT, PDC_CLS_ITEM);
+    BULKI_put(property1, name4, data4);
+
+    BULKI_ENTITY_append_BULKI(property_array, property1);
+    // BULKI_ENTITY_append_BULKI(property_array, property2);
+    // BULKI_ENTITY_append_BULKI(property_array, property3);
+    // BULKI_ENTITY_append_BULKI(property_array, property4);
+
+    BULKI_put(object1, BULKI_singleton_ENTITY("properties", PDC_STRING), property_array);
+    BULKI_ENTITY_append_BULKI(value5, object1);
+
+    BULKI_put(dataset, key5, value5);
+
+    FILE *fp = fopen("dataset.bin", "w");
+    BULKI_serialize_to_file(dataset, fp);
+    // fclose(fp);
+    // Free the memory
+    // BULKI_free(dataset, 1);
+
+    return 0;
+}
+
+int
 main(int argc, char *argv[])
 {
-    printf("test_base_type RST = %d\n", test_base_type());
-    printf("test_put_replace RST = %d\n", test_put_replace());
-    printf("test_base_array_entitiy RST = %d\n", test_base_array_entitiy());
-    printf("test_embedded_entitiy RST = %d\n", test_embedded_entitiy());
-    printf("test_nested_entitiy RST = %d\n", test_bulki_in_entitiy());
+    // printf("test_base_type RST = %d\n", test_base_type());
+    // printf("test_put_replace RST = %d\n", test_put_replace());
+    // printf("test_base_array_entitiy RST = %d\n", test_base_array_entitiy());
+    // printf("test_embedded_entitiy RST = %d\n", test_embedded_entitiy());
+    // printf("test_nested_entitiy RST = %d\n", test_bulki_in_entitiy());
+    printf("bulki_small_json_serialization_test RST = %d\n", bulki_small_json_serialization_test());
+    return 0;
 }

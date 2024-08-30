@@ -109,7 +109,7 @@ insert_index_records(int world_rank, int world_size)
         sprintf(key, "int%s", "key");
         value               = (int64_t *)calloc(1, sizeof(int64_t));
         *((int64_t *)value) = i;
-        if (PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT, ref_type,
+        if (PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT64, ref_type,
                                                 i) < 0) {
             printf("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value, i);
             ret_value |= FAIL;
@@ -145,7 +145,7 @@ delete_index_records(int world_rank, int world_size)
         sprintf(key, "int%s", "key");
         value               = (int64_t *)calloc(1, sizeof(int64_t));
         *((int64_t *)value) = i;
-        if (PDC_Client_delete_obj_ref_from_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT, ref_type,
+        if (PDC_Client_delete_obj_ref_from_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT64, ref_type,
                                                 i) < 0) {
             printf("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value, i);
             ret_value |= FAIL;
@@ -207,7 +207,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
-                if (pdc_ids[i] != i * 10 + 9) {
+                if (pdc_ids[i] != i * 100 + 9) {
                     printf("fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
                     step_failed = 2;
                     break;

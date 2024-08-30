@@ -238,10 +238,13 @@ client_parse_response(dummy_client_t *client, uint64_t **obj_id_list, uint64_t *
 perr_t
 client_insert_data(dummy_client_t *client, int id)
 {
-    char key[40];
-    char value[40];
-    sprintf(key, "%d_%d", id, id);
-    sprintf(value, "%d_%d_%d", id, id, id);
+    char    key[64];
+    char    value[64];
+    char    int_key[64];
+    int64_t int_value = (int64_t)id;
+    sprintf(key, "str%03dstr", id, id);
+    sprintf(int_key, "int%s", "key");
+    sprintf(value, "str%03dstr", id, id, id);
     uint64_t u64_id = (uint64_t)id;
     perr_t   result = SUCCEED;
     // generate a request for each client
@@ -257,9 +260,8 @@ client_insert_data(dummy_client_t *client, int id)
         result |= client_parse_response(client, NULL, NULL);
 
         // client insert numeric value
-        int32_t       i32_id     = (int32_t)id;
-        BULKI_Entity *value_ent2 = BULKI_ENTITY(&i32_id, 1, PDC_INT32, PDC_CLS_ITEM);
-        client_generate_request(client, IDIOMS_INSERT, key, value_ent2, &u64_id);
+        BULKI_Entity *value_ent2 = BULKI_ENTITY(&int_value, 1, PDC_INT64, PDC_CLS_ITEM);
+        client_generate_request(client, IDIOMS_INSERT, int_key, value_ent2, &u64_id);
         sending_request_to_server(client, &servers[hash_result[s].server_id]);
         server_perform_operation(&servers[hash_result[s].server_id]);
         get_response_from_server(client, &servers[hash_result[s].server_id]);
@@ -317,10 +319,13 @@ client_perform_search(dummy_client_t *client, char *query, uint64_t **rst_ids)
 perr_t
 client_delete_data(dummy_client_t *client, int id)
 {
-    char key[20];
-    char value[20];
-    sprintf(key, "%d_%d", id, id);
-    sprintf(value, "%d_%d_%d", id, id, id);
+    char    key[64];
+    char    value[64];
+    char    int_key[64];
+    int64_t int_value = (int64_t)id;
+    sprintf(key, "str%03dstr", id, id);
+    sprintf(int_key, "int%s", key);
+    sprintf(value, "str%03dstr", id, id, id);
     uint64_t u64_id = (uint64_t)id;
     // generate a request for each client
     index_hash_result_t *hash_result       = NULL;
@@ -336,9 +341,8 @@ client_delete_data(dummy_client_t *client, int id)
         result |= client_parse_response(client, NULL, NULL);
 
         // delete numeric value
-        int32_t       i32_id     = (int32_t)id;
-        BULKI_Entity *value_ent2 = BULKI_ENTITY(&i32_id, 1, PDC_INT32, PDC_CLS_ITEM);
-        client_generate_request(client, IDIOMS_DELETE, key, value_ent2, &u64_id);
+        BULKI_Entity *value_ent2 = BULKI_ENTITY(&int_value, 1, PDC_INT64, PDC_CLS_ITEM);
+        client_generate_request(client, IDIOMS_DELETE, int_key, value_ent2, &u64_id);
         sending_request_to_server(client, &servers[hash_result[s].server_id]);
         server_perform_operation(&servers[hash_result[s].server_id]);
         get_response_from_server(client, &servers[hash_result[s].server_id]);
@@ -444,6 +448,171 @@ basic_test()
 }
 
 int
+compare_uint64(const void *a, const void *b)
+{
+    return (*(uint64_t *)a - *(uint64_t *)b);
+}
+
+int
+validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
+{
+    int i;
+    int query_series = world_rank % 6;
+    int step_failed  = -1;
+    switch (query_series) {
+        case 0:
+            if (nres != 1) {
+                printf("fail to query kvtag [%s] with rank %d. Expect 1 result but got %d result\n",
+                       "str109str=str109str", world_rank, nres);
+                step_failed = 0;
+            }
+            if (pdc_ids[0] != 109) {
+                printf("fail to query kvtag [%s] with rank %d. Expect 1 result which is 109, but got result "
+                       "%" PRIu64 ".\n",
+                       "str109str=str109str", world_rank, pdc_ids[0]);
+                step_failed = 0;
+            }
+            break;
+        case 1:
+            if (nres != 10) {
+                printf("fail to query kvtag [%s] with rank %d. Expect 10 Result, but got %d result.\n",
+                       "str09*=str09*", world_rank, nres);
+                step_failed = 1;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != i + 90) {
+                    printf("fail to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
+                           "%d, but got %" PRIu64 "\n",
+                           "str09*=str09*", world_rank, i, i + 90, pdc_ids[i]);
+                    step_failed = 1;
+                    break;
+                }
+            }
+            break;
+        case 2:
+            if (nres != 10) {
+                printf("fail to query kvtag [%s] with rank %d. Expect 10 result, but got %d result.\n",
+                       "*09str=*09str", world_rank, nres);
+                step_failed = 2;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != i * 10 + 9) {
+                    printf("fail to query kvtag [%s] with rank %d. The $d th result does not match. Expect "
+                           "%d, but got %" PRIu64 "\n",
+                           "*09str=*09str", world_rank, i, i * 10 + 9, pdc_ids[i]);
+                    step_failed = 2;
+                    break;
+                }
+            }
+            break;
+        case 3:
+            if (nres != 20) {
+                printf("fail to query kvtag [%s] with rank %d. Expected 20 results, but got %d results\n",
+                       "*09*=*09*", world_rank, nres);
+                step_failed = 3;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            uint64_t expected[20] = {9,  90,  91,  92,  93,  94,  95,  96,  97,  98,
+                                     99, 109, 209, 309, 409, 509, 609, 709, 809, 909};
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != expected[i]) {
+                    printf("fail to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
+                           "%" PRIu64 ", but got %" PRIu64 " results.\n",
+                           "*09*=*09*", world_rank, i, expected[i], pdc_ids[i]);
+                    step_failed = 3;
+                    break;
+                }
+            }
+            break;
+        case 4:
+            if (nres != 1) {
+                printf("fail to query kvtag [%s] with rank %d. Expected 1 result, but got %d results\n",
+                       "intkey=109", world_rank, nres);
+                step_failed = 4;
+            }
+            if (pdc_ids[0] != 109) {
+                printf(
+                    "fail to query kvtag [%s] with rank %d. Expected 1 result which is 109, but got %" PRIu64
+                    "\n",
+                    "intkey=109", world_rank, pdc_ids[0]);
+                step_failed = 4;
+            }
+            break;
+        case 5:
+            if (nres != 10) {
+                printf("fail to query kvtag [%s] with rank %d. Expected 10 results, but got %d results. \n",
+                       "intkey=90|~|99", world_rank, nres);
+                step_failed = 5;
+            }
+            // the result is not in order, so we need to sort the result first
+            qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
+            for (i = 0; i < nres; i++) {
+                if (pdc_ids[i] != i + 90) {
+                    printf("fail to query kvtag [%s] with rank %d. The %d th result does not match, expect "
+                           "%d but got %" PRIu64 "\n",
+                           "intkey=90|~|99", world_rank, i, i + 90, pdc_ids[i]);
+                    step_failed = 5;
+                    break;
+                }
+            }
+            break;
+        default:
+            break;
+    }
+    return step_failed;
+}
+
+void
+perform_loop_test(int num_clients, int num_servers)
+{
+    for (int i = 0; i < 1000; i++) {
+        client_insert_data(&clients[i % num_clients], i);
+    }
+
+    for (int i = 0; i < 1000; i++) {
+        int   client_rank  = i % num_clients;
+        int   query_series = i % 6;
+        char *query        = NULL;
+        switch (query_series) {
+            case 0:
+                query = "str109str=\"str109str\"";
+                break;
+            case 1:
+                query = "str09*=\"str09*\"";
+                break;
+            case 2:
+                query = "*09str=\"*09str\"";
+                break;
+            case 3:
+                query = "*09*=\"*09*\"";
+                break;
+            case 4:
+                query = "intkey=109";
+                break;
+            case 5:
+                query = "intkey=90|~|99";
+                break;
+            default:
+                break;
+        }
+
+        uint64_t *rst_ids   = NULL;
+        uint64_t  rst_count = client_perform_search(&clients[client_rank], query, &rst_ids);
+        if (validate_query_result(client_rank, rst_count, rst_ids) == -1) {
+            printf("query [%s] with rank %d succeed\n", query, client_rank);
+        }
+        else {
+            printf("query [%s] with rank %d failed\n", query, client_rank);
+        }
+    }
+}
+
+int
 main(int argc, char *argv[])
 {
     // read number of servers from first console argument
@@ -458,6 +627,7 @@ main(int argc, char *argv[])
     init_clients(num_clients, num_servers);
 
     basic_test();
+    perform_loop_test(num_clients, num_servers);
 
     // // insert data
     // for (int i = 0; i < num_clients; i++) {

@@ -154,6 +154,21 @@ For index-facilitated approach, here are the APIs you can call for different com
 
 Before using these APIs, you need to create your index first, so please remember to call `PDC_Client_insert_obj_ref_into_dart` right after a successful function call of `PDCobj_put_tag`.
 
+
+
+
+------------------------------------------------------------
+DART Suffix Tree Mode
+------------------------------------------------------------
+
+In DART, to support efficient infix search, we can enable the suffix tree mode, 
+where suffix search becomes an exact search and infix search becomes a prefix search, 
+at the cost of indexing every possible suffix of indexed keywords. 
+
+To enable the suffix tree mode, you can turn on/off this switch in CMakeLists.txt:
+`PDC_DART_SUFFIX_TREE_MODE`
+
+
 +++++++++++++++++++++++++++++++++++++++++++++
 Object and Region Management
 +++++++++++++++++++++++++++++++++++++++++++++
@@ -468,13 +483,35 @@ Also, the root CMakeLists.txt file will automatically detect if HAVE_MALLOC_USAB
 If so, the memory consumption will be more accurate (summation of both allocation and freeing). Otherwise, it will be less accurate but still usable (only measure the total memory ever allocated).
 
 
-------------------------------------------------------------
-DART Suffix Tree Mode
-------------------------------------------------------------
 
-In DART, to support efficient infix search, we can enable the suffix tree mode, 
-where suffix search becomes an exact search and infix search becomes a prefix search, 
-at the cost of indexing every possible suffix of indexed keywords. 
+-----------------------------------------------------------
+Debugging PDC on Perlmutter
+-----------------------------------------------------------
 
-To enable the suffix tree mode, you can turn on/off this switch in CMakeLists.txt:
-`PDC_DART_SUFFIX_TREE_MODE`
+First, you need to start an interactive session on Perlmutter:
+
+.. code-block:: Bash
+    salloc -N 1 -C cpu -q interactive -t 1:00:00
+
+Then, you can load the ``forge`` module:
+
+.. code-block:: Bash
+    module load forge
+
+To run a test, let's lunch pdc_server with 4 cores:
+
+.. code-block:: Bash
+    cd $PDC_HOME/build
+    srun -N 1 -n 4 ./bin/pdc_server.exe &
+
+To debug the client, you can run the following command:
+
+.. code-block:: Bash
+    cd $PDC_HOME/build
+    ddt --connect srun -N 1 -n 8 ./bin/pdc_client.exe
+
+But if you need to debug the server, you can prepend ``srun`` with ``ddt --connect``:
+
+.. code-block:: Bash
+    cd $PDC_HOME/build
+    ddt --connect srun -N 1 -n 4 ./bin/pdc_server.exe &
