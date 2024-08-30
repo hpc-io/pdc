@@ -154,8 +154,7 @@ perr_t PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t
-PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
+perr_t PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
 #endif
 
 /**
