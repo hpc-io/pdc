@@ -124,7 +124,7 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
 #else
         int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count; j++) {
+        for (int j = 0; j < sub_loop_count; j++) {
             char *suffix = substring(attr_val, j, value_str_len);
             // LOG_DEBUG("suffix: %s\n", suffix);
             ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, suffix,
@@ -364,7 +364,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
         // when suffix tree mode is ON, the secondary trie is used for indexing suffixes of the value
         // string.
         int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count; j++) {
+        for (int j = 0; j < sub_loop_count; j++) {
             char *suffix = substring(attr_val, j, value_str_len);
             ret          = delete_obj_ids_from_value_leaf(leaf_content->secondary_trie, suffix,
                                                  idx_record->type == PDC_STRING, value_str_len - j,
