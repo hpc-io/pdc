@@ -108,6 +108,7 @@ dart_determine_query_token_by_key_query(char *k_query, char **out_token, dart_op
     }
     if (affix != NULL) {
         free(affix);
+        affix = NULL;
     }
 }
 
