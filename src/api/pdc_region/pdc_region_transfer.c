@@ -1247,7 +1247,7 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
 }
 
 static perr_t
-PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requests, int size)
+PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requests, int size, MPI_Comm comm)
 {
     perr_t    ret_value = SUCCEED;
     int       index, i, j;
@@ -1287,7 +1287,7 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
              * transfer_requests[index]->data_server_id); */
             PDC_Client_transfer_request_all(n_objs, transfer_requests[index]->transfer_request->access_type,
                                             transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size,
-                                            metadata_id + index);
+                                            metadata_id + index, comm);
             // printf("transfer request towards data server %d\n", transfer_requests[index]->data_server_id);
             for (j = index; j < i; ++j) {
                 // All requests share the same bulk buffer, reference counter is also shared among all
@@ -1324,7 +1324,7 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
          * transfer_requests[index]->data_server_id); */
         PDC_Client_transfer_request_all(n_objs, transfer_requests[index]->transfer_request->access_type,
                                         transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size,
-                                        metadata_id + index);
+                                        metadata_id + index, comm);
 
         // printf("transfer request towards data server %d\n", transfer_requests[index]->data_server_id);
         for (j = index; j < size; ++j) {
@@ -1460,7 +1460,11 @@ merge_transfer_request_ids(pdcid_t *transfer_request_id, int size, pdcid_t *merg
 }
 
 perr_t
-PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
+#ifdef ENABLE_MPI
+PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, MPI_Comm comm)
+#else
+PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int comm)
+#endif
 {
     perr_t                               ret_value  = SUCCEED;
     int                                  write_size = 0, read_size = 0, posix_size = 0, merged_size = 0;
@@ -1501,26 +1505,22 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
         }
     */
     PDC_Client_transfer_pthread_cnt_add(size);
-    /* PDC_Client_transfer_pthread_create(); */
 
 #ifdef ENABLE_MPI
-    // [Tang] TODO: change to user provided comm
-    /* MPI_Comm world_comm; */
-    /* MPI_Comm_dup(MPI_COMM_WORLD, &world_comm); */
-    /* MPI_Barrier(world_comm); */
-    MPI_Barrier(MPI_COMM_WORLD);
+    if (comm != 0)
+        MPI_Barrier(comm);
 #endif
 
     // Start write requests
     if (write_size > 0)
-        PDC_Client_start_all_requests(write_transfer_requests, write_size);
+        PDC_Client_start_all_requests(write_transfer_requests, write_size, comm);
     // printf("%s: checkpoint %d\n", __func__, __LINE__);
     // Start read requests
     if (read_size > 0)
-        PDC_Client_start_all_requests(read_transfer_requests, read_size);
+        PDC_Client_start_all_requests(read_transfer_requests, read_size, comm);
     /*
         fprintf(stderr, "%s: checkpoint %d\n", __func__, __LINE__);
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(comm);
     */
 
     // For POSIX consistency, we block here until the data is received by the server
@@ -1535,13 +1535,38 @@ PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
     // fprintf(stderr, "%s: checkpoint %d\n", __func__, __LINE__);
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    /* MPI_Barrier(world_comm); */
-    /* MPI_Comm_free(&world_comm); */
+    if (comm != 0)
+        MPI_Barrier(comm);
 #endif
 
     FUNC_LEAVE(ret_value);
 }
+
+perr_t
+PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size)
+{
+    perr_t ret_value  = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCregion_transfer_start_all_common(transfer_request_id, size, 0);
+
+    FUNC_LEAVE(ret_value);
+}
+
+#ifdef ENABLE_MPI
+perr_t
+PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm)
+{
+    perr_t ret_value  = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCregion_transfer_start_all_common(transfer_request_id, size, comm);
+
+    FUNC_LEAVE(ret_value);
+}
+#endif
 
 /**
  * Input: Sorted arrays
@@ -1600,8 +1625,14 @@ static int sorted_array_unions(const int **array, const int *input_size, int n_a
     return 0;
 }
 #endif
+
 perr_t
-PDCregion_transfer_start(pdcid_t transfer_request_id)
+PDCregion_transfer_start_common(pdcid_t transfer_request_id,
+#ifdef ENABLE_MPI
+                                MPI_Comm comm)
+#else
+                                int comm)
+#endif
 {
     perr_t                ret_value = SUCCEED;
     struct _pdc_id_info * transferinfo;
@@ -1618,8 +1649,8 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
 
     if (transfer_request->metadata_id != NULL) {
-        printf("PDC Client PDCregion_transfer_start attempt to start existing transfer request @ line %d\n",
-               __LINE__);
+        printf("PDC_Client %s attempt to start existing transfer request @ line %d\n",
+               __func__, __LINE__);
         ret_value = FAIL;
         goto done;
     }
@@ -1628,12 +1659,15 @@ PDCregion_transfer_start(pdcid_t transfer_request_id)
     // Aggregated method will take care of this type of operation.
     if (transfer_request->region_partition == PDC_REGION_DYNAMIC ||
         transfer_request->region_partition == PDC_REGION_LOCAL) {
+#ifdef ENABLE_MPI
+        PDCregion_transfer_start_all_mpi(&transfer_request_id, 1, comm);
+#else
         PDCregion_transfer_start_all(&transfer_request_id, 1);
+#endif
         goto done;
     }
 
     PDC_Client_transfer_pthread_cnt_add(1);
-    /* PDC_Client_transfer_pthread_create(); */
 
     attach_local_transfer_request(transfer_request->obj_pointer, transfer_request_id);
 
@@ -1714,6 +1748,32 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
+perr_t
+PDCregion_transfer_start(pdcid_t transfer_request_id)
+{
+    perr_t ret_value  = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCregion_transfer_start_common(transfer_request_id, 0);
+
+    FUNC_LEAVE(ret_value);
+}
+
+#ifdef ENABLE_MPI
+perr_t
+PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm)
+{
+    perr_t ret_value  = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    ret_value = PDCregion_transfer_start_common(transfer_request_id, comm);
+
+    FUNC_LEAVE(ret_value);
+}
+#endif
 
 static perr_t
 release_region_buffer(char *buf, uint64_t *obj_dims, int local_ndim, uint64_t *local_offset,

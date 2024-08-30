@@ -27,6 +27,9 @@
 
 #include "pdc_public.h"
 #include "pdc_obj.h"
+#ifdef ENABLE_MPI
+#include "mpi.h"
+#endif
 
 /**************************/
 /* Library Public Struct */
@@ -113,6 +116,12 @@ pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t o
 perr_t PDCregion_transfer_start(pdcid_t transfer_request_id);
 
 perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size);
+
+#ifdef ENABLE_MPI
+perr_t PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm);
+
+perr_t PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
+#endif
 
 perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
 

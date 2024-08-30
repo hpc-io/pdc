@@ -3214,7 +3214,12 @@ done:
 
 perr_t
 PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id, char *bulk_buf,
-                                hg_size_t bulk_size, uint64_t *metadata_id)
+                                hg_size_t bulk_size, uint64_t *metadata_id,
+#ifdef ENABLE_MPI
+                                MPI_Comm comm)
+#else
+                                int comm)
+#endif
 {
     perr_t                                ret_value = SUCCEED;
     hg_return_t                           hg_ret    = HG_SUCCESS;
@@ -3278,7 +3283,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 #endif
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm);
 #endif
 
     PDC_Client_transfer_pthread_create();
@@ -3297,11 +3302,6 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_all(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
 
-    /* if (hg_progress_flag_g == -1) { */
-    /*     pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g); */
-    /*     hg_progress_flag_g = 0; */
-    /* } */
-
     /* PDC_Client_check_response(&send_context_g); */
 
     PDC_Client_wait_pthread_progress();
@@ -3312,7 +3312,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
 #endif
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm);
 #endif
 
 #ifdef PDC_TIMING
