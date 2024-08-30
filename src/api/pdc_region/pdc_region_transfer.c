@@ -106,7 +106,6 @@ typedef struct pdc_transfer_request {
     uint64_t *obj_dims;
     // Pointer to object info, can be useful sometimes. We do not want to go through PDC ID list many times.
     struct _pdc_obj_info *obj_pointer;
-
     // Tang: for merging transfer requests with transfer start_all/wait_all
     pdcid_t merged_request_id;
     int     is_done;
