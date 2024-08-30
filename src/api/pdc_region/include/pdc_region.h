@@ -100,36 +100,99 @@ perr_t PDCregion_close(pdcid_t region_id);
  */
 void PDCregion_free(struct pdc_region_info *region);
 
+/**
+ * Create a region transfer request (asynchronously)
+ *
+ * \param buf [IN]              Start point of an application buffer
+ * \param access_type[IN]       Read or write operation
+ * \param obj_id [IN]           Object ID
+ * \param local_reg  [IN]       ID of the source region
+ * \param remote_reg [IN]       ID of the target region
+ *
+ * \return ID of the newly create region transfer request
+ */
 pdcid_t PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, pdcid_t local_reg,
                                   pdcid_t remote_reg);
+
 /**
  * Start a region transfer from local region to remote region for an object on buf.
  *
- * \param buf [IN]              Start point of an application buffer
- * \param obj_id [IN]           ID of the target object
- * \param data_type [IN]        Data type of data in memory
- * \param local_reg  [IN]       ID of the source region
- * \param remote_reg [IN]       ID of the target region
+ * \param transfer_request_id [IN]           ID of the region transfer request
  *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCregion_transfer_start(pdcid_t transfer_request_id);
 
+/**
+ * Start several region transfer requests (asynchronously), can be for different objects.
+ *
+ * \param transfer_request_id [IN]           ID pointer array of the region transfer requests
+ * \param size [IN]                          Number of requests in transfer_request_id
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size);
 
 #ifdef ENABLE_MPI
+/**
+ * Start a region transfer request (asynchronously), MPI collective version for better performance at scale.
+ *
+ * \param transfer_request_id [IN]           ID of the region transfer request
+ * \param comm [IN]                          MPI communicator
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm);
 
-perr_t PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
+/**
+ * Start several region transfer requests (asynchronously), MPI collective version for better performance at scale.
+ *
+ * \param transfer_request_id [IN]           ID pointer array of the region transfer requests
+ * \param size [IN]                          Number of requests in transfer_request_id
+ * \param comm [IN]                          MPI communicator
+ *
+ * \return Non-negative on success/Negative on failure
+ */perr_t PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
 #endif
 
+/**
+ * Retrieve the status of a region transfer request
+ *
+ * \param transfer_request_id [IN]           ID of the region transfer request
+ * \param completed [OUT]                    Result
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
 
+/**
+ * Block and wait for a region transfer request to finish
+ *
+ * \param transfer_request_id [IN]           ID of the region transfer request
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id);
 
+/**
+ * Block and wait for several region transfer request to finish
+ *
+ * \param transfer_request_id [IN]           ID of the region transfer request
+ * \param size [IN]                          Number of requests in transfer_request_id
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size);
 
+/**
+ * Close a transfer request, free internal resources
+ *
+ * \param transfer_request_id [IN]           ID of the region transfer request
+ *
+ * \return Non-negative on success/Negative on failure
+ */
 perr_t PDCregion_transfer_close(pdcid_t transfer_request_id);
+
 /**
  * Map an application buffer to an object
  *
