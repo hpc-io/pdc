@@ -2025,10 +2025,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         }
     }
 
-/* #ifdef ENABLE_MPI */
-/*     t1 = MPI_Wtime(); */
-/*     fprintf(stderr, "Rank %d, Part 1 took %.6f\n", pdc_client_mpi_rank_g, t1 - t0); */
-/* #endif */
+    /* #ifdef ENABLE_MPI */
+    /*     t1 = MPI_Wtime(); */
+    /*     fprintf(stderr, "Rank %d, Part 1 took %.6f\n", pdc_client_mpi_rank_g, t1 - t0); */
+    /* #endif */
 
     transfer_requests = (pdc_transfer_request_wait_all_pkg **)malloc(
         sizeof(pdc_transfer_request_wait_all_pkg *) * total_requests);
@@ -2047,10 +2047,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     // transfer_requests[i]->data_server_id, transfer_requests[i]->metadata_id);
     /* } */
 
-/* #ifdef ENABLE_MPI */
-/*     t0 = MPI_Wtime(); */
-/*     fprintf(stderr, "Rank %d, Part 2 took %.6f\n", pdc_client_mpi_rank_g, t0 - t1); */
-/* #endif */
+    /* #ifdef ENABLE_MPI */
+    /*     t0 = MPI_Wtime(); */
+    /*     fprintf(stderr, "Rank %d, Part 2 took %.6f\n", pdc_client_mpi_rank_g, t0 - t1); */
+    /* #endif */
 
     metadata_ids = (uint64_t *)malloc(sizeof(uint64_t) * total_requests);
     index        = 0;
@@ -2096,10 +2096,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         }
     }
 
-/* #ifdef ENABLE_MPI */
-/*     t1 = MPI_Wtime(); */
-/*     fprintf(stderr, "Rank %d, Part 3 took %.6f\n", pdc_client_mpi_rank_g, t1 - t0); */
-/* #endif */
+    /* #ifdef ENABLE_MPI */
+    /*     t1 = MPI_Wtime(); */
+    /*     fprintf(stderr, "Rank %d, Part 3 took %.6f\n", pdc_client_mpi_rank_g, t1 - t0); */
+    /* #endif */
 
     if (total_requests) {
         // Freed at the wait operation (inside PDC_client_connect call)
@@ -2146,10 +2146,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         }
     }
 
-/* #ifdef ENABLE_MPI */
-/*     t0 = MPI_Wtime(); */
-/*     fprintf(stderr, "Rank %d, Part 4 took %.6f\n", pdc_client_mpi_rank_g, t0 - t1); */
-/* #endif */
+    /* #ifdef ENABLE_MPI */
+    /*     t0 = MPI_Wtime(); */
+    /*     fprintf(stderr, "Rank %d, Part 4 took %.6f\n", pdc_client_mpi_rank_g, t0 - t1); */
+    /* #endif */
     // Deal with merged read requests, need to copy a large buffer to each of the original request buf
     // TODO: Currently only supports 1D merging, so only consider 1D for now
     if (merged_xfer == 1) {
@@ -2208,10 +2208,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         remove_local_transfer_request(transfer_request->obj_pointer, transfer_request_id[i]);
     }
 
-/* #ifdef ENABLE_MPI */
-/*     t1 = MPI_Wtime(); */
-/*     fprintf(stderr, "Rank %d, Part 5 took %.6f\n", pdc_client_mpi_rank_g, t1 - t0); */
-/* #endif */
+    /* #ifdef ENABLE_MPI */
+    /*     t1 = MPI_Wtime(); */
+    /*     fprintf(stderr, "Rank %d, Part 5 took %.6f\n", pdc_client_mpi_rank_g, t1 - t0); */
+    /* #endif */
 
     for (i = 0; i < total_requests; ++i) {
         free(transfer_requests[i]);
