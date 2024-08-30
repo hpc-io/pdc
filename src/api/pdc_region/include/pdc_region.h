@@ -145,14 +145,17 @@ perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size);
 perr_t PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm);
 
 /**
- * Start several region transfer requests (asynchronously), MPI collective version for better performance at scale.
+ * Start several region transfer requests (asynchronously), MPI collective version for better performance at
+ * scale.
  *
  * \param transfer_request_id [IN]           ID pointer array of the region transfer requests
  * \param size [IN]                          Number of requests in transfer_request_id
  * \param comm [IN]                          MPI communicator
  *
  * \return Non-negative on success/Negative on failure
- */perr_t PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
+ */
+perr_t
+PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
 #endif
 
 /**
