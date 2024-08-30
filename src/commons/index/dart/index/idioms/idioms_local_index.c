@@ -211,6 +211,15 @@ idioms_local_index_create(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
     timer_start(&index_timer);
     art_tree *key_trie =
         (idx_record->is_key_suffix == 1) ? idioms->art_key_suffix_tree_g : idioms->art_key_prefix_tree_g;
+    if (strcmp(key, "str109str") == 0) {
+        printf("key: %s, len: %d\n", key, len);
+    }
+    if (strcmp(key, "str096str") == 0) {
+        printf("key: %s, len: %d\n", key, len);
+    }
+    if (strcmp(key, "str099str") == 0) {
+        printf("key: %s, len: %d\n", key, len);
+    }
     insert_into_key_trie(key_trie, key, len, idx_record);
     /**
      * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
