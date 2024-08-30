@@ -352,6 +352,7 @@ stripQuotes(const char *str)
     if (len >= 2 && str[0] == '"' && str[len - 1] == '"') {
         // Call substring to remove the first and last character
         char *stripped = substring(str, 1, len - 1);
+        // TODO: remove this
         printf("str = %s, stripped = %s\n", str, stripped);
         return stripped;
     }

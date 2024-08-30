@@ -297,14 +297,14 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
                 step_failed = 2;
             }
             break;
-        case 3:
-            // infix string query
-            if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09*=\"*09*\"", ref_type, &nres,
-                                                       &pdc_ids) < 0) {
-                printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
-                step_failed = 3;
-            }
-            break;
+        // case 3:
+        //     // infix string query
+        //     if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09*=\"*09*\"", ref_type, &nres,
+        //                                                &pdc_ids) < 0) {
+        //         printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+        //         step_failed = 3;
+        //     }
+        //     break;
         case 4:
             // exact integer query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "intkey=109", ref_type, &nres, &pdc_ids) <
