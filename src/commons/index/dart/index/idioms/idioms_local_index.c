@@ -49,6 +49,16 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         return FAIL;
     }
 
+    if (strcmp((char *)attr_val, "str109str") == 0) {
+        printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
+    }
+    if (strcmp((char *)attr_val, "str096str") == 0) {
+        printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
+    }
+    if (strcmp((char *)attr_val, "str099str") == 0) {
+        printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
+    }
+
     void *entry     = NULL;
     int   idx_found = -1; // -1 not found, 0 found.
     if (is_trie) {
