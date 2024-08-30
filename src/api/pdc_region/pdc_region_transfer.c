@@ -2150,6 +2150,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
     /*     t0 = MPI_Wtime(); */
     /*     fprintf(stderr, "Rank %d, Part 4 took %.6f\n", pdc_client_mpi_rank_g, t0 - t1); */
     /* #endif */
+
     // Deal with merged read requests, need to copy a large buffer to each of the original request buf
     // TODO: Currently only supports 1D merging, so only consider 1D for now
     if (merged_xfer == 1) {
