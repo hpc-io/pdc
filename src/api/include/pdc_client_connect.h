@@ -1102,4 +1102,7 @@ perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *att
  */
 void report_avg_server_profiling_rst();
 
+perr_t PDC_Client_transfer_pthread_create();
+perr_t PDC_Client_transfer_pthread_terminate();
+perr_t PDC_Client_transfer_pthread_cnt_add(int n);
 #endif /* PDC_CLIENT_CONNECT_H */
