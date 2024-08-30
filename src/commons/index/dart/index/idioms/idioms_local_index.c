@@ -849,7 +849,7 @@ idioms_local_index_search(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
             qType_string = "Infix";
             tok          = substring(k_query, 1, strlen(k_query) - 1);
 #ifndef PDC_DART_SFX_TREE
-            art_iter(idioms->art_key_suffix_tree_g, key_index_search_callback, (void *)idx_record);
+            art_iter(idioms->art_key_prefix_tree_g, key_index_search_callback, (void *)idx_record);
 #else
             art_iter_prefix(idioms->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                             key_index_search_callback, (void *)idx_record);

@@ -216,7 +216,8 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 3:
             if (nres != 20) {
-                printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+                printf("fail to query kvtag [%s] with rank %d, nres = %d, expected 20\n", "*09*=*09*",
+                       world_rank, nres);
                 step_failed = 3;
             }
             // the result is not in order, so we need to sort the result first
@@ -225,7 +226,9 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
                                      99, 109, 209, 309, 409, 509, 609, 709, 809, 909};
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != expected[i]) {
-                    printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+                    printf("fail to query kvtag [%s] with rank %d, pdc_ids[%d]=%" PRIu64 ", expected %" PRIu64
+                           "\n",
+                           "*09*=*09*", world_rank, i, pdc_ids[i], expected[i]);
                     step_failed = 3;
                     break;
                 }
