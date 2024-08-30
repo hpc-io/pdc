@@ -1,4 +1,5 @@
 #include "pdc_timing.h"
+#include "assert.h"
 
 #ifdef PDC_TIMING
 static double pdc_base_time;
@@ -534,4 +535,33 @@ PDC_timing_report(const char *prefix __attribute__((unused)))
 {
     return 0;
 }
+#endif // PDC_TIMING
+
+int pdc_timing_rank_g = -1;
+
+inline int
+PDC_get_rank()
+{
+#ifdef ENABLE_MPI
+    if (pdc_timing_rank_g == -1)
+        MPI_Comm_rank(MPI_COMM_WORLD, &pdc_timing_rank_g);
+    return pdc_timing_rank_g;
+#else
+    return 0;
 #endif
+}
+
+inline void
+PDC_get_time_str(char *cur_time)
+{
+    struct timespec ts;
+
+    assert(cur_time);
+
+    clock_gettime(CLOCK_REALTIME, &ts);
+    sprintf(cur_time, "%04d-%02d-%02d %02d:%02d:%02d.%06ld", 1900 + localtime(&ts.tv_sec)->tm_year,
+            localtime(&ts.tv_sec)->tm_mon + 1, localtime(&ts.tv_sec)->tm_mday, localtime(&ts.tv_sec)->tm_hour,
+            localtime(&ts.tv_sec)->tm_min, localtime(&ts.tv_sec)->tm_sec, ts.tv_nsec / 1000);
+
+    return;
+}

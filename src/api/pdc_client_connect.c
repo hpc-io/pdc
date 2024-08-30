@@ -63,8 +63,9 @@
 #include <inttypes.h>
 #include <math.h>
 #include <sys/time.h>
-
 #include "pdc_timing.h"
+
+/* #define TANG_DEBUG 1 */
 
 int                    is_client_debug_g      = 0;
 pdc_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -154,6 +155,7 @@ static hg_id_t data_server_write_check_register_id_g;
 static hg_id_t data_server_write_register_id_g;
 static hg_id_t server_checkpoint_rpc_register_id_g;
 static hg_id_t send_shm_register_id_g;
+static hg_id_t send_rpc_register_id_g;
 
 // bulk
 static hg_id_t query_partial_register_id_g;
@@ -188,7 +190,10 @@ int                        cache_count_g            = 0;
 int                        cache_total_g            = 0;
 pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
 
-static uint64_t object_selection_query_counter_g = 0;
+static uint64_t  object_selection_query_counter_g = 0;
+static pthread_t hg_progress_tid_g;
+static int       hg_progress_flag_g     = -1; // -1 thread unintialized, 0 thread created, 1 terminate thread
+static int       hg_progress_task_cnt_g = 0;
 
 /*
  *
@@ -251,6 +256,108 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static void *
+hg_progress_fn(void *foo)
+{
+    hg_return_t   ret;
+    unsigned int  actual_count;
+    hg_context_t *hg_context = (hg_context_t *)foo;
+
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("[%s] enter %s \n", cur_time, __func__);
+#endif
+
+    while (hg_progress_flag_g != 1) {
+        do {
+            /* PDC_get_time_str(cur_time); */
+            /* printf("[%s] before HG_Trigger\n", cur_time); */
+
+            ret = HG_Trigger(hg_context, 0, 1, &actual_count);
+
+            /* PDC_get_time_str(cur_time); */
+            /* printf("[%s] after HG_Trigger\n", cur_time); */
+        } while ((ret == HG_SUCCESS) && actual_count && hg_progress_flag_g != 1);
+
+        /* PDC_get_time_str(cur_time); */
+        /* printf("[%s] before HG_Progress\n", cur_time); */
+
+        if (hg_progress_flag_g != 1)
+            HG_Progress(hg_context, 100);
+
+        usleep(1000);
+        /* PDC_get_time_str(cur_time); */
+        /* printf("[%s] after HG_Progress\n", cur_time); */
+    }
+
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("[%s] leaving %s\n", cur_time, __func__);
+#endif
+
+    return (NULL);
+}
+
+perr_t
+PDC_Client_transfer_pthread_create()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    if (hg_progress_flag_g == -1) {
+        pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
+        hg_progress_flag_g = 0;
+#ifdef TANG_DEBUG
+        char cur_time[64];
+        PDC_get_time_str(cur_time);
+        printf("%s %s created pthread\n", cur_time, __func__);
+#endif
+    }
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_transfer_pthread_terminate()
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+    if (hg_progress_flag_g == 0 && hg_progress_task_cnt_g == 0) {
+        hg_progress_flag_g = 1;
+        pthread_join(hg_progress_tid_g, NULL);
+        hg_progress_flag_g = -1;
+#ifdef TANG_DEBUG
+        char cur_time[64];
+        PDC_get_time_str(cur_time);
+        printf("%s %s terminated pthread\n", cur_time, __func__);
+#endif
+    }
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_transfer_pthread_cnt_add(int n)
+{
+    perr_t ret_value = SUCCEED;
+
+    FUNC_ENTER(NULL);
+
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s %s change cnt from %d to %d\n", cur_time, __func__, hg_progress_task_cnt_g,
+           hg_progress_task_cnt_g + n);
+#endif
+    hg_progress_task_cnt_g += n;
+
+    FUNC_LEAVE(ret_value);
+}
+
 // Check if all work has been processed
 // Using global variable $atomic_work_todo_g
 perr_t
@@ -271,12 +378,21 @@ PDC_Client_check_response(hg_context_t **hg_context)
         if (hg_atomic_get32(&atomic_work_todo_g) <= 0)
             break;
 
-        hg_ret = HG_Progress(*hg_context, HG_MAX_IDLE_TIME);
+        hg_ret = HG_Progress(*hg_context, 100);
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
     ret_value = SUCCEED;
 
     FUNC_LEAVE(ret_value);
+}
+
+// Block and wait for all work processed by pthread
+inline static void
+PDC_Client_wait_pthread_progress()
+{
+    while (hg_atomic_get32(&atomic_work_todo_g) > 0) {
+        usleep(1000);
+    }
 }
 
 perr_t
@@ -550,19 +666,30 @@ client_send_transfer_request_all_rpc_cb(const struct hg_cb_info *callback_info)
 
     FUNC_ENTER(NULL);
 
+#ifdef TANG_DEBUG
+    char cur_time[64];
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
+
     region_transfer_args = (struct _pdc_transfer_request_all_args *)callback_info->arg;
     handle               = callback_info->info.forward.handle;
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: client_send_transfer_request_all_rpc_cb error with HG_Get_output\n",
-               pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: %s error with HG_Get_output\n", pdc_client_mpi_rank_g, __func__);
         region_transfer_args->ret = -1;
         goto done;
     }
 
     region_transfer_args->ret         = output.ret;
     region_transfer_args->metadata_id = output.metadata_id;
+
+    /* // Tang */
+    /* region_transfer_args->ret = 1; */
+    /* printf("PDC_CLIENT[%d]: %s ret %d meta id %llu\n", */
+    /*        pdc_client_mpi_rank_g, __func__, output.ret, output.metadata_id); */
+
 done:
     fflush(stdout);
     hg_atomic_decr32(&atomic_work_todo_g);
@@ -615,8 +742,7 @@ client_send_transfer_request_rpc_cb(const struct hg_cb_info *callback_info)
 
     ret_value = HG_Get_output(handle, &output);
     if (ret_value != HG_SUCCESS) {
-        printf("PDC_CLIENT[%d]: client_send_transfer_request_rpc_cb error with HG_Get_output\n",
-               pdc_client_mpi_rank_g);
+        printf("PDC_CLIENT[%d]: %s error with HG_Get_output\n", __func__, pdc_client_mpi_rank_g);
         region_transfer_args->ret = -1;
         goto done;
     }
@@ -904,6 +1030,76 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+static hg_return_t
+send_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t ret_value;
+
+    struct _pdc_client_lookup_args *client_lookup_args = (struct _pdc_client_lookup_args *)callback_info->arg;
+    hg_handle_t                     handle             = callback_info->info.forward.handle;
+
+    /* Get output from server*/
+    metadata_add_tag_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS) {
+        client_lookup_args->ret = -1;
+        PGOTO_ERROR(HG_OTHER_ERROR, "==PDC_CLIENT[%d]: metadata_add_tag_rpc_cb error with HG_Get_output",
+                    pdc_client_mpi_rank_g);
+    }
+    client_lookup_args->ret = output.ret;
+
+done:
+    fflush(stdout);
+    hg_atomic_decr32(&atomic_work_todo_g);
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_send_rpc(int server_id)
+{
+    perr_t                         ret_value = SUCCEED;
+    hg_return_t                    hg_ret    = 0;
+    struct _pdc_client_lookup_args lookup_args;
+    hg_handle_t                    handle;
+    send_rpc_in_t                  in;
+
+    FUNC_ENTER(NULL);
+
+    if (server_id < 0 || server_id >= pdc_server_num_g)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: %s invalid server ID %d", pdc_client_mpi_rank_g, __func__,
+                    server_id);
+
+    // Debug statistics for counting number of messages sent to each server.
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "==CLIENT[%d]: ERROR with PDC_Client_try_lookup_server", pdc_client_mpi_rank_g);
+
+    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, send_rpc_register_id_g, &handle);
+
+    in.value = pdc_client_mpi_rank_g;
+
+    hg_ret = HG_Forward(handle, send_rpc_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "==PDC_CLIENT[%d]: - HG_Forward Error!", pdc_client_mpi_rank_g);
+
+    // No need to wait
+    // Wait for response from server
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+
+    PDC_Client_check_response(&send_context_g);
+
+done:
+    fflush(stdout);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
 // Callback function for  HG_Forward()
 // Gets executed after a call to HG_Trigger and the RPC has completed
 static hg_return_t
@@ -1129,7 +1325,7 @@ PDC_Client_check_bulk(hg_context_t *hg_context)
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_get32(&bulk_todo_g) <= 0)
             break;
-        hg_ret = HG_Progress(hg_context, HG_MAX_IDLE_TIME);
+        hg_ret = HG_Progress(hg_context, 100);
 
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
@@ -1291,6 +1487,7 @@ drc_access_again:
     data_server_write_register_id_g        = PDC_data_server_write_register(*hg_class);
     server_checkpoint_rpc_register_id_g    = PDC_server_checkpoint_rpc_register(*hg_class);
     send_shm_register_id_g                 = PDC_send_shm_register(*hg_class);
+    send_rpc_register_id_g                 = PDC_send_rpc_register(*hg_class);
 
     // bulk
     query_partial_register_id_g = PDC_query_partial_register(*hg_class);
@@ -1504,6 +1701,11 @@ PDC_Client_init()
         server_mem_usage_g  = (int64_t *)calloc(pdc_server_num_g, sizeof(int64_t));
     }
 
+    /* if (hg_progress_flag_g == -1) { */
+    /*     hg_progress_flag_g = 0; */
+    /*     pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g); */
+    /* } */
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -1549,6 +1751,13 @@ PDC_Client_finalize()
 
     if (pdc_server_info_g != NULL)
         free(pdc_server_info_g);
+
+    // Terminate thread
+    if (hg_progress_flag_g == 0) {
+        hg_progress_flag_g = 1;
+        pthread_join(hg_progress_tid_g, NULL);
+        hg_progress_flag_g = -1;
+    }
 
 #ifndef ENABLE_MPI
     for (i = 0; i < pdc_server_num_g; i++) {
@@ -3014,20 +3223,28 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     int                                   i;
     hg_handle_t                           client_send_transfer_request_all_handle;
     struct _pdc_transfer_request_all_args transfer_args;
+    char                                  cur_time[64];
 
     FUNC_ENTER(NULL);
+
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] enter %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
+
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
     if (!(access_type == PDC_WRITE || access_type == PDC_READ)) {
         ret_value = FAIL;
-        printf("Invalid PDC type in function PDC_Client_transfer_request_all @ %d\n", __LINE__);
+        printf("Invalid PDC type in function %s @ %d\n", __func__, __LINE__);
         goto done;
     }
     in.n_objs         = n_objs;
     in.access_type    = access_type;
     in.total_buf_size = bulk_size;
+    in.client_id      = pdc_client_mpi_rank_g;
 
     // Compute metadata server id
     // meta_server_id    = PDC_get_server_by_obj_id(obj_id[0], pdc_server_num_g);
@@ -3047,12 +3264,25 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, &bulk_size, HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL,
-                    "PDC_Client_transfer_request_all(): Could not create local bulk data handle @ line %d\n",
-                    __LINE__);
+        PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
+
+    hg_atomic_set32(&atomic_work_todo_g, 1);
 
     hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
                         &transfer_args, &in);
+
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] %s: forwarded to %d\n", cur_time, pdc_client_mpi_rank_g, __func__,
+           data_server_id);
+#endif
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
+    PDC_Client_transfer_pthread_create();
+
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
         pdc_timings.PDCtransfer_request_start_all_read_rpc += MPI_Wtime() - start;
@@ -3066,8 +3296,24 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_all(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
-    hg_atomic_set32(&atomic_work_todo_g, 1);
-    PDC_Client_check_response(&send_context_g);
+
+    /* if (hg_progress_flag_g == -1) { */
+    /*     pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g); */
+    /*     hg_progress_flag_g = 0; */
+    /* } */
+
+    /* PDC_Client_check_response(&send_context_g); */
+
+    PDC_Client_wait_pthread_progress();
+
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] %s: received response\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3081,8 +3327,7 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
     }
 #endif
     /*
-        printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
-               __LINE__);
+        printf("%s checkpoint, first value is %d @ line %d\n", __func__,((int *)buf)[0], __LINE__);
     */
     for (i = 0; i < n_objs; ++i) {
         metadata_id[i] = transfer_args.metadata_id + i;
@@ -3091,6 +3336,12 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request failed... @ line %d\n", __LINE__);
 
     HG_Destroy(client_send_transfer_request_all_handle);
+
+#ifdef TANG_DEBUG
+    PDC_get_time_str(cur_time);
+    printf("%s PDC_CLIENT[%d] leave %s\n", cur_time, pdc_client_mpi_rank_g, __func__);
+#endif
+
 done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -3116,8 +3367,8 @@ PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, 
     in.total_buf_size = total_buf_size;
 
     // Compute metadata server id
-    // fprintf(stderr, "PDC_Client_transfer_request_metadata_query2[%d]: metdata_id = %u, total_buf_size =
-    // %lu\n", pdc_client_mpi_rank_g, metadata_server_id, total_buf_size);
+    // fprintf(stderr, "%s [%d]: metdata_id = %u, total_buf_size =
+    // %lu\n", __func__, pdc_client_mpi_rank_g, metadata_server_id, total_buf_size);
     debug_server_id_count[metadata_server_id]++;
 
     hg_class = HG_Context_get_class(send_context_g);
@@ -3134,10 +3385,7 @@ PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, 
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&(in.total_buf_size), HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL,
-                    "PDC_Client_transfer_request_metadata_query2(): Could not create local bulk data handle "
-                    "@ line %d\n",
-                    __LINE__);
+        PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
 
     hg_ret = HG_Forward(client_send_transfer_request_metadata_query2_handle,
                         client_send_transfer_request_metadata_query2_rpc_cb, &transfer_args, &in);
@@ -3205,10 +3453,7 @@ PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, i
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&(in.total_buf_size), HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL,
-                    "PDC_Client_transfer_request_metadata_query(): Could not create local bulk data handle @ "
-                    "line %d\n",
-                    __LINE__);
+        PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
 
     hg_ret = HG_Forward(client_send_transfer_request_metadata_query_handle,
                         client_send_transfer_request_metadata_query_rpc_cb, &transfer_args, &in);
@@ -3233,7 +3478,7 @@ PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, i
     pdc_timings.PDCtransfer_request_metadata_query_rpc += end - start;
     pdc_timestamp_register(pdc_client_transfer_request_metadata_query_timestamps, function_start, end);
 #endif
-    // fprintf(stderr, "PDC_Client_transfer_request_metadata_query: checkpoint %d\n", __LINE__);
+    // fprintf(stderr, "%s: checkpoint %d\n", __func__, __LINE__);
 
 done:
     fflush(stdout);
@@ -3249,8 +3494,16 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     hg_class_t *                               hg_class;
     hg_handle_t                                client_send_transfer_request_wait_all_handle;
     struct _pdc_transfer_request_wait_all_args transfer_args;
+    char                                       cur_time[64];
 
     FUNC_ENTER(NULL);
+
+    /* if (hg_progress_flag_g == 0) { */
+    /*     hg_progress_flag_g = 1; */
+    /*     pthread_join(hg_progress_tid_g, NULL); */
+    /*     hg_progress_flag_g = -1; */
+    /* } */
+
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
@@ -3276,10 +3529,7 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&transfer_request_id, (hg_size_t *)&(in.total_buf_size),
                             HG_BULK_READWRITE, &(in.local_bulk_handle));
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(
-            FAIL,
-            "PDC_Client_transfer_request_wait_all(): Could not create local bulk data handle @ line %d\n",
-            __LINE__);
+        PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
 
     hg_ret = HG_Forward(client_send_transfer_request_wait_all_handle,
                         client_send_transfer_request_wait_all_rpc_cb, &transfer_args, &in);
@@ -3297,9 +3547,7 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
 
     /*
 
-        printf("PDC_Client_transfer_request() checkpoint, first value is %d @ line %d\n", ((int *)buf)[0],
-
-               __LINE__);
+        printf("%s checkpoint, first value is %d @ line %d\n", ((int *)buf)[0], __func__, __LINE__);
     */
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "PDC_CLIENT: transfer request wait all failed... @ line %d\n", __LINE__);
@@ -3332,6 +3580,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     int                               i;
     hg_handle_t                       client_send_transfer_request_handle;
     struct _pdc_transfer_request_args transfer_args;
+    char                              cur_time[64];
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
@@ -3340,11 +3589,11 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
 #endif
     if (!(access_type == PDC_WRITE || access_type == PDC_READ)) {
         ret_value = FAIL;
-        printf("Invalid PDC type in function PDC_Client_transfer_request @ %d\n", __LINE__);
+        printf("Invalid PDC type in function %s @ %d\n", __func__, __LINE__);
         goto done;
     }
 
-    // printf("rank = %d, PDC_Client_transfer_request_start data_server_id = %u\n", pdc_client_mpi_rank_g,
+    // printf("rank = %d, %s data_server_id = %u\n", pdc_client_mpi_rank_g, __func__,
     // data_server_id);
     in.access_type = access_type;
     in.remote_unit = unit;
@@ -3388,9 +3637,9 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
                             &(in.local_bulk_handle));
 
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL,
-                    "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
-                    __LINE__);
+        PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
+
+    hg_atomic_set32(&atomic_work_todo_g, 1);
 
     hg_ret = HG_Forward(client_send_transfer_request_handle, client_send_transfer_request_rpc_cb,
                         &transfer_args, &in);
@@ -3405,11 +3654,20 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     start = MPI_Wtime();
 #endif
 
+    PDC_Client_transfer_pthread_create();
+
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward() @ line %d\n",
                     __LINE__);
-    hg_atomic_set32(&atomic_work_todo_g, 1);
-    PDC_Client_check_response(&send_context_g);
+    /* hg_atomic_set32(&atomic_work_todo_g, 1); */
+    /* PDC_Client_check_response(&send_context_g); */
+
+    /* if (hg_progress_flag_g == -1) { */
+    /*     pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g); */
+    /*     hg_progress_flag_g = 0; */
+    /* } */
+
+    PDC_Client_wait_pthread_progress();
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3454,9 +3712,7 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_se
                        transfer_request_status_register_id_g, &client_send_transfer_request_status_handle);
 
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL,
-                    "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
-                    __LINE__);
+        PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
 
     hg_ret = HG_Forward(client_send_transfer_request_status_handle,
                         client_send_transfer_request_status_rpc_cb, &transfer_args, &in);
@@ -3486,8 +3742,17 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     transfer_request_wait_in_t             in;
     hg_handle_t                            client_send_transfer_request_wait_handle;
     struct _pdc_transfer_request_wait_args transfer_args;
+    char                                   cur_time[64];
 
     FUNC_ENTER(NULL);
+
+    // Join the thread of trasfer start
+    /* if (hg_progress_flag_g == 0) { */
+    /*     hg_progress_flag_g = 1; */
+    /*     pthread_join(hg_progress_tid_g, NULL); */
+    /*     hg_progress_flag_g = -1; */
+    /* } */
+
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
@@ -3506,9 +3771,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
                        transfer_request_wait_register_id_g, &client_send_transfer_request_wait_handle);
 
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL,
-                    "PDC_Client_transfer_request(): Could not create local bulk data handle @ line %d\n",
-                    __LINE__);
+        PGOTO_ERROR(FAIL, "%s: Could not create local bulk data handle @ line %d\n", __func__, __LINE__);
 
     hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_wait_rpc_cb,
                         &transfer_args, &in);

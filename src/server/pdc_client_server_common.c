@@ -63,6 +63,8 @@ hg_thread_pool_t *hg_test_thread_pool_fs_g = NULL;
 uint64_t pdc_id_seq_g = PDC_SERVER_ID_INTERVEL;
 // actual value for each server is set by PDC_Server_init()
 
+struct timeval last_cache_activity_timeval_g;
+
 #include "pdc_server_region_request_handler.h"
 
 hg_return_t
@@ -1852,6 +1854,28 @@ HG_TEST_RPC_CB(metadata_delete, handle)
 }
 
 /* static hg_return_t */
+// send_rpc_cb(hg_handle_t handle)
+HG_TEST_RPC_CB(send_rpc, handle)
+{
+    send_rpc_in_t  in;
+    send_rpc_out_t out;
+    hg_return_t    ret_value = HG_SUCCESS;
+
+    FUNC_ENTER(NULL);
+
+    HG_Get_input(handle, &in);
+    fprintf(stderr, "==PDC_Server[]: %s received value from client %d\n", __func__, in.value);
+
+    out.value = 1;
+    HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/* static hg_return_t */
 // metadata_add_tag_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(metadata_add_tag, handle)
 {
@@ -1928,7 +1952,14 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
-    PDC_Server_add_kvtag(&in, &out);
+    if (strcmp(in.kvtag.name, "PDC_NOOP") != 0) {
+        PDC_Server_add_kvtag(&in, &out);
+    }
+    else {
+        printf("==PDC_SERVER[]: received NOOP\n");
+        out.ret = 1;
+    }
+
     ret_value = HG_Respond(handle, NULL, NULL, &out);
 
     HG_Free_input(handle, &in);
@@ -2113,6 +2144,7 @@ done:
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
+
 #ifdef ENABLE_MULTITHREAD
 static HG_THREAD_RETURN_TYPE
 pdc_region_write_out_progress(void *arg)
@@ -2169,6 +2201,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+
 // enter this function, transfer is done, data is pushed to buffer
 static hg_return_t
 obj_map_region_release_bulk_transfer_thread_cb(const struct hg_cb_info *hg_cb_info)
@@ -6558,6 +6591,7 @@ HG_TEST_THREAD_CB(query_read_obj_name_client_rpc)
 HG_TEST_THREAD_CB(send_client_storage_meta_rpc)
 HG_TEST_THREAD_CB(send_shm_bulk_rpc)
 HG_TEST_THREAD_CB(send_data_query_rpc)
+HG_TEST_THREAD_CB(send_rpc)
 
 HG_TEST_THREAD_CB(send_nhits)
 HG_TEST_THREAD_CB(send_bulk_rpc)
@@ -6579,6 +6613,7 @@ PDC_FUNC_DECLARE_REGISTER(notify_region_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_query)
 PDC_FUNC_DECLARE_REGISTER(container_query)
 PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
+PDC_FUNC_DECLARE_REGISTER(send_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
