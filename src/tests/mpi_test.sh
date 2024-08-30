@@ -5,7 +5,7 @@
 
 extra_cmd=""
 
-if [[ "$HOSTNAME" == "*nid*" ]]; then
+if [[ "$SUPERCOMPUTER" == "perlmutter" ]]; then
     extra_cmd="--mem=25600 --cpu_bind=cores --overlap"
 fi
 
