@@ -46,6 +46,7 @@ hg_thread_mutex_t lock_list_mutex_g;
 hg_thread_mutex_t meta_buf_map_mutex_g;
 hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
+extern struct timeval last_cache_activity_timeval_g;
 
 #define PAGE_SIZE                    4096
 #define ADDR_MAX                     1024
@@ -453,6 +454,16 @@ typedef struct {
     pdc_metadata_transfer_t ret;
 } metadata_query_out_t;
 
+/* Define send_rpc_in_t */
+typedef struct {
+    int value;
+} send_rpc_in_t;
+
+/* Define send_rpc_out_t */
+typedef struct {
+    int value;
+} send_rpc_out_t;
+
 /* Define metadata_add_tag_in_t */
 typedef struct {
     uint64_t          obj_id;
@@ -803,6 +814,7 @@ typedef struct transfer_request_all_in_t {
     uint64_t total_buf_size;
     int32_t  n_objs;
     uint8_t  access_type;
+    int      client_id;
 } transfer_request_all_in_t;
 
 /* Define transfer_request_all_out_t */
@@ -1751,6 +1763,36 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->t_meta_index);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_send_rpc_in_t */
+static HG_INLINE hg_return_t
+hg_proc_send_rpc_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t    ret;
+    send_rpc_in_t *struct_data = (send_rpc_in_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->value);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_send_rpc_out_t */
+static HG_INLINE hg_return_t
+hg_proc_send_rpc_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t     ret;
+    send_rpc_out_t *struct_data = (send_rpc_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->value);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -2804,6 +2846,11 @@ hg_proc_transfer_request_all_in_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_uint8_t(proc, &struct_data->access_type);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -4259,6 +4306,7 @@ hg_id_t PDC_metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
+hg_id_t PDC_send_rpc_register(hg_class_t *hg_class);
 
 hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_all_register(hg_class_t *hg_class);

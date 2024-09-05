@@ -1883,7 +1883,7 @@ PDC_Server_loop(hg_context_t *hg_context)
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_cas32(&close_server_g, 1, 1))
             break;
-        hg_ret = HG_Progress(hg_context, 1000);
+        hg_ret = HG_Progress(hg_context, 200);
 
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
@@ -2012,6 +2012,7 @@ PDC_Server_mercury_register()
     PDC_metadata_add_kvtag_register(hg_class_g);
     PDC_metadata_get_kvtag_register(hg_class_g);
     PDC_metadata_del_kvtag_register(hg_class_g);
+    PDC_send_rpc_register(hg_class_g);
 
     // bulk
     PDC_query_partial_register(hg_class_g);

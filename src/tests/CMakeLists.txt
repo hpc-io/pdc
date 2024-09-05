@@ -132,6 +132,7 @@ set(PROGRAMS
   #query_vpic_exyz_nopreload
   #query_vpic_exyz_preload
   query_data
+  producer_waitall
   )
 
 # TODO: Check if import_vpic.c is needed. If yes, we have to add the following :
