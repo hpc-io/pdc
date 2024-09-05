@@ -263,6 +263,7 @@ add_test(NAME obj_buf           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME obj_tags          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
 add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get)
 add_test(NAME kvtag_query     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
+add_test(NAME idioms_ci_test     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
 add_test(NAME obj_info          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_info )
 add_test(NAME obj_put_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
 add_test(NAME obj_get_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_get_data )
@@ -318,13 +319,9 @@ add_test(NAME read_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 add_test(NAME read_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int8)
 # add_test(NAME query_data        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./query_data o 1)
 #add_test(NAME region_transfer_write_read2     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_checkpoint_restart_test.sh ./region_transfer_write_only ./region_transfer_read_only)
-
 #add_test(NAME vpicio_bdcats     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio_old ./bdcats_old)
 add_test(NAME vpicio_bdcats_transfer_request     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
 
-if(BUILD_MPI_TESTING)
-add_test(NAME idioms_ci_test     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
-else()
 
 set_tests_properties(pdc_init           PROPERTIES LABELS serial )
 #set_tests_properties(create_prop        PROPERTIES LABELS serial )
@@ -348,6 +345,7 @@ set_tests_properties(obj_buf            PROPERTIES LABELS serial )
 set_tests_properties(obj_tags           PROPERTIES LABELS serial )
 set_tests_properties(kvtag_add_get      PROPERTIES LABELS serial )
 set_tests_properties(kvtag_query        PROPERTIES LABELS serial )
+set_tests_properties(idioms_ci_test     PROPERTIES LABELS serial )
 set_tests_properties(obj_info           PROPERTIES LABELS serial )
 set_tests_properties(obj_put_data       PROPERTIES LABELS serial )
 set_tests_properties(obj_get_data       PROPERTIES LABELS serial )
@@ -415,9 +413,6 @@ set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS seria
 #add_test(NAME vpicio_query_vpic_exyz_preload WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic_exyz_preload )
 #add_test(NAME vpicio_query_vpic_exyz_nopreload WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic_exyz_nopreload )
 
-if(BUILD_MPI_TESTING)
-set_tests_properties(idioms_ci_test     PROPERTIES LABELS serial )
-else()
 
 if(BUILD_MPI_TESTING)
     add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int)
