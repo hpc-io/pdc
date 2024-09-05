@@ -55,7 +55,7 @@ endif()
 # Version information
 #------------------------------------------------------------------------------
 set(PDC_VERSION_MAJOR "0")
-set(PDC_VERSION_MINOR "1")
+set(PDC_VERSION_MINOR "6")
 set(PDC_VERSION_PATCH "0")
 set(PDC_PACKAGE "pdc")
 set(PDC_PACKAGE_NAME "PDC")
