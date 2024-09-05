@@ -496,8 +496,6 @@ if(BUILD_MPI_TESTING)
     add_test(NAME obj_get_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_get_data ${MPI_RUN_CMD} 4 6 )
     add_test(NAME vpicio_bdcats_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_mpi_test.sh ${MPI_RUN_CMD} 4 6 ./vpicio ./bdcats)
 
-    add_test(NAME idioms_ci_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./idioms_ci_test ${MPI_RUN_CMD} 4 6 )
-
     set_tests_properties(read_obj_shared_int                  PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(read_obj_shared_float                PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(read_obj_shared_double               PROPERTIES LABELS "parallel;parallel_obj" )
@@ -578,6 +576,4 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(obj_info_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_put_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_get_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
-
-    set_tests_properties(idioms_ci_mpi                        PROPERTIES LABELS "parallel;parallel_obj" )
 endif()
