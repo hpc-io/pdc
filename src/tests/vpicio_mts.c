@@ -269,7 +269,11 @@ main(int argc, char **argv)
             printf("[%s] Transfer create time: %.5e\n", cur_time, t0 - t1);
 #endif
 
+#ifdef ENABLE_MPI
+        if (PDCregion_transfer_start_all_mpi(transfer_requests, 8, MPI_COMM_WORLD) != SUCCEED) {
+#else
         if (PDCregion_transfer_start_all(transfer_requests, 8) != SUCCEED) {
+#endif
             printf("Failed to start transfer requests\n");
             return FAIL;
         }
