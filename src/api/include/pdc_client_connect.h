@@ -1035,6 +1035,7 @@ perr_t PDC_Client_del_metadata(pdcid_t id, int is_cont);
  */
 DART *get_dart_g();
 
+int get_dart_insert_count();
 /**
  * Return the abstract of the server by server ID
  *
