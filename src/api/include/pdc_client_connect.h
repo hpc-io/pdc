@@ -1044,6 +1044,22 @@ void dart_retrieve_server_info_cb(dart_server *target_server);
  * on the secondary index associated with the primary index
  * specified by attr_name;
  *
+ * The query string can be of the following format:
+ * String Queries:
+ * 1. Exact: key=\"value\"
+ * 2. Prefix: key*=\"value*\"
+ * 3. Suffix: *key=\"*value\"
+ * 4. Infix: *key*=\"*value*\"
+ *
+ * Integer Queries:
+ * 1. Exact: key=value
+ * 2. Range: key=value1|~|value2 (inclusive on both ends, '|' stands for inclusion)
+ * 3. Range: key=value1|~ (inclusive on the lower end)
+ * 4. Range: key=~|value2 (inclusive on the upper end)
+ * 5. Range: key=value1~value2 (exclusive on both ends)
+ * 6. Range: key=~value2 (exclusive on the upper end)
+ * 7. Range: key=value1~ (exclusive on the lower end)
+ *
  * \param hash_algo     [IN]    name of the hashing algorithm
  * \param query_string [IN]    Name of the attribute
  * \param n_res [OUT]   Number of object IDs

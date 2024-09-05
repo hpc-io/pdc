@@ -153,10 +153,10 @@ if(BUILD_MPI_TESTING)
   set(MPI_PROGRAMS
     kvtag_range_query_scale
     kvtag_affix_query_scale
-    # kvtag_query_mpi
     kvtag_add_get_benchmark
     kvtag_add_get_scale
     llsm_idioms_bench
+    idioms_ci_test
   )
 
   foreach(program ${MPI_PROGRAMS})
@@ -321,6 +321,10 @@ add_test(NAME read_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 #add_test(NAME vpicio_bdcats     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio_old ./bdcats_old)
 add_test(NAME vpicio_bdcats_transfer_request     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
 
+if(BUILD_MPI_TESTING)
+add_test(NAME idioms_ci_test     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
+else()
+
 set_tests_properties(pdc_init           PROPERTIES LABELS serial )
 #set_tests_properties(create_prop        PROPERTIES LABELS serial )
 #set_tests_properties(set_prop           PROPERTIES LABELS serial )
@@ -411,6 +415,10 @@ set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS seria
 #add_test(NAME vpicio_query_vpic_exyz_nopreload WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./query_vpic_exyz_nopreload )
 
 if(BUILD_MPI_TESTING)
+set_tests_properties(idioms_ci_test     PROPERTIES LABELS serial )
+else()
+
+if(BUILD_MPI_TESTING)
     add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int)
     add_test(NAME read_obj_shared_float WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 float)
     add_test(NAME read_obj_shared_double WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 double)
@@ -486,10 +494,13 @@ if(BUILD_MPI_TESTING)
 #   add_test(NAME obj_dim_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_dim ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_buf_mpi     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_buf ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_tags ${MPI_RUN_CMD} 4 6 )
+    # add_test(NAME idioms_ci_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./idioms_ci_test ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_info ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_put_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_put_data ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_get_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_get_data ${MPI_RUN_CMD} 4 6 )
     add_test(NAME vpicio_bdcats_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_mpi_test.sh ${MPI_RUN_CMD} 4 6 ./vpicio ./bdcats)
+
+    add_test(NAME idioms_ci_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./idioms_ci_test ${MPI_RUN_CMD} 4 6 )
 
     set_tests_properties(read_obj_shared_int                  PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(read_obj_shared_float                PROPERTIES LABELS "parallel;parallel_obj" )
@@ -567,7 +578,10 @@ if(BUILD_MPI_TESTING)
 #   set_tests_properties(obj_dim_mpi                          PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_buf_mpi                          PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_tags_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
+    # set_tests_properties(idioms_ci_mpi                        PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_info_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_put_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_get_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
+
+    set_tests_properties(idioms_ci_mpi                        PROPERTIES LABELS "parallel;parallel_obj" )
 endif()

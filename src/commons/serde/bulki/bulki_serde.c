@@ -1,4 +1,5 @@
 #include "bulki_serde.h"
+#include "bulki_vle_util.h"
 
 // clang-format off
 /**
@@ -39,29 +40,39 @@
 
 /********************** Serialize ************************** */
 
+// | 7 | 6 | 5 | 4 | 3 | 2 | 1 |        0      |
+// |---|---|---|---|---|---|---|---------------|
+// |   Unused  | Type (5 bits) | Class (1 bit) |
+uint8_t
+serialize_type_class(pdc_c_var_type_t type, pdc_c_var_class_t class)
+{
+    // Ensure the type and class values fit within their bit allocations
+    if (type >= PDC_TYPE_COUNT || class >= PDC_CLS_COUNT) {
+        return 0; // Handle invalid inputs, or use an appropriate error handling approach
+    }
+
+    // Pack the type and class into a single byte
+    uint8_t serialized = (type & 0x1F) | ((class & 0x01) << 5);
+
+    return serialized;
+}
+
 void *
 BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *offset)
 {
     // printf("offset: %zu\n", *offset);
     // serialize the size
     uint64_t size = (uint64_t)get_BULKI_Entity_size(entity);
-    memcpy(buffer + *offset, &size, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    *offset += BULKI_vle_encode_uint(size, buffer + *offset);
 
-    // serialize the class
-    int8_t pdc_class = (int8_t)(entity->pdc_class);
-    memcpy(buffer + *offset, &pdc_class, sizeof(int8_t));
-    *offset += sizeof(int8_t);
-
-    // serialize the type
-    int8_t pdc_type = (int8_t)(entity->pdc_type);
-    memcpy(buffer + *offset, &pdc_type, sizeof(int8_t));
-    *offset += sizeof(int8_t);
+    // serialize the type_class
+    uint8_t type_class = serialize_type_class(entity->pdc_type, entity->pdc_class);
+    memcpy(buffer + *offset, &type_class, sizeof(uint8_t));
+    *offset += sizeof(uint8_t);
 
     // serialize the count
     uint64_t count = (uint64_t)(entity->count);
-    memcpy(buffer + *offset, &count, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    *offset += BULKI_vle_encode_uint(count, buffer + *offset);
 
     // printf("PRE-ser: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
     //        entity->pdc_class, entity->pdc_type, entity->count, *offset);
@@ -78,13 +89,13 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
         }
     }
     else if (entity->pdc_class <= PDC_CLS_ARRAY) {
-        if (pdc_type == PDC_BULKI) { // BULKI
+        if (entity->pdc_type == PDC_BULKI) { // BULKI
             for (size_t i = 0; i < entity->count; i++) {
                 BULKI *bulki = ((BULKI *)entity->data) + i;
                 BULKI_serialize_to_buffer(bulki, buffer, offset);
             }
         }
-        else if (pdc_type == PDC_BULKI_ENT) { // BULKI_Entity
+        else if (entity->pdc_type == PDC_BULKI_ENT) { // BULKI_Entity
             for (size_t i = 0; i < entity->count; i++) {
                 BULKI_Entity *bulki_entity = ((BULKI_Entity *)entity->data) + i;
                 BULKI_Entity_serialize_to_buffer(bulki_entity, buffer, offset);
@@ -106,12 +117,19 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
 }
 
 void *
-BULKI_Entity_serialize(BULKI_Entity *entity)
+BULKI_Entity_serialize(BULKI_Entity *entity, size_t *size)
 {
-    void * buffer = calloc(1, get_BULKI_Entity_size(entity));
-    size_t offset = 0;
+    size_t estimated_size = get_BULKI_Entity_size(entity);
+    void * buffer         = calloc(1, estimated_size);
+    size_t offset         = 0;
     BULKI_Entity_serialize_to_buffer(entity, buffer, &offset);
-    // printf("offset: %zu\n", offset);
+    if (offset < estimated_size) {
+        void *small_buffer = realloc(buffer, offset);
+        if (small_buffer != NULL) {
+            buffer = small_buffer;
+        }
+    }
+    *size = offset;
     return buffer;
 }
 
@@ -119,20 +137,16 @@ void *
 BULKI_serialize_to_buffer(BULKI *bulki, void *buffer, size_t *offset)
 {
     // serialize the total size
-    memcpy(buffer + *offset, &bulki->totalSize, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    *offset += BULKI_vle_encode_uint(bulki->totalSize, buffer + *offset);
 
     // serialize the number of keys
-    memcpy(buffer + *offset, &bulki->numKeys, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    *offset += BULKI_vle_encode_uint(bulki->numKeys, buffer + *offset);
 
     // serialize the header size
-    memcpy(buffer + *offset, &bulki->header->headerSize, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    *offset += BULKI_vle_encode_uint(bulki->header->headerSize, buffer + *offset);
 
     // serialize the data size
-    memcpy(buffer + *offset, &bulki->data->dataSize, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    *offset += BULKI_vle_encode_uint(bulki->data->dataSize, buffer + *offset);
 
     // serialize the header
     for (size_t i = 0; i < bulki->numKeys; i++) {
@@ -141,8 +155,7 @@ BULKI_serialize_to_buffer(BULKI *bulki, void *buffer, size_t *offset)
 
     // serialize the data offset
     uint64_t ofst = (uint64_t)(*offset);
-    memcpy(buffer + *offset, &ofst, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    *offset += BULKI_vle_encode_uint(ofst, buffer + *offset);
 
     // serialize the data
     for (size_t i = 0; i < bulki->numKeys; i++) {
@@ -150,28 +163,35 @@ BULKI_serialize_to_buffer(BULKI *bulki, void *buffer, size_t *offset)
     }
 
     // serialize the data offset
-    ofst = (uint64_t)(*offset) + sizeof(uint64_t);
-    memcpy(buffer + *offset, &ofst, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    ofst = (uint64_t)(*offset);
+    *offset += BULKI_vle_encode_uint(ofst, buffer + *offset);
 
     return buffer;
 }
 
 void *
-BULKI_serialize(BULKI *data)
+BULKI_serialize(BULKI *data, size_t *size)
 {
-    void * buffer = calloc(1, get_BULKI_size(data));
-    size_t offset = 0;
+    size_t estimated_size = get_BULKI_size(data);
+    void * buffer         = calloc(1, estimated_size);
+    size_t offset         = 0;
     BULKI_serialize_to_buffer(data, buffer, &offset);
-    // printf("offset: %zu\n", offset);
+    if (offset < estimated_size) {
+        void *small_buffer = realloc(buffer, offset);
+        if (small_buffer != NULL) {
+            buffer = small_buffer;
+        }
+    }
+    *size = offset;
     return buffer;
 }
 
 void
 BULKI_Entity_serialize_to_file(BULKI_Entity *entity, FILE *fp)
 {
-    void *buffer = BULKI_Entity_serialize(entity);
-    fwrite(buffer, get_BULKI_Entity_size(entity), 1, fp);
+    size_t size;
+    void * buffer = BULKI_Entity_serialize(entity, &size);
+    fwrite(buffer, size, 1, fp);
     free(buffer);
     fclose(fp);
 }
@@ -179,13 +199,22 @@ BULKI_Entity_serialize_to_file(BULKI_Entity *entity, FILE *fp)
 void
 BULKI_serialize_to_file(BULKI *bulki, FILE *fp)
 {
-    void *buffer = BULKI_serialize(bulki);
-    fwrite(buffer, get_BULKI_size(bulki), 1, fp);
+    size_t size   = 0;
+    void * buffer = BULKI_serialize(bulki, &size);
+    fwrite(buffer, size, 1, fp);
     free(buffer);
     fclose(fp);
 }
 
 /********************** Deserialize ************************** */
+
+void
+deserialize_type_class(uint8_t byte, pdc_c_var_type_t *type, pdc_c_var_class_t *class)
+{
+    // Extract the type and class from the byte
+    *type  = (pdc_c_var_type_t)(byte & 0x1F);
+    *class = (pdc_c_var_class_t)((byte >> 5) & 0x01);
+}
 
 BULKI_Entity *
 BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
@@ -193,28 +222,21 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
     // printf("offset: %zu\n", *offset);
     BULKI_Entity *entity = malloc(sizeof(BULKI_Entity));
     // deserialize the size
-    uint64_t size;
-    memcpy(&size, buffer + *offset, sizeof(uint64_t));
-    entity->size = (size_t)size;
-    *offset += sizeof(uint64_t);
+    size_t   bytes_read;
+    uint64_t size = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
+    entity->size  = (size_t)size;
+    *offset += bytes_read;
 
-    // deserialize the class
-    int8_t pdc_class;
-    memcpy(&pdc_class, buffer + *offset, sizeof(int8_t));
-    *offset += sizeof(int8_t);
-    entity->pdc_class = (pdc_c_var_class_t)pdc_class;
-
-    // deserialize the type
-    int8_t pdc_type;
-    memcpy(&pdc_type, buffer + *offset, sizeof(int8_t));
-    *offset += sizeof(int8_t);
-    entity->pdc_type = (pdc_c_var_type_t)pdc_type;
+    // deserialize the type_class
+    uint8_t type_class;
+    memcpy(&type_class, buffer + *offset, sizeof(uint8_t));
+    *offset += sizeof(uint8_t);
+    deserialize_type_class(type_class, &entity->pdc_type, &entity->pdc_class);
 
     // deserialize the count
-    uint64_t count;
-    memcpy(&count, buffer + *offset, sizeof(uint64_t));
-    entity->count = (size_t)count;
-    *offset += sizeof(uint64_t);
+    uint64_t count = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
+    entity->count  = (size_t)count;
+    *offset += bytes_read;
 
     // printf("PRE-DE: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
     //    entity->pdc_class, entity->pdc_type, entity->count, *offset);
@@ -234,14 +256,14 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
         }
     }
     else if (entity->pdc_class <= PDC_CLS_ARRAY) {
-        if (pdc_type == PDC_BULKI) { // BULKI
+        if (entity->pdc_type == PDC_BULKI) { // BULKI
             BULKI *bulki_array = malloc(sizeof(BULKI) * entity->count);
             for (size_t i = 0; i < entity->count; i++) {
                 memcpy(bulki_array + i, BULKI_deserialize_from_buffer(buffer, offset), sizeof(BULKI));
             }
             entity->data = bulki_array;
         }
-        else if (pdc_type == PDC_BULKI_ENT) { // BULKI_Entity
+        else if (entity->pdc_type == PDC_BULKI_ENT) { // BULKI_Entity
             BULKI_Entity *bulki_entity_array = malloc(sizeof(BULKI_Entity) * entity->count);
             for (size_t i = 0; i < entity->count; i++) {
                 memcpy(bulki_entity_array + i, BULKI_Entity_deserialize_from_buffer(buffer, offset),
@@ -270,27 +292,24 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
 {
     BULKI *bulki = malloc(sizeof(BULKI));
     // deserialize the total size
-    uint64_t totalSize;
-    memcpy(&totalSize, buffer + *offset, sizeof(uint64_t));
-    bulki->totalSize = totalSize;
-    *offset += sizeof(uint64_t);
+    size_t   bytes_read;
+    uint64_t totalSize = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
+    bulki->totalSize   = totalSize;
+    *offset += bytes_read;
     // printf("totalSize: %zu\n", bulki->totalSize);
 
     // deserialize the number of keys
-    uint64_t numKeys;
-    memcpy(&numKeys, buffer + *offset, sizeof(uint64_t));
-    bulki->numKeys = numKeys;
-    *offset += sizeof(uint64_t);
+    uint64_t numKeys = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
+    bulki->numKeys   = numKeys;
+    *offset += bytes_read;
 
     // deserialize the header size
-    uint64_t headerSize;
-    memcpy(&headerSize, buffer + *offset, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    uint64_t headerSize = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
+    *offset += bytes_read;
 
     // deserialize the data size
-    uint64_t dataSize;
-    memcpy(&dataSize, buffer + *offset, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    uint64_t dataSize = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
+    *offset += bytes_read;
 
     // deserialize the header
     BULKI_Header *header = malloc(sizeof(BULKI_Header));
@@ -302,14 +321,15 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
     }
 
     // deserialize the data offset
-    uint64_t dataOffset;
-    memcpy(&dataOffset, buffer + *offset, sizeof(uint64_t));
+    uint64_t dataOffset = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
     // check the data offset
     if (((size_t)dataOffset) != *offset) {
-        printf("Error: data offset does not match the expected offset.\n");
+        printf("Error1: data offset does not match the expected offset. Expected: %zu, Found: %zu, "
+               "bytes_read: %zu \n",
+               (size_t)dataOffset, *offset, bytes_read);
         return NULL;
     }
-    *offset += sizeof(uint64_t);
+    *offset += bytes_read;
 
     bulki->header = header;
 
@@ -322,15 +342,17 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
                sizeof(BULKI_Entity));
     }
     // check the total size
-    memcpy(&dataOffset, buffer + *offset, sizeof(uint64_t));
-    *offset += sizeof(uint64_t);
+    dataOffset = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
     // printf("dataOffset: %zu, offset: %zu\n", dataOffset, *offset);
 
     // check the data offset
     if (((size_t)dataOffset) != *offset) {
-        printf("Error: data offset does not match the expected offset.\n");
+        printf("Error2: data offset does not match the expected offset. Expected: %zu, Found: %zu, "
+               "bytes_read: %zu\n",
+               (size_t)dataOffset, *offset, bytes_read);
         return NULL;
     }
+    *offset += bytes_read;
 
     bulki->data = data;
 

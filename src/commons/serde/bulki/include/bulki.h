@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <inttypes.h>
 #include "pdc_generic.h"
-
 /**
  * @brief BULKI_Entity structure
  *

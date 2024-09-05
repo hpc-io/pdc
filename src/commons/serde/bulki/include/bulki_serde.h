@@ -20,10 +20,11 @@
  * @brief Serialize a BULKI_Entity structure to a buffer
  *
  * @param entity Pointer to the BULKI_Entity structure
+ * @param size Pass in the pointer and you will get the size of the buffer
  *
  * @return Pointer to the buffer
  */
-void *BULKI_Entity_serialize(BULKI_Entity *entity);
+void *BULKI_Entity_serialize(BULKI_Entity *entity, size_t *size);
 
 /**
  * @brief Serialize a BULKI_Entity structure to a buffer
@@ -50,10 +51,11 @@ void BULKI_Entity_serialize_to_file(BULKI_Entity *bulki_entity, FILE *fp);
  * @brief Serialize a BULKI structure to a buffer
  *
  * @param data Pointer to the BULKI structure
+ * @param size Pass in the pointer and you will get the size of the buffer
  *
  * @return Pointer to the buffer
  */
-void *BULKI_serialize(BULKI *data);
+void *BULKI_serialize(BULKI *data, size_t *size);
 
 /**
  * @brief Serialize a BULKI structure to a buffer

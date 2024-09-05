@@ -49,6 +49,16 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         return FAIL;
     }
 
+    // if (strcmp((char *)attr_val, "str109str") == 0) {
+    //     printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
+    // }
+    // if (strcmp((char *)attr_val, "str096str") == 0) {
+    //     printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
+    // }
+    // if (strcmp((char *)attr_val, "str099str") == 0) {
+    //     printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
+    // }
+
     void *entry     = NULL;
     int   idx_found = -1; // -1 not found, 0 found.
     if (is_trie) {
@@ -114,7 +124,7 @@ insert_value_into_second_level_index(key_index_leaf_content_t *leaf_content,
                                              idx_record->obj_ids, idx_record->num_obj_ids);
 #else
         int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count; j++) {
+        for (int j = 0; j < sub_loop_count; j++) {
             char *suffix = substring(attr_val, j, value_str_len);
             // LOG_DEBUG("suffix: %s\n", suffix);
             ret = insert_obj_ids_into_value_leaf(leaf_content->secondary_trie, suffix,
@@ -201,6 +211,15 @@ idioms_local_index_create(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
     timer_start(&index_timer);
     art_tree *key_trie =
         (idx_record->is_key_suffix == 1) ? idioms->art_key_suffix_tree_g : idioms->art_key_prefix_tree_g;
+    // if (strcmp(key, "str109str") == 0) {
+    //     printf("key: %s, len: %d\n", key, len);
+    // }
+    // if (strcmp(key, "str096str") == 0) {
+    //     printf("key: %s, len: %d\n", key, len);
+    // }
+    // if (strcmp(key, "str099str") == 0) {
+    //     printf("key: %s, len: %d\n", key, len);
+    // }
     insert_into_key_trie(key_trie, key, len, idx_record);
     /**
      * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
@@ -345,7 +364,7 @@ delete_value_from_second_level_index(key_index_leaf_content_t *leaf_content,
         // when suffix tree mode is ON, the secondary trie is used for indexing suffixes of the value
         // string.
         int sub_loop_count = value_str_len;
-        for (int j = 1; j < sub_loop_count; j++) {
+        for (int j = 0; j < sub_loop_count; j++) {
             char *suffix = substring(attr_val, j, value_str_len);
             ret          = delete_obj_ids_from_value_leaf(leaf_content->secondary_trie, suffix,
                                                  idx_record->type == PDC_STRING, value_str_len - j,
@@ -849,7 +868,7 @@ idioms_local_index_search(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
             qType_string = "Infix";
             tok          = substring(k_query, 1, strlen(k_query) - 1);
 #ifndef PDC_DART_SFX_TREE
-            art_iter(idioms->art_key_suffix_tree_g, key_index_search_callback, (void *)idx_record);
+            art_iter(idioms->art_key_prefix_tree_g, key_index_search_callback, (void *)idx_record);
 #else
             art_iter_prefix(idioms->art_key_suffix_tree_g, (unsigned char *)tok, strlen(tok),
                             key_index_search_callback, (void *)idx_record);
