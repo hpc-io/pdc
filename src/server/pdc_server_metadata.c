@@ -1200,11 +1200,8 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     perr_t          ret_value = SUCCEED;
     pdc_metadata_t *metadata;
     uint32_t *      hash_key, i;
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
-    int unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-#endif
+    int             unlocked = 0;
+
     // DEBUG
     int debug_flag = 0;
 
@@ -1265,15 +1262,13 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     pdc_hash_table_entry_head *lookup_value;
     pdc_metadata_t *           found_identical;
 
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
-    unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-#endif
-
     if (debug_flag == 1)
         printf("checking hash table with key=%d\n", *hash_key);
 
+#ifdef ENABLE_MULTITHREAD
+    // Obtain lock for hash table
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
     if (metadata_hash_table_g != NULL) {
         // lookup
         lookup_value = hash_table_lookup(metadata_hash_table_g, hash_key);

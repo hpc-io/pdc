@@ -226,7 +226,12 @@ perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_serv
 int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 
 perr_t PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id,
-                                       char *bulk_buf, hg_size_t bulk_size, uint64_t *metadata_id);
+                                       char *bulk_buf, hg_size_t bulk_size, uint64_t *metadata_id,
+#ifdef ENABLE_MPI
+                                       MPI_Comm comm);
+#else
+                                       int comm);
+#endif
 
 perr_t PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, int n_objs,
                                                   uint32_t metadata_server_id, uint8_t is_write,
