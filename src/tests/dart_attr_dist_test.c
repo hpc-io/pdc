@@ -259,7 +259,8 @@ main(int argc, char *argv[])
             if (j % size == rank) {
                 // insert object reference into DART
                 timer_start(&timer_dart);
-                PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, ref_type, j);
+                PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, strlen(value), PDC_STRING,
+                                                    ref_type, j);
                 timer_pause(&timer_dart);
                 duration_dart_ms += (double)timer_delta_ms(&timer_dart);
             }

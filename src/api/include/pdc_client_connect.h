@@ -193,6 +193,8 @@ struct _dart_perform_one_thread_param {
 
 #define PDC_CLIENT_DATA_SERVER() ((pdc_client_mpi_rank_g / pdc_nclient_per_server_g) % pdc_server_num_g)
 
+// PDC_pe_info_t *PDC_get_pe_info();
+
 uint32_t PDC_get_client_data_server();
 
 /***************************************/
@@ -1033,12 +1035,13 @@ perr_t PDC_Client_del_metadata(pdcid_t id, int is_cont);
  */
 DART *get_dart_g();
 
+int get_dart_insert_count();
 /**
  * Return the abstract of the server by server ID
  *
  *
  */
-dart_server dart_retrieve_server_info_cb(uint32_t serverId);
+void dart_retrieve_server_info_cb(dart_server *target_server);
 
 /**
  * Search through dart index with key-value pair.
@@ -1046,6 +1049,22 @@ dart_server dart_retrieve_server_info_cb(uint32_t serverId);
  * if the value is not specified, we just retrieve all the indexed data
  * on the secondary index associated with the primary index
  * specified by attr_name;
+ *
+ * The query string can be of the following format:
+ * String Queries:
+ * 1. Exact: key=\"value\"
+ * 2. Prefix: key*=\"value*\"
+ * 3. Suffix: *key=\"*value\"
+ * 4. Infix: *key*=\"*value*\"
+ *
+ * Integer Queries:
+ * 1. Exact: key=value
+ * 2. Range: key=value1|~|value2 (inclusive on both ends, '|' stands for inclusion)
+ * 3. Range: key=value1|~ (inclusive on the lower end)
+ * 4. Range: key=~|value2 (inclusive on the upper end)
+ * 5. Range: key=value1~value2 (exclusive on both ends)
+ * 6. Range: key=~value2 (exclusive on the upper end)
+ * 7. Range: key=value1~ (exclusive on the lower end)
  *
  * \param hash_algo     [IN]    name of the hashing algorithm
  * \param query_string [IN]    Name of the attribute
@@ -1080,12 +1099,15 @@ perr_t PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, ch
  * \param hash_algo     [IN]    name of the hashing algorithm
  * \param attr_key [IN]    Name of the attribute
  * \param attr_value [IN]   Value of the attribute
+ * \param attr_vsize [IN]    Size of the attribute value
+ * \param attr_vtype [IN]    Type of the attribute value
  * \param ref_type  [IN]    The reference type of the object, e.g. PRIMARY_ID, SECONDARY_ID, SERVER_ID
  * \param data      [IN]    Associated value along with the key-value pair.
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                           size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                            dart_object_ref_type_t ref_type, uint64_t data);
 
 /**
@@ -1094,12 +1116,15 @@ perr_t PDC_Client_delete_obj_ref_from_dart(dart_hash_algo_t hash_algo, char *att
  * \param hash_algo     [IN]    name of the hashing algorithm
  * \param attr_key [IN]    Name of the attribute
  * \param attr_value [IN]   Value of the attribute
+ * \param attr_vsize [IN]    Size of the attribute value
+ * \param attr_vtype [IN]    Type of the attribute value
  * \param ref_type  [IN]    The reference type of the object, e.g. PRIMARY_ID, SECONDARY_ID, SERVER_ID
  * \param data      [IN]    Associated value along with the key-value pair.
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, char *attr_val,
+perr_t PDC_Client_insert_obj_ref_into_dart(dart_hash_algo_t hash_algo, char *attr_key, void *attr_val,
+                                           size_t attr_vsize, pdc_c_var_type_t attr_vtype,
                                            dart_object_ref_type_t ref_type, uint64_t data);
 
 /**

@@ -158,6 +158,9 @@ destroy_node(art_node *n)
 int
 art_tree_destroy(art_tree *t)
 {
+    if (t == NULL) {
+        return 0;
+    }
     destroy_node(t->root);
     return 0;
 }

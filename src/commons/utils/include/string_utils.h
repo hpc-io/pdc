@@ -188,4 +188,18 @@ int split_string(const char *str, const char *delim, char ***result, int *result
  */
 char **gen_random_strings(int count, int minlen, int maxlen, int alphabet_size);
 
+/**
+ * determine if the given token is a quoted string.
+ * @param token
+ * @return 1 if it is a quoted string, 0 if not.
+ */
+int is_quoted_string(char *token);
+
+/**
+ * remove the quotes from a string
+ * @param str
+ * @return
+ */
+char *stripQuotes(const char *str);
+
 #endif // PDC_STRING_UTILS_H

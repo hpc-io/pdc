@@ -328,3 +328,36 @@ gen_random_strings(int count, int minlen, int maxlen, int alphabet_size)
     }
     return result;
 }
+
+int
+is_quoted_string(char *token)
+{
+    if (startsWith(token, "\"") || endsWith(token, "\"")) {
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * remove the quotes from a string
+ */
+char *
+stripQuotes(const char *str)
+{
+    if (str == NULL) {
+        return NULL;
+    }
+
+    int len = strlen(str);
+    if (len >= 2 && str[0] == '"' && str[len - 1] == '"') {
+        // Call substring to remove the first and last character
+        char *stripped = substring(str, 1, len - 1);
+        // TODO: remove this
+        printf("str = %s, stripped = %s\n", str, stripped);
+        return stripped;
+    }
+    else {
+        // No quotes to strip, return a copy of the original string
+        return strdup(str); // strdup allocates memory for the copy
+    }
+}

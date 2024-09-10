@@ -50,7 +50,7 @@ int PDC_timing_report(const char *prefix);
  *
  * \param pdc_name [IN]         Name of the PDC
  *
- * \return PDC id on success/Zero on failure
+ * \return PDC id on success / -1 on failure
  */
 pdcid_t PDCinit(const char *pdc_name);
 

@@ -181,6 +181,12 @@ PDC_free(void *mem)
     return PDC_free_knowing_old_size(mem, _old_size);
 }
 
+void
+PDC_free_void(void *mem)
+{
+    PDC_free(mem);
+}
+
 size_t
 PDC_get_global_mem_usage()
 {

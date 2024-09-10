@@ -11,57 +11,15 @@
 #include "pdc_hash.h"
 #include "pdc_compare.h"
 #include "dart_core.h"
-#include "pdc_hash-table.h"
-
-typedef struct {
-    // On the leaf of ART, we maintain a hash table of IDs of all objects containing that key.
-    HashTable *server_id_obj_id_table;
-
-    dart_indexed_value_type_t data_type;
-    // Also, for key lookup ART, we also maintain the pointer to the value tree
-    void *extra_prefix_index;
-    void *extra_suffix_index;
-    void *extra_range_index;
-    void *extra_infix_index;
-} key_index_leaf_content;
-
-typedef struct pdc_art_iterator_param {
-    char *   query_str;
-    char *   level_one_infix;
-    char *   level_two_infix;
-    uint32_t total_count;
-    Set *    out;
-} pdc_art_iterator_param_t;
+#include "pdc_hash_table.h"
+#include "bin_file_ops.h"
 
 /**
- * @brief Initialize the ART index
+ * @brief Initialize local index
+ * @param num_server  The number of servers
+ * @param server_id  The server ID
  */
-void PDC_Server_dart_init();
-
-// /**
-//  * @brief Create the metadata index
-//  * @param in [IN] Input parameters for the create operation
-//  * @param out [OUT] Output parameters for the create operation
-//  * @return perr_t SUCCESS on success, FAIL on failure
-//  */
-// perr_t PDC_Server_metadata_index_create(metadata_index_create_in_t *in, metadata_index_create_out_t *out);
-
-// /**
-//  * @brief Delete the metadata index
-//  * @param in [IN] Input parameters for the delete operation
-//  * @param out [OUT] Output parameters for the delete operation
-//  * @return perr_t SUCCESS on success, FAIL on failure
-//  */
-// perr_t PDC_Server_metadata_index_delete(metadata_index_delete_in_t *in, metadata_index_delete_out_t *out);
-
-// /**
-//  * @brief Search the metadata index
-//  * @param in [IN] Input parameters for the search operation
-//  * @param out [OUT] Output parameters for the search operation
-//  * @return perr_t SUCCESS on success, FAIL on failure
-//  */
-// perr_t PDC_Server_metadata_index_search(metadata_index_search_in_t *in, metadata_index_search_out_t *out,
-//                                         uint64_t *n_obj_ids_ptr, uint64_t **buf_ptrs);
+void PDC_Server_metadata_index_init(uint32_t num_server, uint32_t server_id);
 
 /**
  * @brief Get the server information for the metadata index
@@ -80,5 +38,20 @@ perr_t PDC_Server_dart_get_server_info(dart_get_server_info_in_t *in, dart_get_s
 perr_t PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t * in,
                                           dart_perform_one_server_out_t *out, uint64_t *n_obj_ids_ptr,
                                           uint64_t **buf_ptrs);
+/**
+ * @brief Dumping the index to a file.
+ * @param checkpoint_dir  The directory path to store the index file.
+ * @param serverID  The server ID.
+ * @return perr_t SUCCESS on success, FAIL on failure
+ */
+perr_t metadata_index_dump(char *checkpoint_dir, uint32_t serverID);
+
+/**
+ * @brief Recovering the index from a file. Please initialize idioms before calling this function.
+ * @param checkpiont_dir  The directory path to store the index file.
+ * @param num_server  The number of servers.
+ * @param serverID  The server ID.
+ */
+perr_t metadata_index_recover(char *checkpiont_dir, int num_server, uint32_t serverID);
 
 #endif /* PDC_SERVER_METADATA_INDEX_H */
