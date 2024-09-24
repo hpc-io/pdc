@@ -436,7 +436,7 @@ perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, pdc_var_
 perr_t PDCobj_del_tag(pdcid_t obj_id, char *tag_name);
 
 /**
- * Get object datatype 
+ * Get object datatype
  *
  * \param obj_id [IN]           Object ID
  *

@@ -1257,11 +1257,12 @@ PDCobj_del(pdcid_t obj_id)
     FUNC_LEAVE(ret_value);
 }
 
-pdc_var_type_t PDCobj_get_dtype(pdcid_t obj_id)
+pdc_var_type_t
+PDCobj_get_dtype(pdcid_t obj_id)
 {
     struct _pdc_id_info * info;
     struct _pdc_obj_info *object;
-    pdc_var_type_t dtype;
+    pdc_var_type_t        dtype;
 
     FUNC_ENTER(NULL);
 
@@ -1270,7 +1271,7 @@ pdc_var_type_t PDCobj_get_dtype(pdcid_t obj_id)
         fprintf(stderr, "%s : cannnot find obj id @ line %d\n", __func__, __LINE__);
 
     object = (struct _pdc_obj_info *)(info->obj_ptr);
-    dtype = object->obj_pt->obj_prop_pub->type;
+    dtype  = object->obj_pt->obj_prop_pub->type;
 
     return dtype;
 }
