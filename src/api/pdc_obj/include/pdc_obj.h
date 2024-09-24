@@ -435,4 +435,14 @@ perr_t PDCobj_get_tag(pdcid_t obj_id, char *tag_name, void **tag_value, pdc_var_
  */
 perr_t PDCobj_del_tag(pdcid_t obj_id, char *tag_name);
 
+/**
+ * Get object datatype 
+ *
+ * \param obj_id [IN]           Object ID
+ *
+ * \return PDC datatype
+ */
+
+pdc_var_type_t PDCobj_get_dtype(obj_id);
+
 #endif /* PDC_OBJ_H */

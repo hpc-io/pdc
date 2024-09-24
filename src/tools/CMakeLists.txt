@@ -98,6 +98,8 @@ set(PROGRAMS
   pdc_import
   pdc_export
   pdc_ls
+  pdc_region_push
+  pdc_region_pull
   )
 
 add_library(cjson cjson/cJSON.c)

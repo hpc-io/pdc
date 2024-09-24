@@ -22,6 +22,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+#include "pdc_obj.h"
 #include "pdc_utlist.h"
 #include "pdc_config.h"
 #include "pdc_malloc.h"
@@ -30,7 +31,6 @@
 #include "pdc_cont_pkg.h"
 #include "pdc_prop_pkg.h"
 #include "pdc_obj_pkg.h"
-#include "pdc_obj.h"
 #include "pdc_interface.h"
 #include "pdc_transforms_pkg.h"
 #include "pdc_analysis_pkg.h"
@@ -1255,4 +1255,22 @@ PDCobj_del(pdcid_t obj_id)
 
     // done:
     FUNC_LEAVE(ret_value);
+}
+
+pdc_var_type_t PDCobj_get_dtype(pdcid_t obj_id)
+{
+    struct _pdc_id_info * info;
+    struct _pdc_obj_info *object;
+    pdc_var_type_t dtype;
+
+    FUNC_ENTER(NULL);
+
+    info = PDC_find_id(obj_id);
+    if (info == NULL)
+        fprintf(stderr, "%s : cannnot find obj id @ line %d\n", __func__, __LINE__);
+
+    object = (struct _pdc_obj_info *)(info->obj_ptr);
+    dtype = object->obj_pt->obj_prop_pub->type;
+
+    return dtype;
 }
