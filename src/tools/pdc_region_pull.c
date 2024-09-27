@@ -34,13 +34,13 @@
 int
 main(int argc, char **argv)
 {
-    int i, ndim, cnt, len;
-    uint64_t dims[4], offset_local[4]={0,0,0,0}, offset_remote[4], count[4], total_size, unit_size = 4;
+    int      i, ndim, cnt, len;
+    uint64_t dims[4], offset_local[4] = {0, 0, 0, 0}, offset_remote[4], count[4], total_size, unit_size = 4;
     uint64_t obj_dims[4];
-    pdcid_t pdc_id, cont_prop, cont_id, obj_prop, region_local, region_remote, obj_id, transfer_request;
-    char obj_name[256], *fname;
-    void *data;
-    perr_t ret;
+    pdcid_t  pdc_id, cont_prop, cont_id, obj_prop, region_local, region_remote, obj_id, transfer_request;
+    char     obj_name[256], *fname;
+    void *   data;
+    perr_t   ret;
     pdc_var_type_t dtype;
 
     fname = argv[1];
@@ -62,7 +62,7 @@ main(int argc, char **argv)
     fread(count, sizeof(uint64_t), ndim, file);
     fread(&total_size, sizeof(uint64_t), 1, file);
 
-    data = (void*)malloc(total_size); 
+    data = (void *)malloc(total_size);
 
     fread(data, sizeof(char), total_size, file);
     fclose(file);
@@ -95,7 +95,7 @@ main(int argc, char **argv)
 
     obj_id = PDCobj_create(cont_id, obj_name, obj_prop);
 
-    region_local = PDCregion_create(ndim, offset_local, count);
+    region_local  = PDCregion_create(ndim, offset_local, count);
     region_remote = PDCregion_create(ndim, offset_remote, count);
 
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj_id, region_local, region_remote);

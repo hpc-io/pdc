@@ -34,17 +34,18 @@
 int
 main(int argc, char **argv)
 {
-    int i, ndim, cnt;
-    uint64_t *obj_dims, dims[4], offset_local[4]={0,0,0,0}, offset_remote[4], count[4], total_size, unit_size = 4;
-    pdcid_t pdc_id, cont_prop, cont_id, region_local, region_remote, obj_id, transfer_request;
-    char *cont_name = "c1", *obj_name = "x", out_path[256], out_name[256];
-    void *data;
-    perr_t ret;
+    int       i, ndim, cnt;
+    uint64_t *obj_dims, dims[4], offset_local[4] = {0, 0, 0, 0}, offset_remote[4], count[4], total_size,
+                                 unit_size = 4;
+    pdcid_t        pdc_id, cont_prop, cont_id, region_local, region_remote, obj_id, transfer_request;
+    char *         cont_name = "c1", *obj_name = "x", out_path[256], out_name[256];
+    void *         data;
+    perr_t         ret;
     pdc_var_type_t dtype;
 
     if (argc > 1) {
         cont_name = argv[1];
-        obj_name = argv[2];
+        obj_name  = argv[2];
     }
     else {
         printf("Usage:\n ./pdc_region_push cont_name, obj_name, ndim, offsets[], counts[]");
@@ -65,16 +66,16 @@ main(int argc, char **argv)
         exit(-1);
     }
 
-    dtype = PDCobj_get_dtype(obj_id);
+    dtype     = PDCobj_get_dtype(obj_id);
     unit_size = PDC_get_var_type_size(dtype);
 
     PDCobj_get_dims(obj_id, &ndim, &obj_dims);
 
     ndim = atoi(argv[3]);
-    cnt = 4;
+    cnt  = 4;
     for (i = 0; i < ndim; i++)
         offset_remote[i] = atoll(argv[cnt++]);
-            
+
     total_size = unit_size;
     for (i = 0; i < ndim; i++) {
         count[i] = atoll(argv[cnt++]);
@@ -89,9 +90,9 @@ main(int argc, char **argv)
         printf("%llu ", count[i]);
     printf("\n");
 
-    data = (void*)malloc(total_size); 
+    data = (void *)malloc(total_size);
 
-    region_local = PDCregion_create(ndim, offset_local, count);
+    region_local  = PDCregion_create(ndim, offset_local, count);
     region_remote = PDCregion_create(ndim, offset_remote, count);
 
     transfer_request = PDCregion_transfer_create(data, PDC_READ, obj_id, region_local, region_remote);
