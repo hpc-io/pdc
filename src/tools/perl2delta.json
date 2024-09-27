@@ -1,0 +1,13 @@
+{
+    "input": {
+        "source": {
+            "id": "6bdc7956-fc0f-4ad2-989c-7aa5ee643a79",
+            "path": "/pscratch/sd/h/houhun/pdc_region_push_data"
+        },
+        "destination": {
+            "id": "7e936164-de58-4e3d-85da-21aa23c07169",
+            "path": "~/test"
+        },
+        "recursive_tx": true
+    }
+}
