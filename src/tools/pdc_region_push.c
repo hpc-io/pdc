@@ -43,9 +43,9 @@ main(int argc, char **argv)
     void *         data;
     perr_t         ret;
     pdc_var_type_t dtype;
-    struct  timeval t0;
-    struct  timeval t1;
-    double  elapsed;
+    struct timeval t0;
+    struct timeval t1;
+    double         elapsed;
 
     if (argc > 1) {
         cont_name = argv[1];
