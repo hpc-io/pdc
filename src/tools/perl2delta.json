@@ -6,7 +6,7 @@
         },
         "destination": {
             "id": "7e936164-de58-4e3d-85da-21aa23c07169",
-            "path": "~/test"
+            "path": "/scratch/bbsn/tang/pdc_region_push_data"
         },
         "recursive_tx": true
     }
