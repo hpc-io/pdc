@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <math.h>
+#include <sys/time.h>
 
 #include "pdc.h"
 
@@ -38,17 +39,20 @@ main(int argc, char **argv)
     uint64_t *obj_dims, dims[4], offset_local[4] = {0, 0, 0, 0}, offset_remote[4], count[4], total_size,
                                  unit_size = 4;
     pdcid_t        pdc_id, cont_prop, cont_id, region_local, region_remote, obj_id, transfer_request;
-    char *         cont_name = "c1", *obj_name = "x", out_path[256], out_name[256];
+    char *         cont_name = "c1", *obj_name = "x", *out_path, out_name[256];
     void *         data;
     perr_t         ret;
     pdc_var_type_t dtype;
+    struct  timeval t0;
+    struct  timeval t1;
+    double  elapsed;
 
     if (argc > 1) {
         cont_name = argv[1];
         obj_name  = argv[2];
     }
     else {
-        printf("Usage:\n ./pdc_region_push cont_name, obj_name, ndim, offsets[], counts[]");
+        printf("Usage:\n ./pdc_region_push cont_name, obj_name, ndim, offsets[], counts[], outpath");
         return 0;
     }
 
@@ -81,6 +85,7 @@ main(int argc, char **argv)
         count[i] = atoll(argv[cnt++]);
         total_size *= count[i];
     }
+    out_path = argv[cnt];
 
     printf("Transfer obj name [%s]\ndtype:%s\noffsets: ", obj_name, get_enum_name_by_dtype(dtype));
     for (i = 0; i < ndim; i++)
@@ -88,7 +93,7 @@ main(int argc, char **argv)
     printf("\ncounts: ");
     for (i = 0; i < ndim; i++)
         printf("%llu ", count[i]);
-    printf("\n");
+    printf("\nWriting to %s\n", out_path);
 
     data = (void *)malloc(total_size);
 
@@ -116,9 +121,10 @@ main(int argc, char **argv)
     }
 
     // Write data to a bin file
-    sprintf(out_path, "./pdc_region_push_data"); // harded coded for now
     mkdir(out_path, 0755);
     sprintf(out_name, "%s/data.bin", out_path); // harded coded for now
+                                                //
+    gettimeofday(&t0, NULL);
 
     FILE *file = fopen(out_name, "wb");
     if (file == NULL) {
@@ -141,6 +147,10 @@ main(int argc, char **argv)
     fwrite(&total_size, sizeof(uint64_t), 1, file);
     fwrite(data, sizeof(char), total_size, file);
     fclose(file);
+
+    gettimeofday(&t1, NULL);
+    elapsed = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec) / 1000000.0;
+    printf("Write data took %.2fs\n", elapsed);
 
     free(data);
     ret = PDCobj_close(obj_id);

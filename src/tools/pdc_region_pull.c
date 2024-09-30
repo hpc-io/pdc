@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <getopt.h>
 #include <math.h>
+#include <sys/time.h>
 
 #include "pdc.h"
 
@@ -42,6 +43,9 @@ main(int argc, char **argv)
     void *   data;
     perr_t   ret;
     pdc_var_type_t dtype;
+    struct  timeval t0;
+    struct  timeval t1;
+    double  elapsed;
 
     fname = argv[1];
 
@@ -100,6 +104,8 @@ main(int argc, char **argv)
 
     transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj_id, region_local, region_remote);
 
+    gettimeofday(&t0, NULL);
+
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
         printf("Failed to start transfer for region_xx\n");
@@ -111,6 +117,10 @@ main(int argc, char **argv)
         printf("Failed to wait transfer\n");
         exit(-1);
     }
+
+    gettimeofday(&t1, NULL);
+    elapsed = t1.tv_sec - t0.tv_sec + (t1.tv_usec - t0.tv_usec) / 1000000.0;
+    printf("Pull data to PDC took %.2fs\n", elapsed);
 
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
