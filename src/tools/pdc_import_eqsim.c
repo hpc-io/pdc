@@ -20,7 +20,7 @@ main(int argc, char **argv)
     herr_t status;
 
     int i, j, count, total_count, rank, nproc, ssi_downsample, rec_downsample, batchsize, iter, opensees_size;
-    int start_x[4096], start_y[4096], max_start_x=0, max_start_y=0;
+    int start_x[4096], start_y[4096], max_start_x = 0, max_start_y = 0;
     hsize_t  offset[4], size[4], local_offset[4], local_size[4];
     hsize_t  dims[4] = {4634, 19201, 12801, 1}, chunk_size[4] = {400, 600, 400, 1};
     uint64_t pdc_dims[3], pdc_offset[3], pdc_size[3], pdc_local_offset[3], pdc_local_size[3];
@@ -127,7 +127,6 @@ main(int argc, char **argv)
     pdc_dims[1] = max_start_x + chunk_size[1];
     pdc_dims[2] = max_start_y + chunk_size[2];
     fprintf(stderr, "Rank %d: create obj dims %llu %llu %llu\n", rank, pdc_dims[0], pdc_dims[1], pdc_dims[2]);
-    
 
     for (i = 0; i < 3; i++) {
         pdc_offset[i]       = (uint64_t)offset[i];
