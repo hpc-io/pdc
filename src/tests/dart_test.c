@@ -216,13 +216,15 @@ main(int argc, char **argv)
 
         for (i = 0; i < word_count; i++) {
             int data = i;
-            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
         }
 
         for (i = 0; i < word_count; i++) {
             int data = i;
-            PDC_Client_delete_obj_ref_from_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_delete_obj_ref_from_dart(index_type, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
         }
 
@@ -235,7 +237,8 @@ main(int argc, char **argv)
         for (i = 0; i < word_count; i++) {
             timer_start(&detailed_timer);
             int data = i;
-            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_insert_obj_ref_into_dart(index_type, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
             timer_pause(&detailed_timer);
             if (round == 1)
@@ -316,7 +319,9 @@ main(int argc, char **argv)
 
             int srv_cnt = 0;
             for (srv_cnt = 0; srv_cnt < dart_g->num_server; srv_cnt++) {
-                dart_server server_abstract = dart_retrieve_server_info_cb((uint32_t)srv_cnt);
+                dart_server server_abstract;
+                server_abstract.id = srv_cnt;
+                dart_retrieve_server_info_cb(&server_abstract);
                 if (round == 1)
                     println("[DART Load Balance 1] Server %d has query requests = %d", srv_cnt,
                             server_abstract.request_count);
@@ -367,7 +372,9 @@ main(int argc, char **argv)
 
             int srv_cnt = 0;
             for (srv_cnt = 0; srv_cnt < dart_g->num_server; srv_cnt++) {
-                dart_server server_abstract = dart_retrieve_server_info_cb((uint32_t)srv_cnt);
+                dart_server server_abstract;
+                server_abstract.id = srv_cnt;
+                dart_retrieve_server_info_cb(&server_abstract);
                 if (round == 1)
                     println("[DART Load Balance 2] Server %d has query requests = %d", srv_cnt,
                             server_abstract.request_count);
@@ -418,7 +425,9 @@ main(int argc, char **argv)
 
             int srv_cnt = 0;
             for (srv_cnt = 0; srv_cnt < dart_g->num_server; srv_cnt++) {
-                dart_server server_abstract = dart_retrieve_server_info_cb((uint32_t)srv_cnt);
+                dart_server server_abstract;
+                server_abstract.id = srv_cnt;
+                dart_retrieve_server_info_cb(&server_abstract);
                 if (round == 1)
                     println("[DART Load Balance 3] Server %d has query requests = %d", srv_cnt,
                             server_abstract.request_count);
@@ -472,7 +481,9 @@ main(int argc, char **argv)
 
             int srv_cnt = 0;
             for (srv_cnt = 0; srv_cnt < dart_g->num_server; srv_cnt++) {
-                dart_server server_abstract = dart_retrieve_server_info_cb((uint32_t)srv_cnt);
+                dart_server server_abstract;
+                server_abstract.id = srv_cnt;
+                dart_retrieve_server_info_cb(&server_abstract);
                 if (round == 1)
                     println("[DART Load Balance 4] Server %d has query requests = %d", srv_cnt,
                             server_abstract.request_count);
@@ -488,8 +499,10 @@ main(int argc, char **argv)
             double sqrt_sum = 0;
             double sum      = 0;
             for (srv_cnt = 0; srv_cnt < dart_g->num_server; srv_cnt++) {
-                dart_server server_abstract = dart_retrieve_server_info_cb((uint32_t)srv_cnt);
-                int64_t     num_request     = server_abstract.request_count;
+                dart_server server_abstract;
+                server_abstract.id = srv_cnt;
+                dart_retrieve_server_info_cb(&server_abstract);
+                int64_t num_request = server_abstract.request_count;
                 if (round == 1)
                     println("[DART Load Balance All] The total number of query requests on server %d = %d",
                             srv_cnt, num_request);
@@ -515,8 +528,10 @@ main(int argc, char **argv)
             sum      = 0;
 
             for (srv_cnt = 0; srv_cnt < dart_g->num_server; srv_cnt++) {
-                dart_server server_abstract  = dart_retrieve_server_info_cb((uint32_t)srv_cnt);
-                int64_t     num_indexed_word = server_abstract.indexed_word_count / 2;
+                dart_server server_abstract;
+                server_abstract.id = srv_cnt;
+                dart_retrieve_server_info_cb(&server_abstract);
+                int64_t num_indexed_word = server_abstract.indexed_word_count / 2;
                 if (round == 1)
                     println("[DART Key Distribution] Server %d has %d words indexed", srv_cnt,
                             num_indexed_word);
@@ -547,7 +562,8 @@ main(int argc, char **argv)
         for (i = 0; i < word_count; i++) {
             timer_start(&detailed_timer);
             int data = i;
-            PDC_Client_delete_obj_ref_from_dart(hash_algo, input_word_list[i], input_word_list[i], ref_type,
+            PDC_Client_delete_obj_ref_from_dart(hash_algo, input_word_list[i], input_word_list[i],
+                                                strlen(input_word_list[i]), PDC_STRING, ref_type,
                                                 (uint64_t)data);
             timer_pause(&detailed_timer);
             if (round == 1)

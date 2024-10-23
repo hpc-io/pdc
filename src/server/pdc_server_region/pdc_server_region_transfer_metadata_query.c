@@ -371,7 +371,7 @@ transfer_request_metadata_query_lookup_query_buf(uint64_t query_id, char **buf_p
     pdc_metadata_query_buf *metadata_query, *previous;
     perr_t                  ret_value = SUCCEED;
     FUNC_ENTER(NULL);
-    pthread_mutex_lock(&metadata_query_mutex);
+    /* pthread_mutex_lock(&metadata_query_mutex); */
 
     previous       = NULL;
     int i          = 0;
@@ -398,7 +398,7 @@ transfer_request_metadata_query_lookup_query_buf(uint64_t query_id, char **buf_p
     }
     *buf_ptr = NULL;
 done:
-    pthread_mutex_unlock(&metadata_query_mutex);
+    /* pthread_mutex_unlock(&metadata_query_mutex); */
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -421,7 +421,7 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     pdc_obj_region_metadata *region_metadata;
 
     FUNC_ENTER(NULL);
-    pthread_mutex_lock(&metadata_query_mutex);
+    /* pthread_mutex_lock(&metadata_query_mutex); */
 
     region_metadata = (pdc_obj_region_metadata *)malloc(sizeof(pdc_obj_region_metadata) * n_objs);
 
@@ -451,7 +451,7 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     free(region_metadata);
     // printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
 
-    pthread_mutex_unlock(&metadata_query_mutex);
+    /* pthread_mutex_unlock(&metadata_query_mutex); */
     fflush(stdout);
     FUNC_LEAVE(query_id);
 }

@@ -133,10 +133,10 @@ main(int argc, char **argv)
                 ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL);
                 break;
             }
-            case 3: {
-                ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC);
-                break;
-            }
+            /* case 3: { */
+            /*     ret = PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_DYNAMIC); */
+            /*     break; */
+            /* } */
             default: {
             }
         }
@@ -260,6 +260,9 @@ main(int argc, char **argv)
     /*     printf("successfully closed local region @ line %d\n", __LINE__); */
     /* } */
 
+    if (rank == 0)
+        printf("Test 0 done\n");
+
     for (i = 0; i < OBJ_NUM; ++i) {
         sprintf(obj_name, "o%d_%d", i, rank);
         obj[i] = PDCobj_open(obj_name, pdc);
@@ -372,6 +375,9 @@ main(int argc, char **argv)
             }
         }
     }
+
+    if (rank == 0)
+        printf("Test 1 done\n");
 
     for (i = 0; i < OBJ_NUM; ++i) {
         sprintf(obj_name, "o%d_%d", i, rank);
@@ -495,6 +501,9 @@ main(int argc, char **argv)
     /*     printf("successfully local region @ line %d\n", __LINE__); */
     /* } */
 
+    if (rank == 0)
+        printf("Test 2 done\n");
+
     // Now we rewrite the whole object and check its values.
     // open object
     for (i = 0; i < OBJ_NUM; ++i) {
@@ -611,6 +620,9 @@ main(int argc, char **argv)
         /*     printf("successfully close object o1 @ line %d\n", __LINE__); */
         /* } */
     }
+
+    if (rank == 0)
+        printf("Test 3 done\n");
 
     // open object
     for (i = 0; i < OBJ_NUM; ++i) {
@@ -731,6 +743,9 @@ main(int argc, char **argv)
             }
         }
     }
+
+    if (rank == 0)
+        printf("Test 4 done\n");
 
     // close a container
     if (PDCcont_close(cont) < 0) {

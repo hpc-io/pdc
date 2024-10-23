@@ -46,6 +46,7 @@ hg_thread_mutex_t lock_list_mutex_g;
 hg_thread_mutex_t meta_buf_map_mutex_g;
 hg_thread_mutex_t meta_obj_map_mutex_g;
 #endif
+extern struct timeval last_cache_activity_timeval_g;
 
 #define PAGE_SIZE                    4096
 #define ADDR_MAX                     1024
@@ -64,7 +65,6 @@ hg_thread_mutex_t meta_obj_map_mutex_g;
 #define PDC_SEQ_ID_INIT_VALUE        1000
 #define PDC_UPDATE_CACHE             111
 #define PDC_UPDATE_STORAGE           101
-#define DART_ALPHABET_SIZE           27
 
 #ifndef HOST_NAME_MAX
 #if defined(__APPLE__)
@@ -454,6 +454,16 @@ typedef struct {
     pdc_metadata_transfer_t ret;
 } metadata_query_out_t;
 
+/* Define send_rpc_in_t */
+typedef struct {
+    int value;
+} send_rpc_in_t;
+
+/* Define send_rpc_out_t */
+typedef struct {
+    int value;
+} send_rpc_out_t;
+
 /* Define metadata_add_tag_in_t */
 typedef struct {
     uint64_t          obj_id;
@@ -804,6 +814,7 @@ typedef struct transfer_request_all_in_t {
     uint64_t total_buf_size;
     int32_t  n_objs;
     uint8_t  access_type;
+    int      client_id;
 } transfer_request_all_in_t;
 
 /* Define transfer_request_all_out_t */
@@ -1153,15 +1164,20 @@ typedef struct {
 
 /* Define dart_perform_one_server_in_t */
 typedef struct {
-    int8_t            op_type;
-    int8_t            hash_algo;
-    hg_const_string_t attr_key;
-    hg_const_string_t attr_val;
-    int8_t            obj_ref_type;
-    uint64_t          obj_primary_ref;
-    uint64_t          obj_secondary_ref;
-    uint64_t          obj_server_ref;
-    int64_t           timestamp;
+    int8_t   op_type;
+    int8_t   hash_algo;
+    char *   attr_key;
+    uint32_t attr_vsize;
+    uint8_t  attr_vtype;
+    void *   attr_val;
+    uint64_t vnode_id;
+    int8_t   obj_ref_type;
+    uint64_t obj_primary_ref;
+    uint64_t obj_secondary_ref;
+    uint64_t obj_server_ref;
+    int8_t   inserting_suffix;
+    int64_t  timestamp;
+    uint32_t src_client_id;
 } dart_perform_one_server_in_t;
 
 /* Define dart_perform_one_server_out_t */
@@ -1206,7 +1222,6 @@ hg_proc_pdc_kvtag_t(hg_proc_t proc, void *data)
     if (struct_data->size) {
         switch (hg_proc_get_op(proc)) {
             case HG_DECODE:
-
                 struct_data->value = malloc(struct_data->size);
                 /* HG_FALLTHROUGH(); */
                 /* FALLTHRU */
@@ -1748,6 +1763,36 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
     ret = hg_proc_int32_t(proc, &struct_data->t_meta_index);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_send_rpc_in_t */
+static HG_INLINE hg_return_t
+hg_proc_send_rpc_in_t(hg_proc_t proc, void *data)
+{
+    hg_return_t    ret;
+    send_rpc_in_t *struct_data = (send_rpc_in_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->value);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    return ret;
+}
+
+/* Define hg_proc_send_rpc_out_t */
+static HG_INLINE hg_return_t
+hg_proc_send_rpc_out_t(hg_proc_t proc, void *data)
+{
+    hg_return_t     ret;
+    send_rpc_out_t *struct_data = (send_rpc_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->value);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -2805,6 +2850,11 @@ hg_proc_transfer_request_all_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
+    ret = hg_proc_int32_t(proc, &struct_data->client_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     return ret;
 }
 
@@ -3851,12 +3901,22 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_key);
+    ret = hg_proc_hg_string_t(proc, &struct_data->attr_key);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    ret = hg_proc_hg_const_string_t(proc, &struct_data->attr_val);
+    ret = hg_proc_uint32_t(proc, &struct_data->attr_vsize);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->attr_vtype);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->vnode_id);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
@@ -3881,11 +3941,35 @@ hg_proc_dart_perform_one_server_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-
+    ret = hg_proc_int8_t(proc, &struct_data->inserting_suffix);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
     ret = hg_proc_int64_t(proc, &struct_data->timestamp);
     if (ret != HG_SUCCESS) {
         // HG_LOG_ERROR("Proc error");
         return ret;
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->src_client_id);
+    if (ret != HG_SUCCESS) {
+        // HG_LOG_ERROR("Proc error");
+        return ret;
+    }
+    if (struct_data->attr_vsize) {
+        switch (hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->attr_val = malloc(struct_data->attr_vsize);
+                /* HG_FALLTHROUGH(); */
+                /* FALLTHRU */
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->attr_val, struct_data->attr_vsize);
+                break;
+            case HG_FREE:
+                free(struct_data->attr_val);
+            default:
+                break;
+        }
     }
     return ret;
 }
@@ -4222,6 +4306,7 @@ hg_id_t PDC_metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
+hg_id_t PDC_send_rpc_register(hg_class_t *hg_class);
 
 hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_all_register(hg_class_t *hg_class);

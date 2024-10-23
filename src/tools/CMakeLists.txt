@@ -1,3 +1,13 @@
+option(JMD_DEBUG_MODE "Enable debug mode." OFF)
+if(JMD_DEBUG_MODE)
+  add_definitions(-DJMD_DEBUG=1)
+endif()
+
+option(JMD_VERBOSE "Enable verbose mode." OFF)
+if(JMD_VERBOSE)
+  add_definitions(-DJMD_VERBOSE=1)
+endif()
+
 set(TOOLS_EXT_INCLUDE "")
 set(TOOLS_EXT_LIB "")
 
@@ -100,3 +110,16 @@ foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
   target_link_libraries(${program} pdc cjson ${TOOLS_EXT_LIB})
 endforeach(program)
+
+
+add_executable(metadata_json_loader 
+            metadata_json_loader.c 
+            meta_json/metadata_json_processor.h 
+            meta_json/metadata_json_printer.c 
+            meta_json/metadata_json_printer.h 
+            meta_json/metadata_json_importer.c 
+            meta_json/metadata_json_importer.h
+            fs/fs_ops.c
+            fs/fs_ops.h)
+target_link_libraries(metadata_json_loader ${PDC_EXT_LIB_DEPENDENCIES} pdc cjson ${TOOLS_EXT_LIB})
+target_include_directories(metadata_json_loader PUBLIC ${PDC_EXT_INCLUDE_DEPENDENCIES})

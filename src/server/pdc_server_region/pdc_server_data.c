@@ -1741,6 +1741,7 @@ PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_ptr, hg_
                 error = 1;
                 HG_Destroy(server_send_buf_map_handle);
                 free(tranx_args);
+                tranx_args = NULL;
                 PGOTO_ERROR(FAIL, "PDC_Server_transfer_region_info(): Could not start HG_Forward()");
             }
         }

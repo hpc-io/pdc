@@ -42,7 +42,7 @@
 #endif
 
 #include "pdc_utlist.h"
-#include "pdc_hash-table.h"
+#include "pdc_hash_table.h"
 #include "pdc_dablooms.h"
 #include "pdc_interface.h"
 #include "pdc_client_server_common.h"
@@ -1200,11 +1200,8 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     perr_t          ret_value = SUCCEED;
     pdc_metadata_t *metadata;
     uint32_t *      hash_key, i;
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
-    int unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-#endif
+    int             unlocked = 0;
+
     // DEBUG
     int debug_flag = 0;
 
@@ -1265,15 +1262,13 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
     pdc_hash_table_entry_head *lookup_value;
     pdc_metadata_t *           found_identical;
 
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
-    unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-#endif
-
     if (debug_flag == 1)
         printf("checking hash table with key=%d\n", *hash_key);
 
+#ifdef ENABLE_MULTITHREAD
+    // Obtain lock for hash table
+    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
+#endif
     if (metadata_hash_table_g != NULL) {
         // lookup
         lookup_value = hash_table_lookup(metadata_hash_table_g, hash_key);
@@ -1593,6 +1588,46 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+void
+num_query_action_someta(void *cond_exact, void *cond_lo, void *cond_hi, int lo_inclusive, int hi_inclusive,
+                        pdc_c_var_type_t num_type, void *input, void **out, uint64_t *out_len)
+{
+    void *               input_val  = ((pdc_kvtag_t *)input)->value;
+    size_t               input_size = ((pdc_kvtag_t *)input)->size;
+    libhl_cmp_callback_t cmp_func   = LIBHL_CMP_CB(num_type);
+    *out_len                        = 1;
+    *out                            = calloc(1, sizeof(uint64_t));
+    pbool_t ret_value               = FALSE;
+    if (cond_exact != NULL) { // Exact
+        ret_value = cmp_func(input_val, input_size, cond_exact, get_size_by_dtype(num_type)) == 0;
+    }
+    else if (cond_lo == NULL && cond_hi != NULL) { // less than
+        ret_value = (hi_inclusive)
+                        ? cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) <= 0
+                        : cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) < 0;
+    }
+    else if (cond_lo != NULL && cond_hi == NULL) { // greater than
+        ret_value = (lo_inclusive)
+                        ? cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) >= 0
+                        : cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) > 0;
+    }
+    else if (cond_lo != NULL && cond_hi != NULL) { // between
+        pbool_t lo_rst = (lo_inclusive)
+                             ? cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) >= 0
+                             : cmp_func(input_val, input_size, cond_lo, get_size_by_dtype(num_type)) > 0;
+        pbool_t hi_rst = (hi_inclusive)
+                             ? cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) <= 0
+                             : cmp_func(input_val, input_size, cond_hi, get_size_by_dtype(num_type)) < 0;
+        ret_value = lo_rst && hi_rst;
+    }
+    else {
+    }
+    *((uint64_t *)(*out)) = (uint64_t)ret_value;
+}
+
+num_query_action_collection_t soMetaNumQueryActions = {num_query_action_someta, num_query_action_someta,
+                                                       num_query_action_someta, num_query_action_someta};
+
 pbool_t
 _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
 {
@@ -1608,7 +1643,6 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
         return FALSE;
     }
     if (in->type == (int8_t)PDC_STRING) {
-        // FIXME: need to address kvtag->type serialization problem.
         char *pattern = (char *)in->value;
         if (!simple_matches(kvtag->value, pattern)) {
             return FALSE;
@@ -1616,8 +1650,13 @@ _is_matching_kvtag(pdc_kvtag_t *in, pdc_kvtag_t *kvtag)
     }
     else { // FIXME: for all numeric types, we use memcmp to compare, for exact value query, but we also
            // have to support range query.
-        if (memcmp(in->value, kvtag->value, in->size) != 0)
-            return FALSE;
+        uint64_t *out;
+        uint64_t  out_len;
+        parse_and_run_number_value_query(in->value, in->type, &soMetaNumQueryActions, kvtag, &out_len,
+                                         (void **)&out);
+        return (pbool_t)out[0];
+        // if (memcmp(in->value, kvtag->value, in->size) != 0)
+        //     return FALSE;
     }
 
     FUNC_LEAVE(ret_value);
@@ -1880,6 +1919,17 @@ PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be
 
     *n_meta  = 0;
     *obj_ids = (void *)calloc(alloc_size, sizeof(uint64_t));
+
+    char *v_query = (char *)in->value;
+    printf("==PDC_SERVER[%d] before stripQuotes: Querying kvtag with key [%s], value [%s]\n",
+           pdc_server_rank_g, in->name, (char *)in->value);
+    if (is_string_query(v_query)) {
+        in->value = stripQuotes(v_query);
+        in->type  = PDC_STRING;
+    }
+
+    printf("==PDC_SERVER[%d] after stripQuotes: Querying kvtag with key [%s], value [%s]\n",
+           pdc_server_rank_g, in->name, (char *)in->value);
 
     if (use_rocksdb_g == 1) {
         ret_value = PDC_Server_query_kvtag_rocksdb(in, n_meta, obj_ids, alloc_size);
@@ -2766,7 +2816,7 @@ PDC_add_kvtag_to_list(pdc_kvtag_list_t **list_head, pdc_kvtag_t *tag)
     FUNC_ENTER(NULL);
 
     PDC_kvtag_dup(tag, &newtag);
-    new_list_item        = PDC_CALLOC(1, pdc_kvtag_list_t);
+    new_list_item        = (pdc_kvtag_list_t *)PDC_calloc(1, sizeof(pdc_kvtag_list_t));
     new_list_item->kvtag = newtag;
     DL_APPEND(*list_head, new_list_item);
 
@@ -2840,12 +2890,13 @@ PDC_Server_add_kvtag_sqlite3(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t
         printf("==PDC_SERVER[%d]: error from SQLite %s!\n", pdc_server_rank_g, errMessage);
     else
         out->ret = 1;
+
+done:
 #else
     printf("==PDC_SERVER[%d]: enabled SQLite3 but PDC is not compiled with it!\n", pdc_server_rank_g);
     ret_value = FAIL;
 #endif
 
-done:
     return ret_value;
 }
 

@@ -72,13 +72,14 @@ void *PDC_realloc_addsize(void *ptr, size_t size, size_t *mem_usage_ptr);
 void *PDC_free(void *mem);
 
 /**
+ * free allocated memory and subtract size from specified memory size pointer
+ * \param mem [IN]              Starting address of memory
+ */
+void PDC_free_void(void *mem);
+
+/**
  * Get total memory usage from the global variable
  */
 size_t PDC_get_global_mem_usage();
-
-#define PDC_MALLOC(t)    (t *)PDC_malloc(sizeof(t))
-#define PDC_CALLOC(c, t) (t *)PDC_calloc(c, sizeof(t))
-
-#define PDC_FREE(t, obj) (t *)(intptr_t) PDC_free(obj)
 
 #endif /* PDC_MALLOC_H */

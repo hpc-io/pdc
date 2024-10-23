@@ -1,0 +1,207 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "dataset_name": {
+            "type": "string"
+        },
+        "dataset_description": {
+            "type": "string"
+        },
+        "source_URL": {
+            "type": "string"
+        },
+        "collector": {
+            "type": "string"
+        },
+        "objects": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "full_path": {
+                        "type": "string"
+                    },
+                    "properties": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "value": {
+                                    "type": [
+                                        "number",
+                                        "string",
+                                        "array"
+                                    ]
+                                },
+                                "class": {
+                                    "type": "string",
+                                    "enum": [
+                                        "singleton",
+                                        "array"
+                                    ]
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "int",
+                                        "float",
+                                        "str"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "value",
+                                "class",
+                                "type"
+                            ],
+                            "allOf": [
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "singleton"
+                                            },
+                                            "type": {
+                                                "const": "int"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "integer"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "singleton"
+                                            },
+                                            "type": {
+                                                "const": "float"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "number"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "singleton"
+                                            },
+                                            "type": {
+                                                "const": "str"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "array"
+                                            },
+                                            "type": {
+                                                "const": "int"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "integer"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "array"
+                                            },
+                                            "type": {
+                                                "const": "float"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "number"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                {
+                                    "if": {
+                                        "properties": {
+                                            "class": {
+                                                "const": "array"
+                                            },
+                                            "type": {
+                                                "const": "str"
+                                            }
+                                        }
+                                    },
+                                    "then": {
+                                        "properties": {
+                                            "value": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "properties"
+                ]
+            }
+        }
+    },
+    "required": [
+        "dataset_name",
+        "objects"
+    ]
+}

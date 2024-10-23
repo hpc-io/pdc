@@ -174,6 +174,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
+    PDCregion_transfer_wait(transfer_request);
     PDCregion_transfer_close(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
@@ -218,6 +219,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
 
+    PDCregion_transfer_wait(transfer_request);
     PDCregion_transfer_close(transfer_request);
 
     // Check if data written previously has been correctly read.

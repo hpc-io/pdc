@@ -28,10 +28,11 @@ int32_t request_count_g;
 
 dart_server *all_servers;
 
-dart_server
-virtual_dart_retrieve_server_info_cb(uint32_t server_id)
+void
+virtual_dart_retrieve_server_info_cb(dart_server *server_ptr)
 {
-    return all_servers[server_id];
+    server_ptr->indexed_word_count = server_ptr->indexed_word_count + 1;
+    server_ptr->request_count      = server_ptr->request_count + 1;
 }
 
 // void
@@ -437,28 +438,24 @@ main(int argc, char **argv)
     if (INPUT_TYPE == INPUT_DICTIONARY) {
         // Init dart space.
         alphabet_size = 29;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        __dart_space_init(&dart_g, num_server, alphabet_size, extra_tree_height, replication_factor, 1024);
         read_words_from_text(txtFilePath, &word_count, &req_count, prefix_len, keyword_insert[hashalgo],
                              keyword_search[hashalgo]);
     }
     else if (INPUT_TYPE == INPUT_RANDOM_STRING) {
         alphabet_size = 129;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        __dart_space_init(&dart_g, num_server, alphabet_size, extra_tree_height, replication_factor, 1024);
         gen_random_strings_with_cb(word_count, 6, 16, alphabet_size, prefix_len, keyword_insert[hashalgo],
                                    keyword_search[hashalgo]);
     }
     else if (INPUT_TYPE == INPUT_UUID) {
         alphabet_size = 37;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        __dart_space_init(&dart_g, num_server, alphabet_size, extra_tree_height, replication_factor, 1024);
         gen_uuids(word_count, prefix_len, keyword_insert[hashalgo], keyword_search[hashalgo]);
     }
     else if (INPUT_TYPE == INPUT_WIKI_KEYWORD) {
         alphabet_size = 129;
-        dart_space_init(&dart_g, num_server, num_server, alphabet_size, extra_tree_height,
-                        replication_factor);
+        __dart_space_init(&dart_g, num_server, alphabet_size, extra_tree_height, replication_factor, 1024);
         read_words_from_text(txtFilePath, &word_count, &req_count, prefix_len, keyword_insert[hashalgo],
                              keyword_search[hashalgo]);
     }
