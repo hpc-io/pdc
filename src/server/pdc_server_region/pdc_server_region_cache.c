@@ -741,7 +741,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
 #endif
     env_char = getenv("PDC_SERVER_CACHE_NO_FLUSH");
     if (env_char && atoi(env_char) != 0) {
-        fprintf(stderr, "==PDC_SERVER[%d]: flushed disabled\n", server_rank);
+        fprintf(stderr, "==PDC_SERVER[%d]: flushed disabled\n", PDC_get_rank());
         return 0;
     }
 
