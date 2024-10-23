@@ -998,7 +998,7 @@ PDC_region_cache_clock_cycle(void *ptr)
         }
 
         pthread_mutex_unlock(&pdc_cache_mutex);
-        sleep(flush_frequency_s);
+        usleep(10000);
     }
     return 0;
 }
