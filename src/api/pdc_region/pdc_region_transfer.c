@@ -1787,25 +1787,29 @@ release_region_buffer(char *buf, uint64_t *obj_dims, int local_ndim, uint64_t *l
     if (local_ndim == 2) {
         if (access_type == PDC_READ) {
             ptr = new_buf;
-            for (i = 0; i < local_size[0]; ++i) {
-                memcpy(buf + ((local_offset[0] + i) * obj_dims[1] + local_offset[1]) * unit, ptr,
-                       local_size[1] * unit);
-                ptr += local_size[1] * unit;
-            }
+            // Tang
+            memcpy(buf, ptr, local_size[0] * local_size[1] * unit);
+            /* for (i = 0; i < local_size[0]; ++i) { */
+            /*     memcpy(buf + ((local_offset[0] + i) * obj_dims[1] + local_offset[1]) * unit, ptr, */
+            /*            local_size[1] * unit); */
+            /*     ptr += local_size[1] * unit; */
+            /* } */
         }
     }
     else if (local_ndim == 3) {
         if (access_type == PDC_READ) {
             ptr = new_buf;
-            for (i = 0; i < local_size[0]; ++i) {
-                for (j = 0; j < local_size[1]; ++j) {
-                    memcpy(buf + ((local_offset[0] + i) * obj_dims[1] * obj_dims[2] +
-                                  (local_offset[1] + j) * obj_dims[2] + local_offset[2]) *
-                                     unit,
-                           ptr, local_size[2] * unit);
-                    ptr += local_size[2] * unit;
-                }
-            }
+            // Tang
+            memcpy(buf, ptr, local_size[0] * local_size[1] * local_size[2] * unit);
+            /* for (i = 0; i < local_size[0]; ++i) { */
+            /*     for (j = 0; j < local_size[1]; ++j) { */
+            /*         memcpy(buf + ((local_offset[0] + i) * obj_dims[1] * obj_dims[2] + */
+            /*                       (local_offset[1] + j) * obj_dims[2] + local_offset[2]) * */
+            /*                          unit, */
+            /*                ptr, local_size[2] * unit); */
+            /*         ptr += local_size[2] * unit; */
+            /*     } */
+            /* } */
         }
     }
     if (bulk_buf_ref) {

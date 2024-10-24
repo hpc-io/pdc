@@ -44,6 +44,10 @@
 #include "mpi.h"
 #endif
 
+#ifdef ENABLE_ZFP
+#include "zfp.h"
+#endif
+
 #include "pdc_utlist.h"
 #include "pdc_public.h"
 #include "pdc_interface.h"
@@ -284,11 +288,27 @@ PDC_Server_get_obj_region(pdcid_t obj_id)
 {
     data_server_region_t *ret_value = NULL;
     data_server_region_t *elt       = NULL;
+    FUNC_ENTER(NULL);
+    if (dataserver_region_g != NULL) {
+        DL_FOREACH(dataserver_region_g, elt)
+        {
+            if (elt->obj_id == obj_id)
+                ret_value = elt;
+        }
+    }
+    FUNC_LEAVE(ret_value);
+}
+
+pdc_data_server_io_list_t *
+PDC_Server_get_obj_region_query(pdcid_t obj_id)
+{
+    pdc_data_server_io_list_t *ret_value = NULL;
+    pdc_data_server_io_list_t *elt       = NULL;
 
     FUNC_ENTER(NULL);
 
-    if (dataserver_region_g != NULL) {
-        DL_FOREACH(dataserver_region_g, elt)
+    if (pdc_data_server_write_list_head_g != NULL) {
+        DL_FOREACH(pdc_data_server_write_list_head_g, elt)
         {
             if (elt->obj_id == obj_id)
                 ret_value = elt;
@@ -4718,7 +4738,37 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// No PDC_SERVER_CACHE
+#ifdef ENABLE_ZFP
+static zfp_field *
+_setup_zfp(struct pdc_region_info *region_info, zfp_stream **zfp)
+{
+    zfp_type   type = zfp_type_double;
+    zfp_field *field;
+
+    if (region_info->unit == 8)
+        type = zfp_type_double;
+    else if (region_info->unit == 4)
+        type = zfp_type_int32;
+    else
+        fprintf(stderr, "==PDC_SERVER[%d]: unit has size %u not expected!\n", pdc_server_rank_g,
+                region_info->unit);
+
+    if (region_info->ndim == 1)
+        field = zfp_field_1d(region_info->buf, type, region_info->size[0]);
+    else if (region_info->ndim == 2)
+        field = zfp_field_2d(region_info->buf, type, region_info->size[0], region_info->size[1]);
+    else if (region_info->ndim == 3)
+        field = zfp_field_3d(region_info->buf, type, region_info->size[0], region_info->size[1],
+                             region_info->size[2]);
+
+    *zfp = zfp_stream_open(NULL);
+    // TODO: precision mode for now
+    zfp_stream_set_accuracy(*zfp, 0.01);
+
+    return field;
+}
+#endif
+
 perr_t
 PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
@@ -4818,7 +4868,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // No need to update metadata
             }
             else {
-
+                // data_sieving_g = 1 by default, export PDC_DATA_SIEVING=0 to change
                 if (data_sieving_g) {
                     // Create a buffer for loading the entire region.
                     tmp_buf = (char *)malloc(overlap_region->data_size);
@@ -4827,7 +4877,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #endif
                     if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
                         (ssize_t)overlap_region->data_size) {
-                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g,
+                               __LINE__);
                     }
 #ifdef PDC_TIMING
                     pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
@@ -5013,7 +5064,44 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     }
     if (is_contained == 0) {
         request_region->offset = lseek(region->fd, 0, SEEK_END);
-// printf("posix write for position %d with write size %u\n", 0, (unsigned)write_size);
+
+        // debug
+        /* fprintf(stderr, "==PDC_SERVER[%d]: %s posix write for position %d with write size %u\n", */
+        /*         pdc_server_rank_g, __func__, 0, (unsigned)write_size); */
+#ifdef ENABLE_ZFP
+        zfp_field * field;
+        zfp_stream *zfp;
+        size_t      bufsize;
+        void *      buffer;
+        bitstream * stream;
+
+        field = _setup_zfp(region_info, &zfp);
+        if (field == NULL)
+            fprintf(stderr, "==PDC_SERVER[%d]: _setup_zfp failed!\n", pdc_server_rank_g);
+        else {
+
+            bufsize = zfp_stream_maximum_size(zfp, field);
+            if (bufsize == 0)
+                fprintf(stderr, "==PDC_SERVER[%d]: zfp_stream_maximum_size returned 0!\n", pdc_server_rank_g);
+            buffer = malloc(bufsize);
+            if (buffer == 0)
+                fprintf(stderr, "==PDC_SERVER[%d]: malloc failed!\n", pdc_server_rank_g);
+            else {
+                stream = stream_open(buffer, bufsize);
+                zfp_stream_set_bit_stream(zfp, stream);
+                // Compress the data and overwrite the write_size for the following posix write
+                size_t compress_size = zfp_compress(zfp, field);
+                fprintf(stderr, "==PDC_SERVER[%d]: zfp compressed size %lu / %llu CR=%.2lf\n",
+                        pdc_server_rank_g, compress_size, write_size, (double)write_size / compress_size);
+                buf        = buffer;
+                write_size = compress_size;
+            }
+        }
+        zfp_field_free(field);
+        zfp_stream_close(zfp);
+        stream_close(stream);
+#endif
+
 #ifdef PDC_TIMING
         start_posix = MPI_Wtime();
 #endif
@@ -5054,7 +5142,6 @@ done:
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_data_write_out
 
-// No PDC_SERVER_CACHE
 perr_t
 PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, void *buf, size_t unit)
 {
@@ -5118,7 +5205,8 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 if (pread(region->fd, buf + (overlap_offset[0] - region_info->offset[0]) * unit,
                           overlap_size[0] * unit,
                           overlap_region->offset + pos) != (ssize_t)(overlap_size[0] * unit)) {
-                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                    printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n", pdc_server_rank_g,
+                           __LINE__);
                 }
 #ifdef PDC_TIMING
                 pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
@@ -5133,18 +5221,87 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // No need to update metadata
             }
             else {
+                // data_sieving_g = 1 by default, export PDC_DATA_SIEVING=0 to change
                 if (data_sieving_g) {
                     tmp_buf = (char *)malloc(overlap_region->data_size);
 #ifdef PDC_TIMING
                     start_posix = MPI_Wtime();
 #endif
-                    if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
-                        (ssize_t)overlap_region->data_size) {
-                        printf("==PDC_SERVER[%d]: pread failed to read enough bytes\n", pdc_server_rank_g);
+                    // Read up to 1GB at a time
+                    uint64_t read_max = 1 * 1024 * 1024 * 1024llu;
+                    if (overlap_region->data_size > read_max) {
+                        uint64_t buf_off   = 0;
+                        uint64_t reg_off   = overlap_region->offset;
+                        uint64_t leftover  = overlap_region->data_size;
+                        ssize_t  read_size = read_max;
+
+                        while (leftover > 0) {
+                            /* printf("==PDC_SERVER[%d]: pread %llu, leftover %llu\n", pdc_server_rank_g,
+                             * read_size, leftover); */
+                            if (pread(region->fd, tmp_buf + buf_off, read_size, reg_off) != read_size) {
+                                printf("==PDC_SERVER[%d]: pread failed to read enough bytes %llu, LINE %d\n",
+                                       pdc_server_rank_g, read_size, __LINE__);
+                            }
+                            reg_off += read_size;
+                            buf_off += read_size;
+                            leftover -= read_size;
+                            if (leftover < read_size)
+                                read_size = leftover;
+                        }
+                    }
+                    else {
+                        if (pread(region->fd, tmp_buf, overlap_region->data_size, overlap_region->offset) !=
+                            (ssize_t)overlap_region->data_size) {
+                            printf("==PDC_SERVER[%d]: pread failed to read enough bytes %d\n",
+                                   pdc_server_rank_g, __LINE__);
+                        }
                     }
 #ifdef PDC_TIMING
                     pdc_server_timings->PDCdata_server_read_posix += MPI_Wtime() - start_posix;
 #endif
+
+#ifdef ENABLE_ZFP
+                    // Uncompress the data
+                    zfp_field * field;
+                    zfp_stream *zfp;
+                    size_t      bufsize, decompress_size;
+                    bitstream * stream;
+
+                    field = _setup_zfp(region_info, &zfp);
+                    if (field == NULL)
+                        fprintf(stderr, "==PDC_SERVER[%d]: _setup_zfp failed!\n", pdc_server_rank_g);
+                    else {
+
+                        if (region_info->ndim >= 1)
+                            decompress_size = region_info->unit * region_info->size[0];
+                        if (region_info->ndim >= 2)
+                            decompress_size *= region_info->size[1];
+                        if (region_info->ndim >= 3)
+                            decompress_size *= region_info->size[2];
+                        if (decompress_size == 0)
+                            fprintf(stderr, "==PDC_SERVER[%d]: zfp_stream_maximum_size returned 0!\n",
+                                    pdc_server_rank_g);
+
+                        void *decompress_buffer = malloc(decompress_size);
+                        if (decompress_buffer == 0)
+                            fprintf(stderr, "==PDC_SERVER[%d]: malloc failed!\n", pdc_server_rank_g);
+                        else {
+                            stream = stream_open(decompress_buffer, decompress_size);
+                            zfp_stream_set_bit_stream(zfp, stream);
+                            // Decompress the data
+                            decompress_size = zfp_decompress(zfp, field);
+                            if (decompress_size == 0)
+                                fprintf(stderr, "==PDC_SERVER[%d]: zfp_decompress failed!\n",
+                                        pdc_server_rank_g);
+                            free(tmp_buf);
+                            tmp_buf = decompress_buffer;
+                        }
+                    }
+                    zfp_field_free(field);
+                    zfp_stream_close(zfp);
+                    stream_close(stream);
+#endif
+
                     memcpy_overlap_subregion(region_info->ndim, unit, tmp_buf, overlap_region->start,
                                              overlap_region->count, buf, region_info->offset,
                                              region_info->size, overlap_offset, overlap_size);
@@ -7789,7 +7946,7 @@ attach_local_storage_region_to_query(pdc_query_t *query)
 
 {
     /* pdc_metadata_t *meta; */
-    data_server_region_t *obj_reg;
+    pdc_data_server_io_list_t *obj_reg;
 
     if (NULL == query->constraint) {
         printf("==PDC_SERVER[%d]: %s - query->constraint is NULL!\n", pdc_server_rank_g, __func__);
@@ -7805,12 +7962,12 @@ attach_local_storage_region_to_query(pdc_query_t *query)
     /* } */
     /* query->constraint->storage_region_list_head = meta->storage_region_list_head; */
 
-    obj_reg = PDC_Server_get_obj_region(query->constraint->obj_id);
+    obj_reg = PDC_Server_get_obj_region_query(query->constraint->obj_id);
     if (obj_reg == NULL) {
         printf("==PDC_SERVER[%d]: %s - cannot find region from object!\n", pdc_server_rank_g, __func__);
     }
     else
-        query->constraint->storage_region_list_head = obj_reg->region_storage_head;
+        query->constraint->storage_region_list_head = obj_reg->region_list_head;
 
     return SUCCEED;
 }

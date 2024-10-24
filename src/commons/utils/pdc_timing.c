@@ -1,5 +1,6 @@
 #include "pdc_timing.h"
 #include "assert.h"
+#include "mpi.h"
 
 #ifdef PDC_TIMING
 static double pdc_base_time;

@@ -388,10 +388,10 @@ endif()
 option(PDC_SERVER_CACHE "Enable Server Caching." ON)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
-  set(PDC_SERVER_CACHE_MAX_GB "3" CACHE STRING "Max GB for server cache")
-  set(PDC_SERVER_CACHE_FLUSH_TIME "30" CACHE STRING "Flush time for server cache")
+  set(PDC_SERVER_CACHE_MAX_GB "32" CACHE STRING "Max GB for server cache")
+  set(PDC_SERVER_IDLE_CACHE_FLUSH_TIME "3" CACHE STRING "Idle time to initiate flush from server cache")
 
-  add_compile_definitions(PDC_SERVER_CACHE_MAX_GB=${PDC_SERVER_CACHE_MAX_GB} PDC_SERVER_CACHE_FLUSH_TIME=${PDC_SERVER_CACHE_FLUSH_TIME})
+  add_compile_definitions(PDC_SERVER_CACHE_MAX_GB=${PDC_SERVER_CACHE_MAX_GB} PDC_SERVER_IDLE_CACHE_FLUSH_TIME=${PDC_SERVER_IDLE_CACHE_FLUSH_TIME})
 endif()
 
 
@@ -485,6 +485,14 @@ endif()
 option(PDC_ENABLE_SQLITE3 "Enable SQLite3 (experimental)." OFF)
 if(PDC_ENABLE_SQLITE3)
     set(ENABLE_SQLITE3 1)
+endif()
+
+#-----------------------------------------------------------------------------
+# ZFP option
+#-----------------------------------------------------------------------------
+option(PDC_ENABLE_ZFP "Enable ZFP." OFF)
+if(PDC_ENABLE_ZFP)
+    set(ENABLE_ZFP 1)
 endif()
 
 # Check availability of symbols

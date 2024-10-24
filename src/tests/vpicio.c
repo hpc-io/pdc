@@ -125,6 +125,7 @@ main(int argc, char **argv)
     // create an object property
     obj_prop_xx = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
+    PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_LOCAL);
     PDCprop_set_obj_dims(obj_prop_xx, 1, dims);
     PDCprop_set_obj_type(obj_prop_xx, PDC_FLOAT);
     PDCprop_set_obj_time_step(obj_prop_xx, 0);
