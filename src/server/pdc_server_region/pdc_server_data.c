@@ -283,8 +283,24 @@ PDC_Server_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock_statu
     FUNC_LEAVE(ret_value);
 }
 
-pdc_data_server_io_list_t *
+data_server_region_t *
 PDC_Server_get_obj_region(pdcid_t obj_id)
+{
+    data_server_region_t *ret_value = NULL;
+    data_server_region_t *elt       = NULL;
+    FUNC_ENTER(NULL);
+    if (dataserver_region_g != NULL) {
+        DL_FOREACH(dataserver_region_g, elt)
+        {
+            if (elt->obj_id == obj_id)
+                ret_value = elt;
+        }
+    }
+    FUNC_LEAVE(ret_value);
+}
+
+pdc_data_server_io_list_t *
+PDC_Server_get_obj_region_query(pdcid_t obj_id)
 {
     pdc_data_server_io_list_t *ret_value = NULL;
     pdc_data_server_io_list_t *elt       = NULL;
@@ -7946,7 +7962,7 @@ attach_local_storage_region_to_query(pdc_query_t *query)
     /* } */
     /* query->constraint->storage_region_list_head = meta->storage_region_list_head; */
 
-    obj_reg = PDC_Server_get_obj_region(query->constraint->obj_id);
+    obj_reg = PDC_Server_get_obj_region_query(query->constraint->obj_id);
     if (obj_reg == NULL) {
         printf("==PDC_SERVER[%d]: %s - cannot find region from object!\n", pdc_server_rank_g, __func__);
     }
