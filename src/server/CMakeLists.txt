@@ -17,6 +17,13 @@ if(PDC_ENABLE_SQLITE3)
     find_package(SQLite3 3.31.0 REQUIRED)
 endif()
 
+if(PDC_ENABLE_ZFP)
+    add_definitions(-DENABLE_ZFP=1)
+    find_package(ZFP REQUIRED)
+    # find_path(ZFP_INCLUDE_DIR include/zfp.h)
+endif()
+
+
 include_directories(
   ${PDC_COMMON_INCLUDE_DIRS}
   ${PDC_INCLUDES_BUILD_TIME}
@@ -40,6 +47,7 @@ include_directories(
   ${MERCURY_INCLUDE_DIR}
   ${FASTBIT_INCLUDE_DIR}
   ${ROCKSDB_INCLUDE_DIR}
+  ${ZFP_INCLUDE_DIRS}
 )
 
 add_definitions( -DIS_PDC_SERVER=1 )
@@ -70,6 +78,8 @@ add_library(pdc_server_lib
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
     target_link_libraries(pdc_server_lib ${MERCURY_LIBRARY} ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
+elseif(PDC_ENABLE_ZFP)
+    target_link_libraries(pdc_server_lib ${MERCURY_LIBRARY} ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} zfp::zfp)
 elseif(PDC_ENABLE_ROCKSDB)
     if(PDC_ENABLE_SQLITE3)
         target_link_libraries(pdc_server_lib ${MERCURY_LIBRARY} ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${ROCKSDB_LIBRARY} SQLite::SQLite3)

@@ -5,6 +5,7 @@
 
 # Cori CI needs srun even for serial tests
 run_cmd=""
+
 if [[ "$SUPERCOMPUTER" == "perlmutter" ]]; then
     run_cmd="srun -n 1 --mem=25600 --cpu_bind=cores --overlap"
 fi

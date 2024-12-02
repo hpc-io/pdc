@@ -333,6 +333,11 @@ Server Nonblocking Control
 
 By design, the region transfer request start does not guarantee the finish of data transfer or server I/O. In fact, this function should return to the application as soon as possible. Data transfer and server I/O can occur in the background so that client applications can take advantage of overlapping timings between application computations and PDC data management.
 
+Server Data Cache
+---------------------------------------------
+
+PDC supports server-side write data cache and is enabled in the CMake option ``PDC_SERVER_CACHE`` by default. Each time the server receives a region writerequest, it will cache the data in the server's memory without writing it to the file system. The server monitors both the total amount of cached data and how long it has not received any I/O requests to determine when to flush the data from cache to the file system. Two additional CMake options ``PDC_SERVER_CACHE_MAX_GB`` and ``PDC_SERVER_IDLE_CACHE_FLUSH_TIME`` can be set to affect the cache flush behavior. When the cached data size reaches the limit or the server is idle longer than the idle time, the flush operation is triggered. With the idle time trigger, when a new I/O request is received during the flush, PDC will stop flushng the next region and reset the timer to avoid interfering with the client's I/O. Setting ``export PDC_SERVER_CACHE_NO_FLUSH=0`` can disable the flush operation and keep the data in cache.
+
 Server Region Transfer Request Start
 ---------------------------------------------
 
@@ -342,6 +347,11 @@ In addition, the region transfer request received by the data server triggers a 
 Then, ``PDC_commit_request`` is called for request registration. This operation pushes the metadata for the region transfer request to the end of the data server's linked list for temporary storage.
 
 Finally, the server RPC returns a finished code to the client so that the client can return to the application immediately.
+
+Server Region Transfer Data Sieving
+---------------------------------------------
+When reading a 2D/3D region, PDC server uses data sieving if a subset of a storage region is requested, which would improve the read performance. The entire region is read as a contiguous chunk and the request subset will be extracted before sending the data to the client. Setting ``export PDC_DATA_SIEVING=0`` before running the server will disable this feature.
+
 
 Server Region Transfer Request Wait
 ---------------------------------------------
@@ -372,6 +382,11 @@ I/O by region is a special feature of the PDC I/O management system. Writing a r
 However, when a new region is written to an object, it is necessary to scan all the previously written regions to check for overlapping. The overlapping areas must be updated accordingly. If the new region is fully contained in any previously stored regions, it is unnecessary to append it to the end of the file.
 
 I/O by region will store repeated bytes when write requests contain overlapping parts. In addition, the region update mechanism generates extra I/O operations. This is one of its disadvantages. Optimization for region search (as R trees) in the future can relieve this problem.
+
+Storage Compression (Prototype)
+---------------------------------------------
+
+PDC has partial support for storing the compressed data for each storage regions with the ZFP compression library. Currently the compression is hard-coded to the ZFP accuracy mode.
 
 +++++++++++++++++++++++++++++++++++++++++++++
 Contributing to PDC project
