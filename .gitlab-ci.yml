@@ -14,7 +14,7 @@ perlmutter-no-cache-build:
       when: manual
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com
     allow_failure: false
     tags:
         - perlmutter
@@ -42,7 +42,7 @@ perlmutter-cache-build:
       when: manual
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     allow_failure: false
     tags:
         - perlmutter
@@ -72,7 +72,7 @@ perlmutter-no-cache-parallel-pdc:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -95,7 +95,7 @@ perlmutter-no-cache-parallel-obj:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -119,7 +119,7 @@ perlmutter-no-cache-parallel-cont:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -143,7 +143,7 @@ perlmutter-no-cache-parallel-prop:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -167,7 +167,7 @@ perlmutter-no-cache-parallel-region:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -191,7 +191,7 @@ perlmutter-no-cache-parallel-region-all:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -220,7 +220,7 @@ perlmutter-cache-parallel-pdc:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -243,7 +243,7 @@ perlmutter-cache-parallel-obj:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -267,7 +267,7 @@ perlmutter-cache-parallel-cont:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -291,7 +291,7 @@ perlmutter-cache-parallel-prop:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -315,7 +315,7 @@ perlmutter-cache-parallel-region:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -339,7 +339,7 @@ perlmutter-cache-parallel-region-all:
     stage: test
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
     - if: '$METRICS == null'
     needs:
@@ -363,7 +363,7 @@ perlmutter-metrics-build:
     stage: build
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
         - if: '$METRICS == "true"'
     allow_failure: false
@@ -390,7 +390,7 @@ perlmutter-metrics:
     stage: metrics
     id_tokens:
         SITE_ID_TOKEN:
-            aud: https://software.nersc.gov/
+            aud: https://gitlab.com/
     rules:
         - if: '$METRICS == "true"'
     needs:
