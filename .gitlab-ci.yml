@@ -10,7 +10,7 @@ stages:
 .report-status:
     variables:
         STATUS_PROJECT: "hpc-io/pdc"
-        STATUS_NAME: "NERSC (Perlmutter)"
+        STATUS_NAME: "NERSC"
     script:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
