@@ -8,31 +8,31 @@ stages:
     - metrics
 
 .report-status:
-  variables:
-    STATUS_PROJECT: hpc-io/pdc
-    STATUS_NAME: NERSC
-  script:
-    # For complete details on the GitHub API please see:
-    # https://developer.github.com/v3/repos/statuses
-    - curl -X POST -H "Authorization: token @${GITHUB_TOKEN}" https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}?state=${CI_JOB_NAME}\&context=${STATUS_NAME}\&target_url=${CI_PIPELINE_URL}
-  dependencies: []
+    variables:
+        STATUS_PROJECT: hpc-io/pdc
+        STATUS_NAME: NERSC
+    script:
+        # For complete details on the GitHub API please see:
+        # https://developer.github.com/v3/repos/statuses
+        - curl -X POST -H "Authorization: token @${GITHUB_TOKEN}" https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}?state=${CI_JOB_NAME}\&context=${STATUS_NAME}\&target_url=${CI_PIPELINE_URL}
+    dependencies: []
 
 pending:
-  stage: .pre
-  extends:
-    - .report-status
+    stage: .pre
+    extends:
+        - .report-status
 
 success:
-  stage: .post
-  extends:
-    - .report-status
+    stage: .post
+    extends:
+        - .report-status
 
 failure:
-  stage: .post
-  extends:
-    - .report-status
-  rules:
-    - when: on_failure
+    stage: .post
+    extends:
+        - .report-status
+    rules:
+        - when: on_failure
 
 perlmutter-no-cache-build:
     stage: build
