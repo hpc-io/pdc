@@ -9,15 +9,8 @@ stages:
 
 .report-status:
     variables:
-        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
-        SUPERCOMPUTER: "perlmutter"
         STATUS_PROJECT: "hpc-io/pdc"
         STATUS_NAME: "NERSC (Perlmutter)"
-    id_tokens:
-        SITE_ID_TOKEN:
-            aud: https://gitlab.com
-    tags:
-        - perlmutter
     script:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
