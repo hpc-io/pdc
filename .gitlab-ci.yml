@@ -14,7 +14,8 @@ stages:
     script:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
-        - curl -L \
+        - |
+          curl -L \
           -X POST \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer @${GITHUB_TOKEN}" \
