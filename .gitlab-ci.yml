@@ -11,8 +11,6 @@ stages:
     variables:
         STATUS_PROJECT: hpc-io/pdc
         STATUS_NAME: NERSC
-    tags:
-        - perlmutter
     script:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
@@ -20,16 +18,22 @@ stages:
 
 pending:
     stage: .pre
+    tags:
+        - perlmutter
     extends:
         - .report-status
 
 success:
     stage: .post
+    tags:
+        - perlmutter
     extends:
         - .report-status
 
 failure:
     stage: .post
+    tags:
+        - perlmutter
     extends:
         - .report-status
     rules:
