@@ -11,6 +11,9 @@ stages:
     variables:
         STATUS_PROJECT: hpc-io/pdc
         STATUS_NAME: NERSC
+    id_tokens:
+        SITE_ID_TOKEN:
+            aud: https://gitlab.com
     tags:
         - perlmutter
     script:
