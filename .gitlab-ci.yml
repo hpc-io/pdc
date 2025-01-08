@@ -1,7 +1,7 @@
 variables:
     PDC_BUILD_PATH: "${CI_PROJECT_DIR}/build"
     PDC_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
-    GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_PIPELINE_ID}"
+    GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}"
 
 stages:
     - build
@@ -53,7 +53,6 @@ perlmutter-no-cache-build:
     tags:
         - perlmutter
     variables:
-        GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_PIPELINE_ID}-no-cache"
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
@@ -82,7 +81,6 @@ perlmutter-cache-build:
     tags:
         - perlmutter
     variables:
-        GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_PIPELINE_ID}-cache"
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
