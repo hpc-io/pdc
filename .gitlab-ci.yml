@@ -119,8 +119,8 @@ perlmutter-no-cache-parallel-pdc:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-pdc"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-pdc"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-pdc"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-pdc"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -143,8 +143,8 @@ perlmutter-no-cache-parallel-obj:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-obj"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-obj"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-obj"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-obj"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -167,8 +167,8 @@ perlmutter-no-cache-parallel-cont:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-cont"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-cont"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-cont"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-cont"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -191,8 +191,8 @@ perlmutter-no-cache-parallel-prop:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-prop"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-prop"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-prop"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-prop"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -215,8 +215,8 @@ perlmutter-no-cache-parallel-region:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-region"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-region"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-region"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-region"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -239,8 +239,8 @@ perlmutter-no-cache-parallel-region-all:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/no-cache/pdc-tmp-paralell-region-all"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/no-cache/pdc-data-paralell-region-all"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-region-all"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-region-all"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -267,8 +267,8 @@ perlmutter-cache-parallel-pdc:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-pdc"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-pdc"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-pdc"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-pdc"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -291,8 +291,8 @@ perlmutter-cache-parallel-obj:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-obj"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-obj"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-obj"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-obj"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -315,8 +315,8 @@ perlmutter-cache-parallel-cont:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-cont"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-cont"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-cont"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-cont"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -339,8 +339,8 @@ perlmutter-cache-parallel-prop:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-prop"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-prop"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-prop"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-prop"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -363,8 +363,8 @@ perlmutter-cache-parallel-region:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-region"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-region"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-region"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-region"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -387,8 +387,8 @@ perlmutter-cache-parallel-region-all:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/cache/pdc-tmp-paralell-region-all"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/cache/pdc-data-paralell-region-all"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-region-all"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-region-all"
     script:        
         - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -437,8 +437,8 @@ perlmutter-metrics:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=${PDC_QUEUE} --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        PDC_TMPDIR: "${PDC_BUILD_PATH}/pdc-tmp-metrics"
-        PDC_DATA_LOC: "${PDC_BUILD_PATH}/pdc-data-metrics"
+        PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/pdc-tmp-metrics"
+        PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/pdc-data-metrics"
         PDC_CLIENT_LOOKUP: "NONE"
         PDC_SERVER: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/pdc_server.exe"
         PDC_SERVER_CLOSE: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/close_server"
