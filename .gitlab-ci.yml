@@ -26,35 +26,26 @@ stages:
 
 pending:
     stage: .pre
+    variables:
+        STATUS_MESSAGE: "Waiting for manual approval to run on NERSC system..."
     extends:
         - .report-status
-    script:
-        - echo "STATUS_MESSAGE='Waiting for approval to run on NERSC system...'" > .env
-    artifacts:
-        reports:
-            dotenv: .env
 
 success:
     stage: .post
+    variables:
+        STATUS_MESSAGE: "Successfully passed all tests on NERSC system!"
     extends:
         - .report-status
-    script:
-        - echo "STATUS_MESSAGE='Successfully passed all tests on NERSC system!'" > .env
-    artifacts:
-        reports:
-            dotenv: .env
 
 failure:
     stage: .post
+    variables:
+        STATUS_MESSAGE: "Failed to pass all tests on NERSC system!"
     extends:
         - .report-status
     rules:
         - when: on_failure
-    script:
-        - echo "STATUS_MESSAGE='Failed to pass all tests on NERSC system!'" > .env
-    artifacts:
-        reports:
-            dotenv: .env
 
 perlmutter-no-cache-build:
     stage: build
