@@ -27,7 +27,7 @@ stages:
 pending:
     stage: .pre
     variables:
-        STATUS_MESSAGE: "Waiting for manual approval to run on NERSC system..."
+        STATUS_MESSAGE: "Waiting for manual approval..."
     extends:
         - .report-status
 
@@ -62,6 +62,7 @@ perlmutter-no-cache-build:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
+        STATUS_MESSAGE: ""
     script:
         - module load libfabric
         - module list
@@ -70,6 +71,8 @@ perlmutter-no-cache-build:
         - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/no-cache
         - make -j
         - make install
+    extends:
+        - .report-status
     artifacts:
         paths:
             - ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -90,6 +93,7 @@ perlmutter-cache-build:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
+        STATUS_MESSAGE: ""
     script:
         - module load libfabric
         - module list
@@ -98,6 +102,8 @@ perlmutter-cache-build:
         - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/cache
         - make -j
         - make install
+    extends:
+        - .report-status
     artifacts:
         paths:
             - ${PDC_BUILD_PATH}/perlmutter/cache
