@@ -6,12 +6,13 @@ variables:
     GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}"
 
 stages:
+    - authorize
     - build
     - test
     - metrics
 
 .report-status:
-    before_script:
+    script:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
         - |
@@ -46,11 +47,25 @@ failure:
     rules:
         - when: on_failure
 
-perlmutter-no-cache-build:
-    stage: build
+perlmutter-authorize:
+    stage: authorize
     rules:
     - if: '$METRICS == null'
       when: manual
+    script:
+        - |
+          curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}" \
+          -d "{\"state\":\"pending\",\"description\":\"Running...\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${STATUS_NAME}\"}"
+
+perlmutter-no-cache-build:
+    stage: build
+    needs:
+        - perlmutter-authorize
     id_tokens:
         SITE_ID_TOKEN:
             aud: https://gitlab.com
@@ -61,7 +76,6 @@ perlmutter-no-cache-build:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        STATUS_MESSAGE: " "
     script:
         - module load libfabric
         - module list
@@ -77,9 +91,8 @@ perlmutter-no-cache-build:
 
 perlmutter-cache-build:
     stage: build
-    rules:
-    - if: '$METRICS == null'
-      when: manual
+    needs:
+        - perlmutter-authorize
     id_tokens:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
@@ -90,9 +103,6 @@ perlmutter-cache-build:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        STATUS_MESSAGE: ""
-    extends:
-        - .report-status
     script:
         - module load libfabric
         - module list
