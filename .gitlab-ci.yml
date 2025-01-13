@@ -11,7 +11,7 @@ stages:
     - metrics
 
 .report-status:
-    script:
+    before_script:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
         - |
@@ -62,8 +62,6 @@ perlmutter-no-cache-build:
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         STATUS_MESSAGE: " "
-    extends:
-        - .report-status
     script:
         - module load libfabric
         - module list
