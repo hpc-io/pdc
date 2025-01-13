@@ -1,4 +1,6 @@
 variables:
+    STATUS_PROJECT: "hpc-io/pdc"
+    STATUS_NAME: "NERSC / Perlmutter"
     PDC_BUILD_PATH: "${CI_PROJECT_DIR}/build"
     PDC_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
     GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}"
@@ -9,9 +11,6 @@ stages:
     - metrics
 
 .report-status:
-    variables:
-        STATUS_PROJECT: "hpc-io/pdc"
-        STATUS_NAME: "NERSC / Perlmutter"
     script:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
@@ -62,7 +61,7 @@ perlmutter-no-cache-build:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
-        STATUS_MESSAGE: ""
+        STATUS_MESSAGE: " "
     extends:
         - .report-status
     script:
