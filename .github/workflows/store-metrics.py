@@ -127,7 +127,7 @@ with open(sys.argv[2], 'r') as f:
             total_time_file_agg += t
             observed_time_file_agg += t
             obj_close_time_node.append(t)
-        elif 'Sleep time' in line:
+        elif 'Sleep end' in line:
             t = float(line.split(':')[1])
             sleep_time_file_agg += t
             observed_time_file_agg += t
