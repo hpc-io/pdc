@@ -34,14 +34,14 @@ pending:
 success:
     stage: .post
     variables:
-        STATUS_MESSAGE: "Successfully passed all tests on NERSC system!"
+        STATUS_MESSAGE: "Successfully passed all tests on Perlmutter!"
     extends:
         - .report-status
 
 failure:
     stage: .post
     variables:
-        STATUS_MESSAGE: "Failed to pass all tests on NERSC system!"
+        STATUS_MESSAGE: "Failed to pass all tests on Perlmutter!"
     extends:
         - .report-status
     rules:
