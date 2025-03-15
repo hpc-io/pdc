@@ -108,7 +108,8 @@ PDCinit(const char *pdc_name)
         PGOTO_ERROR(FAIL, "PDC region transfer init error");
 
     // PDC Client Server connection init
-    PDC_Client_init();
+    if (PDC_Client_init() < 0)
+        PGOTO_ERROR(FAIL, "PDC client init error");
 #ifdef PDC_TIMING
     PDC_timing_init();
 #endif
