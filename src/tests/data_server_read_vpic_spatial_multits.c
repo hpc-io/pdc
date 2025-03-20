@@ -142,12 +142,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if (cont_id <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // Float vars are first in the array follow by int vars
     for (i = 0; i < n_var; i++) {
@@ -352,13 +352,13 @@ main(int argc, char **argv)
 
 done:
     if (PDCcont_close(cont_id) < 0)
-        LOG_ERROR("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close container property\n");
+        LOG_ERROR("Failed to close container property\n");
 
     if (PDCclose(pdc_id) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 exit:
 #ifdef ENABLE_MPI

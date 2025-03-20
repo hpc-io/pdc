@@ -460,13 +460,13 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
     switch (query_series) {
         case 0:
             if (nres != 1) {
-                LOG_ERROR("fail to query kvtag [%s] with rank %d. Expect 1 result but got %d result\n",
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expect 1 result but got %d result\n",
                           "str109str=str109str", world_rank, nres);
                 step_failed = 0;
             }
             if (pdc_ids[0] != 109) {
                 LOG_ERROR(
-                    "fail to query kvtag [%s] with rank %d. Expect 1 result which is 109, but got result "
+                    "Failed to query kvtag [%s] with rank %d. Expect 1 result which is 109, but got result "
                     "%" PRIu64 ".\n",
                     "str109str=str109str", world_rank, pdc_ids[0]);
                 step_failed = 0;
@@ -474,7 +474,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 1:
             if (nres != 10) {
-                LOG_ERROR("fail to query kvtag [%s] with rank %d. Expect 10 Result, but got %d result.\n",
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expect 10 Result, but got %d result.\n",
                           "str09*=str09*", world_rank, nres);
                 step_failed = 1;
             }
@@ -483,7 +483,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
                     LOG_ERROR(
-                        "fail to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
+                        "Failed to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
                         "%d, but got %" PRIu64 "\n",
                         "str09*=str09*", world_rank, i, i + 90, pdc_ids[i]);
                     step_failed = 1;
@@ -493,7 +493,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 2:
             if (nres != 10) {
-                LOG_ERROR("fail to query kvtag [%s] with rank %d. Expect 10 result, but got %d result.\n",
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expect 10 result, but got %d result.\n",
                           "*09str=*09str", world_rank, nres);
                 step_failed = 2;
             }
@@ -502,7 +502,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i * 10 + 9) {
                     LOG_ERROR(
-                        "fail to query kvtag [%s] with rank %d. The $d th result does not match. Expect "
+                        "Failed to query kvtag [%s] with rank %d. The $d th result does not match. Expect "
                         "%d, but got %" PRIu64 "\n",
                         "*09str=*09str", world_rank, i, i * 10 + 9, pdc_ids[i]);
                     step_failed = 2;
@@ -512,7 +512,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 3:
             if (nres != 20) {
-                LOG_ERROR("fail to query kvtag [%s] with rank %d. Expected 20 results, but got %d results\n",
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expected 20 results, but got %d results\n",
                           "*09*=*09*", world_rank, nres);
                 step_failed = 3;
             }
@@ -523,7 +523,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != expected[i]) {
                     LOG_ERROR(
-                        "fail to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
+                        "Failed to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
                         "%" PRIu64 ", but got %" PRIu64 " results.\n",
                         "*09*=*09*", world_rank, i, expected[i], pdc_ids[i]);
                     step_failed = 3;
@@ -533,13 +533,13 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 4:
             if (nres != 1) {
-                LOG_ERROR("fail to query kvtag [%s] with rank %d. Expected 1 result, but got %d results\n",
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expected 1 result, but got %d results\n",
                           "intkey=109", world_rank, nres);
                 step_failed = 4;
             }
             if (pdc_ids[0] != 109) {
                 LOG_ERROR(
-                    "fail to query kvtag [%s] with rank %d. Expected 1 result which is 109, but got %" PRIu64
+                    "Failed to query kvtag [%s] with rank %d. Expected 1 result which is 109, but got %" PRIu64
                     "\n",
                     "intkey=109", world_rank, pdc_ids[0]);
                 step_failed = 4;
@@ -548,7 +548,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
         case 5:
             if (nres != 10) {
                 LOG_ERROR(
-                    "fail to query kvtag [%s] with rank %d. Expected 10 results, but got %d results. \n",
+                    "Failed to query kvtag [%s] with rank %d. Expected 10 results, but got %d results. \n",
                     "intkey=90|~|99", world_rank, nres);
                 step_failed = 5;
             }
@@ -557,7 +557,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
                     LOG_ERROR(
-                        "fail to query kvtag [%s] with rank %d. The %d th result does not match, expect "
+                        "Failed to query kvtag [%s] with rank %d. The %d th result does not match, expect "
                         "%d but got %" PRIu64 "\n",
                         "intkey=90|~|99", world_rank, i, i + 90, pdc_ids[i]);
                     step_failed = 5;

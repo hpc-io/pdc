@@ -105,12 +105,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        LOG_ERROR("fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
     if (cont_id <= 0)
-        LOG_ERROR("fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop_xx = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -453,111 +453,111 @@ main(int argc, char **argv)
 #endif
 
     if (PDCobj_close(obj_xx) < 0)
-        LOG_ERROR("fail to close obj_xx\n");
+        LOG_ERROR("Failed to close obj_xx\n");
 
     if (PDCobj_close(obj_yy) < 0)
-        LOG_ERROR("fail to close object obj_yy\n");
+        LOG_ERROR("Failed to close object obj_yy\n");
 
     if (PDCobj_close(obj_zz) < 0)
-        LOG_ERROR("fail to close object obj_zz\n");
+        LOG_ERROR("Failed to close object obj_zz\n");
 
     if (PDCobj_close(obj_pxx) < 0)
-        LOG_ERROR("fail to close object obj_pxx\n");
+        LOG_ERROR("Failed to close object obj_pxx\n");
 
     if (PDCobj_close(obj_pyy) < 0)
-        LOG_ERROR("fail to close object obj_pyy\n");
+        LOG_ERROR("Failed to close object obj_pyy\n");
 
     if (PDCobj_close(obj_pzz) < 0)
-        LOG_ERROR("fail to close object obj_pzz\n");
+        LOG_ERROR("Failed to close object obj_pzz\n");
 
     if (PDCobj_close(obj_id11) < 0)
-        LOG_ERROR("fail to close object obj_id11\n");
+        LOG_ERROR("Failed to close object obj_id11\n");
 
     if (PDCobj_close(obj_id22) < 0)
-        LOG_ERROR("fail to close object obj_id22\n");
+        LOG_ERROR("Failed to close object obj_id22\n");
 
     if (PDCprop_close(obj_prop_xx) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_xx\n");
+        LOG_ERROR("Failed to close obj property obj_prop_xx\n");
 
     if (PDCprop_close(obj_prop_yy) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_yy\n");
+        LOG_ERROR("Failed to close obj property obj_prop_yy\n");
 
     if (PDCprop_close(obj_prop_zz) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_zz\n");
+        LOG_ERROR("Failed to close obj property obj_prop_zz\n");
 
     if (PDCprop_close(obj_prop_pxx) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_pxx\n");
+        LOG_ERROR("Failed to close obj property obj_prop_pxx\n");
 
     if (PDCprop_close(obj_prop_pyy) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_pyy\n");
+        LOG_ERROR("Failed to close obj property obj_prop_pyy\n");
 
     if (PDCprop_close(obj_prop_pzz) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_pzz\n");
+        LOG_ERROR("Failed to close obj property obj_prop_pzz\n");
 
     if (PDCprop_close(obj_prop_id11) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_id11\n");
+        LOG_ERROR("Failed to close obj property obj_prop_id11\n");
 
     if (PDCprop_close(obj_prop_id22) < 0)
-        LOG_ERROR("fail to close obj property obj_prop_id22\n");
+        LOG_ERROR("Failed to close obj property obj_prop_id22\n");
 
     if (PDCregion_close(region_x) < 0)
-        LOG_ERROR("fail to close region region_x\n");
+        LOG_ERROR("Failed to close region region_x\n");
 
     if (PDCregion_close(region_y) < 0)
-        LOG_ERROR("fail to close region region_y\n");
+        LOG_ERROR("Failed to close region region_y\n");
 
     if (PDCregion_close(region_z) < 0)
-        LOG_ERROR("fail to close region region_z\n");
+        LOG_ERROR("Failed to close region region_z\n");
 
     if (PDCregion_close(region_px) < 0)
-        LOG_ERROR("fail to close region region_px\n");
+        LOG_ERROR("Failed to close region region_px\n");
 
     if (PDCregion_close(region_py) < 0)
-        LOG_ERROR("fail to close region region_py\n");
+        LOG_ERROR("Failed to close region region_py\n");
 
     if (PDCobj_close(region_pz) < 0)
-        LOG_ERROR("fail to close region region_pz\n");
+        LOG_ERROR("Failed to close region region_pz\n");
 
     if (PDCobj_close(region_id1) < 0)
-        LOG_ERROR("fail to close region region_id1\n");
+        LOG_ERROR("Failed to close region region_id1\n");
 
     if (PDCobj_close(region_id2) < 0)
-        LOG_ERROR("fail to close region region_id2\n");
+        LOG_ERROR("Failed to close region region_id2\n");
 
     if (PDCregion_close(region_xx) < 0)
-        LOG_ERROR("fail to close region region_xx\n");
+        LOG_ERROR("Failed to close region region_xx\n");
 
     if (PDCregion_close(region_yy) < 0)
-        LOG_ERROR("fail to close region region_yy\n");
+        LOG_ERROR("Failed to close region region_yy\n");
 
     if (PDCregion_close(region_zz) < 0)
-        LOG_ERROR("fail to close region region_zz\n");
+        LOG_ERROR("Failed to close region region_zz\n");
 
     if (PDCregion_close(region_pxx) < 0)
-        LOG_ERROR("fail to close region region_pxx\n");
+        LOG_ERROR("Failed to close region region_pxx\n");
 
     if (PDCregion_close(region_pyy) < 0)
-        LOG_ERROR("fail to close region region_pyy\n");
+        LOG_ERROR("Failed to close region region_pyy\n");
 
     if (PDCregion_close(region_pzz) < 0)
-        LOG_ERROR("fail to close region region_pzz\n");
+        LOG_ERROR("Failed to close region region_pzz\n");
 
     if (PDCobj_close(region_id11) < 0)
-        LOG_ERROR("fail to close region region_id11\n");
+        LOG_ERROR("Failed to close region region_id11\n");
 
     if (PDCobj_close(region_id22) < 0)
-        LOG_ERROR("fail to close region region_id22\n");
+        LOG_ERROR("Failed to close region region_id22\n");
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        LOG_ERROR("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc_id) < 0)
-        LOG_ERROR("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     free(offset);
     free(offset_remote);

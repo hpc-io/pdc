@@ -84,12 +84,12 @@ main(int argc, char **argv)
     }
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
 

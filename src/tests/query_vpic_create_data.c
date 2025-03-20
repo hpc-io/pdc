@@ -109,10 +109,10 @@ main(int argc, char **argv)
     pdc_id    = PDCinit("pdc");
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if (cont_id <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create object property for float and int
     obj_prop_float = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -221,19 +221,19 @@ main(int argc, char **argv)
 
 done:
     if (PDCprop_close(obj_prop_float) < 0)
-        LOG_ERROR("Fail to close float obj property \n");
+        LOG_ERROR("Failed to close float obj property \n");
 
     if (PDCprop_close(obj_prop_int) < 0)
-        LOG_ERROR("Fail to close int obj property \n");
+        LOG_ERROR("Failed to close int obj property \n");
 
     if (PDCcont_close(cont_id) < 0)
-        LOG_ERROR("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close container property\n");
+        LOG_ERROR("Failed to close container property\n");
 
     if (PDCclose(pdc_id) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

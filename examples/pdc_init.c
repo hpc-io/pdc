@@ -46,7 +46,7 @@ main(int argc, char **argv)
 
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOGI("fail to close PDC\n");
+        LOGI("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

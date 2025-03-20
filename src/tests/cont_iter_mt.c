@@ -86,19 +86,19 @@ TestThread(void *ThreadArgs)
 
     // close cont1
     if (PDCcont_close(cont1) < 0)
-        LOG_ERROR("Fail to close container %lld\n", cont1);
+        LOG_ERROR("Failed to close container %lld\n", cont1);
     else
         LOG_INFO("[%d] successfully close container # %llx\n", args->ThreadRank, cont1);
 
     // close cont2
     if (PDCcont_close(cont2) < 0)
-        LOG_ERROR("Fail to close container %lld\n", cont2);
+        LOG_ERROR("Failed to close container %lld\n", cont2);
     else
         LOG_INFO("[%d] successfully close container # %llx\n", args->ThreadRank, cont2);
 
     // close cont3
     if (PDCcont_close(cont3) < 0)
-        LOG_ERROR("Fail to close container %lld\n", cont3);
+        LOG_ERROR("Failed to close container %lld\n", cont3);
     else
         LOG_INFO("[%d] successfully close container # %llx\n", args->ThreadRank, cont3);
 
@@ -152,7 +152,7 @@ main(int argc, char **argv)
 
     // close pdc
     if (PDC_close(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
     else
         LOG_INFO("PDC is closed\n");
 

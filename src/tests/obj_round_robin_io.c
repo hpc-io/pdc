@@ -151,12 +151,12 @@ main(int argc, char **argv)
 
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     PDCprop_set_obj_type(obj_prop, var_type);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
 
@@ -202,12 +202,12 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(local_region) < 0) {
-        LOG_ERROR("Fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
 
     if (PDCregion_close(global_region) < 0) {
-        LOG_ERROR("Fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
 
@@ -253,12 +253,12 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(local_region) < 0) {
-        LOG_ERROR("Fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
 
     if (PDCregion_close(global_region) < 0) {
-        LOG_ERROR("Fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
 
@@ -351,12 +351,12 @@ main(int argc, char **argv)
         free(data_read);
 
         if (PDCregion_close(local_region) < 0) {
-            LOG_ERROR("Fail to close local region\n");
+            LOG_ERROR("Failed to close local region\n");
             ret_value = 1;
         }
 
         if (PDCregion_close(global_region) < 0) {
-            LOG_ERROR("Fail to close global region\n");
+            LOG_ERROR("Failed to close global region\n");
             ret_value = 1;
         }
 

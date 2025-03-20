@@ -48,7 +48,7 @@ main(int argc, char **argv)
         LOG_INFO("Create a container property\n");
     }
     else {
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
         return 1;
     }
     // create a container
@@ -57,12 +57,12 @@ main(int argc, char **argv)
         LOG_INFO("Create a container c1\n");
     }
     else {
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
         return 1;
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         return 1;
     }
     else {
@@ -70,7 +70,7 @@ main(int argc, char **argv)
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         return 1;
     }
     else {
@@ -78,7 +78,7 @@ main(int argc, char **argv)
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         return 1;
     }
 #ifdef ENABLE_MPI

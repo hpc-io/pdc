@@ -152,12 +152,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0) {
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
     }
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
     if (cont_id <= 0) {
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
     }
 
     // create an object property
@@ -182,15 +182,15 @@ main(int argc, char **argv)
     LOG_ERROR("Rank %4d: Write read wait all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     if (PDCobj_close(obj_id) < 0) {
-        LOG_ERROR("Fail to close obj_id\n");
+        LOG_ERROR("Failed to close obj_id\n");
     }
 
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
     }
 
     if (PDCclose(pdc_id) < 0) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
     }
 
     MPI_Finalize();

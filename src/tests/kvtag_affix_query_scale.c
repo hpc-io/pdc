@@ -169,7 +169,7 @@ main(int argc, char *argv[])
     int bypass_query = query_type == -1 ? 1 : 0;
     // prepare container
     if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, my_rank) < 0) {
-        println("fail to prepare container");
+        println("Failed to prepare container");
         goto done;
     }
     // Create a number of objects, add at least one tag to that object
@@ -213,16 +213,16 @@ main(int argc, char *argv[])
             pdcid_t meta_id = PDC_obj_get_info(obj_ids[i])->obj_info_pub->meta_id;
             if (is_using_dart) {
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    LOG_ERROR("Fail to add a kvtag to o%d\n", i + my_obj_s);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
                 }
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, kvtag.value, kvtag.size,
                                                         kvtag.type, ref_type, meta_id) < 0) {
-                    LOG_ERROR("Fail to add a kvtag to o%d\n", i + my_obj_s);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
             else {
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    LOG_ERROR("Fail to add a kvtag to o%d\n", i + my_obj_s);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
             free(kvtag.name);
@@ -330,7 +330,7 @@ main(int argc, char *argv[])
 #endif
                 }
                 if (ret_value < 0) {
-                    LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                     break;
                 }
 
@@ -411,7 +411,7 @@ done:
     // close a container
     if (PDCcont_close(cont) < 0) {
         if (my_rank == 0) {
-            LOG_ERROR("Fail to close container c1\n");
+            LOG_ERROR("Failed to close container c1\n");
         }
     }
     else {
@@ -422,7 +422,7 @@ done:
     // close an object property
     if (PDCprop_close(obj_prop) < 0) {
         if (my_rank == 0)
-            LOG_ERROR("Fail to close property");
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (my_rank == 0)
@@ -432,7 +432,7 @@ done:
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
         if (my_rank == 0)
-            LOG_ERROR("Fail to close property");
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (my_rank == 0)
@@ -442,7 +442,7 @@ done:
     // close pdc
     if (PDCclose(pdc) < 0) {
         if (my_rank == 0)
-            LOG_ERROR("Fail to close PDC\n");
+            LOG_ERROR("Failed to close PDC\n");
     }
 
 #ifdef ENABLE_MPI

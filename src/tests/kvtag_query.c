@@ -112,17 +112,17 @@ main(int argc, char *argv[])
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
     // Create a number of objects, add at least one tag to that object
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
@@ -134,7 +134,7 @@ main(int argc, char *argv[])
         sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
-            LOG_ERROR("Fail to create object");
+            LOG_ERROR("Failed to create object");
     }
 
     if (my_rank == 0)
@@ -165,13 +165,13 @@ main(int argc, char *argv[])
             if (is_using_dart) {
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, strlen(value),
                                                         PDC_STRING, ref_type, (uint64_t)obj_ids[i]) < 0) {
-                    LOG_ERROR("Fail to add a kvtag to o%d\n", i + my_obj_s);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
             else {
                 /* println("Rank %d: [%s] [%d], len %d\n", my_rank, kvtag.name, v, kvtag.size); */
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    LOG_ERROR("Fail to add a kvtag to o%d\n", i + my_obj_s);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
         }
@@ -213,7 +213,7 @@ main(int argc, char *argv[])
 #else
             if (PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids) < 0) {
 #endif
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                 break;
             }
         }
@@ -231,25 +231,25 @@ main(int argc, char *argv[])
 #endif
     // close a container
     if (PDCcont_close(cont) < 0)
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
     else
         LOG_INFO("successfully close container c1\n");
 
     // close an object property
     if (PDCprop_close(obj_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
     else
         LOG_INFO("successfully close object property\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
     else
         LOG_INFO("successfully close container property\n");
 
     // close pdc
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 done:
 #ifdef ENABLE_MPI
     MPI_Finalize();

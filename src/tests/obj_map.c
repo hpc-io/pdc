@@ -87,12 +87,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if (cont_id <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -186,14 +186,14 @@ main(int argc, char **argv)
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDC_close(pdc_id) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

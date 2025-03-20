@@ -92,7 +92,7 @@ main(int argc, char **argv)
         LOG_INFO("Create a container property\n");
     }
     else {
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
@@ -102,7 +102,7 @@ main(int argc, char **argv)
         LOG_INFO("Create a container c1\n");
     }
     else {
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
@@ -111,13 +111,13 @@ main(int argc, char **argv)
         LOG_INFO("Create an object property\n");
     }
     else {
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
 
     ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj type");
+        LOG_ERROR("Failed to set obj type");
         ret_value = 1;
     }
     PDCprop_set_obj_dims(obj_prop, ndim, dims);
@@ -150,7 +150,7 @@ main(int argc, char **argv)
             }
         }
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to set obj type");
+            LOG_ERROR("Failed to set obj type");
             ret_value = 1;
         }
 
@@ -160,7 +160,7 @@ main(int argc, char **argv)
             LOG_INFO("Create an object o1\n");
         }
         else {
-            LOG_ERROR("Fail to create object");
+            LOG_ERROR("Failed to create object");
             ret_value = 1;
         }
     }
@@ -174,7 +174,7 @@ main(int argc, char **argv)
         LOG_INFO("Create local region\n");
     }
     else {
-        LOG_ERROR("Fail to create region");
+        LOG_ERROR("Failed to create region");
         ret_value = 1;
     }
 
@@ -187,7 +187,7 @@ main(int argc, char **argv)
         LOG_INFO("Create global region\n");
     }
     else {
-        LOG_ERROR("Fail to create region");
+        LOG_ERROR("Failed to create region");
         ret_value = 1;
     }
     for (j = 0; j < OBJ_NUM; ++j) {
@@ -204,7 +204,7 @@ main(int argc, char **argv)
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer start");
+            LOG_ERROR("Failed to region transfer start");
             ret_value = 1;
         }
     }
@@ -212,7 +212,7 @@ main(int argc, char **argv)
         for (i = 0; i < OBJ_NUM; ++i) {
             ret = PDCregion_transfer_start(transfer_request[i]);
             if (ret != SUCCEED) {
-                LOG_ERROR("Fail to region transfer start");
+                LOG_ERROR("Failed to region transfer start");
                 ret_value = 1;
             }
         }
@@ -220,7 +220,7 @@ main(int argc, char **argv)
     if (wait_method == 1) {
         ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
     }
@@ -233,7 +233,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         request_size = 0;
@@ -243,7 +243,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         free(transfer_request_all);
@@ -251,12 +251,12 @@ main(int argc, char **argv)
     for (i = 0; i < OBJ_NUM; ++i) {
         ret = PDCregion_transfer_close(transfer_request[i]);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer close");
+            LOG_ERROR("Failed to region transfer close");
             ret_value = 1;
         }
     }
     if (PDCregion_close(reg) < 0) {
-        LOG_ERROR("Fail to close local region");
+        LOG_ERROR("Failed to close local region");
         ret_value = 1;
     }
     else {
@@ -264,7 +264,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        LOG_ERROR("Fail to close global region");
+        LOG_ERROR("Failed to close global region");
         ret_value = 1;
     }
     else {
@@ -285,7 +285,7 @@ main(int argc, char **argv)
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer start");
+            LOG_ERROR("Failed to region transfer start");
             ret_value = 1;
         }
     }
@@ -293,7 +293,7 @@ main(int argc, char **argv)
         for (i = 0; i < OBJ_NUM; ++i) {
             ret = PDCregion_transfer_start(transfer_request[i]);
             if (ret != SUCCEED) {
-                LOG_ERROR("Fail to region transfer start");
+                LOG_ERROR("Failed to region transfer start");
                 ret_value = 1;
             }
         }
@@ -301,7 +301,7 @@ main(int argc, char **argv)
     if (wait_method == 1) {
         ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
     }
@@ -314,7 +314,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         request_size = 0;
@@ -324,7 +324,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         free(transfer_request_all);
@@ -332,7 +332,7 @@ main(int argc, char **argv)
     for (i = 0; i < OBJ_NUM; ++i) {
         ret = PDCregion_transfer_close(transfer_request[i]);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer close");
+            LOG_ERROR("Failed to region transfer close");
             ret_value = 1;
         }
     }
@@ -348,7 +348,7 @@ main(int argc, char **argv)
         }
     }
     if (PDCregion_close(reg) < 0) {
-        LOG_ERROR("Fail to close local region");
+        LOG_ERROR("Failed to close local region");
         ret_value = 1;
     }
     else {
@@ -356,7 +356,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        LOG_ERROR("Fail to close global region");
+        LOG_ERROR("Failed to close global region");
         ret_value = 1;
     }
     else {
@@ -394,7 +394,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg) < 0) {
-        LOG_ERROR("Fail to close local region");
+        LOG_ERROR("Failed to close local region");
         ret_value = 1;
     }
     else {
@@ -402,7 +402,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        LOG_ERROR("Fail to close global region");
+        LOG_ERROR("Failed to close global region");
         ret_value = 1;
     }
     else {
@@ -412,7 +412,7 @@ main(int argc, char **argv)
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer start");
+            LOG_ERROR("Failed to region transfer start");
             ret_value = 1;
         }
     }
@@ -420,7 +420,7 @@ main(int argc, char **argv)
         for (i = 0; i < OBJ_NUM; ++i) {
             ret = PDCregion_transfer_start(transfer_request[i]);
             if (ret != SUCCEED) {
-                LOG_ERROR("Fail to region transfer start");
+                LOG_ERROR("Failed to region transfer start");
                 ret_value = 1;
             }
         }
@@ -428,7 +428,7 @@ main(int argc, char **argv)
     if (wait_method == 1) {
         ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
     }
@@ -441,7 +441,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         request_size = 0;
@@ -451,7 +451,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         free(transfer_request_all);
@@ -459,7 +459,7 @@ main(int argc, char **argv)
     for (i = 0; i < OBJ_NUM; ++i) {
         ret = PDCregion_transfer_close(transfer_request[i]);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer close");
+            LOG_ERROR("Failed to region transfer close");
             ret_value = 1;
         }
     }
@@ -477,7 +477,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg) < 0) {
-        LOG_ERROR("Fail to close local region");
+        LOG_ERROR("Failed to close local region");
         ret_value = 1;
     }
     else {
@@ -485,7 +485,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        LOG_ERROR("Fail to close global region");
+        LOG_ERROR("Failed to close global region");
         ret_value = 1;
     }
     else {
@@ -495,7 +495,7 @@ main(int argc, char **argv)
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer start");
+            LOG_ERROR("Failed to region transfer start");
             ret_value = 1;
         }
     }
@@ -503,7 +503,7 @@ main(int argc, char **argv)
         for (i = 0; i < OBJ_NUM; ++i) {
             ret = PDCregion_transfer_start(transfer_request[i]);
             if (ret != SUCCEED) {
-                LOG_ERROR("Fail to region transfer start");
+                LOG_ERROR("Failed to region transfer start");
                 ret_value = 1;
             }
         }
@@ -511,7 +511,7 @@ main(int argc, char **argv)
     if (wait_method == 1) {
         ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
     }
@@ -524,7 +524,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         request_size = 0;
@@ -534,7 +534,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         free(transfer_request_all);
@@ -542,7 +542,7 @@ main(int argc, char **argv)
     for (i = 0; i < OBJ_NUM; ++i) {
         ret = PDCregion_transfer_close(transfer_request[i]);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer close");
+            LOG_ERROR("Failed to region transfer close");
             ret_value = 1;
         }
     }
@@ -550,7 +550,7 @@ main(int argc, char **argv)
     // close object
     for (i = 0; i < OBJ_NUM; ++i) {
         if (PDCobj_close(obj[i]) < 0) {
-            LOG_ERROR("Fail to close object o1");
+            LOG_ERROR("Failed to close object o1");
             ret_value = 1;
         }
         else {
@@ -577,7 +577,7 @@ main(int argc, char **argv)
             LOG_INFO("Create an object o1\n");
         }
         else {
-            LOG_ERROR("Fail to create object");
+            LOG_ERROR("Failed to create object");
             ret_value = 1;
         }
     }
@@ -619,7 +619,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg) < 0) {
-        LOG_ERROR("Fail to close local region");
+        LOG_ERROR("Failed to close local region");
         ret_value = 1;
     }
     else {
@@ -627,7 +627,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        LOG_ERROR("Fail to close global region");
+        LOG_ERROR("Failed to close global region");
         ret_value = 1;
     }
     else {
@@ -637,7 +637,7 @@ main(int argc, char **argv)
     if (start_method) {
         ret = PDCregion_transfer_start_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer start");
+            LOG_ERROR("Failed to region transfer start");
             ret_value = 1;
         }
     }
@@ -645,7 +645,7 @@ main(int argc, char **argv)
         for (i = 0; i < OBJ_NUM; ++i) {
             ret = PDCregion_transfer_start(transfer_request[i]);
             if (ret != SUCCEED) {
-                LOG_ERROR("Fail to region transfer start");
+                LOG_ERROR("Failed to region transfer start");
                 ret_value = 1;
             }
         }
@@ -653,7 +653,7 @@ main(int argc, char **argv)
     if (wait_method == 1) {
         ret = PDCregion_transfer_wait_all(transfer_request, OBJ_NUM);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
     }
@@ -666,7 +666,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         request_size = 0;
@@ -676,7 +676,7 @@ main(int argc, char **argv)
         }
         ret = PDCregion_transfer_wait_all(transfer_request_all, request_size);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer wait");
+            LOG_ERROR("Failed to region transfer wait");
             ret_value = 1;
         }
         free(transfer_request_all);
@@ -684,7 +684,7 @@ main(int argc, char **argv)
     for (i = 0; i < OBJ_NUM; ++i) {
         ret = PDCregion_transfer_close(transfer_request[i]);
         if (ret != SUCCEED) {
-            LOG_ERROR("Fail to region transfer close");
+            LOG_ERROR("Failed to region transfer close");
             ret_value = 1;
         }
     }
@@ -692,7 +692,7 @@ main(int argc, char **argv)
     // close object
     for (i = 0; i < OBJ_NUM; ++i) {
         if (PDCobj_close(obj[i]) < 0) {
-            LOG_ERROR("Fail to close object o1");
+            LOG_ERROR("Failed to close object o1");
             ret_value = 1;
         }
         else {
@@ -715,7 +715,7 @@ main(int argc, char **argv)
     // close a container
 
     if (PDCcont_close(cont) < 0) {
-        LOG_ERROR("Fail to close container c1");
+        LOG_ERROR("Failed to close container c1");
         ret_value = 1;
     }
     else {
@@ -723,7 +723,7 @@ main(int argc, char **argv)
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -731,7 +731,7 @@ main(int argc, char **argv)
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -745,7 +745,7 @@ main(int argc, char **argv)
     free(transfer_request);
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC");
+        LOG_ERROR("Failed to close PDC");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

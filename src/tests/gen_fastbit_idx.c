@@ -43,7 +43,7 @@ main(int argc, char **argv)
 
 done:
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     return 0;
 }

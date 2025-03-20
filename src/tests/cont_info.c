@@ -48,12 +48,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
     if (cont_id <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -61,7 +61,7 @@ main(int argc, char **argv)
 
     cont_id2 = PDCcont_open("c1", pdc_id);
     if (cont_id2 == 0)
-        LOG_ERROR("Fail to open container");
+        LOG_ERROR("Failed to open container");
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -74,17 +74,17 @@ main(int argc, char **argv)
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        LOG_ERROR("Fail to close container cont_id1\n");
+        LOG_ERROR("Failed to close container cont_id1\n");
 
     if (PDCcont_close(cont_id2) < 0)
-        LOG_ERROR("Fail to close container cont_id2\n");
+        LOG_ERROR("Failed to close container cont_id2\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc_id) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

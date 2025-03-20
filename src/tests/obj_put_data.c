@@ -57,7 +57,7 @@ main(int argc, char **argv)
         LOG_INFO("Create a container property\n");
     }
     else {
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
@@ -67,7 +67,7 @@ main(int argc, char **argv)
         LOG_INFO("Rank %d Create a container %s\n", rank, cont_name);
     }
     else {
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
 
@@ -77,7 +77,7 @@ main(int argc, char **argv)
         LOG_INFO("Rank %d Put data to %s\n", rank, obj_name1);
     }
     else {
-        LOG_ERROR("Fail to put data into object");
+        LOG_ERROR("Failed to put data into object");
         ret_value = 1;
     }
 
@@ -87,20 +87,20 @@ main(int argc, char **argv)
         LOG_INFO("Rank %d Put data to %s\n", rank, obj_name2);
     }
     else {
-        LOG_ERROR("Fail to put data into object");
+        LOG_ERROR("Failed to put data into object");
         ret_value = 1;
     }
 
     // close object
     if (PDCobj_close(obj1) < 0) {
-        LOG_ERROR("Fail to close object o1\n");
+        LOG_ERROR("Failed to close object o1\n");
         ret_value = 1;
     }
     else {
         LOG_INFO("successfully close object o1\n");
     }
     if (PDCobj_close(obj2) < 0) {
-        LOG_ERROR("Fail to close object o2\n");
+        LOG_ERROR("Failed to close object o2\n");
         ret_value = 1;
     }
     else {
@@ -109,7 +109,7 @@ main(int argc, char **argv)
 
     // close a container
     if (PDCcont_close(cont) < 0) {
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     else {
@@ -117,7 +117,7 @@ main(int argc, char **argv)
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -125,7 +125,7 @@ main(int argc, char **argv)
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

@@ -49,7 +49,7 @@ main(int argc, char **argv)
 
     obj = PDCobj_open_col("run1", pdc);
     if (obj <= 0)
-        LOG_ERROR("Fail to open object");
+        LOG_ERROR("Failed to open object");
 
     /*     //=============PATTERN 1=============== */
     /*     // Read everything */
@@ -288,10 +288,10 @@ main(int argc, char **argv)
     free(rec_data);
 
     if (PDCobj_close(obj) < 0)
-        LOG_ERROR("fail to close object\n");
+        LOG_ERROR("Failed to close object\n");
 
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

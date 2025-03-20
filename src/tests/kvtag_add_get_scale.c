@@ -115,17 +115,17 @@ main(int argc, char *argv[])
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
     // Create a number of objects, add at least one tag to that object
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
@@ -139,7 +139,7 @@ main(int argc, char *argv[])
         sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
-            LOG_ERROR("Fail to create object");
+            LOG_ERROR("Failed to create object");
 
         if (i > 0 && i % obj_1percent == 0) {
 #ifdef ENABLE_MPI
@@ -178,7 +178,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_add_tag; i++) {
         v = i + my_add_tag_s;
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
-            LOG_ERROR("Fail to add a kvtag to o%d\n", i + my_obj_s);
+            LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
 
         if (i % tag_1percent == 0) {
 #ifdef ENABLE_MPI
@@ -212,7 +212,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_query; i++) {
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_type,
                            (void *)&value_size) < 0)
-            LOG_ERROR("Fail to get a kvtag from o%d\n", i + my_query_s);
+            LOG_ERROR("Failed to get a kvtag from o%d\n", i + my_query_s);
 
         if (i % query_1percent == 0) {
 #ifdef ENABLE_MPI

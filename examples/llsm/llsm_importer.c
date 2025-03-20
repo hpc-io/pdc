@@ -295,12 +295,12 @@ main(int argc, char *argv[])
     // create a container property
     cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
     if (cont_prop_g <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id_g = PDCcont_create("c1", cont_prop_g);
     if (cont_id_g <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // Rank 0 reads the filename list and distribute data to other ranks
     if (rank == 0) {
@@ -341,7 +341,7 @@ main(int argc, char *argv[])
     // parse the csv
     csv_table_t *csv_table = csv_parse_list(list, csv_field_types);
     if (csv_table == NULL) {
-        LOG_ERROR("Fail to parse csv file");
+        LOG_ERROR("Failed to parse csv file");
         return -1;
     }
     llsm_args                 = (llsm_importer_args_t *)malloc(sizeof(llsm_importer_args_t));

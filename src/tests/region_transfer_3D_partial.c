@@ -75,7 +75,7 @@ main(int argc, char **argv)
         LOG_INFO("Create a container property\n");
     }
     else {
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
@@ -85,7 +85,7 @@ main(int argc, char **argv)
         LOG_INFO("Create a container c1\n");
     }
     else {
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
@@ -94,13 +94,13 @@ main(int argc, char **argv)
         LOG_INFO("Create an object property\n");
     }
     else {
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
 
     ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj type");
+        LOG_ERROR("Failed to set obj type");
         ret_value = 1;
     }
     PDCprop_set_obj_dims(obj_prop, 3, dims);
@@ -116,7 +116,7 @@ main(int argc, char **argv)
         LOG_INFO("Create an object o1\n");
     }
     else {
-        LOG_ERROR("Fail to create object");
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
     // create second object
@@ -126,7 +126,7 @@ main(int argc, char **argv)
         LOG_INFO("Create an object o2\n");
     }
     else {
-        LOG_ERROR("Fail to create object");
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
 
@@ -147,7 +147,7 @@ main(int argc, char **argv)
     PDCregion_transfer_close(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
-        LOG_ERROR("Fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
     else {
@@ -155,7 +155,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        LOG_ERROR("Fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
     else {
@@ -195,7 +195,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg) < 0) {
-        LOG_ERROR("Fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
     else {
@@ -203,7 +203,7 @@ main(int argc, char **argv)
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        LOG_ERROR("Fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
     else {
@@ -212,14 +212,14 @@ main(int argc, char **argv)
 
     // close object
     if (PDCobj_close(obj1) < 0) {
-        LOG_ERROR("Fail to close object o1\n");
+        LOG_ERROR("Failed to close object o1\n");
         ret_value = 1;
     }
     else {
         LOG_INFO("successfully close object o1\n");
     }
     if (PDCobj_close(obj2) < 0) {
-        LOG_ERROR("Fail to close object o2\n");
+        LOG_ERROR("Failed to close object o2\n");
         ret_value = 1;
     }
     else {
@@ -227,7 +227,7 @@ main(int argc, char **argv)
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     else {
@@ -235,7 +235,7 @@ main(int argc, char **argv)
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -243,7 +243,7 @@ main(int argc, char **argv)
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -253,7 +253,7 @@ main(int argc, char **argv)
     free(data_read);
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

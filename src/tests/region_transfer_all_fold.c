@@ -161,7 +161,7 @@ main(int argc, char **argv)
             LOG_INFO("Create an object o1\n");
         }
         else {
-            LOG_ERROR("Fail to create object");
+            LOG_ERROR("Failed to create object");
             ret_value = 1;
         }
     }
@@ -200,7 +200,7 @@ main(int argc, char **argv)
 
     // close a container
     if (PDCcont_close(cont) < 0) {
-        LOG_ERROR("Fail to close container c1");
+        LOG_ERROR("Failed to close container c1");
         ret_value = 1;
     }
     else {
@@ -208,7 +208,7 @@ main(int argc, char **argv)
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -216,7 +216,7 @@ main(int argc, char **argv)
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -228,7 +228,7 @@ main(int argc, char **argv)
     free(transfer_request);
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC");
+        LOG_ERROR("Failed to close PDC");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

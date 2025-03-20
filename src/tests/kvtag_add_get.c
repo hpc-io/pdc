@@ -51,41 +51,41 @@ main()
     if (cont_prop > 0)
         LOG_INFO("Create a container property\n");
     else
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont > 0)
         LOG_INFO("Create a container c1\n");
     else
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop1 > 0)
         LOG_INFO("Create an object property\n");
     else
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop2 > 0)
         LOG_INFO("Create an object property\n");
     else
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
     // create first object
     obj1 = PDCobj_create(cont, "o1", obj_prop1);
     if (obj1 > 0)
         LOG_INFO("Create an object o1\n");
     else
-        LOG_ERROR("Fail to create object");
+        LOG_ERROR("Failed to create object");
 
     // create second object
     obj2 = PDCobj_create(cont, "o2", obj_prop2);
     if (obj2 > 0)
         LOG_INFO("Create an object o2\n");
     else
-        LOG_ERROR("Fail to create object");
+        LOG_ERROR("Failed to create object");
 
     kvtag1.name  = "key1string";
     kvtag1.value = (void *)v1;
@@ -103,37 +103,37 @@ main()
     kvtag3.size  = sizeof(double);
 
     if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size) < 0)
-        LOG_ERROR("Fail to add a kvtag to o1\n");
+        LOG_ERROR("Failed to add a kvtag to o1\n");
     else
         LOG_INFO("successfully added a kvtag to o1\n");
 
     if (PDCobj_put_tag(obj2, kvtag2.name, kvtag2.value, kvtag2.type, kvtag2.size) < 0)
-        LOG_ERROR("Fail to add a kvtag to o1\n");
+        LOG_ERROR("Failed to add a kvtag to o1\n");
     else
         LOG_INFO("successfully added a kvtag to o1\n");
 
     if (PDCobj_put_tag(obj2, kvtag3.name, kvtag3.value, kvtag3.type, kvtag3.size) < 0)
-        LOG_ERROR("Fail to add a kvtag to o1\n");
+        LOG_ERROR("Failed to add a kvtag to o1\n");
     else
         LOG_INFO("successfully added a kvtag to o1\n");
 
     if (PDCobj_get_tag(obj1, kvtag1.name, (void *)&value1, (void *)&type1, (void *)&value_size) < 0)
-        LOG_ERROR("Fail to get a kvtag from o1\n");
+        LOG_ERROR("Failed to get a kvtag from o1\n");
     else
         LOG_INFO("successfully retrieved a kvtag [%s] = [%s] from o1\n", kvtag1.name, (char *)value1);
 
     if (PDCobj_get_tag(obj2, kvtag2.name, (void *)&value2, (void *)&type2, (void *)&value_size) < 0)
-        LOG_ERROR("Fail to get a kvtag from o2\n");
+        LOG_ERROR("Failed to get a kvtag from o2\n");
     else
         LOG_INFO("successfully retrieved a kvtag [%s] = [%d] from o2\n", kvtag2.name, *(int *)value2);
 
     if (PDCobj_get_tag(obj2, kvtag3.name, (void *)&value3, (void *)&type3, (void *)&value_size) < 0)
-        LOG_ERROR("Fail to get a kvtag from o2\n");
+        LOG_ERROR("Failed to get a kvtag from o2\n");
     else
         LOG_INFO("successfully retrieved a kvtag [%s] = [%f] from o2\n", kvtag3.name, *(double *)value3);
 
     if (PDCobj_del_tag(obj1, kvtag1.name) < 0)
-        LOG_ERROR("Fail to delete a kvtag from o1\n");
+        LOG_ERROR("Failed to delete a kvtag from o1\n");
     else
         LOG_INFO("successfully deleted a kvtag [%s] from o1\n", kvtag1.name);
 
@@ -142,14 +142,14 @@ main()
     kvtag1.type  = PDC_STRING;
     kvtag1.size  = strlen(v1) + 1;
     if (PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size) < 0)
-        LOG_ERROR("Fail to add a kvtag to o1\n");
+        LOG_ERROR("Failed to add a kvtag to o1\n");
     else
         LOG_INFO("successfully added a kvtag to o1\n");
 
     /* PDC_free_kvtag(&value1); */
 
     if (PDCobj_get_tag(obj1, kvtag1.name, (void *)&value1, (void *)&type1, (void *)&value_size) < 0)
-        LOG_ERROR("Fail to get a kvtag from o1\n");
+        LOG_ERROR("Failed to get a kvtag from o1\n");
     else
         LOG_INFO("successfully retrieved a kvtag [%s] = [%s] from o1\n", kvtag1.name, (char *)value1);
 
@@ -159,41 +159,41 @@ main()
 
     // close first object
     if (PDCobj_close(obj1) < 0)
-        LOG_ERROR("Fail to close object o1\n");
+        LOG_ERROR("Failed to close object o1\n");
     else
         LOG_INFO("successfully close object o1\n");
 
     // close second object
     if (PDCobj_close(obj2) < 0)
-        LOG_ERROR("Fail to close object o2\n");
+        LOG_ERROR("Failed to close object o2\n");
     else
         LOG_INFO("successfully close object o2\n");
 
     // close a container
     if (PDCcont_close(cont) < 0)
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
     else
         LOG_INFO("successfully close container c1\n");
 
     // close a container property
     if (PDCprop_close(obj_prop1) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
     else
         LOG_INFO("successfully close object property\n");
 
     if (PDCprop_close(obj_prop2) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
     else
         LOG_INFO("successfully close object property\n");
 
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
     else
         LOG_INFO("successfully close container property\n");
 
     // close pdc
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     return 0;
 }

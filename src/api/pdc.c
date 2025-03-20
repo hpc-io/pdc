@@ -180,35 +180,35 @@ PDCclose(pdcid_t pdcid)
     // check every list before closing
     // container property
     if (PDC_prop_cont_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close container property");
+        PGOTO_ERROR(FAIL, "Failed to close container property");
     // object property
     if (PDC_prop_obj_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close object property");
+        PGOTO_ERROR(FAIL, "Failed to close object property");
     // container
     if (PDC_cont_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close container");
+        PGOTO_ERROR(FAIL, "Failed to close container");
     // object
     if (PDC_obj_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close object");
+        PGOTO_ERROR(FAIL, "Failed to close object");
     // region
     if (PDC_region_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close region");
+        PGOTO_ERROR(FAIL, "Failed to close region");
 
     if (PDC_prop_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy property");
+        PGOTO_ERROR(FAIL, "Failed to destroy property");
     if (PDC_cont_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy container");
+        PGOTO_ERROR(FAIL, "Failed to destroy container");
     if (PDC_obj_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy object");
+        PGOTO_ERROR(FAIL, "Failed to destroy object");
     if (PDC_region_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy region");
+        PGOTO_ERROR(FAIL, "Failed to destroy region");
 
     if (PDC_iterator_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy iterator");
+        PGOTO_ERROR(FAIL, "Failed to destroy iterator");
     if (PDC_analysis_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy analysis");
+        PGOTO_ERROR(FAIL, "Failed to destroy analysis");
     if (PDC_transform_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy transform");
+        PGOTO_ERROR(FAIL, "Failed to destroy transform");
 
     PDC_class_close(pdcid);
 

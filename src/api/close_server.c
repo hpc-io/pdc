@@ -49,7 +49,7 @@ main(int argc, char *argv[])
     PDC_Client_close_all_server();
 
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     if (!rank) {

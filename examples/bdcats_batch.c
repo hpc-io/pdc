@@ -543,36 +543,36 @@ main(int argc, char **argv)
         transfer_close += MPI_Wtime() - start;
 #endif
         if (PDCregion_close(region_xx) < 0) {
-           LOG_ERROR("fail to close region region_xx\n");
+           LOG_ERROR("Failed to close region region_xx\n");
             return 1;
         }
         if (PDCregion_close(region_yy) < 0) {
-            LOG_ERROR("fail to close region region_yy\n");
+            LOG_ERROR("Failed to close region region_yy\n");
             return 1;
         }
 
         if (PDCregion_close(region_zz) < 0) {
-           LOG_ERROR("fail to close region region_zz\n");
+           LOG_ERROR("Failed to close region region_zz\n");
             return 1;
         }
         if (PDCregion_close(region_pxx) < 0) {
-            LOG_ERROR("fail to close region region_pxx\n");
+            LOG_ERROR("Failed to close region region_pxx\n");
             return 1;
         }
         if (PDCregion_close(region_pyy) < 0) {
-           LOG_ERROR("fail to close region region_pyy\n");
+           LOG_ERROR("Failed to close region region_pyy\n");
             return 1;
         }
         if (PDCregion_close(region_pzz) < 0) {
-           LOG_ERROR("fail to close region region_pzz\n");
+           LOG_ERROR("Failed to close region region_pzz\n");
             return 1;
         }
         if (PDCobj_close(region_id11) < 0) {
-           LOG_ERROR("fail to close region region_id11\n");
+           LOG_ERROR("Failed to close region region_id11\n");
             return 1;
         }
         if (PDCobj_close(region_id22) < 0) {
-           LOG_ERROR("fail to close region region_id22\n");
+           LOG_ERROR("Failed to close region region_id22\n");
             return 1;
         }
     }
@@ -584,35 +584,35 @@ main(int argc, char **argv)
 
     for (i = 0; i < timestep; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
-           LOG_ERROR("fail to close obj_xx\n");
+           LOG_ERROR("Failed to close obj_xx\n");
             return 1;
         }
         if (PDCobj_close(obj_yy[i]) < 0) {
-           LOG_ERROR("fail to close object obj_yy\n");
+           LOG_ERROR("Failed to close object obj_yy\n");
             return 1;
         }
         if (PDCobj_close(obj_zz[i]) < 0) {
-           LOG_ERROR("fail to close object obj_zz\n");
+           LOG_ERROR("Failed to close object obj_zz\n");
             return 1;
         }
         if (PDCobj_close(obj_pxx[i]) < 0) {
-           LOG_ERROR("fail to close object obj_pxx\n");
+           LOG_ERROR("Failed to close object obj_pxx\n");
             return 1;
         }
         if (PDCobj_close(obj_pyy[i]) < 0) {
-           LOG_ERROR("fail to close object obj_pyy\n");
+           LOG_ERROR("Failed to close object obj_pyy\n");
             return 1;
         }
         if (PDCobj_close(obj_pzz[i]) < 0) {
-           LOG_ERROR("fail to close object obj_pzz\n");
+           LOG_ERROR("Failed to close object obj_pzz\n");
             return 1;
         }
         if (PDCobj_close(obj_id11[i]) < 0) {
-           LOG_ERROR("fail to close object obj_id11\n");
+           LOG_ERROR("Failed to close object obj_id11\n");
             return 1;
         }
         if (PDCobj_close(obj_id22[i]) < 0) {
-           LOG_ERROR("fail to close object obj_id22\n");
+           LOG_ERROR("Failed to close object obj_id22\n");
             return 1;
         }
     }
@@ -663,40 +663,40 @@ main(int argc, char **argv)
     free(obj_id22);
 
     if (PDCregion_close(region_x) < 0) {
-       LOG_ERROR("fail to close region region_x\n");
+       LOG_ERROR("Failed to close region region_x\n");
         return 1;
     }
     if (PDCregion_close(region_y) < 0) {
-       LOG_ERROR("fail to close region region_y\n");
+       LOG_ERROR("Failed to close region region_y\n");
         return 1;
     }
     if (PDCregion_close(region_z) < 0) {
-       LOG_ERROR("fail to close region region_z\n");
+       LOG_ERROR("Failed to close region region_z\n");
         return 1;
     }
     if (PDCregion_close(region_px) < 0) {
-       LOG_ERROR("fail to close region region_px\n");
+       LOG_ERROR("Failed to close region region_px\n");
         return 1;
     }
     if (PDCregion_close(region_py) < 0) {
-       LOG_ERROR("fail to close region region_py\n");
+       LOG_ERROR("Failed to close region region_py\n");
         return 1;
     }
     if (PDCobj_close(region_pz) < 0) {
-       LOG_ERROR("fail to close region region_pz\n");
+       LOG_ERROR("Failed to close region region_pz\n");
         return 1;
     }
     if (PDCobj_close(region_id1) < 0) {
-       LOG_ERROR("fail to close region region_id1\n");
+       LOG_ERROR("Failed to close region region_id1\n");
         return 1;
     }
     if (PDCobj_close(region_id2) < 0) {
-       LOG_ERROR("fail to close region region_id2\n");
+       LOG_ERROR("Failed to close region region_id2\n");
         return 1;
     }
 
     if (PDCclose(pdc_id) < 0) {
-       LOG_ERROR("fail to close PDC\n");
+       LOG_ERROR("Failed to close PDC\n");
         return 1;
     }
     free(offset);

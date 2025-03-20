@@ -108,13 +108,13 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0) {
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
         return FAIL;
     }
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
     if (cont_id <= 0) {
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
         return FAIL;
     }
     // create an object property
@@ -330,35 +330,35 @@ main(int argc, char **argv)
 #endif
 
         if (PDCobj_close(obj_xx) != SUCCEED) {
-            LOG_ERROR("Fail to close obj_xx\n");
+            LOG_ERROR("Failed to close obj_xx\n");
             return FAIL;
         }
         if (PDCobj_close(obj_yy) != SUCCEED) {
-            LOG_ERROR("Fail to close object obj_yy\n");
+            LOG_ERROR("Failed to close object obj_yy\n");
             return FAIL;
         }
         if (PDCobj_close(obj_zz) != SUCCEED) {
-            LOG_ERROR("Fail to close object obj_zz\n");
+            LOG_ERROR("Failed to close object obj_zz\n");
             return FAIL;
         }
         if (PDCobj_close(obj_pxx) != SUCCEED) {
-            LOG_ERROR("Fail to close object obj_pxx\n");
+            LOG_ERROR("Failed to close object obj_pxx\n");
             return FAIL;
         }
         if (PDCobj_close(obj_pyy) != SUCCEED) {
-            LOG_ERROR("Fail to close object obj_pyy\n");
+            LOG_ERROR("Failed to close object obj_pyy\n");
             return FAIL;
         }
         if (PDCobj_close(obj_pzz) != SUCCEED) {
-            LOG_ERROR("Fail to close object obj_pzz\n");
+            LOG_ERROR("Failed to close object obj_pzz\n");
             return FAIL;
         }
         if (PDCobj_close(obj_id11) != SUCCEED) {
-            LOG_ERROR("Fail to close object obj_id11\n");
+            LOG_ERROR("Failed to close object obj_id11\n");
             return FAIL;
         }
         if (PDCobj_close(obj_id22) != SUCCEED) {
-            LOG_ERROR("Fail to close object obj_id22\n");
+            LOG_ERROR("Failed to close object obj_id22\n");
             return FAIL;
         }
 
@@ -374,31 +374,31 @@ main(int argc, char **argv)
     PDC_timing_report("write");
 
     if (PDCprop_close(obj_prop_float) != SUCCEED) {
-        LOG_ERROR("Fail to close obj_prop_float\n");
+        LOG_ERROR("Failed to close obj_prop_float\n");
         return FAIL;
     }
     if (PDCprop_close(obj_prop_int) != SUCCEED) {
-        LOG_ERROR("Fail to close obj_prop_int\n");
+        LOG_ERROR("Failed to close obj_prop_int\n");
         return FAIL;
     }
     if (PDCregion_close(region_local) != SUCCEED) {
-        LOG_ERROR("Fail to close local region \n");
+        LOG_ERROR("Failed to close local region \n");
         return FAIL;
     }
     if (PDCobj_close(region_remote) != SUCCEED) {
-        LOG_ERROR("Fail to close remote region\n");
+        LOG_ERROR("Failed to close remote region\n");
         return FAIL;
     }
     if (PDCcont_close(cont_id) != SUCCEED) {
-        LOG_ERROR("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
         return FAIL;
     }
     if (PDCprop_close(cont_prop) != SUCCEED) {
-        LOG_ERROR("Fail to close property\n");
+        LOG_ERROR("Failed to close property\n");
         return FAIL;
     }
     if (PDCclose(pdc_id) != SUCCEED) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         return FAIL;
     }
     free(x);

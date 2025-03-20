@@ -142,7 +142,7 @@ main(int argc, char **argv)
     obj = PDCobj_create_mpi(cont, "run1", obj_prop, 0, MPI_COMM_WORLD);
     /* obj = PDCobj_create(cont, "run1", obj_prop); */
     if (obj <= 0)
-        LOG_ERROR("Fail to create object\n");
+        LOG_ERROR("Failed to create object\n");
 
     remote_reg = PDCregion_create(3, pdc_offset, pdc_size);
 
@@ -220,19 +220,19 @@ main(int argc, char **argv)
     PDCregion_close(local_reg);
 
     if (PDCobj_close(obj) < 0)
-        LOG_ERROR("fail to close object\n");
+        LOG_ERROR("Failed to close object\n");
 
     if (PDCcont_close(cont) < 0)
-        LOG_ERROR("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     if (PDCprop_close(obj_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

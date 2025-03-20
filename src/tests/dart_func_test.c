@@ -37,15 +37,15 @@ main(int argc, char **argv)
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     pdcid_t cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
@@ -94,13 +94,13 @@ main(int argc, char **argv)
     // done:
 
     if (PDCcont_close(cont) < 0)
-        LOG_ERROR("Fail to close container %lld\n", cont);
+        LOG_ERROR("Failed to close container %lld\n", cont);
 
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         // }
 #ifdef ENABLE_MPI
     MPI_Finalize();

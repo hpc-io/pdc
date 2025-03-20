@@ -118,7 +118,7 @@ main(int argc, char **argv)
 
     cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
     if (cont_prop_g <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     obj_prop_g = PDCprop_create(PDC_OBJ_CREATE, pdc_id_g);
 
@@ -345,7 +345,7 @@ scan_group(hid_t gid, int level, char *app_name)
                 if (create_cont) {
                     cont_id_g = PDCcont_create(group_name, cont_prop_g);
                     if (cont_id_g <= 0)
-                        LOG_ERROR("Fail to create container");
+                        LOG_ERROR("Failed to create container");
                     LOG_INFO("Importer%2d: Created container [%s]\n", rank, group_name);
                     add(container_names, group_name);
                 }

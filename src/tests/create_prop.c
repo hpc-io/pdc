@@ -47,25 +47,25 @@ main(int argc, char **argv)
     // create an object property
     create_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (create_prop1 <= 0) {
-        LOG_ERROR("Fail to create");
+        LOG_ERROR("Failed to create");
         ret_value = 1;
     }
     // create another object property
     create_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (create_prop2 <= 0) {
-        LOG_ERROR("Fail to create");
+        LOG_ERROR("Failed to create");
         ret_value = 1;
     }
 
     if (PDCprop_close(create_prop1) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
         LOG_INFO("successfully close first property\n");
     }
     if (PDCprop_close(create_prop2) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -80,12 +80,12 @@ main(int argc, char **argv)
             LOG_INFO("Create an object property\n");
     }
     else {
-        LOG_ERROR("Fail to create");
+        LOG_ERROR("Failed to create");
         ret_value = 1;
     }
     // close property
     if (PDCprop_close(create_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -93,7 +93,7 @@ main(int argc, char **argv)
     }
     // close a pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

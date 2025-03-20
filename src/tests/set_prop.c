@@ -53,66 +53,66 @@ main(int argc, char **argv)
     // create an object property
     create_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (create_prop1 <= 0) {
-        LOG_ERROR("Fail to create");
+        LOG_ERROR("Failed to create");
         ret_value = 1;
     }
     // create another object property
     create_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (create_prop2 <= 0) {
-        LOG_ERROR("Fail to create");
+        LOG_ERROR("Failed to create");
         ret_value = 1;
     }
 
     ret = PDCprop_set_obj_user_id(create_prop2, 666);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj user id");
+        LOG_ERROR("Failed to set obj user id");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_data_loc(create_prop2, "somewhere");
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj user id");
+        LOG_ERROR("Failed to set obj user id");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_app_name(create_prop2, "someapp name");
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj user id");
+        LOG_ERROR("Failed to set obj user id");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_time_step(create_prop2, 666);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_tags(create_prop2, "sometag");
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_dims(create_prop2, ndim, dims);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_type(create_prop2, PDC_DOUBLE);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_buf(create_prop2, NULL);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to set obj time step");
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
 
     if (PDCprop_close(create_prop1) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
         LOG_INFO("successfully close first property\n");
     }
     if (PDCprop_close(create_prop2) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
@@ -120,7 +120,7 @@ main(int argc, char **argv)
     }
     // close a pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

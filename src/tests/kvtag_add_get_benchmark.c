@@ -153,17 +153,17 @@ init_test(int my_rank, int proc_num, uint64_t n_obj_incr, uint64_t n_query, uint
     // create a container property
     *cont_prop = PDCprop_create(PDC_CONT_CREATE, *pdc);
     if (*cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     *cont = PDCcont_create("c1", *cont_prop);
     if (*cont <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     *obj_prop = PDCprop_create(PDC_OBJ_CREATE, *pdc);
     if (*obj_prop <= 0)
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
     if (my_rank == 0)
         LOG_INFO("create obj_ids array\n");
@@ -195,7 +195,7 @@ create_object(uint64_t my_obj, uint64_t my_obj_s, pdcid_t cont, pdcid_t obj_prop
         sprintf(obj_name, "obj%" PRIu64 "", v);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
-            LOG_ERROR("Fail to create object");
+            LOG_ERROR("Failed to create object");
     }
 }
 
@@ -222,7 +222,7 @@ add_n_tags(uint64_t my_obj, uint64_t my_obj_s, uint64_t n_attr, char **tag_value
             sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", v, j);
             if (PDCobj_put_tag(obj_ids[i], tag_name, (void *)tag_values[j], PDC_STRING, tag_value_len + 1) <
                 0)
-                LOG_ERROR("Fail to add a kvtag to o%" PRIu64 "\n", v);
+                LOG_ERROR("Failed to add a kvtag to o%" PRIu64 "\n", v);
         }
     }
 }
@@ -246,7 +246,7 @@ get_object_tags(pdcid_t obj_id, uint64_t obj_name_v, uint64_t n_attr, void **tag
     for (i = 0; i < n_attr; i++) {
         sprintf(tag_name, "tag%" PRIu64 ".%" PRIu64 "", obj_name_v, i);
         if (PDCobj_get_tag(obj_id, tag_name, (void **)&tag_values[i], &tag_type, (void *)&value_size[i]) < 0)
-            LOG_ERROR("Fail to get a kvtag from o%" PRIu64 "\n", obj_name_v);
+            LOG_ERROR("Failed to get a kvtag from o%" PRIu64 "\n", obj_name_v);
     }
 }
 
@@ -299,7 +299,7 @@ check_and_release_query_result(uint64_t n_query, uint64_t my_obj, uint64_t my_ob
     // for (i = 0; i < my_obj; i++) {
     //     v = i + my_obj_s;
     //     if (PDCobj_close(obj_ids[i]) < 0)
-    //         LOG_ERROR("Fail to close object o%" PRIu64 "\n", v);
+    //         LOG_ERROR("Failed to close object o%" PRIu64 "\n", v);
     // }
 }
 
@@ -308,18 +308,18 @@ closePDC(pdcid_t pdc, pdcid_t cont_prop, pdcid_t cont, pdcid_t obj_prop)
 {
     // close a container
     if (PDCcont_close(cont) < 0)
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(obj_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     // close pdc
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 }
 
 int

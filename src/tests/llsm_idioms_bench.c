@@ -196,7 +196,7 @@ add_tag_to_one_object(pid_t obj_id, char *attr_name, char *attr_value, int is_us
     struct _pdc_obj_info *obj_prop = PDC_obj_get_info(obj_id);
     uint64_t              meta_id  = obj_prop->obj_info_pub->meta_id;
     if (PDCobj_put_tag(obj_id, kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-        LOG_ERROR("Fail to add tag to object %" PRIu64 "\n", obj_id);
+        LOG_ERROR("Failed to add tag to object %" PRIu64 "\n", obj_id);
         return -1;
     }
     if (is_using_dart) {
@@ -432,7 +432,7 @@ main(int argc, char *argv[])
     int bypass_query = query_type == -1 ? 1 : 0;
     // prepare container
     if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, my_rank) < 0) {
-        println("fail to prepare container");
+        println("Failed to prepare container");
         goto done;
     }
 
@@ -587,7 +587,7 @@ done:
     // close a container
     if (PDCcont_close(cont) < 0) {
         if (my_rank == 0) {
-            LOG_ERROR("Fail to close container c1\n");
+            LOG_ERROR("Failed to close container c1\n");
         }
     }
     else {
@@ -598,7 +598,7 @@ done:
     // close an object property
     if (PDCprop_close(obj_prop) < 0) {
         if (my_rank == 0)
-            LOG_ERROR("Fail to close property");
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (my_rank == 0)
@@ -608,7 +608,7 @@ done:
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
         if (my_rank == 0)
-            LOG_ERROR("Fail to close property");
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (my_rank == 0)
@@ -618,7 +618,7 @@ done:
     // close pdc
     if (PDCclose(pdc) < 0) {
         if (my_rank == 0)
-            LOG_ERROR("Fail to close PDC\n");
+            LOG_ERROR("Failed to close PDC\n");
     }
 
 #ifdef ENABLE_MPI

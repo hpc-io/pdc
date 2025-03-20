@@ -56,12 +56,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if (cont_id <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -100,25 +100,25 @@ main(int argc, char **argv)
 
     // close region
     if (PDCregion_close(r1) < 0)
-        LOG_ERROR("Fail to close region r1\n");
+        LOG_ERROR("Failed to close region r1\n");
 
     if (PDCregion_close(r2) < 0)
-        LOG_ERROR("Fail to close region r2\n");
+        LOG_ERROR("Failed to close region r2\n");
 
     // close object
     if (PDCobj_close(obj2) < 0)
-        LOG_ERROR("Fail to close obj2\n");
+        LOG_ERROR("Failed to close obj2\n");
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        LOG_ERROR("Fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc_id) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

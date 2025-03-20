@@ -124,20 +124,20 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     // create NCONT  container
     for (i = 0; i < NCONT; i++) {
         sprintf(cont_name, "Cont%d", i);
         cont[i] = PDCcont_create(cont_name, cont_prop);
         if (cont[i] <= 0)
-            LOG_ERROR("Fail to create container");
+            LOG_ERROR("Failed to create container");
     }
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
     PDCprop_set_obj_type(obj_prop, PDC_INT);
     PDCprop_set_obj_dims(obj_prop, 3, dims);
@@ -229,15 +229,15 @@ done:
     // close all container
     for (i = 0; i < NCONT; i++) {
         if (PDCcont_close(cont[i]) < 0)
-            LOG_ERROR("Fail to close container c1\n");
+            LOG_ERROR("Failed to close container c1\n");
     }
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

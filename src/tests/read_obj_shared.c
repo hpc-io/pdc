@@ -114,7 +114,7 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0) {
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
@@ -122,13 +122,13 @@ main(int argc, char **argv)
     sprintf(cont_name, "c");
     cont = PDCcont_create_col(cont_name, cont_prop);
     if (cont <= 0) {
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0) {
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
     dims[0]      = size_B;
@@ -196,21 +196,21 @@ main(int argc, char **argv)
     }
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to region transfer close");
+        LOG_ERROR("Failed to region transfer close");
         ret_value = 1;
     }
 
     if (PDCobj_close(global_obj) < 0) {
-        LOG_ERROR("Fail to close global obj");
+        LOG_ERROR("Failed to close global obj");
         ret_value = 1;
     }
 
     if (PDCregion_close(local_region) < 0) {
-        LOG_ERROR("Fail to close local region");
+        LOG_ERROR("Failed to close local region");
         ret_value = 1;
     }
     if (PDCregion_close(global_region) < 0) {
-        LOG_ERROR("Fail to close global region");
+        LOG_ERROR("Failed to close global region");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
@@ -251,7 +251,7 @@ main(int argc, char **argv)
     }
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        LOG_ERROR("Fail to region transfer close");
+        LOG_ERROR("Failed to region transfer close");
         ret_value = 1;
     }
 
@@ -268,29 +268,29 @@ main(int argc, char **argv)
     }
 
     if (PDCobj_close(global_obj) < 0) {
-        LOG_ERROR("Fail to close global obj\n");
+        LOG_ERROR("Failed to close global obj\n");
         ret_value = 1;
     }
 
     if (PDCregion_close(local_region) < 0) {
-        LOG_ERROR("Fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
     if (PDCregion_close(global_region) < 0) {
-        LOG_ERROR("Fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
 
     if (PDCcont_close(cont) < 0) {
-        LOG_ERROR("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
         ret_value = 1;
     }
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
     free(mydata);

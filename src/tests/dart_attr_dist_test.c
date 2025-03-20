@@ -149,16 +149,16 @@ main(int argc, char *argv[])
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        LOG_ERROR("Fail to create container property");
+        LOG_ERROR("Failed to create container property");
 
     sprintf(pdc_container_name, "c1_%d", rank);
     pdcid_t cont = PDCcont_create(pdc_container_name, cont_prop);
     if (cont <= 0)
-        LOG_ERROR("Fail to create container");
+        LOG_ERROR("Failed to create container");
 
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        LOG_ERROR("Fail to create object property");
+        LOG_ERROR("Failed to create object property");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -172,7 +172,7 @@ main(int argc, char *argv[])
             sprintf(pdc_obj_name, "obj%d", i);
             obj_ids[i] = PDCobj_create(cont, pdc_obj_name, obj_prop);
             if (obj_ids[i] <= 0)
-                LOG_ERROR("Fail to create object");
+                LOG_ERROR("Failed to create object");
         }
         else {
             obj_ids[i] = -1;
@@ -222,7 +222,7 @@ main(int argc, char *argv[])
                 // attach attribute to object
                 timer_start(&timer_obj);
                 if (PDCobj_put_tag(obj_ids[j], key, (void *)&val, PDC_INT, sizeof(int)) < 0)
-                    LOG_ERROR("Fail to add a kvtag to o%d\n", j);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", j);
                 timer_pause(&timer_obj);
                 duration_obj_ms += (double)timer_delta_ms(&timer_obj);
             }
@@ -305,7 +305,7 @@ main(int argc, char *argv[])
 
                 // naive query methods
                 if (PDC_Client_query_kvtag(&kvtag, &rest_count1, &out1) < 0) {
-                    LOG_ERROR("Fail to query kvtag\n");
+                    LOG_ERROR("Failed to query kvtag\n");
                     break;
                 }
             }
@@ -361,13 +361,13 @@ main(int argc, char *argv[])
                  total_num_attr, total_num_obj, size, total_time);
 
     if (PDCcont_close(cont) < 0)
-        LOG_ERROR("Fail to close container %lld\n", cont);
+        LOG_ERROR("Failed to close container %lld\n", cont);
 
     if (PDCprop_close(cont_prop) < 0)
-        LOG_ERROR("Fail to close property");
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        LOG_ERROR("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     // free attr_2_obj_array
     free(attr_2_obj_array);

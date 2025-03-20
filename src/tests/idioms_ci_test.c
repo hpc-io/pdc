@@ -166,7 +166,7 @@ validate_empty_result(int world_rank, int nres, uint64_t *pdc_ids)
 {
     int query_series = world_rank % 6;
     if (nres > 0) {
-        LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+        LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
         return query_series;
     }
     return -1;
@@ -181,24 +181,24 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
     switch (query_series) {
         case 0:
             if (nres != 1) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
                 step_failed = 0;
             }
             if (pdc_ids[0] != 109) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
                 step_failed = 0;
             }
             break;
         case 1:
             if (nres != 10) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
                 step_failed = 1;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
-                    LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
                     step_failed = 1;
                     break;
                 }
@@ -206,14 +206,14 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 2:
             if (nres != 10) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
                 step_failed = 2;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i * 100 + 9) {
-                    LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
                     step_failed = 2;
                     break;
                 }
@@ -221,7 +221,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 3:
             if (nres != 20) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d, nres = %d, expected 20\n", "*09*=*09*",
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d, nres = %d, expected 20\n", "*09*=*09*",
                           world_rank, nres);
                 step_failed = 3;
             }
@@ -231,7 +231,7 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
                                      99, 109, 209, 309, 409, 509, 609, 709, 809, 909};
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != expected[i]) {
-                    LOG_ERROR("Fail to query kvtag [%s] with rank %d, pdc_ids[%d]=%" PRIu64
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d, pdc_ids[%d]=%" PRIu64
                               ", expected %" PRIu64 "\n",
                               "*09*=*09*", world_rank, i, pdc_ids[i], expected[i]);
                     step_failed = 3;
@@ -241,24 +241,24 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 4:
             if (nres != 1) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
                 step_failed = 4;
             }
             if (pdc_ids[0] != 109) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
                 step_failed = 4;
             }
             break;
         case 5:
             if (nres != 10) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
                 step_failed = 5;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
-                    LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
                     step_failed = 5;
                     break;
                 }
@@ -282,7 +282,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // exact string query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "str109str=\"str109str\"", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
                 step_failed = 0;
             };
             break;
@@ -290,7 +290,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // prefix string query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "str09*=\"str09*\"", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
                 step_failed = 1;
             }
             break;
@@ -298,7 +298,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // suffix string query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09str=\"*09str\"", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
                 step_failed = 2;
             }
             break;
@@ -306,7 +306,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
         //     // infix string query
         //     if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09*=\"*09*\"", ref_type, &nres,
         //                                                &pdc_ids) < 0) {
-        //         LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+        //         LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
         //         step_failed = 3;
         //     }
         //     break;
@@ -314,7 +314,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // exact integer query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "intkey=109", ref_type, &nres, &pdc_ids) <
                 0) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
                 step_failed = 4;
             }
             break;
@@ -322,7 +322,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // range integer query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "intkey=90|~|99", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                LOG_ERROR("Fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
                 step_failed = 5;
             }
             break;
@@ -350,7 +350,7 @@ main(int argc, char *argv[])
 
     // prepare container
     if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, world_rank) < 0) {
-        println("fail to prepare container");
+        println("Failed to prepare container");
         goto done;
     }
 
@@ -466,7 +466,7 @@ done:
     // close a container
     if (PDCcont_close(cont) < 0) {
         if (world_rank == 0) {
-            LOG_ERROR("Fail to close container c1\n");
+            LOG_ERROR("Failed to close container c1\n");
         }
     }
     else {
@@ -477,7 +477,7 @@ done:
     // close an object property
     if (PDCprop_close(obj_prop) < 0) {
         if (world_rank == 0)
-            LOG_ERROR("Fail to close property");
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (world_rank == 0)
@@ -487,7 +487,7 @@ done:
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
         if (world_rank == 0)
-            LOG_ERROR("Fail to close property");
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (world_rank == 0)
@@ -497,7 +497,7 @@ done:
     // close pdc
     if (PDCclose(pdc) < 0) {
         if (world_rank == 0)
-            LOG_ERROR("Fail to close PDC\n");
+            LOG_ERROR("Failed to close PDC\n");
     }
 
 #ifdef ENABLE_MPI
