@@ -109,7 +109,7 @@ PDCinit(const char *pdc_name)
 
     // PDC Client Server connection init
     if (PDC_Client_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC client init error");
+        PGOTO_ERROR(0, "PDC client init error");
 #ifdef PDC_TIMING
     PDC_timing_init();
 #endif
