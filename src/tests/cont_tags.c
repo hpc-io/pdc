@@ -178,7 +178,7 @@ main(int argc, char **argv)
         return -1;
     }
     else {
-        LOG_INFO("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close a container
     if (PDCcont_close(cont2) < 0) {
@@ -186,7 +186,7 @@ main(int argc, char **argv)
         return -1;
     }
     else {
-        LOG_INFO("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
 
     // close a container property
@@ -195,7 +195,7 @@ main(int argc, char **argv)
         return -1;
     }
     else {
-        LOG_INFO("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {

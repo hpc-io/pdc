@@ -97,7 +97,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close cont2
     if (PDCcont_close(cont2) < 0) {
@@ -105,7 +105,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container c2\n");
+        LOG_INFO("Successfully closed container c2\n");
     }
     // close cont3
     if (PDCcont_close(cont3) < 0) {
@@ -113,7 +113,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container c3\n");
+        LOG_INFO("Successfully closed container c3\n");
     }
     // close a container property
     if (PDCprop_close(create_prop) < 0) {
@@ -121,7 +121,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {

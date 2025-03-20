@@ -109,14 +109,14 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close first property\n");
+        LOG_INFO("Successfully closed first property\n");
     }
     if (PDCprop_close(create_prop2) < 0) {
         LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close second property\n");
+        LOG_INFO("Successfully closed second property\n");
     }
     // close a pdc
     if (PDCclose(pdc) < 0) {

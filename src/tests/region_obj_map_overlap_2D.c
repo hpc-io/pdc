@@ -405,14 +405,14 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close object o1");
+        LOG_INFO("Successfully closed object o1");
     }
     if (PDCobj_close(obj2) < 0) {
         LOG_ERROR("Failed to close object o2");
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close object o2");
+        LOG_INFO("Successfully closed object o2");
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
@@ -420,7 +420,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container c1");
+        LOG_INFO("Successfully closed container c1");
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
@@ -428,7 +428,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close object property");
+        LOG_INFO("Successfully closed object property");
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
@@ -436,7 +436,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container property");
+        LOG_INFO("Successfully closed container property");
     }
     free(data);
     free(data_read);

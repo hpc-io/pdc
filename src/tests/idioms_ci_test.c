@@ -471,7 +471,7 @@ done:
     }
     else {
         if (world_rank == 0)
-            LOG_INFO("successfully close container c1\n");
+            LOG_INFO("Successfully closed container c1\n");
     }
 
     // close an object property
@@ -481,7 +481,7 @@ done:
     }
     else {
         if (world_rank == 0)
-            LOG_INFO("successfully close object property\n");
+            LOG_INFO("Successfully closed object property\n");
     }
 
     // close a container property
@@ -491,7 +491,7 @@ done:
     }
     else {
         if (world_rank == 0)
-            LOG_INFO("successfully close container property\n");
+            LOG_INFO("Successfully closed container property\n");
     }
 
     // close pdc

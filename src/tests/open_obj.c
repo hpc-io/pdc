@@ -126,35 +126,35 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object o1\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o1\n", rank);
     }
     if (PDCobj_close(open11) < 0) {
         LOG_ERROR("Rank %d Fail to close object open11\n", rank);
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object open11\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open11\n", rank);
     }
     if (PDCobj_close(open12) < 0) {
         LOG_ERROR("Rank %d Fail to close object open12\n", rank);
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object open12\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open12\n", rank);
     }
     if (PDCobj_close(obj2) < 0) {
         LOG_ERROR("Rank %d Fail to close object o2\n", rank);
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object o2\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o2\n", rank);
     }
     if (PDCobj_close(open21) < 0) {
         LOG_ERROR("Rank %d Fail to close object open21\n", rank);
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object open21\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open21\n", rank);
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
@@ -162,7 +162,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close container c1\n", rank);
+        LOG_INFO("Rank %d Successfully closed container c1\n", rank);
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
@@ -170,7 +170,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object property\n", rank);
+        LOG_INFO("Rank %d Successfully closed object property\n", rank);
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
@@ -178,7 +178,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close container property\n", rank);
+        LOG_INFO("Rank %d Successfully closed container property\n", rank);
     }
     // close pdc
     if (PDCclose(pdc) < 0) {

@@ -121,14 +121,14 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object o1\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o1\n", rank);
     }
     if (PDCobj_close(obj2) < 0) {
         LOG_ERROR("Rank %d Fail to close object o2\n", rank);
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object o2\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o2\n", rank);
     }
 // Wait for all processes to finish their object creation
 #ifdef ENABLE_MPI
@@ -215,14 +215,14 @@ main(int argc, char **argv)
             ret_value = 1;
         }
         else {
-            LOG_INFO("Rank %d successfully close object %s\n", rank, obj_name1);
+            LOG_INFO("Rank %d Successfully closed object %s\n", rank, obj_name1);
         }
         if (PDCobj_close(obj2) < 0) {
             LOG_ERROR("Rank %d Fail to close object %s\n", rank, obj_name2);
             ret_value = 1;
         }
         else {
-            LOG_INFO("Rank %d successfully close object %s\n", rank, obj_name2);
+            LOG_INFO("Rank %d Successfully closed object %s\n", rank, obj_name2);
         }
     }
 
@@ -232,7 +232,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close container c1\n", rank);
+        LOG_INFO("Rank %d Successfully closed container c1\n", rank);
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
@@ -240,7 +240,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object property\n", rank);
+        LOG_INFO("Rank %d Successfully closed object property\n", rank);
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
@@ -248,7 +248,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close container property\n", rank);
+        LOG_INFO("Rank %d Successfully closed container property\n", rank);
     }
     // close pdc
     if (PDCclose(pdc) < 0) {

@@ -88,19 +88,19 @@ TestThread(void *ThreadArgs)
     if (PDCcont_close(cont1) < 0)
         LOG_ERROR("Failed to close container %lld\n", cont1);
     else
-        LOG_INFO("[%d] successfully close container # %llx\n", args->ThreadRank, cont1);
+        LOG_INFO("[%d] Successfully closed container # %llx\n", args->ThreadRank, cont1);
 
     // close cont2
     if (PDCcont_close(cont2) < 0)
         LOG_ERROR("Failed to close container %lld\n", cont2);
     else
-        LOG_INFO("[%d] successfully close container # %llx\n", args->ThreadRank, cont2);
+        LOG_INFO("[%d] Successfully closed container # %llx\n", args->ThreadRank, cont2);
 
     // close cont3
     if (PDCcont_close(cont3) < 0)
         LOG_ERROR("Failed to close container %lld\n", cont3);
     else
-        LOG_INFO("[%d] successfully close container # %llx\n", args->ThreadRank, cont3);
+        LOG_INFO("[%d] Successfully closed container # %llx\n", args->ThreadRank, cont3);
 
     // close a container property
     if (PDCprop_close(create_prop) < 0)

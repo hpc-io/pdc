@@ -76,7 +76,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
 
     LOG_INFO("Trying to open a deleted container, should fail\n");
@@ -90,7 +90,7 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {

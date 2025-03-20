@@ -114,35 +114,35 @@ main()
     if (PDCobj_close(obj1) < 0)
         LOG_ERROR("Failed to close object o1\n");
     else
-        LOG_INFO("successfully close object o1\n");
+        LOG_INFO("Successfully closed object o1\n");
 
     // close second object
     if (PDCobj_close(obj2) < 0)
         LOG_ERROR("Failed to close object o2\n");
     else
-        LOG_INFO("successfully close object o2\n");
+        LOG_INFO("Successfully closed object o2\n");
 
     // close a container
     if (PDCcont_close(cont) < 0)
         LOG_ERROR("Failed to close container c1\n");
     else
-        LOG_INFO("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
 
     // close a container property
     if (PDCprop_close(obj_prop1) < 0)
         LOG_ERROR("Failed to close property");
     else
-        LOG_INFO("successfully close object property\n");
+        LOG_INFO("Successfully closed object property\n");
 
     if (PDCprop_close(obj_prop2) < 0)
         LOG_ERROR("Failed to close property");
     else
-        LOG_INFO("successfully close object property\n");
+        LOG_INFO("Successfully closed object property\n");
 
     if (PDCprop_close(cont_prop) < 0)
         LOG_ERROR("Failed to close property");
     else
-        LOG_INFO("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
 
     // close pdc
     if (PDCclose(pdc) < 0)

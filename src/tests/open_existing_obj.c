@@ -79,21 +79,21 @@ main(int argc, char **argv)
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object open11\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open11\n", rank);
     }
     if (PDCobj_close(open12) < 0) {
         LOG_ERROR("Rank %d fail to close object open12\n", rank);
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object open12\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open12\n", rank);
     }
     if (PDCobj_close(open21) < 0) {
         LOG_ERROR("Rank %d fail to close object open21\n", rank);
         ret_value = 1;
     }
     else {
-        LOG_INFO("Rank %d successfully close object open21\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open21\n", rank);
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
