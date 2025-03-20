@@ -90,22 +90,22 @@ PDCinit(const char *pdc_name)
     FUNC_ENTER(NULL);
 
     if (NULL == (pdc_id_list_g = (struct pdc_id_list *)PDC_calloc(1, sizeof(struct pdc_id_list))))
-        PGOTO_ERROR(FAIL, "PDC global id list: memory allocation failed");
+        PGOTO_ERROR(0, "PDC global id list: memory allocation failed");
 
     if (PDC_class_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC class init error");
+        PGOTO_ERROR(0, "PDC class init error");
     pdcid = PDC_class_create(pdc_name);
 
     if (PDC_prop_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC property init error");
+        PGOTO_ERROR(0, "PDC property init error");
     if (PDC_cont_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC container init error");
+        PGOTO_ERROR(0, "PDC container init error");
     if (PDC_obj_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC object init error");
+        PGOTO_ERROR(0, "PDC object init error");
     if (PDC_region_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC region init error");
+        PGOTO_ERROR(0, "PDC region init error");
     if (PDC_transfer_request_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC region transfer init error");
+        PGOTO_ERROR(0, "PDC region transfer init error");
 
     // PDC Client Server connection init
     PDC_Client_init();
