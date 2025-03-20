@@ -1,6 +1,7 @@
 #include "pdc_hist_pkg.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "pdc_logger.h"
 
 #define MACRO_SAMPLE_MIN_MAX(TYPE, n, data, sample_pct, min, max)                                            \
     ({                                                                                                       \
@@ -272,7 +273,8 @@ PDC_gen_hist(pdc_var_type_t dtype, uint64_t n, void *data)
 #ifdef ENABLE_TIMING
     gettimeofday(&pdc_timer_end, 0);
     gen_hist_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("== generate histogram of %lu elements with %d bins takes %.2fs\n", n, hist->nbin, gen_hist_time);
+    LOG_INFO("== generate histogram of %lu elements with %d bins takes %.2fs\n", n, hist->nbin,
+             gen_hist_time);
 #endif
 
     ret_value = hist;
@@ -311,11 +313,11 @@ PDC_print_hist(pdc_histogram_t *hist)
 
     for (i = 0; i < hist->nbin; i++) {
         if (i != hist->nbin - 1)
-            printf("[%.2f, %.2f): %" PRIu64 "\n", hist->range[i * 2], hist->range[i * 2 + 1], hist->bin[i]);
+            LOG_INFO("[%.2f, %.2f): %" PRIu64 "\n", hist->range[i * 2], hist->range[i * 2 + 1], hist->bin[i]);
         else
-            printf("[%.2f, %.2f]: %" PRIu64 "\n", hist->range[i * 2], hist->range[i * 2 + 1], hist->bin[i]);
+            LOG_INFO("[%.2f, %.2f]: %" PRIu64 "\n", hist->range[i * 2], hist->range[i * 2 + 1], hist->bin[i]);
     }
-    printf("\n\n");
+    LOG_INFO("\n\n");
 
 done:
     fflush(stdout);

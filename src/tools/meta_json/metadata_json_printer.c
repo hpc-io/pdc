@@ -10,34 +10,34 @@ int
 print_json_header(cJSON *dataset_name, cJSON *dataset_description, cJSON *source_URL, cJSON *collector,
                   MD_JSON_ARGS *md_json_args)
 {
-    printf("Dataset Name: %s\n", dataset_name->valuestring);
-    printf("Dataset Description: %s\n", dataset_description->valuestring);
-    printf("Source URL: %s\n", source_URL->valuestring);
-    printf("Collector: %s\n\n", collector->valuestring);
+    LOG_JUST_PRINT("Dataset Name: %s\n", dataset_name->valuestring);
+    LOG_JUST_PRINT("Dataset Description: %s\n", dataset_description->valuestring);
+    LOG_JUST_PRINT("Source URL: %s\n", source_URL->valuestring);
+    LOG_JUST_PRINT("Collector: %s\n\n", collector->valuestring);
     return 0;
 }
 
 int
 print_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_json_args)
 {
-    printf("  Object Name: %s\n", name->valuestring);
-    printf("  Object Type: %s\n", type->valuestring);
-    printf("  Object Full Path: %s\n\n", full_path->valuestring);
+    LOG_JUST_PRINT("  Object Name: %s\n", name->valuestring);
+    LOG_JUST_PRINT("  Object Type: %s\n", type->valuestring);
+    LOG_JUST_PRINT("  Object Full Path: %s\n\n", full_path->valuestring);
     return 0;
 }
 
 int
 print_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JSON_ARGS *md_json_args)
 {
-    printf("    Property Name: %s\n", name->valuestring);
+    LOG_JUST_PRINT("    Property Name: %s\n", name->valuestring);
     if (cJSON_IsString(value)) {
-        printf("    Property Value: %s\n", value->valuestring);
+        LOG_JUST_PRINT("    Property Value: %s\n", value->valuestring);
     }
     else if (cJSON_IsNumber(value)) {
-        printf("    Property Value: %f\n", value->valuedouble);
+        LOG_JUST_PRINT("    Property Value: %f\n", value->valuedouble);
     }
-    printf("    Property Class: %s\n", cls->valuestring);
-    printf("    Property Type: %s\n\n", type->valuestring);
+    LOG_JUST_PRINT("    Property Class: %s\n", cls->valuestring);
+    LOG_JUST_PRINT("    Property Type: %s\n\n", type->valuestring);
     return 0;
 }
 

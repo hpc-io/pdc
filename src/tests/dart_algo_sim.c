@@ -312,7 +312,6 @@ gen_random_strings_with_cb(int count, int minlen, int maxlen, int alphabet_size,
             char chr = (char)((randnum % alphabet_size) + 65);
             str[i]   = chr;
         }
-        // printf("generated %s\n", str);
         result[c] = str;
         if (insert_cb != NULL && search_cb != NULL) {
             insert_cb(result[c], prefix_len);
@@ -380,7 +379,7 @@ void
 print_usage()
 {
     println("dart_sim.exe <hash> <num_server> <input_type> <path_to_file> <alphabet_size> "
-            "<replication_factor> <word_count> <prefix_len> ");
+            "<replication_factor> <word_count> <prefix_len>");
 }
 
 int

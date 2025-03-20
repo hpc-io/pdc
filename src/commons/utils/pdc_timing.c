@@ -42,7 +42,7 @@ PDC_timing_init()
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
     if (!(rank % 31)) {
-        printf("client process rank %d, hostname = %s\n", rank, hostname);
+        LOG_INFO("client process rank %d, hostname = %s\n", rank, hostname);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -127,46 +127,46 @@ PDC_timing_report(const char *prefix)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
     if (!(rank % 32)) {
-        printf("client process rank %d, hostname = %s\n", rank, hostname);
+        LOG_INFO("client process rank %d, hostname = %s\n", rank, hostname);
     }
     MPI_Reduce(&pdc_timings, &max_timings, sizeof(pdc_timing) / sizeof(double), MPI_DOUBLE, MPI_MAX, 0,
                MPI_COMM_WORLD);
     if (rank == 0) {
-        printf("PDCbuf_obj_map_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_map_rpc,
-               max_timings.PDCbuf_obj_map_rpc_wait);
-        printf("PDCreg_obtain_lock_write_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_write_rpc,
-               max_timings.PDCreg_obtain_lock_write_rpc_wait);
-        printf("PDCreg_obtain_lock_read_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_read_rpc,
-               max_timings.PDCreg_obtain_lock_read_rpc_wait);
+        LOG_INFO("PDCbuf_obj_map_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_map_rpc,
+                 max_timings.PDCbuf_obj_map_rpc_wait);
+        LOG_INFO("PDCreg_obtain_lock_write_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_write_rpc,
+                 max_timings.PDCreg_obtain_lock_write_rpc_wait);
+        LOG_INFO("PDCreg_obtain_lock_read_rpc = %lf, wait = %lf\n", max_timings.PDCreg_obtain_lock_read_rpc,
+                 max_timings.PDCreg_obtain_lock_read_rpc_wait);
 
-        printf("PDCreg_release_lock_write_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_write_rpc,
-               max_timings.PDCreg_release_lock_write_rpc_wait);
-        printf("PDCreg_release_lock_read_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_read_rpc,
-               max_timings.PDCreg_release_lock_read_rpc_wait);
-        printf("PDCbuf_obj_unmap_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_unmap_rpc,
-               max_timings.PDCbuf_obj_unmap_rpc_wait);
+        LOG_INFO("PDCreg_release_lock_write_rpc = %lf, wait = %lf\n",
+                 max_timings.PDCreg_release_lock_write_rpc, max_timings.PDCreg_release_lock_write_rpc_wait);
+        LOG_INFO("PDCreg_release_lock_read_rpc = %lf, wait = %lf\n", max_timings.PDCreg_release_lock_read_rpc,
+                 max_timings.PDCreg_release_lock_read_rpc_wait);
+        LOG_INFO("PDCbuf_obj_unmap_rpc = %lf, wait = %lf\n", max_timings.PDCbuf_obj_unmap_rpc,
+                 max_timings.PDCbuf_obj_unmap_rpc_wait);
 
-        printf("PDCtransfer_request_start_write = %lf, wait = %lf\n",
-               max_timings.PDCtransfer_request_start_write_rpc,
-               max_timings.PDCtransfer_request_start_write_rpc_wait);
-        printf("PDCtransfer_request_start_read = %lf, wait = %lf\n",
-               max_timings.PDCtransfer_request_start_read_rpc,
-               max_timings.PDCtransfer_request_start_read_rpc_wait);
-        printf("PDCtransfer_request_wait_write = %lf, wait = %lf\n",
-               max_timings.PDCtransfer_request_wait_write_rpc,
-               max_timings.PDCtransfer_request_wait_write_rpc_wait);
-        printf("PDCtransfer_request_wait_read = %lf, wait = %lf\n",
-               max_timings.PDCtransfer_request_wait_read_rpc,
-               max_timings.PDCtransfer_request_wait_read_rpc_wait);
-        printf("PDCtransfer_request_start_all_write = %lf, wait = %lf\n",
-               max_timings.PDCtransfer_request_start_all_write_rpc,
-               max_timings.PDCtransfer_request_start_all_write_rpc_wait);
-        printf("PDCtransfer_request_start_all_read = %lf, wait = %lf\n",
-               max_timings.PDCtransfer_request_start_all_read_rpc,
-               max_timings.PDCtransfer_request_start_all_read_rpc_wait);
-        printf("PDCtransfer_request_wait_write = %lf, wait = %lf\n",
-               max_timings.PDCtransfer_request_wait_all_rpc,
-               max_timings.PDCtransfer_request_wait_all_rpc_wait);
+        LOG_INFO("PDCtransfer_request_start_write = %lf, wait = %lf\n",
+                 max_timings.PDCtransfer_request_start_write_rpc,
+                 max_timings.PDCtransfer_request_start_write_rpc_wait);
+        LOG_INFO("PDCtransfer_request_start_read = %lf, wait = %lf\n",
+                 max_timings.PDCtransfer_request_start_read_rpc,
+                 max_timings.PDCtransfer_request_start_read_rpc_wait);
+        LOG_INFO("PDCtransfer_request_wait_write = %lf, wait = %lf\n",
+                 max_timings.PDCtransfer_request_wait_write_rpc,
+                 max_timings.PDCtransfer_request_wait_write_rpc_wait);
+        LOG_INFO("PDCtransfer_request_wait_read = %lf, wait = %lf\n",
+                 max_timings.PDCtransfer_request_wait_read_rpc,
+                 max_timings.PDCtransfer_request_wait_read_rpc_wait);
+        LOG_INFO("PDCtransfer_request_start_all_write = %lf, wait = %lf\n",
+                 max_timings.PDCtransfer_request_start_all_write_rpc,
+                 max_timings.PDCtransfer_request_start_all_write_rpc_wait);
+        LOG_INFO("PDCtransfer_request_start_all_read = %lf, wait = %lf\n",
+                 max_timings.PDCtransfer_request_start_all_read_rpc,
+                 max_timings.PDCtransfer_request_start_all_read_rpc_wait);
+        LOG_INFO("PDCtransfer_request_wait_write = %lf, wait = %lf\n",
+                 max_timings.PDCtransfer_request_wait_all_rpc,
+                 max_timings.PDCtransfer_request_wait_all_rpc_wait);
     }
 
     sprintf(filename, "pdc_client_log_rank_%d.csv", rank);
@@ -262,9 +262,9 @@ PDC_server_timing_init()
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     gethostname(hostname, HOST_NAME_MAX);
 
-    printf("server process rank %d, hostname = %s\n", rank, hostname);
+    LOG_INFO("server process rank %d, hostname = %s\n", rank, hostname);
     /*
-        printf("rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, "
+        LOG_INFO("rank = %d, hostname = %s, PDCbuf_obj_map_rpc = %lf, PDCreg_obtain_lock_rpc = %lf, "
                "PDCreg_release_lock_write_rpc = "
                "%lf, PDCreg_release_lock_read_rpc = %lf, PDCbuf_obj_unmap_rpc = %lf, "
                "region_release_bulk_transfer_cb = %lf\n",

@@ -27,6 +27,7 @@
 
 #include "pdc_config.h"
 #include "pdc_public.h"
+#include "pdc_logger.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -136,18 +137,13 @@ extern pbool_t err_occurred;
  */
 #define PGOTO_ERROR(ret_val, ...)                                                                            \
     do {                                                                                                     \
-        fprintf(stderr, "Error in %s:%d\n", __FILE__, __LINE__);                                             \
-        fprintf(stderr, " # %s(): ", __func__);                                                              \
-        fprintf(stderr, __VA_ARGS__);                                                                        \
-        fprintf(stderr, "\n");                                                                               \
+        LOG_ERROR(__VA_ARGS__);                                                                              \
         PGOTO_DONE(ret_val);                                                                                 \
     } while (0)
 
 #define PGOTO_ERROR_VOID(...)                                                                                \
     do {                                                                                                     \
-        fprintf(stderr, "Error in %s:%d\n", __FILE__, __LINE__);                                             \
-        fprintf(stderr, " # %s(): ", __func__);                                                              \
-        fprintf(stderr, "\n");                                                                               \
+        LOG_ERROR(__VA_ARGS__);                                                                              \
         PGOTO_DONE_VOID;                                                                                     \
     } while (0)
 
@@ -176,20 +172,6 @@ extern pbool_t err_occurred;
     } while (0)
 
 #else
-/* #define FUNC_ENTER(X) \ */
-/*     do { \ */
-/*         time_t now; \ */
-/*         time(&now); \ */
-/*         fprintf(stderr, "%ld enter %s\n", now, __func__); \ */
-/*     } while (0) */
-
-/* #define FUNC_LEAVE(ret_value) \ */
-/*     do { \ */
-/*         time_t now; \ */
-/*         time(&now); \ */
-/*         fprintf(stderr, "%ld leave %s\n", now, __func__); \ */
-/*         return (ret_value); \ */
-/*     } while (0) */
 
 #define FUNC_ENTER(X)                                                                                        \
     do {                                                                                                     \

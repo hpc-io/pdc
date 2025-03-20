@@ -1,22 +1,23 @@
 #include "qc_parser.h"
+#include "pdc_logger.h"
 
 void
 printSubExpression(char *expression, Condition *condition)
 {
     if (condition == NULL) {
-        printf("NULL\n");
+        LOG_JUST_PRINT("NULL\n");
         return;
     }
-    printf("level %d, logical op: %s, start: %d, end: %d ", condition->level, logicalOpStr[condition->op],
-           condition->start, condition->end);
-    printf("[");
+    LOG_JUST_PRINT("level %d, logical op: %s, start: %d, end: %d ", condition->level,
+                   logicalOpStr[condition->op], condition->start, condition->end);
+    LOG_JUST_PRINT("[");
     for (int i = condition->start; i < condition->end; i++) {
-        printf("%c", expression[i]);
+        LOG_JUST_PRINT("%c", expression[i]);
     }
-    printf("]\n");
-    printf("left:");
+    LOG_JUST_PRINT("]\n");
+    LOG_JUST_PRINT("left:");
     printSubExpression(expression, condition->left);
-    printf("right:");
+    LOG_JUST_PRINT("right:");
     printSubExpression(expression, condition->right);
 }
 
@@ -112,7 +113,6 @@ extractExpression(char *expression, Condition *condition)
         if (expression[i1] == ')') {
             levelCounter--;
         }
-        // printf("i1: %d, i2: %d, levelCounter: %d\n", i1, i2, levelCounter);
         if (levelCounter == condition->level) {
             int conditionFound = 0;
             if (expression[i1] == 'O' && expression[i2] == 'R') { // FOUND OR on the same level
@@ -164,7 +164,6 @@ splitCondition(char *expression, Condition *condition)
         if (expression[i1] == ')') {
             levelCounter--;
         }
-        // printf("i1: %d, i2: %d, levelCounter: %d\n", i1, i2, levelCounter);
         if (levelCounter == condition->level) {
             int conditionFound = 0;
             if (expression[i1] == 'O' && expression[i2] == 'R') { // FOUND OR on the same level
@@ -238,11 +237,11 @@ void
 printSubClauses(char *expression, subClause *subPtr, int numSubClauses)
 {
     for (int i = 0; i < numSubClauses; i++) {
-        printf("SubClause %d: Level: %d, Expression: ", i, subPtr[i].level);
+        LOG_JUST_PRINT("SubClause %d: Level: %d, Expression: ", i, subPtr[i].level);
         for (int j = subPtr[i].start; j <= subPtr[i].end; j++) {
-            printf("%c", expression[j]);
+            LOG_JUST_PRINT("%c", expression[j]);
         }
-        printf("\n");
+        LOG_JUST_PRINT("\n");
         if (subPtr[i].numSubClauses > 0) {
             printSubClauses(expression, subPtr[i].subClauseArray, subPtr[i].numSubClauses);
         }

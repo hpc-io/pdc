@@ -1,4 +1,5 @@
 #include "bulki_serde.h"
+#include "pdc_logger.h"
 
 int
 test_base_type()
@@ -39,16 +40,12 @@ test_base_type()
     size_t size;
     void * buffer = BULKI_serialize(bulki, &size);
 
-    // printf("Serialized data:\n");
-    // BULKI_print(bulki);
-
     // Do some I/O if you like
     FILE *fp = fopen("test_bulki.bin", "wb");
     fwrite(buffer, 1, size, fp);
     fclose(fp);
 
     BULKI_free(bulki, 1);
-    // printf("Freed bulki\n");
 
     // read the file and deserialize
     fp = fopen("test_bulki.bin", "rb");
@@ -58,21 +55,16 @@ test_base_type()
     // read the file into the buffer
     void *buffer2 = malloc(fsize + 1);
     fread(buffer2, fsize, 1, fp);
-    // printf("Read %ld bytes\n", fsize);
     fclose(fp);
 
     // Deserialize the buffer
     BULKI *deserializedBulki = BULKI_deserialize(buffer2);
 
-    // printf("Deserialized data:\n");
-    // BULKI_print(deserializedBulki);
-
     int equal = BULKI_equal(bulki, deserializedBulki);
-    printf("bulki == deserializedBulki: %d\n", equal);
+    LOG_INFO("bulki == deserializedBulki: %d\n", equal);
 
     // Free the memory
     BULKI_free(deserializedBulki, 1);
-    // printf("Freed deserializedBulki\n");
 
     free(buffer);
 
@@ -98,10 +90,10 @@ test_put_replace()
 
     BULKI_Entity *dataEnt = BULKI_get(bulki, BULKI_ENTITY("key1", 1, PDC_STRING, PDC_CLS_ITEM));
     int           equal   = BULKI_Entity_equal(dataEnt, BULKI_ENTITY(&u64value, 1, PDC_UINT64, PDC_CLS_ITEM));
-    printf("first value is desired after replacing the original value: %d\n", equal);
+    LOG_INFO("first value is desired after replacing the original value: %d\n", equal);
     dataEnt = BULKI_get(bulki, BULKI_ENTITY("key2", 1, PDC_STRING, PDC_CLS_ITEM));
     equal   = BULKI_Entity_equal(dataEnt, BULKI_ENTITY("value2", 1, PDC_STRING, PDC_CLS_ITEM));
-    printf("second value not changed after replace put: %d\n", equal);
+    LOG_INFO("second value not changed after replace put: %d\n", equal);
     return equal;
 }
 
@@ -164,23 +156,15 @@ test_base_array_entitiy()
     size_t size;
     void * buffer = BULKI_serialize(bulki2, &size);
 
-    // printf("Serialized data:\n");
-    // BULKI_print(bulki2);
-
     // Deserialize the buffer
     BULKI *deserializedBulki = BULKI_deserialize(buffer);
 
-    // printf("Deserialized data:\n");
-    // BULKI_print(deserializedBulki);
-
     int equal = BULKI_equal(bulki2, deserializedBulki);
-    printf("bulki2 == deserializedBulki: %d\n", equal);
+    LOG_INFO("bulki2 == deserializedBulki: %d\n", equal);
 
     // Free the memory
     BULKI_free(deserializedBulki, 1);
-    // printf("Freed deserializedBulki\n");
     BULKI_free(bulki, 1);
-    // printf("Freed bulki\n");
     free(buffer);
 
     return equal;
@@ -224,23 +208,15 @@ test_embedded_entitiy()
     size_t size;
     void * buffer = BULKI_serialize(bulki, &size);
 
-    // printf("Serialized data:\n");
-    // BULKI_print(bulki);
-
     // Deserialize the buffer
     BULKI *deserializedBulki = BULKI_deserialize(buffer);
 
-    // printf("Deserialized data:\n");
-    // BULKI_print(deserializedBulki);
-
     int equal = BULKI_equal(bulki, deserializedBulki);
-    printf("bulki == deserializedBulki: %d\n", equal);
+    LOG_INFO("bulki == deserializedBulki: %d\n", equal);
 
     // Free the memory
     BULKI_free(deserializedBulki, 1);
-    // printf("Freed deserializedBulki\n");
     BULKI_free(bulki, 1);
-    // printf("Freed bulki\n");
     free(buffer);
 
     return equal;
@@ -260,7 +236,7 @@ test_bulki_in_entitiy()
 
     int equal = BULKI_Entity_equal(nestEntity, des_nestEntity);
 
-    printf("EMPTY BULKI in BULKI Entity = %d \n", equal);
+    LOG_INFO("EMPTY BULKI in BULKI Entity = %d \n", equal);
 
     BULKI_put(bulki, BULKI_ENTITY("key", 1, PDC_STRING, PDC_CLS_ITEM),
               BULKI_ENTITY("value", 1, PDC_STRING, PDC_CLS_ITEM));
@@ -269,7 +245,7 @@ test_bulki_in_entitiy()
     des_nestEntity = BULKI_Entity_deserialize(buffer);
 
     equal = BULKI_Entity_equal(nestEntity, des_nestEntity);
-    printf("non-empty base BULKI in BULKI Entity = %d \n", equal);
+    LOG_INFO("non-empty base BULKI in BULKI Entity = %d \n", equal);
 
     BULKI_Entity *secondValue = empty_Bent_Array_Entity();
     BULKI_ENTITY_append_BULKI_Entity(secondValue, BULKI_ENTITY("secondValue1", 1, PDC_STRING, PDC_CLS_ITEM));
@@ -281,7 +257,7 @@ test_bulki_in_entitiy()
     des_nestEntity = BULKI_Entity_deserialize(buffer);
 
     equal = BULKI_Entity_equal(nestEntity, des_nestEntity);
-    printf("non-empty compound BULKI in BULKI Entity with array = %d \n", equal);
+    LOG_INFO("non-empty compound BULKI in BULKI Entity with array = %d \n", equal);
 
     return equal;
 }
@@ -367,11 +343,11 @@ bulki_small_json_serialization_test()
 int
 main(int argc, char *argv[])
 {
-    printf("test_base_type RST = %d\n", test_base_type());
-    printf("test_put_replace RST = %d\n", test_put_replace());
-    printf("test_base_array_entitiy RST = %d\n", test_base_array_entitiy());
-    printf("test_embedded_entitiy RST = %d\n", test_embedded_entitiy());
-    printf("test_nested_entitiy RST = %d\n", test_bulki_in_entitiy());
-    printf("bulki_small_json_serialization_test RST = %d\n", bulki_small_json_serialization_test());
+    LOG_INFO("test_base_type RST = %d\n", test_base_type());
+    LOG_INFO("test_put_replace RST = %d\n", test_put_replace());
+    LOG_INFO("test_base_array_entitiy RST = %d\n", test_base_array_entitiy());
+    LOG_INFO("test_embedded_entitiy RST = %d\n", test_embedded_entitiy());
+    LOG_INFO("test_nested_entitiy RST = %d\n", test_bulki_in_entitiy());
+    LOG_INFO("bulki_small_json_serialization_test RST = %d\n", bulki_small_json_serialization_test());
     return 0;
 }

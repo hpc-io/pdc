@@ -35,6 +35,7 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_client_server_common.h"
 #include "pdc_utlist.h"
+#include "pdc_logger.h"
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -279,27 +280,8 @@ PDCbuf_io_transform_register(char *func ATTRIBUTE(unused), void *buf ATTRIBUTE(u
                              int next_state ATTRIBUTE(unused), pdc_data_movement_t when ATTRIBUTE(unused))
 {
     perr_t ret_value = FAIL; /* Return value (not implemented) */
-#if 0
-    void *ftnHandle = NULL;
-    size_t (*ftnPtr)() = NULL;
-    struct _pdc_obj_info *object1 = NULL;
-    struct _pdc_region_transform_ftn_info *thisFtn = NULL;
-    struct pdc_region_info *region_info;
-    struct _pdc_id_info *id_info;
-    char *thisApp = NULL;
-    char *colonsep = NULL; 
-    char *transformslibrary = NULL;
-    char *applicationDir = NULL;
-    char *userdefinedftn = NULL;
-    char *loadpath = NULL;
-    int local_regIndex;
-#endif
     FUNC_ENTER(NULL);
-    printf("IO transforms are not currently supported!\n");
-    // done:
-    //    if (applicationDir) free(applicationDir);
-    //    if (userdefinedftn) free(userdefinedftn);
-
+    LOG_ERROR("IO transforms are not currently supported!\n");
     FUNC_LEAVE(ret_value);
 }
 

@@ -36,6 +36,7 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_region.h"
 #include "pdc_server_analysis.h"
+#include "pdc_logger.h"
 
 size_t            analysis_registry_size  = 0;
 size_t            transform_registry_size = 0;
@@ -475,14 +476,14 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
     if (ftnPtr != NULL) {
         if ((iterIn = in.iter_in) == 0) {
             nulliter_count = 1;
-            printf("input is a NULL iterator\n");
+            LOG_INFO("input is a NULL iterator\n");
         }
         else if (execution_locus == SERVER_MEMORY) {
             /* inputIter = &PDC_Block_iterator_cache[iterIn]; */
         }
         if ((iterOut = in.iter_out) == 0) {
             nulliter_count += 1;
-            printf("output is a NULL iterator\n");
+            LOG_INFO("output is a NULL iterator\n");
         }
 
         /* For the unusual case where both the input and output iterators
@@ -518,7 +519,7 @@ HG_TEST_RPC_CB(analysis_ftn, handle)
      */
     if (ftnPtr && (nulliter_count == 2)) {
         result = ftnPtr(iterIn, iterOut);
-        printf("function call result was %d\n----------------\n", result);
+        LOG_INFO("function call result was %d\n----------------\n", result);
 
         /* FIXME:
          * We might consider adding the function result into
@@ -551,7 +552,7 @@ HG_TEST_RPC_CB(obj_data_iterator, handle)
     memset(&in, 0, sizeof(in));
     // Decode input
     HG_Get_input(handle, &in);
-    // printf("obj_data_iterator_cb entered!\n");
+    // LOG_INFO("obj_data_iterator_cb entered!\n");
     ret_value = PDC_Server_instantiate_data_iterator(&in, &out);
 
     HG_Respond(handle, NULL, NULL, &out);

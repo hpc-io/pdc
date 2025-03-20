@@ -1,6 +1,7 @@
 #include "pdc_set.h"
 #include "pdc_compare.h"
 #include "pdc_hash.h"
+#include "pdc_logger.h"
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +21,7 @@ main(int argc, char **argv)
     char *   endptr;
     uint64_t max_id = strtoull(argv[1], &endptr, 10);
     if (*endptr != '\0') {
-        fprintf(stderr, "Invalid number: %s\n", argv[1]);
+        LOG_ERROR("Invalid number: %s\n", argv[1]);
         return 1;
     }
 
@@ -36,7 +37,7 @@ main(int argc, char **argv)
     // test if the size of set is correct
 
     if (set_num_entries(set) != (unsigned int)max_id) {
-        printf("Error: set size is not correct\n");
+        LOG_ERROR("Error: set size is not correct\n");
         return 1;
     }
 
@@ -45,7 +46,7 @@ main(int argc, char **argv)
         uint64_t *value = malloc(sizeof(uint64_t));
         *value          = i;
         if (!set_query(set, value)) {
-            printf("Error: value %" PRIu64 " not found in the set\n", i);
+            LOG_ERROR("Error: value %" PRIu64 " not found in the set\n", i);
             return 1;
         }
     }
@@ -56,7 +57,7 @@ main(int argc, char **argv)
     while (set_iter_has_more(it)) {
         uint64_t *value = set_iter_next(it);
         if (!set_query(set, value)) {
-            printf("Error: value %" PRIu64 " not found in the set\n", *value);
+            LOG_ERROR("Error: value %" PRIu64 " not found in the set\n", *value);
             return 1;
         }
     }

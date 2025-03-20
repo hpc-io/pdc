@@ -44,20 +44,10 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
                                size_t num_obj_ids)
 {
     perr_t ret = SUCCEED;
-    // printf("index is %p, obj_id: %llu\n", index, obj_ids[0]);
     if (index == NULL) {
+        LOG_ERROR("index was null\n");
         return FAIL;
     }
-
-    // if (strcmp((char *)attr_val, "str109str") == 0) {
-    //     printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
-    // }
-    // if (strcmp((char *)attr_val, "str096str") == 0) {
-    //     printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
-    // }
-    // if (strcmp((char *)attr_val, "str099str") == 0) {
-    //     printf("attr_val: %s, value_len: %zu, obj_ids: %llu\n", (char *)attr_val, value_len, obj_ids[0]);
-    // }
 
     void *entry     = NULL;
     int   idx_found = -1; // -1 not found, 0 found.
@@ -211,15 +201,6 @@ idioms_local_index_create(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
     timer_start(&index_timer);
     art_tree *key_trie =
         (idx_record->is_key_suffix == 1) ? idioms->art_key_suffix_tree_g : idioms->art_key_prefix_tree_g;
-    // if (strcmp(key, "str109str") == 0) {
-    //     printf("key: %s, len: %d\n", key, len);
-    // }
-    // if (strcmp(key, "str096str") == 0) {
-    //     printf("key: %s, len: %d\n", key, len);
-    // }
-    // if (strcmp(key, "str099str") == 0) {
-    //     printf("key: %s, len: %d\n", key, len);
-    // }
     insert_into_key_trie(key_trie, key, len, idx_record);
     /**
      * Note: in IDIOMS, the client-runtime is responsible for iterating all suffixes of the key.
@@ -250,8 +231,9 @@ idioms_local_index_create(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
     timer_pause(&index_timer);
 
     if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
-               idioms->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
+        LOG_DEBUG(
+            "[Server_Side_Insert_%d] Timer to insert a keyword %s : %s into index = %.4f microseconds\n",
+            idioms->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
         char value_str[64];
         if (idx_record->type == PDC_STRING) {
             snprintf(value_str, 64, "%s", idx_record->value);
@@ -268,11 +250,12 @@ idioms_local_index_create(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
         else {
             snprintf(value_str, 64, "[UnknownValue]");
         }
-        printf("[idioms_local_index_create] Client %" PRIu32 " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64
-               " into Server %" PRIu32 " in %.4f microseconds, insert_request_count_g = %" PRId64
-               ", index_record_count_g = %" PRId64 "\n",
-               idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms->server_id_g,
-               timer_delta_us(&index_timer), idioms->insert_request_count_g, idioms->index_record_count_g);
+        LOG_DEBUG("[idioms_local_index_create] Client %" PRIu32
+                  " inserted a kvtag \"%s\" : \"%s\" -> %" PRIu64 " into Server %" PRIu32
+                  " in %.4f microseconds, insert_request_count_g = %" PRId64
+                  ", index_record_count_g = %" PRId64 "\n",
+                  idx_record->src_client_id, key, value_str, idx_record->obj_ids[0], idioms->server_id_g,
+                  timer_delta_us(&index_timer), idioms->insert_request_count_g, idioms->index_record_count_g);
     }
     idioms->time_to_create_index_g += timer_delta_us(&index_timer);
     idioms->index_record_count_g++;
@@ -495,8 +478,9 @@ idioms_local_index_delete(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
     // #endif
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_Delete_%d] Timer to delete a keyword %s : %s from index = %.4f microseconds\n",
-               idioms->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
+        LOG_DEBUG(
+            "[Server_Side_Delete_%d] Timer to delete a keyword %s : %s from index = %.4f microseconds\n",
+            idioms->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
     }
     idioms->time_to_delete_index_g += timer_delta_us(&index_timer);
     idioms->index_record_count_g--;
@@ -515,7 +499,6 @@ collect_obj_ids(value_index_leaf_content_t *value_index_leaf, IDIOMS_md_idx_reco
 
     // get number of object IDs in the set
     int num_obj_ids = set_num_entries(obj_id_set);
-    // printf("[SEARCH] obj_id_set: %p, num_obj: %d\n", obj_id_set, num_obj_ids);
 
     // realloc the obj_ids array in idx_record
     idx_record->obj_ids =
@@ -532,7 +515,7 @@ collect_obj_ids(value_index_leaf_content_t *value_index_leaf, IDIOMS_md_idx_reco
         idx_record->num_obj_ids += num_obj_ids;
     }
     else {
-        printf("ERROR: offset %zu != num_obj_ids %d\n", offset, num_obj_ids);
+        LOG_ERROR("ERROR: offset %zu != num_obj_ids %d\n", offset, num_obj_ids);
     }
     return 0;
 }
@@ -543,9 +526,6 @@ value_trie_callback(void *data, const unsigned char *key, uint32_t key_len, void
     value_index_leaf_content_t *value_index_leaf = (value_index_leaf_content_t *)(value);
     IDIOMS_md_idx_record_t *    idx_record       = (IDIOMS_md_idx_record_t *)(data);
 
-    // printf("value_trie_callback: key: %s, value: %s, value_index_leaf: %p\n", key, (char
-    // *)idx_record->value,
-    //        value_index_leaf);
     char *         v_query          = (char *)idx_record->value;
     pattern_type_t value_query_type = determine_pattern_type(v_query);
     if (value_query_type == PATTERN_MIDDLE) {
@@ -566,10 +546,6 @@ value_rbt_callback(rbt_t *rbt, void *key, size_t klen, void *value, void *priv)
 {
     value_index_leaf_content_t *value_index_leaf = (value_index_leaf_content_t *)(value);
     IDIOMS_md_idx_record_t *    idx_record       = (IDIOMS_md_idx_record_t *)(priv);
-
-    // printf("value_rbt_callback: key: %s, value: %s, value_index_leaf: %p\n", (char *)key,
-    //        (char *)idx_record->value, value_index_leaf);
-
     if (value_index_leaf != NULL) {
         collect_obj_ids(value_index_leaf, idx_record);
     }
@@ -636,7 +612,7 @@ value_number_query(char *secondary_query, key_index_leaf_content_t *leafcnt,
         // the string is not ended or started with '~', and if it contains '~', it is a in-between query.
         split_string(secondary_query, "~", &tokens, &num_tokens);
         if (num_tokens != 2) {
-            printf("ERROR: invalid range query: %s\n", secondary_query);
+            LOG_ERROR("ERROR: invalid range query: %s\n", secondary_query);
             return -1;
         }
         char *lo_tok = tokens[0];
@@ -881,9 +857,9 @@ idioms_local_index_search(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
 
     timer_pause(&index_timer);
     if (DART_SERVER_DEBUG) {
-        printf("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
-               qType_string, idioms->server_id_g, query, idx_record->num_obj_ids,
-               timer_delta_us(&index_timer));
+        LOG_DEBUG("[Server_Side_%s_%d] Time to address query '%s' and get %d results  = %.4f microseconds\n",
+                  qType_string, idioms->server_id_g, query, idx_record->num_obj_ids,
+                  timer_delta_us(&index_timer));
     }
     idioms->time_to_search_index_g += timer_delta_us(&index_timer);
     idioms->search_request_count_g += 1;
