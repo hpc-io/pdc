@@ -142,7 +142,7 @@ main(int argc, char **argv)
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCreg_obtain_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE, PDC_NOBLOCK);
         if (ret != SUCCEED) {
-            LOG_INFO("Fail to obtain lock");
+            LOG_ERROR("Fail to obtain lock");
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -174,7 +174,7 @@ main(int argc, char **argv)
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCreg_release_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE);
         if (ret != SUCCEED) {
-            LOG_INFO("Fail to release lock");
+            LOG_ERROR("Fail to release lock");
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -184,7 +184,7 @@ main(int argc, char **argv)
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCbuf_obj_unmap(obj_ids[i], region_remote_ids[i]);
         if (ret != SUCCEED) {
-            LOG_INFO("Fail to unmap");
+            LOG_ERROR("Fail to unmap");
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);

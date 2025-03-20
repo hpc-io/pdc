@@ -99,7 +99,7 @@ main(int argc, char **argv)
     // open a container
     cont_id = PDCcont_open("c1", pdc_id);
     if (cont_id == 0)
-        LOG_INFO("Fail to create container");
+        LOG_ERROR("Fail to create container");
 
         // open objects
 #ifdef ENABLE_MPI
@@ -249,83 +249,83 @@ main(int argc, char **argv)
 
     ret = PDCregion_transfer_start(transfer_request_x);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_xx\n");
+        LOG_ERROR("Failed to start transfer for region_xx\n");
         return 1;
     }
     ret = PDCregion_transfer_start(transfer_request_y);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_yy\n");
+        LOG_ERROR("Failed to start transfer for region_yy\n");
         return 1;
     }
     ret = PDCregion_transfer_start(transfer_request_z);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_zz\n");
+        LOG_ERROR("Failed to start transfer for region_zz\n");
         return 1;
     }
     ret = PDCregion_transfer_start(transfer_request_px);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_pxx\n");
+        LOG_ERROR("Failed to start transfer for region_pxx\n");
         return 1;
     }
     ret = PDCregion_transfer_start(transfer_request_py);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_pyy\n");
+        LOG_ERROR("Failed to start transfer for region_pyy\n");
         return 1;
     }
     ret = PDCregion_transfer_start(transfer_request_pz);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_pzz\n");
+        LOG_ERROR("Failed to start transfer for region_pzz\n");
         return 1;
     }
     ret = PDCregion_transfer_start(transfer_request_id1);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_id11\n");
+        LOG_ERROR("Failed to start transfer for region_id11\n");
         return 1;
     }
     ret = PDCregion_transfer_start(transfer_request_id2);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to start transfer for region_id22\n");
+        LOG_ERROR("Failed to start transfer for region_id22\n");
         return 1;
     }
 
     ret = PDCregion_transfer_wait(transfer_request_x);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_xx\n");
+        LOG_ERROR("Failed to transfer wait for region_xx\n");
         return 1;
     }
     ret = PDCregion_transfer_wait(transfer_request_y);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_yy\n");
+        LOG_ERROR("Failed to transfer wait for region_yy\n");
         return 1;
     }
     ret = PDCregion_transfer_wait(transfer_request_z);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_zz\n");
+        LOG_ERROR("Failed to transfer wait for region_zz\n");
         return 1;
     }
     ret = PDCregion_transfer_wait(transfer_request_px);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_pxx\n");
+        LOG_ERROR("Failed to transfer wait for region_pxx\n");
         return 1;
     }
     ret = PDCregion_transfer_wait(transfer_request_py);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_pyy\n");
+        LOG_ERROR("Failed to transfer wait for region_pyy\n");
         return 1;
     }
     ret = PDCregion_transfer_wait(transfer_request_pz);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_pzz\n");
+        LOG_ERROR("Failed to transfer wait for region_pzz\n");
         return 1;
     }
     ret = PDCregion_transfer_wait(transfer_request_id1);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_id11\n");
+        LOG_ERROR("Failed to transfer wait for region_id11\n");
         return 1;
     }
     ret = PDCregion_transfer_wait(transfer_request_id2);
     if (ret != SUCCEED) {
-        LOG_INFO("Failed to transfer wait for region_id22\n");
+        LOG_ERROR("Failed to transfer wait for region_id22\n");
         return 1;
     }
 
@@ -373,83 +373,83 @@ main(int argc, char **argv)
     PDC_timing_report("read");
 
     if (PDCobj_close(obj_xx) < 0)
-        LOG_INFO("Fail to close obj_xx\n");
+        LOG_ERROR("Fail to close obj_xx\n");
 
     if (PDCobj_close(obj_yy) < 0)
-        LOG_INFO("Fail to close object obj_yy\n");
+        LOG_ERROR("Fail to close object obj_yy\n");
 
     if (PDCobj_close(obj_zz) < 0)
-        LOG_INFO("Fail to close object obj_zz\n");
+        LOG_ERROR("Fail to close object obj_zz\n");
 
     if (PDCobj_close(obj_pxx) < 0)
-        LOG_INFO("Fail to close object obj_pxx\n");
+        LOG_ERROR("Fail to close object obj_pxx\n");
 
     if (PDCobj_close(obj_pyy) < 0)
-        LOG_INFO("Fail to close object obj_pyy\n");
+        LOG_ERROR("Fail to close object obj_pyy\n");
 
     if (PDCobj_close(obj_pzz) < 0)
-        LOG_INFO("Fail to close object obj_pzz\n");
+        LOG_ERROR("Fail to close object obj_pzz\n");
 
     if (PDCobj_close(obj_id11) < 0)
-        LOG_INFO("Fail to close object obj_id11\n");
+        LOG_ERROR("Fail to close object obj_id11\n");
 
     if (PDCobj_close(obj_id22) < 0)
-        LOG_INFO("Fail to close object obj_id22\n");
+        LOG_ERROR("Fail to close object obj_id22\n");
 
     if (PDCregion_close(region_x) < 0)
-        LOG_INFO("Fail to close region region_x\n");
+        LOG_ERROR("Fail to close region region_x\n");
 
     if (PDCregion_close(region_y) < 0)
-        LOG_INFO("Fail to close region region_y\n");
+        LOG_ERROR("Fail to close region region_y\n");
 
     if (PDCregion_close(region_z) < 0)
-        LOG_INFO("Fail to close region region_z\n");
+        LOG_ERROR("Fail to close region region_z\n");
 
     if (PDCregion_close(region_px) < 0)
-        LOG_INFO("Fail to close region region_px\n");
+        LOG_ERROR("Fail to close region region_px\n");
 
     if (PDCregion_close(region_py) < 0)
-        LOG_INFO("Fail to close region region_py\n");
+        LOG_ERROR("Fail to close region region_py\n");
 
     if (PDCobj_close(region_pz) < 0)
-        LOG_INFO("Fail to close region region_pz\n");
+        LOG_ERROR("Fail to close region region_pz\n");
 
     if (PDCobj_close(region_id1) < 0)
-        LOG_INFO("Fail to close region region_id1\n");
+        LOG_ERROR("Fail to close region region_id1\n");
 
     if (PDCobj_close(region_id2) < 0)
-        LOG_INFO("Fail to close region region_id2\n");
+        LOG_ERROR("Fail to close region region_id2\n");
 
     if (PDCregion_close(region_xx) < 0)
-        LOG_INFO("Fail to close region region_xx\n");
+        LOG_ERROR("Fail to close region region_xx\n");
 
     if (PDCregion_close(region_yy) < 0)
-        LOG_INFO("Fail to close region region_yy\n");
+        LOG_ERROR("Fail to close region region_yy\n");
 
     if (PDCregion_close(region_zz) < 0)
-        LOG_INFO("Fail to close region region_zz\n");
+        LOG_ERROR("Fail to close region region_zz\n");
 
     if (PDCregion_close(region_pxx) < 0)
-        LOG_INFO("Fail to close region region_pxx\n");
+        LOG_ERROR("Fail to close region region_pxx\n");
 
     if (PDCregion_close(region_pyy) < 0)
-        LOG_INFO("Fail to close region region_pyy\n");
+        LOG_ERROR("Fail to close region region_pyy\n");
 
     if (PDCregion_close(region_pzz) < 0)
-        LOG_INFO("Fail to close region region_pzz\n");
+        LOG_ERROR("Fail to close region region_pzz\n");
 
     if (PDCobj_close(region_id11) < 0)
-        LOG_INFO("Fail to close region region_id11\n");
+        LOG_ERROR("Fail to close region region_id11\n");
 
     if (PDCobj_close(region_id22) < 0)
-        LOG_INFO("Fail to close region region_id22\n");
+        LOG_ERROR("Fail to close region region_id22\n");
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        LOG_INFO("Fail to close container c1\n");
+        LOG_ERROR("Fail to close container c1\n");
 
     if (PDCclose(pdc_id) < 0)
-        LOG_INFO("Fail to close PDC\n");
+        LOG_ERROR("Fail to close PDC\n");
 
     free(x);
     free(y);

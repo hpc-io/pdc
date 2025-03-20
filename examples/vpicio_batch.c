@@ -145,13 +145,13 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0) {
-        LOG_INFO("Fail to create container property");
+        LOG_ERROR("Fail to create container property");
         return 1;
     }
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
     if (cont_id <= 0) {
-        LOG_INFO("Fail to create container");
+        LOG_ERROR("Fail to create container");
         return 1;
     }
     // create an object property
@@ -432,7 +432,7 @@ main(int argc, char **argv)
         if (test_method == 2) {
             ret = PDCregion_transfer_start_all(temp_requests, 8);
             if (ret != SUCCEED) {
-                LOG_INFO("Failed to start transfer for all regions\n");
+                LOG_ERROR("Failed to start transfer for all regions\n");
                 return 1;
             }
         }
@@ -444,28 +444,28 @@ main(int argc, char **argv)
         else {
             ret = PDCreg_obtain_lock(obj_xx[i], region_xx, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_xx\n");
+                LOG_ERROR("Failed to obtain lock for region_xx\n");
             ret = PDCreg_obtain_lock(obj_yy[i], region_yy, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_yy\n");
+                LOG_ERROR("Failed to obtain lock for region_yy\n");
             ret = PDCreg_obtain_lock(obj_zz[i], region_zz, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_zz\n");
+                LOG_ERROR("Failed to obtain lock for region_zz\n");
             ret = PDCreg_obtain_lock(obj_pxx[i], region_pxx, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_pxx\n");
+                LOG_ERROR("Failed to obtain lock for region_pxx\n");
             ret = PDCreg_obtain_lock(obj_pyy[i], region_pyy, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_pyy\n");
+                LOG_ERROR("Failed to obtain lock for region_pyy\n");
             ret = PDCreg_obtain_lock(obj_pzz[i], region_pzz, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_pzz\n");
+                LOG_ERROR("Failed to obtain lock for region_pzz\n");
             ret = PDCreg_obtain_lock(obj_id11[i], region_id11, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_id11\n");
+                LOG_ERROR("Failed to obtain lock for region_id11\n");
             ret = PDCreg_obtain_lock(obj_id22[i], region_id22, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to obtain lock for region_id22\n");
+                LOG_ERROR("Failed to obtain lock for region_id22\n");
         }
 #ifdef ENABLE_MPI
         transfer_start += MPI_Wtime() - start;
@@ -489,7 +489,7 @@ main(int argc, char **argv)
         if (test_method == 2) {
             ret = PDCregion_transfer_wait_all(temp_requests, 8);
             if (ret != SUCCEED) {
-                LOG_INFO("Failed to start transfer for all regions\n");
+                LOG_ERROR("Failed to start transfer for all regions\n");
                 return 1;
             }
         }
@@ -501,28 +501,28 @@ main(int argc, char **argv)
         else {
             ret = PDCreg_release_lock(obj_xx[i], region_xx, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_xx\n");
+                LOG_ERROR("Failed to release lock for region_xx\n");
             ret = PDCreg_release_lock(obj_yy[i], region_yy, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_yy\n");
+                LOG_ERROR("Failed to release lock for region_yy\n");
             ret = PDCreg_release_lock(obj_zz[i], region_zz, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_zz\n");
+                LOG_ERROR("Failed to release lock for region_zz\n");
             ret = PDCreg_release_lock(obj_pxx[i], region_pxx, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_pxx\n");
+                LOG_ERROR("Failed to release lock for region_pxx\n");
             ret = PDCreg_release_lock(obj_pyy[i], region_pyy, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_pyy\n");
+                LOG_ERROR("Failed to release lock for region_pyy\n");
             ret = PDCreg_release_lock(obj_pzz[i], region_pzz, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_pzz\n");
+                LOG_ERROR("Failed to release lock for region_pzz\n");
             ret = PDCreg_release_lock(obj_id11[i], region_id11, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_id11\n");
+                LOG_ERROR("Failed to release lock for region_id11\n");
             ret = PDCreg_release_lock(obj_id22[i], region_id22, PDC_WRITE);
             if (ret != SUCCEED)
-                LOG_INFO("Failed to release lock for region_id22\n");
+                LOG_ERROR("Failed to release lock for region_id22\n");
         }
 #ifdef ENABLE_MPI
         end = MPI_Wtime();
@@ -608,35 +608,35 @@ main(int argc, char **argv)
 #endif
 
         if (PDCregion_close(region_xx) < 0) {
-            LOG_INFO("Fail to close region region_xx\n");
+            LOG_ERROR("Fail to close region region_xx\n");
             return 1;
         }
         if (PDCregion_close(region_yy) < 0) {
-            LOG_INFO("Fail to close region region_yy\n");
+            LOG_ERROR("Fail to close region region_yy\n");
             return 1;
         }
         if (PDCregion_close(region_zz) < 0) {
-            LOG_INFO("Fail to close region region_zz\n");
+            LOG_ERROR("Fail to close region region_zz\n");
             return 1;
         }
         if (PDCregion_close(region_pxx) < 0) {
-            LOG_INFO("Fail to close region region_pxx\n");
+            LOG_ERROR("Fail to close region region_pxx\n");
             return 1;
         }
         if (PDCregion_close(region_pyy) < 0) {
-            LOG_INFO("Fail to close region region_pyy\n");
+            LOG_ERROR("Fail to close region region_pyy\n");
             return 1;
         }
         if (PDCregion_close(region_pzz) < 0) {
-            LOG_INFO("Fail to close region region_pzz\n");
+            LOG_ERROR("Fail to close region region_pzz\n");
             return 1;
         }
         if (PDCregion_close(region_id11) < 0) {
-            LOG_INFO("Fail to close region region_id11\n");
+            LOG_ERROR("Fail to close region region_id11\n");
             return 1;
         }
         if (PDCregion_close(region_id22) < 0) {
-            LOG_INFO("Fail to close region region_id22\n");
+            LOG_ERROR("Fail to close region region_id22\n");
             return 1;
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -649,35 +649,35 @@ main(int argc, char **argv)
     PDC_timing_report("write");
     for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
-            LOG_INFO("Fail to close obj_xx\n");
+            LOG_ERROR("Fail to close obj_xx\n");
             return 1;
         }
         if (PDCobj_close(obj_yy[i]) < 0) {
-            LOG_INFO("Fail to close object obj_yy\n");
+            LOG_ERROR("Fail to close object obj_yy\n");
             return 1;
         }
         if (PDCobj_close(obj_zz[i]) < 0) {
-            LOG_INFO("Fail to close object obj_zz\n");
+            LOG_ERROR("Fail to close object obj_zz\n");
             return 1;
         }
         if (PDCobj_close(obj_pxx[i]) < 0) {
-            LOG_INFO("Fail to close object obj_pxx\n");
+            LOG_ERROR("Fail to close object obj_pxx\n");
             return 1;
         }
         if (PDCobj_close(obj_pyy[i]) < 0) {
-            LOG_INFO("Fail to close object obj_pyy\n");
+            LOG_ERROR("Fail to close object obj_pyy\n");
             return 1;
         }
         if (PDCobj_close(obj_pzz[i]) < 0) {
-            LOG_INFO("Fail to close object obj_pzz\n");
+            LOG_ERROR("Fail to close object obj_pzz\n");
             return 1;
         }
         if (PDCobj_close(obj_id11[i]) < 0) {
-            LOG_INFO("Fail to close object obj_id11\n");
+            LOG_ERROR("Fail to close object obj_id11\n");
             return 1;
         }
         if (PDCobj_close(obj_id22[i]) < 0) {
-            LOG_INFO("Fail to close object obj_id22\n");
+            LOG_ERROR("Fail to close object obj_id22\n");
             return 1;
         }
     }
@@ -731,81 +731,81 @@ main(int argc, char **argv)
     free(obj_id11);
     free(obj_id22);
     if (PDCprop_close(obj_prop_xx) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_xx\n");
+        LOG_ERROR("Fail to close obj property obj_prop_xx\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_yy) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_yy\n");
+        LOG_ERROR("Fail to close obj property obj_prop_yy\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_zz) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_zz\n");
+        LOG_ERROR("Fail to close obj property obj_prop_zz\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_pxx) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_pxx\n");
+        LOG_ERROR("Fail to close obj property obj_prop_pxx\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_pyy) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_pyy\n");
+        LOG_ERROR("Fail to close obj property obj_prop_pyy\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_pzz) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_pzz\n");
+        LOG_ERROR("Fail to close obj property obj_prop_pzz\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_id11) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_id11\n");
+        LOG_ERROR("Fail to close obj property obj_prop_id11\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_id22) < 0) {
-        LOG_INFO("Fail to close obj property obj_prop_id22\n");
+        LOG_ERROR("Fail to close obj property obj_prop_id22\n");
         return 1;
     }
     if (PDCregion_close(region_x) < 0) {
-        LOG_INFO("Fail to close region region_x\n");
+        LOG_ERROR("Fail to close region region_x\n");
         return 1;
     }
     if (PDCregion_close(region_y) < 0) {
-        LOG_INFO("Fail to close region region_y\n");
+        LOG_ERROR("Fail to close region region_y\n");
         return 1;
     }
     if (PDCregion_close(region_z) < 0) {
-        LOG_INFO("Fail to close region region_z\n");
+        LOG_ERROR("Fail to close region region_z\n");
         return 1;
     }
     if (PDCregion_close(region_px) < 0) {
-        LOG_INFO("Fail to close region region_px\n");
+        LOG_ERROR("Fail to close region region_px\n");
         return 1;
     }
     if (PDCregion_close(region_py) < 0) {
-        LOG_INFO("Fail to close region region_py\n");
+        LOG_ERROR("Fail to close region region_py\n");
         return 1;
     }
     if (PDCobj_close(region_pz) < 0) {
-        LOG_INFO("Fail to close region region_pz\n");
+        LOG_ERROR("Fail to close region region_pz\n");
         return 1;
     }
     if (PDCobj_close(region_id1) < 0) {
-        LOG_INFO("Fail to close region region_id1\n");
+        LOG_ERROR("Fail to close region region_id1\n");
         return 1;
     }
     if (PDCobj_close(region_id2) < 0) {
-        LOG_INFO("Fail to close region region_id2\n");
+        LOG_ERROR("Fail to close region region_id2\n");
         return 1;
     }
     // close a container
     if (PDCcont_close(cont_id) < 0) {
-        LOG_INFO("Fail to close container c1\n");
+        LOG_ERROR("Fail to close container c1\n");
         return 1;
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_INFO("Fail to close property");
+        LOG_ERROR("Fail to close property");
         return 1;
     }
     if (PDCclose(pdc_id) < 0) {
-        LOG_INFO("Fail to close PDC\n");
+        LOG_ERROR("Fail to close PDC\n");
         return 1;
     }
     free(offset);

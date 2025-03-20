@@ -250,7 +250,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
             LOG_ERROR("disk:threadError | File \"%s\" cannot be opened from Disk\n", fileName);
 
         if (!tif)
-            LGO_ERROR("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
+            LOG_ERROR("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
         uint64_t  offset  = 0;
         uint64_t *offsets = NULL;
         TIFFGetField(tif, TIFFTAG_STRIPOFFSETS, &offsets);

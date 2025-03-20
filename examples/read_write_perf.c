@@ -129,26 +129,26 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0) {
-        LOG_INFO("Fail to create container property");
+        LOG_ERROR("Fail to create container property");
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont <= 0) {
-        LOG_INFO("Fail to create container");
+        LOG_ERROR("Fail to create container");
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0) {
-        LOG_INFO("Fail to create object property");
+        LOG_ERROR("Fail to create object property");
         ret_value = 1;
     }
 
     ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
     if (ret != SUCCEED) {
-        LOG_INFO("Fail to set obj type");
+        LOG_ERROR("Fail to set obj type");
         ret_value = 1;
     }
     PDCprop_set_obj_dims(obj_prop, ndim, dims);
@@ -165,7 +165,7 @@ main(int argc, char **argv)
         sprintf(obj_name1, "o1_%d_%d", rank, i);
         obj1 = PDCobj_create(cont, obj_name1, obj_prop);
         if (obj1 <= 0) {
-            LOG_INFO("Fail to create object");
+            LOG_ERROR("Fail to create object");
             ret_value = 1;
         }
 
@@ -207,16 +207,16 @@ main(int argc, char **argv)
         }
 
         if (PDCregion_close(reg) < 0) {
-            LOG_INFO("Fail to close local region");
+            LOG_ERROR("Fail to close local region");
             ret_value = 1;
         }
 
         if (PDCregion_close(reg_global) < 0) {
-            LOG_INFO("Fail to close global region");
+            LOG_ERROR("Fail to close global region");
             ret_value = 1;
         }
         if (PDCobj_close(obj1) < 0) {
-            LOG_INFO("Fail to close object o1");
+            LOG_ERROR("Fail to close object o1");
             ret_value = 1;
         }
     }
@@ -227,7 +227,7 @@ main(int argc, char **argv)
         sprintf(obj_name1, "o1_%d_%d", rank, i);
         obj1 = PDCobj_open(obj_name1, pdc);
         if (obj1 <= 0) {
-            LOG_INFO("Fail to open object");
+            LOG_ERROR("Fail to open object");
             ret_value = 1;
         }
 
@@ -274,17 +274,17 @@ main(int argc, char **argv)
         }
 
         if (PDCregion_close(reg) < 0) {
-            LOG_INFO("Fail to close local region");
+            LOG_ERROR("Fail to close local region");
             ret_value = 1;
         }
 
         if (PDCregion_close(reg_global) < 0) {
-            LOG_INFO("Fail to close global region");
+            LOG_ERROR("Fail to close global region");
             ret_value = 1;
         }
 
         if (PDCobj_close(obj1) < 0) {
-            LOG_INFO("Fail to close object o1");
+            LOG_ERROR("Fail to close object o1");
             ret_value = 1;
         }
     }
@@ -293,22 +293,22 @@ main(int argc, char **argv)
 
     // close a container
     if (PDCcont_close(cont) < 0) {
-        LOG_INFO("Fail to close container c1");
+        LOG_ERROR("Fail to close container c1");
         ret_value = 1;
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        LOG_INFO("Fail to close property");
+        LOG_ERROR("Fail to close property");
         ret_value = 1;
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_INFO("Fail to close property");
+        LOG_ERROR("Fail to close property");
         ret_value = 1;
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOG_INFO("Fail to close PDC");
+        LOG_ERROR("Fail to close PDC");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
