@@ -100,42 +100,42 @@ main(int argc, char **argv)
     // open objects
     obj_xx = PDCobj_open("obj-var-xx", pdc_id);
     if (obj_xx == 0) {
-        LOG_INFO("Error when open object %s\n", "obj-var-xx");
+        LOG_ERROR("Error when open object %s\n", "obj-var-xx");
         exit(-1);
     }
     obj_yy = PDCobj_open("obj-var-yy", pdc_id);
     if (obj_yy == 0) {
-        LOG_INFO("Error when open object %s\n", "obj-var-yy");
+        LOG_ERROR("Error when open object %s\n", "obj-var-yy");
         exit(-1);
     }
     obj_zz = PDCobj_open("obj-var-zz", pdc_id);
     if (obj_zz == 0) {
-        LOG_INFO("Error when open object %s\n", "obj-var-zz");
+        LOG_ERROR("Error when open object %s\n", "obj-var-zz");
         exit(-1);
     }
     obj_pxx = PDCobj_open("obj-var-pxx", pdc_id);
     if (obj_pxx == 0) {
-        LOG_INFO("Error when open object %s\n", "obj-var-pxx");
+        LOG_ERROR("Error when open object %s\n", "obj-var-pxx");
         exit(-1);
     }
     obj_pyy = PDCobj_open("obj-var-pyy", pdc_id);
     if (obj_pyy == 0) {
-        LOG_INFO("Error when open object %s\n", "obj-var-pyy");
+        LOG_ERROR("Error when open object %s\n", "obj-var-pyy");
         exit(-1);
     }
     obj_pzz = PDCobj_open("obj-var-pzz", pdc_id);
     if (obj_pzz == 0) {
-        LOG_INFO("Error when open object %s\n", "obj-var-pzz");
+        LOG_ERROR("Error when open object %s\n", "obj-var-pzz");
         exit(-1);
     }
     obj_id11 = PDCobj_open("id11", pdc_id);
     if (obj_id11 == 0) {
-        LOG_INFO("Error when open object %s\n", "id11");
+        LOG_ERROR("Error when open object %s\n", "id11");
         exit(-1);
     }
     obj_id22 = PDCobj_open("id22", pdc_id);
     if (obj_id22 == 0) {
-        LOG_INFO("Error when open object %s\n", "id22");
+        LOG_ERROR("Error when open object %s\n", "id22");
         exit(-1);
     }
 

@@ -154,44 +154,44 @@ main(int argc, char **argv)
 
     obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0, comm);
     if (obj_xx == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
 
     obj_yy = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, 0, comm);
     if (obj_yy == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
         exit(-1);
     }
     obj_zz = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, 0, comm);
     if (obj_zz == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
         exit(-1);
     }
     obj_pxx = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, 0, comm);
     if (obj_pxx == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
         exit(-1);
     }
     obj_pyy = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, 0, comm);
     if (obj_pyy == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
         exit(-1);
     }
     obj_pzz = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, 0, comm);
     if (obj_pzz == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
         exit(-1);
     }
 
     obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0, comm);
     if (obj_id11 == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj_id11");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id11");
         exit(-1);
     }
     obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, 0, comm);
     if (obj_id22 == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj_id22");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id22");
         exit(-1);
     }
 

@@ -78,7 +78,7 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var
 
     pdcid_t obj_id = PDCobj_create_mpi(cont_id, obj_name, *obj_prop, 0, comm);
     if (obj_id == 0) {
-        LOG_INFO("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
 
