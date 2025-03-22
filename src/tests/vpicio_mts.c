@@ -45,7 +45,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    LOG_INFO("Usage: srun -n ./vpicio #particles #steps sleep_time(s)\n");
+    LOG_JUST_PRINT("Usage: srun -n ./vpicio #particles #steps sleep_time(s)\n");
 }
 
 int

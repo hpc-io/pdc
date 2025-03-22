@@ -28,9 +28,6 @@ void setLogLevel(PDC_LogLevel level);
 void log_message(bool just_print, PDC_LogLevel level, const char *file, const char *func, int line_number,
                  const char *format, ...);
 
-void log_message_nlf(PDC_LogLevel level, const char *file, const char *func, int line_number,
-                     const char *format, ...);
-
 #define LOG_ERROR(format, ...)                                                                               \
     log_message(false, LOG_LEVEL_ERROR, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
 #define LOG_WARNING(format, ...)                                                                             \
@@ -41,14 +38,5 @@ void log_message_nlf(PDC_LogLevel level, const char *file, const char *func, int
     log_message(false, LOG_LEVEL_DEBUG, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
 #define LOG_JUST_PRINT(format, ...)                                                                          \
     log_message(true, LOG_LEVEL_INFO, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
-
-#define NLF_LOG_ERROR(format, ...)                                                                           \
-    log_message_nlf(LOG_LEVEL_ERROR, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
-#define NLF_LOG_WARNING(format, ...)                                                                         \
-    log_message_nlf(LOG_LEVEL_WARNING, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
-#define NLF_LOG_INFO(format, ...)                                                                            \
-    log_message_nlf(LOG_LEVEL_INFO, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
-#define NLF_LOG_DEBUG(format, ...)                                                                           \
-    log_message_nlf(LOG_LEVEL_DEBUG, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
 
 #endif // PDC_LOGGER_H

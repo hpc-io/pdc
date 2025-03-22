@@ -71,7 +71,7 @@ void           do_plist(hid_t);
 void
 print_usage()
 {
-    LOG_INFO("Usage: srun -n 2443 ./h5boss_v2_import h5boss_filenames\n");
+    LOG_JUST_PRINT("Usage: srun -n 2443 ./h5boss_v2_import h5boss_filenames\n");
 }
 
 int     rank = 0, size = 1;

@@ -43,7 +43,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    LOG_INFO("Usage: srun -n #procs ./haccio #particles\n");
+    LOG_JUST_PRINT("Usage: srun -n #procs ./haccio #particles\n");
 }
 
 void

@@ -73,65 +73,64 @@ get_cur_log_file(PDC_LogLevel level)
 }
 
 void
-_log_message(int lf, PDC_LogLevel level, const char *file, const char *func, int line_number,
-             const char *format, va_list args)
+_log_message(PDC_LogLevel level, const char *file, const char *func, int line_number,
+             const char *format, va_list args, bool just_print)
 {
     if (level > logLevel) {
         return;
     }
 
-    char prefix[16];
-    switch (level) {
-        case LOG_LEVEL_ERROR:
-            strcpy(prefix, "ERROR");
-            break;
-        case LOG_LEVEL_WARNING:
-            strcpy(prefix, "WARNING");
-            break;
-        case LOG_LEVEL_INFO:
-            strcpy(prefix, "INFO");
-            break;
-        case LOG_LEVEL_DEBUG:
-            strcpy(prefix, "DEBUG");
-            break;
-    }
-
-    // Extract only the filename (stem) from the full path
-    const char *filename = strrchr(file, '/');
-    if (filename) {
-        filename++;
-    }
-    else {
-        filename = file;
-    }
-
-    // Properly format timestamp
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    struct tm timeinfo;
-    localtime_r(&tv.tv_sec, &timeinfo);
-
-    char timestr[30];
-    strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", &timeinfo);
-
-    const char *log_format = "[%s.%06ld] [%s] [%s:%s:%d] %s";
-
-    char message[MAX_LOG_MSG_LENGTH + 1];
-    vsnprintf(message, MAX_LOG_MSG_LENGTH, format, args);
-
     FILE *logFile = get_cur_log_file(level);
-    fprintf(logFile, log_format, timestr, tv.tv_usec, prefix, filename, func, line_number, message);
-    fflush(logFile);
-}
+    if(!just_print) {
+        char prefix[16];
+        switch (level) {
+            case LOG_LEVEL_ERROR:
+                strcpy(prefix, "ERROR");
+                break;
+            case LOG_LEVEL_WARNING:
+                strcpy(prefix, "WARNING");
+                break;
+            case LOG_LEVEL_INFO:
+                strcpy(prefix, "INFO");
+                break;
+            case LOG_LEVEL_DEBUG:
+                strcpy(prefix, "DEBUG");
+                break;
+        }
 
-void
-log_message_nlf(PDC_LogLevel level, const char *file, const char *func, int line_number, const char *format,
-                ...)
-{
-    va_list args;
-    va_start(args, format);
-    _log_message(0, level, file, func, line_number, format, args);
-    va_end(args);
+        // Extract only the filename (stem) from the full path
+        const char *filename = strrchr(file, '/');
+        if (filename) {
+            filename++;
+        }
+        else {
+            filename = file;
+        }
+
+        // Properly format timestamp
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        struct tm timeinfo;
+        localtime_r(&tv.tv_sec, &timeinfo);
+
+        char timestr[30];
+        strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", &timeinfo);
+
+        const char *log_format = "[%s.%06ld] [%s] [%s:%s:%d] %s";
+
+        char message[MAX_LOG_MSG_LENGTH + 1];
+        vsnprintf(message, MAX_LOG_MSG_LENGTH, format, args);
+        
+        fprintf(logFile, log_format, timestr, tv.tv_usec, prefix, filename, func, line_number, message);
+    } else {
+        const char *log_format = "%s";
+        char message[MAX_LOG_MSG_LENGTH + 1];
+        vsnprintf(message, MAX_LOG_MSG_LENGTH, format, args);
+
+        fprintf(logFile, log_format, message);
+    }
+
+    fflush(logFile);
 }
 
 void
@@ -141,12 +140,6 @@ log_message(bool just_print, PDC_LogLevel level, const char *file, const char *f
 
     va_list args;
     va_start(args, format);
-    if (just_print) {
-        FILE *logFile = get_cur_log_file(level);
-        fprintf(logFile, file, func, line_number, format, args);
-    }
-    else {
-        _log_message(1, level, file, func, line_number, format, args);
-    }
+    _log_message(level, file, func, line_number, format, args, just_print);
     va_end(args);
 }

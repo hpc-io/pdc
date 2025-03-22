@@ -13,7 +13,7 @@
 void
 print_usage()
 {
-    LOG_INFO("Usage: srun -n ./write_obj obj_name size_MB type\n");
+    LOG_JUST_PRINT("Usage: srun -n ./write_obj obj_name size_MB type\n");
 }
 
 int

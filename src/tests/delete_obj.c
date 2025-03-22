@@ -52,7 +52,7 @@ rand_string(char *str, size_t size)
 void
 print_usage()
 {
-    LOG_INFO("Usage: srun -n ./delete_obj -r total_objects_to_create_delete\n");
+    LOG_JUST_PRINT("Usage: srun -n ./delete_obj -r total_objects_to_create_delete\n");
 }
 
 int

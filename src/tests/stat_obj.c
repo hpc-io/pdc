@@ -35,7 +35,7 @@
 void
 print_usage()
 {
-    LOG_INFO("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
+    LOG_JUST_PRINT("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
 
 int

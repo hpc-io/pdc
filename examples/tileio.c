@@ -24,9 +24,9 @@ int g_x_ept, g_y_ept;
 void
 print_usage()
 {
-    LOG_INFO("Usage: srun -N #nodes -n #procs ./tilio #x_tils #y_tiles "
+    LOG_JUST_PRINT("Usage: srun -N #nodes -n #procs ./tilio #x_tils #y_tiles "
            "#num_elements_x #num_elements_y\n");
-    LOG_INFO("\tnote: #procs should equal to x_tiles*y_tiles\n");
+    LOG_JUST_PRINT("\tnote: #procs should equal to x_tiles*y_tiles\n");
 }
 
 pdcid_t
