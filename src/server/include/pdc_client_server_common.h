@@ -202,8 +202,8 @@ typedef struct region_list_t {
 // TODO: currently only support upto four dimensions
 typedef struct region_info_transfer_t {
     size_t   ndim;
-    uint64_t start_0, start_1, start_2, start_3;
-    uint64_t count_0, count_1, count_2, count_3;
+    uint64_t start[NUM_DIMS];
+    uint64_t count[NUM_DIMS];
 } region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
