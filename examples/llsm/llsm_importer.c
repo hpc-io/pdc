@@ -126,7 +126,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     duration = getDoubleTimestamp() - start; // end timing the operation and calculate duration in nanoseconds
 
     LOG_INFO("[Rank %4d] Region_Transfer %s_[%ld_Bytes] Done! Time taken: %.4f seconds\n", rank,
-           fileName_cell->field_value, image_info->tiff_size, duration);
+             fileName_cell->field_value, image_info->tiff_size, duration);
 
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
@@ -169,7 +169,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     duration = getDoubleTimestamp() - start; // end timing the operation calculate duration in nanoseconds
 
     LOG_INFO("[Rank %4d] Create_object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
-           duration);
+             duration);
 
     // free memory
     // free(offsets);

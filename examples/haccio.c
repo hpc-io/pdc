@@ -211,7 +211,7 @@ main(int argc, char **argv)
         double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
         double bandwidth    = per_particle * NUM_PARTICLES / 1024.0 / 1024.0 / time_total * mpi_size;
         LOG_INFO("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
-               time_total, time_lock, time_io, time_release);
+                 time_total, time_lock, time_io, time_release);
     }
     MPI_Finalize();
 

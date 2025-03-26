@@ -512,8 +512,9 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 3:
             if (nres != 20) {
-                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expected 20 results, but got %d results\n",
-                          "*09*=*09*", world_rank, nres);
+                LOG_ERROR(
+                    "Failed to query kvtag [%s] with rank %d. Expected 20 results, but got %d results\n",
+                    "*09*=*09*", world_rank, nres);
                 step_failed = 3;
             }
             // the result is not in order, so we need to sort the result first
@@ -538,10 +539,9 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
                 step_failed = 4;
             }
             if (pdc_ids[0] != 109) {
-                LOG_ERROR(
-                    "Failed to query kvtag [%s] with rank %d. Expected 1 result which is 109, but got %" PRIu64
-                    "\n",
-                    "intkey=109", world_rank, pdc_ids[0]);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expected 1 result which is 109, but got "
+                          "%" PRIu64 "\n",
+                          "intkey=109", world_rank, pdc_ids[0]);
                 step_failed = 4;
             }
             break;

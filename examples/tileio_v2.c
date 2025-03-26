@@ -25,7 +25,7 @@ void
 print_usage()
 {
     LOG_JUST_PRINT("Usage: srun -N #nodes -n #procs ./tilio #x_tils #y_tiles "
-           "#num_elements_x #num_elements_y\n");
+                   "#num_elements_x #num_elements_y\n");
     LOG_JUST_PRINT("\tnote: #procs should equal to x_tiles*y_tiles\n");
 }
 
@@ -165,8 +165,8 @@ main(int argc, char **argv)
         double bandwidth =
             g_x_ept * g_y_ept / 1024.0 / 1024.0 * g_x_tiles * g_y_tiles * sizeof(double) / time_total;
         LOG_INFO("Bandwidth: %.2fMB/s, total time: %.4f, transfer create: %.4f, transfer start: %.4f, "
-               "transfert wait: %.4f\n",
-               bandwidth, time_total, time_create, time_start, time_wait);
+                 "transfert wait: %.4f\n",
+                 bandwidth, time_total, time_create, time_start, time_wait);
     }
 
     MPI_Comm_free(&g_mpi_comm);

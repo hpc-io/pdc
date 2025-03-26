@@ -73,15 +73,15 @@ get_cur_log_file(PDC_LogLevel level)
 }
 
 void
-_log_message(PDC_LogLevel level, const char *file, const char *func, int line_number,
-             const char *format, va_list args, bool just_print)
+_log_message(PDC_LogLevel level, const char *file, const char *func, int line_number, const char *format,
+             va_list args, bool just_print)
 {
     if (level > logLevel) {
         return;
     }
 
     FILE *logFile = get_cur_log_file(level);
-    if(!just_print) {
+    if (!just_print) {
         char prefix[16];
         switch (level) {
             case LOG_LEVEL_ERROR:
@@ -120,11 +120,12 @@ _log_message(PDC_LogLevel level, const char *file, const char *func, int line_nu
 
         char message[MAX_LOG_MSG_LENGTH + 1];
         vsnprintf(message, MAX_LOG_MSG_LENGTH, format, args);
-        
+
         fprintf(logFile, log_format, timestr, tv.tv_usec, prefix, filename, func, line_number, message);
-    } else {
+    }
+    else {
         const char *log_format = "%s";
-        char message[MAX_LOG_MSG_LENGTH + 1];
+        char        message[MAX_LOG_MSG_LENGTH + 1];
         vsnprintf(message, MAX_LOG_MSG_LENGTH, format, args);
 
         fprintf(logFile, log_format, message);

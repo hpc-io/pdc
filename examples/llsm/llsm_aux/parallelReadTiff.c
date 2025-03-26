@@ -53,7 +53,7 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
             int counter = 0;
             while (!TIFFSetDirectory(tif, (uint64_t)dir) && counter < 3) {
                 LOG_ERROR("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
-                       fileName, dir, counter + 1);
+                          fileName, dir, counter + 1);
                 counter++;
             }
 
@@ -347,7 +347,7 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
             int counter = 0;
             while (!TIFFSetDirectory(tif, (uint64_t)0) && counter < 3) {
                 LOG_ERROR("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
-                       fileName, dir, counter + 1);
+                          fileName, dir, counter + 1);
                 counter++;
             }
 
@@ -440,7 +440,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
         uint8_t counter = 0;
         while (!TIFFSetDirectory(tif, 0) && counter < 3) {
             LOG_ERROR("Thread %d: File \"%s\" Directory \"%d\" failed to open. Try %d\n", w, fileName, 0,
-                   counter + 1);
+                      counter + 1);
             counter++;
             if (counter == 3) {
 #ifdef ENABLE_OPENMP

@@ -46,7 +46,7 @@ void
 print_usage()
 {
     LOG_DEBUG("Usage: srun -n bdcats_batch sleep_time timestep #particles test_method(0:old API, 1:wait, "
-           "default 2:wait all)\n");
+              "default 2:wait all)\n");
 }
 
 int
@@ -112,7 +112,7 @@ main(int argc, char **argv)
     }
     if (!rank) {
         LOG_INFO("sleep time = %u, timestep = %" PRIu64 ", numparticles = %" PRIu64 ", test_method = %d\n",
-               sleep_time, timestep, numparticles, test_method);
+                 sleep_time, timestep, numparticles, test_method);
     }
 
     x = (float *)malloc(numparticles * sizeof(float));
@@ -180,7 +180,7 @@ main(int argc, char **argv)
         obj_xx[i]   = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_xx[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-yy %" PRIu64 "", i);
@@ -190,7 +190,7 @@ main(int argc, char **argv)
         obj_yy[i]   = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_yy[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-zz %" PRIu64 "", i);
@@ -200,7 +200,7 @@ main(int argc, char **argv)
         obj_zz[i]   = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_zz[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-pxx %" PRIu64 "", i);
@@ -210,7 +210,7 @@ main(int argc, char **argv)
         obj_pxx[i]  = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_pxx[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-pyy %" PRIu64 "", i);
@@ -220,7 +220,7 @@ main(int argc, char **argv)
         obj_pyy[i]  = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_pyy[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-pzz %" PRIu64 "", i);
@@ -230,7 +230,7 @@ main(int argc, char **argv)
         obj_pzz[i]  = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_pzz[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
             exit(-1);
         }
         sprintf(obj_name, "id11 %" PRIu64 "", i);
@@ -240,7 +240,7 @@ main(int argc, char **argv)
         obj_id11[i] = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_id11[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id11");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id11");
             exit(-1);
         }
         sprintf(obj_name, "id22 %" PRIu64 "", i);
@@ -250,7 +250,7 @@ main(int argc, char **argv)
         obj_id22[i] = PDCobj_open(obj_name, pdc_id);
 #endif
         if (obj_id22[i] == 0) {
-           LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id22");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id22");
             exit(-1);
         }
     }
@@ -396,22 +396,22 @@ main(int argc, char **argv)
                 LOG_ERROR("Failed to obtain lock for region_yy\n");
             ret = PDCreg_obtain_lock(obj_zz[i], region_zz, PDC_READ, PDC_NOBLOCK);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to obtain lock for region_zz\n");
+                LOG_ERROR("failed to obtain lock for region_zz\n");
             ret = PDCreg_obtain_lock(obj_pxx[i], region_pxx, PDC_READ, PDC_NOBLOCK);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to obtain lock for region_pxx\n");
+                LOG_ERROR("failed to obtain lock for region_pxx\n");
             ret = PDCreg_obtain_lock(obj_pyy[i], region_pyy, PDC_READ, PDC_NOBLOCK);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to obtain lock for region_pyy\n");
+                LOG_ERROR("failed to obtain lock for region_pyy\n");
             ret = PDCreg_obtain_lock(obj_pzz[i], region_pzz, PDC_READ, PDC_NOBLOCK);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to obtain lock for region_pzz\n");
+                LOG_ERROR("failed to obtain lock for region_pzz\n");
             ret = PDCreg_obtain_lock(obj_id11[i], region_id11, PDC_READ, PDC_NOBLOCK);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to obtain lock for region_id11\n");
+                LOG_ERROR("failed to obtain lock for region_id11\n");
             ret = PDCreg_obtain_lock(obj_id22[i], region_id22, PDC_READ, PDC_NOBLOCK);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to obtain lock for region_id22\n");
+                LOG_ERROR("failed to obtain lock for region_id22\n");
         }
 #ifdef ENABLE_MPI
         transfer_start += MPI_Wtime() - start;
@@ -425,7 +425,7 @@ main(int argc, char **argv)
         if (test_method == 2) {
             ret = PDCregion_transfer_wait_all(temp_requests, 8);
             if (ret != SUCCEED) {
-               LOG_ERROR("failed to start transfer for all regions\n");
+                LOG_ERROR("failed to start transfer for all regions\n");
                 return 1;
             }
         }
@@ -437,28 +437,28 @@ main(int argc, char **argv)
         else {
             ret = PDCreg_release_lock(obj_xx[i], region_xx, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_xx\n");
+                LOG_ERROR("failed to release lock for region_xx\n");
             ret = PDCreg_release_lock(obj_yy[i], region_yy, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_yy\n");
+                LOG_ERROR("failed to release lock for region_yy\n");
             ret = PDCreg_release_lock(obj_zz[i], region_zz, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_zz\n");
+                LOG_ERROR("failed to release lock for region_zz\n");
             ret = PDCreg_release_lock(obj_pxx[i], region_pxx, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_pxx\n");
+                LOG_ERROR("failed to release lock for region_pxx\n");
             ret = PDCreg_release_lock(obj_pyy[i], region_pyy, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_pyy\n");
+                LOG_ERROR("failed to release lock for region_pyy\n");
             ret = PDCreg_release_lock(obj_pzz[i], region_pzz, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_pzz\n");
+                LOG_ERROR("failed to release lock for region_pzz\n");
             ret = PDCreg_release_lock(obj_id11[i], region_id11, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_id11\n");
+                LOG_ERROR("failed to release lock for region_id11\n");
             ret = PDCreg_release_lock(obj_id22[i], region_id22, PDC_READ);
             if (ret != SUCCEED)
-               LOG_ERROR("failed to release lock for region_id22\n");
+                LOG_ERROR("failed to release lock for region_id22\n");
         }
 #ifdef ENABLE_MPI
         end = MPI_Wtime();
@@ -543,7 +543,7 @@ main(int argc, char **argv)
         transfer_close += MPI_Wtime() - start;
 #endif
         if (PDCregion_close(region_xx) < 0) {
-           LOG_ERROR("Failed to close region region_xx\n");
+            LOG_ERROR("Failed to close region region_xx\n");
             return 1;
         }
         if (PDCregion_close(region_yy) < 0) {
@@ -552,7 +552,7 @@ main(int argc, char **argv)
         }
 
         if (PDCregion_close(region_zz) < 0) {
-           LOG_ERROR("Failed to close region region_zz\n");
+            LOG_ERROR("Failed to close region region_zz\n");
             return 1;
         }
         if (PDCregion_close(region_pxx) < 0) {
@@ -560,19 +560,19 @@ main(int argc, char **argv)
             return 1;
         }
         if (PDCregion_close(region_pyy) < 0) {
-           LOG_ERROR("Failed to close region region_pyy\n");
+            LOG_ERROR("Failed to close region region_pyy\n");
             return 1;
         }
         if (PDCregion_close(region_pzz) < 0) {
-           LOG_ERROR("Failed to close region region_pzz\n");
+            LOG_ERROR("Failed to close region region_pzz\n");
             return 1;
         }
         if (PDCobj_close(region_id11) < 0) {
-           LOG_ERROR("Failed to close region region_id11\n");
+            LOG_ERROR("Failed to close region region_id11\n");
             return 1;
         }
         if (PDCobj_close(region_id22) < 0) {
-           LOG_ERROR("Failed to close region region_id22\n");
+            LOG_ERROR("Failed to close region region_id22\n");
             return 1;
         }
     }
@@ -584,35 +584,35 @@ main(int argc, char **argv)
 
     for (i = 0; i < timestep; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
-           LOG_ERROR("Failed to close obj_xx\n");
+            LOG_ERROR("Failed to close obj_xx\n");
             return 1;
         }
         if (PDCobj_close(obj_yy[i]) < 0) {
-           LOG_ERROR("Failed to close object obj_yy\n");
+            LOG_ERROR("Failed to close object obj_yy\n");
             return 1;
         }
         if (PDCobj_close(obj_zz[i]) < 0) {
-           LOG_ERROR("Failed to close object obj_zz\n");
+            LOG_ERROR("Failed to close object obj_zz\n");
             return 1;
         }
         if (PDCobj_close(obj_pxx[i]) < 0) {
-           LOG_ERROR("Failed to close object obj_pxx\n");
+            LOG_ERROR("Failed to close object obj_pxx\n");
             return 1;
         }
         if (PDCobj_close(obj_pyy[i]) < 0) {
-           LOG_ERROR("Failed to close object obj_pyy\n");
+            LOG_ERROR("Failed to close object obj_pyy\n");
             return 1;
         }
         if (PDCobj_close(obj_pzz[i]) < 0) {
-           LOG_ERROR("Failed to close object obj_pzz\n");
+            LOG_ERROR("Failed to close object obj_pzz\n");
             return 1;
         }
         if (PDCobj_close(obj_id11[i]) < 0) {
-           LOG_ERROR("Failed to close object obj_id11\n");
+            LOG_ERROR("Failed to close object obj_id11\n");
             return 1;
         }
         if (PDCobj_close(obj_id22[i]) < 0) {
-           LOG_ERROR("Failed to close object obj_id22\n");
+            LOG_ERROR("Failed to close object obj_id22\n");
             return 1;
         }
     }
@@ -663,40 +663,40 @@ main(int argc, char **argv)
     free(obj_id22);
 
     if (PDCregion_close(region_x) < 0) {
-       LOG_ERROR("Failed to close region region_x\n");
+        LOG_ERROR("Failed to close region region_x\n");
         return 1;
     }
     if (PDCregion_close(region_y) < 0) {
-       LOG_ERROR("Failed to close region region_y\n");
+        LOG_ERROR("Failed to close region region_y\n");
         return 1;
     }
     if (PDCregion_close(region_z) < 0) {
-       LOG_ERROR("Failed to close region region_z\n");
+        LOG_ERROR("Failed to close region region_z\n");
         return 1;
     }
     if (PDCregion_close(region_px) < 0) {
-       LOG_ERROR("Failed to close region region_px\n");
+        LOG_ERROR("Failed to close region region_px\n");
         return 1;
     }
     if (PDCregion_close(region_py) < 0) {
-       LOG_ERROR("Failed to close region region_py\n");
+        LOG_ERROR("Failed to close region region_py\n");
         return 1;
     }
     if (PDCobj_close(region_pz) < 0) {
-       LOG_ERROR("Failed to close region region_pz\n");
+        LOG_ERROR("Failed to close region region_pz\n");
         return 1;
     }
     if (PDCobj_close(region_id1) < 0) {
-       LOG_ERROR("Failed to close region region_id1\n");
+        LOG_ERROR("Failed to close region region_id1\n");
         return 1;
     }
     if (PDCobj_close(region_id2) < 0) {
-       LOG_ERROR("Failed to close region region_id2\n");
+        LOG_ERROR("Failed to close region region_id2\n");
         return 1;
     }
 
     if (PDCclose(pdc_id) < 0) {
-       LOG_ERROR("Failed to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         return 1;
     }
     free(offset);
