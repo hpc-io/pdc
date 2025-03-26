@@ -205,13 +205,24 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     int                     j;
 
     FUNC_ENTER(NULL);
+
+    if (buf == NULL)
+        PGOTO_ERROR(FAIL, "client buffer was NULL");
+
     reginfo1 = PDC_find_id(local_reg);
-    reg1     = (struct pdc_region_info *)(reginfo1->obj_ptr);
+    if (reginfo1 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate local region ID");
+    reg1 = (struct pdc_region_info *)(reginfo1->obj_ptr);
+
     reginfo2 = PDC_find_id(remote_reg);
-    reg2     = (struct pdc_region_info *)(reginfo2->obj_ptr);
+    if (reginfo2 == NULL)
+        PGOTO_ERROR(FAIL, "cannot locate remote region ID");
+    reg2 = (struct pdc_region_info *)(reginfo2->obj_ptr);
+
     objinfo2 = PDC_find_id(obj_id);
     if (objinfo2 == NULL)
         PGOTO_ERROR(FAIL, "cannot locate remote object ID");
+
     obj2 = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
     // remote_meta_id = obj2->obj_info_pub->meta_id;
 
