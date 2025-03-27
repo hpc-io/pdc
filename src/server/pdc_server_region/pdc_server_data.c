@@ -1253,8 +1253,9 @@ PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_lis
 #endif
     DL_FOREACH(new_obj_reg->region_buf_map_head, tmp)
     {
-        if (tmp->remote_obj_id == in->remote_obj_id && PDC_region_info_transfer_is_equal(&(in->remote_region_unit), &(tmp->remote_region_unit))) {
-                dup = 1;
+        if (tmp->remote_obj_id == in->remote_obj_id &&
+            PDC_region_info_transfer_is_equal(&(in->remote_region_unit), &(tmp->remote_region_unit))) {
+            dup = 1;
         }
     }
     if (dup == 0) {
@@ -1329,7 +1330,8 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
     if (ret_value == NULL) {
         size_t i;
 
-        size_t            region_size = get_region_with_dims_size_bytes((uint64_t*)&(region.count), type_size, region.ndim) / type_size;
+        size_t region_size =
+            get_region_with_dims_size_bytes((uint64_t *)&(region.count), type_size, region.ndim) / type_size;
         region_buf_map_t *buf_map_ptr = NULL;
 
         ret_value = malloc(region_size);
@@ -1340,7 +1342,7 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
         buf_map_ptr->remote_data_ptr      = ret_value;
         buf_map_ptr->remote_region_unit   = region;
         buf_map_ptr->remote_region_nounit = region;
-        for(int j = 0; j < buf_map_ptr->remote_ndim ; j++) {
+        for (int j = 0; j < buf_map_ptr->remote_ndim; j++) {
             buf_map_ptr->remote_region_nounit.count[j] /= type_size;
         }
         DL_APPEND(target_obj->region_buf_map_head, buf_map_ptr);

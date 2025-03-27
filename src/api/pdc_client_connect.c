@@ -1403,7 +1403,6 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     }
     memset(hostname, 0, sizeof(hostname));
     gethostname(hostname, sizeof(hostname));
-    strcpy(hostname, "eno1");
     sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_client_mpi_rank_g == 0) {
         printf("==PDC_CLIENT: using %.7s\n", na_info_string);
@@ -3579,7 +3578,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     in.remote_unit = unit;
     in.obj_id      = obj_id;
 
-    in.obj_ndim    = obj_ndim;
+    in.obj_ndim = obj_ndim;
     set_region_with_dims(obj_dims, in.obj_dims, in.obj_ndim, in.obj_ndim);
 
     // Compute metadata server id

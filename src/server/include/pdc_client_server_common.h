@@ -1240,13 +1240,13 @@ hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
 
-    for(int i = 0; i < DIM_MAX; i++) {
+    for (int i = 0; i < DIM_MAX; i++) {
         ret = hg_proc_uint64_t(proc, &(struct_data->start[i]));
         if (ret != HG_SUCCESS) {
             return ret;
         }
     }
-    for(int i = 0; i < DIM_MAX; i++) {
+    for (int i = 0; i < DIM_MAX; i++) {
         ret = hg_proc_uint64_t(proc, &(struct_data->count[i]));
         if (ret != HG_SUCCESS) {
             return ret;
@@ -2653,7 +2653,7 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
         // HG_LOG_ERROR("Proc error");
         return ret;
     }
-    for(int i = 0; i < DIM_MAX; i++) {
+    for (int i = 0; i < DIM_MAX; i++) {
         ret = hg_proc_uint64_t(proc, &struct_data->obj_dims[i]);
         if (ret != HG_SUCCESS) {
             return ret;
