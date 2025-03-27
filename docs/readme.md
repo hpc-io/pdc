@@ -68,7 +68,7 @@
     - Input: 
       + pdc_name is the reference for PDC class. Recommended use "pdc"
     - Output: 
-      + PDC class ID used for future reference.
+      + PDC class ID used for future reference or 0 on failure.
     - All PDC client applications must call PDCinit before using it. This function will setup connections from clients to servers. A valid PDC server must be running.
     - For developers: currently implemented in pdc.c.
   + perr_t PDCclose(pdcid_t pdcid)
