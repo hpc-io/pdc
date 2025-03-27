@@ -71,7 +71,6 @@ pdc_transfer_status_t PDC_try_finish_request(uint64_t transfer_request_id, hg_ha
  * TODO: Scan the entire transfer list and search for repetitive nodes.
  * Not a thread-safe function, need protection from pthread_mutex_lock(&transfer_request_id_mutex);
  */
-
 pdcid_t PDC_transfer_request_id_register();
 
 perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,

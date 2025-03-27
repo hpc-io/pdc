@@ -27,9 +27,12 @@
 
 #include "pdc_public.h"
 #include "pdc_obj.h"
+
 #ifdef ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#define DIM_MAX                      4
 
 /**************************/
 /* Library Public Struct */
@@ -45,6 +48,13 @@ struct pdc_region_info {
     void *                buf;
     size_t                unit;
 };
+
+// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
+typedef struct region_info_transfer_t {
+    size_t   ndim;
+    uint64_t start[DIM_MAX];
+    uint64_t count[DIM_MAX];
+} region_info_transfer_t;
 
 typedef enum {
     PDC_TRANSFER_STATUS_COMPLETE  = 0,
@@ -242,15 +252,89 @@ perr_t PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id);
 perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type,
                           pdc_lock_mode_t lock_mode);
 
+
 /**
- * Release the region lock
+ * Check if two region info transfer are identical
  *
- * \param obj_id [IN]           ID of the object
- * \param reg_id [IN]           ID of the region
- * \param access_type [IN]      Region access type
+ * \param reg1 [IN]             Pointer to region info transfer to compare
+ * \param reg2 [IN]             Pointer to region info transfer to compare
  *
- * \return Non-negative on success/Negative on failure
+ * \return 1 if they are the same/-1 otherwise
  */
-perr_t PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type);
+pbool_t PDC_region_info_transfer_is_equal(const region_info_transfer_t* reg1, const region_info_transfer_t* reg2);
+
+/**
+ * Set region info transfer
+ *
+ * \param src_reg [IN]            Pointer to src region info transfer
+ * \param dest_reg [IN]             Pointer to region to compare
+ *
+ * \return Non-negative on Success/Negative on failure
+ */
+perr_t PDC_set_region_info_transfer(const region_info_transfer_t* src_reg, region_info_transfer_t* dest_reg);
+
+/**
+ * Get size in bytes of region with dimensions
+ * \param src_reg [IN] Pointer to the source region
+ * \param unit [IN] Size of each element in source and destination regions
+ * \param ndim [IN] Number of dimensions in source region
+ * 
+ * \return size in bytes of src_reg
+ */
+uint64_t get_region_with_dims_size_bytes(uint64_t* src_reg, int unit, int ndim);
+
+/**
+ * Get the size in elements of region with dimensions from region with dimentions and bytes
+ * \param src_reg [IN] Pointer to the source region
+ * \param unit [IN] Size of each element in source and destination regions
+ * \param ndim [IN] Number of dimensions in source region
+ * 
+ * \return size in bytes of src_reg
+ */
+uint64_t get_region_with_dims_size_from_region_size_bytes(const uint64_t* src_reg, int unit, int ndim);
+
+/**
+ * Get the size in elements of region with dimensions
+ * \param src_reg [IN] Pointer to the source region
+ * \param ndim [IN] Number of dimensions in source region
+ * 
+ * \return size in elements of src_reg
+ */
+uint64_t get_region_with_dims_size(const uint64_t* src_reg, int ndim);
+
+/**
+ * set size in bytes of region with dimensions
+ * \param src_reg [IN] Pointer to the source region
+ * \param dest_reg [IN] Pointer to the destination region
+ * \param unit [IN] Size of each element in source and destion regions
+ * \param ndim [IN] Number of dimensions in destination region
+ * 
+ * \return Non-negative on Success/Negative on failure
+ */
+perr_t set_region_in_elements_from_region_size_bytes(const uint64_t* src_reg, uint64_t* dest_reg, int unit, int ndim);
+
+/**
+ * Set dest region  equal to source region taking into account the dimensions 
+ * Validates that the source and destination addresses are not null
+ * \param src_reg [IN] Pointer to the start address of source region
+ * \param dest_rewg [IN] Point to the start address of the destination region
+ * \param unit [IN] Size of each element in source and destion regions
+ * 
+ * \return Non-negative on Success/Negative on failure
+ */
+perr_t set_region_with_dims(const uint64_t* src_reg, uint64_t* dest_reg, int src_ndim, int dest_ndim);
+
+/**
+ * Set dest region equal to source region taking into account the dimensions in bytes
+ * E.g., it sets the dest region sizes equal to the src region size * unit
+ * Validates that the source and destination addresses are not null
+ * \param src_reg [IN] Pointer to the start address of source region
+ * \param dest_reg [IN] Point to the start address of the destination region
+ * \param unit [IN] Size of each element in source and destion regions
+ * \param dest_ndim [IN] number of dimensions of destination region
+ * 
+ * \return Non-negative on Success/Negative on failure
+ */
+perr_t set_region_with_dims_to_size_bytes(const uint64_t* src_reg, uint64_t* dest_reg, int unit, int dest_ndim);
 
 #endif /* PDC_REGION_H */
