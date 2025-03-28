@@ -276,7 +276,7 @@ int flush_multidatasets() {
     double start_time;
 #endif
     i = 0;
-    //printf("Rank %d number of datasets to be written %d\n", rank, dataset_size);
+    LOG_DEBUG("Rank %d number of datasets to be written %d\n", rank, dataset_size);
 #if ENABLE_MULTIDATASET==1
     #ifdef H5_TIMING_ENABLE
     increment_H5Dwrite();
@@ -319,7 +319,7 @@ int flush_multidatasets() {
 
     free(multi_datasets_temp);
 #else
-    //printf("rank %d has dataset_size %lld\n", rank, (long long int) dataset_size);
+    LOG_DEBUG("rank %d has dataset_size %lld\n", rank, (long long int) dataset_size);
 #ifdef PDC_PATCH
 
     if (cached_objs.size()) {
@@ -362,7 +362,7 @@ int flush_multidatasets() {
             offset_length = new_end[j] - new_start[j];
             pdcid_t reg = PDCregion_create(1, &offset, &offset_length);
             pdcid_t transfer_request_id = PDCregion_transfer_create(ptr, PDC_WRITE, it->second->did, reg, reg);
-            //printf("did = %lu, starting request offset = %lu, size = %lu, j = %d\n", it->second->did, offset, offset_length, j);
+            LOG_DEBUG("did = %lu, starting request offset = %lu, size = %lu, j = %d\n", it->second->did, offset, offset_length, j);
             PDCregion_transfer_start(transfer_request_id);
             PDCregion_transfer_wait(transfer_request_id);
 

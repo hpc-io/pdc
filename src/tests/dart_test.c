@@ -63,7 +63,7 @@ read_words_from_text(const char *fileName, int *word_count, int *total_word_coun
     int    max_line_len    = 512;
     char **words           = (char **)malloc(sizeof(char *) * lines_allocated);
     if (words == NULL) {
-        fprintf(stderr, "Out of memory\n");
+        LOG_ERROR("Out of memory\n");
         exit(1);
     }
     int i;
@@ -90,7 +90,7 @@ read_words_from_text(const char *fileName, int *word_count, int *total_word_coun
             new_size                = lines_allocated * 2;
             char **new_wordlist_ptr = (char **)realloc(words, sizeof(char *) * new_size);
             if (new_wordlist_ptr == NULL) {
-                fprintf(stderr, "Out of memory\n");
+                LOG_ERROR("Out of memory\n");
                 exit(3);
             }
             words           = new_wordlist_ptr;
@@ -98,7 +98,7 @@ read_words_from_text(const char *fileName, int *word_count, int *total_word_coun
         }
         words[line_count] = (char *)malloc(sizeof(char) * max_line_len);
         if (words[line_count] == NULL) {
-            fprintf(stderr, "out of memory\n");
+            LOG_ERROR("out of memory\n");
             exit(4);
         }
         if (fgets(words[line_count], max_line_len - 1, file) == NULL) {
@@ -186,15 +186,15 @@ main(int argc, char **argv)
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     pdcid_t cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     DART *dart_g               = get_dart_g();
     dart_g->replication_factor = replication_factor;
@@ -590,13 +590,13 @@ main(int argc, char **argv)
     // done:
 
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        LOG_ERROR("Failed to close container %lld\n", cont);
 
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

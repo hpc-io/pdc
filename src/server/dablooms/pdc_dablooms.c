@@ -17,6 +17,7 @@
 
 #include "pdc_murmur.h"
 #include "pdc_dablooms.h"
+#include "pdc_logger.h"
 
 #define DABLOOMS_VERSION "0.9.1"
 
@@ -81,7 +82,7 @@ bitmap_increment(bitmap_t *bitmap, unsigned int index, long offset)
     }
 
     if (temp == 0x0f) {
-        fprintf(stderr, "Error, 4 bit int Overflow\n");
+        LOG_ERROR("Error, 4 bit int Overflow\n");
         return -1;
     }
 
@@ -107,7 +108,7 @@ bitmap_decrement(bitmap_t *bitmap, unsigned int index, long offset)
     }
 
     if (temp == 0x00) {
-        fprintf(stderr, "Error, Decrementing zero\n");
+        LOG_ERROR("Error, Decrementing zero\n");
         return -1;
     }
 
@@ -183,7 +184,7 @@ counting_bloom_init(unsigned int capacity, double error_rate, long offset)
     counting_bloom_t *bloom;
 
     if ((bloom = PDC_malloc(sizeof(counting_bloom_t))) == NULL) {
-        fprintf(stderr, "Error, could not realloc a new bloom filter\n");
+        LOG_ERROR("Error, could not realloc a new bloom filter\n");
         return NULL;
     }
     bloom->bitmap          = NULL;
@@ -294,7 +295,7 @@ new_counting_bloom_from_scale(scaling_bloom_t *bloom)
 
     if ((bloom->blooms = realloc(bloom->blooms, (bloom->num_blooms + 1) * sizeof(counting_bloom_t *))) ==
         NULL) {
-        fprintf(stderr, "Error, could not realloc a new bloom filter\n");
+        LOG_ERROR("Error, could not realloc a new bloom filter\n");
         return NULL;
     }
 
@@ -384,7 +385,7 @@ scaling_bloom_init(unsigned int capacity, double error_rate)
         return NULL;
     }
     if ((bloom->bitmap = new_bitmap(sizeof(scaling_bloom_header_t))) == NULL) {
-        fprintf(stderr, "Error, Could not create bitmap with file\n");
+        LOG_ERROR("Error, Could not create bitmap with file\n");
         free_scaling_bloom(bloom);
         return NULL;
     }
@@ -409,7 +410,7 @@ new_scaling_bloom(unsigned int capacity, double error_rate)
     bloom = scaling_bloom_init(capacity, error_rate);
 
     if (!(cur_bloom = new_counting_bloom_from_scale(bloom))) {
-        fprintf(stderr, "Error, Could not create counting bloom\n");
+        LOG_ERROR("Error, Could not create counting bloom\n");
         free_scaling_bloom(bloom);
         return NULL;
     }

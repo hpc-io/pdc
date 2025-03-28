@@ -56,12 +56,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -82,11 +82,11 @@ main(int argc, char **argv)
 
     ret = PDCbuf_obj_map(&myArray1[0], PDC_INT, r1, obj2, r2);
     if (ret < 0)
-        printf("PDCbuf_obj_map failed\n");
+        LOG_ERROR("PDCbuf_obj_map failed\n");
 
     ret = PDCreg_obtain_lock(obj2, r2, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED)
-        printf("Failed to obtain lock for region\n");
+        LOG_ERROR("Failed to obtain lock for region\n");
 
     // update buffer
     myArray1[0][0] = 117;
@@ -94,31 +94,31 @@ main(int argc, char **argv)
 
     ret = PDCreg_release_lock(obj2, r2, PDC_WRITE);
     if (ret != SUCCEED)
-        printf("Failed to release lock for region\n");
+        LOG_ERROR("Failed to release lock for region\n");
 
     PDCbuf_obj_unmap(obj2, r2);
 
     // close region
     if (PDCregion_close(r1) < 0)
-        printf("fail to close region r1\n");
+        LOG_ERROR("Failed to close region r1\n");
 
     if (PDCregion_close(r2) < 0)
-        printf("fail to close region r2\n");
+        LOG_ERROR("Failed to close region r2\n");
 
     // close object
     if (PDCobj_close(obj2) < 0)
-        printf("fail to close obj2\n");
+        LOG_ERROR("Failed to close obj2\n");
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc_id) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

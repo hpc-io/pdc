@@ -1,6 +1,7 @@
 #include "pdc_server_metadata_index.h"
 #include "idioms_local_index.h"
 #include "idioms_persistence.h"
+#include "pdc_logger.h"
 
 art_tree *art_key_prefix_tree_g   = NULL;
 art_tree *art_key_suffix_tree_g   = NULL;
@@ -86,22 +87,19 @@ PDC_Server_dart_perform_one_server(dart_perform_one_server_in_t *in, dart_perfor
         idioms_local_index_delete(idioms_g, idx_record);
     }
     else {
-        // printf("attr_key=%s, attr_val=%s, attr_vsize=%d, attr_dtype=%d\n", attr_key, attr_val, attr_vsize,
-        //        attr_dtype);
-
         idx_record->num_obj_ids = 0;
         idioms_local_index_search(idioms_g, idx_record);
         *n_obj_ids_ptr = idx_record->num_obj_ids;
         *buf_ptrs      = idx_record->obj_ids;
 
         if (attr_key[0] == '*') {
-            printf("server_id = %d, attr_key=%s, attr_val=%s, attr_vsize=%d, attr_dtype=%d\n",
-                   midx_server_id_g, attr_key, attr_val, attr_vsize, attr_dtype);
-            printf("result = ");
+            LOG_INFO("server_id = %d, attr_key=%s, attr_val=%s, attr_vsize=%d, attr_dtype=%d\n",
+                     midx_server_id_g, attr_key, attr_val, attr_vsize, attr_dtype);
+            LOG_INFO("result =");
             for (int i = 0; i < *n_obj_ids_ptr; i++) {
-                printf("%" PRIu64 " ", idx_record->obj_ids[i]);
+                LOG_INFO("%" PRIu64 " ", idx_record->obj_ids[i]);
             }
-            printf("\n");
+            LOG_INFO("\n");
         }
 
         out->n_items = (*n_obj_ids_ptr);

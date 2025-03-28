@@ -1,6 +1,7 @@
 #include "parallelReadTiff.h"
 #include "tiffio.h"
 #include "inttypes.h"
+#include "pdc_logger.h"
 
 // #define ENABLE_OPENMP
 
@@ -32,7 +33,7 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
     int32_t  batchSize  = (z - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
 
-    printf("numWorkers %d\n", numWorkers);
+    LOG_INFO("numWorkers %d\n", numWorkers);
 
     int32_t w;
 #ifdef ENABLE_OPENMP
@@ -42,7 +43,7 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
 
         TIFF *tif = TIFFOpen(fileName, "r");
         if (!tif)
-            printf("tiff:threadError | Thread %d: File \"%s\" cannot be opened\n", w, fileName);
+            LOG_ERROR("tiff:threadError | Thread %d: File \"%s\" cannot be opened\n", w, fileName);
 
         void *buffer = malloc(x * bytes);
         for (int64_t dir = startSlice + (w * batchSize); dir < startSlice + ((w + 1) * batchSize); dir++) {
@@ -51,8 +52,8 @@ readTiffParallelBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, vo
 
             int counter = 0;
             while (!TIFFSetDirectory(tif, (uint64_t)dir) && counter < 3) {
-                printf("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
-                       fileName, dir, counter + 1);
+                LOG_ERROR("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
+                          fileName, dir, counter + 1);
                 counter++;
             }
 
@@ -108,7 +109,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
     int32_t  batchSize  = (z - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
 
-    printf("numWorkers %d\n", numWorkers);
+    LOG_INFO("numWorkers %d\n", numWorkers);
 
     uint16_t compressed = 1;
     TIFF *   tif        = TIFFOpen(fileName, "r");
@@ -246,17 +247,17 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
         int fd = open(fileName, O_RDONLY);
 #endif
         if (fd == -1)
-            printf("disk:threadError | File \"%s\" cannot be opened from Disk\n", fileName);
+            LOG_ERROR("disk:threadError | File \"%s\" cannot be opened from Disk\n", fileName);
 
         if (!tif)
-            printf("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
+            LOG_ERROR("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
         uint64_t  offset  = 0;
         uint64_t *offsets = NULL;
         TIFFGetField(tif, TIFFTAG_STRIPOFFSETS, &offsets);
         uint64_t *byteCounts = NULL;
         TIFFGetField(tif, TIFFTAG_STRIPBYTECOUNTS, &byteCounts);
         if (!offsets || !byteCounts)
-            printf("tiff:threadError | Could not get offsets or byte counts from the tiff file\n");
+            LOG_ERROR("tiff:threadError | Could not get offsets or byte counts from the tiff file\n");
         offset           = offsets[0];
         uint64_t fOffset = offsets[stripsPerDir - 1] + byteCounts[stripsPerDir - 1];
         uint64_t zSize   = fOffset - offset;
@@ -313,7 +314,7 @@ readTiffParallel(uint64_t x, uint64_t y, uint64_t z, const char *fileName, void 
         if (errBak)
             readTiffParallelBak(x, y, z, fileName, tiff, bits, startSlice, flipXY);
         else
-            printf("tiff:threadError %s\n", errString);
+            LOG_ERROR("tiff:threadError %s\n", errString);
     }
 }
 
@@ -326,7 +327,7 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
     int32_t  batchSize  = (y - 1) / numWorkers + 1;
     uint64_t bytes      = bits / 8;
 
-    printf("numWorkers %d\n", numWorkers);
+    LOG_INFO("numWorkers %d\n", numWorkers);
 
     int32_t w;
 #ifdef ENABLE_OPENMP
@@ -336,7 +337,7 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
 
         TIFF *tif = TIFFOpen(fileName, "r");
         if (!tif)
-            printf("tiff:threadError | Thread %d: File \"%s\" cannot be opened\n", w, fileName);
+            LOG_ERROR("tiff:threadError | Thread %d: File \"%s\" cannot be opened\n", w, fileName);
 
         void *buffer = malloc(x * bytes);
         for (int64_t dir = startSlice + (w * batchSize); dir < startSlice + ((w + 1) * batchSize); dir++) {
@@ -345,8 +346,8 @@ readTiffParallel2DBak(uint64_t x, uint64_t y, uint64_t z, const char *fileName, 
 
             int counter = 0;
             while (!TIFFSetDirectory(tif, (uint64_t)0) && counter < 3) {
-                printf("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
-                       fileName, dir, counter + 1);
+                LOG_ERROR("Thread %d: File \"%s\" Directory \"%" PRId64 "\" failed to open. Try %d\n", w,
+                          fileName, dir, counter + 1);
                 counter++;
             }
 
@@ -410,7 +411,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
     uint8_t errBak = 0;
     char    errString[10000];
 
-    printf("numWorkers %d\n", numWorkers);
+    LOG_INFO("numWorkers %d\n", numWorkers);
 
 #ifdef ENABLE_OPENMP
 #pragma omp parallel for
@@ -438,8 +439,8 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
 
         uint8_t counter = 0;
         while (!TIFFSetDirectory(tif, 0) && counter < 3) {
-            printf("Thread %d: File \"%s\" Directory \"%d\" failed to open. Try %d\n", w, fileName, 0,
-                   counter + 1);
+            LOG_ERROR("Thread %d: File \"%s\" Directory \"%d\" failed to open. Try %d\n", w, fileName, 0,
+                      counter + 1);
             counter++;
             if (counter == 3) {
 #ifdef ENABLE_OPENMP
@@ -526,7 +527,7 @@ readTiffParallel2D(uint64_t x, uint64_t y, uint64_t z, const char *fileName, voi
         if (errBak)
             readTiffParallel2DBak(x, y, z, fileName, tiff, bits, startSlice, flipXY);
         else
-            printf("tiff:threadError %s\n", errString);
+            LOG_ERROR("tiff:threadError %s\n", errString);
     }
 }
 
@@ -542,7 +543,7 @@ readTiffParallelImageJ(uint64_t x, uint64_t y, uint64_t z, const char *fileName,
 #endif
     TIFF *tif = TIFFOpen(fileName, "r");
     if (!tif)
-        printf("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
+        LOG_ERROR("tiff:threadError | File \"%s\" cannot be opened\n", fileName);
     uint64_t  offset  = 0;
     uint64_t *offsets = NULL;
     TIFFGetField(tif, TIFFTAG_STRIPOFFSETS, &offsets);
@@ -691,7 +692,7 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
     TIFFSetWarningHandler(DummyHandler);
     TIFF *tif = TIFFOpen(fileName, "r");
     if (!tif)
-        printf("tiff:inputError | File \"%s\" cannot be opened", fileName);
+        LOG_ERROR("tiff:inputError | File \"%s\" cannot be opened", fileName);
 
     TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, x);
     TIFFGetField(tif, TIFFTAG_IMAGELENGTH, y);
@@ -703,7 +704,7 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
             t *= 8;
             if (s > t) {
                 t = 65535;
-                printf("Number of slices > 32768\n");
+                LOG_INFO("Number of slices > 32768\n");
                 break;
             }
         }
@@ -723,13 +724,13 @@ get_tiff_info(char *fileName, parallel_tiff_range_t *strip_range, uint64_t *x, u
     }
     else {
         if (strip_range->length != 2) {
-            printf("tiff:inputError | Input range is not 2");
+            LOG_ERROR("tiff:inputError | Input range is not 2");
         }
         else {
             *startSlice = (uint64_t)(*(strip_range->range)) - 1;
             *z          = (uint64_t)(*(strip_range->range + 1)) - startSlice[0];
             if (!TIFFSetDirectory(tif, startSlice[0] + z[0] - 1) || !TIFFSetDirectory(tif, startSlice[0])) {
-                printf("tiff:rangeOutOfBound | Range is out of bounds");
+                LOG_ERROR("tiff:rangeOutOfBound | Range is out of bounds");
             }
         }
     }
@@ -772,7 +773,7 @@ _TIFF_load(char *fileName, uint8_t isImageJIm, uint64_t x, uint64_t y, uint64_t 
            uint64_t startSlice, uint64_t stripSize, uint8_t flipXY, int ndim, size_t *dims, void **tiff_ptr)
 {
     if (tiff_ptr == NULL) {
-        printf("tiff:dataTypeError, Data type not suppported\n");
+        LOG_ERROR("tiff:dataTypeError, Data type not suppported\n");
     }
     *tiff_ptr = _get_tiff_array(bits, ndim, dims);
     // Case for ImageJ

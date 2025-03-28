@@ -85,12 +85,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -110,7 +110,7 @@ main(int argc, char **argv)
         obj2 = PDCobj_create(cont_id, "obj-var-xx", obj_prop2);
 #endif
         if (obj2 == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
             exit(-1);
         }
     }
@@ -128,7 +128,7 @@ main(int argc, char **argv)
 
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, r1, obj2, r2);
     if (ret < 0) {
-        printf("PDCbuf_obj_map failed\n");
+        LOG_ERROR("PDCbuf_obj_map failed\n");
         exit(-1);
     }
 
@@ -138,7 +138,7 @@ main(int argc, char **argv)
 
     ret = PDCreg_obtain_lock(obj2, r2, PDC_READ, PDC_NOBLOCK);
     if (ret != SUCCEED)
-        printf("Failed to obtain lock for r2\n");
+        LOG_ERROR("Failed to obtain lock for r2\n");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -146,7 +146,7 @@ main(int argc, char **argv)
 
     ret = PDCreg_release_lock(obj2, r2, PDC_READ);
     if (ret != SUCCEED)
-        printf("Failed to release lock for r2\n");
+        LOG_ERROR("Failed to release lock for r2\n");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -154,25 +154,25 @@ main(int argc, char **argv)
 
     ret = PDCbuf_obj_unmap(obj2, r2);
     if (ret != SUCCEED)
-        printf("region unmap failed\n");
+        LOG_ERROR("region unmap failed\n");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     if (PDCobj_close(obj2) < 0)
-        printf("fail to close obj2\n");
+        LOG_ERROR("Failed to close obj2\n");
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        printf("fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc_id) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

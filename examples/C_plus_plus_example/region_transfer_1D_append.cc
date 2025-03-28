@@ -58,14 +58,14 @@ main(int argc, char **argv)
     }
     sprintf(data_name, "data0_%d", rank);
 
-    printf("rank %d C++ example for writing %d lists of arrays with size %d\n", rank, ARRAY_SIZE, DATA_SIZE);
+    LOG_INFO("rank %d C++ example for writing %d lists of arrays with size %d\n", rank, ARRAY_SIZE, DATA_SIZE);
     for ( i = 0; i < ARRAY_SIZE; ++i ) {
         register_multidataset_request_append(data_name, 0, data, sizeof(int) * DATA_SIZE, H5T_NATIVE_CHAR);
     }
 
     sprintf(data_name, "data1_%d", rank);
 
-    printf("rank %d C++ example for writing %d lists of arrays with size %d\n", rank, ARRAY_SIZE, DATA_SIZE);
+    LOG_INFO("rank %d C++ example for writing %d lists of arrays with size %d\n", rank, ARRAY_SIZE, DATA_SIZE);
     for ( i = 0; i < ARRAY_SIZE; ++i ) {
         register_multidataset_request_append(data_name, 0, data, sizeof(int) * DATA_SIZE, H5T_NATIVE_CHAR);
     }

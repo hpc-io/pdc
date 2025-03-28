@@ -43,42 +43,42 @@ main(int argc, char **argv)
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     create_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (create_prop > 0) {
-        printf("Create a container property\n");
+        LOG_INFO("Create a container property\n");
     }
     else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
     cont1 = PDCcont_create("c1", create_prop);
     if (cont1 > 0) {
-        printf("Create a container c1\n");
+        LOG_INFO("Create a container c1\n");
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create second container
     cont2 = PDCcont_create("c2", create_prop);
     if (cont2 > 0) {
-        printf("Create a container c2\n");
+        LOG_INFO("Create a container c2\n");
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create third container
     cont3 = PDCcont_create("c3", create_prop);
     if (cont3 > 0) {
-        printf("Create a container c3\n");
+        LOG_INFO("Create a container c3\n");
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // start container iteration
@@ -86,46 +86,46 @@ main(int argc, char **argv)
 
     while (!PDCcont_iter_null(ch)) {
         PDCcont_iter_get_info(ch);
-        printf("container property id is ");
+        LOG_INFO("container property id is");
 
         ch = PDCcont_iter_next(ch);
     }
 
     // close cont1
     if (PDCcont_close(cont1) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close cont2
     if (PDCcont_close(cont2) < 0) {
-        printf("fail to close container c2\n");
+        LOG_ERROR("Failed to close container c2\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close container c2\n");
+        LOG_INFO("Successfully closed container c2\n");
     }
     // close cont3
     if (PDCcont_close(cont3) < 0) {
-        printf("fail to close container c3\n");
+        LOG_ERROR("Failed to close container c3\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close container c3\n");
+        LOG_INFO("Successfully closed container c3\n");
     }
     // close a container property
     if (PDCprop_close(create_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

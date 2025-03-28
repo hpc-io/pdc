@@ -4,6 +4,7 @@
 #include "query_utils.h"
 #include <inttypes.h>
 #include <stdint.h>
+#include "pdc_logger.h"
 
 int
 _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **out_str)
@@ -46,7 +47,7 @@ _gen_affix_for_token(char *token_str, int affix_type, size_t affix_len, char **o
         affix_str[affix_len + 2] = '\0';
     }
     else {
-        printf("Invalid affix type %d!\n", affix_type);
+        LOG_ERROR("Invalid affix type %d!\n", affix_type);
         return 0;
     }
 
@@ -81,7 +82,7 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
     // "hello"
     key_ptr_len = _gen_affix_for_token(input->base_tag->name, input->key_query_type, affix_len, &key_ptr);
     if (key_ptr_len == 0) {
-        printf("Failed to generate key query!\n");
+        LOG_ERROR("Failed to generate key query!\n");
         return;
     }
 
@@ -97,7 +98,7 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
         value_ptr[value_ptr_len + 2] = '\0';
 
         if (value_ptr_len == 0) {
-            printf("Failed to generate value query!\n");
+            LOG_ERROR("Failed to generate value query!\n");
             return;
         }
     }
@@ -112,7 +113,7 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
             input->base_tag->type = PDC_DOUBLE;
         }
         else {
-            printf("Invalid tag type!\n");
+            LOG_ERROR("Invalid tag type!\n");
             return;
         }
         char *format_str = get_format_by_dtype(input->base_tag->type);
@@ -131,7 +132,7 @@ gen_query_key_value(query_gen_input_t *input, query_gen_output_t *output)
             snprintf(value_ptr, value_ptr_len + 1, fmt_str, input->range_lo, input->range_hi);
         }
         else {
-            printf("Invalid value query type for integer!\n");
+            LOG_ERROR("Invalid value query type for integer!\n");
             return;
         }
     }
@@ -443,7 +444,7 @@ parse_and_run_number_value_query(char *num_val_query, pdc_c_var_type_t num_type,
         // the string is not ended or started with '~', and if it contains '~', it is a in-between query.
         split_string(num_val_query, "~", &tokens, &num_tokens);
         if (num_tokens != 2) {
-            printf("ERROR: invalid range query: %s\n", num_val_query);
+            LOG_ERROR("ERROR: invalid range query: %s\n", num_val_query);
             return -1;
         }
         char *lo_tok = tokens[0];

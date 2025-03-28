@@ -13,7 +13,7 @@
 void
 print_usage()
 {
-    printf("Should run with more than 1 processes!\n");
+    LOG_JUST_PRINT("Should run with more than 1 processes!\n");
 }
 
 int
@@ -56,17 +56,17 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     PDCprop_set_obj_dims(obj_prop, 1, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
@@ -84,7 +84,7 @@ main(int argc, char **argv)
         for (i = 0; i < NOBJ; i++) {
             obj_ids[i] = PDCobj_create(cont, obj_names[i], obj_prop);
             if (obj_ids[i] <= 0) {
-                printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
+                LOG_ERROR("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
                 goto done;
             }
         }
@@ -98,7 +98,7 @@ main(int argc, char **argv)
     for (i = 0; i < NOBJ; i++) {
         PDC_Client_query_metadata_name_timestep(obj_names[i], 0, &metadata[i]);
         if (metadata[i]->obj_id == 0) {
-            printf("Error with metadata!\n");
+            LOG_ERROR("Error with metadata!\n");
             goto done;
         }
 
@@ -107,7 +107,7 @@ main(int argc, char **argv)
         PDC_Client_write(metadata[i], &write_region, write_data);
     }
 
-    printf("%d - Finished writing %d regions. \n", rank, NOBJ);
+    LOG_INFO("%d - Finished writing %d regions. \n", rank, NOBJ);
     fflush(stdout);
 
 #ifdef ENABLE_MPI
@@ -129,10 +129,10 @@ main(int argc, char **argv)
     }
 
     PDC_Client_query_name_read_entire_obj(my_read_obj, obj_names, &out_buf, out_buf_sizes);
-    printf("Received %d data objects:\n", NOBJ);
+    LOG_INFO("Received %d data objects:\n", NOBJ);
     for (i = 0; i < my_read_obj; i++) {
-        printf("Proc %d - [%s]: [%c] ... [%c], size %" PRId64 "\n", rank, obj_names[i],
-               ((char **)out_buf)[i][0], ((char **)out_buf)[i][out_buf_sizes[i] - 1], out_buf_sizes[i]);
+        LOG_INFO("Proc %d - [%s]: [%c] ... [%c], size %" PRId64 "\n", rank, obj_names[i],
+                 ((char **)out_buf)[i][0], ((char **)out_buf)[i][out_buf_sizes[i] - 1], out_buf_sizes[i]);
         fflush(stdout);
     }
 
@@ -147,14 +147,14 @@ main(int argc, char **argv)
 done:
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

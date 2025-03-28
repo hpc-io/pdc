@@ -42,11 +42,11 @@ main(int argc, char **argv)
 #endif
 
     pdc = PDCinit("pdc");
-    printf("generated new pdc\n");
+    LOGI("generated new pdc\n");
 
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOGI("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
