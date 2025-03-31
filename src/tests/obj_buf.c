@@ -45,34 +45,34 @@ main(int argc, char **argv)
 
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Create a container property\n");
+        LOG_INFO("Create a container property\n");
     }
     else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
-        printf("Create a container\n");
+        LOG_INFO("Create a container\n");
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop > 0) {
-        printf("Create an object property\n");
+        LOG_INFO("Create an object property\n");
     }
     else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
     PDCprop_set_obj_buf(obj_prop, myArray);
@@ -81,52 +81,52 @@ main(int argc, char **argv)
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
-        printf("Create an object o1\n");
+        LOG_INFO("Create an object o1\n");
     }
     else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
     // set and retrieve the object buffer
 
     rbuf = PDCobj_buf_retrieve(obj1);
-    printf("first number to retrieve is: %d\n", *((int *)*rbuf));
+    LOG_ERROR("First number to retrieve is: %d\n", *((int *)*rbuf));
 
     // close object
     if (PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
+        LOG_ERROR("Failed to close object o1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o1\n");
+        LOG_INFO("Successfully closed object o1\n");
     }
     // close object property
     if (PDCprop_close(obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close object property\n");
+        LOG_INFO("Successfully closed object property\n");
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

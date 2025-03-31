@@ -51,7 +51,7 @@ parse_console_args(int argc, char *argv[], char **file_name, int *flag_m)
                 parse_code = 0;
                 break;
             default:
-                fprintf(stderr, "Usage: %s [-m] [-f filename]\n", argv[0]);
+                LOG_ERROR("Usage: %s [-m] [-f filename]\n", argv[0]);
                 parse_code = -1;
                 exit(EXIT_FAILURE);
         }
@@ -95,7 +95,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
             pdc_type = PDC_DOUBLE;
             break;
         default:
-            printf("Error: unsupported data type.\n");
+            LOG_ERROR("Error: unsupported data type.\n");
             exit(-1);
     }
     PDCprop_set_obj_type(obj_prop_g, pdc_type);
@@ -125,8 +125,8 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 
     duration = getDoubleTimestamp() - start; // end timing the operation and calculate duration in nanoseconds
 
-    printf("[Rank %4d] Region_Transfer %s_[%ld_Bytes] Done! Time taken: %.4f seconds\n", rank,
-           fileName_cell->field_value, image_info->tiff_size, duration);
+    LOG_INFO("[Rank %4d] Region_Transfer %s_[%ld_Bytes] Done! Time taken: %.4f seconds\n", rank,
+             fileName_cell->field_value, image_info->tiff_size, duration);
 
     // add metadata tags based on the csv row
     csv_cell_t *cell = fileName_cell;
@@ -168,8 +168,8 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
     // get timing
     duration = getDoubleTimestamp() - start; // end timing the operation calculate duration in nanoseconds
 
-    printf("[Rank %4d] Create_object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
-           duration);
+    LOG_INFO("[Rank %4d] Create_object %s Done! Time taken: %.4f seconds\n", rank, fileName_cell->field_value,
+             duration);
 
     // free memory
     // free(offsets);
@@ -210,17 +210,17 @@ on_csv_row(csv_row_t *row, llsm_importer_args_t *llsm_args)
 
     duration = getDoubleTimestamp() - start; // end timing the operation and calculate duration in nanoseconds
 
-    printf("[Rank %4d] Read %s Done! Time taken: %.4f seconds\n", rank, filepath, duration);
+    LOG_INFO("[Rank %4d] Read %s Done! Time taken: %.4f seconds\n", rank, filepath, duration);
 
     if (image_info == NULL || image_info->tiff_ptr == NULL) {
         return;
     }
 
-    printf("first few bytes ");
+    LOG_INFO("first few bytes");
     for (i = 0; i < 10; i++) {
-        printf("%d ", ((uint8_t *)image_info->tiff_ptr)[i]);
+        LOG_INFO("%d ", ((uint8_t *)image_info->tiff_ptr)[i]);
     }
-    printf("\n");
+    LOG_INFO("\n");
 
     // import the image to PDC
     import_to_pdc(image_info, fileName_cell);
@@ -239,7 +239,7 @@ read_txt(char *txtFileName, PDC_LIST *list, int *max_row_length)
     int row_length = 0;
 
     if (file == NULL) {
-        printf("Error: could not open file %s\n", txtFileName);
+        LOG_ERROR("Error: could not open file %s\n", txtFileName);
         return;
     }
     char buffer[1024];
@@ -286,8 +286,8 @@ main(int argc, char *argv[])
     char *directory_path = dirname(strdup(file_name));
 
     // print file name for validating purpose
-    printf("Filename: %s\n", file_name ? file_name : "(none)");
-    printf("Directory: %s\n", directory_path ? directory_path : "(none)");
+    LOG_INFO("Filename: %s\n", file_name ? file_name : "(none)");
+    LOG_INFO("Directory: %s\n", directory_path ? directory_path : "(none)");
 
     // create a pdc
     pdc_id_g = PDCinit("pdc");
@@ -295,18 +295,18 @@ main(int argc, char *argv[])
     // create a container property
     cont_prop_g = PDCprop_create(PDC_CONT_CREATE, pdc_id_g);
     if (cont_prop_g <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id_g = PDCcont_create("c1", cont_prop_g);
     if (cont_id_g <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // Rank 0 reads the filename list and distribute data to other ranks
     if (rank == 0) {
         read_txt(file_name, list, &bcast_count);
         // print bcast_count
-        printf("bcast_count: %d \n", bcast_count);
+        LOG_ERROR("bcast_count: %d \n", bcast_count);
 
 #ifdef ENABLE_MPI
         // broadcast the number of lines
@@ -341,7 +341,7 @@ main(int argc, char *argv[])
     // parse the csv
     csv_table_t *csv_table = csv_parse_list(list, csv_field_types);
     if (csv_table == NULL) {
-        printf("Fail to parse csv file @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to parse csv file");
         return -1;
     }
     llsm_args                 = (llsm_importer_args_t *)malloc(sizeof(llsm_importer_args_t));
@@ -372,7 +372,7 @@ main(int argc, char *argv[])
 #endif
 
     if (rank == 0) {
-        printf("[Completion Time] LLSM IMPORTER FINISHES! Time taken: %.4f seconds\n", duration);
+        LOG_INFO("[Completion Time] LLSM IMPORTER FINISHES! Time taken: %.4f seconds\n", duration);
     }
     // free memory for csv table
     csv_free_table(csv_table);

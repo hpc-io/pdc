@@ -67,40 +67,40 @@ main(int argc, char **argv)
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Create a container property\n");
+        LOG_INFO("Create a container property\n");
     }
     else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
-        printf("Create a container c1\n");
+        LOG_INFO("Create a container c1\n");
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop > 0) {
-        printf("Create an object property\n");
+        LOG_INFO("Create an object property\n");
     }
     else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
 
     ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
     if (ret != SUCCEED) {
-        printf("Fail to set obj type @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to set obj type");
         ret_value = 1;
     }
     PDCprop_set_obj_dims(obj_prop, 3, dims);
@@ -113,20 +113,20 @@ main(int argc, char **argv)
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
-        printf("Create an object o1\n");
+        LOG_INFO("Create an object o1\n");
     }
     else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
     // create second object
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if (obj2 > 0) {
-        printf("Create an object o2\n");
+        LOG_INFO("Create an object o2\n");
     }
     else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
 
@@ -147,19 +147,19 @@ main(int argc, char **argv)
     PDCregion_transfer_close(transfer_request);
 
     if (PDCregion_close(reg) < 0) {
-        printf("fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
     else {
-        printf("successfully local region\n");
+        LOG_INFO("successfully local region\n");
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
     else {
-        printf("successfully closed global region\n");
+        LOG_INFO("successfully closed global region\n");
     }
 
     // reg = PDCregion_create(1, offset, offset_length);
@@ -188,72 +188,72 @@ main(int argc, char **argv)
 
     for (i = 0; i < BUF_LEN / 8; ++i) {
         if (data_read[i] != (BUF_LEN / 8 + i) * 4 + 3) {
-            printf("wrong value %d!=%d\n", data_read[i], (BUF_LEN / 8 + i) * 4 + 3);
+            LOG_ERROR("wrong value %d!=%d\n", data_read[i], (BUF_LEN / 8 + i) * 4 + 3);
             ret_value = 1;
             break;
         }
     }
 
     if (PDCregion_close(reg) < 0) {
-        printf("fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
     else {
-        printf("successfully local region\n");
+        LOG_INFO("successfully local region\n");
     }
 
     if (PDCregion_close(reg_global) < 0) {
-        printf("fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
     else {
-        printf("successfully global region\n");
+        LOG_INFO("successfully global region\n");
     }
 
     // close object
     if (PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
+        LOG_ERROR("Failed to close object o1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o1\n");
+        LOG_INFO("Successfully closed object o1\n");
     }
     if (PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
+        LOG_ERROR("Failed to close object o2\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o2\n");
+        LOG_INFO("Successfully closed object o2\n");
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close object property\n");
+        LOG_INFO("Successfully closed object property\n");
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     free(data);
     free(data_read);
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

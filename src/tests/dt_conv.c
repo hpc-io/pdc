@@ -40,7 +40,7 @@ main(int argc, char **argv)
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    printf("generated new pdc, id is %lld\n", pdc);
+    LOG_INFO("generated new pdc, id is %lld\n", pdc);
 
     float a[10] = {1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1, 9.1, 10.1};
     int   b[5];
@@ -48,12 +48,12 @@ main(int argc, char **argv)
 
     int i;
     for (i = 0; i < 5; i++)
-        printf("b[%d] is %d\n", i, b[i]);
+        LOG_INFO("b[%d] is %d\n", i, b[i]);
     // close pdc
     if (PDC_close(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
     else
-        printf("PDC is closed\n");
+        LOG_INFO("PDC is closed\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

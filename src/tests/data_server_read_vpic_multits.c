@@ -54,7 +54,7 @@ uniform_random_number()
 void
 usage(const char *name)
 {
-    printf(
+    LOG_INFO(
         "Usage:\n./%s num_variable(up to 8) variable_size_per_proc_MB n_timestep compute_time\nexiting...\n",
         name);
 }
@@ -121,8 +121,8 @@ main(int argc, char **argv)
         sleep_time = 15;
 
     if (rank == 0) {
-        printf("read %d variables, each %dMB per proc, %d timesteps, %.1f compute time\n", n_var,
-               size_per_proc_var_MB, n_ts, sleep_time);
+        LOG_INFO("read %d variables, each %dMB per proc, %d timesteps, %.1f compute time\n", n_var,
+                 size_per_proc_var_MB, n_ts, sleep_time);
         fflush(stdout);
     }
 
@@ -137,12 +137,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // Float vars are first in the array follow by int vars
     for (i = 0; i < n_var; i++) {
@@ -186,7 +186,7 @@ main(int argc, char **argv)
         for (i = 0; i < n_var; i++) {
             ret = PDC_Client_query_metadata_name_timestep_agg(obj_names[i], ts, &obj_metas[ts][i]);
             if (ret != SUCCEED || obj_metas[ts][i] == NULL || obj_metas[ts][i]->obj_id == 0) {
-                printf("Error with metadata! ts=%d\n", ts);
+                LOG_ERROR("Error with metadata! ts=%d\n", ts);
                 exit(-1);
             }
         }
@@ -200,7 +200,7 @@ main(int argc, char **argv)
     query_time_total += query_time;
 
     if (rank == 0) {
-        printf("Query done!\n");
+        LOG_INFO("Query done!\n");
         fflush(stdout);
     }
 
@@ -213,7 +213,7 @@ main(int argc, char **argv)
         // First timestep is always sync read, then start async (prefetching)
         if (ts == 0) {
             if (rank == 0)
-                printf("Timestep %d: sync read start\n", ts);
+                LOG_INFO("Timestep %d: sync read start\n", ts);
             fflush(stdout);
 
             // Timing
@@ -222,7 +222,7 @@ main(int argc, char **argv)
             for (i = 0; i < n_var; i++) {
                 ret = PDC_Client_read(obj_metas[ts][i], &obj_regions[ts][i], mydata[i]);
                 if (ret != SUCCEED) {
-                    printf("Error with PDC_Client_read!\n");
+                    LOG_ERROR("Error with PDC_Client_read!\n");
                     goto done;
                 }
             } // end of for
@@ -236,7 +236,7 @@ main(int argc, char **argv)
             wait_time_total += wait_time;
 
             if (rank == 0) {
-                printf("sync read done\n");
+                LOG_INFO("sync read done\n");
                 fflush(stdout);
             }
         }
@@ -251,7 +251,7 @@ main(int argc, char **argv)
             gettimeofday(&pdc_timer_start_1, 0);
 
             if (rank == 0) {
-                printf("Timestep %d: Wait for prefetch.\n", ts);
+                LOG_INFO("Timestep %d: Wait for prefetch.\n", ts);
                 fflush(stdout);
             }
 
@@ -259,7 +259,7 @@ main(int argc, char **argv)
             for (i = 0; i < n_var; i++) {
                 ret = PDC_Client_wait(&request[ts][i], 90000, 100);
                 if (ret != SUCCEED) {
-                    printf("Error with PDC_Client_wait!\n");
+                    LOG_ERROR("Error with PDC_Client_wait!\n");
                     goto done;
                 }
             }
@@ -271,25 +271,22 @@ main(int argc, char **argv)
             wait_time_total += wait_time;
 
             if (rank == 0) {
-                printf("Timestep %d: prefetch finished.\n", ts);
+                LOG_INFO("Timestep %d: prefetch finished.\n", ts);
                 fflush(stdout);
             }
         }
 
-        /*
-         * PREFETCH
-         */
         // Prefetch next ts except the last read
         if (ts != n_ts - 1) {
             if (rank == 0)
-                printf("Timestep %d: prefetch timestep %d.\n", ts, ts + 1);
+                LOG_INFO("Timestep %d: prefetch timestep %d.\n", ts, ts + 1);
 
             for (i = 0; i < n_var; i++) {
                 request[ts + 1][i].n_update = n_var;
                 ret = PDC_Client_iread(obj_metas[ts + 1][i], &obj_regions[ts + 1][i], &request[ts + 1][i],
                                        mydata[i]);
                 if (ret != SUCCEED) {
-                    printf("Error with PDC_Client_iread!\n");
+                    LOG_ERROR("Error with PDC_Client_iread!\n");
                     goto done;
                 }
             } // end of for
@@ -310,7 +307,7 @@ main(int argc, char **argv)
             true_sleep_time = 0;
 
         if (rank == 0) {
-            printf("Compute for %d seconds.\n", (int)(true_sleep_time));
+            LOG_INFO("Compute for %d seconds.\n", (int)(true_sleep_time));
             fflush(stdout);
         }
 
@@ -322,8 +319,8 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
         if (rank == 0)
-            printf("Timestep %d: query time %.5e, read time %.5e, wait time %.5e, compute time %.5e\n", ts,
-                   query_time, read_time, wait_time, true_sleep_time);
+            LOG_INFO("Timestep %d: query time %.5e, read time %.5e, wait time %.5e, compute time %.5e\n", ts,
+                     query_time, read_time, wait_time, true_sleep_time);
     } // end of for ts
 
 #ifdef ENABLE_MPI
@@ -333,10 +330,10 @@ main(int argc, char **argv)
     total_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = n_particles * 4.0 * 8 * size / 1024.0 / 1024.0;
     if (rank == 0) {
-        printf("read %d ts each of %.0fMB data with %d ranks: total %.2f\n"
-               "query %.2f, read %.2f, wait %.2f, compute %.2f\n",
-               n_ts, total_size, size, total_time, query_time_total, read_time_total, wait_time_total,
-               compute_total);
+        LOG_INFO("read %d ts each of %.0fMB data with %d ranks: total %.2f\n"
+                 "query %.2f, read %.2f, wait %.2f, compute %.2f\n",
+                 n_ts, total_size, size, total_time, query_time_total, read_time_total, wait_time_total,
+                 compute_total);
         fflush(stdout);
     }
 
@@ -348,13 +345,13 @@ main(int argc, char **argv)
 
 done:
     if (PDCcont_close(cont_id) < 0)
-        printf("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close container property\n");
+        LOG_ERROR("Failed to close container property\n");
 
     if (PDCclose(pdc_id) < 0)
-        printf("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 exit:
 #ifdef ENABLE_MPI

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "pdc_region.h"
+#include "pdc_logger.h"
 
 typedef struct pdc_region_metadata_pkg {
     uint64_t *                      reg_offset;
@@ -78,12 +79,11 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
         ptr += sizeof(int);
         for (i = 0; i < n_objs; ++i) {
             if (metadata_server_objs) {
-                metadata_server_objs_end->next =
-                    (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_region_metadata));
-                metadata_server_objs_end = metadata_server_objs_end->next;
+                metadata_server_objs_end->next = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_metadata_pkg));
+                metadata_server_objs_end       = metadata_server_objs_end->next;
             }
             else {
-                metadata_server_objs     = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_region_metadata));
+                metadata_server_objs     = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_metadata_pkg));
                 metadata_server_objs_end = metadata_server_objs;
             }
 
@@ -287,8 +287,8 @@ metadata_query_buf_create(pdc_obj_region_metadata *regions, int size, uint64_t *
                                                  (sizeof(uint32_t) + sizeof(uint64_t) * regions[i].ndim * 2);
         }
         else {
-            printf("metadata_query_buf_create: Unable to find the object with ID %lu\n",
-                   (long int)regions[i].obj_id);
+            LOG_ERROR("metadata_query_buf_create: Unable to find the object with ID %lu\n",
+                      (long int)regions[i].obj_id);
         }
     }
     if (!total_data_size) {
@@ -303,12 +303,8 @@ metadata_query_buf_create(pdc_obj_region_metadata *regions, int size, uint64_t *
     query_buf->id   = query_id_g;
     query_id_g++;
     ptr = query_buf->buf;
-    // printf("metadata_query_buf_create query_id = %lu, size of buf = %lu, buf address = %lld @ line %d\n",
-    // query_buf->id, total_data_size, (long long int)query_buf, __LINE__);
     memcpy(ptr, &transfer_request_counter_total, sizeof(int));
     ptr += sizeof(int);
-    // printf("metadata_query_buf_create transfer_request_counter_total = %d @ %d\n",
-    // transfer_request_counter_total, __LINE__);
     // Iterate through all input regions. We fill in the buffer.
     for (i = 0; i < size; ++i) {
         temp = metadata_server_objs;
@@ -336,8 +332,6 @@ metadata_query_buf_create(pdc_obj_region_metadata *regions, int size, uint64_t *
                     ptr += sizeof(uint64_t) * regions[i].ndim;
                     memcpy(ptr, overlap_size, sizeof(uint64_t) * regions[i].ndim);
                     ptr += sizeof(uint64_t) * regions[i].ndim;
-                    // printf("overlapping offset = %lu, overlapping size = %lu\n", overlap_offset[0],
-                    // overlap_size[0]);
                 }
                 // overlap_size is freed together.
                 free(overlap_offset);
@@ -446,11 +440,8 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
                                                    unit, data_server_id, region_partition);
         }
     }
-    // printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
     query_id = metadata_query_buf_create(region_metadata, n_objs, total_buf_size_ptr);
     free(region_metadata);
-    // printf("transfer_request_metadata_query_parse: checkpoint %d\n", __LINE__);
-
     /* pthread_mutex_unlock(&metadata_query_mutex); */
     fflush(stdout);
     FUNC_LEAVE(query_id);
@@ -477,8 +468,7 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
     memcpy(regions->reg_size, reg_size, sizeof(uint64_t) * ndim);
 
     if (region_partition == PDC_REGION_DYNAMIC) {
-        // printf("transfer_request_metadata_reg_append: checkpoint @ line %d, pdc_server_size = %d, ndim =
-        // %d\n", __LINE__, pdc_server_size, ndim);
+
         min_bytes        = data_server_bytes[0];
         min_bytes_server = 0;
 
@@ -494,8 +484,6 @@ transfer_request_metadata_reg_append(pdc_region_metadata_pkg *regions, int ndim,
             total_reg_size *= reg_size[i];
         }
         data_server_bytes[min_bytes_server] += total_reg_size;
-        // printf("transfer_request_metadata_reg_append: checkpoint @ line %d, pdc_server_size = %d, ndim =
-        // %d, data_server_id = %d\n", __LINE__, pdc_server_size, ndim, (int) regions->data_server_id);
     }
     else {
         regions->data_server_id = data_server_id;
@@ -514,7 +502,6 @@ transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_
     pdc_region_metadata_pkg *temp_region_metadata;
 
     FUNC_ENTER(NULL);
-    // printf("transfer_request_metadata_query_append: checkpoint %d\n", __LINE__);
     temp = metadata_server_objs;
     while (temp) {
         if (temp->obj_id == obj_id) {
@@ -522,7 +509,6 @@ transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_
         }
         temp = temp->next;
     }
-    // printf("transfer_request_metadata_query_append: checkpoint %d\n", __LINE__);
     if (temp == NULL) {
         temp = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_metadata_pkg));
         if (metadata_server_objs) {
@@ -539,20 +525,15 @@ transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_
         metadata_server_objs_end->obj_id      = obj_id;
         metadata_server_objs_end->ndim        = ndim;
     }
-    // printf("transfer_request_metadata_query_append: checkpoint %d\n", __LINE__);
     region_metadata = temp->regions;
     while (region_metadata) {
         if (detect_region_contained(reg_offset, reg_size, region_metadata->reg_offset,
                                     region_metadata->reg_size, ndim)) {
-            // printf("%lu, %lu, %lu ,%lu\n", reg_offset[0], reg_size[0], region_metadata->reg_offset[0],
-            //       region_metadata->reg_size[0]);
-            // printf("---------------transfer_request_metadata_query_append: detected repeated requests\n");
             FUNC_LEAVE(region_metadata->data_server_id);
         }
         region_metadata = region_metadata->next;
     }
     // Reaching this line means that we are creating a new region and append it to the end of the object list.
-    // printf("transfer_request_metadata_query_append: checkpoint %d\n", __LINE__);
     temp_region_metadata = (pdc_region_metadata_pkg *)malloc(sizeof(pdc_region_metadata_pkg));
     if (temp->regions) {
         temp->regions_end->next = temp_region_metadata;
@@ -564,7 +545,6 @@ transfer_request_metadata_query_append(uint64_t obj_id, int ndim, uint64_t *reg_
     }
     transfer_request_metadata_reg_append(temp_region_metadata, ndim, reg_offset, reg_size, unit,
                                          data_server_id, region_partition);
-    // printf("transfer_request_metadata_query_append: checkpoint %d\n", __LINE__);
     fflush(stdout);
     FUNC_LEAVE(temp->regions_end->data_server_id);
 }

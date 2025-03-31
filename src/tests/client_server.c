@@ -48,7 +48,7 @@ PDC_Client_read_server_addr_from_file(char target_addr_string[MAX_SERVER_NUM][PA
 
     na_config = fopen(pdc_server_cfg_name, "r");
     if (!na_config) {
-        fprintf(stderr, "Could not open config file from default location: %s\n", pdc_server_cfg_name);
+        LOG_ERROR("Could not open config file from default location: %s\n", pdc_server_cfg_name);
         exit(0);
     }
     char tmp[PATH_MAX];
@@ -57,7 +57,7 @@ PDC_Client_read_server_addr_from_file(char target_addr_string[MAX_SERVER_NUM][PA
         p = strrchr(target_addr_string[i], '\n');
         if (p != NULL)
             *p = '\0';
-        /* printf("%s", target_addr_string[i]); */
+
         i++;
     }
     fclose(na_config);
@@ -69,14 +69,12 @@ PDC_Client_read_server_addr_from_file(char target_addr_string[MAX_SERVER_NUM][PA
 static hg_return_t
 client_rpc_cb(const struct hg_cb_info *callback_info)
 {
-    /* printf("Entering client_rpc_cb()"); */
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args *)callback_info->arg;
     hg_handle_t                handle             = callback_info->info.forward.handle;
 
     /* Get output from server*/
     gen_obj_id_out_t output;
     HG_Get_output(handle, &output);
-    /* printf("Return value=%llu\n", output.ret); */
     client_lookup_args->obj_id = output.ret;
 
     hg_atomic_decr32(&atomic_work_todo_g);
@@ -88,7 +86,6 @@ client_rpc_cb(const struct hg_cb_info *callback_info)
 static hg_return_t
 client_lookup_cb(const struct hg_cb_info *callback_info)
 {
-    /* printf("Entering client_lookup_cb()"); */
     hg_return_t hg_ret;
 
     struct client_lookup_args *client_lookup_args = (struct client_lookup_args *)callback_info->arg;
@@ -103,10 +100,9 @@ client_lookup_cb(const struct hg_cb_info *callback_info)
     gen_obj_id_in_t in;
     in.obj_name = client_lookup_args->obj_name;
 
-    /* printf("Sending input to target\n"); */
     hg_ret = HG_Forward(handle, client_rpc_cb, client_lookup_args, &in);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "client_lookup_cb(): Could not start HG_Forward()\n");
+        LOG_ERROR("client_lookup_cb(): Could not start HG_Forward()\n");
         return EXIT_FAILURE;
     }
     return HG_SUCCESS;
@@ -118,17 +114,16 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     char na_info_string[PATH_MAX];
     sprintf(na_info_string, "cci+tcp://%d", port);
     if (!na_info_string) {
-        fprintf(stderr, HG_PORT_NAME
-                " environment variable must be set, e.g.:\nMERCURY_PORT_NAME=\"cci+tcp://22222\"\n");
+        LOG_ERROR("HG_PORT_NAME
+                  " environment variable must be set, e.g.:\nMERCURY_PORT_NAME=\"cci+tcp://22222\"\n");
         exit(0);
     }
-    /* printf("NA: %s\n", na_info_string); */
 
     /* Initialize Mercury with the desired network abstraction class */
-    printf("Using %s\n", na_info_string);
+    LOG_INFO("Using %s\n", na_info_string);
     *hg_class = HG_Init(na_info_string, NA_FALSE);
     if (*hg_class == NULL) {
-        printf("Error with HG_Init()\n");
+        LOG_ERROR("Error with HG_Init()\n");
         return -1;
     }
 
@@ -151,7 +146,6 @@ PDC_Client_check_response(hg_context_t **hg_context)
             hg_ret = HG_Trigger(*hg_context, 0 /* timeout */, 1 /* max count */, &actual_count);
         } while ((hg_ret == HG_SUCCESS) && actual_count);
 
-        /* printf("actual_count=%d\n",actual_count); */
         /* Do not try to make progress anymore if we're done */
         if (hg_atomic_get32(&atomic_work_todo_g) <= 0)
             break;
@@ -172,7 +166,6 @@ send_name_recv_id(struct client_lookup_args *client_lookup_args, char *target_ad
     // implementation.
     hg_ret = HG_Addr_lookup(client_lookup_args->hg_context, client_lookup_cb, client_lookup_args,
                             target_addr_string, HG_OP_ID_IGNORE);
-    /* printf("HG_Addr_lookup() ret=%d\n", hg_ret); */
 
     return hg_ret;
 }
@@ -206,7 +199,7 @@ main(int argc, char **argv)
     // Init Mercury network connection
     PDC_Client_mercury_init(&hg_class, &hg_context, port);
     if (hg_class == NULL || hg_context == NULL) {
-        printf("Error with Mercury Init, exiting...\n");
+        LOG_ERROR("Error with Mercury Init, exiting...\n");
         exit(0);
     }
     hg_atomic_init32(&atomic_work_todo_g, 0);
@@ -228,7 +221,7 @@ main(int argc, char **argv)
         client_lookup_args[i].obj_id     = -1;
 
         hg_atomic_incr32(&atomic_work_todo_g);
-        printf("Target addr:%s\n", target_addr_string[i]);
+        LOG_INFO("Target addr:%s\n", target_addr_string[i]);
         send_name_recv_id(&client_lookup_args[i], target_addr_string[i]);
     }
 
@@ -237,10 +230,10 @@ main(int argc, char **argv)
     hg_time_get_current(&end_time);
     elapsed_time        = hg_time_subtract(end_time, start_time);
     elapsed_time_double = hg_time_to_double(elapsed_time);
-    printf("Total elapsed time for PDC server connection: %.5e s\n", elapsed_time_double);
+    LOG_INFO("Total elapsed time for PDC server connection: %.5e s\n", elapsed_time_double);
 
     for (i = 0; i < n_server; i++) {
-        printf("\"%s\" obj_id = %d\n", client_lookup_args[i].obj_name, client_lookup_args[i].obj_id);
+        LOG_INFO("\"%s\" obj_id = %d\n", client_lookup_args[i].obj_name, client_lookup_args[i].obj_id);
         HG_Addr_free(hg_class, client_lookup_args[i].hg_target_addr);
         free(test_obj_names[i]);
     }

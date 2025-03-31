@@ -49,53 +49,55 @@ TestThread(void *ThreadArgs)
     // create a container property
     pdcid_t create_prop = PDCprop_create(PDC_CONT_CREATE, args->pdcId);
     if (create_prop > 0)
-        printf("[%d] Create a container property, id is %llx\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] Create a container property, id is %llx\n", args->ThreadRank, create_prop);
     else
-        printf("[%d] Fail to create container property @ line  %d!\n", args->ThreadRank, __LINE__);
+        LOG_ERROR("[%d] Fail to create container property!\n", args->ThreadRank);
 
     // print default container lifetime (persistent)
     struct PDC_cont_prop *prop = PDCcont_prop_get_info(create_prop);
     if (prop->cont_life == PDC_PERSIST)
-        printf("[%d] container property (id: %lld) default lifetime is persistent\n", args->ThreadRank,
-               create_prop);
+        LOG_INFO("[%d] container property (id: %lld) default lifetime is persistent\n", args->ThreadRank,
+                 create_prop);
     else
-        printf("[%d] container property (id: %lld) default lifetime is transient\n", args->ThreadRank,
-               create_prop);
+        LOG_INFO("[%d] container property (id: %lld) default lifetime is transient\n", args->ThreadRank,
+                 create_prop);
 
     // create a container
     pdcid_t cont = PDCcont_create("c1", create_prop);
     if (cont > 0)
-        printf("[%d] Create a container, id is %lld\n", args->ThreadRank, cont);
+        LOG_INFO("[%d] Create a container, id is %lld\n", args->ThreadRank, cont);
     else
-        printf("[%d] Failed to create container @ line  %d!\n", args->ThreadRank, __LINE__);
+        LOG_ERROR("[%d] Failed to create container!\n", args->ThreadRank);
 
     // set container lifetime to transient
     PDCprop_set_cont_lifetime(create_prop, PDC_TRANSIENT);
     prop = PDCcont_prop_get_info(create_prop);
     if (prop->cont_life == PDC_PERSIST)
-        printf("[%d] container property (id: %lld) lifetime is persistent\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] container property (id: %lld) lifetime is persistent\n", args->ThreadRank,
+                 create_prop);
     else
-        printf("[%d] container property (id: %lld) lifetime is transient\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] container property (id: %lld) lifetime is transient\n", args->ThreadRank, create_prop);
 
     // set container lifetime to persistent
     PDCcont_persist(cont);
     prop = PDCcont_prop_get_info(create_prop);
     if (prop->cont_life == PDC_PERSIST)
-        printf("[%d] container property (id: %lld) lifetime is persistent\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] container property (id: %lld) lifetime is persistent\n", args->ThreadRank,
+                 create_prop);
     else
-        printf("[%d] container property (id: %lld) lifetime is transient\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] container property (id: %lld) lifetime is transient\n", args->ThreadRank, create_prop);
 
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("[%d] failed to close container %lld\n", args->ThreadRank, cont);
+        LOG_ERROR("[%d] failed to close container %lld\n", args->ThreadRank, cont);
     else
-        printf("[%d] successfully closed container # %lld\n", args->ThreadRank, cont);
+        LOG_INFO("[%d] successfully closed container # %lld\n", args->ThreadRank, cont);
 
     // close a container property
     if (PDCprop_close(create_prop) < 0)
-        printf("[%d] Fail to close property @ line %d\n", args->ThreadRank, __LINE__);
+        LOG_ERROR("[%d] Fail to close property\n", args->ThreadRank);
     else
-        printf("[%d] successfully closed container property # %lld\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] successfully closed container property # %lld\n", args->ThreadRank, create_prop);
 
     return NULL;
 }
@@ -123,7 +125,7 @@ main(int argc, char **argv)
     // create a pdc
     pdcid_t create_prop;
     pdcid_t pdc = PDC_init("pdc");
-    printf("[MAIN] created a new pdc, pdc id is: %lld\n", pdc);
+    LOG_INFO("[MAIN] created a new pdc, pdc id is: %lld\n", pdc);
 
     /*Create nThreads threads in each process*/
     for (i = 0; i < nThreads; i++) {
@@ -140,16 +142,16 @@ main(int argc, char **argv)
 
     // close pdc
     if (PDC_close(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
     else
-        printf("PDC is closed\n");
+        LOG_INFO("PDC is closed\n");
 
     free(args);
     if (status > 0) {
-        printf("%d threads exited with an error status\n", status);
+        LOG_ERROR("%d threads exited with an error status\n", status);
     }
     else {
-        printf("No errors reported\n");
+        LOG_INFO("No errors reported\n");
     }
 
 #ifdef ENABLE_MPI

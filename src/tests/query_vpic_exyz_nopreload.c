@@ -42,43 +42,43 @@ main(int argc, char **argv)
         z_hi      = atof(argv[8]);
     }
     else {
-        printf("Not sufficient query conditions!\n");
+        LOG_ERROR("Not sufficient query conditions!\n");
     }
 
     // Query the created object
     PDC_Client_query_metadata_name_timestep("x", 0, &x_meta);
     if (x_meta == NULL || x_meta->obj_id == 0) {
-        printf("Error with x metadata!\n");
+        LOG_ERROR("Error with x metadata!\n");
         goto done;
     }
     x_id = x_meta->obj_id;
-    printf("x_id = %" PRIu64 "\n", x_id);
+    LOG_INFO("x_id = %" PRIu64 "\n", x_id);
 
     PDC_Client_query_metadata_name_timestep("y", 0, &y_meta);
     if (y_meta == NULL || y_meta->obj_id == 0) {
-        printf("Error with y metadata!\n");
+        LOG_ERROR("Error with y metadata!\n");
         goto done;
     }
     y_id = y_meta->obj_id;
-    printf("y_id = %" PRIu64 "\n", y_id);
+    LOG_INFO("y_id = %" PRIu64 "\n", y_id);
 
     PDC_Client_query_metadata_name_timestep("z", 0, &z_meta);
     if (z_meta == NULL || z_meta->obj_id == 0) {
-        printf("Error with z metadata!\n");
+        LOG_ERROR("Error with z metadata!\n");
         goto done;
     }
     z_id = z_meta->obj_id;
-    printf("z_id = %" PRIu64 "\n", z_id);
+    LOG_INFO("z_id = %" PRIu64 "\n", z_id);
 
     PDC_Client_query_metadata_name_timestep("Energy", 0, &energy_meta);
     if (energy_meta == NULL || energy_meta->obj_id == 0) {
-        printf("Error with energy metadata!\n");
+        LOG_ERROR("Error with energy metadata!\n");
         goto done;
     }
     energy_id = energy_meta->obj_id;
-    printf("energy_id = %" PRIu64 "\n", energy_id);
+    LOG_INFO("energy_id = %" PRIu64 "\n", energy_id);
 
-    printf("Distribute the metadata\n");
+    LOG_INFO("Distribute the metadata\n");
     float preload_value = 1000000.0;
     qpreload_energy     = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &preload_value);
     qpreload_x          = PDCquery_create(x_id, PDC_GT, PDC_FLOAT, &preload_value);
@@ -86,7 +86,7 @@ main(int argc, char **argv)
     qpreload = PDCquery_or(qpreload_x, qpreload_energy);
 
     PDCquery_get_nhits(qpreload, &nhits);
-    printf("Done... %" PRIu64 " hits\n", nhits);
+    LOG_INFO("Done... %" PRIu64 " hits\n", nhits);
     PDCquery_free_all(qpreload);
 
     // Construct query constraints
@@ -100,8 +100,8 @@ main(int argc, char **argv)
 
     q = PDCquery_and(q2, q1);
 
-    printf("Query: %.1f < Energy < %.1f && %.1f < X < %.1f && %.1f < Y < %.1f, && %.1f < z < %.1f\n",
-           energy_lo, energy_hi, x_lo, x_hi, y_lo, y_hi, z_lo, z_hi);
+    LOG_INFO("Query: %.1f < Energy < %.1f && %.1f < X < %.1f && %.1f < Y < %.1f, && %.1f < z < %.1f\n",
+             energy_lo, energy_hi, x_lo, x_hi, y_lo, y_hi, z_lo, z_hi);
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);
@@ -110,8 +110,8 @@ main(int argc, char **argv)
 
     gettimeofday(&pdc_timer_end, 0);
     get_sel_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("Query result in (%" PRIu64 " hits):\n", sel.nhits);
-    printf("Get selection time: %.5e\n", get_sel_time);
+    LOG_INFO("Query result in (%" PRIu64 " hits):\n", sel.nhits);
+    LOG_INFO("Get selection time: %.5e\n", get_sel_time);
 
     if (sel.nhits > 0) {
         energy_data = (float *)calloc(sel.nhits, sizeof(float));
@@ -127,15 +127,15 @@ main(int argc, char **argv)
 
         gettimeofday(&pdc_timer_end, 0);
         get_data_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-        printf("Get data time: %.5e\n", get_data_time);
+        LOG_INFO("Get data time: %.5e\n", get_data_time);
 
         for (i = 0; i < sel.nhits; i++) {
             if (energy_data[i] < energy_lo) {
-                printf("Error with energy_data = %.1f\n", energy_data[i]);
+                LOG_ERROR("Error with energy_data = %.1f\n", energy_data[i]);
                 break;
             }
             if (x_data[i] > x_hi || x_data[i] < x_lo) {
-                printf("Error with x_data = %.1f\n", x_data[i]);
+                LOG_ERROR("Error with x_data = %.1f\n", x_data[i]);
                 break;
             }
         }
@@ -156,7 +156,7 @@ main(int argc, char **argv)
 
 done:
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     return 0;
 }

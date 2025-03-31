@@ -29,6 +29,7 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_transforms_common.h"
 #include "pdc_client_server_common.h"
+#include "pdc_logger.h"
 
 #ifdef ENABLE_MULTITHREAD
 extern hg_thread_pool_t *hg_test_thread_pool_g;
@@ -80,7 +81,7 @@ HG_TEST_RPC_CB(transform_ftn, handle)
         out.region_id      = in.region_id;
     }
     else {
-        printf("Unable to resolve transform function pointer\n");
+        LOG_ERROR("Unable to resolve transform function pointer\n");
         out.ret = -1;
     }
 

@@ -192,7 +192,7 @@ PDC_prop_cont_list_null()
     nelemts = PDC_id_list_null(PDC_CONT_PROP);
     if (nelemts > 0) {
         if (PDC_id_list_clear(PDC_CONT_PROP) < 0)
-            PGOTO_ERROR(FAIL, "fail to clear container property list");
+            PGOTO_ERROR(FAIL, "Failed to clear container property list");
     }
 
 done:
@@ -212,7 +212,7 @@ PDC_prop_obj_list_null()
     nelemts = PDC_id_list_null(PDC_OBJ_PROP);
     if (nelemts > 0) {
         if (PDC_id_list_clear(PDC_OBJ_PROP) < 0)
-            PGOTO_ERROR(FAIL, "fail to clear obj property list");
+            PGOTO_ERROR(FAIL, "Failed to clear obj property list");
     }
 
 done:

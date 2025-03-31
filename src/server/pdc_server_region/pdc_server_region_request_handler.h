@@ -11,7 +11,6 @@ transfer_request_all_bulk_transfer_read_cb2(const struct hg_cb_info *info)
     double end, start;
 #endif
 
-    // printf("entering transfer_request_all_bulk_transfer_read_cb2\n");
     pthread_mutex_lock(&transfer_request_status_mutex);
     for (i = 0; i < local_bulk_args2->request_data.n_objs; ++i) {
         PDC_finish_request(local_bulk_args2->transfer_request_id[i]);
@@ -23,7 +22,6 @@ transfer_request_all_bulk_transfer_read_cb2(const struct hg_cb_info *info)
     HG_Bulk_free(local_bulk_args2->bulk_handle);
     HG_Destroy(local_bulk_args2->handle);
     free(local_bulk_args2);
-    // printf("finishing transfer_request_all_bulk_transfer_read_cb2\n");
 
 #ifdef PDC_TIMING
     // transfer_request_inner_read_all_bulk is purely for transferring read data from server to client.
@@ -55,7 +53,6 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     double end;
 #endif
 
-    // printf("entering transfer_request_all_bulk_transfer_read_cb\n");
     handle_info         = HG_Get_info(local_bulk_args->handle);
     request_data.n_objs = local_bulk_args->in.n_objs;
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_READ);
@@ -104,11 +101,11 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
                                        request_data.unit[i], 0);
 #endif
 #if 0
-        fprintf(stderr, "server read array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]); uint64_t k; 
+        LOG_ERROR("server read array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]); uint64_t k; 
         for ( k = 0; k < remote_reg_info->size[0]; ++k ) {
-            fprintf(stderr, "%d,", *(int*)(ptr + sizeof(int) * k));
+            LOG_ERROR("%d,", *(int*)(ptr + sizeof(int) * k));
         }
-        fprintf(stderr, "\n");
+        LOG_ERROR("\n");
 #endif
         ptr += mem_size;
     }
@@ -136,9 +133,7 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     ret = HG_Bulk_create(handle_info->hg_class, 1, &(local_bulk_args2->data_buf), &total_mem_size,
                          HG_BULK_READWRITE, &(local_bulk_args2->bulk_handle));
     if (ret != HG_SUCCESS) {
-        printf("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info): @ line "
-               "%d \n",
-               __LINE__);
+        LOG_ERROR("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)\n");
     }
 
     // This is the actual data transfer. When transfer is finished, we are heading our way to the function
@@ -148,9 +143,7 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
                          HG_BULK_PUSH, handle_info->addr, local_bulk_args->in.local_bulk_handle, 0,
                          local_bulk_args2->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
     if (ret != HG_SUCCESS) {
-        printf("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info): @ line "
-               "%d \n",
-               __LINE__);
+        LOG_ERROR("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)");
     }
     // pointers in request_data are freed in the next call back function
     free(local_bulk_args->data_buf);
@@ -179,7 +172,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
 #ifdef TANG_DEBUG
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__);
+    LOG_DEBUG("%s ==PDC_SERVER[%d]: enter\n", cur_time, PDC_get_rank());
 #endif
 
     gettimeofday(&last_cache_activity_timeval_g, NULL);
@@ -208,7 +201,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
 #ifdef TANG_DEBUG
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: %s before (cache) writing\n", cur_time, PDC_get_rank(), __func__);
+    LOG_DEBUG("%s ==PDC_SERVER[%d]: before (cache) writing\n", cur_time, PDC_get_rank());
 #endif
 
     for (i = 0; i < request_data.n_objs; ++i) {
@@ -227,11 +220,11 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
 #if 0
         uint64_t j;
-        fprintf(stderr, "server write array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]);
+        LOG_ERROR("server write array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]);
         for ( j = 0; j < remote_reg_info->size[0]; ++j ) {
-            fprintf(stderr, "%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
+            LOG_ERROR("%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
         }
-        fprintf(stderr, "\n");
+        LOG_ERROR("\n");
 #endif
         pthread_mutex_lock(&transfer_request_status_mutex);
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
@@ -240,7 +233,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
 #ifdef TANG_DEBUG
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: %s after (cache) writing\n", cur_time, PDC_get_rank(), __func__);
+    LOG_DEBUG("%s ==PDC_SERVER[%d]: after (cache) writing\n", cur_time, PDC_get_rank());
 #endif
 
 #ifndef PDC_SERVER_CACHE
@@ -270,7 +263,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 
 #ifdef TANG_DEBUG
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: leaving %s\n", cur_time, PDC_get_rank(), __func__);
+    LOG_DEBUG("%s ==PDC_SERVER[%d]: leaving\n", cur_time, PDC_get_rank());
 #endif
 
     FUNC_LEAVE(ret);
@@ -300,8 +293,6 @@ transfer_request_wait_all_bulk_transfer_cb(const struct hg_cb_info *info)
         transfer_request_id = *((pdcid_t *)ptr);
         ptr += sizeof(pdcid_t);
         status = PDC_check_request(transfer_request_id);
-        // printf("processing transfer_id = %llu, pdc_server_rank = %d\n", (long long
-        // unsigned)transfer_request_id, get_server_rank());
         if (status == PDC_TRANSFER_STATUS_PENDING) {
             PDC_try_finish_request(transfer_request_id, local_bulk_args->handle, handle_ref, 1);
         }
@@ -310,12 +301,6 @@ transfer_request_wait_all_bulk_transfer_cb(const struct hg_cb_info *info)
         }
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    /*
-
-        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): exiting the wait function at server side @
-       %d\n",
-               __LINE__);
-    */
     if (fast_return) {
         free(handle_ref);
         out.ret = 1;
@@ -356,7 +341,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 #ifdef TANG_DEBUG
     char cur_time[64];
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__);
+    LOG_DEBUG("%s ==PDC_SERVER[%d]: enter\n", cur_time, PDC_get_rank());
 #endif
 
     gettimeofday(&last_cache_activity_timeval_g, NULL);
@@ -389,10 +374,6 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
         (remote_reg_info->size)[2]   = (local_bulk_args->in.remote_region).count_2;
         obj_dims[2]                  = (local_bulk_args->in).obj_dim2;
     }
-/*
-    printf("Server transfer request at write branch, index 1 value = %d\n",
-           *((int *)(local_bulk_args->data_buf + sizeof(int))));
-*/
 #ifdef PDC_SERVER_CACHE
     PDC_transfer_request_data_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                         remote_reg_info, (void *)local_bulk_args->data_buf,
@@ -462,7 +443,6 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     FUNC_ENTER(NULL);
     HG_Get_input(handle, &in);
 
-    // printf("entering the status function at server side @ line %d\n", __LINE__);
     pthread_mutex_lock(&transfer_request_status_mutex);
     out.status = PDC_check_request(in.transfer_request_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);
@@ -492,11 +472,6 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
 #endif
 
     HG_Get_input(handle, &in);
-    /*
-        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): entering the wait function at server side @
-       %d\n",
-               __LINE__);
-    */
     pthread_mutex_lock(&transfer_request_status_mutex);
     status = PDC_check_request(in.transfer_request_id);
     if (status == PDC_TRANSFER_STATUS_PENDING) {
@@ -507,11 +482,6 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
         fast_return = 1;
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    /*
-        printf("HG_TEST_RPC_CB(transfer_request_wait, handle): exiting the wait function at server side @
-       %d\n",
-               __LINE__);
-    */
     if (fast_return) {
         out.ret   = 1;
         ret_value = HG_Respond(handle, NULL, NULL, &out);
@@ -597,8 +567,7 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
 
 #ifdef TANG_DEBUG
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: enter %s process CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__,
-           in.client_id);
+    LOG_DEBUG("%s ==PDC_SERVER[%d]: enter process CLIENT[%d]\n", cur_time, PDC_get_rank(), in.client_id);
 #endif
 
     gettimeofday(&last_cache_activity_timeval_g, NULL);
@@ -640,7 +609,7 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
 
 #ifdef TANG_DEBUG
         PDC_get_time_str(cur_time);
-        printf("%s ==PDC_SERVER[x]: %s start bulk \n", cur_time, __func__);
+        LOG_DEBUG("%s ==PDC_SERVER[x]: start bulk \n", cur_time);
 #endif
 
         ret_value =
@@ -650,7 +619,7 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
 
 #ifdef TANG_DEBUG
         PDC_get_time_str(cur_time);
-        printf("%s ==PDC_SERVER[x]: %s done bulk\n", cur_time, __func__);
+        LOG_DEBUG("%s ==PDC_SERVER[x]: done bulk\n", cur_time);
 #endif
     }
     else {
@@ -682,8 +651,7 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
 
 #ifdef TANG_DEBUG
     PDC_get_time_str(cur_time);
-    printf("%s ==PDC_SERVER[%d]: leaving %s responded CLIENT[%d]\n", cur_time, PDC_get_rank(), __func__,
-           in.client_id);
+    LOG_DEBUG("%s ==PDC_SERVER[%d]: leaving responded CLIENT[%d]\n", cur_time, PDC_get_rank(), in.client_id);
 #endif
 
     fflush(stdout);
@@ -698,14 +666,10 @@ transfer_request_metadata_query_bulk_transfer_cb(const struct hg_cb_info *info)
     transfer_request_metadata_query_out_t                   out;
 
     FUNC_ENTER(NULL);
-    // printf("transfer_request_metadata_query_bulk_transfer_cb: checkpoint %d\n", __LINE__);
     out.query_id =
         transfer_request_metadata_query_parse(local_bulk_args->in.n_objs, (char *)local_bulk_args->data_buf,
                                               local_bulk_args->in.is_write, &(out.total_buf_size));
-    // printf("transfer_request_metadata_query_bulk_transfer_cb: checkpoint %d\n", __LINE__);
     free(local_bulk_args->data_buf);
-    // printf("transfer_request_metadata_query_bulk_transfer_cb: checkpoint %d\n", __LINE__);
-
     out.ret = 1;
     ret     = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
     HG_Bulk_free(local_bulk_args->bulk_handle);
@@ -733,11 +697,10 @@ HG_TEST_RPC_CB(transfer_request_metadata_query, handle)
     local_bulk_args->data_buf = malloc(in.total_buf_size);
     local_bulk_args->in       = in;
     local_bulk_args->handle   = handle;
-    // printf("transfer_request_metadata_query: checkpoint %d\n", __LINE__);
     ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf), &(in.total_buf_size),
                                HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
     if (ret_value != HG_SUCCESS) {
-        printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d \n", __LINE__);
+        LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
     }
 
     // This is the actual data transfer. When transfer is finished, we are heading our way to the function
@@ -762,8 +725,6 @@ transfer_request_metadata_query2_bulk_transfer_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
 
     out.ret = 1;
-    // printf("transfer_request_metadata_query2_bulk_transfer_cb: checkpoint %d, data_buf = %lld\n", __LINE__,
-    // (long long int)local_bulk_args->data_buf);
     free(local_bulk_args->data_buf);
     ret = HG_Respond(local_bulk_args->handle, NULL, NULL, &out);
     HG_Bulk_free(local_bulk_args->bulk_handle);
@@ -792,14 +753,11 @@ HG_TEST_RPC_CB(transfer_request_metadata_query2, handle)
     local_bulk_args->handle = handle;
 
     // Retrieve the data buffer to be sent to client
-    // printf("transfer_request_metadata_query2: checkpoint %d, total_buf_size = %lu\n", __LINE__,
-    // in.total_buf_size);
     transfer_request_metadata_query_lookup_query_buf(in.query_id, (char **)&(local_bulk_args->data_buf));
-    // printf("transfer_request_metadata_query2: checkpoint %d\n", __LINE__);
     ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf), &(in.total_buf_size),
                                HG_BULK_READWRITE, &(local_bulk_args->bulk_handle));
     if (ret_value != HG_SUCCESS) {
-        printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d \n", __LINE__);
+        LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
     }
 
     // This is the actual data transfer. When transfer is finished, we are heading our way to the function
@@ -867,11 +825,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
 #ifdef PDC_TIMING
     local_bulk_args->start_time = MPI_Wtime();
 #endif
-    /*
-        printf("server check obj ndim %d, dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "]\n", (int)in.obj_ndim,
-               in.obj_dim0, in.obj_dim1, in.obj_dim2);
-    */
-    // printf("HG_TEST_RPC_CB(transfer_request, handle) checkpoint @ line %d\n", __LINE__);
     out.ret   = 1;
     ret_value = HG_Respond(handle, NULL, NULL, &out);
     if (in.access_type == PDC_WRITE) {
@@ -879,7 +832,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
                                    (const hg_size_t *)&(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
         if (ret_value != HG_SUCCESS) {
-            printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d \n", __LINE__);
+            LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
         }
 
         // This is the actual data transfer. When transfer is finished, we are heading our way to the function
@@ -918,38 +871,11 @@ HG_TEST_RPC_CB(transfer_request, handle)
         PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
                                        (void *)local_bulk_args->data_buf, in.remote_unit, 0);
 #endif
-        /*
-                printf("ndim = %d\n", in.obj_ndim);
-                if (in.obj_ndim == 2) {
-                    printf("offset[0] = %" PRIu64 ", length[0] = %" PRIu64 ", offset[1] = %" PRIu64 ",
-           length[1] = %" PRIu64 "\n", (remote_reg_info->offset)[0], (remote_reg_info->size)[0],
-           (remote_reg_info->offset)[1], (remote_reg_info->size)[1]);
-                }
-                uint64_t total_data_size = (remote_reg_info->size)[0];
-                if (remote_reg_info->ndim >= 2) {
-                    total_data_size *= (remote_reg_info->size)[1];
-                }
-                if (remote_reg_info->ndim >= 3) {
-                    total_data_size *= (remote_reg_info->size)[2];
-                }
-                int *int_ptr = local_bulk_args->data_buf;
-                uint64_t i;
-                 printf("Read data print out\n");
-                for ( i = 0; i < total_data_size; ++i ) {
-                    printf("%d ", int_ptr[i]);
-                }
-                printf("\n");
-                printf("--------------------\n");
-        */
-        /*
-                printf("Server transfer request at read branch index 1 value is %d\n",
-                       *((int *)(local_bulk_args->data_buf + sizeof(int))));
-        */
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    (const hg_size_t *)&(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
         if (ret_value != HG_SUCCESS) {
-            printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d \n", __LINE__);
+            LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
         }
 
         // This is the actual data transfer. When transfer is finished, we are heading our way to the function
@@ -960,7 +886,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
         free(remote_reg_info);
     }
     if (ret_value != HG_SUCCESS) {
-        printf("Error at HG_TEST_RPC_CB(transfer_request, handle): @ line %d \n", __LINE__);
+        LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
     }
 
     HG_Free_input(handle, &in);

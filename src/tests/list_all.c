@@ -53,7 +53,7 @@ rand_string(char *str, size_t size)
 void
 print_usage()
 {
-    printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
+    LOG_JUST_PRINT("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
 
 int
@@ -92,11 +92,11 @@ main(int argc, char **argv)
                 break;
             case '?':
                 if (optopt == 'r')
-                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                    LOG_ERROR("Option -%c requires an argument.\n", optopt);
                 else if (isprint(optopt))
-                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+                    LOG_ERROR("Unknown option `-%c'.\n", optopt);
                 else
-                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+                    LOG_ERROR("Unknown option character `\\x%x'.\n", optopt);
                 return 1;
             default:
                 print_usage();
@@ -111,7 +111,7 @@ main(int argc, char **argv)
     count /= size;
 
     if (rank == 0)
-        printf("Creating %d objects per MPI rank\n", count);
+        LOG_INFO("Creating %d objects per MPI rank\n", count);
     fflush(stdout);
 
     // create a pdc
@@ -120,17 +120,17 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     PDCprop_set_obj_dims(obj_prop, 3, dims);
 
@@ -140,7 +140,7 @@ main(int argc, char **argv)
     }
 
     if (rank == 0) {
-        printf("Using %s\n", name_mode[use_name + 1]);
+        LOG_INFO("Using %s\n", name_mode[use_name + 1]);
     }
 
     srand(rank + 1);
@@ -165,7 +165,7 @@ main(int argc, char **argv)
             PDCprop_set_obj_time_step(obj_prop, i / 4 + rank * count);
         }
         else {
-            printf("Unsupported name choice\n");
+            LOG_ERROR("Unsupported name choice\n");
             goto done;
         }
         PDCprop_set_obj_user_id(obj_prop, getuid());
@@ -174,7 +174,7 @@ main(int argc, char **argv)
 
         test_obj = PDCobj_create(cont, obj_name, obj_prop);
         if (test_obj == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", obj_name);
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
     }
@@ -187,13 +187,13 @@ main(int argc, char **argv)
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to create %d obj/rank with %d ranks: %.5e\n", count, size, ht_total_sec);
+        LOG_INFO("Time to create %d obj/rank with %d ranks: %.5e\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 
-    printf("Listing all objects\n");
+    LOG_INFO("Listing all objects\n");
     PDC_Client_list_all(&n_obj, &out);
-    printf("Received %d metadata objects\n", n_obj);
+    LOG_INFO("Received %d metadata objects\n", n_obj);
 
     for (i = 0; i < n_obj; i++) {
         PDC_print_metadata(out[i]);
@@ -203,16 +203,16 @@ main(int argc, char **argv)
     PDCprop_set_obj_time_step(obj_prop, 0);
     test_obj = PDCobj_create(cont, "test_obj_name0", obj_prop);
     test_obj = PDCobj_create(cont, "test_obj_name1", obj_prop);
-    printf("Searching for objects with tag1=2\n");
+    LOG_INFO("Searching for objects with tag1=2\n");
     PDC_partial_query(0, -1, NULL, NULL, -1, -1, -1, "tag1=2", &n_obj, &out);
-    printf("Received %d metadata objects\n", n_obj);
+    LOG_INFO("Received %d metadata objects\n", n_obj);
     for (i = 0; i < n_obj; i++) {
         PDC_print_metadata(out[i]);
     }
 
-    printf("Searching for objects with timestep from 2 to 4\n");
+    LOG_INFO("Searching for objects with timestep from 2 to 4\n");
     PDC_partial_query(0, -1, NULL, NULL, 2, 4, -1, NULL, &n_obj, &out);
-    printf("Received %d metadata objects\n", n_obj);
+    LOG_INFO("Received %d metadata objects\n", n_obj);
     for (i = 0; i < n_obj; i++) {
         PDC_print_metadata(out[i]);
     }
@@ -220,14 +220,14 @@ main(int argc, char **argv)
 done:
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

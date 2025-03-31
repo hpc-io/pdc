@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAX_LOG_MSG_LENGTH       1024
 #define MAX_LOG_FILE_SIZE        (10 * 1024 * 1024) // 10 MB
@@ -20,18 +21,22 @@ void setLogFile(PDC_LogLevel level, const char *fileName);
 
 void setLogLevel(PDC_LogLevel level);
 
-void log_message(PDC_LogLevel level, const char *format, ...);
+/**
+ * just_print is equivalent to calling printf("%s", args) meaning no extra information
+ * such as the file and line number will be printed
+ */
+void log_message(bool just_print, PDC_LogLevel level, const char *file, const char *func, int line_number,
+                 const char *format, ...);
 
-void log_message_nlf(PDC_LogLevel level, const char *format, ...);
-
-#define LOG_ERROR(format, ...)   log_message(LOG_LEVEL_ERROR, format, ##__VA_ARGS__)
-#define LOG_WARNING(format, ...) log_message(LOG_LEVEL_WARNING, format, ##__VA_ARGS__)
-#define LOG_INFO(format, ...)    log_message(LOG_LEVEL_INFO, format, ##__VA_ARGS__)
-#define LOG_DEBUG(format, ...)   log_message(LOG_LEVEL_DEBUG, format, ##__VA_ARGS__)
-
-#define NLF_LOG_ERROR(format, ...)   log_message_nlf(LOG_LEVEL_ERROR, format, ##__VA_ARGS__)
-#define NLF_LOG_WARNING(format, ...) log_message_nlf(LOG_LEVEL_WARNING, format, ##__VA_ARGS__)
-#define NLF_LOG_INFO(format, ...)    log_message_nlf(LOG_LEVEL_INFO, format, ##__VA_ARGS__)
-#define NLF_LOG_DEBUG(format, ...)   log_message_nlf(LOG_LEVEL_DEBUG, format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...)                                                                               \
+    log_message(false, LOG_LEVEL_ERROR, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
+#define LOG_WARNING(format, ...)                                                                             \
+    log_message(false, LOG_LEVEL_WARNING, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
+#define LOG_INFO(format, ...)                                                                                \
+    log_message(false, LOG_LEVEL_INFO, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...)                                                                               \
+    log_message(false, LOG_LEVEL_DEBUG, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
+#define LOG_JUST_PRINT(format, ...)                                                                          \
+    log_message(true, LOG_LEVEL_INFO, __FILE__, __func__, __LINE__, format, ##__VA_ARGS__)
 
 #endif // PDC_LOGGER_H

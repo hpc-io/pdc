@@ -103,12 +103,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // Query obj metadata and create read region one by one
     for (i = 0; i < NUM_VAR; i++) {
@@ -119,7 +119,7 @@ main(int argc, char **argv)
         ret = PDC_Client_query_metadata_name_timestep(obj_names[i], 0, &obj_metas[i]);
 #endif
         if (ret != SUCCEED || obj_metas[i] == NULL || obj_metas[i]->obj_id == 0) {
-            printf("Error with metadata!\n");
+            LOG_ERROR("Error with metadata!\n");
             exit(-1);
         }
 
@@ -141,7 +141,7 @@ main(int argc, char **argv)
 #endif
 
     if (rank == 0)
-        printf("Read %d variables\n", read_var);
+        LOG_INFO("Read %d variables\n", read_var);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -157,7 +157,7 @@ main(int argc, char **argv)
         request[i].n_update = read_var;
         ret                 = PDC_Client_iread(obj_metas[i], &obj_regions[i], &request[i], mydata[i]);
         if (ret != SUCCEED) {
-            printf("Error with PDC_Client_iread!\n");
+            LOG_ERROR("Error with PDC_Client_iread!\n");
             goto done;
         }
 
@@ -170,13 +170,13 @@ main(int argc, char **argv)
     }
 
     if (rank == 0)
-        printf("Finished sending all read requests, now waiting\n");
+        LOG_ERROR("Finished sending all read requests, now waiting\n");
 
     gettimeofday(&pdc_timer_start_1, 0);
     for (i = 0; i < read_var; i++) {
         ret = PDC_Client_wait(&request[i], 200000, 100);
         if (ret != SUCCEED) {
-            printf("Error with PDC_Client_wait!\n");
+            LOG_ERROR("Error with PDC_Client_wait!\n");
             goto done;
         }
     }
@@ -192,45 +192,45 @@ main(int argc, char **argv)
     read_time  = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = NPARTICLES * 4.0 * 8.0 * size / 1024.0 / 1024.0;
     if (rank == 0) {
-        printf("Read %.2f MB data with %d ranks\nTotal read time: %.2f\nSent %.2f, wait %.2f, Throughput "
-               "%.2f MB/s\n",
-               total_size, size, read_time, sent_time_total, wait_time_total, total_size / read_time);
+        LOG_INFO("Read %.2f MB data with %d ranks\nTotal read time: %.2f\nSent %.2f, wait %.2f, Throughput "
+                 "%.2f MB/s\n",
+                 total_size, size, read_time, sent_time_total, wait_time_total, total_size / read_time);
         fflush(stdout);
     }
 
     int verify = 1;
     if (rank == 0)
-        printf("Verifying data correctness ... ");
+        LOG_INFO("Verifying data correctness ...");
 
     // Data verification
     for (i = 0; i < NPARTICLES; i++) {
         if (((int *)mydata[7])[i] != i * 2 || ((int *)mydata[6])[i] != i ||
             ((float *)mydata[5])[i] != (i * 2.0 / NPARTICLES) * ZDIM ||
             ((float *)mydata[2])[i] != (i * 1.0 / NPARTICLES) * ZDIM) {
-            printf("\nERROR on rank %d at element %d. [%d %d %.2f %.2f]/[%d %d %.2f %.2f]\n", rank, i,
-                   ((int *)mydata[7])[i], ((int *)mydata[6])[i], ((float *)mydata[5])[i],
-                   ((float *)mydata[2])[i], i * 2, i, (i * 2.0 / NPARTICLES) * ZDIM,
-                   (i * 1.0 / NPARTICLES) * ZDIM);
+            LOG_ERROR("\nERROR on rank %d at element %d. [%d %d %.2f %.2f]/[%d %d %.2f %.2f]\n", rank, i,
+                      ((int *)mydata[7])[i], ((int *)mydata[6])[i], ((float *)mydata[5])[i],
+                      ((float *)mydata[2])[i], i * 2, i, (i * 2.0 / NPARTICLES) * ZDIM,
+                      (i * 1.0 / NPARTICLES) * ZDIM);
             verify = 0;
             break;
         } // end if
     }     // end of
     if (verify == 1) {
         if (rank == 0)
-            printf("SUCCEED\n");
+            LOG_INFO("succeED\n");
     }
 
 done:
     fflush(stdout);
 
     if (PDCcont_close(cont_id) < 0)
-        printf("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close container property\n");
+        LOG_ERROR("Failed to close container property\n");
 
     if (PDCclose(pdc_id) < 0)
-        printf("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

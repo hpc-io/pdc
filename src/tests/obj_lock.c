@@ -64,17 +64,17 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     // set object dimension
     PDCprop_set_obj_dims(obj_prop, 3, d);
@@ -85,7 +85,7 @@ main(int argc, char **argv)
         sprintf(obj_name, "test_obj");
         obj1 = PDCobj_create(cont, obj_name, obj_prop);
         if (obj1 <= 0)
-            printf("Fail to create object @ line  %d!\n", __LINE__);
+            LOG_ERROR("Failed to create object");
     }
 
     for (i = 0; i < 3; i++) {
@@ -104,10 +104,10 @@ main(int argc, char **argv)
     ret = PDCreg_obtain_lock(obj1, reg, PDC_WRITE, PDC_NOBLOCK);
 
     if (ret != SUCCEED)
-        printf("[%d] Failed to obtain lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64
-               ",%" PRIu64 ",%" PRIu64 ") ... error\n",
-               rank, region->offset[0], region->offset[1], region->offset[2], region->size[0],
-               region->size[1], region->size[2]);
+        LOG_ERROR("[%d] Failed to obtain lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64
+                  ",%" PRIu64 ",%" PRIu64 ") ... error\n",
+                  rank, region->offset[0], region->offset[1], region->offset[2], region->size[0],
+                  region->size[1], region->size[2]);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -118,7 +118,7 @@ main(int argc, char **argv)
     total_lock_overhead = elapsed / 1000000.0;
 
     if (rank == 0) {
-        printf("Total lock overhead        : %.5e\n", total_lock_overhead);
+        LOG_INFO("Total lock overhead        : %.5e\n", total_lock_overhead);
     }
 
 #ifdef ENABLE_MPI
@@ -128,10 +128,10 @@ main(int argc, char **argv)
 
     ret = PDCreg_release_lock(obj1, reg, PDC_WRITE);
     if (ret != SUCCEED)
-        printf("[%d] Failed to release lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64
-               ",%" PRIu64 ",%" PRIu64 ") ... error\n",
-               rank, region->offset[0], region->offset[1], region->offset[2], region->size[0],
-               region->size[1], region->size[2]);
+        LOG_ERROR("[%d] Failed to release lock for region (%" PRIu64 ",%" PRIu64 ",%" PRIu64 ") (%" PRIu64
+                  ",%" PRIu64 ",%" PRIu64 ") ... error\n",
+                  rank, region->offset[0], region->offset[1], region->offset[2], region->size[0],
+                  region->size[1], region->size[2]);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -142,30 +142,30 @@ main(int argc, char **argv)
     total_lock_overhead = elapsed / 1000000.0;
 
     if (rank == 0) {
-        printf("Total lock release overhead: %.5e\n", total_lock_overhead);
+        LOG_INFO("Total lock release overhead: %.5e\n", total_lock_overhead);
     }
 
     // close object
     if (rank == 0) {
         if (PDCobj_close(obj1) < 0)
-            printf("fail to close object o1\n");
+            LOG_ERROR("Failed to close object o1\n");
     }
 
     // close object property
     if (PDCprop_close(obj_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     // close pdc
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

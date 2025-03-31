@@ -308,13 +308,13 @@ csv_print_header(csv_header_t *header)
 {
     csv_header_t *current_header = header;
     while (current_header != NULL) {
-        printf("%s", current_header->field_name);
+        LOG_JUST_PRINT("%s", current_header->field_name);
         if (current_header->next != NULL) {
-            printf(", ");
+            LOG_JUST_PRINT(",");
         }
         current_header = current_header->next;
     }
-    printf("\n");
+    LOG_JUST_PRINT("\n");
 }
 
 void
@@ -324,37 +324,37 @@ csv_print_row(csv_row_t *row, int with_key)
     while (current_cell != NULL) {
         csv_print_cell(current_cell, with_key);
         if (current_cell->next != NULL) {
-            printf(", ");
+            LOG_JUST_PRINT(",");
         }
         if (with_key) {
-            printf("\n");
+            LOG_JUST_PRINT("\n");
         }
         current_cell = current_cell->next;
     }
-    printf("\n");
+    LOG_JUST_PRINT("\n");
 }
 
 void
 csv_print_cell(csv_cell_t *cell, int with_key)
 {
     if (with_key) {
-        printf("%s: ", cell->header->field_name);
+        LOG_JUST_PRINT("%s: ", cell->header->field_name);
     }
     switch (cell->header->field_type) {
         case 'i':
-            printf("%ld", strtol(cell->field_value, NULL, 10));
+            LOG_JUST_PRINT("%ld", strtol(cell->field_value, NULL, 10));
             break;
 
         case 'f':
-            printf("%f", strtod(cell->field_value, NULL));
+            LOG_JUST_PRINT("%f", strtod(cell->field_value, NULL));
             break;
 
         case 's':
-            printf("%s", cell->field_value);
+            LOG_JUST_PRINT("%s", cell->field_value);
             break;
 
         default:
-            printf("%s", cell->field_value);
+            LOG_JUST_PRINT("%s", cell->field_value);
             break;
     }
 }

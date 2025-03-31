@@ -108,7 +108,6 @@ main(int argc, char *argv[])
     value2->obj_id = 20;
 
     for (i = 0; i < num; i++) {
-        /* printf("Iter[%d]\n", i); */
         keys[i]           = (int *)malloc(sizeof(int));
         *keys[i]          = 1000 + i;
         values[i]         = (hash_value_metadata_t *)malloc(sizeof(hash_value_metadata_t));
@@ -120,55 +119,29 @@ main(int argc, char *argv[])
         hg_hash_table_insert(hash_table, keys[i], values[i]);
     }
 
-    printf("Entries: %d\n", hg_hash_table_num_entries(hash_table));
+    LOG_INFO("Entries: %d\n", hg_hash_table_num_entries(hash_table));
 
     lookup_key   = *key2;
     lookup_value = hg_hash_table_lookup(hash_table, &lookup_key);
     if (lookup_value != NULL) {
-        printf("Found in hash table with obj_id=%d, obj_name=%s, test=%s\n", lookup_value->obj_id,
-               lookup_value->obj_name, lookup_value->test);
+        LOG_INFO("Found in hash table with obj_id=%d, obj_name=%s, test=%s\n", lookup_value->obj_id,
+                 lookup_value->obj_name, lookup_value->test);
         sprintf(lookup_value->obj_name, "%s", "SUCCESSFULLY CHANGED HASH VALUE");
         lookup_value->test = "World";
     }
     else {
-        printf("Object with lookup_key=%d not found!\n", lookup_key);
+        LOG_INFO("Object with lookup_key=%d not found!\n", lookup_key);
     }
 
-    printf("New value after change!\n");
+    LOG_INFO("New value after change!\n");
     lookup_value = hg_hash_table_lookup(hash_table, &lookup_key);
     if (lookup_value != NULL) {
-        printf("Found in hash table with obj_id=%d, obj_name=%s, test=%s\n", lookup_value->obj_id,
-               lookup_value->obj_name, lookup_value->test);
+        LOG_INFO("Found in hash table with obj_id=%d, obj_name=%s, test=%s\n", lookup_value->obj_id,
+                 lookup_value->obj_name, lookup_value->test);
     }
     else {
-        printf("Object with lookup_key=%d not found!\n", lookup_key);
+        LOG_INFO("Object with lookup_key=%d not found!\n", lookup_key);
     }
-
-    /* if (*value1 != *((int *)hg_hash_table_lookup(hash_table, key1))) { */
-    /*     fprintf(stderr, "Error: values do not match\n"); */
-    /*     ret = EXIT_FAILURE; */
-    /*     goto done; */
-    /* } */
-    /* hg_hash_table_remove(hash_table, key1); */
-
-    /* if (1 != hg_hash_table_num_entries(hash_table)) { */
-    /*     fprintf(stderr, "Error: was expecting 1 entry, got %u\n", */
-    /*             hg_hash_table_num_entries(hash_table)); */
-    /*     ret = EXIT_FAILURE; */
-    /*     goto done; */
-    /* } */
-
-    /* hg_hash_table_iterate(hash_table, &hash_table_iter); */
-    /* if (!hg_hash_table_iter_has_more(&hash_table_iter)) { */
-    /*     fprintf(stderr, "Error: there should be more values\n"); */
-    /*     ret = EXIT_FAILURE; */
-    /*     goto done; */
-    /* } */
-    /* if (*value2 != *((int *)hg_hash_table_iter_next(&hash_table_iter))) { */
-    /*     fprintf(stderr, "Error: values do not match\n"); */
-    /*     ret = EXIT_FAILURE; */
-    /*     goto done; */
-    /* } */
 
     hg_hash_table_free(hash_table);
     return ret;

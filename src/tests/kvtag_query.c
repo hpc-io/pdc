@@ -34,7 +34,7 @@ int
 assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {
     if (rank > size || my_count == NULL || my_start == NULL) {
-        printf("assign_work_to_rank(): Error with input!\n");
+        LOG_ERROR("assign_work_to_rank(): Error with input!\n");
         return -1;
     }
     if (nwork < size) {
@@ -61,17 +61,19 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 void
 print_usage(char *name)
 {
-    printf("%s n_obj n_round n_selectivity is_using_dart\n", name);
-    printf("Summary: This test will create n_obj objects, and add n_selectivity tags to each object. Then it "
-           "will "
-           "perform n_round collective queries against the tags, each query from each client should get "
-           "a whole result set.\n");
-    printf("Parameters:\n");
-    printf("  n_obj: number of objects\n");
-    printf("  n_round: number of rounds, it can be the total number of tags too, as each round will perform "
-           "one query against one tag\n");
-    printf("  n_selectivity: selectivity, on a 100 scale. \n");
-    printf("  is_using_dart: 1 for using dart, 0 for not using dart\n");
+    LOG_JUST_PRINT("%s n_obj n_round n_selectivity is_using_dart\n", name);
+    LOG_JUST_PRINT(
+        "Summary: This test will create n_obj objects, and add n_selectivity tags to each object. Then it "
+        "will "
+        "perform n_round collective queries against the tags, each query from each client should get "
+        "a whole result set.\n");
+    LOG_JUST_PRINT("Parameters:\n");
+    LOG_JUST_PRINT("  n_obj: number of objects\n");
+    LOG_JUST_PRINT(
+        "  n_round: number of rounds, it can be the total number of tags too, as each round will perform "
+        "one query against one tag\n");
+    LOG_JUST_PRINT("  n_selectivity: selectivity, on a 100 scale. \n");
+    LOG_JUST_PRINT("  is_using_dart: 1 for using dart, 0 for not using dart\n");
 }
 
 int
@@ -110,33 +112,33 @@ main(int argc, char *argv[])
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     // Create a number of objects, add at least one tag to that object
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
     if (my_rank == 0)
-        printf("I will create %d obj\n", my_obj);
+        LOG_INFO("I will create %d obj\n", my_obj);
 
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
     for (i = 0; i < my_obj; i++) {
         sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
-            printf("Fail to create object @ line  %d!\n", __LINE__);
+            LOG_ERROR("Failed to create object");
     }
 
     if (my_rank == 0)
-        printf("Created %d objects\n", n_obj);
+        LOG_INFO("Created %d objects\n", n_obj);
     fflush(stdout);
 
     char *attr_name_per_rank = gen_random_strings(1, 6, 8, 26)[0];
@@ -163,13 +165,13 @@ main(int argc, char *argv[])
             if (is_using_dart) {
                 if (PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, strlen(value),
                                                         PDC_STRING, ref_type, (uint64_t)obj_ids[i]) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
             else {
                 /* println("Rank %d: [%s] [%d], len %d\n", my_rank, kvtag.name, v, kvtag.size); */
                 if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0) {
-                    printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
                 }
             }
         }
@@ -211,7 +213,7 @@ main(int argc, char *argv[])
 #else
             if (PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids) < 0) {
 #endif
-                printf("fail to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", kvtag.name, my_rank);
                 break;
             }
         }
@@ -229,25 +231,25 @@ main(int argc, char *argv[])
 #endif
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
     else
-        printf("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
 
     // close an object property
     if (PDCprop_close(obj_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
     else
-        printf("successfully close object property\n");
+        LOG_INFO("Successfully closed object property\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
     else
-        printf("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
 
     // close pdc
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 done:
 #ifdef ENABLE_MPI
     MPI_Finalize();

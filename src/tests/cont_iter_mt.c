@@ -49,9 +49,9 @@ TestThread(void *ThreadArgs)
     // create a container property
     pdcid_t create_prop = PDCprop_create(PDC_CONT_CREATE, args->pdcId);
     if (create_prop > 0)
-        printf("[%d] Create a container property, id is %llx\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] Create a container property, id is %llx\n", args->ThreadRank, create_prop);
     else
-        printf("[%d] Fail to create container property @ line  %d!\n", args->ThreadRank, __LINE__);
+        LOG_ERROR("[%d] Fail to create container property!\n", args->ThreadRank);
 
     // create a container
     pdcid_t cont1 = PDCcont_create("c1", create_prop);
@@ -77,36 +77,36 @@ TestThread(void *ThreadArgs)
     cont_handle *ch = PDCcont_iter_start(args->pdcId);
     while (!PDCcont_iter_null(ch)) {
         struct PDC_cont_info *info = PDCcont_iter_get_info(ch);
-        printf("[%d] container name is: %s\n", args->ThreadRank, info->name);
-        printf("[%d] container is in pdc %lld\n", args->ThreadRank, info->cont_pt->pdc->local_id);
-        printf("[%d] container property id is %llx\n", args->ThreadRank, info->cont_pt->cont_prop_id);
+        LOG_INFO("[%d] container name is: %s\n", args->ThreadRank, info->name);
+        LOG_INFO("[%d] container is in pdc %lld\n", args->ThreadRank, info->cont_pt->pdc->local_id);
+        LOG_INFO("[%d] container property id is %llx\n", args->ThreadRank, info->cont_pt->cont_prop_id);
 
         ch = PDCcont_iter_next(ch);
     }
 
     // close cont1
     if (PDCcont_close(cont1) < 0)
-        printf("fail to close container %lld\n", cont1);
+        LOG_ERROR("Failed to close container %lld\n", cont1);
     else
-        printf("[%d] successfully close container # %llx\n", args->ThreadRank, cont1);
+        LOG_INFO("[%d] Successfully closed container # %llx\n", args->ThreadRank, cont1);
 
     // close cont2
     if (PDCcont_close(cont2) < 0)
-        printf("fail to close container %lld\n", cont2);
+        LOG_ERROR("Failed to close container %lld\n", cont2);
     else
-        printf("[%d] successfully close container # %llx\n", args->ThreadRank, cont2);
+        LOG_INFO("[%d] Successfully closed container # %llx\n", args->ThreadRank, cont2);
 
     // close cont3
     if (PDCcont_close(cont3) < 0)
-        printf("fail to close container %lld\n", cont3);
+        LOG_ERROR("Failed to close container %lld\n", cont3);
     else
-        printf("[%d] successfully close container # %llx\n", args->ThreadRank, cont3);
+        LOG_INFO("[%d] Successfully closed container # %llx\n", args->ThreadRank, cont3);
 
     // close a container property
     if (PDCprop_close(create_prop) < 0)
-        printf("[%d] Fail to close property @ line %d\n", args->ThreadRank, __LINE__);
+        LOG_ERROR("[%d] Fail to close property\n", args->ThreadRank);
     else
-        printf("[%d] Successfully closed container property # %lld\n", args->ThreadRank, create_prop);
+        LOG_INFO("[%d] Successfully closed container property # %lld\n", args->ThreadRank, create_prop);
 
     return NULL;
 }
@@ -135,7 +135,7 @@ main(int argc, char **argv)
     // create a pdc
     pdcid_t create_prop;
     pdcid_t pdc = PDC_init("pdc");
-    printf("[MAIN] created a new pdc, pdc id is: %lld\n", pdc);
+    LOG_INFO("[MAIN] created a new pdc, pdc id is: %lld\n", pdc);
 
     /*Create nThreads threads in each process*/
     for (i = 0; i < nThreads; i++) {
@@ -152,16 +152,16 @@ main(int argc, char **argv)
 
     // close pdc
     if (PDC_close(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
     else
-        printf("PDC is closed\n");
+        LOG_INFO("PDC is closed\n");
 
     free(args);
     if (status > 0) {
-        printf("%d threads exited with an error status\n", status);
+        LOG_ERROR("%d threads exited with an error status\n", status);
     }
     else {
-        printf("No errors reported\n");
+        LOG_INFO("No errors reported\n");
     }
 #ifdef ENABLE_MPI
     MPI_Finalize();
