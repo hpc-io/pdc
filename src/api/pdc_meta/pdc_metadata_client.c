@@ -71,7 +71,7 @@ send_query_condition_get_separate_result(char conditions[][CONDITION_LENGTH], in
                                          MPI_Comm world_comm, separate_query_result_t **result)
 {
     if (conditionCount <= 0) {
-        printf("No conditions to send\n");
+        LOG_INFO("No conditions to send\n");
         return;
     }
     *result = (separate_query_result_t *)malloc(conditionCount * sizeof(separate_query_result_t));
@@ -93,7 +93,7 @@ send_query_condition_get_separate_result(char conditions[][CONDITION_LENGTH], in
         perr_t    rst =
             PDC_Client_search_obj_ref_through_dart(DART_HASH, condition, REF_PRIMARY_ID, &n_res, &out);
         if (rst != SUCCEED) {
-            printf("Error with PDC_Client_search_obj_ref_through_dart\n");
+            LOG_ERROR("Error with PDC_Client_search_obj_ref_through_dart\n");
             return;
         }
         (*result)[i] = (separate_query_result_t){n_res, out, condition};

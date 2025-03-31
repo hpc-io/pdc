@@ -43,7 +43,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n #procs ./haccio #particles (in 10e6)\n");
+    LOG_JUST_PRINT("Usage: srun -n #procs ./haccio #particles (in 10e6)\n");
 }
 
 void
@@ -77,7 +77,7 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var
 
     pdcid_t obj_id = PDCobj_create_mpi(cont_id, obj_name, *obj_prop, 0, comm);
     if (obj_id == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
 
@@ -104,7 +104,7 @@ main(int argc, char **argv)
 
     if (mpi_rank == 0) {
         NUM_PARTICLES = atoi(argv[1]);
-        printf("particles: %d\n", NUM_PARTICLES);
+        LOG_INFO("particles: %d\n", NUM_PARTICLES);
     }
     MPI_Bcast(&NUM_PARTICLES, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -142,7 +142,7 @@ main(int argc, char **argv)
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCreg_obtain_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE, PDC_NOBLOCK);
         if (ret != SUCCEED) {
-            printf("Fail to obtain lock @ line  %d!\n", __LINE__);
+            LOG_ERROR("Failed to obtain lock");
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -174,7 +174,7 @@ main(int argc, char **argv)
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCreg_release_lock(obj_ids[i], region_remote_ids[i], PDC_WRITE);
         if (ret != SUCCEED) {
-            printf("Fail to release lock @ line  %d!\n", __LINE__);
+            LOG_ERROR("Failed to release lock");
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -184,7 +184,7 @@ main(int argc, char **argv)
     for (i = 0; i < NUM_VARS; i++) {
         ret = PDCbuf_obj_unmap(obj_ids[i], region_remote_ids[i]);
         if (ret != SUCCEED) {
-            printf("Fail to unmap @ line  %d!\n", __LINE__);
+            LOG_ERROR("Failed to unmap");
         }
     }
     MPI_Barrier(MPI_COMM_WORLD);
@@ -210,8 +210,8 @@ main(int argc, char **argv)
     if (mpi_rank == 0) {
         double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
         double bandwidth    = per_particle * NUM_PARTICLES / 1024.0 / 1024.0 / time_total * mpi_size;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
-               time_total, time_lock, time_io, time_release);
+        LOG_INFO("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
+                 time_total, time_lock, time_io, time_release);
     }
     MPI_Finalize();
 

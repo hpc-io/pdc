@@ -141,7 +141,7 @@ main(int argc, char *argv[])
 
     // print array.
     for (i = 0; i < arr_len; ++i) {
-        printf("rank %d: %ld\n", rank, attr_2_obj_array[i]);
+        LOG_INFO("rank %d: %ld\n", rank, attr_2_obj_array[i]);
     }
 
     sprintf(pdc_context_name, "pdc_%d", rank);
@@ -149,16 +149,16 @@ main(int argc, char *argv[])
 
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     sprintf(pdc_container_name, "c1_%d", rank);
     pdcid_t cont = PDCcont_create(pdc_container_name, cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -172,7 +172,7 @@ main(int argc, char *argv[])
             sprintf(pdc_obj_name, "obj%d", i);
             obj_ids[i] = PDCobj_create(cont, pdc_obj_name, obj_prop);
             if (obj_ids[i] <= 0)
-                printf("Fail to create object @ line  %d!\n", __LINE__);
+                LOG_ERROR("Failed to create object");
         }
         else {
             obj_ids[i] = -1;
@@ -185,7 +185,7 @@ main(int argc, char *argv[])
     stime      = MPI_Wtime();
 #endif
     if (rank == 0)
-        printf("[Summary] Create %zu objects with %d ranks, time: %.6f\n", total_num_obj, size, total_time);
+        LOG_INFO("[Summary] Create %zu objects with %d ranks, time: %.6f\n", total_num_obj, size, total_time);
     // ========== ATTACH TAGS TO OBJECTS ==========
     stopwatch_t timer_obj;
     stopwatch_t timer_dart;
@@ -222,7 +222,7 @@ main(int argc, char *argv[])
                 // attach attribute to object
                 timer_start(&timer_obj);
                 if (PDCobj_put_tag(obj_ids[j], key, (void *)&val, PDC_INT, sizeof(int)) < 0)
-                    printf("fail to add a kvtag to o%d\n", j);
+                    LOG_ERROR("Failed to add a kvtag to o%d\n", j);
                 timer_pause(&timer_obj);
                 duration_obj_ms += (double)timer_delta_ms(&timer_obj);
             }
@@ -231,8 +231,8 @@ main(int argc, char *argv[])
             if (j % num_object_per_pct == 0)
                 pct += 1;
             if (rank == 0 && j % num_object_per_ton_thousand == 0) {
-                printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for  %llu objs within  %.4f ms\n", pct, key,
-                       value, j, duration_obj_ms);
+                LOG_INFO("[Client_Side_Insert] %d\%: Insert '%s=%s' for  %llu objs within  %.4f ms\n", pct,
+                         key, value, j, duration_obj_ms);
             }
         }
     }
@@ -244,8 +244,8 @@ main(int argc, char *argv[])
 #endif
 
     if (rank == 0)
-        printf("[Summary] Inserted %d attributes for  %zu objects with %d ranks, obj time: %.6f\n",
-               total_num_attr, total_num_obj, size, total_time);
+        LOG_INFO("[Summary] Inserted %d attributes for  %zu objects with %d ranks, obj time: %.6f\n",
+                 total_num_attr, total_num_obj, size, total_time);
     // ========== INSERT OBJECT REFERENCE INTO DART ==========
     dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
     dart_hash_algo_t       hash_algo = DART_HASH;
@@ -269,9 +269,9 @@ main(int argc, char *argv[])
             if (j % num_object_per_pct == 0)
                 pct += 1;
             if (rank == 0 && j % num_object_per_ton_thousand == 0) {
-                printf("[Client_Side_Insert] %d\%: Insert '%s=%s' for  %llu objs, index time "
-                       "%.4f ms\n",
-                       pct, key, value, j, duration_dart_ms);
+                LOG_INFO("[Client_Side_Insert] %d\%: Insert '%s=%s' for  %llu objs, index time "
+                         "%.4f ms\n",
+                         pct, key, value, j, duration_dart_ms);
             }
         }
     }
@@ -281,9 +281,9 @@ main(int argc, char *argv[])
     stime      = MPI_Wtime();
 #endif
     if (rank == 0)
-        printf("[Summary] Inserted %d attributes for  %zu objects with %d ranks, dart time: "
-               "%.6f\n",
-               total_num_attr, total_num_obj, size, total_time);
+        LOG_INFO("[Summary] Inserted %d attributes for  %zu objects with %d ranks, dart time: "
+                 "%.6f\n",
+                 total_num_attr, total_num_obj, size, total_time);
     // ========== EXACT QUERY with Naive Approach ==========
     pdc_kvtag_t kvtag;
     duration_obj_ms  = 0.0;
@@ -305,7 +305,7 @@ main(int argc, char *argv[])
 
                 // naive query methods
                 if (PDC_Client_query_kvtag(&kvtag, &rest_count1, &out1) < 0) {
-                    printf("fail to query kvtag\n");
+                    LOG_ERROR("Failed to query kvtag\n");
                     break;
                 }
             }
@@ -323,8 +323,8 @@ main(int argc, char *argv[])
 #endif
 
     if (rank == 0)
-        printf("[Summary] Exact query %d attributes for %zu objects with %d ranks, obj time: %.6f\n",
-               total_num_attr, total_num_obj, size, total_time);
+        LOG_INFO("[Summary] Exact query %d attributes for %zu objects with %d ranks, obj time: %.6f\n",
+                 total_num_attr, total_num_obj, size, total_time);
     // ========== EXACT QUERY with DART ==========
     duration_obj_ms  = 0.0;
     duration_dart_ms = 0.0;
@@ -356,18 +356,18 @@ main(int argc, char *argv[])
 #endif
 
     if (rank == 0)
-        printf("[Summary] Exact query %d attributes for  %zu objects with %d ranks, dart "
-               "time: %.6f ms\n",
-               total_num_attr, total_num_obj, size, total_time);
+        LOG_INFO("[Summary] Exact query %d attributes for  %zu objects with %d ranks, dart "
+                 "time: %.6f ms\n",
+                 total_num_attr, total_num_obj, size, total_time);
 
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        LOG_ERROR("Failed to close container %lld\n", cont);
 
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     // free attr_2_obj_array
     free(attr_2_obj_array);

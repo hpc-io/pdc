@@ -35,7 +35,7 @@
 void
 print_usage()
 {
-    printf("Usage: srun -n ./update_obj -r num_of_obj_per_rank\n");
+    LOG_JUST_PRINT("Usage: srun -n ./update_obj -r num_of_obj_per_rank\n");
 }
 
 int
@@ -78,11 +78,11 @@ main(int argc, char **argv)
                 break;
             case '?':
                 if (optopt == 'r')
-                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                    LOG_ERROR("Option -%c requires an argument.\n", optopt);
                 else if (isprint(optopt))
-                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+                    LOG_ERROR("Unknown option `-%c'.\n", optopt);
                 else
-                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+                    LOG_ERROR("Unknown option character `\\x%x'.\n", optopt);
                 return 1;
             default:
                 print_usage();
@@ -97,7 +97,7 @@ main(int argc, char **argv)
     count /= size;
 
     if (rank == 0)
-        printf("Update/Delete %d objects per MPI rank\n", count);
+        LOG_INFO("Update/Delete %d objects per MPI rank\n", count);
     fflush(stdout);
 
     // create a pdc
@@ -106,17 +106,17 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
@@ -130,7 +130,7 @@ main(int argc, char **argv)
     srand(rank + 1);
 
     if (rank == 0) {
-        printf("Using %s\n", name_mode[use_name + 1]);
+        LOG_INFO("Using %s\n", name_mode[use_name + 1]);
     }
 
     obj_names = (char **)malloc(count * sizeof(char *));
@@ -155,17 +155,17 @@ main(int argc, char **argv)
     }
 
     if (fread(&n_entry, sizeof(int), 1, file) == 0) {
-        printf("read failed\n");
+        LOG_ERROR("Read failed\n");
     }
 
     while (n_entry > 0) {
         if (fread(&tmp_count, sizeof(int), 1, file) == 0) {
-            printf("read failed\n");
+            LOG_ERROR("Read failed\n");
         }
 
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
         if (fread(hash_key, sizeof(uint32_t), 1, file) == 0) {
-            printf("read failed\n");
+            LOG_ERROR("Read failed\n");
         }
 
         // read each metadata
@@ -175,7 +175,7 @@ main(int argc, char **argv)
                 break;
             }
             if (fread(&entry, sizeof(pdc_metadata_t), 1, file) == 0) {
-                printf("read failed\n");
+                LOG_ERROR("Read failed\n");
             }
             sprintf(obj_names[read_count], "%s", entry.obj_name);
             obj_ts[read_count] = entry.time_step;
@@ -196,7 +196,7 @@ main(int argc, char **argv)
     for (i = 0; i < count; i++) {
         PDC_Client_query_metadata_name_timestep(obj_names[i], obj_ts[i], &res);
         if (res == NULL) {
-            printf("No result found for current query with name [%s]\n", obj_names[i]);
+            LOG_INFO("No result found for current query with name [%s]\n", obj_names[i]);
         }
         else {
             PDC_Client_update_metadata(res, &new);
@@ -211,7 +211,7 @@ main(int argc, char **argv)
                                    ht_total_end.tv_usec - ht_total_start.tv_usec;
                 ht_total_sec = ht_total_elapsed / 1000000.0;
 
-                printf("updated %10d ... %.5e\n", i * size, ht_total_sec);
+                LOG_INFO("updated %10d ... %.5e\n", i * size, ht_total_sec);
                 fflush(stdout);
             }
         }
@@ -225,20 +225,20 @@ main(int argc, char **argv)
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to update %d obj/rank with %d ranks: %.5e\n\n\n", count, size, ht_total_sec);
+        LOG_INFO("Time to update %d obj/rank with %d ranks: %.5e\n\n\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

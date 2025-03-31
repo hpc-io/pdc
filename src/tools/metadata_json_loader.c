@@ -58,7 +58,7 @@ read_json_file(const char *filename, void *args)
 
     fp = fopen(filename, "r");
     if (fp == NULL) {
-        fprintf(stderr, "Error: cannot open file %s\n", filename);
+        LOG_ERROR("Error: cannot open file %s\n", filename);
         exit(1);
     }
 
@@ -66,21 +66,16 @@ read_json_file(const char *filename, void *args)
     json_file_size = ftell(fp);
     rewind(fp);
 
-    // if (json_file_size > MAX_JSON_FILE_SIZE) {
-    //     fprintf(stderr, "Error: file %s is too large\n", filename);
-    //     exit(1);
-    // }
-
     json_str = (char *)malloc(json_file_size + 1);
     if (json_str == NULL) {
-        fprintf(stderr, "Error: cannot allocate memory for json_str\n");
+        LOG_ERROR("Error: cannot allocate memory for json_str\n");
         exit(1);
     }
 
     size_t bytesRead = fread(json_str, 1, json_file_size, fp);
     if (bytesRead < json_file_size) {
         if (!feof(fp)) {
-            fprintf(stderr, "Error: cannot read file %s\n", filename);
+            LOG_ERROR("Error: cannot read file %s\n", filename);
             fclose(fp);
             exit(1);
         }
@@ -122,7 +117,7 @@ parseJSON(const char *jsonString, void *args)
     if (json == NULL) {
         const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
-            fprintf(stderr, "Error before: %s\n", error_ptr);
+            LOG_ERROR("Error before: %s\n", error_ptr);
         }
         goto end;
     }
@@ -273,7 +268,7 @@ main(int argc, char **argv)
     }
 
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s <json_file_dir> <num_files>\n", argv[0]);
+        LOG_ERROR("Usage: %s <json_file_dir> <num_files>\n", argv[0]);
         return EXIT_FAILURE;
     }
 

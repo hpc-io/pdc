@@ -56,7 +56,7 @@ main(int argc, char **argv)
     // create a pdc
 
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     PDCregion_create(3, offset, offset_length);
 
@@ -66,7 +66,7 @@ main(int argc, char **argv)
 
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 

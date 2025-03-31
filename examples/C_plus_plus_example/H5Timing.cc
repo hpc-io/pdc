@@ -185,9 +185,9 @@ static int record_timer(std::vector<H5Timer> *timer, const char* filename) {
 
 static int output_results() {
 #ifdef PDC_PATCH
-    printf("total PDCwrite calls = %d, PDCread calls = %d\n", timer_class->PDCwrite_count, timer_class->PDCread_count);
+    LOG_INFO("total PDCwrite calls = %d, PDCread calls = %d\n", timer_class->PDCwrite_count, timer_class->PDCread_count);
 #else
-    printf("total H5Dwrite calls = %d, H5Dread calls = %d\n", timer_class->H5Dwrite_count, timer_class->H5Dread_count);
+    LOG_INFO("total H5Dwrite calls = %d, H5Dread calls = %d\n", timer_class->H5Dwrite_count, timer_class->H5Dread_count);
 #endif
     if ( timer_class->dataset_timers->size() ) {
         record_timer(timer_class->dataset_timers, "dataset_write_record.csv");
@@ -211,10 +211,10 @@ int finalize_timers() {
     gettimeofday(&temp_time, NULL);
     timer_class->total_end_time = (temp_time.tv_usec + temp_time.tv_sec * 1000000) + .0;
 #ifdef PDC_PATCH
-    printf("total program time is %lf, PDCstart time = %lf, PDCwait time = %lf\n", (timer_class->total_end_time - timer_class->total_start_time) / 1000000.0, timer_class->PDCstart_time / 1000000.0, timer_class->PDCwait_time / 1000000.0);
+    LOG_INFO("total program time is %lf, PDCstart time = %lf, PDCwait time = %lf\n", (timer_class->total_end_time - timer_class->total_start_time) / 1000000.0, timer_class->PDCstart_time / 1000000.0, timer_class->PDCwait_time / 1000000.0);
 #else
-    printf("total program time is %lf, H5Dwrite time = %lf, H5Dread time = %lf\n", (timer_class->total_end_time - timer_class->total_start_time) / 1000000.0, timer_class->H5Dwrite_time / 1000000.0, timer_class->H5Dread_time / 1000000.0);
-    printf("merge requests time = %lf, wrap requests time = %lf, H5Dclose = %lf\n", timer_class->merge_requests_time / 1000000.0, timer_class->wrap_requests_time / 1000000.0, timer_class->H5Dclose_time / 1000000.0);
+    LOG_INFO("total program time is %lf, H5Dwrite time = %lf, H5Dread time = %lf\n", (timer_class->total_end_time - timer_class->total_start_time) / 1000000.0, timer_class->H5Dwrite_time / 1000000.0, timer_class->H5Dread_time / 1000000.0);
+    LOG_INFO("merge requests time = %lf, wrap requests time = %lf, H5Dclose = %lf\n", timer_class->merge_requests_time / 1000000.0, timer_class->wrap_requests_time / 1000000.0, timer_class->H5Dclose_time / 1000000.0);
 #endif
     free(timer_class);
 

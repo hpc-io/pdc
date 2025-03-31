@@ -77,7 +77,7 @@ main(int argc, char **argv)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #else
-    printf("MPI NOT Enabled!\n");
+    LOG_INFO("MPI NOT Enabled!\n");
     fflush(stdout);
 #endif
 
@@ -97,7 +97,7 @@ main(int argc, char **argv)
     uint64_t int_dims[NDIM]   = {int_bytes * size};
 
     if (rank == 0)
-        printf("creating %d variables each with %" PRIu64 " particles \n", write_var, nparticles);
+        LOG_INFO("creating %d variables each with %" PRIu64 " particles \n", write_var, nparticles);
 
     // Float vars are first in the array follow by int vars
     for (i = 0; i < NUM_FLOAT_VAR; i++)
@@ -109,10 +109,10 @@ main(int argc, char **argv)
     pdc_id    = PDCinit("pdc");
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create object property for float and int
     obj_prop_float = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -137,7 +137,7 @@ main(int argc, char **argv)
         if (rank == 0) {
             obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_float);
             if (obj_ids[i] <= 0) {
-                printf("Error getting an object %s from server, exit...\n", obj_names[i]);
+                LOG_ERROR("Error getting an object %s from server, exit...\n", obj_names[i]);
                 goto done;
             }
         }
@@ -152,7 +152,7 @@ main(int argc, char **argv)
         if (rank == 0) {
             obj_ids[i] = PDCobj_create(cont_id, obj_names[i], obj_prop_int);
             if (obj_ids[i] <= 0) {
-                printf("Error getting an object %s from server, exit...\n", obj_names[i]);
+                LOG_ERROR("Error getting an object %s from server, exit...\n", obj_names[i]);
                 goto done;
             }
         }
@@ -174,7 +174,7 @@ main(int argc, char **argv)
         ret = PDC_Client_query_metadata_name_timestep(obj_names[i], 0, &obj_metas[i]);
 #endif
         if (ret != SUCCEED || obj_metas[i] == NULL || obj_metas[i]->obj_id == 0) {
-            printf("Error with metadata!\n");
+            LOG_ERROR("Error with metadata!\n");
             exit(-1);
         }
     }
@@ -191,7 +191,7 @@ main(int argc, char **argv)
     }
 
     if (rank == 0)
-        printf("Write out %d variables\n", write_var);
+        LOG_INFO("Write out %d variables\n", write_var);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -202,7 +202,7 @@ main(int argc, char **argv)
     for (i = 0; i < write_var; i++) {
         ret = PDC_Client_write(obj_metas[i], &obj_regions[i], mydata[i]);
         if (ret != SUCCEED) {
-            printf("Error with PDC_Client_iwrite!\n");
+            LOG_ERROR("Error with PDC_Client_iwrite!\n");
             goto done;
         }
     }
@@ -215,25 +215,25 @@ main(int argc, char **argv)
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = nparticles * 4.0 * write_var * size / 1048576.0;
     if (rank == 0) {
-        printf("Write %f MB data with %d ranks\nTotal write time: %.2f\n", total_size, size, write_time);
+        LOG_INFO("Write %f MB data with %d ranks\nTotal write time: %.2f\n", total_size, size, write_time);
         fflush(stdout);
     }
 
 done:
     if (PDCprop_close(obj_prop_float) < 0)
-        printf("Fail to close float obj property \n");
+        LOG_ERROR("Failed to close float obj property \n");
 
     if (PDCprop_close(obj_prop_int) < 0)
-        printf("Fail to close int obj property \n");
+        LOG_ERROR("Failed to close int obj property \n");
 
     if (PDCcont_close(cont_id) < 0)
-        printf("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close container property\n");
+        LOG_ERROR("Failed to close container property\n");
 
     if (PDCclose(pdc_id) < 0)
-        printf("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

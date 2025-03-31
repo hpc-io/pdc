@@ -52,7 +52,7 @@ rand_string(char *str, size_t size)
 void
 print_usage()
 {
-    printf("Usage: srun -n ./delete_obj -r total_objects_to_create_delete\n");
+    LOG_JUST_PRINT("Usage: srun -n ./delete_obj -r total_objects_to_create_delete\n");
 }
 
 int
@@ -84,11 +84,11 @@ main(int argc, char **argv)
                 break;
             case '?':
                 if (optopt == 'r')
-                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                    LOG_ERROR("Option -%c requires an argument.\n", optopt);
                 else if (isprint(optopt))
-                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+                    LOG_ERROR("Unknown option `-%c'.\n", optopt);
                 else
-                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+                    LOG_ERROR("Unknown option character `\\x%x'.\n", optopt);
                 return 1;
             default:
                 print_usage();
@@ -103,7 +103,7 @@ main(int argc, char **argv)
     count /= size;
 
     if (rank == 0)
-        printf("Delete %d objects per MPI rank\n", count);
+        LOG_INFO("Delete %d objects per MPI rank\n", count);
     fflush(stdout);
 
     // create a pdc
@@ -112,17 +112,17 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     create_obj_ids = (pdcid_t *)malloc(sizeof(pdcid_t) * count);
 
@@ -132,7 +132,7 @@ main(int argc, char **argv)
     }
 
     if (rank == 0) {
-        printf("Using %s\n", name_mode[use_name + 1]);
+        LOG_INFO("Using %s\n", name_mode[use_name + 1]);
         fflush(stdout);
     }
 
@@ -157,7 +157,7 @@ main(int argc, char **argv)
             PDCprop_set_obj_time_step(obj_prop, i / 4 + rank * count);
         }
         else {
-            printf("Unsupported name choice\n");
+            LOG_ERROR("Unsupported name choice\n");
             goto done;
         }
         PDCprop_set_obj_user_id(obj_prop, getuid());
@@ -167,7 +167,7 @@ main(int argc, char **argv)
         // Create object
         create_obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (create_obj_ids[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", obj_name);
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
     }
@@ -180,25 +180,25 @@ main(int argc, char **argv)
     for (i = 0; i < count; i++) {
         ret = PDC_Client_delete_metadata_by_id(create_obj_ids[i]);
         if (ret != SUCCEED) {
-            printf("Delete fail with process %d, exiting\n", rank);
+            LOG_ERROR("Delete fail with process %d, exiting\n", rank);
             goto done;
         }
     }
     if (rank == 0) {
-        printf("Delete test SUCCEED.\n");
+        LOG_INFO("Delete test SUCCEED.\n");
     }
 
 done:
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

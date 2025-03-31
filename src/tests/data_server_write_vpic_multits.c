@@ -54,7 +54,7 @@ uniform_random_number()
 void
 usage(const char *name)
 {
-    printf(
+    LOG_INFO(
         "Usage:\n./%s num_variable(up to 8) variable_size_per_proc_MB n_timestep compute_time\nexiting...\n",
         name);
 }
@@ -131,8 +131,8 @@ main(int argc, char **argv)
         sleep_time = 15;
 
     if (rank == 0) {
-        printf("Write %d variables, each %dMB per proc, %d timesteps, %.1f compute time\n", n_var,
-               size_per_proc_var_MB, n_ts, sleep_time);
+        LOG_INFO("Write %d variables, each %dMB per proc, %d timesteps, %.1f compute time\n", n_var,
+                 size_per_proc_var_MB, n_ts, sleep_time);
         fflush(stdout);
     }
 
@@ -142,12 +142,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("VPIC_cont", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create object property for float and int
     obj_prop_float = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -213,7 +213,7 @@ main(int argc, char **argv)
         }
 
         if (rank == 0) {
-            printf("Compute for %.2f seconds\n", gen_time + true_sleep_time);
+            LOG_INFO("Compute for %.2f seconds\n", gen_time + true_sleep_time);
         }
         fflush(stdout);
 
@@ -226,7 +226,7 @@ main(int argc, char **argv)
 #endif
 
         if (rank == 0) {
-            printf("Compute done\n");
+            LOG_INFO("Compute done\n");
             fflush(stdout);
         }
 
@@ -239,7 +239,7 @@ main(int argc, char **argv)
                 if (rank == 0) {
                     obj_ids[ts][i] = PDCobj_create(cont_id, obj_names[i], obj_prop_float);
                     if (obj_ids[ts][i] <= 0) {
-                        printf("Error creating object %s, exit...\n", obj_names[i]);
+                        LOG_ERROR("Error creating object %s, exit...\n", obj_names[i]);
                         goto done;
                     }
                 }
@@ -250,7 +250,7 @@ main(int argc, char **argv)
                 if (rank == 0) {
                     obj_ids[ts][i] = PDCobj_create(cont_id, obj_names[i], obj_prop_int);
                     if (obj_ids[ts][i] <= 0) {
-                        printf("Error creating object %s, exit...\n", obj_names[i]);
+                        LOG_ERROR("Error creating object %s, exit...\n", obj_names[i]);
                         goto done;
                     }
                 }
@@ -272,14 +272,14 @@ main(int argc, char **argv)
         create_time_total += create_time;
 
         if (rank == 0) {
-            printf("%d: start querying objects\n", rank);
+            LOG_INFO("%d: start querying objects\n", rank);
             fflush(stdout);
         }
 
         for (i = 0; i < n_var; i++) {
             ret = PDC_Client_query_metadata_name_timestep_agg(obj_names[i], ts, &obj_metas[ts][i]);
             if (ret != SUCCEED || obj_metas[ts][i] == NULL || obj_metas[ts][i]->obj_id == 0) {
-                printf("Error with metadata! ts=%d\n", ts);
+                LOG_ERROR("Error with metadata! ts=%d\n", ts);
                 exit(-1);
             }
         }
@@ -292,7 +292,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
         if (rank == 0) {
-            printf("%d: querying done\n", rank);
+            LOG_INFO("%d: querying done\n", rank);
             fflush(stdout);
         }
 
@@ -304,7 +304,7 @@ main(int argc, char **argv)
             for (i = 0; i < n_var; i++) {
                 ret = PDC_Client_wait(&request[ts - 1][i], 30000, 100);
                 if (ret != SUCCEED) {
-                    printf("Error with PDC_Client_wait!\n");
+                    LOG_ERROR("Error with PDC_Client_wait!\n");
                     goto done;
                 }
             }
@@ -317,7 +317,7 @@ main(int argc, char **argv)
         }
 
         if (rank == 0)
-            printf("Timestep %d: start to write.\n", ts);
+            LOG_INFO("Timestep %d: start to write.\n", ts);
         fflush(stdout);
 
         // Last ts is sync IO
@@ -332,7 +332,7 @@ main(int argc, char **argv)
                 request[ts][i].n_update = n_var;
                 ret = PDC_Client_iwrite(obj_metas[ts][i], &obj_regions[ts][i], &request[ts][i], mydata[i]);
                 if (ret != SUCCEED) {
-                    printf("Error with PDC_Client_iwrite!\n");
+                    LOG_ERROR("Error with PDC_Client_iwrite!\n");
                     goto done;
                 }
             } // end of for
@@ -346,8 +346,8 @@ main(int argc, char **argv)
         }
 
         if (rank == 0)
-            printf("Timestep %d: create time %.5e, query time %.5e, write time %.5e, wait time %.5e\n", ts,
-                   create_time, query_time, write_time, wait_time);
+            LOG_INFO("Timestep %d: create time %.5e, query time %.5e, write time %.5e, wait time %.5e\n", ts,
+                     create_time, query_time, write_time, wait_time);
     }
 
     // Perform last timestep write
@@ -360,7 +360,7 @@ main(int argc, char **argv)
     for (i = 0; i < n_var; i++) {
         ret = PDC_Client_write(obj_metas[n_ts - 1][i], &obj_regions[n_ts - 1][i], mydata[i]);
         if (ret != SUCCEED) {
-            printf("Error with PDC_Client_iwrite!\n");
+            LOG_ERROR("Error with PDC_Client_iwrite!\n");
             goto done;
         }
     } // end of for
@@ -375,16 +375,16 @@ main(int argc, char **argv)
     wait_time_total += wait_time;
 
     if (rank == 0)
-        printf("Timestep %d: write time %.2f, wait time %.2f\n", ts, write_time, wait_time);
+        LOG_INFO("Timestep %d: write time %.2f, wait time %.2f\n", ts, write_time, wait_time);
 
     gettimeofday(&pdc_timer_end, 0);
     total_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
     total_size = n_particles * 4.0 * 8 * size / 1024.0 / 1024.0;
     if (rank == 0) {
-        printf("Write %d ts each of %.0fMB data with %d ranks: total %.2f\n"
-               "create %.2f, query %.2f, write %.2f, wait %.2f, compute %.2f\n",
-               n_ts, total_size, size, total_time, create_time_total, query_time_total, write_time_total,
-               wait_time_total, compute_total);
+        LOG_INFO("Write %d ts each of %.0fMB data with %d ranks: total %.2f\n"
+                 "create %.2f, query %.2f, write %.2f, wait %.2f, compute %.2f\n",
+                 n_ts, total_size, size, total_time, create_time_total, query_time_total, write_time_total,
+                 wait_time_total, compute_total);
         fflush(stdout);
     }
 
@@ -396,19 +396,19 @@ main(int argc, char **argv)
 
 done:
     if (PDCprop_close(obj_prop_float) < 0)
-        printf("Fail to close float obj property \n");
+        LOG_ERROR("Failed to close float obj property \n");
 
     if (PDCprop_close(obj_prop_int) < 0)
-        printf("Fail to close int obj property \n");
+        LOG_ERROR("Failed to close int obj property \n");
 
     if (PDCcont_close(cont_id) < 0)
-        printf("Fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close container property\n");
+        LOG_ERROR("Failed to close container property\n");
 
     if (PDCclose(pdc_id) < 0)
-        printf("Fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 exit:
 #ifdef ENABLE_MPI

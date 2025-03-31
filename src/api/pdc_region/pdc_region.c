@@ -88,7 +88,7 @@ PDC_region_list_null()
     nelemts = PDC_id_list_null(PDC_REGION);
     if (nelemts > 0) {
         if (PDC_id_list_clear(PDC_REGION) < 0)
-            PGOTO_ERROR(FAIL, "fail to clear object list");
+            PGOTO_ERROR(FAIL, "Failed to clear object list");
     }
 
 done:

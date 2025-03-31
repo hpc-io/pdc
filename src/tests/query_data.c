@@ -12,7 +12,7 @@
 void
 print_usage()
 {
-    printf("Usage: srun -n ./query_data obj_name size_MB\n");
+    LOG_JUST_PRINT("Usage: srun -n ./query_data obj_name size_MB\n");
 }
 
 int
@@ -60,7 +60,7 @@ main(int argc, char **argv)
     size_MB  = atoi(argv[2]);
 
     if (rank == 0) {
-        printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
+        LOG_INFO("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     }
     size_MB *= 1048576;
 
@@ -70,19 +70,19 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0) {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0) {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0) {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
     my_data_count = size_MB / size;
@@ -96,11 +96,11 @@ main(int argc, char **argv)
 
     // Create a object with only rank 0
     if (rank == 0) {
-        printf("Creating an object with name [%s]\n", obj_name);
+        LOG_INFO("Creating an object with name [%s]\n", obj_name);
         fflush(stdout);
         obj_id = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_id <= 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
             ret_value = 1;
         }
     }
@@ -112,7 +112,7 @@ main(int argc, char **argv)
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata, &metadata_server_id);
     if (metadata == NULL || metadata->obj_id == 0) {
-        printf("Error with metadata!\n");
+        LOG_ERROR("Error with metadata!\n");
         ret_value = 1;
     }
 
@@ -142,7 +142,7 @@ main(int argc, char **argv)
     ht_total_sec = ht_total_elapsed / 1000000.0;
 
     if (rank == 0) {
-        printf("Time to write data with %d ranks: %.5e\n", size, ht_total_sec);
+        LOG_INFO("Time to write data with %d ranks: %.5e\n", size, ht_total_sec);
         fflush(stdout);
     }
 
@@ -171,16 +171,16 @@ main(int argc, char **argv)
     PDCselection_free(&sel);
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
