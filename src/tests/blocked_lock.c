@@ -67,17 +67,16 @@ main(int argc, char **argv)
 
     // create a pdc
     pdc_id = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -92,7 +91,7 @@ main(int argc, char **argv)
 
     obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
     if (obj2 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
 
@@ -105,13 +104,11 @@ main(int argc, char **argv)
 
     // create a region
     r1 = PDCregion_create(1, offset, mysize);
-    //    printf("first region id: %lld\n", r1);
-    r2 = PDCregion_create(1, offset_remote, mysize);
-    //    printf("second region id: %lld\n", r2);
-
+    //    LOG_ERROR("First region id: %lld\n", r1);
+    r2  = PDCregion_create(1, offset_remote, mysize);
     ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, r1, obj2, r2);
     if (ret < 0) {
-        printf("PDCbuf_obj_map failed\n");
+        LOG_ERROR("PDCbuf_obj_map failed\n");
         exit(-1);
     }
 
@@ -119,54 +116,53 @@ main(int argc, char **argv)
 
     ret = PDCreg_obtain_lock(obj2, r2, WRITE, NOBLOCK);
     if (ret != SUCCEED)
-        printf("Failed to obtain lock for r2\n");
+        LOG_ERROR("Failed to obtain lock for r2\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     for (int i = 0; i < numparticles; i++) {
         x[i] = uniform_random_number() * x_dim;
-        // printf("x = %f\n", x[i]);
         // fflush(stdout);
     }
 
     ret = PDCreg_release_lock(obj2, r2, WRITE);
     if (ret != SUCCEED)
-        printf("Failed to release lock for r2\n");
+        LOG_ERROR("Failed to release lock for r2\n");
 
     MPI_Barrier(MPI_COMM_WORLD);
-    printf("done with region release\n");
+    LOG_INFO("done with region release\n");
     fflush(stdout);
 
     if (rank == 0) {
-        printf("request another lock\n");
+        LOG_INFO("request another lock\n");
         fflush(stdout);
     }
 
     ret = PDCreg_obtain_lock(obj2, r2, WRITE, BLOCK);
     if (ret != SUCCEED)
-        printf("Failed to obtain lock for r2\n");
+        LOG_ERROR("Failed to obtain lock for r2\n");
     if (rank == 0) {
-        printf("lock is granted\n");
+        LOG_INFO("lock is granted\n");
         fflush(stdout);
     }
 
     ret = PDCbuf_obj_unmap(obj2, r2);
     if (ret != SUCCEED)
-        printf("region unmap failed\n");
+        LOG_ERROR("region unmap failed\n");
 
     if (PDCobj_close(obj2) < 0)
-        printf("fail to close obj2\n");
+        LOG_ERROR("Failed to close obj2\n");
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        printf("fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDC_close(pdc_id) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

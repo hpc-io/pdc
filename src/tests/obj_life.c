@@ -45,40 +45,40 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Create a container property\n");
+        LOG_INFO("Create a container property\n");
     }
     else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         return 1;
     }
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont > 0) {
-        printf("Create a container c1\n");
+        LOG_INFO("Create a container c1\n");
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         return 1;
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         return 1;
     }
     else {
-        printf("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         return 1;
     }
     else {
-        printf("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         return 1;
     }
 #ifdef ENABLE_MPI

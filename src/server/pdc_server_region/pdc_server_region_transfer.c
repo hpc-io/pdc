@@ -1,6 +1,8 @@
 #include "pdc_client_server_common.h"
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
+#include "pdc_logger.h"
+
 static int io_by_region_g = 1;
 
 int
@@ -95,23 +97,13 @@ PDC_finish_request(uint64_t transfer_request_id)
                 ptr->handle_ref[0]--;
                 if (!ptr->handle_ref[0]) {
                     if (ptr->out_type == -1) {
-                        printf("PDC SERVER PDC_finish_request out type unset error %d\n", __LINE__);
+                        LOG_ERROR("PDC SERVER PDC_finish_request out type unset error\n");
                     }
                     if (ptr->out_type) {
-
-                        /* PDC_get_time_str(cur_time); */
-                        /* printf("%s ==PDC_SERVER[%d]: enter %s, out_all ret\n", cur_time, PDC_get_rank(),
-                         * __func__); */
-
                         out_all.ret = 1;
                         ret_value   = HG_Respond(ptr->handle, NULL, NULL, &out_all);
                     }
                     else {
-
-                        /* PDC_get_time_str(cur_time); */
-                        /* printf("%s ==PDC_SERVER[%d]: enter %s, out ret\n", cur_time, PDC_get_rank(),
-                         * __func__); */
-
                         out.ret   = 1;
                         ret_value = HG_Respond(ptr->handle, NULL, NULL, &out);
                     }
@@ -257,12 +249,12 @@ PDC_transfer_request_id_register()
 #define PDC_POSIX_IO(fd, buf, io_size, is_write)                                                             \
     if (is_write) {                                                                                          \
         if (write(fd, buf, io_size) != io_size) {                                                            \
-            printf("server POSIX write failed\n");                                                           \
+            LOG_ERROR("server POSIX write failed\n");                                                        \
         }                                                                                                    \
     }                                                                                                        \
     else {                                                                                                   \
         if (read(fd, buf, io_size) != io_size) {                                                             \
-            printf("server POSIX read failed\n");                                                            \
+            LOG_ERROR("server POSIX read failed\n");                                                         \
         }                                                                                                    \
     }
 
@@ -282,7 +274,6 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     FUNC_ENTER(NULL);
 
     /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: enter %s\n", cur_time, PDC_get_rank(), __func__); */
 
     if (io_by_region_g || obj_ndim == 0) {
         // PDC_Server_register_obj_region(obj_id);
@@ -296,7 +287,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
         goto done;
     }
     if (obj_ndim != (int)region_info->ndim) {
-        printf("Server I/O error: Obj dim does not match obj dim\n");
+        LOG_ERROR("Server I/O error: Obj dim does not match obj dim\n");
         goto done;
     }
 
@@ -314,12 +305,11 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
              PDC_get_rank(), PDC_get_rank());
     PDC_mkdir(storage_location);
 
-    /* fprintf(stderr, "Rank %d, write to offset %llu, size %llu\n", server_rank, region_info->offset[0],
+    /* LOG_ERROR("Rank %d, write to offset %llu, size %llu\n", server_rank, region_info->offset[0],
      * region_info->size[0]); */
 
     fd = open(storage_location, O_RDWR | O_CREAT, 0666);
     if (region_info->ndim == 1) {
-        // printf("server I/O checkpoint 1D\n");
         lseek(fd, region_info->offset[0] * unit, SEEK_SET);
         io_size = region_info->size[0] * unit;
         PDC_POSIX_IO(fd, buf, io_size, is_write);
@@ -327,20 +317,13 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     else if (region_info->ndim == 2) {
         // Check we can directly write the contiguous chunk to the file
         if (region_info->offset[1] == 0 && region_info->size[1] == obj_dims[1]) {
-            // printf("server I/O checkpoint 2D 1\n");
             lseek(fd, region_info->offset[0] * obj_dims[1] * unit, SEEK_SET);
             io_size = region_info->size[0] * obj_dims[1] * unit;
             PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else {
-            // printf("server I/O checkpoint 2D 2\n");
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
-                /*
-                                printf("lseek to %lld\n",
-                                       (long long int)((i + region_info->offset[0]) * obj_dims[1] +
-                   region_info->offset[1]));
-                */
                 lseek(fd, ((i + region_info->offset[0]) * obj_dims[1] + region_info->offset[1]) * unit,
                       SEEK_SET);
                 io_size = region_info->size[1] * unit;
@@ -355,11 +338,9 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
             region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
             lseek(fd, region_info->offset[0] * region_info->size[1] * region_info->size[2] * unit, SEEK_SET);
             io_size = region_info->size[0] * region_info->size[1] * region_info->size[2] * unit;
-            // printf("server I/O checkpoint 3D 1\n");
             PDC_POSIX_IO(fd, buf, io_size, is_write);
         }
         else if (region_info->offset[2] == 0 && region_info->size[2] == obj_dims[2]) {
-            // printf("server I/O checkpoint 3D 2\n");
             // We have to write plane by plane
             for (i = 0; i < region_info->size[0]; ++i) {
                 lseek(fd,
@@ -373,14 +354,6 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
             }
         }
         else {
-            /*
-                        printf("server I/O checkpoint 3D 3, obj dims [%" PRIu64 ", %" PRIu64 ", %" PRIu64
-                               "], region [%" PRIu64 ", %" PRIu64 ", %" PRIu64 "] size [%" PRIu64 ", %" PRIu64
-                               ", %" PRIu64 "]\n",
-                               obj_dims[0], obj_dims[1], obj_dims[2], region_info->offset[0],
-               region_info->offset[1], region_info->offset[2], region_info->size[0], region_info->size[1],
-               region_info->size[2]);
-            */
             // We have to write line by line
             for (i = 0; i < region_info->size[0]; ++i) {
                 for (j = 0; j < region_info->size[1]; ++j) {
@@ -400,7 +373,6 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
 
 done:
     /* PDC_get_time_str(cur_time); */
-    /* printf("%s ==PDC_SERVER[%d]: leave %s\n", cur_time, PDC_get_rank(), __func__); */
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -417,26 +389,7 @@ clean_write_bulk_data(transfer_request_all_data *request_data)
     free(request_data->data_buf);
     return 0;
 }
-/*
-static int
-print_bulk_data(transfer_request_all_data *request_data)
-{
-    int      i, j;
-    uint64_t data_size;
-    printf("total number of objects: %d\n", request_data->n_objs);
-    for (i = 0; i < request_data->n_objs; ++i) {
-        data_size = request_data->remote_length[i][0] * request_data->unit[i];
-        for (j = 1; j < request_data->remote_ndim[i]; ++j) {
-            data_size *= request_data->remote_length[i][j];
-        }
 
-        printf("----object %d----\n", i);
-        printf("object dimension: %d\n", request_data->remote_ndim[i]);
-        printf("object unit: %" PRIu64 "\n", request_data->unit[i]);
-    }
-    return 0;
-}
-*/
 int
 parse_bulk_data(void *buf, transfer_request_all_data *request_data, pdc_access_t access_type)
 {

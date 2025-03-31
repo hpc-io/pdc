@@ -48,12 +48,12 @@ import_json_header(cJSON *dataset_name, cJSON *dataset_description, cJSON *sourc
     // create a container property
     pdc_args->cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_args->pdc);
     if (pdc_args->cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     pdc_args->cont = PDCcont_create(cJSON_GetStringValue(dataset_name), pdc_args->cont_prop);
     if (pdc_args->cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // extract the strings from the JSON attributes
     char *ds_desc   = cJSON_GetStringValue(dataset_description);
@@ -67,7 +67,7 @@ import_json_header(cJSON *dataset_name, cJSON *dataset_description, cJSON *sourc
     // create an object property
     pdc_args->obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_args->pdc);
     if (pdc_args->obj_prop <= 0) {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
         return -1;
     }
 
@@ -88,7 +88,7 @@ import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_
     pdc_importer_args_t *pdc_args = (pdc_importer_args_t *)md_json_args->processor_args;
 
     if (cJSON_GetStringValue(name) == NULL) {
-        printf("Object name is NULL!\n");
+        LOG_ERROR("Object name is NULL!\n");
         return -1;
     }
     char       datetime_buff[15];
@@ -101,18 +101,18 @@ import_object_base(cJSON *name, cJSON *type, cJSON *full_path, MD_JSON_ARGS *md_
     sprintf(object_name, "%s_%d%s", cJSON_GetStringValue(name), md_json_args->mpi_rank, datetime_buff);
     pdc_args->obj_id = PDCobj_create(pdc_args->cont, object_name, pdc_args->obj_prop);
     if (pdc_args->obj_id <= 0) {
-        printf("Fail to create object!\n");
+        LOG_ERROR("Failed to create object!\n");
         return -1;
     }
 
     if (PDCobj_put_tag(pdc_args->obj_id, "obj_full_path", (void *)cJSON_GetStringValue(full_path), PDC_STRING,
                        strlen(cJSON_GetStringValue(full_path)) + 1) != SUCCEED) {
-        printf("Fail to put tag!\n");
+        LOG_ERROR("Failed to put tag!\n");
         return -1;
     }
     if (PDCobj_put_tag(pdc_args->obj_id, "obj_type", (void *)cJSON_GetStringValue(type), PDC_STRING,
                        strlen(cJSON_GetStringValue(type)) + 1) != SUCCEED) {
-        printf("Fail to put tag!\n");
+        LOG_ERROR("Failed to put tag!\n");
         return -1;
     }
 
@@ -164,13 +164,13 @@ import_object_property(cJSON *name, cJSON *type, cJSON *cls, cJSON *value, MD_JS
         }
     }
     else {
-        printf("attr %s is of unknown type %s \n", cJSON_GetStringValue(name), cJSON_GetStringValue(type));
+        LOG_ERROR("attr %s is of unknown type %s \n", cJSON_GetStringValue(name), cJSON_GetStringValue(type));
         goto end;
     }
 
     if (PDCobj_put_tag(pdc_args->obj_id, name->valuestring, (void *)&property_value, pdc_type,
                        property_value_size) != SUCCEED) {
-        printf("Fail to add tag!\n");
+        LOG_ERROR("Failed to add tag!\n");
     }
 
 end:
@@ -189,18 +189,18 @@ finish_import_one_json(MD_JSON_ARGS *md_json_args)
     // finalize PDC related things
     // close a container
     if (PDCcont_close(pdc_args->cont) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         return -1;
     }
 
     // close a container property
     if (PDCprop_close(pdc_args->obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         return -1;
     }
 
     if (PDCprop_close(pdc_args->cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         return -1;
     }
 
@@ -219,7 +219,7 @@ finalize_importer(MD_JSON_ARGS *md_json_args)
     // finalize PDC related things
     // close pdc
     if (PDCclose(pdc_args->pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         return -1;
     }
 

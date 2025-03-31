@@ -37,6 +37,7 @@ Boston, MA 02111-1307, USA.  */
 #include <stdio.h>
 #include "pdc_config.h"
 #include "pdc_hashtab.h"
+#include "pdc_logger.h"
 
 /* This macro defines reserved value for empty table entry. */
 
@@ -113,7 +114,7 @@ static unsigned long higher_prime_number(n) unsigned long n;
 
     /* If we've run out of primes, abort.  */
     if (n > *low) {
-        fprintf(stderr, "Cannot find prime bigger than %lu\n", n);
+        LOG_ERROR("Cannot find prime bigger than %lu\n", n);
         abort();
     }
 

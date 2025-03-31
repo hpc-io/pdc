@@ -29,6 +29,7 @@
 #include <time.h>
 
 #include "pdc.h"
+#include "pdc_logger.h"
 #include "pdc_client_connect.h"
 
 int
@@ -48,11 +49,11 @@ main(int argc, char *argv[])
     PDC_Client_close_all_server();
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     if (!rank) {
-        printf("total close time = %lf\n", MPI_Wtime() - start);
+        LOG_INFO("total close time = %lf\n", MPI_Wtime() - start);
     }
     MPI_Finalize();
 #endif

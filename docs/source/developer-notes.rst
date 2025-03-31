@@ -2,6 +2,30 @@
 Developer Notes
 ================================
 
++++++++++++++++++++++++++++++++++++++++++++++
+PDC Logging
++++++++++++++++++++++++++++++++++++++++++++++
+
+The following macros are defined in the header file `src/commons/logging/include/pdc_logger.h` and should be used instead of `printf` for logging.
+
+The available macros, which follow a similar usage to `printf`, are:
+
+.. code-block:: C
+    LOG_ERROR
+    LOG_WARNING
+    LOG_INFO
+    LOG_DEBUG
+    LOG_JUST_PRINT
+
+Each of these macros automatically prepends a timestamp and log level prefix to the output:
+
+.. code-block:: C
+    [year-month-day hour:minute:second] [ERROR] 
+    [year-month-day hour:minute:second] [WARNING] 
+    [year-month-day hour:minute:second] [INFO] 
+    [year-month-day hour:minute:second] [DEBUG] 
+
+`LOG_JUST_PRINT` does not print a prefix and outputs the message as-is. This macro is useful when you need to print raw messages without log metadata.
 
 +++++++++++++++++++++++++++++++++++++++++++++
 PDC Server Metadata Management

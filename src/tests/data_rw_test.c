@@ -17,7 +17,7 @@ pdcid_t cont_prop;
 void
 print_usage()
 {
-    printf("Usage: srun -n ./data_rw_test\n");
+    LOG_JUST_PRINT("Usage: srun -n ./data_rw_test\n");
 }
 
 pdcid_t
@@ -27,7 +27,7 @@ create_obj(char *obj_name, uint32_t ndim, uint64_t *dims)
 
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     PDCprop_set_obj_dims(obj_prop, ndim, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
@@ -39,7 +39,7 @@ create_obj(char *obj_name, uint32_t ndim, uint64_t *dims)
     if (rank == 0) {
         obj_id = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_id <= 0) {
-            printf("Error getting an object id of %s from server, exit...\n", obj_name);
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
     }
@@ -55,21 +55,21 @@ print_data(int ndim, uint64_t *start, uint64_t *count, void *data)
 
     if (ndim == 1) {
         data_1d = (char *)data;
-        printf("[%.*s]\n", (int)count[0], data_1d + start[0]);
+        LOG_JUST_PRINT("[%.*s]\n", (int)count[0], data_1d + start[0]);
     }
     else if (ndim == 2) {
         data_2d = (char **)data;
         for (j = 0; j < count[1]; j++) {
-            printf("[%.*s]\n", (int)count[0], data_2d[j + start[1]] + start[0]);
+            LOG_JUST_PRINT("[%.*s]\n", (int)count[0], data_2d[j + start[1]] + start[0]);
         }
     }
     else if (ndim == 3) {
         data_3d = (char ***)data;
         for (i = 0; i < count[2]; i++) {
             for (j = 0; j < count[1]; j++) {
-                printf("[%.*s]\n", (int)count[0], data_3d[i + start[2]][j + start[1]] + start[0]);
+                LOG_JUST_PRINT("[%.*s]\n", (int)count[0], data_3d[i + start[2]][j + start[1]] + start[0]);
             }
-            printf("\n");
+            LOG_JUST_PRINT("\n");
         }
     }
     return 1;
@@ -87,8 +87,8 @@ data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t *tr
         truth_data_1d = (char *)truth_data;
         for (k = 0; k < count[0]; k++) {
             if (data_1d[k + start[0]] != truth_data_1d[k + truth_start[0]]) {
-                printf("(%" PRIu64 ") %c / %c\n", k, data_1d[k + start[0]],
-                       truth_data_1d[k + truth_start[0]]);
+                LOG_JUST_PRINT("(%" PRIu64 ") %c / %c\n", k, data_1d[k + start[0]],
+                               truth_data_1d[k + truth_start[0]]);
                 return -1;
             }
         }
@@ -100,8 +100,9 @@ data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t *tr
             for (k = 0; k < count[0]; k++) {
                 if (data_2d[j + start[1]][k + start[0]] !=
                     truth_data_2d[j + truth_start[1]][k + truth_start[0]]) {
-                    printf("(%" PRIu64 ", %" PRIu64 ") %c / %c\n", j, k, data_2d[j + start[1]][k + start[0]],
-                           truth_data_2d[j + truth_start[1]][k + truth_start[0]]);
+                    LOG_JUST_PRINT("(%" PRIu64 ", %" PRIu64 ") %c / %c\n", j, k,
+                                   data_2d[j + start[1]][k + start[0]],
+                                   truth_data_2d[j + truth_start[1]][k + truth_start[0]]);
                     return -1;
                 }
             }
@@ -115,9 +116,10 @@ data_verify(int ndim, uint64_t *start, uint64_t *count, void *data, uint64_t *tr
                 for (k = 0; k < count[0]; k++) {
                     if (data_3d[i + start[2]][j + start[1]][k + start[0]] !=
                         truth_data_3d[i + truth_start[2]][j + truth_start[1]][k + truth_start[0]]) {
-                        printf("(%" PRIu64 ", %" PRIu64 ", %" PRIu64 ") %c / %c\n", i, j, k,
-                               data_3d[i + start[2]][j + start[1]][k + start[0]],
-                               truth_data_3d[i + truth_start[2]][j + truth_start[1]][k + truth_start[0]]);
+                        LOG_JUST_PRINT(
+                            "(%" PRIu64 ", %" PRIu64 ", %" PRIu64 ") %c / %c\n", i, j, k,
+                            data_3d[i + start[2]][j + start[1]][k + start[0]],
+                            truth_data_3d[i + truth_start[2]][j + truth_start[1]][k + truth_start[0]]);
                         return -1;
                     }
                 }
@@ -150,7 +152,7 @@ test1d(char *obj_name)
     dims[2] = 0;
     obj_id  = create_obj(obj_name, ndim, dims);
     if (obj_id == 0) {
-        printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
+        LOG_ERROR("[%d]: Error creating an object [%s]\n", rank, obj_name);
         exit(-1);
     }
 
@@ -161,7 +163,7 @@ test1d(char *obj_name)
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
     if (metadata == NULL) {
-        printf("Error getting metadata from server!\n");
+        LOG_ERROR("Error getting metadata from server!\n");
         exit(-1);
     }
 
@@ -230,7 +232,7 @@ test1d(char *obj_name)
 
     is_correct = data_verify(ndim, data_start, read_region.size, read_data, data_offset_real, data);
     if (is_correct != 1)
-        printf("proc %d: verification failed!\n", rank);
+        LOG_ERROR("proc %d: verification failed!\n", rank);
     is_all_correct = is_correct;
 
 #ifdef ENABLE_MPI
@@ -239,11 +241,11 @@ test1d(char *obj_name)
 #endif
 
     if (rank == 0) {
-        printf("1D data verfication ...");
+        LOG_INFO("1D data verfication ...");
         if (is_all_correct != size)
-            printf("FAILED!\n");
+            LOG_ERROR("FAILED!\n");
         else
-            printf("SUCCEED!\n");
+            LOG_INFO("succeED!\n");
     }
     free(data);
 
@@ -274,7 +276,7 @@ test2d(char *obj_name)
 
     obj_id = create_obj(obj_name, ndim, prob_domain);
     if (obj_id == 0) {
-        printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
+        LOG_ERROR("[%d]: Error creating an object [%s]\n", rank, obj_name);
         exit(-1);
     }
 
@@ -285,7 +287,7 @@ test2d(char *obj_name)
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
     if (metadata == NULL) {
-        printf("Error getting metadata from server!\n");
+        LOG_ERROR("Error getting metadata from server!\n");
         exit(-1);
     }
 
@@ -408,7 +410,7 @@ test2d(char *obj_name)
 
     is_correct = data_verify(ndim, data_start, read_region.size, read_data_2d, data_offset_real, data_2d);
     if (is_correct != 1)
-        printf("proc %d: verification failed!\n", rank);
+        LOG_ERROR("proc %d: verification failed!\n", rank);
     is_all_correct = is_correct;
 
 #ifdef ENABLE_MPI
@@ -417,11 +419,11 @@ test2d(char *obj_name)
 #endif
 
     if (rank == 0) {
-        printf("2D data verfication ...");
+        LOG_INFO("2D data verfication ...");
         if (is_all_correct != size)
-            printf("FAILED!\n");
+            LOG_ERROR("FAILED!\n");
         else
-            printf("SUCCEED!\n");
+            LOG_INFO("succeED!\n");
     }
 
     free(data);
@@ -471,7 +473,7 @@ test3d(char *obj_name)
 
     obj_id = create_obj(obj_name, ndim, prob_domain);
     if (obj_id == 0) {
-        printf("[%d]: Error creating an object [%s]\n", rank, obj_name);
+        LOG_ERROR("[%d]: Error creating an object [%s]\n", rank, obj_name);
         exit(-1);
     }
 
@@ -482,7 +484,7 @@ test3d(char *obj_name)
     // Query the created object
     PDC_Client_query_metadata_name_timestep(obj_name, 0, &metadata);
     if (metadata == NULL) {
-        printf("Error getting metadata from server!\n");
+        LOG_ERROR("Error getting metadata from server!\n");
         exit(-1);
     }
 
@@ -743,7 +745,7 @@ test3d(char *obj_name)
 
     is_correct = data_verify(ndim, data_start, read_region.size, read_data_3d, data_offset_real, data_3d);
     if (is_correct != 1)
-        printf("proc %d: verification failed!\n", rank);
+        LOG_ERROR("proc %d: verification failed!\n", rank);
 
     is_all_correct = is_correct;
 
@@ -753,11 +755,11 @@ test3d(char *obj_name)
 #endif
 
     if (rank == 0) {
-        printf("3D data verfication ...");
+        LOG_INFO("3D data verfication ...");
         if (is_all_correct != size)
-            printf("FAILED!\n");
+            LOG_ERROR("FAILED!\n");
         else
-            printf("SUCCEED!\n");
+            LOG_INFO("succeED!\n");
     }
 
     free(data);
@@ -820,12 +822,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     test1d("test_obj_1d");
 
@@ -842,18 +844,18 @@ main(int argc, char **argv)
     test3d("test_obj_3d");
 
     if (rank == 0)
-        printf("\n\n");
+        LOG_JUST_PRINT("\n\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container\n");
+        LOG_ERROR("Failed to close container\n");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

@@ -45,7 +45,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n ./vpicio sleep_time timestamps #particles\n");
+    LOG_JUST_PRINT("Usage: srun -n ./vpicio sleep_time timestamps #particles\n");
 }
 
 int
@@ -108,7 +108,7 @@ main(int argc, char **argv)
     if (argc >= 4) {
         numparticles = atoll(argv[3]);
         if (rank == 0)
-            printf("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
+            LOG_INFO("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
     }
     if (argc >= 5) {
         test_method = atoi(argv[4]);
@@ -122,9 +122,9 @@ main(int argc, char **argv)
     }
 
     if (!rank) {
-        printf("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64
-               ", test_method = %d, region_ partition = %d\n",
-               sleep_time, timestamps, numparticles, test_method, (int)region_partition);
+        LOG_INFO("sleep time = %u, timestamps = %" PRIu64 ", numparticles = %" PRIu64
+                 ", test_method = %d, region_ partition = %d\n",
+                 sleep_time, timestamps, numparticles, test_method, (int)region_partition);
     }
     dims[0] = numparticles * size;
 
@@ -145,13 +145,13 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0) {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         return 1;
     }
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
     if (cont_id <= 0) {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         return 1;
     }
     // create an object property
@@ -252,49 +252,49 @@ main(int argc, char **argv)
         sprintf(obj_name, "obj-var-xx %" PRIu64 "", i);
         obj_xx[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_xx, 0, comm);
         if (obj_xx[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-yy %" PRIu64 "", i);
         obj_yy[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_yy, 0, comm);
         if (obj_yy[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-yy");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-zz %" PRIu64 "", i);
         obj_zz[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_zz, 0, comm);
         if (obj_zz[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-zz");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-pxx %" PRIu64 "", i);
         obj_pxx[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_pxx, 0, comm);
         if (obj_pxx[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pxx");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-pyy %" PRIu64 "", i);
         obj_pyy[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_pyy, 0, comm);
         if (obj_pyy[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pyy");
             exit(-1);
         }
         sprintf(obj_name, "obj-var-pzz %" PRIu64 "", i);
         obj_pzz[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_pzz, 0, comm);
         if (obj_pzz[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-pzz");
             exit(-1);
         }
         sprintf(obj_name, "id11 %" PRIu64 "", i);
         obj_id11[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_id11, 0, comm);
         if (obj_id11[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj_id11");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id11");
             exit(-1);
         }
         sprintf(obj_name, "id22 %" PRIu64 "", i);
         obj_id22[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop_id22, 0, comm);
         if (obj_id22[i] == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "obj_id22");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj_id22");
             exit(-1);
         }
     }
@@ -323,84 +323,84 @@ main(int argc, char **argv)
             transfer_request_x[i] =
                 PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx[i], region_x, region_xx);
             if (transfer_request_x[i] == 0) {
-                printf("Array x transfer request creation failed\n");
+                LOG_INFO("Array x transfer request creation failed\n");
                 return 1;
             }
             transfer_request_y[i] =
                 PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy[i], region_y, region_yy);
             if (transfer_request_y[i] == 0) {
-                printf("Array y transfer request creation failed\n");
+                LOG_INFO("Array y transfer request creation failed\n");
                 return 1;
             }
             transfer_request_z[i] =
                 PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz[i], region_z, region_zz);
             if (transfer_request_z[i] == 0) {
-                printf("Array z transfer request creation failed\n");
+                LOG_INFO("Array z transfer request creation failed\n");
                 return 1;
             }
             transfer_request_px[i] =
                 PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx[i], region_px, region_pxx);
             if (transfer_request_px[i] == 0) {
-                printf("Array px transfer request creation failed\n");
+                LOG_INFO("Array px transfer request creation failed\n");
                 return 1;
             }
             transfer_request_py[i] =
                 PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy[i], region_py, region_pyy);
             if (transfer_request_py[i] == 0) {
-                printf("Array py transfer request creation failed\n");
+                LOG_INFO("Array py transfer request creation failed\n");
                 return 1;
             }
             transfer_request_pz[i] =
                 PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz[i], region_pz, region_pzz);
             if (transfer_request_pz[i] == 0) {
-                printf("Array pz transfer request creation failed\n");
+                LOG_INFO("Array pz transfer request creation failed\n");
                 return 1;
             }
             transfer_request_id1[i] =
                 PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11[i], region_id1, region_id11);
             if (transfer_request_id1[i] == 0) {
-                printf("Array id1 transfer request creation failed\n");
+                LOG_INFO("Array id1 transfer request creation failed\n");
                 return 1;
             }
             transfer_request_id2[i] =
                 PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22[i], region_id2, region_id22);
             if (transfer_request_id2[i] == 0) {
-                printf("Array id2 transfer request creation failed\n");
+                LOG_INFO("Array id2 transfer request creation failed\n");
                 return 1;
             }
         }
         else {
             ret = PDCbuf_obj_map(&x[0], PDC_FLOAT, region_x, obj_xx[i], region_xx);
             if (ret < 0)
-                printf("Array x PDCbuf_obj_map failed\n");
+                LOG_INFO("Array x PDCbuf_obj_map failed\n");
 
             ret = PDCbuf_obj_map(&y[0], PDC_FLOAT, region_y, obj_yy[i], region_yy);
             if (ret < 0)
-                printf("Array y PDCbuf_obj_map failed\n");
+                LOG_INFO("Array y PDCbuf_obj_map failed\n");
 
             ret = PDCbuf_obj_map(&z[0], PDC_FLOAT, region_z, obj_zz[i], region_zz);
             if (ret < 0)
-                printf("Array z PDCbuf_obj_map failed\n");
+                LOG_INFO("Array z PDCbuf_obj_map failed\n");
 
             ret = PDCbuf_obj_map(&px[0], PDC_FLOAT, region_px, obj_pxx[i], region_pxx);
             if (ret < 0)
-                printf("Array px PDCbuf_obj_map failed\n");
+                LOG_INFO("Array px PDCbuf_obj_map failed\n");
 
             ret = PDCbuf_obj_map(&py[0], PDC_FLOAT, region_py, obj_pyy[i], region_pyy);
             if (ret < 0)
-                printf("Array py PDCbuf_obj_map failed\n");
+                LOG_INFO("Array py PDCbuf_obj_map failed\n");
 
             ret = PDCbuf_obj_map(&pz[0], PDC_FLOAT, region_pz, obj_pzz[i], region_pzz);
             if (ret < 0)
-                printf("Array pz PDCbuf_obj_map failed\n");
+                LOG_INFO("Array pz PDCbuf_obj_map failed\n");
 
             ret = PDCbuf_obj_map(&id1[0], PDC_INT, region_id1, obj_id11[i], region_id11);
             if (ret < 0)
-                printf("Array id1 PDCbuf_obj_map failed\n");
+                LOG_INFO("Array id1 PDCbuf_obj_map failed\n");
 
             ret = PDCbuf_obj_map(&id2[0], PDC_INT, region_id2, obj_id22[i], region_id22);
             if (ret < 0)
-                printf("Array id2 PDCbuf_obj_map failed\n");
+                LOG_INFO("Array id2 PDCbuf_obj_map failed\n");
         }
 #ifdef ENABLE_MPI
         transfer_create += MPI_Wtime() - start;
@@ -432,7 +432,7 @@ main(int argc, char **argv)
         if (test_method == 2) {
             ret = PDCregion_transfer_start_all(temp_requests, 8);
             if (ret != SUCCEED) {
-                printf("Failed to start transfer for all regions\n");
+                LOG_ERROR("Failed to start transfer for all regions\n");
                 return 1;
             }
         }
@@ -444,28 +444,28 @@ main(int argc, char **argv)
         else {
             ret = PDCreg_obtain_lock(obj_xx[i], region_xx, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_xx\n");
+                LOG_ERROR("Failed to obtain lock for region_xx\n");
             ret = PDCreg_obtain_lock(obj_yy[i], region_yy, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_yy\n");
+                LOG_ERROR("Failed to obtain lock for region_yy\n");
             ret = PDCreg_obtain_lock(obj_zz[i], region_zz, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_zz\n");
+                LOG_ERROR("Failed to obtain lock for region_zz\n");
             ret = PDCreg_obtain_lock(obj_pxx[i], region_pxx, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_pxx\n");
+                LOG_ERROR("Failed to obtain lock for region_pxx\n");
             ret = PDCreg_obtain_lock(obj_pyy[i], region_pyy, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_pyy\n");
+                LOG_ERROR("Failed to obtain lock for region_pyy\n");
             ret = PDCreg_obtain_lock(obj_pzz[i], region_pzz, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_pzz\n");
+                LOG_ERROR("Failed to obtain lock for region_pzz\n");
             ret = PDCreg_obtain_lock(obj_id11[i], region_id11, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_id11\n");
+                LOG_ERROR("Failed to obtain lock for region_id11\n");
             ret = PDCreg_obtain_lock(obj_id22[i], region_id22, PDC_WRITE, PDC_NOBLOCK);
             if (ret != SUCCEED)
-                printf("Failed to obtain lock for region_id22\n");
+                LOG_ERROR("Failed to obtain lock for region_id22\n");
         }
 #ifdef ENABLE_MPI
         transfer_start += MPI_Wtime() - start;
@@ -489,7 +489,7 @@ main(int argc, char **argv)
         if (test_method == 2) {
             ret = PDCregion_transfer_wait_all(temp_requests, 8);
             if (ret != SUCCEED) {
-                printf("Failed to start transfer for all regions\n");
+                LOG_ERROR("Failed to start transfer for all regions\n");
                 return 1;
             }
         }
@@ -501,28 +501,28 @@ main(int argc, char **argv)
         else {
             ret = PDCreg_release_lock(obj_xx[i], region_xx, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_xx\n");
+                LOG_ERROR("Failed to release lock for region_xx\n");
             ret = PDCreg_release_lock(obj_yy[i], region_yy, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_yy\n");
+                LOG_ERROR("Failed to release lock for region_yy\n");
             ret = PDCreg_release_lock(obj_zz[i], region_zz, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_zz\n");
+                LOG_ERROR("Failed to release lock for region_zz\n");
             ret = PDCreg_release_lock(obj_pxx[i], region_pxx, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_pxx\n");
+                LOG_ERROR("Failed to release lock for region_pxx\n");
             ret = PDCreg_release_lock(obj_pyy[i], region_pyy, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_pyy\n");
+                LOG_ERROR("Failed to release lock for region_pyy\n");
             ret = PDCreg_release_lock(obj_pzz[i], region_pzz, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_pzz\n");
+                LOG_ERROR("Failed to release lock for region_pzz\n");
             ret = PDCreg_release_lock(obj_id11[i], region_id11, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_id11\n");
+                LOG_ERROR("Failed to release lock for region_id11\n");
             ret = PDCreg_release_lock(obj_id22[i], region_id22, PDC_WRITE);
             if (ret != SUCCEED)
-                printf("Failed to release lock for region_id22\n");
+                LOG_ERROR("Failed to release lock for region_id22\n");
         }
 #ifdef ENABLE_MPI
         end = MPI_Wtime();
@@ -532,111 +532,111 @@ main(int argc, char **argv)
         if (test_method) {
             ret = PDCregion_transfer_close(transfer_request_x[i]);
             if (ret != SUCCEED) {
-                printf("region xx transfer close failed\n");
+                LOG_INFO("region xx transfer close failed\n");
                 return 1;
             }
             ret = PDCregion_transfer_close(transfer_request_y[i]);
             if (ret != SUCCEED) {
-                printf("region yy transfer close failed\n");
+                LOG_INFO("region yy transfer close failed\n");
                 return 1;
             }
             ret = PDCregion_transfer_close(transfer_request_z[i]);
             if (ret != SUCCEED) {
-                printf("region zz transfer close failed\n");
+                LOG_INFO("region zz transfer close failed\n");
                 return 1;
             }
             ret = PDCregion_transfer_close(transfer_request_px[i]);
             if (ret != SUCCEED) {
-                printf("region pxx transfer close failed\n");
+                LOG_INFO("region pxx transfer close failed\n");
                 return 1;
             }
             ret = PDCregion_transfer_close(transfer_request_py[i]);
             if (ret != SUCCEED) {
-                printf("region pyy transfer close failed\n");
+                LOG_INFO("region pyy transfer close failed\n");
                 return 1;
             }
             ret = PDCregion_transfer_close(transfer_request_pz[i]);
             if (ret != SUCCEED) {
-                printf("region pzz transfer close failed\n");
+                LOG_INFO("region pzz transfer close failed\n");
                 return 1;
             }
             ret = PDCregion_transfer_close(transfer_request_id1[i]);
             if (ret != SUCCEED) {
-                printf("region id11 transfer close failed\n");
+                LOG_INFO("region id11 transfer close failed\n");
                 return 1;
             }
             ret = PDCregion_transfer_close(transfer_request_id2[i]);
             if (ret != SUCCEED) {
-                printf("region id22 transfer close failed\n");
+                LOG_INFO("region id22 transfer close failed\n");
                 return 1;
             }
         }
         else {
             ret = PDCbuf_obj_unmap(obj_xx[i], region_xx);
             if (ret != SUCCEED)
-                printf("region xx unmap failed\n");
+                LOG_INFO("region xx unmap failed\n");
             ret = PDCbuf_obj_unmap(obj_yy[i], region_yy);
             if (ret != SUCCEED)
-                printf("region yy unmap failed\n");
+                LOG_INFO("region yy unmap failed\n");
 
             ret = PDCbuf_obj_unmap(obj_zz[i], region_zz);
             if (ret != SUCCEED)
-                printf("region zz unmap failed\n");
+                LOG_INFO("region zz unmap failed\n");
 
             ret = PDCbuf_obj_unmap(obj_pxx[i], region_pxx);
             if (ret != SUCCEED)
-                printf("region pxx unmap failed\n");
+                LOG_INFO("region pxx unmap failed\n");
 
             ret = PDCbuf_obj_unmap(obj_pyy[i], region_pyy);
             if (ret != SUCCEED)
-                printf("region pyy unmap failed\n");
+                LOG_INFO("region pyy unmap failed\n");
 
             ret = PDCbuf_obj_unmap(obj_pzz[i], region_pzz);
             if (ret != SUCCEED)
-                printf("region pzz unmap failed\n");
+                LOG_INFO("region pzz unmap failed\n");
 
             ret = PDCbuf_obj_unmap(obj_id11[i], region_id11);
             if (ret != SUCCEED)
-                printf("region id11 unmap failed\n");
+                LOG_INFO("region id11 unmap failed\n");
 
             ret = PDCbuf_obj_unmap(obj_id22[i], region_id22);
             if (ret != SUCCEED)
-                printf("region id22 unmap failed\n");
+                LOG_INFO("region id22 unmap failed\n");
         }
 #ifdef ENABLE_MPI
         transfer_close += MPI_Wtime() - start;
 #endif
 
         if (PDCregion_close(region_xx) < 0) {
-            printf("fail to close region region_xx\n");
+            LOG_ERROR("Failed to close region region_xx\n");
             return 1;
         }
         if (PDCregion_close(region_yy) < 0) {
-            printf("fail to close region region_yy\n");
+            LOG_ERROR("Failed to close region region_yy\n");
             return 1;
         }
         if (PDCregion_close(region_zz) < 0) {
-            printf("fail to close region region_zz\n");
+            LOG_ERROR("Failed to close region region_zz\n");
             return 1;
         }
         if (PDCregion_close(region_pxx) < 0) {
-            printf("fail to close region region_pxx\n");
+            LOG_ERROR("Failed to close region region_pxx\n");
             return 1;
         }
         if (PDCregion_close(region_pyy) < 0) {
-            printf("fail to close region region_pyy\n");
+            LOG_ERROR("Failed to close region region_pyy\n");
             return 1;
         }
         if (PDCregion_close(region_pzz) < 0) {
-            printf("fail to close region region_pzz\n");
+            LOG_ERROR("Failed to close region region_pzz\n");
             return 1;
         }
         if (PDCregion_close(region_id11) < 0) {
-            printf("fail to close region region_id11\n");
+            LOG_ERROR("Failed to close region region_id11\n");
             return 1;
         }
         if (PDCregion_close(region_id22) < 0) {
-            printf("fail to close region region_id22\n");
+            LOG_ERROR("Failed to close region region_id22\n");
             return 1;
         }
         MPI_Barrier(MPI_COMM_WORLD);
@@ -649,35 +649,35 @@ main(int argc, char **argv)
     PDC_timing_report("write");
     for (i = 0; i < timestamps; ++i) {
         if (PDCobj_close(obj_xx[i]) < 0) {
-            printf("fail to close obj_xx\n");
+            LOG_ERROR("Failed to close obj_xx\n");
             return 1;
         }
         if (PDCobj_close(obj_yy[i]) < 0) {
-            printf("fail to close object obj_yy\n");
+            LOG_ERROR("Failed to close object obj_yy\n");
             return 1;
         }
         if (PDCobj_close(obj_zz[i]) < 0) {
-            printf("fail to close object obj_zz\n");
+            LOG_ERROR("Failed to close object obj_zz\n");
             return 1;
         }
         if (PDCobj_close(obj_pxx[i]) < 0) {
-            printf("fail to close object obj_pxx\n");
+            LOG_ERROR("Failed to close object obj_pxx\n");
             return 1;
         }
         if (PDCobj_close(obj_pyy[i]) < 0) {
-            printf("fail to close object obj_pyy\n");
+            LOG_ERROR("Failed to close object obj_pyy\n");
             return 1;
         }
         if (PDCobj_close(obj_pzz[i]) < 0) {
-            printf("fail to close object obj_pzz\n");
+            LOG_ERROR("Failed to close object obj_pzz\n");
             return 1;
         }
         if (PDCobj_close(obj_id11[i]) < 0) {
-            printf("fail to close object obj_id11\n");
+            LOG_ERROR("Failed to close object obj_id11\n");
             return 1;
         }
         if (PDCobj_close(obj_id22[i]) < 0) {
-            printf("fail to close object obj_id22\n");
+            LOG_ERROR("Failed to close object obj_id22\n");
             return 1;
         }
     }
@@ -689,37 +689,37 @@ main(int argc, char **argv)
     MPI_Reduce(&transfer_create, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_create, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer create: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+        LOG_INFO("transfer create: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&transfer_start, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_start, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_start, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer start: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+        LOG_INFO("transfer start: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&transfer_wait, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_wait, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_wait, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer wait: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+        LOG_INFO("transfer wait: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&transfer_close, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_close, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&transfer_close, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("transfer close: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+        LOG_INFO("transfer close: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&flush_all, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&flush_all, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&flush_all, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("flush all: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+        LOG_INFO("flush all: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
     MPI_Reduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(&total_time, &avg_time, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&total_time, &min_time, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
     if (!rank) {
-        printf("total: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
+        LOG_INFO("total: %lf - %lf - %lf\n", min_time, avg_time / size, max_time);
     }
 #endif
     free(obj_xx);
@@ -731,81 +731,81 @@ main(int argc, char **argv)
     free(obj_id11);
     free(obj_id22);
     if (PDCprop_close(obj_prop_xx) < 0) {
-        printf("Fail to close obj property obj_prop_xx\n");
+        LOG_ERROR("Failed to close obj property obj_prop_xx\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_yy) < 0) {
-        printf("Fail to close obj property obj_prop_yy\n");
+        LOG_ERROR("Failed to close obj property obj_prop_yy\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_zz) < 0) {
-        printf("Fail to close obj property obj_prop_zz\n");
+        LOG_ERROR("Failed to close obj property obj_prop_zz\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_pxx) < 0) {
-        printf("Fail to close obj property obj_prop_pxx\n");
+        LOG_ERROR("Failed to close obj property obj_prop_pxx\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_pyy) < 0) {
-        printf("Fail to close obj property obj_prop_pyy\n");
+        LOG_ERROR("Failed to close obj property obj_prop_pyy\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_pzz) < 0) {
-        printf("Fail to close obj property obj_prop_pzz\n");
+        LOG_ERROR("Failed to close obj property obj_prop_pzz\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_id11) < 0) {
-        printf("Fail to close obj property obj_prop_id11\n");
+        LOG_ERROR("Failed to close obj property obj_prop_id11\n");
         return 1;
     }
     if (PDCprop_close(obj_prop_id22) < 0) {
-        printf("Fail to close obj property obj_prop_id22\n");
+        LOG_ERROR("Failed to close obj property obj_prop_id22\n");
         return 1;
     }
     if (PDCregion_close(region_x) < 0) {
-        printf("fail to close region region_x\n");
+        LOG_ERROR("Failed to close region region_x\n");
         return 1;
     }
     if (PDCregion_close(region_y) < 0) {
-        printf("fail to close region region_y\n");
+        LOG_ERROR("Failed to close region region_y\n");
         return 1;
     }
     if (PDCregion_close(region_z) < 0) {
-        printf("fail to close region region_z\n");
+        LOG_ERROR("Failed to close region region_z\n");
         return 1;
     }
     if (PDCregion_close(region_px) < 0) {
-        printf("fail to close region region_px\n");
+        LOG_ERROR("Failed to close region region_px\n");
         return 1;
     }
     if (PDCregion_close(region_py) < 0) {
-        printf("fail to close region region_py\n");
+        LOG_ERROR("Failed to close region region_py\n");
         return 1;
     }
     if (PDCobj_close(region_pz) < 0) {
-        printf("fail to close region region_pz\n");
+        LOG_ERROR("Failed to close region region_pz\n");
         return 1;
     }
     if (PDCobj_close(region_id1) < 0) {
-        printf("fail to close region region_id1\n");
+        LOG_ERROR("Failed to close region region_id1\n");
         return 1;
     }
     if (PDCobj_close(region_id2) < 0) {
-        printf("fail to close region region_id2\n");
+        LOG_ERROR("Failed to close region region_id2\n");
         return 1;
     }
     // close a container
     if (PDCcont_close(cont_id) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         return 1;
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         return 1;
     }
     if (PDCclose(pdc_id) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         return 1;
     }
     free(offset);

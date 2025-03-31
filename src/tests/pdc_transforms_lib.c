@@ -436,7 +436,7 @@ pdc_convert_datatype(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t *d
         else
             storage_in_bytes = elements;
     }
-    printf("pdc_convert_datatype: elements = %ld\n", elements);
+    LOG_INFO("pdc_convert_datatype: elements = %ld\n", elements);
 
     switch (srcType) {
         case PDC_INT: {
@@ -578,7 +578,7 @@ pdc_transform_increment(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t
             typesize = sizeof(short);
     }
 
-    fprintf(stdout, "\n[TRANSFORM] Entering pdc_transform_increment\n");
+    LOG_INFO("\n[TRANSFORM] Entering pdc_transform_increment\n");
 
     nval = 1;
     for (i = 0; i < ndim; i++) {
@@ -603,14 +603,14 @@ pdc_transform_increment(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t
             }
             break;
         default:
-            fprintf(stdout, "\n[TRANSFORM] Unable to increment values\n");
+            LOG_INFO("\n[TRANSFORM] Unable to increment values\n");
             return -1;
             break;
     }
 
     *dataOut = destBuff;
 
-    fprintf(stdout, "\n[TRANSFORM] %ld values successfully incremented\n", nval);
+    LOG_INFO("\n[TRANSFORM] %ld values successfully incremented\n", nval);
     return nval;
 }
 
@@ -636,26 +636,26 @@ pdc_transform_compress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_t 
     else if (srcType == PDC_INT8)
         typesize = 1;
 
-    fprintf(stdout, "\n[TRANSFORM] Entering pdc_transform_compress\n");
+    LOG_INFO("\n[TRANSFORM] Entering pdc_transform_compress\n");
     nval = 1;
     for (i = 0; i < ndim; i++)
         nval *= dims[i];
 
     nbytes = nval * typesize;
-    fprintf(stdout, "[TRANSFORM] Src Buffer size : %d * %d = %ld\n", nval, typesize, nbytes);
+    LOG_INFO("[TRANSFORM] Src Buffer size : %d * %d = %ld\n", nval, typesize, nbytes);
     destsize = nbytes + BLOSC_MAX_OVERHEAD;
-    fprintf(stdout, "[TRANSFORM] Dest Buffer size : %ld + %d = %ld\n", nbytes, BLOSC_MAX_OVERHEAD, destsize);
+    LOG_INFO("[TRANSFORM] Dest Buffer size : %ld + %d = %ld\n", nbytes, BLOSC_MAX_OVERHEAD, destsize);
     destBuff = malloc(destsize);
 
     csize = blosc_compress(clevel, doshuffle, typesize, nbytes, dataIn, destBuff, destsize);
 
     if (csize < 0)
-        fprintf(stdout, "[TRANSFORM] Error while compressing data (errcode: %ld)\n", csize);
+        LOG_INFO("[TRANSFORM] Error while compressing data (errcode: %ld)\n", csize);
     if (csize == 0)
-        fprintf(stdout, "[TRANSFORM] Unable to compress data (errcode: %ld)\n", csize);
+        LOG_INFO("[TRANSFORM] Unable to compress data (errcode: %ld)\n", csize);
 
     if (csize > 0) {
-        fprintf(stdout, "[TRANSFORM] Data sucessfully compressed from %ld B to %ld B\n", nbytes, csize);
+        LOG_INFO("[TRANSFORM] Data sucessfully compressed from %ld B to %ld B\n", nbytes, csize);
     }
     *dataOut = destBuff;
     return csize;
@@ -669,7 +669,7 @@ pdc_transform_decompress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_
     size_t typesize, destsize, dsize;
     void * destBuff = *dataOut;
 
-    fprintf(stdout, "\n[TRANSFORM] Entering pdc_transform_decompress\n");
+    LOG_INFO("\n[TRANSFORM] Entering pdc_transform_decompress\n");
 
     if ((destType == PDC_INT) || (destType == PDC_UINT) || (destType == PDC_FLOAT))
         typesize = sizeof(int);
@@ -688,8 +688,8 @@ pdc_transform_decompress(void *dataIn, PDC_var_type_t srcType, int ndim, uint64_
     dsize = (size_t)blosc_decompress(dataIn, destBuff, destsize);
 
     if (dsize <= 0)
-        fprintf(stdout, "[TRANSFORM] Error while decompressing data (errcode: %zu)\n", dsize);
+        LOG_INFO("[TRANSFORM] Error while decompressing data (errcode: %zu)\n", dsize);
     else
-        fprintf(stdout, "[TRANSFORM] Data sucessfully decompressed!\n");
+        LOG_INFO("[TRANSFORM] Data sucessfully decompressed!\n");
     return dsize;
 }

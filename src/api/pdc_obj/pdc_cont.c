@@ -206,7 +206,7 @@ PDC_cont_list_null()
     nelemts = PDC_id_list_null(PDC_CONT);
     if (nelemts > 0) {
         if (PDC_id_list_clear(PDC_CONT) < 0)
-            PGOTO_ERROR(FAIL, "fail to clear container list");
+            PGOTO_ERROR(FAIL, "Failed to clear container list");
     }
 
 done:

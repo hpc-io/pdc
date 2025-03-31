@@ -51,15 +51,15 @@ main(int argc, char **argv)
 
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Rank %d Create a container property\n", rank);
+        LOG_INFO("Rank %d Create a container property\n", rank);
     }
     else {
-        printf("Rank %d Fail to create container property @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create container property!\n", rank);
         ret_value = 1;
     }
     // create a container
@@ -67,29 +67,29 @@ main(int argc, char **argv)
     cont = PDCcont_create_col(cont_name, cont_prop);
     // cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
-        printf("Rank %d Create a container %s\n", rank, cont_name);
+        LOG_INFO("Rank %d Create a container %s\n", rank, cont_name);
     }
     else {
-        printf("Rank %d Fail to create container @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create container!\n", rank);
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop > 0) {
-        printf("Rank %d Create an object property\n", rank);
+        LOG_INFO("Rank %d Create an object property\n", rank);
     }
     else {
-        printf("Rank %d Fail to create object property @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create object property!\n", rank);
         ret_value = 1;
     }
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if (ret != SUCCEED) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
     if (ret != SUCCEED) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
 
@@ -97,10 +97,10 @@ main(int argc, char **argv)
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
-        printf("Rank %d Create an object %s\n", rank, obj_name1);
+        LOG_INFO("Rank %d Create an object %s\n", rank, obj_name1);
     }
     else {
-        printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create object!\n", rank);
         ret_value = 1;
     }
 
@@ -108,27 +108,27 @@ main(int argc, char **argv)
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if (obj2 > 0) {
-        printf("Rank %d Create an object %s\n", rank, obj_name2);
+        LOG_INFO("Rank %d Create an object %s\n", rank, obj_name2);
     }
     else {
-        printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create object!\n", rank);
         ret_value = 1;
     }
 
     // close created objects
     if (PDCobj_close(obj1) < 0) {
-        printf("Rank %d fail to close object o1\n", rank);
+        LOG_ERROR("Rank %d Fail to close object o1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object o1\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o1\n", rank);
     }
     if (PDCobj_close(obj2) < 0) {
-        printf("Rank %d fail to close object o2\n", rank);
+        LOG_ERROR("Rank %d Fail to close object o2\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object o2\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o2\n", rank);
     }
 // Wait for all processes to finish their object creation
 #ifdef ENABLE_MPI
@@ -138,119 +138,121 @@ main(int argc, char **argv)
         sprintf(obj_name1, "o1_%d", (rank + i) % size);
         obj1 = PDCobj_open(obj_name1, pdc);
         if (obj1 == 0) {
-            printf("Rank %d Fail to open object %s\n", rank, obj_name1);
+            LOG_ERROR("Rank %d Fail to open object %s\n", rank, obj_name1);
             ret_value = 1;
         }
         else {
-            printf("Rank %d Opened object %s\n", rank, obj_name1);
+            LOG_INFO("Rank %d Opened object %s\n", rank, obj_name1);
         }
         sprintf(obj_name2, "o2_%d", (rank + i) % size);
         obj2 = PDCobj_open(obj_name2, pdc);
         if (obj2 == 0) {
-            printf("Rank %d Fail to open object %s\n", rank, obj_name2);
+            LOG_ERROR("Rank %d Fail to open object %s\n", rank, obj_name2);
             ret_value = 1;
         }
         else {
-            printf("Rank %d Open object %s\n", rank, obj_name2);
+            LOG_INFO("Rank %d Open object %s\n", rank, obj_name2);
         }
         obj1_info = PDCobj_get_info(obj1);
         obj2_info = PDCobj_get_info(obj2);
         if (strcmp(obj1_info->name, obj_name1) != 0) {
-            printf("Object 1 name is wrong at rank %d\n", rank);
+            LOG_ERROR("Object 1 name is wrong at rank %d\n", rank);
             ret_value = 1;
         }
 
         if (obj1_info->obj_pt->type != PDC_DOUBLE) {
-            printf("Type is not properly inherited from object 1 property at rank %d.\n", rank);
+            LOG_ERROR("Type is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
 
         if (obj1_info->obj_pt->ndim != ndim) {
-            printf("Number of dimensions is not properly inherited from object 1 property at rank %d.\n",
-                   rank);
+            LOG_ERROR("Number of dimensions is not properly inherited from object 1 property at rank %d.\n",
+                      rank);
             ret_value = 1;
         }
         if (obj1_info->obj_pt->dims[0] != (unsigned)(i + rank) % size * 2 + 1) {
-            printf("First dimension is not properly inherited from object 1 property at rank %d.\n", rank);
+            LOG_ERROR("First dimension is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (obj1_info->obj_pt->dims[1] != (unsigned)(i + rank) % size * 3 + 2) {
-            printf("Second dimension is not properly inherited from object 1 property at rank %d.\n", rank);
+            LOG_ERROR("Second dimension is not properly inherited from object 1 property at rank %d.\n",
+                      rank);
             ret_value = 1;
         }
         if (obj1_info->obj_pt->dims[2] != (unsigned)(i + rank) % size * 5 + 3) {
-            printf("Third dimension is not properly inherited from object 1 property at rank %d.\n", rank);
+            LOG_ERROR("Third dimension is not properly inherited from object 1 property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (strcmp(obj2_info->name, obj_name2) != 0) {
-            printf("Object 2 name is wrong\n");
+            LOG_ERROR("Object 2 name is wrong\n");
             ret_value = 1;
         }
 
         if (obj2_info->obj_pt->type != PDC_DOUBLE) {
-            printf("Type is not properly inherited from object property.\n");
+            LOG_ERROR("Type is not properly inherited from object property.\n");
             ret_value = 1;
         }
 
         if (obj2_info->obj_pt->ndim != ndim) {
-            printf("Number of dimensions is not properly inherited from object property at rank %d.\n", rank);
+            LOG_ERROR("Number of dimensions is not properly inherited from object property at rank %d.\n",
+                      rank);
             ret_value = 1;
         }
         if (obj2_info->obj_pt->dims[0] != (unsigned)(i + rank) % size * 2 + 1) {
-            printf("First dimension is not properly inherited from object property at rank %d.\n", rank);
+            LOG_ERROR("First dimension is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (obj2_info->obj_pt->dims[1] != (unsigned)(i + rank) % size * 3 + 2) {
-            printf("Second dimension is not properly inherited from object property at rank %d.\n", rank);
+            LOG_ERROR("Second dimension is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (obj2_info->obj_pt->dims[2] != (unsigned)(i + rank) % size * 5 + 3) {
-            printf("Third dimension is not properly inherited from object property at rank %d.\n", rank);
+            LOG_ERROR("Third dimension is not properly inherited from object property at rank %d.\n", rank);
             ret_value = 1;
         }
         if (PDCobj_close(obj1) < 0) {
-            printf("Rank %d fail to close object %s\n", rank, obj_name1);
+            LOG_ERROR("Rank %d Fail to close object %s\n", rank, obj_name1);
             ret_value = 1;
         }
         else {
-            printf("Rank %d successfully close object %s\n", rank, obj_name1);
+            LOG_INFO("Rank %d Successfully closed object %s\n", rank, obj_name1);
         }
         if (PDCobj_close(obj2) < 0) {
-            printf("Rank %d fail to close object %s\n", rank, obj_name2);
+            LOG_ERROR("Rank %d Fail to close object %s\n", rank, obj_name2);
             ret_value = 1;
         }
         else {
-            printf("Rank %d successfully close object %s\n", rank, obj_name2);
+            LOG_INFO("Rank %d Successfully closed object %s\n", rank, obj_name2);
         }
     }
 
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("Rank %d fail to close container c1\n", rank);
+        LOG_ERROR("Rank %d Fail to close container c1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close container c1\n", rank);
+        LOG_INFO("Rank %d Successfully closed container c1\n", rank);
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        printf("Rank %d Fail to close property @ line %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to close property\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object property\n", rank);
+        LOG_INFO("Rank %d Successfully closed object property\n", rank);
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Rank %d Fail to close property @ line %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to close property\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close container property\n", rank);
+        LOG_INFO("Rank %d Successfully closed container property\n", rank);
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("Rank %d fail to close PDC\n", rank);
+        LOG_ERROR("Rank %d Fail to close PDC\n", rank);
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

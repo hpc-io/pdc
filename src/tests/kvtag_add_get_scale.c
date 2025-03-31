@@ -34,7 +34,7 @@ int
 assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {
     if (rank > size || my_count == NULL || my_start == NULL) {
-        printf("assign_work_to_rank(): Error with input!\n");
+        LOG_INFO("assign_work_to_rank(): Error with input!\n");
         return -1;
     }
     if (nwork < size) {
@@ -61,7 +61,7 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 void
 print_usage(char *name)
 {
-    printf("%s n_obj n_add_tag n_query\n", name);
+    LOG_JUST_PRINT("%s n_obj n_add_tag n_query\n", name);
 }
 
 int
@@ -94,7 +94,7 @@ main(int argc, char *argv[])
 
     if (n_add_tag > n_obj || n_query > n_obj) {
         if (my_rank == 0)
-            printf("n_add_tag or n_query larger than n_obj! Exiting...\n");
+            LOG_ERROR("n_add_tag or n_query larger than n_obj! Exiting...\n");
         goto done;
     }
 
@@ -107,7 +107,7 @@ main(int argc, char *argv[])
     query_1percent = my_query / 100;
 
     if (my_rank == 0)
-        printf("Create %d obj, %d tags, query %d\n", my_obj, my_add_tag, my_query);
+        LOG_INFO("Create %d obj, %d tags, query %d\n", my_obj, my_add_tag, my_query);
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -115,17 +115,17 @@ main(int argc, char *argv[])
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     // Create a number of objects, add at least one tag to that object
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
@@ -139,7 +139,7 @@ main(int argc, char *argv[])
         sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
         if (obj_ids[i] <= 0)
-            printf("Fail to create object @ line  %d!\n", __LINE__);
+            LOG_ERROR("Failed to create object");
 
         if (i > 0 && i % obj_1percent == 0) {
 #ifdef ENABLE_MPI
@@ -149,8 +149,8 @@ main(int argc, char *argv[])
                 int    current_percentage              = i / obj_1percent;
                 int    estimated_current_object_number = n_obj / 100 * current_percentage;
                 double tps                             = estimated_current_object_number / percent_time;
-                printf("[OBJ PROGRESS %3d%% ] %11d objects, %7.2f seconds, TPS: %10.2f \n",
-                       current_percentage, estimated_current_object_number, percent_time, tps);
+                LOG_INFO("[OBJ PROGRESS %3d%% ] %11d objects, %7.2f seconds, TPS: %10.2f \n",
+                         current_percentage, estimated_current_object_number, percent_time, tps);
             }
 #endif
         }
@@ -162,8 +162,8 @@ main(int argc, char *argv[])
 #endif
 
     if (my_rank == 0)
-        printf("Total time to create %11d objects: %7.2f , throughput %10.2f \n", n_obj, total_time,
-               n_obj / total_time);
+        LOG_INFO("Total time to create %11d objects: %7.2f , throughput %10.2f \n", n_obj, total_time,
+                 n_obj / total_time);
 
     // Add tags
     kvtag.name  = "Group";
@@ -178,7 +178,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_add_tag; i++) {
         v = i + my_add_tag_s;
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
-            printf("fail to add a kvtag to o%d\n", i + my_obj_s);
+            LOG_ERROR("Failed to add a kvtag to o%d\n", i + my_obj_s);
 
         if (i % tag_1percent == 0) {
 #ifdef ENABLE_MPI
@@ -188,8 +188,8 @@ main(int argc, char *argv[])
                 int    current_percentage           = i / tag_1percent;
                 int    estimated_current_tag_number = n_obj / 100 * current_percentage;
                 double tps                          = estimated_current_tag_number / percent_time;
-                printf("[TAG PROGRESS %3d%% ] %11d tags, %7.2f seconds, TPS: %10.2f \n", current_percentage,
-                       estimated_current_tag_number, percent_time, tps);
+                LOG_INFO("[TAG PROGRESS %3d%% ] %11d tags, %7.2f seconds, TPS: %10.2f \n", current_percentage,
+                         estimated_current_tag_number, percent_time, tps);
             }
 #endif
         }
@@ -200,8 +200,8 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to add tags to %11d objects: %7.2f , throughput %10.2f \n", n_add_tag, total_time,
-               n_add_tag / total_time);
+        LOG_INFO("Total time to add tags to %11d objects: %7.2f , throughput %10.2f \n", n_add_tag,
+                 total_time, n_add_tag / total_time);
 
     values = (void **)calloc(my_query, sizeof(void *));
 
@@ -212,7 +212,7 @@ main(int argc, char *argv[])
     for (i = 0; i < my_query; i++) {
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_type,
                            (void *)&value_size) < 0)
-            printf("fail to get a kvtag from o%d\n", i + my_query_s);
+            LOG_ERROR("Failed to get a kvtag from o%d\n", i + my_query_s);
 
         if (i % query_1percent == 0) {
 #ifdef ENABLE_MPI
@@ -222,8 +222,8 @@ main(int argc, char *argv[])
                 int    current_percentage             = i / query_1percent;
                 int    estimated_current_query_number = n_obj / 100 * current_percentage;
                 double tps                            = estimated_current_query_number / percent_time;
-                printf("[QRY PROGRESS %3d%% ] %11d queries, %7.2f seconds, TPS: %10.2f \n",
-                       current_percentage, estimated_current_query_number, percent_time, tps);
+                LOG_INFO("[QRY PROGRESS %3d%% ] %11d queries, %7.2f seconds, TPS: %10.2f \n",
+                         current_percentage, estimated_current_query_number, percent_time, tps);
             }
 #endif
         }
@@ -234,47 +234,21 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        printf("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
-               total_time, n_query / total_time);
+        LOG_INFO("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
+                 total_time, n_query / total_time);
 
     fflush(stdout);
 
     for (i = 0; i < my_query; i++) {
         if (*(int *)(values[i]) != i + my_add_tag_s)
-            printf("Error with retrieved tag from o%d\n", i + my_query_s);
+            LOG_ERROR("Error with retrieved tag from o%d\n", i + my_query_s);
         free(values[i]);
     }
     free(values);
     if (my_rank == 0) {
-        printf("Done checking values\n");
+        LOG_INFO("Done checking values\n");
         fflush(stdout);
     }
-
-    /* // close first object */
-    /* for (i = 0; i < my_obj; i++) { */
-    /*     if (PDCobj_close(obj_ids[i]) < 0) */
-    /*         printf("fail to close object o%d\n", i + my_obj_s); */
-    /* } */
-
-    /* // close a container */
-    /* if (PDCcont_close(cont) < 0) */
-    /*     printf("fail to close container c1\n"); */
-
-    /* // close a container property */
-    /* if (PDCprop_close(obj_prop) < 0) */
-    /*     printf("Fail to close property @ line %d\n", __LINE__); */
-
-    /* if (PDCprop_close(cont_prop) < 0) */
-    /*     printf("Fail to close property @ line %d\n", __LINE__); */
-
-    /* // close pdc */
-    /* if (PDCclose(pdc) < 0) */
-    /*     printf("fail to close PDC\n"); */
-
-    /* if (my_rank == 0) { */
-    /*     printf("Done closing PDC\n"); */
-    /*     fflush(stdout); */
-    /* } */
 
 done:
 #ifdef ENABLE_MPI

@@ -38,14 +38,10 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
         offset_remote += chunk_size;
         tids[i] = PDCregion_transfer_create(data_out, PDC_WRITE, obj_id, region_local, region_remote);
         if (tids[i] == 0)
-            printf("transfer request creation failed\n");
-        /* ret = PDCregion_transfer_start(tids[i]); */
-        /* if (ret != SUCCEED) */
-        /*     printf("Failed to start transfer\n"); */
+            LOG_ERROR("transfer request creation failed\n");
     }
 
-    /* printf("rank %d call wait_all on tids.\n", mpi_rank); */
-    fprintf(stderr, "Rank %4d: create took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    LOG_ERROR("Rank %4d: create took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -53,9 +49,9 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
 
     ret = PDCregion_transfer_start_all(tids, iterations);
     if (ret != SUCCEED)
-        printf("Failed to start transfer\n");
+        LOG_ERROR("Failed to start transfer\n");
 
-    fprintf(stderr, "Rank %4d: start all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    LOG_ERROR("Rank %4d: start all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     stime = MPI_Wtime();
 
@@ -63,10 +59,9 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
 
     ret = PDCregion_transfer_wait_all(tids, iterations);
     if (ret != SUCCEED)
-        printf("Failed to wait all transfer\n");
+        LOG_ERROR("Failed to wait all transfer\n");
 
-    /* printf("rank %d read before wait_all()\n", mpi_rank); */
-    fprintf(stderr, "Rank %4d: wait all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    LOG_ERROR("Rank %4d: wait all tids took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -79,8 +74,8 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     ret              = PDCregion_transfer_start(read_tid);
     ret              = PDCregion_transfer_wait(read_tid);
     ret              = PDCregion_transfer_close(read_tid);
-    /* printf("rank %d read success!\n", mpi_rank); */
-    fprintf(stderr, "Rank %4d: create wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+
+    LOG_ERROR("Rank %4d: create wait read took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     // Write more
     stime          = MPI_Wtime();
@@ -94,33 +89,26 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
         offset_remote += chunk_size;
         tids2[i] = PDCregion_transfer_create(data_out, PDC_WRITE, obj_id, region_local, region_remote);
         if (tids2[i] == 0)
-            printf("transfer request creation failed\n");
-        /* ret = PDCregion_transfer_start(tids2[i]); */
-        /* if (ret != SUCCEED) */
-        /*     printf("Failed to start transfer\n"); */
+            LOG_ERROR("transfer request creation failed\n");
     }
-    fprintf(stderr, "Rank %4d: create tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    LOG_ERROR("Rank %4d: create tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 
     ret = PDCregion_transfer_start_all(tids2, N);
     if (ret != SUCCEED)
-        printf("Failed to start transfer\n");
+        LOG_ERROR("Failed to start transfer\n");
 
-    fprintf(stderr, "Rank %4d: start tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
-    /* ret = PDCregion_transfer_wait_all(tids, (iterations)); */
-    /* if (ret != SUCCEED) */
-    /*     printf("Failed to transfer wait\n"); */
+    LOG_ERROR("Rank %4d: start tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
-    /* printf("rank %d call wait_all on tids2.\n", mpi_rank); */
-    ret = PDCregion_transfer_wait_all(tids2, (N));
+    ret   = PDCregion_transfer_wait_all(tids2, (N));
     if (ret != SUCCEED)
-        printf("Failed to transfer wait\n");
+        LOG_ERROR("Failed to transfer wait\n");
 
-    fprintf(stderr, "Rank %4d: wait all tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    LOG_ERROR("Rank %4d: wait all tids2 took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
@@ -128,15 +116,15 @@ write_read_wait_all(pdcid_t obj_id, int iterations)
     for (int i = 0; i < iterations; i++) {
         ret = PDCregion_transfer_close(tids[i]);
         if (ret != SUCCEED)
-            printf("region transfer close failed\n");
+            LOG_ERROR("region transfer close failed\n");
     }
     for (int i = 0; i < N; i++) {
         ret = PDCregion_transfer_close(tids2[i]);
         if (ret != SUCCEED)
-            printf("region transfer close failed\n");
+            LOG_ERROR("region transfer close failed\n");
     }
 
-    fprintf(stderr, "Rank %4d: close all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    LOG_ERROR("Rank %4d: close all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     free(data_in);
     free(data_out);
@@ -164,12 +152,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0) {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
     }
     // create a container
     cont_id = PDCcont_create_col("c1", cont_prop);
     if (cont_id <= 0) {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
     }
 
     // create an object property
@@ -191,18 +179,18 @@ main(int argc, char **argv)
     write_read_wait_all(obj_id, 1000);
 
     MPI_Barrier(MPI_COMM_WORLD);
-    fprintf(stderr, "Rank %4d: Write read wait all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
+    LOG_ERROR("Rank %4d: Write read wait all took %.6f\n", mpi_rank, MPI_Wtime() - stime);
 
     if (PDCobj_close(obj_id) < 0) {
-        printf("fail to close obj_id\n");
+        LOG_ERROR("Failed to close obj_id\n");
     }
 
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
     }
 
     if (PDCclose(pdc_id) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
     }
 
     MPI_Finalize();

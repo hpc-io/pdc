@@ -24,9 +24,9 @@ int g_x_ept, g_y_ept;
 void
 print_usage()
 {
-    printf("Usage: srun -N #nodes -n #procs ./tilio #x_tils #y_tiles "
-           "#num_elements_x #num_elements_y\n");
-    printf("\tnote: #procs should equal to x_tiles*y_tiles\n");
+    LOG_JUST_PRINT("Usage: srun -N #nodes -n #procs ./tilio #x_tils #y_tiles "
+                   "#num_elements_x #num_elements_y\n");
+    LOG_JUST_PRINT("\tnote: #procs should equal to x_tiles*y_tiles\n");
 }
 
 pdcid_t
@@ -45,7 +45,7 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdcid_t
 
     pdcid_t obj_id = PDCobj_create_mpi(cont_id, obj_name, *obj_prop, 0, g_mpi_comm);
     if (obj_id == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
 
@@ -85,7 +85,7 @@ init(int argc, char **argv)
 
     MPI_Comm_rank(g_mpi_comm, &g_mpi_rank);
     MPI_Cart_coords(g_mpi_comm, g_mpi_rank, NUM_DIMS, g_coords);
-    // printf("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
+    // LOG_INFO("my 2d rank: %d, coords: (%d, %d)\n", g_mpi_rank, g_coords[0], g_coords[1]);
 }
 
 int
@@ -133,7 +133,7 @@ main(int argc, char **argv)
     time_acquire_lock = MPI_Wtime();
     ret               = PDCreg_obtain_lock(obj_id, global_region_id, PDC_WRITE, PDC_NOBLOCK);
     if (ret != SUCCEED) {
-        printf("Fail to obtain lock @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to obtain lock");
     }
     MPI_Barrier(MPI_COMM_WORLD);
     time_acquire_lock = MPI_Wtime() - time_acquire_lock;
@@ -153,7 +153,7 @@ main(int argc, char **argv)
     time_release_lock = MPI_Wtime();
     ret               = PDCreg_release_lock(obj_id, global_region_id, PDC_WRITE);
     if (ret != SUCCEED) {
-        printf("Fail to release lock @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to release lock");
     }
     MPI_Barrier(MPI_COMM_WORLD);
     time_release_lock = MPI_Wtime() - time_release_lock;
@@ -161,7 +161,7 @@ main(int argc, char **argv)
     // Unmap object
     ret = PDCbuf_obj_unmap(obj_id, global_region_id);
     if (ret != SUCCEED) {
-        printf("Fail to unmap @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to unmap");
     }
     // TODO delete before close ?
     PDCobj_close(obj_id);
@@ -185,8 +185,8 @@ main(int argc, char **argv)
     if (g_mpi_rank == 0) {
         double bandwidth =
             g_x_tiles * g_y_tiles * g_x_ept * g_y_ept / 1024.0 / 1024.0 * sizeof(double) / time_total;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
-               time_total, time_acquire_lock, time_io, time_release_lock);
+        LOG_INFO("Bandwidth: %.2fMB/s, total time: %.4f, lock: %.4f, io: %.4f, release: %.4f\n", bandwidth,
+                 time_total, time_acquire_lock, time_io, time_release_lock);
     }
 
     MPI_Comm_free(&g_mpi_comm);
