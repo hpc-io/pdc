@@ -313,12 +313,11 @@ do_transfer_request_metadata(int pdc_server_size_input, char *checkpoint)
         ptr += sizeof(int);
         for (i = 0; i < n_objs; ++i) {
             if (metadata_server_objs) {
-                metadata_server_objs_end->next =
-                    (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_region_metadata));
-                metadata_server_objs_end = metadata_server_objs_end->next;
+                metadata_server_objs_end->next = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_metadata_pkg));
+                metadata_server_objs_end       = metadata_server_objs_end->next;
             }
             else {
-                metadata_server_objs     = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_region_metadata));
+                metadata_server_objs     = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_metadata_pkg));
                 metadata_server_objs_end = metadata_server_objs;
             }
 
