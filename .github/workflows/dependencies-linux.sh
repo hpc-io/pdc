@@ -20,6 +20,6 @@ git clone --recursive https://github.com/mercury-hpc/mercury.git
 cd mercury
 git checkout v2.2.0
 mkdir build && cd build
-cmake ../  -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DMERCURY_USE_CHECKSUMS=OFF
+cmake ../  -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DMERCURY_USE_CHECKSUMS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 make -j2 && sudo make install
 ctest
