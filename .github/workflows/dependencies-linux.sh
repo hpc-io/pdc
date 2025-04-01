@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 sudo apt-get update
-sudo apt-get install libopenmpi-dev libhdf5-dev uuid-dev
+sudo apt-get install libopenmpi-dev libhdf5-dev uuid-dev cmake
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.12.1.tar.gz
