@@ -59,7 +59,7 @@ set(PROGRAMS
   cont/cont_del
   cont/cont_getid
   cont/cont_tags
-  locks/consistency_semantics
+  misc/consistency_semantics
   obj/create_obj
   obj/open_obj
   obj/open_existing_obj
@@ -89,14 +89,14 @@ set(PROGRAMS
   misc/vpicio
   misc/vpicio_mts
   misc/bdcats
-  misc/vpicio_old
-  misc/bdcats_old
+  deprecated/vpicio_old
+  deprecated/bdcats_old
   #cont/cont_add_del
   #misc/data_server_meta_test
   tags/kvtag_add_get
   #tags/kvtag_get
   tags/kvtag_query
-  #obj/obj_transformation
+  #deprecated/obj_transformation
   region/region_transfer_query
   region/region_transfer
   region/region_transfer_status
