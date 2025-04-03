@@ -34,6 +34,7 @@
 #include "pdc_utlist.h"
 #include "pdc_server.h"
 #include "pdc_server_data.h"
+#include "pdc_logger.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -431,24 +432,24 @@ PDC_print_metadata(pdc_metadata_t *a)
     if (a == NULL)
         PGOTO_ERROR_VOID("==Empty metadata structure");
 
-    printf("================================\n");
-    printf("  data_type = [%d]\n", a->data_type);
-    printf("  obj_id    = %" PRIu64 "\n", a->obj_id);
-    printf("  cont_id   = %" PRIu64 "\n", a->cont_id);
-    printf("  uid       = %d\n", a->user_id);
-    printf("  app_name  = [%s]\n", a->app_name);
-    printf("  obj_name  = [%s]\n", a->obj_name);
-    printf("  obj_loc   = [%s]\n", a->data_location);
-    printf("  time_step = %d\n", a->time_step);
-    printf("  tags      = [%s]\n", a->tags);
-    printf("  ndim      = %lu\n", a->ndim);
-    printf("  dims = %" PRIu64 "", a->dims[0]);
+    LOG_JUST_PRINT("================================\n");
+    LOG_JUST_PRINT("  data_type = [%d]\n", a->data_type);
+    LOG_JUST_PRINT("  obj_id    = %" PRIu64 "\n", a->obj_id);
+    LOG_JUST_PRINT("  cont_id   = %" PRIu64 "\n", a->cont_id);
+    LOG_JUST_PRINT("  uid       = %d\n", a->user_id);
+    LOG_JUST_PRINT("  app_name  = [%s]\n", a->app_name);
+    LOG_JUST_PRINT("  obj_name  = [%s]\n", a->obj_name);
+    LOG_JUST_PRINT("  obj_loc   = [%s]\n", a->data_location);
+    LOG_JUST_PRINT("  time_step = %d\n", a->time_step);
+    LOG_JUST_PRINT("  tags      = [%s]\n", a->tags);
+    LOG_JUST_PRINT("  ndim      = %lu\n", a->ndim);
+    LOG_JUST_PRINT("  dims = %" PRIu64 "", a->dims[0]);
     for (i = 1; i < a->ndim; i++)
-        printf(", %" PRIu64 "", a->dims[i]);
+        LOG_JUST_PRINT(", %" PRIu64 "", a->dims[i]);
     // print regiono info
     DL_FOREACH(a->storage_region_list_head, elt)
     PDC_print_region_list(elt);
-    printf("\n================================\n\n");
+    LOG_JUST_PRINT("\n================================\n\n");
     fflush(stdout);
 
 done:
@@ -612,25 +613,28 @@ PDC_print_storage_region_list(region_list_t *a)
 
     FUNC_ENTER(NULL);
 
-    if (a == NULL)
+    if (a == NULL) {
         PGOTO_ERROR_VOID("==Empty region_list_t structure");
-
-    if (a->ndim > 4)
-        PGOTO_ERROR_VOID("==Error with ndim %lu", a->ndim);
-
-    printf("================================\n");
-    printf("  ndim      = %lu\n", a->ndim);
-    printf("  start    count\n");
-    for (i = 0; i < a->ndim; i++) {
-        printf("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
 
-    printf("    path: %s\n", a->storage_location);
-    printf(" buf_map: %d\n", a->buf_map_refcount);
-    printf("   dirty: %d\n", a->reg_dirty_from_buf);
-    printf("  offset: %" PRIu64 "\n", a->offset);
+    if (a->ndim > 4) {
+        PGOTO_ERROR_VOID("==Error with ndim %lu", a->ndim);
+    }
 
-    printf("================================\n\n");
+    LOG_JUST_PRINT("================================\n");
+    LOG_JUST_PRINT("  ndim      = %lu\n", a->ndim);
+    LOG_JUST_PRINT("  start    count\n");
+
+    for (i = 0; i < a->ndim; i++) {
+        LOG_JUST_PRINT("  %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
+    }
+
+    LOG_JUST_PRINT("    path: %s\n", a->storage_location);
+    LOG_JUST_PRINT(" buf_map: %d\n", a->buf_map_refcount);
+    LOG_JUST_PRINT("   dirty: %d\n", a->reg_dirty_from_buf);
+    LOG_JUST_PRINT("  offset: %" PRIu64 "\n", a->offset);
+
+    LOG_JUST_PRINT("================================\n\n");
     fflush(stdout);
 
 done:
@@ -648,27 +652,24 @@ PDC_print_region_list(region_list_t *a)
     if (a == NULL)
         PGOTO_ERROR_VOID("==Empty region_list_t structure");
 
-    printf("\n  == Region Info ==\n");
-    printf("    ndim      = %lu\n", a->ndim);
+    LOG_JUST_PRINT("\n  == Region Info ==\n");
+    LOG_JUST_PRINT("    ndim      = %lu\n", a->ndim);
     if (a->ndim > 4)
         PGOTO_ERROR_VOID("Error with dim %lu\n", a->ndim);
-
-    printf("    start    count\n");
-    /* printf("start stride count\n"); */
     for (i = 0; i < a->ndim; i++) {
-        printf("    %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
+        LOG_JUST_PRINT("    %5" PRIu64 "    %5" PRIu64 "\n", a->start[i], a->count[i]);
     }
-    printf("    Storage location: [%s]\n", a->storage_location);
-    printf("    Storage offset  : %" PRIu64 " \n", a->offset);
-    printf("    Client IDs: ");
+    LOG_JUST_PRINT("    Storage location: [%s]\n", a->storage_location);
+    LOG_JUST_PRINT("    Storage offset  : %" PRIu64 " \n", a->offset);
+    LOG_JUST_PRINT("    Client IDs:");
     i = 0;
     while (1) {
-        printf("%u, ", a->client_ids[i]);
+        LOG_JUST_PRINT("%u, ", a->client_ids[i]);
         i++;
         if (a->client_ids[i] == 0)
             break;
     }
-    printf("\n  =================\n");
+    LOG_JUST_PRINT("\n  =================\n");
 
 done:
     fflush(stdout);
@@ -1566,10 +1567,7 @@ HG_TEST_RPC_CB(gen_obj_id, handle)
 #ifdef ENABLE_MPI
     int server_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
-    /*
-        printf("server rank %llu generated object with data server ID %u, obj_id = %llu\n", (long long
-       unsigned) server_rank, (unsigned)in.data.data_server_id, (long long unsigned) out.obj_id);
-    */
+
 #endif
     HG_Respond(handle, NULL, NULL, &out);
 
@@ -1864,7 +1862,7 @@ HG_TEST_RPC_CB(send_rpc, handle)
     FUNC_ENTER(NULL);
 
     HG_Get_input(handle, &in);
-    fprintf(stderr, "==PDC_Server[]: %s received value from client %d\n", __func__, in.value);
+    LOG_ERROR("==PDC_Server: received value from client %d\n", in.value);
 
     out.value = 1;
     HG_Respond(handle, NULL, NULL, &out);
@@ -1956,7 +1954,7 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
         PDC_Server_add_kvtag(&in, &out);
     }
     else {
-        printf("==PDC_SERVER[]: received NOOP\n");
+        LOG_INFO("==PDC_SERVER[]: received NOOP\n");
         out.ret = 1;
     }
 
@@ -1996,7 +1994,7 @@ HG_TEST_RPC_CB(notify_io_complete, handle)
         HG_Respond(handle, PDC_Client_work_done_cb, read_info, &out);
     }
     else {
-        printf("==PDC_CLIENT: notify_io_complete_cb() - error with io type!\n");
+        LOG_ERROR("==PDC_CLIENT: notify_io_complete_cb() - error with io type!\n");
         HG_Respond(handle, NULL, NULL, &out);
     }
 
@@ -2421,7 +2419,7 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
                     registry[transform_id]->ftnPtr;
                 size_t result = this_transform(buf, bulk_args->in.data_type, ndim, dims, &data_buf,
                                                bulk_args->in.dest_type);
-                printf("==PDC_SERVER: transform returned %ld\n", result);
+                LOG_INFO("==PDC_SERVER: transform returned %ld\n", result);
                 puts("----------------");
 
                 if ((use_transform_size == 0) && dims)
@@ -2556,8 +2554,7 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
             int (*analysis_ftn)(pdcid_t iterIn, pdcid_t iterOut, struct _pdc_iterator_cbs_t * _cbs) =
                 registry[analysis_meta_index]->ftnPtr;
             int result = analysis_ftn(bulk_args->in.input_iter, bulk_args->in.output_iter, &iter_cbs);
-            printf("==PDC_SERVER: Analysis returned %d\n", result);
-            puts("----------------\n");
+            LOG_INFO("==PDC_SERVER: Analysis returned %d\n", result);
         }
     }
 #ifdef ENABLE_MPI
@@ -2634,8 +2631,8 @@ analysis_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
         if (mpi_rank == 0) {
-            printf("Analysis avg time = %lf seconds\nIO avg time = %lf\n", averages[2] / mpi_size,
-                   averages[3] / mpi_size);
+            LOG_INFO("Analysis avg time = %lf seconds\nIO avg time = %lf\n", averages[2] / mpi_size,
+                     averages[3] / mpi_size);
         }
     }
 #endif
@@ -2915,12 +2912,6 @@ HG_TEST_RPC_CB(region_release, handle)
     /* Get info from handle */
     hg_info = HG_Get_info(handle);
 
-    /* time_t t; */
-    /* struct tm tm; */
-    /* t = time(NULL); */
-    /* tm = *localtime(&t); */
-    /* printf("start region_release: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
-
     if (in.access_type == PDC_READ) {
         // check region is dirty or not, if dirty transfer data
         request_region = (region_list_t *)malloc(sizeof(region_list_t));
@@ -2943,11 +2934,6 @@ HG_TEST_RPC_CB(region_release, handle)
                 server_region->offset      = (uint64_t *)malloc(sizeof(uint64_t));
                 (server_region->size)[0]   = size;
                 (server_region->offset)[0] = in.region.start_0;
-
-                /* t = time(NULL); */
-                /* tm = *localtime(&t); */
-                /* printf("start PDC_Server_data_read_direct: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min,
-                 * tm.tm_sec); */
 
                 ret_value = PDC_Server_data_read_direct(elt->from_obj_id, server_region, data_buf);
                 if (ret_value != SUCCEED)
@@ -3123,14 +3109,6 @@ HG_TEST_RPC_CB(region_release, handle)
                         out.ret = 1;
                         HG_Respond(handle, NULL, NULL, &out);
 #else
-                        /* t = time(NULL); */
-                        /* tm = *localtime(&t); */
-                        /* printf("start PDC_Server_data_read_from: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min,
-                         * tm.tm_sec); */
-/*
-                        PDC_Server_data_read_from(obj_map_bulk_args->remote_obj_id, remote_reg_info, data_buf,
-                                                  in.data_unit);
-*/
 #ifdef PDC_SERVER_CACHE
                         PDC_transfer_request_data_read_from(obj_map_bulk_args->remote_obj_id, 0, NULL,
                                                             remote_reg_info, data_buf, in.data_unit);
@@ -3142,7 +3120,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            LOG_INFO("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
                             PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release, "
                                                         "handle) local and remote bulk size does not match");
                         }
@@ -3175,10 +3153,6 @@ HG_TEST_RPC_CB(region_release, handle)
             HG_Free_input(handle, &in);
             HG_Destroy(handle);
         }
-
-        /* t = time(NULL); */
-        /* tm = *localtime(&t); */
-        /* printf("done read: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
     }
     // write lock release with mapping case
     // do data tranfer if it is write lock release with mapping.
@@ -3315,7 +3289,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
-                            printf("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
+                            LOG_INFO("==PDC_SERVER: local size %llu, remote %llu\n", size, size2);
                             /* PGOTO_ERROR(HG_OTHER_ERROR, "===PDC SERVER: HG_TEST_RPC_CB(region_release,
                              * handle) local and remote bulk size does not match"); */
                         }
@@ -3349,9 +3323,6 @@ HG_TEST_RPC_CB(region_release, handle)
         }
     }
 done:
-    /* t = time(NULL); */
-    /* tm = *localtime(&t); */
-    /* printf("done region_release: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec); */
     if (error == 1) {
         out.ret = 0;
         HG_Respond(handle, NULL, NULL, &out);
@@ -3523,8 +3494,7 @@ region_read_transform_release(region_transform_and_lock_in_t *in, hg_handle_t ha
                         size = HG_Bulk_get_size(eltt2->local_bulk_handle);
                     if (size != HG_Bulk_get_size(remote_bulk_handle))
                         PGOTO_ERROR(HG_OTHER_ERROR,
-                                    "===PDC SERVER: %s - local and remote bulk size does not match",
-                                    __func__);
+                                    "===PDC SERVER: local and remote bulk size does not match");
 
                     hg_ret = HG_Bulk_transfer(hg_info->context, obj_map_region_release_bulk_transfer_cb,
                                               transform_release_bulk_args, HG_BULK_PUSH, hg_info->addr,
@@ -3739,7 +3709,7 @@ HG_TEST_RPC_CB(region_transform_release, handle)
     // do data transfer if it is write lock release with mapping.
     // ************************************************************
     else {
-        printf("region_release_cb: release obj_id=%" PRIu64 " access_type==WRITE\n", in.obj_id);
+        LOG_INFO("region_release_cb: release obj_id=%" PRIu64 " access_type==WRITE\n", in.obj_id);
         request_region = (region_list_t *)malloc(sizeof(region_list_t));
         PDC_region_transfer_t_to_list_t(&in.region, request_region);
         target_obj = PDC_Server_get_obj_region(in.obj_id);
@@ -4802,7 +4772,7 @@ HG_TEST_RPC_CB(bulk_rpc, handle)
     bulk_args->nbytes = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt    = cnt;
 
-    printf("==PDC_SERVER: bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
+    LOG_INFO("==PDC_SERVER: bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
 
     /* Create a new block handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
@@ -5036,7 +5006,7 @@ HG_TEST_RPC_CB(get_metadata_by_id, handle)
     if (target != NULL)
         PDC_metadata_t_to_transfer_t(target, &out.res_meta);
     else {
-        printf("==PDC_SERVER: no matching metadata of obj_id=%" PRIu64 "\n", in.obj_id);
+        LOG_INFO("==PDC_SERVER: no matching metadata of obj_id=%" PRIu64 "\n", in.obj_id);
         out.res_meta.user_id       = -1;
         out.res_meta.obj_id        = 0;
         out.res_meta.cont_id       = 0;
@@ -5161,13 +5131,13 @@ PDC_find_in_path(char *workingDir, char *application)
             // Change directory (pushd) to the where we find the application
             if (chdir(checkPath) == 0) {
                 if (getcwd(checkPath, sizeof(checkPath)) == NULL) {
-                    printf("Path is too large\n");
+                    LOG_ERROR("Path is too large\n");
                 }
 
                 offset = strlen(checkPath);
                 // Change back (popd) to where we started
                 if (chdir(workingDir) != 0) {
-                    printf("Check dir failed\n");
+                    LOG_ERROR("Check dir failed\n");
                 }
                 sprintf(&checkPath[offset], "/%s", appName);
                 PGOTO_DONE(strdup(checkPath));
@@ -6222,7 +6192,7 @@ HG_TEST_RPC_CB(send_shm_bulk_rpc, handle)
     bulk_args->nbytes  = HG_Bulk_get_size(origin_bulk_handle);
     bulk_args->cnt     = cnt;
 
-    printf("==PDC_SERVER: send_bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
+    LOG_ERROR("==PDC_SERVER: send_bulk_rpc_cb, nbytes %lu\n", bulk_args->nbytes);
 
     /* Create a new bulk handle to read the data */
     HG_Bulk_create(hg_info->hg_class, 1, NULL, (hg_size_t *)&bulk_args->nbytes, HG_BULK_READWRITE,
@@ -6443,7 +6413,6 @@ HG_TEST_RPC_CB(dart_get_server_info, handle)
 
     // Send response to client
     HG_Respond(handle, NULL, NULL, &out);
-    /* printf("==PDC_SERVER: dart_get_server_info_cb(): returned %llu\n", out.indexed_word_count); */
     // Free input
     HG_Free_input(handle, &in);
     // Free handle
@@ -6478,23 +6447,18 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     stopwatch_t server_timer;
     timer_start(&server_timer);
 
-    // printf("==PDC_SERVER: dart_perform_one_server_cb(): key = %s\n", in.attr_key);
-
     PDC_Server_dart_perform_one_server(&in, &out, n_obj_ids_ptr, buf_ptrs);
 
     timer_pause(&server_timer);
     out.server_time_elapsed       = (int64_t)timer_delta_us(&server_timer);
     out.server_memory_consumption = (int64_t)PDC_get_global_mem_usage();
 
-    // printf("perform_server_cb. n_obj_ids_ptr on op_type = %d = %d\n", in.op_type ,*n_obj_ids_ptr);
     out.op_type = in.op_type;
-    // printf("out.n_items= %d\n", out.n_items);
     // No result found
     if (*n_obj_ids_ptr == 0) {
         out.bulk_handle = HG_BULK_NULL;
         out.ret         = 0;
-        // printf("No object ids returned for the query\n");
-        ret = HG_Respond(handle, NULL, NULL, &out);
+        ret             = HG_Respond(handle, NULL, NULL, &out);
         goto done;
     }
 
@@ -6506,26 +6470,21 @@ HG_TEST_RPC_CB(dart_perform_one_server, handle)
     hg_ret = HG_Bulk_create(hg_class_g, n_buf, (void **)buf_ptrs, (const hg_size_t *)buf_sizes,
                             HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS) {
-        fprintf(stderr, "Could not create bulk data handle\n");
+        LOG_ERROR("Could not create bulk data handle\n");
         return EXIT_FAILURE;
     }
 
     // Fill bulk handle and return number of metadata that satisfy the query
     out.bulk_handle = bulk_handle;
     out.ret         = *n_obj_ids_ptr;
-    // printf("out.ret = %d\n", out.ret);
 
     // FIXME: Memory leak? buf_ptrs is not freed
     // TODO: To confirm how we can know the bulk data has been sent to client completely
 
     // Send bulk handle to client
-    /* printf("query_partial_cb(): Sending bulk handle to client\n"); */
-    /* fflush(stdout); */
-    /* HG_Respond(handle, PDC_server_bulk_respond_cb, NULL, &out); */
     ret = HG_Respond(handle, NULL, NULL, &out);
 
 done:
-    /* printf("==PDC_SERVER: metadata_index_search_cb(): returned %llu\n", out.ret); */
     // Free input
     HG_Free_input(handle, &in);
     // Free handle
@@ -6878,11 +6837,11 @@ PDC_get_overlap_start_count(uint32_t ndim, uint64_t *start_a, uint64_t *count_a,
 
     // Check if they are truly overlapping regions
     if (PDC_is_contiguous_start_count_overlap(ndim, start_a, count_a, start_b, count_b) != 1) {
-        printf("== %s: non-overlap regions!\n", __func__);
+        LOG_INFO("non-overlap regions!\n");
         for (i = 0; i < ndim; i++) {
-            printf("\t\tdim%" PRIu64 " - start_a: %" PRIu64 " count_a: %" PRIu64 ", "
-                   "\t\tstart_b:%" PRIu64 " count_b:%" PRIu64 "\n",
-                   i, start_a[i], count_a[i], start_b[i], count_b[i]);
+            LOG_INFO("\t\tdim%" PRIu64 " - start_a: %" PRIu64 " count_a: %" PRIu64 ", "
+                     "\t\tstart_b:%" PRIu64 " count_b:%" PRIu64 "\n",
+                     i, start_a[i], count_a[i], start_b[i], count_b[i]);
         }
         PGOTO_DONE(FAIL);
     }
@@ -7071,7 +7030,6 @@ serialize(pdc_query_t *root, int *combine_ops, int *cnt, pdc_query_constraint_t 
     FUNC_ENTER(NULL);
 
     if (root == NULL) {
-        /* fprintf(fp, "%d ", MARKER); */
         combine_ops[*cnt] = -1;
         (*cnt)++;
         PGOTO_DONE_VOID;
@@ -7135,85 +7093,55 @@ print_query(pdc_query_t *query)
 
     if (query->left == NULL && query->right == NULL) {
 
-        printf(" (%" PRIu64 " %s", query->constraint->obj_id, pdcquery_op_char_g[query->constraint->op]);
-        /*
-                if (query->constraint->is_range == 1) {
-                    if (query->constraint->type == PDC_FLOAT)
-                        printf(" %.6f %s %.6f) ", *((float *)&query->constraint->value),
-                               pdcquery_op_char_g[query->constraint->op2], *((float
-           *)&query->constraint->value2)); else if (query->constraint->type == PDC_DOUBLE) printf(" %.6f %s
-           %.6f) ", *((double *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2],
-           *((double *)&query->constraint->value2)); else if (query->constraint->type == PDC_INT) printf(" %d
-           %s %d) ", *((int *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2], *((int
-           *)&query->constraint->value2)); else if (query->constraint->type == PDC_UINT) printf(" %u %s %u) ",
-           *((unsigned *)&query->constraint->value), pdcquery_op_char_g[query->constraint->op2], *((unsigned
-           *)&query->constraint->value2)); else if (query->constraint->type == PDC_INT64) printf(" %" PRId64 "
-           %s %" PRId64 ")", *((int64_t *)&query->constraint->value),
-                               pdcquery_op_char_g[query->constraint->op2], *((int64_t
-           *)&query->constraint->value2)); else if (query->constraint->type == PDC_UINT64) printf(" %" PRId64
-           " %s %" PRId64 ") ", *((uint64_t *)&query->constraint->value),
-                               pdcquery_op_char_g[query->constraint->op2], *((uint64_t
-           *)&query->constraint->value2));
-                }
-                else {
-                    if (query->constraint->type == PDC_FLOAT)
-                        printf(" %.6f) ", *((float *)&query->constraint->value));
-                    else if (query->constraint->type == PDC_DOUBLE)
-                        printf(" %.6f) ", *((double *)&query->constraint->value));
-                    else if (query->constraint->type == PDC_INT)
-                        printf(" %d) ", *((int *)&query->constraint->value));
-                    else if (query->constraint->type == PDC_UINT)
-                        printf(" %u) ", *((unsigned *)&query->constraint->value));
-                    else if (query->constraint->type == PDC_INT64)
-                        printf(" %" PRId64 ")", *((int64_t *)&query->constraint->value));
-                    else if (query->constraint->type == PDC_UINT64)
-                        printf(" %" PRIu64 ") ", *((uint64_t *)&query->constraint->value));
-                }
-        */
+        LOG_JUST_PRINT(" (%" PRIu64 " %s", query->constraint->obj_id,
+                       pdcquery_op_char_g[query->constraint->op]);
         if (query->constraint->is_range == 1) {
             if (query->constraint->type == PDC_FLOAT)
-                printf(" %.6f %s %.6f) ", (float)query->constraint->value,
-                       pdcquery_op_char_g[query->constraint->op2], (float)query->constraint->value2);
+                LOG_JUST_PRINT(" %.6f %s %.6f) ", (float)query->constraint->value,
+                               pdcquery_op_char_g[query->constraint->op2], (float)query->constraint->value2);
             else if (query->constraint->type == PDC_DOUBLE)
-                printf(" %.6f %s %.6f) ", (double)query->constraint->value,
-                       pdcquery_op_char_g[query->constraint->op2], (double)query->constraint->value2);
+                LOG_JUST_PRINT(" %.6f %s %.6f) ", (double)query->constraint->value,
+                               pdcquery_op_char_g[query->constraint->op2], (double)query->constraint->value2);
             else if (query->constraint->type == PDC_INT)
-                printf(" %d %s %d) ", (int)query->constraint->value,
-                       pdcquery_op_char_g[query->constraint->op2], (int)query->constraint->value2);
+                LOG_JUST_PRINT(" %d %s %d) ", (int)query->constraint->value,
+                               pdcquery_op_char_g[query->constraint->op2], (int)query->constraint->value2);
             else if (query->constraint->type == PDC_UINT)
-                printf(" %u %s %u) ", (unsigned)query->constraint->value,
-                       pdcquery_op_char_g[query->constraint->op2], (unsigned)query->constraint->value2);
+                LOG_JUST_PRINT(" %u %s %u) ", (unsigned)query->constraint->value,
+                               pdcquery_op_char_g[query->constraint->op2],
+                               (unsigned)query->constraint->value2);
             else if (query->constraint->type == PDC_INT64)
-                printf(" %" PRId64 " %s %" PRId64 ")", (int64_t)query->constraint->value,
-                       pdcquery_op_char_g[query->constraint->op2], (int64_t)query->constraint->value2);
+                LOG_JUST_PRINT(" %" PRId64 " %s %" PRId64 ")", (int64_t)query->constraint->value,
+                               pdcquery_op_char_g[query->constraint->op2],
+                               (int64_t)query->constraint->value2);
             else if (query->constraint->type == PDC_UINT64)
-                printf(" %" PRId64 " %s %" PRId64 ") ", (uint64_t)query->constraint->value,
-                       pdcquery_op_char_g[query->constraint->op2], (uint64_t)query->constraint->value2);
+                LOG_JUST_PRINT(" %" PRId64 " %s %" PRId64 ") ", (uint64_t)query->constraint->value,
+                               pdcquery_op_char_g[query->constraint->op2],
+                               (uint64_t)query->constraint->value2);
         }
         else {
             if (query->constraint->type == PDC_FLOAT)
-                printf(" %.6f) ", (float)query->constraint->value);
+                LOG_JUST_PRINT(" %.6f) ", (float)query->constraint->value);
             else if (query->constraint->type == PDC_DOUBLE)
-                printf(" %.6f) ", (double)query->constraint->value);
+                LOG_JUST_PRINT(" %.6f) ", (double)query->constraint->value);
             else if (query->constraint->type == PDC_INT)
-                printf(" %d) ", (int)query->constraint->value);
+                LOG_JUST_PRINT(" %d) ", (int)query->constraint->value);
             else if (query->constraint->type == PDC_UINT)
-                printf(" %u) ", (unsigned)query->constraint->value);
+                LOG_JUST_PRINT(" %u) ", (unsigned)query->constraint->value);
             else if (query->constraint->type == PDC_INT64)
-                printf(" %" PRId64 ")", (int64_t)query->constraint->value);
+                LOG_JUST_PRINT(" %" PRId64 ")", (int64_t)query->constraint->value);
             else if (query->constraint->type == PDC_UINT64)
-                printf(" %" PRIu64 ") ", (uint64_t)query->constraint->value);
+                LOG_JUST_PRINT(" %" PRIu64 ") ", (uint64_t)query->constraint->value);
         }
         PGOTO_DONE_VOID;
     }
 
-    printf("(");
+    LOG_JUST_PRINT("(");
     print_query(query->left);
 
-    printf(" %s ", pdcquery_combine_op_char_g[query->combine_op]);
+    LOG_JUST_PRINT(" %s ", pdcquery_combine_op_char_g[query->combine_op]);
 
     print_query(query->right);
-    printf(")");
+    LOG_JUST_PRINT(")");
 
 done:
     FUNC_LEAVE_VOID;
@@ -7226,18 +7154,19 @@ PDCquery_print(pdc_query_t *query)
 
     FUNC_ENTER(NULL);
 
-    printf("Value selection: \n");
+    LOG_JUST_PRINT("Value selection: \n");
     print_query(query);
-    printf("\n");
+    LOG_JUST_PRINT("\n");
     if (query->region) {
-        printf("Spatial selection: \n");
-        printf("  ndim      = %lu\n", query->region->ndim);
-        printf("  start    count\n");
+        LOG_JUST_PRINT("Spatial selection: \n");
+        LOG_JUST_PRINT("  ndim      = %lu\n", query->region->ndim);
+        LOG_JUST_PRINT("  start    count\n");
         for (i = 0; i < query->region->ndim; i++) {
-            printf("  %5" PRIu64 "    %5" PRIu64 "\n", query->region->offset[i], query->region->size[i]);
+            LOG_JUST_PRINT("  %5" PRIu64 "    %5" PRIu64 "\n", query->region->offset[i],
+                           query->region->size[i]);
         }
     }
-    printf("\n");
+    LOG_JUST_PRINT("\n");
 
     fflush(stdout);
     FUNC_LEAVE_VOID;
@@ -7386,22 +7315,22 @@ PDCselection_print(pdc_selection_t *sel)
 
     FUNC_ENTER(NULL);
 
-    printf("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits, sel->coords_alloc);
-    printf("== Coordinates:\n");
+    LOG_JUST_PRINT("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits,
+                   sel->coords_alloc);
+    LOG_JUST_PRINT("== Coordinates:\n");
 
     if (sel->nhits > 10) {
         for (i = 0; i < 10; i++)
-
-            printf(" ,%" PRIu64 "", sel->coords[i]);
-        printf(" , ... ");
+            LOG_JUST_PRINT(" ,%" PRIu64 "", sel->coords[i]);
+        LOG_JUST_PRINT(" , ...");
         for (i = sel->nhits - 10; i < sel->nhits; i++)
-            printf(" ,%" PRIu64 "", sel->coords[i]);
+            LOG_JUST_PRINT(" ,%" PRIu64 "", sel->coords[i]);
     }
     else {
         for (i = 0; i < sel->nhits; i++)
-            printf(" ,%" PRIu64 "", sel->coords[i]);
+            LOG_JUST_PRINT(" ,%" PRIu64 "", sel->coords[i]);
     }
-    printf("\n\n");
+    LOG_JUST_PRINT("\n\n");
 
     FUNC_LEAVE_VOID;
 }
@@ -7413,13 +7342,14 @@ PDCselection_print_all(pdc_selection_t *sel)
 
     FUNC_ENTER(NULL);
 
-    printf("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits, sel->coords_alloc);
-    printf("== Coordinates:\n");
+    LOG_JUST_PRINT("== %" PRIu64 " hits, allocated %" PRIu64 " coordinates!\n", sel->nhits,
+                   sel->coords_alloc);
+    LOG_JUST_PRINT("== Coordinates:\n");
 
     for (i = 0; i < sel->nhits; i++)
-        printf(" ,%" PRIu64 "", sel->coords[i]);
+        LOG_JUST_PRINT(" ,%" PRIu64 "", sel->coords[i]);
 
-    printf("\n\n");
+    LOG_JUST_PRINT("\n\n");
 
     FUNC_LEAVE_VOID;
 }

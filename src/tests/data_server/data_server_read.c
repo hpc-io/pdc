@@ -10,7 +10,7 @@
 void
 print_usage()
 {
-    printf("Usage: srun -n ./data_server_read obj_name readsize\n");
+    LOG_JUST_PRINT("Usage: srun -n ./data_server_read obj_name readsize\n");
 }
 
 int
@@ -54,12 +54,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     PDC_Client_query_metadata_name_timestep(argv[1], 0, &metadata);
 
@@ -88,7 +88,7 @@ main(int argc, char **argv)
     ht_total_sec = ht_total_elapsed / 1000000.0;
 
     if (rank == 0) {
-        printf("Time to read data with %d ranks: %.5e\n", size, ht_total_sec);
+        LOG_INFO("Time to read data with %d ranks: %.5e\n", size, ht_total_sec);
         fflush(stdout);
     }
 
@@ -98,14 +98,14 @@ main(int argc, char **argv)
 
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

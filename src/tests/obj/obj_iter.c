@@ -51,44 +51,44 @@ main(int argc, char **argv)
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Create a container property\n");
+        LOG_INFO("Create a container property\n");
     }
     else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
-        printf("Create a container c1\n");
+        LOG_INFO("Create a container c1\n");
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop > 0) {
-        printf("Create an object property\n");
+        LOG_INFO("Create an object property\n");
     }
     else {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if (ret != SUCCEED) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     ret = PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
     if (ret != SUCCEED) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
 
@@ -96,30 +96,30 @@ main(int argc, char **argv)
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
-        printf("Create an object o1\n");
+        LOG_INFO("Create an object o1\n");
     }
     else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
     // create second object
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
     if (obj2 > 0) {
-        printf("Create an object o2\n");
+        LOG_INFO("Create an object o2\n");
     }
     else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
     // create third object
     sprintf(obj_name3, "o3_%d", rank);
     obj3 = PDCobj_create(cont, obj_name3, obj_prop);
     if (obj3 > 0) {
-        printf("Create an object o3\n");
+        LOG_INFO("Create an object o3\n");
     }
     else {
-        printf("Fail to create object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object");
         ret_value = 1;
     }
     // start object iteration
@@ -128,23 +128,23 @@ main(int argc, char **argv)
     while (!PDCobj_iter_null(oh)) {
         info = PDCobj_iter_get_info(oh);
         if (info->obj_pt->type != PDC_DOUBLE) {
-            printf("Type is not properly inherited from object property.\n");
+            LOG_ERROR("Type is not properly inherited from object property.\n");
             ret_value = 1;
         }
         if (info->obj_pt->ndim != ndim) {
-            printf("Number of dimensions is not properly inherited from object property.\n");
+            LOG_ERROR("Number of dimensions is not properly inherited from object property.\n");
             ret_value = 1;
         }
         if (info->obj_pt->dims[0] != dims[0]) {
-            printf("First dimension is not properly inherited from object property.\n");
+            LOG_ERROR("First dimension is not properly inherited from object property.\n");
             ret_value = 1;
         }
         if (info->obj_pt->dims[1] != dims[1]) {
-            printf("Second dimension is not properly inherited from object property.\n");
+            LOG_ERROR("Second dimension is not properly inherited from object property.\n");
             ret_value = 1;
         }
         if (info->obj_pt->dims[2] != dims[2]) {
-            printf("Third dimension is not properly inherited from object property.\n");
+            LOG_ERROR("Third dimension is not properly inherited from object property.\n");
             ret_value = 1;
         }
 
@@ -153,55 +153,55 @@ main(int argc, char **argv)
 
     // close first object
     if (PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
+        LOG_ERROR("Failed to close object o1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o1\n");
+        LOG_INFO("Successfully closed object o1\n");
     }
     // close second object
     if (PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
+        LOG_ERROR("Failed to close object o2\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o2\n");
+        LOG_INFO("Successfully closed object o2\n");
     }
     // close third object
     if (PDCobj_close(obj3) < 0) {
-        printf("fail to close object o3\n");
+        LOG_ERROR("Failed to close object o3\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o3\n");
+        LOG_INFO("Successfully closed object o3\n");
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close object property\n");
+        LOG_INFO("Successfully closed object property\n");
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

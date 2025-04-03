@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 sudo apt-get update
-sudo apt-get install libopenmpi-dev libhdf5-dev uuid-dev
+sudo apt-get install libopenmpi-dev libhdf5-dev uuid-dev cmake
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.12.1.tar.gz
@@ -18,8 +18,8 @@ cd ..
 # Mercury
 git clone --recursive https://github.com/mercury-hpc/mercury.git
 cd mercury
-git checkout v2.1.0
+git checkout v2.2.0
 mkdir build && cd build
-cmake ../  -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DMERCURY_USE_CHECKSUMS=OFF
+cmake ../  -DCMAKE_C_COMPILER=gcc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DMERCURY_USE_CHECKSUMS=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 make -j2 && sudo make install
 ctest

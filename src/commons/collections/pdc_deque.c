@@ -1,4 +1,5 @@
 #include "pdc_deque.h"
+#include "pdc_logger.h"
 #include <stdio.h>
 
 #define DEFAULT_CAPACITY 16
@@ -18,7 +19,7 @@ resize_deque(PDC_deque_t *deque, size_t new_capacity)
 {
     void **new_data = malloc(sizeof(void *) * new_capacity);
     if (new_data == NULL) {
-        printf("Failed to allocate memory for deque!\n");
+        LOG_ERROR("Failed to allocate memory for deque!\n");
         exit(1);
     }
 

@@ -4,13 +4,14 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
+#include "pdc_logger.h"
 
 FILE *
 open_file(char *filename, char *mode)
 {
     FILE *fp = fopen(filename, mode);
     if (fp == NULL) {
-        fprintf(stderr, "Error opening file %s: %s\n", filename, strerror(errno));
+        LOG_ERROR("Error opening file %s: %s\n", filename, strerror(errno));
         exit(1);
     }
     return fp;
@@ -20,7 +21,7 @@ int
 close_file(FILE *fp)
 {
     if (fclose(fp) != 0) {
-        fprintf(stderr, "Error closing file\n");
+        LOG_ERROR("Error closing file\n");
         return 1;
     }
     return 0;
@@ -37,13 +38,13 @@ read_file(FILE *fp, io_buffer_t *buffer)
     // Allocate memory for the buffer
     buffer->buffer = (char *)malloc(buffer->size + 1);
     if (buffer->buffer == NULL) {
-        fprintf(stderr, "Error allocating memory for file buffer\n");
+        LOG_ERROR("Error allocating memory for file buffer\n");
         return 1;
     }
 
     // Read the file into the buffer
     if (fread(buffer->buffer, 1, buffer->size, fp) != buffer->size) {
-        fprintf(stderr, "Error reading file\n");
+        LOG_ERROR("Error reading file\n");
         return 1;
     }
     buffer->buffer[buffer->size] = '\0';
@@ -55,7 +56,7 @@ int
 write_file(FILE *fp, io_buffer_t *buffer)
 {
     if (fwrite(buffer->buffer, 1, buffer->size, fp) != buffer->size) {
-        fprintf(stderr, "Error writing file\n");
+        LOG_ERROR("Error writing file\n");
         return 1;
     }
     return 0;
@@ -64,14 +65,14 @@ write_file(FILE *fp, io_buffer_t *buffer)
 void
 print_string(char *string)
 {
-    printf("%s", string);
+    LOG_JUST_PRINT("%s", string);
 }
 
 int
 read_line(FILE *fp, char *buffer, size_t size)
 {
     if (fgets(buffer, size, fp) == NULL) {
-        fprintf(stderr, "Error reading line\n");
+        LOG_ERROR("Error reading line\n");
         return 1;
     }
     // Remove the newline character if present
@@ -85,7 +86,7 @@ int
 get_input(char *buffer, size_t size)
 {
     if (fgets(buffer, size, stdin) == NULL) {
-        fprintf(stderr, "Error getting input\n");
+        LOG_ERROR("Error getting input\n");
         return 1;
     }
     // Remove the newline character if present
@@ -98,7 +99,7 @@ get_input(char *buffer, size_t size)
 void
 print_error(char *message)
 {
-    fprintf(stderr, "Error: %s\n", message);
+    LOG_ERROR("Error: %s\n", message);
 }
 
 int
@@ -115,7 +116,7 @@ read_text_file(char *filename, void (*callback)(char *line))
         callback(line);
     }
     if (ferror(fp)) {
-        fprintf(stderr, "Error reading file\n");
+        LOG_ERROR("Error reading file\n");
         return 1;
     }
     free(line);
@@ -129,7 +130,7 @@ write_text_file(char *filename, char **lines, size_t num_lines)
     FILE *fp = open_file(filename, IO_MODE_WRITE);
     for (size_t i = 0; i < num_lines; i++) {
         if (fprintf(fp, "%s\n", lines[i]) < 0) {
-            fprintf(stderr, "Error writing to file\n");
+            LOG_ERROR("Error writing to file\n");
             close_file(fp);
             return 1;
         }
@@ -143,7 +144,7 @@ read_binary_file(char *filename, void *buffer, size_t size)
 {
     FILE *fp = open_file(filename, IO_MODE_BINARY IO_MODE_READ);
     if (fread(buffer, 1, size, fp) != size) {
-        fprintf(stderr, "Error reading file\n");
+        LOG_ERROR("Error reading file\n");
         close_file(fp);
         return 1;
     }
@@ -156,7 +157,7 @@ write_binary_file(char *filename, void *buffer, size_t size)
 {
     FILE *fp = open_file(filename, IO_MODE_BINARY IO_MODE_WRITE);
     if (fwrite(buffer, 1, size, fp) != size) {
-        fprintf(stderr, "Error writing file\n");
+        LOG_ERROR("Error writing file\n");
         close_file(fp);
         return 1;
     }
@@ -169,17 +170,17 @@ update_binary_file(char *filename, void *buffer, size_t size, unsigned long star
 {
     FILE *fp = open_file(filename, IO_MODE_BINARY IO_MODE_READ IO_MODE_WRITE);
     if (fseek(fp, start_pos, SEEK_SET) != 0) {
-        fprintf(stderr, "Error seeking to starting position\n");
+        LOG_ERROR("Error seeking to starting position\n");
         close_file(fp);
         return 1;
     }
     if (fwrite(buffer, 1, size, fp) != size) {
-        fprintf(stderr, "Error writing to file\n");
+        LOG_ERROR("Error writing to file\n");
         close_file(fp);
         return 1;
     }
     if (length != size && ftruncate(fileno(fp), start_pos + size) != 0) {
-        fprintf(stderr, "Error truncating file\n");
+        LOG_ERROR("Error truncating file\n");
         close_file(fp);
         return 1;
     }

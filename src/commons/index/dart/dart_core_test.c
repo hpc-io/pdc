@@ -1,4 +1,5 @@
 #include "dart_core.h"
+#include "pdc_logger.h"
 
 int32_t request_count_g;
 
@@ -15,7 +16,7 @@ main(int argc, char *argv[])
 {
 
     if (argc != 4) {
-        printf("Usage: %s <query_str> <num_server> <replication_factor>\n", argv[0]);
+        LOG_JUST_PRINT("Usage: %s <query_str> <num_server> <replication_factor>\n", argv[0]);
         return 1;
     }
 
@@ -46,47 +47,47 @@ main(int argc, char *argv[])
     index_hash_result_t *out;
     int                  array_len = DART_hash(&dart, query_str, OP_INSERT, NULL, &out);
     // print out in the same line
-    printf("server ids for insert (%d): \n{", array_len);
+    LOG_JUST_PRINT("server ids for insert (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
-        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+        LOG_JUST_PRINT("  %d : %s,\n", out[i].server_id, out[i].key);
     }
-    printf("\n}\n");
+    LOG_JUST_PRINT("\n}\n");
 
     free(out);
 
     array_len = DART_hash(&dart, query_str, OP_EXACT_QUERY, NULL, &out);
-    printf("server ids for exact search (%d): \n{", array_len);
+    LOG_JUST_PRINT("server ids for exact search (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
-        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+        LOG_JUST_PRINT("  %d : %s,\n", out[i].server_id, out[i].key);
     }
-    printf("\n}\n");
+    LOG_JUST_PRINT("\n}\n");
 
     free(out);
 
     array_len = DART_hash(&dart, substring(query_str, 0, strlen(query_str) - 3), OP_PREFIX_QUERY, NULL, &out);
-    printf("server ids for prefix search (%d): \n{", array_len);
+    LOG_JUST_PRINT("server ids for prefix search (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
-        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+        LOG_JUST_PRINT("  %d : %s,\n", out[i].server_id, out[i].key);
     }
-    printf("\n}\n");
+    LOG_JUST_PRINT("\n}\n");
 
     free(out);
 
     array_len = DART_hash(&dart, substring(query_str, 3, strlen(query_str)), OP_SUFFIX_QUERY, NULL, &out);
-    printf("server ids for suffix search (%d): \n{", array_len);
+    LOG_JUST_PRINT("server ids for suffix search (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
-        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+        LOG_JUST_PRINT("  %d : %s,\n", out[i].server_id, out[i].key);
     }
-    printf("\n}\n");
+    LOG_JUST_PRINT("\n}\n");
 
     free(out);
 
     array_len = DART_hash(&dart, substring(query_str, 2, strlen(query_str) - 2), OP_INFIX_QUERY, NULL, &out);
-    printf("server ids for infix search (%d): \n{", array_len);
+    LOG_JUST_PRINT("server ids for infix search (%d): \n{", array_len);
     for (int i = 0; i < array_len; i++) {
-        printf("  %d : %s,\n", out[i].server_id, out[i].key);
+        LOG_JUST_PRINT("  %d : %s,\n", out[i].server_id, out[i].key);
     }
-    printf("\n}\n");
+    LOG_JUST_PRINT("\n}\n");
 
     return 0;
 }

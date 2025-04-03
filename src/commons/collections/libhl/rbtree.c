@@ -7,6 +7,7 @@
 #include "rbtree.h"
 #include "pdc_malloc.h"
 #include "comparators.h"
+#include "pdc_logger.h"
 
 #define IS_BLACK(_n) (!(_n) || (_n)->color == RBTREE_COLOR_BLACK)
 #define IS_RED(_n)   ((_n) && (_n)->color == RBTREE_COLOR_RED)
@@ -650,7 +651,7 @@ rbt_add(rbt_t *rbt, void *k, size_t klen, void *v)
                         rbt_rotate_left(rbt, grandparent);
                 }
                 else {
-                    fprintf(stderr, "Corrupted tree\n");
+                    LOG_ERROR("Corrupted tree\n");
                     return -1;
                 }
             }
@@ -1033,12 +1034,12 @@ rbt_print(rbt_t *rbt)
     char format[16];
     snprintf(format, sizeof(format), "%%%ds", w.ws_col);
     for (i = 0; i < 20; i++)
-        sprintf(s[i], format, " ");
+        sprintf(s[i], format, "");
 
     rbt_print_internal(rbt->root, 0, 0, 0, s);
 
     for (i = 0; i < 20; i++)
-        printf("%s\n", s[i]);
+        LOG_INFO("%s\n", s[i]);
 }
 #endif
 

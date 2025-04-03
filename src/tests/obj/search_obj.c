@@ -50,7 +50,7 @@ rand_string(char *str, size_t size)
 void
 print_usage()
 {
-    printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
+    LOG_JUST_PRINT("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
 
 int
@@ -92,11 +92,11 @@ main(int argc, char **argv)
                 break;
             case '?':
                 if (optopt == 'r')
-                    fprintf(stderr, "Option -%c requires an argument.\n", optopt);
+                    LOG_ERROR("Option -%c requires an argument.\n", optopt);
                 else if (isprint(optopt))
-                    fprintf(stderr, "Unknown option `-%c'.\n", optopt);
+                    LOG_ERROR("Unknown option `-%c'.\n", optopt);
                 else
-                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+                    LOG_ERROR("Unknown option character `\\x%x'.\n", optopt);
                 return 1;
             default:
                 print_usage();
@@ -109,28 +109,27 @@ main(int argc, char **argv)
     }
 
     if (rank == 0) {
-        printf("%d clients in total\n", size);
+        LOG_INFO("%d clients in total\n", size);
     }
     count /= size;
 
     // create a pdc
     pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     env_str = getenv("PDC_OBJ_NAME");
     if (env_str != NULL) {
@@ -140,7 +139,7 @@ main(int argc, char **argv)
     srand(rank + 1);
 
     if (rank == 0) {
-        printf("Using %s\n", name_mode[use_name + 1]);
+        LOG_INFO("Using %s\n", name_mode[use_name + 1]);
     }
 
     obj_names = (char **)malloc(count * sizeof(char *));
@@ -157,7 +156,6 @@ main(int argc, char **argv)
         strcpy(pdc_server_tmp_dir_g, tmp_dir);
 
     sprintf(filename, "%s/metadata_checkpoint.%d", pdc_server_tmp_dir_g, rank);
-    /* printf("file name: %s\n", filename); */
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         fputs("Checkpoint file not available\n", stderr);
@@ -165,15 +163,12 @@ main(int argc, char **argv)
     }
 
     fread(&n_entry, sizeof(int), 1, file);
-    /* printf("%d entries\n", n_entry); */
 
     while (n_entry > 0) {
         fread(&tmp_count, sizeof(int), 1, file);
-        /* printf("Count:%d\n", tmp_count); */
 
         hash_key = (uint32_t *)malloc(sizeof(uint32_t));
         fread(hash_key, sizeof(uint32_t), 1, file);
-        /* printf("Hash key is %u\n", *hash_key); */
 
         // read each metadata
         for (j = 0; j < tmp_count; j++) {
@@ -184,20 +179,16 @@ main(int argc, char **argv)
             fread(&entry, sizeof(pdc_metadata_t), 1, file);
             sprintf(obj_names[read_count], "%s", entry.obj_name);
             obj_ts[i] = entry.time_step;
-            /* printf("Read name %s\n", obj_names[read_count]); */
+
             read_count++;
         }
         n_entry--;
     }
 
     fclose(file);
-    /* printf("Finished read\n"); */
-    /* fflush(stdout); */
-
-    /* count = read_count; */
 
     if (rank == 0)
-        printf("Searching %d objects per MPI rank\n", count);
+        LOG_INFO("Searching %d objects per MPI rank\n", count);
     fflush(stdout);
 
 #ifdef ENABLE_MPI
@@ -210,19 +201,11 @@ main(int argc, char **argv)
 
         pdc_metadata_t *res = NULL;
 
-        /* printf("Proc %d search %s\n", rank, obj_name); */
-        /* PDC_Client_query_metadata_with_name(obj_names[i], &res); */
-        /* PDC_Client_query_metadata_with_name(obj_names[0], &res); */
         int name_id = 0;
         PDC_Client_query_metadata_name_only(obj_names[name_id], &res);
         if (res == NULL) {
-            printf("No result found for current query with name [%s]\n", obj_names[i]);
+            LOG_INFO("No result found for current query with name [%s]\n", obj_names[i]);
         }
-        /* else { */
-        /*     printf("Got response from server.\n"); */
-        /*     PDC_print_metadata(res); */
-        /*     fflush(stdout); */
-        /* } */
 
         // Print progress
         int progress_factor = count < 20 ? 1 : 20;
@@ -233,7 +216,7 @@ main(int argc, char **argv)
             ht_total_sec = ht_total_elapsed / 1000000.0;
 
             if (rank == 0) {
-                printf("searched %10d ... %.5e\n", i * size, ht_total_sec);
+                LOG_INFO("searched %10d ... %.5e\n", i * size, ht_total_sec);
                 fflush(stdout);
             }
 
@@ -251,21 +234,20 @@ main(int argc, char **argv)
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        /* printf("Time to full query %d obj/rank with %d ranks: %.5e\n\n\n", count, size, ht_total_sec); */
-        printf("Time to partial query %d obj/rank with %d ranks: %.5e\n\n\n", count, size, ht_total_sec);
+        LOG_INFO("Time to partial query %d obj/rank with %d ranks: %.5e\n\n\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container %lld\n", cont);
+        LOG_ERROR("Failed to close container %lld\n", cont);
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDC_close(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

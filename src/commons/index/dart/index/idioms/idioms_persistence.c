@@ -127,7 +127,6 @@ append_attr_name_node(void *data, const unsigned char *key, uint32_t key_len, vo
         kv_bulki = BULKI_init(1); // one key-value pair
         hash_table_insert(vnode_buf_ht, &(leafcnt->virtural_node_id), kv_bulki);
     }
-    // printf("[PERSISTENCE]key = %s\n", key);
     BULKI_Entity *key_entity = BULKI_ENTITY((void *)key, 1, PDC_STRING, PDC_CLS_ITEM);
 
     BULKI_Entity *data_entity = BULKI_get(kv_bulki, key_entity);

@@ -14,7 +14,7 @@
 void
 print_usage(char *name)
 {
-    printf("Usage: %s /path/to/file region_size_MB\n", name);
+    LOG_JUST_PRINT("Usage: %s /path/to/file region_size_MB\n", name);
 }
 
 int
@@ -52,7 +52,7 @@ main(int argc, char *argv[])
     region_size = region_MB * 1048576;
 
     if (my_rank == 0) {
-        printf("Region size = %d MB, reading from file [%s], \n", region_MB, file_name);
+        LOG_INFO("Region size = %d MB, reading from file [%s], \n", region_MB, file_name);
     }
 
     fapl = H5Pcreate(H5P_FILE_ACCESS);
@@ -63,21 +63,21 @@ main(int argc, char *argv[])
 
     file_id = H5Fopen(file_name, H5F_ACC_RDONLY, fapl);
     if (file_id < 0) {
-        printf("Error opening file [%s]!\n", file_name);
+        LOG_ERROR("Error opening file [%s]!\n", file_name);
         goto done;
     }
 
     group_name = "Step#0";
     group_id   = H5Gopen(file_id, group_name, H5P_DEFAULT);
     if (group_id < 0) {
-        printf("Error opening group [%s]!\n", group_name);
+        LOG_ERROR("Error opening group [%s]!\n", group_name);
         goto done;
     }
 
     for (i = 0; i < NVAR; i++) {
         dset_ids[i] = H5Dopen(group_id, dset_names[i], H5P_DEFAULT);
         if (dset_ids[i] < 0) {
-            printf("Error opening dataset [%s]!\n", dset_names[i]);
+            LOG_ERROR("Error opening dataset [%s]!\n", dset_names[i]);
             goto done;
         }
     }
@@ -118,7 +118,7 @@ main(int argc, char *argv[])
         if (my_rank == 0) {
             obj_ids[i] = PDCobj_create(cont_id, dset_names[i], obj_prop);
             if (obj_ids[i] <= 0) {
-                printf("Error getting an object %s from server, exit...\n", dset_names[i]);
+                LOG_ERROR("Error getting an object %s from server, exit...\n", dset_names[i]);
                 goto done;
             }
         }
@@ -130,7 +130,7 @@ main(int argc, char *argv[])
         ret = PDC_Client_query_metadata_name_timestep(dset_names[i], 0, &obj_meta);
 #endif
         if (ret != SUCCEED || obj_meta == NULL || obj_meta->obj_id == 0) {
-            printf("Error with metadata!\n");
+            LOG_ERROR("Error with metadata!\n");
             exit(-1);
         }
 
@@ -143,7 +143,7 @@ main(int argc, char *argv[])
             memspace = H5Screate_simple(1, &elem_count, NULL);
             H5Sselect_hyperslab(filespace, H5S_SELECT_SET, &elem_offset, NULL, &elem_count, NULL);
             if (elem_offset + elem_count > dims[0]) {
-                printf("%d ERROR - off %llu count %llu\n", my_rank, elem_offset, elem_count);
+                LOG_ERROR("%d ERROR - off %llu count %llu\n", my_rank, elem_offset, elem_count);
             }
             hg_ret = H5Dread(dset_ids[i], H5T_NATIVE_FLOAT, memspace, filespace, H5P_DEFAULT, data);
             H5Sclose(memspace);
@@ -151,18 +151,15 @@ main(int argc, char *argv[])
             obj_region.offset[0] = elem_offset * sizeof(float);
             obj_region.size[0]   = elem_count * sizeof(float);
 
-            /* printf("%d HDF5 off %llu count %llu, PDC off %lu count %lu\n", */
-            /*         my_rank, elem_offset, elem_count, obj_region.offset[0], obj_region.size[0]); */
-
             ret = PDC_Client_write(obj_meta, &obj_region, data);
             if (ret != SUCCEED) {
-                printf("Error with PDC_Client_write!\n");
+                LOG_ERROR("Error with PDC_Client_write!\n");
                 exit(-1);
             }
 
             if ((my_rank == 0 || my_rank == num_procs - 1) && j > 0 && j % (my_nregion / 10) == 0)
-                printf("Rank %d -  obj [%s] Imported %lld/%lld regions\n", my_rank, dset_names[i], j,
-                       my_nregion);
+                LOG_INFO("Rank %d -  obj [%s] Imported %lld/%lld regions\n", my_rank, dset_names[i], j,
+                         my_nregion);
 
         } // End for j
 
@@ -171,7 +168,7 @@ main(int argc, char *argv[])
 #endif
 
         if (my_rank == 0)
-            printf("\n\nFinished import object %s\n\n", dset_names[i]);
+            LOG_INFO("\n\nFinished import object %s\n\n", dset_names[i]);
         fflush(stdout);
     } // End for i
 

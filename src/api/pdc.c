@@ -90,25 +90,26 @@ PDCinit(const char *pdc_name)
     FUNC_ENTER(NULL);
 
     if (NULL == (pdc_id_list_g = (struct pdc_id_list *)PDC_calloc(1, sizeof(struct pdc_id_list))))
-        PGOTO_ERROR(FAIL, "PDC global id list: memory allocation failed");
+        PGOTO_ERROR(0, "PDC global id list: memory allocation failed");
 
     if (PDC_class_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC class init error");
+        PGOTO_ERROR(0, "PDC class init error");
     pdcid = PDC_class_create(pdc_name);
 
     if (PDC_prop_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC property init error");
+        PGOTO_ERROR(0, "PDC property init error");
     if (PDC_cont_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC container init error");
+        PGOTO_ERROR(0, "PDC container init error");
     if (PDC_obj_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC object init error");
+        PGOTO_ERROR(0, "PDC object init error");
     if (PDC_region_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC region init error");
+        PGOTO_ERROR(0, "PDC region init error");
     if (PDC_transfer_request_init() < 0)
-        PGOTO_ERROR(FAIL, "PDC region transfer init error");
+        PGOTO_ERROR(0, "PDC region transfer init error");
 
     // PDC Client Server connection init
-    PDC_Client_init();
+    if (PDC_Client_init() < 0)
+        PGOTO_ERROR(0, "PDC client init error");
 #ifdef PDC_TIMING
     PDC_timing_init();
 #endif
@@ -180,35 +181,35 @@ PDCclose(pdcid_t pdcid)
     // check every list before closing
     // container property
     if (PDC_prop_cont_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close container property");
+        PGOTO_ERROR(FAIL, "Failed to close container property");
     // object property
     if (PDC_prop_obj_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close object property");
+        PGOTO_ERROR(FAIL, "Failed to close object property");
     // container
     if (PDC_cont_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close container");
+        PGOTO_ERROR(FAIL, "Failed to close container");
     // object
     if (PDC_obj_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close object");
+        PGOTO_ERROR(FAIL, "Failed to close object");
     // region
     if (PDC_region_list_null() < 0)
-        PGOTO_ERROR(FAIL, "fail to close region");
+        PGOTO_ERROR(FAIL, "Failed to close region");
 
     if (PDC_prop_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy property");
+        PGOTO_ERROR(FAIL, "Failed to destroy property");
     if (PDC_cont_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy container");
+        PGOTO_ERROR(FAIL, "Failed to destroy container");
     if (PDC_obj_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy object");
+        PGOTO_ERROR(FAIL, "Failed to destroy object");
     if (PDC_region_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy region");
+        PGOTO_ERROR(FAIL, "Failed to destroy region");
 
     if (PDC_iterator_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy iterator");
+        PGOTO_ERROR(FAIL, "Failed to destroy iterator");
     if (PDC_analysis_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy analysis");
+        PGOTO_ERROR(FAIL, "Failed to destroy analysis");
     if (PDC_transform_end() < 0)
-        PGOTO_ERROR(FAIL, "fail to destroy transform");
+        PGOTO_ERROR(FAIL, "Failed to destroy transform");
 
     PDC_class_close(pdcid);
 

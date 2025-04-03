@@ -43,7 +43,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    printf("Usage: srun -n #procs ./haccio #particles\n");
+    LOG_JUST_PRINT("Usage: srun -n #procs ./haccio #particles\n");
 }
 
 void
@@ -78,7 +78,7 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var
 
     pdcid_t obj_id = PDCobj_create_mpi(cont_id, obj_name, *obj_prop, 0, comm);
     if (obj_id == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
     }
 
@@ -106,7 +106,7 @@ main(int argc, char **argv)
 
     if (mpi_rank == 0) {
         NUM_PARTICLES = atoi(argv[1]);
-        printf("particles: %d\n", NUM_PARTICLES);
+        LOG_INFO("particles: %d\n", NUM_PARTICLES);
     }
     MPI_Bcast(&NUM_PARTICLES, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -185,9 +185,9 @@ main(int argc, char **argv)
     if (mpi_rank == 0) {
         double per_particle = sizeof(float) * 7 + sizeof(int64_t) + sizeof(int16_t);
         double bandwidth    = per_particle * NUM_PARTICLES / 1024.0 / 1024.0 / time_total * mpi_size;
-        printf("Bandwidth: %.2fMB/s, total time: %.4f, create transfer: %.4f, start transfer: %.4f, wait "
-               "transfer: %.4f\n",
-               bandwidth, time_total, time_create, time_start, time_wait);
+        LOG_INFO("Bandwidth: %.2fMB/s, total time: %.4f, create transfer: %.4f, start transfer: %.4f, wait "
+                 "transfer: %.4f\n",
+                 bandwidth, time_total, time_create, time_start, time_wait);
     }
     MPI_Finalize();
 

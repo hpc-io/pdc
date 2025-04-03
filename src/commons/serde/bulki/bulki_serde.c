@@ -1,5 +1,6 @@
 #include "bulki_serde.h"
 #include "bulki_vle_util.h"
+#include "pdc_logger.h"
 
 // clang-format off
 /**
@@ -60,7 +61,6 @@ serialize_type_class(pdc_c_var_type_t type, pdc_c_var_class_t class)
 void *
 BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *offset)
 {
-    // printf("offset: %zu\n", *offset);
     // serialize the size
     uint64_t size = (uint64_t)get_BULKI_Entity_size(entity);
     *offset += BULKI_vle_encode_uint(size, buffer + *offset);
@@ -73,9 +73,6 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
     // serialize the count
     uint64_t count = (uint64_t)(entity->count);
     *offset += BULKI_vle_encode_uint(count, buffer + *offset);
-
-    // printf("PRE-ser: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-    //        entity->pdc_class, entity->pdc_type, entity->count, *offset);
 
     // serialize the data
     if (entity->pdc_class == PDC_CLS_ITEM) {
@@ -107,12 +104,9 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
         }
     }
     else {
-        printf("Error: unsupported class type %d\n", entity->pdc_class);
+        LOG_ERROR("unsupported class type %d\n", entity->pdc_class);
         return NULL;
     }
-
-    // printf("POST-ser: size: %zu,  class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-    //        entity->pdc_class, entity->pdc_type, entity->count, *offset);
     return buffer;
 }
 
@@ -219,7 +213,6 @@ deserialize_type_class(uint8_t byte, pdc_c_var_type_t *type, pdc_c_var_class_t *
 BULKI_Entity *
 BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
 {
-    // printf("offset: %zu\n", *offset);
     BULKI_Entity *entity = malloc(sizeof(BULKI_Entity));
     // deserialize the size
     size_t   bytes_read;
@@ -237,9 +230,6 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
     uint64_t count = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
     entity->count  = (size_t)count;
     *offset += bytes_read;
-
-    // printf("PRE-DE: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-    //    entity->pdc_class, entity->pdc_type, entity->count, *offset);
 
     // deserialize the data
     if (entity->pdc_class == PDC_CLS_ITEM) {
@@ -278,12 +268,9 @@ BULKI_Entity_deserialize_from_buffer(void *buffer, size_t *offset)
         }
     }
     else {
-        printf("Error: unsupported class type %d\n", entity->pdc_class);
+        LOG_ERROR("unsupported class type %d\n", entity->pdc_class);
         return NULL;
     }
-
-    // printf("POST-DE: size: %zu, class: %d, type: %d, count: %zu, offset: %zu\n", entity->size,
-    //        entity->pdc_class, entity->pdc_type, entity->count, *offset);
     return entity;
 }
 
@@ -296,7 +283,6 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
     uint64_t totalSize = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
     bulki->totalSize   = totalSize;
     *offset += bytes_read;
-    // printf("totalSize: %zu\n", bulki->totalSize);
 
     // deserialize the number of keys
     uint64_t numKeys = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
@@ -324,9 +310,9 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
     uint64_t dataOffset = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
     // check the data offset
     if (((size_t)dataOffset) != *offset) {
-        printf("Error1: data offset does not match the expected offset. Expected: %zu, Found: %zu, "
-               "bytes_read: %zu \n",
-               (size_t)dataOffset, *offset, bytes_read);
+        LOG_ERROR("Error1: data offset does not match the expected offset. Expected: %zu, Found: %zu, "
+                  "bytes_read: %zu \n",
+                  (size_t)dataOffset, *offset, bytes_read);
         return NULL;
     }
     *offset += bytes_read;
@@ -343,13 +329,12 @@ BULKI_deserialize_from_buffer(void *buffer, size_t *offset)
     }
     // check the total size
     dataOffset = BULKI_vle_decode_uint(buffer + *offset, &bytes_read);
-    // printf("dataOffset: %zu, offset: %zu\n", dataOffset, *offset);
 
     // check the data offset
     if (((size_t)dataOffset) != *offset) {
-        printf("Error2: data offset does not match the expected offset. Expected: %zu, Found: %zu, "
-               "bytes_read: %zu\n",
-               (size_t)dataOffset, *offset, bytes_read);
+        LOG_ERROR("Error2: data offset does not match the expected offset. Expected: %zu, Found: %zu, "
+                  "bytes_read: %zu\n",
+                  (size_t)dataOffset, *offset, bytes_read);
         return NULL;
     }
     *offset += bytes_read;
@@ -382,7 +367,6 @@ BULKI_Entity_deserialize_from_file(FILE *fp)
     // read the file into the buffer
     void *buffer = malloc(fsize + 1);
     fread(buffer, fsize, 1, fp);
-    // printf("Read %ld bytes\n", fsize);
     fclose(fp);
     BULKI_Entity *rst = BULKI_Entity_deserialize(buffer);
     free(buffer);
@@ -398,7 +382,6 @@ BULKI_deserialize_from_file(FILE *fp)
     // read the file into the buffer
     void *buffer = malloc(fsize + 1);
     fread(buffer, fsize, 1, fp);
-    // printf("Read %ld bytes\n", fsize);
     fclose(fp);
     BULKI *rst = BULKI_deserialize(buffer);
     free(buffer);

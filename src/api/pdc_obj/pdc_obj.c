@@ -35,6 +35,7 @@
 #include "pdc_transforms_pkg.h"
 #include "pdc_analysis_pkg.h"
 #include "pdc_client_connect.h"
+#include "pdc_logger.h"
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -379,7 +380,7 @@ PDC_obj_list_null()
     nelemts = PDC_id_list_null(PDC_OBJ);
     if (nelemts > 0) {
         if (PDC_id_list_clear(PDC_OBJ) < 0)
-            PGOTO_ERROR(FAIL, "fail to clear object list");
+            PGOTO_ERROR(FAIL, "Failed to clear object list");
     }
 
 done:
@@ -611,9 +612,6 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
             p->obj_pt->transform_prop.dims[i] = out->current_state.dims[i];
     }
     p->metadata = out;
-
-    // printf("PDCobj_open_common: obj partition for %s is %d\n", obj_name, (int) (((pdc_metadata_t
-    // *)p->metadata)->region_partition));
 
     p->local_transfer_request_head = NULL;
     p->local_transfer_request_end  = NULL;
@@ -975,7 +973,7 @@ PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims)
     FUNC_ENTER(NULL);
     info = PDC_find_id(obj_id);
     if (info == NULL) {
-        fprintf(stderr, "PDCobj_set_dims: cannnot find obj id @ line %d\n", __LINE__);
+        LOG_ERROR("PDCobj_set_dims: cannnot find obj id");
     }
     object = (struct _pdc_obj_info *)(info->obj_ptr);
     if (object->local_transfer_request_size) {
@@ -985,8 +983,8 @@ PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims)
     }
 
     if (ndim != (int)((pdc_metadata_t *)(object->metadata))->ndim) {
-        fprintf(stderr, "PDCobj_set_dims: input dimension size is wrong %d != %d @ line %d\n", ndim,
-                (int)object->obj_pt->obj_prop_pub->ndim, __LINE__);
+        LOG_ERROR("PDCobj_set_dims: input dimension size is wrong %d != %d\n", ndim,
+                  (int)object->obj_pt->obj_prop_pub->ndim);
     }
     memcpy(object->obj_pt->obj_prop_pub->dims, dims, ndim * sizeof(uint64_t));
     memcpy(((pdc_metadata_t *)(object->metadata))->dims, dims, ndim * sizeof(uint64_t));
@@ -1012,7 +1010,7 @@ PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims)
 
     info = PDC_find_id(obj_id);
     if (info == NULL) {
-        fprintf(stderr, "PDCobj_set_dims: cannnot find obj id @ line %d\n", __LINE__);
+        LOG_ERROR("PDCobj_set_dims: cannnot find obj id");
     }
     object = (struct _pdc_obj_info *)(info->obj_ptr);
     *ndim  = object->obj_pt->obj_prop_pub->ndim;

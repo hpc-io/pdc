@@ -128,8 +128,9 @@ int
 main(int argc, char *argv[])
 {
     if (argc == 1) {
-        printf("Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] "
-               "[-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
+        LOG_JUST_PRINT(
+            "Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] "
+            "[-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
         return 0;
     }
     else {
@@ -153,11 +154,9 @@ main(int argc, char *argv[])
                     char tmp[1024];
                     sprintf(tmp, "%s/%s", argv[1], dir->d_name);
                     DIR *d1 = opendir(tmp);
-                    /* printf("%s\n", tmp); */
 
                     while ((direc = readdir(d1)) != NULL) { // go into it and go for checkpoint files again
                         if (strstr(direc->d_name, "metadata_checkpoint.")) {
-                            // printf("getting checkpoints\n");
                             char last = argv[1][strlen(argv[1]) - 1];
                             if (last == '/') {
                                 full_path = (char *)malloc(sizeof(char) *
@@ -195,7 +194,7 @@ main(int argc, char *argv[])
                     closedir(d1);
                 }
                 if (strstr(dir->d_name, "metadata_checkpoint.")) {
-                    printf("%s\n", dir->d_name);
+                    LOG_INFO("%s\n", dir->d_name);
                     char last = argv[1][strlen(argv[1]) - 1];
                     if (last == '/') {
                         full_path =
@@ -244,7 +243,7 @@ main(int argc, char *argv[])
         }
 
         if (head == NULL) {
-            printf("Unable to open/locate checkpoint file(s).\n");
+            LOG_ERROR("Unable to open/locate checkpoint file(s).\n");
             return -1;
         }
         else {
@@ -314,12 +313,11 @@ do_transfer_request_metadata(int pdc_server_size_input, char *checkpoint)
         ptr += sizeof(int);
         for (i = 0; i < n_objs; ++i) {
             if (metadata_server_objs) {
-                metadata_server_objs_end->next =
-                    (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_region_metadata));
-                metadata_server_objs_end = metadata_server_objs_end->next;
+                metadata_server_objs_end->next = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_metadata_pkg));
+                metadata_server_objs_end       = metadata_server_objs_end->next;
             }
             else {
-                metadata_server_objs     = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_region_metadata));
+                metadata_server_objs     = (pdc_obj_metadata_pkg *)malloc(sizeof(pdc_obj_metadata_pkg));
                 metadata_server_objs_end = metadata_server_objs;
             }
 
@@ -380,7 +378,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     int arg_index = 2;
     while (arg_index < argc) {
         if (is_arg(argv[arg_index]) == 0) {
-            printf("Improperly formatted argument(s).\n");
+            LOG_ERROR("Improperly formatted argument(s).\n");
             return;
         }
         if (strcmp(argv[arg_index], "-n") == 0) {
@@ -433,7 +431,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     while (cur_file_node != NULL) {
         filename = cur_file_node->file_name;
         stat(filename, &attr);
-        printf("[INFO] File [%s] last modified at: %s", filename, ctime(&attr.st_mtime));
+        LOG_INFO("[INFO] File [%s] last modified at: %s", filename, ctime(&attr.st_mtime));
         // Start server restart code
         perr_t ret_value = SUCCEED;
         int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
@@ -448,45 +446,44 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
 
         FILE *file = fopen(filename, "r");
         if (file == NULL) {
-            printf("==PDC_SERVER[%d]: %s -  Checkpoint file open FAILED [%s]!", pdc_server_rank_g, __func__,
-                   filename);
+            LOG_ERROR("==PDC_SERVER[%d]: Checkpoint file open FAILED [%s]!", pdc_server_rank_g, filename);
             ret_value = FAIL;
             continue;
         }
 
         if (fread(&n_cont, sizeof(int), 1, file) != 1) {
-            printf("Read failed for cont count\n");
+            LOG_ERROR("Read failed for cont count\n");
         }
         all_cont = n_cont;
         while (n_cont > 0) {
             hash_key = (uint32_t *)malloc(sizeof(uint32_t));
             if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) {
-                printf("Read failed for cont hash_key\n");
+                LOG_ERROR("Read failed for cont hash_key\n");
                 return;
             }
 
             // Reconstruct hash table
             cont_entry = (pdc_cont_hash_table_entry_t *)malloc(sizeof(pdc_cont_hash_table_entry_t));
             if (fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file) != 1) {
-                printf("Read failed for cont_entry\n");
+                LOG_ERROR("Read failed for cont_entry\n");
                 return;
             }
 
             n_cont--;
         } // End while
         if (fread(&n_entry, sizeof(int), 1, file) != 1) {
-            printf("Read failed for n_entry\n");
+            LOG_ERROR("Read failed for n_entry\n");
         }
 
         while (n_entry > 0) {
             if (fread(&count, sizeof(int), 1, file) != 1) {
-                printf("Read failed for obj count\n");
+                LOG_ERROR("Read failed for obj count\n");
                 return;
             }
 
             hash_key = (uint32_t *)malloc(sizeof(uint32_t));
             if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) {
-                printf("Read failed for obj hash_key\n");
+                LOG_ERROR("Read failed for obj hash_key\n");
                 return;
             }
 
@@ -496,11 +493,11 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             entry->bloom    = NULL;
             entry->metadata = NULL;
 
-            /* fprintf(stderr, "size of metadata: %lu\n", sizeof(pdc_metadata_t)); */
+            /* LOG_ERROR("size of metadata: %lu\n", sizeof(pdc_metadata_t)); */
             metadata = (pdc_metadata_t *)calloc(sizeof(pdc_metadata_t), count);
             for (i = 0; i < count; i++) {
                 if (fread(metadata + i, sizeof(pdc_metadata_t), 1, file) != 1) {
-                    printf("Read failed for metadata\n");
+                    LOG_ERROR("Read failed for metadata\n");
                 }
                 MetadataNode *new_node     = (MetadataNode *)malloc(sizeof(MetadataNode));
                 new_node->metadata_ptr     = (metadata + i);
@@ -538,36 +535,35 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
 
                 // Read kv tags
                 if (fread(&n_kvtag, sizeof(int), 1, file) != 1) {
-                    printf("Read failed for n_kvtag\n");
+                    LOG_ERROR("Read failed for n_kvtag\n");
                 }
                 for (j = 0; j < n_kvtag; j++) {
                     pdc_kvtag_list_t *kvtag_list = (pdc_kvtag_list_t *)calloc(1, sizeof(pdc_kvtag_list_t));
                     kvtag_list->kvtag            = (pdc_kvtag_t *)malloc(sizeof(pdc_kvtag_t));
                     if (fread(&key_len, sizeof(int), 1, file) != 1) {
-                        printf("Read failed for key_len\n");
+                        LOG_ERROR("Read failed for key_len\n");
                     }
                     kvtag_list->kvtag->name = malloc(key_len);
                     if (fread((void *)(kvtag_list->kvtag->name), key_len, 1, file) != 1) {
-                        printf("Read failed for kvtag_list->kvtag->name\n");
+                        LOG_ERROR("Read failed for kvtag_list->kvtag->name\n");
                     }
                     if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) {
-                        printf("Read failed for kvtag_list->kvtag->size\n");
+                        LOG_ERROR("Read failed for kvtag_list->kvtag->size\n");
                     }
                     if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) {
-                        printf("Read failed for kvtag_list->kvtag->size\n");
+                        LOG_ERROR("Read failed for kvtag_list->kvtag->size\n");
                     }
                     kvtag_list->kvtag->value = malloc(kvtag_list->kvtag->size);
                     if (fread(kvtag_list->kvtag->value, kvtag_list->kvtag->size, 1, file) != 1) {
-                        printf("Read failed for kvtag_list->kvtag->value\n");
+                        LOG_ERROR("Read failed for kvtag_list->kvtag->value\n");
                     }
                 }
 
                 if (fread(&n_region, sizeof(int), 1, file) != 1) {
-                    printf("Read failed for n_region\n");
+                    LOG_ERROR("Read failed for n_region\n");
                 }
                 if (n_region < 0) {
-                    printf("==PDC_SERVER[%d]: %s -  Checkpoint file region number ERROR!", pdc_server_rank_g,
-                           __func__);
+                    LOG_ERROR("==PDC_SERVER[%d] Checkpoint file region number ERROR!", pdc_server_rank_g);
                     ret_value = FAIL;
                     continue;
                 }
@@ -577,24 +573,24 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 for (j = 0; j < n_region; j++) {
                     region_list = (region_list_t *)malloc(sizeof(region_list_t));
                     if (fread(region_list, sizeof(region_list_t), 1, file) != 1) {
-                        printf("Read failed for region_list\n");
+                        LOG_ERROR("Read failed for region_list\n");
                     }
 
                     int has_hist = 0;
                     if (fread(&has_hist, sizeof(int), 1, file) != 1) {
-                        printf("Read failed for has_list\n");
+                        LOG_ERROR("Read failed for has_list\n");
                     }
                     if (has_hist == 1) {
                         region_list->region_hist = (pdc_histogram_t *)malloc(sizeof(pdc_histogram_t));
                         if (fread(&region_list->region_hist->dtype, sizeof(int), 1, file) != 1) {
-                            printf("Read failed for region_list->region_hist->dtype\n");
+                            LOG_ERROR("Read failed for region_list->region_hist->dtype\n");
                         }
                         if (fread(&region_list->region_hist->nbin, sizeof(int), 1, file) != 1) {
-                            printf("Read failed for region_list->region_hist->nbin\n");
+                            LOG_ERROR("Read failed for region_list->region_hist->nbin\n");
                         }
                         if (region_list->region_hist->nbin == 0) {
-                            printf("==PDC_SERVER[%d]: %s -  Checkpoint file histogram size is 0!",
-                                   pdc_server_rank_g, __func__);
+                            LOG_ERROR("==PDC_SERVER[%d]: Checkpoint file histogram size is 0!",
+                                      pdc_server_rank_g);
                         }
 
                         region_list->region_hist->range =
@@ -604,14 +600,14 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
 
                         if (fread(region_list->region_hist->range, sizeof(double),
                                   region_list->region_hist->nbin * 2, file) != 1) {
-                            printf("Read failed for region_list->region_hist->range\n");
+                            LOG_ERROR("Read failed for region_list->region_hist->range\n");
                         }
                         if (fread(region_list->region_hist->bin, sizeof(uint64_t),
                                   region_list->region_hist->nbin, file) != 1) {
-                            printf("Read failed for region_list->region_hist->bin\n");
+                            LOG_ERROR("Read failed for region_list->region_hist->bin\n");
                         }
                         if (fread(&region_list->region_hist->incr, sizeof(double), 1, file) != 1) {
-                            printf("Read failed for region_list->region_hist->incr\n");
+                            LOG_ERROR("Read failed for region_list->region_hist->incr\n");
                         }
                     }
 
@@ -626,7 +622,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         }
 
         if (fread(&n_objs, sizeof(int), 1, file) != 1) {
-            printf("Read failed for n_objs\n");
+            LOG_ERROR("Read failed for n_objs\n");
         }
 
         for (i = 0; i < n_objs; ++i) {
@@ -635,10 +631,10 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             new_obj_reg->fd               = -1;
             new_obj_reg->storage_location = (char *)malloc(sizeof(char) * ADDR_MAX);
             if (fread(&new_obj_reg->obj_id, sizeof(uint64_t), 1, file) != 1) {
-                printf("Read failed for obj_id\n");
+                LOG_ERROR("Read failed for obj_id\n");
             }
             if (fread(&n_region, sizeof(int), 1, file) != 1) {
-                printf("Read failed for n_region\n");
+                LOG_ERROR("Read failed for n_region\n");
             }
             MetadataNode *wanted_node = metadata_head;
             while (wanted_node != NULL) {
@@ -651,7 +647,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             for (j = 0; j < n_region; j++) {
                 region_list_t *new_region_list = (region_list_t *)malloc(sizeof(region_list_t));
                 if (fread(new_region_list, sizeof(region_list_t), 1, file) != 1) {
-                    printf("Read failed for new_region_list\n");
+                    LOG_ERROR("Read failed for new_region_list\n");
                 }
                 RegionNode *new_node  = (RegionNode *)malloc(sizeof(RegionNode));
                 new_node->region_list = new_region_list;
@@ -671,13 +667,13 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
         char *   checkpoint_buf;
 
         if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) {
-            printf("Read failed for checkpoint size\n");
+            LOG_ERROR("Read failed for checkpoint size\n");
         }
 
         checkpoint_buf = (char *)malloc(checkpoint_size);
 
         if (fread(checkpoint_buf, checkpoint_size, 1, file) != 1) {
-            printf("Read failed for checkpoint buf\n");
+            LOG_ERROR("Read failed for checkpoint buf\n");
         }
 
         pdc_obj_metadata_pkg *metadata_server_objs =
@@ -866,7 +862,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     FILE *fp;
     if (output_file_name) {
         fp = fopen(output_file_name, "w");
-        printf("Output to [%s]\n", output_file_name);
+        LOG_INFO("Output to [%s]\n", output_file_name);
     }
     else {
         fp = stdout;

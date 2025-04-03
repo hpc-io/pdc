@@ -12,7 +12,7 @@
 void
 print_usage()
 {
-    printf("Usage: srun -n ./data_server_read obj_name size_MB n_timestep sleepseconds\n");
+    LOG_JUST_PRINT("Usage: srun -n ./data_server_read obj_name size_MB n_timestep sleepseconds\n");
 }
 
 int
@@ -53,33 +53,32 @@ main(int argc, char **argv)
     long microseconds = (long)(sleepseconds * 1000000);
 
     if (rank == 0) {
-        printf("Reading a %lu MB object [%s]: %d timesteps,  %.2fs sleep time, and %d clients.\n", size_MB,
-               obj_name, ntimestep, sleepseconds, size);
+        LOG_INFO("Reading a %lu MB object [%s]: %d timesteps,  %.2fs sleep time, and %d clients.\n", size_MB,
+                 obj_name, ntimestep, sleepseconds, size);
     }
     size_B = size_MB * 1048576;
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0) {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         goto done;
     }
 
     // create a container
     pdcid_t cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0) {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         goto done;
     }
 
     // create an object property
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0) {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
         goto done;
     }
 
@@ -112,23 +111,18 @@ main(int argc, char **argv)
 
         // Query the created object
         if (rank == 0)
-            printf("%d: Start to query object just created ...", rank);
+            LOG_INFO("%d: Start to query object just created ...", rank);
 
         PDC_Client_query_metadata_name_timestep_agg(obj_name, ts, &metadata);
-        /* if (rank == 1) { */
-        /*     PDC_print_metadata(metadata); */
-        /* } */
         if (metadata == NULL || metadata->obj_id == 0) {
-            printf("[%d]: Error with metadata!\n", rank);
+            LOG_ERROR("[%d]: Error with metadata!\n", rank);
             exit(-1);
         }
-        /* printf("%d: reading to (%llu, %llu) of %llu bytes\n", rank, region.offset[0], region.offset[1],
-         * region.size[0]*region.size[1]); */
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
 #endif
         if (rank == 0)
-            printf(" done\n", rank);
+            LOG_INFO(" done\n", rank);
 
         gettimeofday(&meta_end, 0);
         meta_elapsed =
@@ -136,7 +130,7 @@ main(int argc, char **argv)
         total_meta_sec += meta_elapsed / 1000000.0;
 
         if (rank == 0) {
-            printf("Sleep %.2f seconds.\n", sleepseconds);
+            LOG_INFO("Sleep %.2f seconds.\n", sleepseconds);
             fflush(stdout);
         }
 
@@ -148,7 +142,7 @@ main(int argc, char **argv)
             // Wait for previous read completion before reading current timestep
             ret_value = PDC_Client_wait(&request, 60000, 100);
             if (ret_value != SUCCEED) {
-                printf("==PDC_CLIENT: PDC_Client_read - PDC_Client_wait error\n");
+                LOG_ERROR("==PDC_CLIENT: PDC_Client_read - PDC_Client_wait error\n");
                 goto done;
             }
 
@@ -161,28 +155,17 @@ main(int argc, char **argv)
                 wait_elapsed =
                     (wait_end.tv_sec - wait_start.tv_sec) * 1000000LL + wait_end.tv_usec - wait_start.tv_usec;
                 total_wait_sec += wait_elapsed / 1000000.0;
-                printf("Timestep %d read, metadata %.2f s, wait %.2f s.\n", ts, meta_elapsed / 1000000.0,
-                       wait_elapsed / 1000000.0);
+                LOG_INFO("Timestep %d read, metadata %.2f s, wait %.2f s.\n", ts, meta_elapsed / 1000000.0,
+                         wait_elapsed / 1000000.0);
                 fflush(stdout);
             }
         }
 
-        /* PDC_Client_read_wait_notify(metadata, &region, mydata); */
-
-        /* if (rank == 0) */
-        /*     printf("Before iread\n"); */
-        /* fflush(stdout); */
-
-        // (pdc_metadata_t *meta, struct PDC_region_info *region, PDC_Request_t *request, void *buf)
         ret_value = PDC_Client_iread(metadata, &region, &request, mydata);
         if (ret_value != SUCCEED) {
-            printf("[%d] Error with PDC_Client_iread!\n", rank);
+            LOG_ERROR("[%d] Error with PDC_Client_iread!\n", rank);
             goto done;
         }
-
-        /* if (rank == 0) */
-        /*     printf("After iread\n"); */
-        /* fflush(stdout); */
 
     } /* End of for ntimestep */
 
@@ -206,14 +189,14 @@ main(int argc, char **argv)
 done:
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container %ld\n", cont);
+        LOG_ERROR("Failed to close container %ld\n", cont);
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDC_close(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

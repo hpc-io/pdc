@@ -52,7 +52,7 @@ rand_string(char *str, size_t size)
 void
 print_usage()
 {
-    printf("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
+    LOG_JUST_PRINT("Usage: srun -n ./creat_obj -r num_of_obj_per_rank\n");
 }
 
 int
@@ -91,11 +91,11 @@ main(int argc, char **argv)
                 break;
             case '?':
                 if (optopt == 'r')
-                    fprintf(stderr, "Option -%c requires an argument.\n", i);
+                    LOG_ERROR("Option -%c requires an argument.\n", i);
                 else if (isprint(i))
-                    fprintf(stderr, "Unknown option `-%c'.\n", i);
+                    LOG_ERROR("Unknown option `-%c'.\n", i);
                 else
-                    fprintf(stderr, "Unknown option character `\\x%x'.\n", i);
+                    LOG_ERROR("Unknown option character `\\x%x'.\n", i);
                 return 1;
             default:
                 print_usage();
@@ -116,7 +116,7 @@ main(int argc, char **argv)
     count /= size;
 
     if (rank == 0)
-        printf("Creating %d objects per MPI rank\n", count);
+        LOG_INFO("Creating %d objects per MPI rank\n", count);
     fflush(stdout);
 
     // create a pdc
@@ -125,12 +125,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont = PDCcont_create_col("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     char *cont_tags = "cont_tags0=123";
     if (rank == 0) {
@@ -140,7 +140,7 @@ main(int argc, char **argv)
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     PDCprop_set_obj_type(obj_prop, PDC_INT);
     PDCprop_set_obj_dims(obj_prop, 3, dims);
@@ -151,7 +151,7 @@ main(int argc, char **argv)
     }
 
     if (rank == 0) {
-        printf("Using %s\n", name_mode[use_name + 1]);
+        LOG_INFO("Using %s\n", name_mode[use_name + 1]);
     }
 
     srand(rank + 1);
@@ -177,7 +177,7 @@ main(int argc, char **argv)
             PDCprop_set_obj_time_step(obj_prop, i / 4 + rank * count);
         }
         else {
-            printf("Unsupported name choice\n");
+            LOG_ERROR("Unsupported name choice\n");
             goto done;
         }
         PDCprop_set_obj_user_id(obj_prop, getuid());
@@ -185,11 +185,11 @@ main(int argc, char **argv)
         PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
         if (count < 20) {
-            printf("[%d] create obj with name %s\n", rank, obj_name);
+            LOG_INFO("[%d] create obj with name %s\n", rank, obj_name);
         }
         test_obj = PDCobj_create(cont, obj_name, obj_prop);
         if (test_obj == 0) {
-            printf("Error getting an object id of %s from server, exit...\n", obj_name);
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", obj_name);
             exit(-1);
         }
 
@@ -201,7 +201,7 @@ main(int argc, char **argv)
                                ht_total_end.tv_usec - ht_total_start.tv_usec;
             ht_total_sec = ht_total_elapsed / 1000000.0;
             if (rank == 0) {
-                printf("%10d created ... %.5e s\n", i * size, ht_total_sec);
+                LOG_INFO("%10d created ... %.5e s\n", i * size, ht_total_sec);
                 fflush(stdout);
             }
 #ifdef ENABLE_MPI
@@ -218,21 +218,21 @@ main(int argc, char **argv)
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
     if (rank == 0) {
-        printf("Time to create %d obj/rank with %d ranks: %.5e\n", count, size, ht_total_sec);
+        LOG_INFO("Time to create %d obj/rank with %d ranks: %.5e\n", count, size, ht_total_sec);
         fflush(stdout);
     }
 
 done:
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

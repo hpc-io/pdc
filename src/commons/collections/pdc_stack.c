@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "pdc_logger.h"
 #include "pdc_stack.h"
 
 #define DEFAULT_CAPACITY 16
@@ -20,7 +21,7 @@ stack_push(PDC_stack_t *stack, void *value)
         size_t new_capacity = stack->capacity * 2;
         void **new_data     = realloc(stack->data, sizeof(void *) * new_capacity);
         if (new_data == NULL) {
-            printf("Failed to reallocate memory for stack!\n");
+            LOG_ERROR("Failed to reallocate memory for stack!\n");
             exit(1);
         }
         stack->data     = new_data;
@@ -33,7 +34,7 @@ void *
 stack_pop(PDC_stack_t *stack)
 {
     if (stack->size == 0) {
-        printf("Stack underflow!\n");
+        LOG_ERROR("Stack underflow!\n");
         exit(1);
     }
     return stack->data[--stack->size];

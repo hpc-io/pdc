@@ -2,6 +2,7 @@
 #include "dart_core.h"
 #include "bulki.h"
 #include "assert.h"
+#include "pdc_logger.h"
 
 typedef enum { IDIOMS_INSERT = 1, IDIOMS_DELETE = 2, IDIOMS_QUERY = 3 } IDIOMS_OP_TYPE;
 
@@ -184,7 +185,6 @@ server_perform_delete(dummy_server_t *server, char *key, BULKI_Entity *value_ent
 void
 server_perform_operation(dummy_server_t *server)
 {
-    // printf("Perform operation on server %d\n", server->id);
     BULKI_Entity * resultBent  = empty_Bent_Array_Entity();
     BULKI_Entity * bentArr     = BULKI_Entity_deserialize(server->buffer_in);
     BULKI_Entity * opType_ent  = BULKI_ENTITY_get_BULKI_Entity(bentArr, 0);
@@ -266,18 +266,18 @@ client_insert_data(dummy_client_t *client, int id)
         result |= client_parse_response(client, NULL, NULL);
     }
     char *result_str = result == SUCCEED ? "SUCCEED" : "FAILED";
-    printf("Insert result: %s\n", result_str);
+    LOG_INFO("Insert result: %s\n", result_str);
     return result;
 }
 
 void
 client_print_result(uint64_t *rst_ids, uint64_t rst_count)
 {
-    printf("Result count : %" PRIu64 " | ", rst_count);
+    LOG_JUST_PRINT("Result count : %" PRIu64 " | ", rst_count);
     for (int i = 0; i < rst_count; i++) {
-        printf("%lu ", rst_ids[i]);
+        LOG_JUST_PRINT("%lu ", rst_ids[i]);
     }
-    printf("|\n");
+    LOG_JUST_PRINT("|\n");
 }
 
 uint64_t
@@ -347,7 +347,7 @@ client_delete_data(dummy_client_t *client, int id)
         result |= client_parse_response(client, NULL, NULL);
     }
     char *result_str = result == SUCCEED ? "SUCCEED" : "FAILED";
-    printf("Delete result: %s\n", result_str);
+    LOG_INFO("Delete result: %s\n", result_str);
     return result;
 }
 
@@ -460,30 +460,32 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
     switch (query_series) {
         case 0:
             if (nres != 1) {
-                printf("fail to query kvtag [%s] with rank %d. Expect 1 result but got %d result\n",
-                       "str109str=str109str", world_rank, nres);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expect 1 result but got %d result\n",
+                          "str109str=str109str", world_rank, nres);
                 step_failed = 0;
             }
             if (pdc_ids[0] != 109) {
-                printf("fail to query kvtag [%s] with rank %d. Expect 1 result which is 109, but got result "
-                       "%" PRIu64 ".\n",
-                       "str109str=str109str", world_rank, pdc_ids[0]);
+                LOG_ERROR(
+                    "Failed to query kvtag [%s] with rank %d. Expect 1 result which is 109, but got result "
+                    "%" PRIu64 ".\n",
+                    "str109str=str109str", world_rank, pdc_ids[0]);
                 step_failed = 0;
             }
             break;
         case 1:
             if (nres != 10) {
-                printf("fail to query kvtag [%s] with rank %d. Expect 10 Result, but got %d result.\n",
-                       "str09*=str09*", world_rank, nres);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expect 10 Result, but got %d result.\n",
+                          "str09*=str09*", world_rank, nres);
                 step_failed = 1;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
-                    printf("fail to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
-                           "%d, but got %" PRIu64 "\n",
-                           "str09*=str09*", world_rank, i, i + 90, pdc_ids[i]);
+                    LOG_ERROR(
+                        "Failed to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
+                        "%d, but got %" PRIu64 "\n",
+                        "str09*=str09*", world_rank, i, i + 90, pdc_ids[i]);
                     step_failed = 1;
                     break;
                 }
@@ -491,17 +493,18 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 2:
             if (nres != 10) {
-                printf("fail to query kvtag [%s] with rank %d. Expect 10 result, but got %d result.\n",
-                       "*09str=*09str", world_rank, nres);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expect 10 result, but got %d result.\n",
+                          "*09str=*09str", world_rank, nres);
                 step_failed = 2;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i * 10 + 9) {
-                    printf("fail to query kvtag [%s] with rank %d. The $d th result does not match. Expect "
-                           "%d, but got %" PRIu64 "\n",
-                           "*09str=*09str", world_rank, i, i * 10 + 9, pdc_ids[i]);
+                    LOG_ERROR(
+                        "Failed to query kvtag [%s] with rank %d. The $d th result does not match. Expect "
+                        "%d, but got %" PRIu64 "\n",
+                        "*09str=*09str", world_rank, i, i * 10 + 9, pdc_ids[i]);
                     step_failed = 2;
                     break;
                 }
@@ -509,8 +512,9 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 3:
             if (nres != 20) {
-                printf("fail to query kvtag [%s] with rank %d. Expected 20 results, but got %d results\n",
-                       "*09*=*09*", world_rank, nres);
+                LOG_ERROR(
+                    "Failed to query kvtag [%s] with rank %d. Expected 20 results, but got %d results\n",
+                    "*09*=*09*", world_rank, nres);
                 step_failed = 3;
             }
             // the result is not in order, so we need to sort the result first
@@ -519,9 +523,10 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
                                      99, 109, 209, 309, 409, 509, 609, 709, 809, 909};
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != expected[i]) {
-                    printf("fail to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
-                           "%" PRIu64 ", but got %" PRIu64 " results.\n",
-                           "*09*=*09*", world_rank, i, expected[i], pdc_ids[i]);
+                    LOG_ERROR(
+                        "Failed to query kvtag [%s] with rank %d. The %d th result does not match. Expect "
+                        "%" PRIu64 ", but got %" PRIu64 " results.\n",
+                        "*09*=*09*", world_rank, i, expected[i], pdc_ids[i]);
                     step_failed = 3;
                     break;
                 }
@@ -529,31 +534,32 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 4:
             if (nres != 1) {
-                printf("fail to query kvtag [%s] with rank %d. Expected 1 result, but got %d results\n",
-                       "intkey=109", world_rank, nres);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expected 1 result, but got %d results\n",
+                          "intkey=109", world_rank, nres);
                 step_failed = 4;
             }
             if (pdc_ids[0] != 109) {
-                printf(
-                    "fail to query kvtag [%s] with rank %d. Expected 1 result which is 109, but got %" PRIu64
-                    "\n",
-                    "intkey=109", world_rank, pdc_ids[0]);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d. Expected 1 result which is 109, but got "
+                          "%" PRIu64 "\n",
+                          "intkey=109", world_rank, pdc_ids[0]);
                 step_failed = 4;
             }
             break;
         case 5:
             if (nres != 10) {
-                printf("fail to query kvtag [%s] with rank %d. Expected 10 results, but got %d results. \n",
-                       "intkey=90|~|99", world_rank, nres);
+                LOG_ERROR(
+                    "Failed to query kvtag [%s] with rank %d. Expected 10 results, but got %d results. \n",
+                    "intkey=90|~|99", world_rank, nres);
                 step_failed = 5;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
-                    printf("fail to query kvtag [%s] with rank %d. The %d th result does not match, expect "
-                           "%d but got %" PRIu64 "\n",
-                           "intkey=90|~|99", world_rank, i, i + 90, pdc_ids[i]);
+                    LOG_ERROR(
+                        "Failed to query kvtag [%s] with rank %d. The %d th result does not match, expect "
+                        "%d but got %" PRIu64 "\n",
+                        "intkey=90|~|99", world_rank, i, i + 90, pdc_ids[i]);
                     step_failed = 5;
                     break;
                 }
@@ -602,10 +608,10 @@ perform_loop_test(int num_clients, int num_servers)
         uint64_t *rst_ids   = NULL;
         uint64_t  rst_count = client_perform_search(&clients[client_rank], query, &rst_ids);
         if (validate_query_result(client_rank, rst_count, rst_ids) == -1) {
-            printf("query [%s] with rank %d succeed\n", query, client_rank);
+            LOG_INFO("query [%s] with rank %d succeed\n", query, client_rank);
         }
         else {
-            printf("query [%s] with rank %d failed\n", query, client_rank);
+            LOG_ERROR("query [%s] with rank %d failed\n", query, client_rank);
         }
     }
 }

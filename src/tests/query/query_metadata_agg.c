@@ -10,7 +10,7 @@
 void
 print_usage()
 {
-    printf("Usage: srun -n ./data_server_read obj_name size_MB\n");
+    LOG_JUST_PRINT("Usage: srun -n ./data_server_read obj_name size_MB\n");
 }
 
 int
@@ -28,22 +28,21 @@ main(int argc, const char *argv[])
 
     // create a pdc
     pdcid_t pdc = PDC_init("pdc");
-    /* printf("create a new pdc, pdc id is: %lld\n", pdc); */
 
     // create a container property
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     pdcid_t cont = PDCcont_create("c1", cont_prop);
     if (cont <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0)
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
 
     pdcid_t  test_obj     = -1;
     uint64_t my_data_size = size_MB / size;
@@ -59,26 +58,25 @@ main(int argc, const char *argv[])
 
     // Create a object with only rank 0
     if (rank == 0) {
-        /* printf("Creating an object with name [%s]", obj_name); */
+
         /* fflush(stdout); */
         test_obj = PDCobj_create(cont, obj_name, obj_prop);
         if (test_obj <= 0) {
-            printf("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
+            LOG_ERROR("Error getting an object id of %s from server, exit...\n", "DataServerTestBin");
             exit(-1);
         }
     }
 
-    /* printf("%d: object created.\n", rank); */
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
     // Query the created object
-    /* printf("%d: Start to query object just created.\n", rank); */
+
     pdc_metadata_t *metadata;
     PDC_Client_query_metadata_name_timestep_agg(obj_name, 0, &metadata);
     if (metadata == NULL || metadata->obj_id == 0) {
-        printf("Proc %d: Error with metadata!\n", rank);
+        LOG_ERROR("Proc %d: Error with metadata!\n", rank);
         exit(-1);
     }
 
@@ -89,14 +87,14 @@ main(int argc, const char *argv[])
 done:
     // close a container
     if (PDCcont_close(cont) < 0)
-        printf("fail to close container %lu\n", cont);
+        LOG_ERROR("Failed to close container %lu\n", cont);
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDC_close(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

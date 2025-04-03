@@ -28,6 +28,7 @@
 #endif
 
 #include "thpool.h"
+#include "pdc_logger.h"
 
 #ifdef THPOOL_DEBUG
 #define THPOOL_DEBUG 1
@@ -36,7 +37,7 @@
 #endif
 
 #if !defined(DISABLE_PRINT) || defined(THPOOL_DEBUG)
-#define err(str) fprintf(stderr, str)
+#define err(str) LOG_ERROR("%s\n", str)
 #else
 #define err(str)
 #endif
@@ -153,7 +154,7 @@ thpool_init(int num_threads)
     for (n = 0; n < num_threads; n++) {
         thread_init(thpool_p, &thpool_p->threads[n], n);
 #if THPOOL_DEBUG
-        printf("THPOOL_DEBUG: Created thread %d in pool \n", n);
+        LOG_DEBUG("THPOOL_DEBUG: Created thread %d in pool \n", n);
 #endif
     }
 

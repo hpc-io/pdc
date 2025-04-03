@@ -43,34 +43,34 @@ main(int argc, char **argv)
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Rank %d Create a container property\n", rank);
+        LOG_INFO("Rank %d Create a container property\n", rank);
     }
     else {
-        printf("Rank %d Fail to create container property @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create container property!\n", rank);
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
-        printf("Rank %d Create a container c1\n", rank);
+        LOG_INFO("Rank %d Create a container c1\n", rank);
     }
     else {
-        printf("Rank %d Fail to create container @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create container!\n", rank);
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop > 0) {
-        printf("Rank %d Create an object property\n", rank);
+        LOG_INFO("Rank %d Create an object property\n", rank);
     }
     else {
-        printf("Rank %d Fail to create object property @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create object property!\n", rank);
         ret_value = 1;
     }
     // create first object
@@ -81,13 +81,13 @@ main(int argc, char **argv)
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
 #endif
     if (obj1 > 0) {
-        printf("Rank %d Create an object o1\n", rank);
+        LOG_INFO("Rank %d Create an object o1\n", rank);
     }
     else {
-        printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create object!\n", rank);
         ret_value = 1;
     }
-    printf("checkpoint 1 rank %d\n", rank);
+    LOG_INFO("checkpoint 1 rank %d\n", rank);
     // create second object
     sprintf(obj_name2, "o2");
 #ifdef ENABLE_MPI
@@ -96,102 +96,102 @@ main(int argc, char **argv)
     obj2 = PDCobj_create(cont, obj_name2, obj_prop);
 #endif
     if (obj2 > 0) {
-        printf("Rank %d Create an object o2\n", rank);
+        LOG_INFO("Rank %d Create an object o2\n", rank);
     }
     else {
-        printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to create object!\n", rank);
         ret_value = 1;
     }
-    printf("checkpoint 2 rank %d\n", rank);
+    LOG_INFO("checkpoint 2 rank %d\n", rank);
     // open first object twice
     open11 = PDCobj_open(obj_name1, pdc);
     if (open11 == 0) {
-        printf("Rank %d Fail to open object o1\n", rank);
+        LOG_ERROR("Rank %d Fail to open object o1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d Open object o1\n", rank);
+        LOG_INFO("Rank %d Open object o1\n", rank);
     }
     open12 = PDCobj_open(obj_name1, pdc);
     if (open12 == 0) {
-        printf("Rank %d Fail to open object o1\n", rank);
+        LOG_ERROR("Rank %d Fail to open object o1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d Open object o1\n", rank);
+        LOG_INFO("Rank %d Open object o1\n", rank);
     }
     // open second object once
     open21 = PDCobj_open(obj_name2, pdc);
     if (open21 == 0) {
-        printf("Rank %d Fail to open object o2\n", rank);
+        LOG_ERROR("Rank %d Fail to open object o2\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d Open object o2\n", rank);
+        LOG_INFO("Rank %d Open object o2\n", rank);
     }
     // close object
     if (PDCobj_close(obj1) < 0) {
-        printf("Rank %d fail to close object o1\n", rank);
+        LOG_ERROR("Rank %d Fail to close object o1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object o1\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o1\n", rank);
     }
     if (PDCobj_close(open11) < 0) {
-        printf("Rank %d fail to close object open11\n", rank);
+        LOG_ERROR("Rank %d Fail to close object open11\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object open11\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open11\n", rank);
     }
     if (PDCobj_close(open12) < 0) {
-        printf("Rank %d fail to close object open12\n", rank);
+        LOG_ERROR("Rank %d Fail to close object open12\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object open12\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open12\n", rank);
     }
     if (PDCobj_close(obj2) < 0) {
-        printf("Rank %d fail to close object o2\n", rank);
+        LOG_ERROR("Rank %d Fail to close object o2\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object o2\n", rank);
+        LOG_INFO("Rank %d Successfully closed object o2\n", rank);
     }
     if (PDCobj_close(open21) < 0) {
-        printf("Rank %d fail to close object open21\n", rank);
+        LOG_ERROR("Rank %d Fail to close object open21\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object open21\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open21\n", rank);
     }
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("Rank %d fail to close container c1\n", rank);
+        LOG_ERROR("Rank %d Fail to close container c1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close container c1\n", rank);
+        LOG_INFO("Rank %d Successfully closed container c1\n", rank);
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        printf("Rank %d Fail to close property @ line %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to close property\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object property\n", rank);
+        LOG_INFO("Rank %d Successfully closed object property\n", rank);
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Rank %d Fail to close property @ line %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d Fail to close property\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close container property\n", rank);
+        LOG_INFO("Rank %d Successfully closed container property\n", rank);
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("Rank %d fail to close PDC\n", rank);
+        LOG_ERROR("Rank %d Fail to close PDC\n", rank);
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

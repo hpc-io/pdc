@@ -29,6 +29,7 @@
 #include "pdc_public.h"
 #include "pdc_prop.h"
 #include "pdc_cont.h"
+#include "pdc_logger.h"
 
 #ifdef ENABLE_MPI
 #include "pdc_mpi.h"
@@ -50,7 +51,7 @@ int PDC_timing_report(const char *prefix);
  *
  * \param pdc_name [IN]         Name of the PDC
  *
- * \return PDC id on success / -1 on failure
+ * \return PDC id on success / 0 on failure
  */
 pdcid_t PDCinit(const char *pdc_name);
 
