@@ -13,7 +13,7 @@
 void
 print_usage()
 {
-    printf("Usage: srun -n ./write_obj obj_name size_MB type\n");
+    LOG_JUST_PRINT("Usage: srun -n ./write_obj obj_name size_MB type\n");
 }
 
 int
@@ -107,36 +107,36 @@ main(int argc, char **argv)
         type_size = sizeof(int8_t);
     }
 
-    printf("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
+    LOG_INFO("Writing a %" PRIu64 " MB object [%s] with %d clients.\n", size_MB, obj_name, size);
     // size_B = 1;
     size_B = size_MB * 1048576;
 
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0) {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont <= 0) {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0) {
-        printf("Fail to create object property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object property");
         ret_value = 1;
     }
     dims[0]      = size_B;
     my_data_size = size_B / size;
-    printf("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
+    LOG_INFO("my_data_size at rank %d is %llu\n", rank, (long long unsigned)my_data_size);
 
     mydata = (char *)malloc(my_data_size * type_size);
 
@@ -155,7 +155,7 @@ main(int argc, char **argv)
 #endif
 
     if (global_obj <= 0) {
-        printf("Error creating an object [%s], exit...\n", obj_name);
+        LOG_ERROR("Error creating an object [%s], exit...\n", obj_name);
         ret_value = 1;
     }
 
@@ -176,7 +176,7 @@ main(int argc, char **argv)
     }
     transfer_request = PDCregion_transfer_create(mydata, PDC_WRITE, global_obj, local_region, global_region);
     if (transfer_request == 0) {
-        printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
+        LOG_ERROR("PDCregion_transfer_create failed");
         ret_value = 1;
     }
 
@@ -186,19 +186,19 @@ main(int argc, char **argv)
     gettimeofday(&pdc_timer_start, 0);
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_start for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_wait for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        printf("PDCregion_transfer_closefailed @ line %d\n", __LINE__);
+        LOG_ERROR("PDCregion_transfer_closefailed");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI
@@ -208,13 +208,13 @@ main(int argc, char **argv)
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     if (rank == 0) {
-        printf("Time to process write data with %d ranks: %.5e\n", size, write_time);
+        LOG_INFO("Time to process write data with %d ranks: %.5e\n", size, write_time);
         fflush(stdout);
     }
 
     transfer_request = PDCregion_transfer_create(mydata, PDC_READ, global_obj, local_region, global_region);
     if (transfer_request == 0) {
-        printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
+        LOG_INFO("PDCregion_transfer_create failed");
         ret_value = 1;
     }
 
@@ -224,27 +224,26 @@ main(int argc, char **argv)
     gettimeofday(&pdc_timer_start, 0);
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_start for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_wait for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
+        LOG_ERROR("PDCregion_transfer_close failed");
         ret_value = 1;
     }
 
     for (i = 0; i < (int)my_data_size; i++) {
         for (j = 0; j < (int)type_size; ++j) {
             if (mydata[i * type_size + j] != (char)i) {
-                printf("Wrong value detected %d != %d at @ line  %d!\n", mydata[i * type_size + j], i,
-                       __LINE__);
+                LOG_ERROR("Wrong value detected %d != %d!\n", mydata[i * type_size + j], i);
                 ret_value = 1;
                 i         = my_data_size;
                 break;
@@ -259,7 +258,7 @@ main(int argc, char **argv)
     write_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     if (rank == 0) {
-        printf("Time to process read data with %d ranks: %.5e\n", size, write_time);
+        LOG_INFO("Time to process read data with %d ranks: %.5e\n", size, write_time);
         fflush(stdout);
     }
 
@@ -269,29 +268,29 @@ main(int argc, char **argv)
     free(mydata);
 
     if (PDCobj_close(global_obj) < 0) {
-        printf("fail to close global obj @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close global obj");
         ret_value = 1;
     }
 
     if (PDCregion_close(local_region) < 0) {
-        printf("fail to close local region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close local region");
         ret_value = 1;
     }
 
     if (PDCregion_close(global_region) < 0) {
-        printf("fail to close global region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close global region");
         ret_value = 1;
     }
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close container");
         ret_value = 1;
     }
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close PDC");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

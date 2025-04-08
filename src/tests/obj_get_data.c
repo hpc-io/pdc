@@ -50,25 +50,25 @@ main(int argc, char **argv)
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Create a container property\n");
+        LOG_INFO("Create a container property\n");
     }
     else {
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
         ret_value = 1;
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
-        printf("Rank %d Create a container %s\n", rank, cont_name);
+        LOG_INFO("Rank %d Create a container %s\n", rank, cont_name);
     }
     else {
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
         ret_value = 1;
     }
 
@@ -76,10 +76,10 @@ main(int argc, char **argv)
     sprintf(obj_name1, "o1_%d", rank);
     obj1 = PDCobj_put_data(obj_name1, (void *)data, BUF_LEN * sizeof(double), cont);
     if (obj1 > 0) {
-        printf("Rank %d Put data to %s\n", rank, obj_name1);
+        LOG_INFO("Rank %d Put data to %s\n", rank, obj_name1);
     }
     else {
-        printf("Fail to put data into object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to put data into object");
         ret_value = 1;
     }
 
@@ -87,22 +87,22 @@ main(int argc, char **argv)
     sprintf(obj_name2, "o2_%d", rank);
     obj2 = PDCobj_put_data(obj_name2, (void *)data, BUF_LEN * sizeof(double), cont);
     if (obj2 > 0) {
-        printf("Rank %d Put data to %s\n", rank, obj_name2);
+        LOG_INFO("Rank %d Put data to %s\n", rank, obj_name2);
     }
     else {
-        printf("Fail to put data into object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to put data into object");
         ret_value = 1;
     }
 
     memset(data, 0, BUF_LEN * sizeof(double));
     error_code = PDCobj_get_data(obj1, (void *)(data), BUF_LEN * sizeof(double));
     if (error_code != SUCCEED) {
-        printf("Fail to get obj 1 data\n");
+        LOG_ERROR("Failed to get obj 1 data\n");
         ret_value = 1;
     }
     for (i = 0; i < BUF_LEN * sizeof(double); ++i) {
         if (data[i] != 1) {
-            printf("wrong value at obj 1\n");
+            LOG_ERROR("wrong value at obj 1\n");
             ret_value = 1;
             break;
         }
@@ -110,12 +110,12 @@ main(int argc, char **argv)
     memset(data, 0, BUF_LEN * sizeof(double));
     error_code = PDCobj_get_data(obj2, (void *)(data), BUF_LEN * sizeof(double));
     if (error_code != SUCCEED) {
-        printf("Fail to get obj 1 data\n");
+        LOG_ERROR("Failed to get obj 1 data\n");
         ret_value = 1;
     }
     for (i = 0; i < BUF_LEN * sizeof(double); ++i) {
         if (data[i] != 2) {
-            printf("wrong value at obj 2\n");
+            LOG_ERROR("wrong value at obj 2\n");
             ret_value = 1;
             break;
         }
@@ -123,39 +123,39 @@ main(int argc, char **argv)
 
     // close object
     if (PDCobj_close(obj1) < 0) {
-        printf("fail to close object o1\n");
+        LOG_ERROR("Failed to close object o1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o1\n");
+        LOG_INFO("Successfully closed object o1\n");
     }
     if (PDCobj_close(obj2) < 0) {
-        printf("fail to close object o2\n");
+        LOG_ERROR("Failed to close object o2\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close object o2\n");
+        LOG_INFO("Successfully closed object o2\n");
     }
 
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
         ret_value = 1;
     }
     else {
-        printf("successfully close container c1\n");
+        LOG_INFO("Successfully closed container c1\n");
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
         ret_value = 1;
     }
     else {
-        printf("successfully close container property\n");
+        LOG_INFO("Successfully closed container property\n");
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

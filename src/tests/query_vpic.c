@@ -28,7 +28,7 @@ main(void)
 
     PDC_Client_query_metadata_name_timestep("Energy", 0, &energy_meta);
     if (energy_meta == NULL || energy_meta->obj_id == 0) {
-        printf("Error with energy metadata!\n");
+        LOG_ERROR("Error with energy metadata!\n");
         goto done;
     }
     energy_id = energy_meta->obj_id;
@@ -44,9 +44,9 @@ main(void)
 
     gettimeofday(&pdc_timer_end, 0);
     double get_sel_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("Get selection time: %.5e\n", get_sel_time);
+    LOG_INFO("Get selection time: %.5e\n", get_sel_time);
 
-    printf("  Query results:\n");
+    LOG_INFO("  Query results:\n");
     if (sel.nhits < 500)
         PDCselection_print_all(&sel);
     else
@@ -63,22 +63,22 @@ main(void)
 
     gettimeofday(&pdc_timer_end, 0);
     double get_data_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("Get data time: %.5e\n", get_data_time);
+    LOG_INFO("Get data time: %.5e\n", get_data_time);
 
-    printf("Query result energy data (%" PRIu64 " hits):\n", sel.nhits);
+    LOG_INFO("Query result energy data (%" PRIu64 " hits):\n", sel.nhits);
     for (i = 0; i < sel.nhits; i++) {
         if (energy_data[i] > energy_hi0 || energy_data[i] < energy_lo0) {
-            printf("Error with result %" PRIu64 ": %.5e\n", i, energy_data[i]);
+            LOG_ERROR("Error with result %" PRIu64 ": %.5e\n", i, energy_data[i]);
         }
     }
-    printf("Verified: all correct!\n");
+    LOG_INFO("Verified: all correct!\n");
 
     PDCquery_free_all(q);
     PDCselection_free(&sel);
 
 done:
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     return 0;
 }

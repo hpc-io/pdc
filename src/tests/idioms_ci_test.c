@@ -45,11 +45,12 @@ compare_uint64(const void *a, const void *b)
 void
 print_usage(char *name)
 {
-    printf("%s \n", name);
-    printf("Summary: This test will create a number of objects which are attached with a number of tags. "
-           "Then, it will"
-           "perform different types queries supported by IDIOMS to retrieve the object IDs, and perform the "
-           "necessary validation.\n");
+    LOG_JUST_PRINT("%s \n", name);
+    LOG_JUST_PRINT(
+        "Summary: This test will create a number of objects which are attached with a number of tags. "
+        "Then, it will"
+        "perform different types queries supported by IDIOMS to retrieve the object IDs, and perform the "
+        "necessary validation.\n");
 }
 
 perr_t
@@ -62,20 +63,20 @@ prepare_container(pdcid_t *pdc, pdcid_t *cont_prop, pdcid_t *cont, pdcid_t *obj_
     // create a container property
     *cont_prop = PDCprop_create(PDC_CONT_CREATE, *pdc);
     if (*cont_prop <= 0) {
-        printf("[Client %d] Fail to create container property @ line  %d!\n", world_rank, __LINE__);
+        LOG_ERROR("[Client %d] Fail to create container property!\n", world_rank);
         goto done;
     }
     // create a container
     *cont = PDCcont_create("c1", *cont_prop);
     if (*cont <= 0) {
-        printf("[Client %d] Fail to create container @ line  %d!\n", world_rank, __LINE__);
+        LOG_ERROR("[Client %d] Fail to create container!\n", world_rank);
         goto done;
     }
 
     // create an object property
     *obj_prop = PDCprop_create(PDC_OBJ_CREATE, *pdc);
     if (*obj_prop <= 0) {
-        printf("[Client %d] Fail to create object property @ line  %d!\n", world_rank, __LINE__);
+        LOG_ERROR("[Client %d] Fail to create object property!\n", world_rank);
         goto done;
     }
 
@@ -99,7 +100,8 @@ insert_index_records(int world_rank, int world_size)
         snprintf(value, 63, "str%03dstr", i);
         if (PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, strlen(value) + 1, PDC_STRING,
                                                 ref_type, i) < 0) {
-            printf("CLIENT %d failed to create index record %s %s %" PRIu64 "\n", world_rank, key, value, i);
+            LOG_ERROR("CLIENT %d failed to create index record %s %s %" PRIu64 "\n", world_rank, key, value,
+                      i);
             ret_value |= FAIL;
         }
         free(key);
@@ -111,7 +113,8 @@ insert_index_records(int world_rank, int world_size)
         *((int64_t *)value) = i;
         if (PDC_Client_insert_obj_ref_into_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT64, ref_type,
                                                 i) < 0) {
-            printf("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value, i);
+            LOG_ERROR("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value,
+                      i);
             ret_value |= FAIL;
         }
         free(key);
@@ -135,7 +138,8 @@ delete_index_records(int world_rank, int world_size)
         snprintf(value, 63, "str%03dstr", i);
         if (PDC_Client_delete_obj_ref_from_dart(hash_algo, key, value, strlen(value) + 1, PDC_STRING,
                                                 ref_type, i) < 0) {
-            printf("CLIENT %d failed to create index record %s %s %" PRIu64 "\n", world_rank, key, value, i);
+            LOG_ERROR("CLIENT %d failed to create index record %s %s %" PRIu64 "\n", world_rank, key, value,
+                      i);
             ret_value |= FAIL;
         }
         free(key);
@@ -147,7 +151,8 @@ delete_index_records(int world_rank, int world_size)
         *((int64_t *)value) = i;
         if (PDC_Client_delete_obj_ref_from_dart(hash_algo, key, value, sizeof(int64_t), PDC_INT64, ref_type,
                                                 i) < 0) {
-            printf("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value, i);
+            LOG_ERROR("CLIENT %d failed to create index record %s %" PRId64 " %d\n", world_rank, key, value,
+                      i);
             ret_value |= FAIL;
         }
         free(key);
@@ -161,7 +166,7 @@ validate_empty_result(int world_rank, int nres, uint64_t *pdc_ids)
 {
     int query_series = world_rank % 6;
     if (nres > 0) {
-        printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+        LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
         return query_series;
     }
     return -1;
@@ -176,24 +181,24 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
     switch (query_series) {
         case 0:
             if (nres != 1) {
-                printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
                 step_failed = 0;
             }
             if (pdc_ids[0] != 109) {
-                printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
                 step_failed = 0;
             }
             break;
         case 1:
             if (nres != 10) {
-                printf("fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
                 step_failed = 1;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
-                    printf("fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
                     step_failed = 1;
                     break;
                 }
@@ -201,14 +206,14 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 2:
             if (nres != 10) {
-                printf("fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
                 step_failed = 2;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i * 100 + 9) {
-                    printf("fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
                     step_failed = 2;
                     break;
                 }
@@ -216,8 +221,8 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 3:
             if (nres != 20) {
-                printf("fail to query kvtag [%s] with rank %d, nres = %d, expected 20\n", "*09*=*09*",
-                       world_rank, nres);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d, nres = %d, expected 20\n", "*09*=*09*",
+                          world_rank, nres);
                 step_failed = 3;
             }
             // the result is not in order, so we need to sort the result first
@@ -226,9 +231,9 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
                                      99, 109, 209, 309, 409, 509, 609, 709, 809, 909};
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != expected[i]) {
-                    printf("fail to query kvtag [%s] with rank %d, pdc_ids[%d]=%" PRIu64 ", expected %" PRIu64
-                           "\n",
-                           "*09*=*09*", world_rank, i, pdc_ids[i], expected[i]);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d, pdc_ids[%d]=%" PRIu64
+                              ", expected %" PRIu64 "\n",
+                              "*09*=*09*", world_rank, i, pdc_ids[i], expected[i]);
                     step_failed = 3;
                     break;
                 }
@@ -236,24 +241,24 @@ validate_query_result(int world_rank, int nres, uint64_t *pdc_ids)
             break;
         case 4:
             if (nres != 1) {
-                printf("fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
                 step_failed = 4;
             }
             if (pdc_ids[0] != 109) {
-                printf("fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
                 step_failed = 4;
             }
             break;
         case 5:
             if (nres != 10) {
-                printf("fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
                 step_failed = 5;
             }
             // the result is not in order, so we need to sort the result first
             qsort(pdc_ids, nres, sizeof(uint64_t), compare_uint64);
             for (i = 0; i < nres; i++) {
                 if (pdc_ids[i] != i + 90) {
-                    printf("fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                    LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
                     step_failed = 5;
                     break;
                 }
@@ -277,7 +282,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // exact string query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "str109str=\"str109str\"", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                printf("fail to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str109str=str109str", world_rank);
                 step_failed = 0;
             };
             break;
@@ -285,7 +290,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // prefix string query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "str09*=\"str09*\"", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                printf("fail to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "str09*=str09*", world_rank);
                 step_failed = 1;
             }
             break;
@@ -293,7 +298,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // suffix string query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09str=\"*09str\"", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                printf("fail to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09str=*09str", world_rank);
                 step_failed = 2;
             }
             break;
@@ -301,7 +306,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
         //     // infix string query
         //     if (PDC_Client_search_obj_ref_through_dart(hash_algo, "*09*=\"*09*\"", ref_type, &nres,
         //                                                &pdc_ids) < 0) {
-        //         printf("fail to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
+        //         LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "*09*=*09*", world_rank);
         //         step_failed = 3;
         //     }
         //     break;
@@ -309,7 +314,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // exact integer query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "intkey=109", ref_type, &nres, &pdc_ids) <
                 0) {
-                printf("fail to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=109", world_rank);
                 step_failed = 4;
             }
             break;
@@ -317,7 +322,7 @@ search_through_index(int world_rank, int world_size, int (*validator)(int r, int
             // range integer query
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, "intkey=90|~|99", ref_type, &nres,
                                                        &pdc_ids) < 0) {
-                printf("fail to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
+                LOG_ERROR("Failed to query kvtag [%s] with rank %d\n", "intkey=90|~|99", world_rank);
                 step_failed = 5;
             }
             break;
@@ -345,7 +350,7 @@ main(int argc, char *argv[])
 
     // prepare container
     if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, world_rank) < 0) {
-        println("fail to prepare container @ line %d", __LINE__);
+        println("Failed to prepare container");
         goto done;
     }
 
@@ -380,7 +385,7 @@ main(int argc, char *argv[])
     // we are performing 1000 insertion operations for string value and 1000 times for numerical values.
     perr_t ret_value = insert_index_records(world_rank, world_size);
     if (ret_value == FAIL) {
-        printf("CLIENT %d failed to insert index records\n", world_rank);
+        LOG_ERROR("CLIENT %d failed to insert index records\n", world_rank);
     }
     assert(ret_value == SUCCEED);
 
@@ -391,8 +396,8 @@ main(int argc, char *argv[])
 #endif
     // print performance and timing information
     if (world_rank == 0) {
-        printf("Index Insertion 2000 times, time: %.5f ms, TPS = %.5f\n", total_time * 1000.0,
-               2000.0 / total_time);
+        LOG_INFO("Index Insertion 2000 times, time: %.5f ms, TPS = %.5f\n", total_time * 1000.0,
+                 2000.0 / total_time);
     }
 
     // perform 1000 times query test, each test will be performed by a different client,
@@ -402,8 +407,8 @@ main(int argc, char *argv[])
         int  step_failed        = search_through_index(world_rank, world_size, validate_query_result);
         char query_types[6][20] = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
         if (step_failed >= 0) {
-            printf("CLIENT %d failed to search index for query type %s\n", world_rank,
-                   query_types[step_failed]);
+            LOG_ERROR("CLIENT %d failed to search index for query type %s\n", world_rank,
+                      query_types[step_failed]);
         }
         assert(step_failed < 0);
     }
@@ -415,14 +420,14 @@ main(int argc, char *argv[])
 #endif
     // print performance and timing information
     if (world_rank == 0) {
-        printf("Index Query %d times, time: %.5f ms, TPS = %.5f\n", 1000 * world_size, total_time * 1000.0,
-               1000.0 * world_size / total_time);
+        LOG_INFO("Index Query %d times, time: %.5f ms, TPS = %.5f\n", 1000 * world_size, total_time * 1000.0,
+                 1000.0 * world_size / total_time);
     }
 
     // delete the index records.
     ret_value = delete_index_records(world_rank, world_size);
     if (ret_value == FAIL) {
-        printf("CLIENT %d failed to delete index records\n", world_rank);
+        LOG_ERROR("CLIENT %d failed to delete index records\n", world_rank);
     }
     assert(ret_value == SUCCEED);
 
@@ -433,16 +438,16 @@ main(int argc, char *argv[])
 #endif
     // print performance and timing information
     if (world_rank == 0) {
-        printf("Index Deletion 2000 times, time: %.5f ms, TPS = %.5f\n", total_time * 1000.0,
-               2000.0 / total_time);
+        LOG_INFO("Index Deletion 2000 times, time: %.5f ms, TPS = %.5f\n", total_time * 1000.0,
+                 2000.0 / total_time);
     }
 
     for (i = 0; i < 1000; i++) {
         int  step_failed        = search_through_index(world_rank, world_size, validate_empty_result);
         char query_types[6][20] = {"EXACT STRING", "PREFIX", "SUFFIX", "INFIX", "EXACT NUMBER", "RANGE"};
         if (step_failed >= 0) {
-            printf("CLIENT %d failed to search index for query type %s\n", world_rank,
-                   query_types[step_failed]);
+            LOG_ERROR("CLIENT %d failed to search index for query type %s\n", world_rank,
+                      query_types[step_failed]);
         }
         assert(step_failed < 0);
     }
@@ -453,46 +458,46 @@ main(int argc, char *argv[])
 #endif
     // print performance and timing information
     if (world_rank == 0) {
-        printf("EMPTY Query %d times, time: %.5f ms, TPS = %.5f\n", 1000 * world_size, total_time * 1000.0,
-               1000.0 * world_size / total_time);
+        LOG_INFO("EMPTY Query %d times, time: %.5f ms, TPS = %.5f\n", 1000 * world_size, total_time * 1000.0,
+                 1000.0 * world_size / total_time);
     }
 
 done:
     // close a container
     if (PDCcont_close(cont) < 0) {
         if (world_rank == 0) {
-            printf("fail to close container c1\n");
+            LOG_ERROR("Failed to close container c1\n");
         }
     }
     else {
         if (world_rank == 0)
-            printf("successfully close container c1\n");
+            LOG_INFO("Successfully closed container c1\n");
     }
 
     // close an object property
     if (PDCprop_close(obj_prop) < 0) {
         if (world_rank == 0)
-            printf("Fail to close property @ line %d\n", __LINE__);
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (world_rank == 0)
-            printf("successfully close object property\n");
+            LOG_INFO("Successfully closed object property\n");
     }
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
         if (world_rank == 0)
-            printf("Fail to close property @ line %d\n", __LINE__);
+            LOG_ERROR("Failed to close property");
     }
     else {
         if (world_rank == 0)
-            printf("successfully close container property\n");
+            LOG_INFO("Successfully closed container property\n");
     }
 
     // close pdc
     if (PDCclose(pdc) < 0) {
         if (world_rank == 0)
-            printf("fail to close PDC\n");
+            LOG_ERROR("Failed to close PDC\n");
     }
 
 #ifdef ENABLE_MPI

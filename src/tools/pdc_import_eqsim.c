@@ -46,7 +46,7 @@ main(int argc, char **argv)
 
     file = H5Fopen(fname, H5F_ACC_RDONLY, fapl);
     if (file < 0)
-        fprintf(stderr, "Failed to open file [%s]\n", fname);
+        LOG_ERROR("Failed to open file [%s]\n", fname);
 
     dset   = H5Dopen(file, dname, H5P_DEFAULT);
     dspace = H5Dget_space(dset);
@@ -91,8 +91,8 @@ main(int argc, char **argv)
     data = (double *)malloc(sizeof(double) * local_size[0] * local_size[1] * local_size[2]);
 
     if (nproc <= 16)
-        fprintf(stderr, "Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0],
-                offset[1], offset[2], size[0], size[1], size[2]);
+        LOG_ERROR("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
+                  offset[2], size[0], size[1], size[2]);
 
 #ifdef ENABLE_MPI
     t0 = MPI_Wtime();
@@ -104,7 +104,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (rank == 0)
-        fprintf(stderr, "Read from HDF5 took %.4lf\n", t1 - t0);
+        LOG_ERROR("Read from HDF5 took %.4lf\n", t1 - t0);
 #endif
 
     H5Sclose(mspace);
@@ -126,7 +126,7 @@ main(int argc, char **argv)
     pdc_dims[0] = dims[0];
     pdc_dims[1] = max_start_x + chunk_size[1];
     pdc_dims[2] = max_start_y + chunk_size[2];
-    fprintf(stderr, "Rank %d: create obj dims %llu %llu %llu\n", rank, pdc_dims[0], pdc_dims[1], pdc_dims[2]);
+    LOG_ERROR("Rank %d: create obj dims %llu %llu %llu\n", rank, pdc_dims[0], pdc_dims[1], pdc_dims[2]);
 
     for (i = 0; i < 3; i++) {
         pdc_offset[i]       = (uint64_t)offset[i];
@@ -151,7 +151,7 @@ main(int argc, char **argv)
     obj = PDCobj_create_mpi(cont, "run1", obj_prop, 0, MPI_COMM_WORLD);
     /* obj = PDCobj_create(cont, "run1", obj_prop); */
     if (obj <= 0)
-        fprintf(stderr, "Fail to create object @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create object");
 
     remote_reg = PDCregion_create(3, pdc_offset, pdc_size);
 
@@ -167,7 +167,7 @@ main(int argc, char **argv)
     value_size   = 4 * sizeof(double);
 
     if (PDCobj_put_tag(obj, tag_name, tag_value, PDC_DOUBLE, value_size) < 0)
-        fprintf(stderr, "Rank %d fail to put tag @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to put tag!\n", rank);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
@@ -183,7 +183,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (rank == 0)
-        fprintf(stderr, "Write data to server took %.4lf\n", t1 - t0);
+        LOG_ERROR("Write data to server took %.4lf\n", t1 - t0);
 #endif
 
     free(data);
@@ -192,19 +192,19 @@ main(int argc, char **argv)
     PDCregion_close(local_reg);
 
     if (PDCobj_close(obj) < 0)
-        fprintf(stderr, "fail to close object\n");
+        LOG_ERROR("Failed to close object\n");
 
     if (PDCcont_close(cont) < 0)
-        fprintf(stderr, "fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     if (PDCprop_close(obj_prop) < 0)
-        fprintf(stderr, "Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCprop_close(cont_prop) < 0)
-        fprintf(stderr, "Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDCclose(pdc) < 0)
-        fprintf(stderr, "fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

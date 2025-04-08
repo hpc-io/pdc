@@ -198,11 +198,6 @@ static inline list_entry_t *
 create_entry()
 {
     list_entry_t *new_entry = (list_entry_t *)PDC_calloc(1, sizeof(list_entry_t));
-    /*
-    if (!new_entry) {
-        fprintf(stderr, "Can't create new entry: %s", strerror(errno));
-    }
-    */
     return new_entry;
 }
 
@@ -473,11 +468,6 @@ move_entry(linked_list_t *list, size_t srcPos, size_t dstPos)
     if (e) {
         if (insert_entry(list, e, dstPos) == 0)
             return 0;
-        else {
-            if (insert_entry(list, e, srcPos) != 0) {
-                // fprintf(stderr, "Can't restore entry at index %lu while moving to %lu\n", srcPos, dstPos);
-            }
-        }
     }
     /* TODO - Unimplemented */
     return -1;
@@ -742,7 +732,6 @@ list_create_tagged_value_nocopy(char *tag, void *val)
 {
     tagged_value_t *newval = (tagged_value_t *)PDC_calloc(1, sizeof(tagged_value_t));
     if (!newval) {
-        // fprintf(stderr, "Can't create new tagged value: %s", strerror(errno));
         return NULL;
     }
 
@@ -766,7 +755,6 @@ list_create_tagged_value(char *tag, void *val, size_t vlen)
 {
     tagged_value_t *newval = (tagged_value_t *)PDC_calloc(1, sizeof(tagged_value_t));
     if (!newval) {
-        // fprintf(stderr, "Can't create new tagged value: %s", strerror(errno));
         return NULL;
     }
 
@@ -781,7 +769,6 @@ list_create_tagged_value(char *tag, void *val, size_t vlen)
                 newval->vlen = vlen;
             }
             else {
-                // fprintf(stderr, "Can't copy value: %s", strerror(errno));
                 free(newval->tag);
                 free(newval);
                 return NULL;
@@ -808,7 +795,6 @@ list_create_tagged_sublist(char *tag, linked_list_t *sublist)
 {
     tagged_value_t *newval = (tagged_value_t *)PDC_calloc(1, sizeof(tagged_value_t));
     if (!newval) {
-        // fprintf(stderr, "Can't create new tagged value: %s", strerror(errno));
         return NULL;
     }
 

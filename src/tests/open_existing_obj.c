@@ -43,61 +43,61 @@ main(int argc, char **argv)
 #endif
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     sprintf(obj_name1, "o1_%d", rank);
     sprintf(obj_name2, "o2_%d", rank);
     // open first object twice
     open11 = PDCobj_open(obj_name1, pdc);
     if (open11 == 0) {
-        printf("Rank %d Fail to open object o1\n", rank);
+        LOG_ERROR("Rank %d Fail to open object o1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d Open object o1\n", rank);
+        LOG_INFO("Rank %d Open object o1\n", rank);
     }
     open12 = PDCobj_open(obj_name1, pdc);
     if (open12 == 0) {
-        printf("Rank %d Fail to open object o1\n", rank);
+        LOG_ERROR("Rank %d Fail to open object o1\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d Open object o1\n", rank);
+        LOG_INFO("Rank %d Open object o1\n", rank);
     }
     // open second object once
     open21 = PDCobj_open(obj_name2, pdc);
     if (open21 == 0) {
-        printf("Rank %d Fail to open object o2\n", rank);
+        LOG_ERROR("Rank %d Fail to open object o2\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d Open object o2\n", rank);
+        LOG_INFO("Rank %d Open object o2\n", rank);
     }
     // close object
     if (PDCobj_close(open11) < 0) {
-        printf("Rank %d fail to close object open11\n", rank);
+        LOG_ERROR("Rank %d fail to close object open11\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object open11\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open11\n", rank);
     }
     if (PDCobj_close(open12) < 0) {
-        printf("Rank %d fail to close object open12\n", rank);
+        LOG_ERROR("Rank %d fail to close object open12\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object open12\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open12\n", rank);
     }
     if (PDCobj_close(open21) < 0) {
-        printf("Rank %d fail to close object open21\n", rank);
+        LOG_ERROR("Rank %d fail to close object open21\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object open21\n", rank);
+        LOG_INFO("Rank %d Successfully closed object open21\n", rank);
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("Rank %d fail to close PDC\n", rank);
+        LOG_ERROR("Rank %d fail to close PDC\n", rank);
         ret_value = 1;
     }
 #ifdef ENABLE_MPI

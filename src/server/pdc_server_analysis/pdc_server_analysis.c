@@ -58,6 +58,7 @@
 #include "pdc_server.h"
 #include "pdc_analysis_pkg.h"
 #include "pdc_analysis.h"
+#include "pdc_logger.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
@@ -118,7 +119,7 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
     thisIter->storage_order    = (_pdc_major_type_t)((in->storageinfo >> 8) & 0xFF);
     region_reference           = PDC_Server_get_obj_region(in->object_id);
     if (region_reference == NULL) {
-        printf("==PDC_ANALYSIS_SERVER: Unable to locate object region (id=%" PRIu64 ")\n", in->object_id);
+        LOG_ERROR("==PDC_ANALYSIS_SERVER: Unable to locate object region (id=%" PRIu64 ")\n", in->object_id);
         /* The most likely cause of this condition is that the client never
          * created an object mapping which would move the client data to the data-server.
          * We now have the option to either fail, or to create a new temporary region.
@@ -126,45 +127,9 @@ PDC_Server_instantiate_data_iterator(obj_data_iterator_in_t *in, obj_data_iterat
          * data-server temp so that the client can update the locus info.
          */
         out->server_region_id = -1;
-
-#if 0
-#ifdef ENABLE_MULTITHREAD 
-        hg_thread_mutex_lock(&create_region_struct_mutex_g);
-#endif
-
-        new_obj_reg = (data_server_region_t *)malloc(sizeof(struct data_server_region_t));
-        if(new_obj_reg == NULL) {
-#ifdef ENABLE_MULTITHREAD 
-            // Unlock before we bail out...
-            hg_thread_mutex_unlock(&create_region_struct_mutex_g);
-#endif
-            PGOTO_ERROR(NULL, "PDC_Server_instantiate_data_iterator() allocation of new object region failed");
-	}
-        new_obj_reg->obj_id = in->object_id;
-        new_obj_reg->region_lock_head = NULL;
-        new_obj_reg->region_buf_map_head = NULL;
-        new_obj_reg->region_lock_request_head = NULL;
-        new_obj_reg->obj_data_ptr = malloc(thisIter->totalElements * thisIter->element_size);
-        if (new_obj_reg->obj_data_ptr != NULL) {
-            DL_APPEND(dataserver_region_g, new_obj_reg);
-	}
-	else {
-#ifdef ENABLE_MULTITHREAD 
-            // Unlock before we bail out...
-            hg_thread_mutex_unlock(&create_region_struct_mutex_g);
-#endif
-            free(new_obj_reg);
-            PGOTO_ERROR(NULL, "PDC_Server_instantiate_data_iterator() allocation of object data failed");
-	}
-#ifdef ENABLE_MULTITHREAD 
-        hg_thread_mutex_unlock(&create_region_struct_mutex_g);
-#endif
-	out->server_region_id = in->object_id;
-        printf("==PDC_ANALYSIS_SERVER: Created a temp data container for id=%ld\n", in->object_id);
-#endif /* #if 0 */
     }
     else {
-        printf("==PDC_ANALYSIS_SERVER: Found object region for id=%" PRIu64 "\n", in->object_id);
+        LOG_INFO("==PDC_ANALYSIS_SERVER: Found object region for id=%" PRIu64 "\n", in->object_id);
         out->server_region_id = in->object_id;
     }
 
@@ -209,7 +174,7 @@ PDC_Server_get_ftn_reference(char *ftn)
         /* We need the in_process address of the function */
         if ((appHandle = dlopen(0, RTLD_NOW)) == NULL) {
             char *this_error = dlerror();
-            fprintf(stderr, "dlopen failed: %s\n", this_error);
+            LOG_ERROR("dlopen failed: %s\n", this_error);
             fflush(stderr);
             return NULL;
         }
@@ -255,7 +220,7 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
                 if ((thisIter->srcNext = PDC_Server_get_region_data_ptr(thisIter->objectId)) == NULL)
                     thisIter->srcNext = malloc(thisIter->totalElements * thisIter->element_size);
                 if ((thisIter->srcStart = thisIter->srcNext) == NULL) {
-                    printf("==PDC_ANALYSIS_SERVER: Unable to allocate iterator storage\n");
+                    LOG_ERROR("==PDC_ANALYSIS_SERVER: Unable to allocate iterator storage\n");
                     return 0;
                 }
                 thisIter->srcNext += thisIter->startOffset + thisIter->skipCount;

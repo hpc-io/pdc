@@ -36,39 +36,39 @@ main(void)
     // Query the created object
     PDC_Client_query_metadata_name_timestep("x", 0, &x_meta);
     if (x_meta == NULL || x_meta->obj_id == 0) {
-        printf("Error with x metadata!\n");
+        LOG_ERROR("Error with x metadata!\n");
         goto done;
     }
     x_id = x_meta->obj_id;
     if (rank == 0)
-        printf("x_id = %" PRIu64 "\n", x_id);
+        LOG_INFO("x_id = %" PRIu64 "\n", x_id);
 
     PDC_Client_query_metadata_name_timestep("y", 0, &y_meta);
     if (y_meta == NULL || y_meta->obj_id == 0) {
-        printf("Error with y metadata!\n");
+        LOG_ERROR("Error with y metadata!\n");
         goto done;
     }
     y_id = y_meta->obj_id;
     if (rank == 0)
-        printf("y_id = %" PRIu64 "\n", y_id);
+        LOG_INFO("y_id = %" PRIu64 "\n", y_id);
 
     PDC_Client_query_metadata_name_timestep("z", 0, &z_meta);
     if (z_meta == NULL || z_meta->obj_id == 0) {
-        printf("Error with z metadata!\n");
+        LOG_ERROR("Error with z metadata!\n");
         goto done;
     }
     z_id = z_meta->obj_id;
     if (rank == 0)
-        printf("z_id = %" PRIu64 "\n", z_id);
+        LOG_INFO("z_id = %" PRIu64 "\n", z_id);
 
     PDC_Client_query_metadata_name_timestep("Energy", 0, &energy_meta);
     if (energy_meta == NULL || energy_meta->obj_id == 0) {
-        printf("Error with energy metadata!\n");
+        LOG_ERROR("Error with energy metadata!\n");
         goto done;
     }
     energy_id = energy_meta->obj_id;
     if (rank == 0)
-        printf("energy_id = %" PRIu64 "\n", energy_id);
+        LOG_INFO("energy_id = %" PRIu64 "\n", energy_id);
 
     q1_lo = PDCquery_create(energy_id, PDC_GT, PDC_FLOAT, &energy_lo);
     q1_hi = PDCquery_create(energy_id, PDC_LT, PDC_FLOAT, &energy_hi);
@@ -87,8 +87,8 @@ main(void)
 
     q = PDCquery_and(q3, q12);
 
-    printf("Query: %.1f< Energy < %.1f && %.1f < X < %.1f && %.1f < Y < %.1f\n", energy_lo, energy_hi, x_lo,
-           x_hi, y_lo, y_hi);
+    LOG_INFO("Query: %.1f< Energy < %.1f && %.1f < X < %.1f && %.1f < Y < %.1f\n", energy_lo, energy_hi, x_lo,
+             x_hi, y_lo, y_hi);
 
     // Get selection
     gettimeofday(&pdc_timer_start, 0);
@@ -97,8 +97,8 @@ main(void)
 
     gettimeofday(&pdc_timer_end, 0);
     get_sel_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-    printf("Query result in (%" PRIu64 " hits):\n", sel.nhits);
-    printf("Get selection time: %.5e\n", get_sel_time);
+    LOG_INFO("Query result in (%" PRIu64 " hits):\n", sel.nhits);
+    LOG_INFO("Get selection time: %.5e\n", get_sel_time);
 
     if (sel.nhits > 0) {
         energy_data = (float *)calloc(sel.nhits, sizeof(float));
@@ -114,7 +114,7 @@ main(void)
 
         gettimeofday(&pdc_timer_end, 0);
         get_data_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-        printf("Get data time: %.5e\n", get_data_time);
+        LOG_INFO("Get data time: %.5e\n", get_data_time);
 
         fflush(stdout);
     }
@@ -131,7 +131,7 @@ main(void)
 
 done:
     if (PDCclose(pdc) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
     return 0;
 }

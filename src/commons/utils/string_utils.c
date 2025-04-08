@@ -3,6 +3,7 @@
 //
 
 #include "string_utils.h"
+#include "pdc_logger.h"
 #include <regex.h>
 
 const char *VISIBLE_ALPHABET =
@@ -243,7 +244,7 @@ split_string(const char *str, const char *delim, char ***result, int *result_len
     // Compile regular expression
     reti = regcomp(&regex, delim, 0);
     if (reti) {
-        fprintf(stderr, "Could not compile regex\n");
+        LOG_ERROR("Could not compile regex\n");
         return -1;
     }
 
@@ -352,8 +353,6 @@ stripQuotes(const char *str)
     if (len >= 2 && str[0] == '"' && str[len - 1] == '"') {
         // Call substring to remove the first and last character
         char *stripped = substring(str, 1, len - 1);
-        // TODO: remove this
-        printf("str = %s, stripped = %s\n", str, stripped);
         return stripped;
     }
     else {

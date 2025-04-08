@@ -1,5 +1,6 @@
 #include "pdc_region.h"
 #include "pdc_private.h"
+#include "pdc_logger.h"
 #include <string.h>
 
 int
@@ -25,7 +26,7 @@ PDC_region_overlap_detect(int ndim, uint64_t *offset1, uint64_t *size1, uint64_t
     if (!check_overlap(ndim, offset1, size1, offset2, size2)) {
         *output_offset = NULL;
         *output_size   = NULL;
-        // printf("PDC_region_overlap_detect @ line %d, overlap detect failed\n", __LINE__);
+        LOG_DEBUG("PDC_region_overlap_detect, overlap detect failed\n");
         goto done;
     }
     // Overlapping exist.

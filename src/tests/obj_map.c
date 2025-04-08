@@ -87,12 +87,12 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
     if (cont_prop <= 0)
-        printf("Fail to create container property @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container property");
 
     // create a container
     cont_id = PDCcont_create("c1", cont_prop);
     if (cont_id <= 0)
-        printf("Fail to create container @ line  %d!\n", __LINE__);
+        LOG_ERROR("Failed to create container");
 
     // create an object property
     obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
@@ -102,7 +102,7 @@ main(int argc, char **argv)
     if (env_str != NULL) {
         use_name = atoi(env_str);
     }
-    printf("Using %s\n", name_mode[use_name + 1]);
+    LOG_INFO("Using %s\n", name_mode[use_name + 1]);
 
     srand(rank + 1);
     sprintf(srank, "%d", rank);
@@ -138,19 +138,19 @@ main(int argc, char **argv)
 
     obj1 = PDCobj_create(cont_id, obj_name1, obj_prop1);
     if (obj1 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", obj_name1);
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", obj_name1);
         exit(-1);
     }
 
     obj2 = PDCobj_create(cont_id, obj_name2, obj_prop2);
     if (obj2 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", obj_name2);
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", obj_name2);
         exit(-1);
     }
 
     obj3 = PDCobj_create(cont_id, obj_name3, obj_prop3);
     if (obj3 == 0) {
-        printf("Error getting an object id of %s from server, exit...\n", obj_name3);
+        LOG_ERROR("Error getting an object id of %s from server, exit...\n", obj_name3);
         exit(-1);
     }
 
@@ -168,32 +168,32 @@ main(int argc, char **argv)
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
-    printf("Total map overhead          : %.5e\n", ht_total_sec);
+    LOG_INFO("Total map overhead          : %.5e\n", ht_total_sec);
     fflush(stdout);
 
     gettimeofday(&ht_total_start, 0);
 
     ret = PDCreg_unmap(obj1, r1);
     if (ret != SUCCEED)
-        printf("region unmap failed\n");
+        LOG_ERROR("region unmap failed\n");
 
     gettimeofday(&ht_total_end, 0);
     ht_total_elapsed = (ht_total_end.tv_sec - ht_total_start.tv_sec) * 1000000LL + ht_total_end.tv_usec -
                        ht_total_start.tv_usec;
     ht_total_sec = ht_total_elapsed / 1000000.0;
 
-    printf("Total unmap overhead        : %.5e\n", ht_total_sec);
+    LOG_INFO("Total unmap overhead        : %.5e\n", ht_total_sec);
 
     // close a container
     if (PDCcont_close(cont_id) < 0)
-        printf("fail to close container c1\n");
+        LOG_ERROR("Failed to close container c1\n");
 
     // close a container property
     if (PDCprop_close(cont_prop) < 0)
-        printf("Fail to close property @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to close property");
 
     if (PDC_close(pdc_id) < 0)
-        printf("fail to close PDC\n");
+        LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
     MPI_Finalize();

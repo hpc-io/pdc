@@ -41,21 +41,21 @@ demo_sum(pdcid_t iterIn, pdcid_t iterOut)
     int *dataIn  = NULL;
     int *dataOut = NULL;
     int  blockLengthOut, blockLengthIn;
-    printf("Entered: %s\n----------------\n", __func__);
+    LOG_INFO("Entered: \n----------------\n");
 
     if ((blockLengthOut = PDCobj_data_getNextBlock(iterOut, (void **)&dataOut, NULL)) > 0) {
         while ((blockLengthIn = PDCobj_data_getNextBlock(iterIn, (void **)&dataIn, NULL)) > 0) {
-            printf("Summing %d elements\n", blockLengthIn);
+            LOG_INFO("Summing %d elements\n", blockLengthIn);
             for (i = 0, k = 0; i < blockLengthIn; i++) {
-                printf("\t%d\n", dataIn[i]);
+                LOG_INFO("\t%d\n", dataIn[i]);
                 total += dataIn[i];
             }
-            printf("\nSum = %d\n", total);
+            LOG_INFO("\nSum = %d\n", total);
             dataOut[k++] = total;
             total        = 0;
         }
     }
-    printf("Leaving: %s\n----------------\n", __func__);
+    LOG_INFO("Leaving: \n----------------\n");
     return 0;
 }
 
@@ -74,7 +74,7 @@ check_mpi_access()
 #ifdef ENABLE_MPI
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
-        printf("MPI rank is %d of %d\n", rank, size);
+        LOG_INFO("MPI rank is %d of %d\n", rank, size);
 #endif
     }
 

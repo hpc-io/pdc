@@ -117,15 +117,15 @@ main(int argc, char **argv)
 
     // create a pdc
     pdc = PDCinit("pdc");
-    printf("create a new pdc\n");
+    LOG_INFO("create a new pdc\n");
 
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop > 0) {
-        printf("Rank %d Create a container property\n", rank);
+        LOG_INFO("Rank %d Create a container property\n", rank);
     }
     else {
-        printf("Rank %d Fail to create container property @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to create container property!\n", rank);
         ret_value = 1;
     }
     // create a container
@@ -133,30 +133,30 @@ main(int argc, char **argv)
     cont = PDCcont_create_col(cont_name, cont_prop);
     // cont = PDCcont_create(cont_name, cont_prop);
     if (cont > 0) {
-        printf("Rank %d Create a container %s\n", rank, cont_name);
+        LOG_INFO("Rank %d Create a container %s\n", rank, cont_name);
     }
     else {
-        printf("Rank %d Fail to create container @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to create container!\n", rank);
         ret_value = 1;
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop > 0) {
-        printf("Rank %d Create an object property\n", rank);
+        LOG_INFO("Rank %d Create an object property\n", rank);
     }
     else {
-        printf("Rank %d Fail to create object property @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to create object property!\n", rank);
         ret_value = 1;
     }
 
     ret = PDCprop_set_obj_dims(obj_prop, ndim, dims);
     if (ret != SUCCEED) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
     PDCprop_set_obj_type(obj_prop, var_type);
     if (ret != SUCCEED) {
-        printf("Fail to set obj time step @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to set obj time step");
         ret_value = 1;
     }
 
@@ -167,10 +167,10 @@ main(int argc, char **argv)
 
     obj1 = PDCobj_create(cont, obj_name1, obj_prop);
     if (obj1 > 0) {
-        printf("Rank %d Create an object %s\n", rank, obj_name1);
+        LOG_INFO("Rank %d Create an object %s\n", rank, obj_name1);
     }
     else {
-        printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to create object\n", rank);
         ret_value = 1;
     }
     for (i = 0; i < (int)my_data_size; i++) {
@@ -180,34 +180,34 @@ main(int argc, char **argv)
     }
     transfer_request = PDCregion_transfer_create(mydata, PDC_WRITE, obj1, local_region, global_region);
     if (transfer_request == 0) {
-        printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
+        LOG_ERROR("PDCregion_transfer_create failed");
         ret_value = 1;
     }
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_start for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_wait for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
+        LOG_ERROR("PDCregion_transfer_close failed");
         ret_value = 1;
     }
 
     if (PDCregion_close(local_region) < 0) {
-        printf("fail to close local region\n");
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
 
     if (PDCregion_close(global_region) < 0) {
-        printf("fail to close global region\n");
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
 
@@ -218,10 +218,10 @@ main(int argc, char **argv)
     local_region  = PDCregion_create(1, offset, mysize);
     global_region = PDCregion_create(ndim, offset, dims);
     if (obj2 > 0) {
-        printf("Rank %d Create an object %s\n", rank, obj_name2);
+        LOG_INFO("Rank %d Create an object %s\n", rank, obj_name2);
     }
     else {
-        printf("Rank %d Fail to create object @ line  %d!\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to create object!\n", rank);
         ret_value = 1;
     }
     for (i = 0; i < (int)my_data_size; i++) {
@@ -231,51 +231,51 @@ main(int argc, char **argv)
     }
     transfer_request = PDCregion_transfer_create(mydata, PDC_WRITE, obj2, local_region, global_region);
     if (transfer_request == 0) {
-        printf("PDCregion_transfer_create failed @ line %d\n", __LINE__);
+        LOG_ERROR("PDCregion_transfer_create failed");
         ret_value = 1;
     }
     ret = PDCregion_transfer_start(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_start for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_wait(transfer_request);
     if (ret != SUCCEED) {
-        printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
+        LOG_ERROR("Failed to region_transfer_wait for region");
         ret_value = 1;
     }
 
     ret = PDCregion_transfer_close(transfer_request);
     if (ret != SUCCEED) {
-        printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
+        LOG_ERROR("PDCregion_transfer_close failed");
         ret_value = 1;
     }
 
     if (PDCregion_close(local_region) < 0) {
-        printf("fail to close local region %d\n", __LINE__);
+        LOG_ERROR("Failed to close local region\n");
         ret_value = 1;
     }
 
     if (PDCregion_close(global_region) < 0) {
-        printf("fail to close global region %d\n", __LINE__);
+        LOG_ERROR("Failed to close global region\n");
         ret_value = 1;
     }
 
     // close created objects
     if (PDCobj_close(obj1) < 0) {
-        printf("Rank %d fail to close object o1_%d %d\n", rank, rank, __LINE__);
+        LOG_ERROR("Rank %d fail to close object o1_%d %d\n", rank, rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object o1_%d\n", rank, rank);
+        LOG_INFO("Rank %d Successfully closed object o1_%d\n", rank, rank);
     }
     if (PDCobj_close(obj2) < 0) {
-        printf("Rank %d fail to close object o2_%d %d\n", rank, rank, __LINE__);
+        LOG_ERROR("Rank %d fail to close object o2_%d\n", rank, rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object o2_%d\n", rank, rank);
+        LOG_INFO("Rank %d Successfully closed object o2_%d\n", rank, rank);
     }
 // Wait for all processes to finish their object creation
 #ifdef ENABLE_MPI
@@ -286,20 +286,20 @@ main(int argc, char **argv)
         sprintf(obj_name1, "o1_%d", target_rank);
         obj1 = PDCobj_open(obj_name1, pdc);
         if (obj1 == 0) {
-            printf("Rank %d Fail to open object %s %d\n", rank, obj_name1, __LINE__);
+            LOG_ERROR("Rank %d fail to open object %s\n", rank, obj_name1);
             ret_value = 1;
         }
         else {
-            printf("Rank %d Opened object %s\n", rank, obj_name1);
+            LOG_INFO("Rank %d Opened object %s\n", rank, obj_name1);
         }
         sprintf(obj_name2, "o2_%d", target_rank);
         obj2 = PDCobj_open(obj_name2, pdc);
         if (obj2 == 0) {
-            printf("Rank %d Fail to open object %s %d\n", rank, obj_name2, __LINE__);
+            LOG_ERROR("Rank %d fail to open object %s\n", rank, obj_name2);
             ret_value = 1;
         }
         else {
-            printf("Rank %d Open object %s\n", rank, obj_name2);
+            LOG_INFO("Rank %d Open object %s\n", rank, obj_name2);
         }
 
         dims[0]      = target_rank * 2 + 16;
@@ -317,32 +317,32 @@ main(int argc, char **argv)
 
         transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj2, local_region, global_region);
         if (transfer_request == 0) {
-            printf("PDCregion_transfer_create for read obj2 failed %d\n", __LINE__);
+            LOG_ERROR("PDCregion_transfer_create for read obj2 failed\n");
             ret_value = 1;
         }
 
         ret = PDCregion_transfer_start(transfer_request);
         if (ret != SUCCEED) {
-            printf("Failed to region_transfer_start for region @ line %d\n", __LINE__);
+            LOG_ERROR("Failed to region_transfer_start for region");
             ret_value = 1;
         }
 
         ret = PDCregion_transfer_wait(transfer_request);
         if (ret != SUCCEED) {
-            printf("Failed to region_transfer_wait for region @ line %d\n", __LINE__);
+            LOG_ERROR("Failed to region_transfer_wait for region");
             ret_value = 1;
         }
 
         ret = PDCregion_transfer_close(transfer_request);
         if (ret != SUCCEED) {
-            printf("PDCregion_transfer_close failed @ line %d\n", __LINE__);
+            LOG_ERROR("PDCregion_transfer_close failed");
             ret_value = 1;
         }
 
         for (j = 0; j < (int)(my_data_size * type_size); ++j) {
             if (data_read[j] != (char)(j + target_rank * 5 + 3)) {
-                printf("rank %d, i = %d, j = %d, wrong value %d!=%d %d\n", rank, i, j, data_read[j],
-                       (char)(j + target_rank * 5 + 3), __LINE__);
+                LOG_ERROR("rank %d, i = %d, j = %d, wrong value %d!=%d\n", rank, i, j, data_read[j],
+                          (char)(j + target_rank * 5 + 3));
                 ret_value = 1;
                 break;
             }
@@ -351,58 +351,58 @@ main(int argc, char **argv)
         free(data_read);
 
         if (PDCregion_close(local_region) < 0) {
-            printf("fail to close local region %d\n", __LINE__);
+            LOG_ERROR("Failed to close local region\n");
             ret_value = 1;
         }
 
         if (PDCregion_close(global_region) < 0) {
-            printf("fail to close global region %d\n", __LINE__);
+            LOG_ERROR("Failed to close global region\n");
             ret_value = 1;
         }
 
         if (PDCobj_close(obj1) < 0) {
-            printf("Rank %d fail to close object %s %d\n", rank, obj_name1, __LINE__);
+            LOG_ERROR("Rank %d fail to close object %s\n", rank, obj_name1);
             ret_value = 1;
         }
         else {
-            printf("Rank %d successfully close object %s\n", rank, obj_name1);
+            LOG_INFO("Rank %d Successfully closed object %s\n", rank, obj_name1);
         }
         if (PDCobj_close(obj2) < 0) {
-            printf("Rank %d fail to close object %s %d\n", rank, obj_name2, __LINE__);
+            LOG_ERROR("Rank %d fail to close object %s\n", rank, obj_name2);
             ret_value = 1;
         }
         else {
-            printf("Rank %d successfully close object %s\n", rank, obj_name2);
+            LOG_INFO("Rank %d Successfully closed object %s\n", rank, obj_name2);
         }
     }
 
     // close a container
     if (PDCcont_close(cont) < 0) {
-        printf("Rank %d fail to close container c %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to close container\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close container c\n", rank);
+        LOG_INFO("Rank %d Successfully closed container c\n", rank);
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        printf("Rank %d Fail to close property @ line %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to close property\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close object property\n", rank);
+        LOG_INFO("Rank %d Successfully closed object property\n", rank);
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        printf("Rank %d Fail to close property @ line %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to close property\n", rank);
         ret_value = 1;
     }
     else {
-        printf("Rank %d successfully close container property\n", rank);
+        LOG_INFO("Rank %d Successfully closed container property\n", rank);
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        printf("Rank %d fail to close PDC %d\n", rank, __LINE__);
+        LOG_ERROR("Rank %d fail to close PDC\n", rank);
         ret_value = 1;
     }
 
