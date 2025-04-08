@@ -217,9 +217,9 @@ PDC_get_region_desc_size_bytes(uint64_t *src_reg, int unit, int ndim)
 {
     FUNC_ENTER(NULL);
 
-    if(src_reg == NULL)
+    if (src_reg == NULL)
         LOG_WARNING("src_reg was NULL\n");
-    if(ndim == 0) 
+    if (ndim == 0)
         return 0;
 
     uint64_t region_size = 1;
@@ -236,7 +236,7 @@ PDC_get_region_desc_size_from_bytes_to_elements(const uint64_t *src_reg, int uni
 {
     FUNC_ENTER(NULL);
 
-    if(src_reg == NULL)
+    if (src_reg == NULL)
         LOG_WARNING("src_reg was NULL\n");
 
     uint64_t total_elements = 1;
@@ -253,7 +253,7 @@ PDC_get_region_desc_size(const uint64_t *src_reg, int ndim)
 {
     FUNC_ENTER(NULL);
 
-    if(src_reg == NULL) 
+    if (src_reg == NULL)
         LOG_WARNING("src_reg was NULL\n");
     if (ndim == 0)
         return 0;

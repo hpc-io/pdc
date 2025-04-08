@@ -255,7 +255,7 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_ty
 /**
  * @brief Check if two region info transfers are identical.
  *
- * Compares two region info transfer structures (`reg1` and `reg2`) to determine if they 
+ * Compares two region info transfer structures (`reg1` and `reg2`) to determine if they
  * are equal. The comparison checks if all bytes within the structures match.
  *
  * @param reg1 [IN] Pointer to the first region info transfer to compare.
@@ -264,7 +264,7 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_ty
  * @return 1 if the region info transfers are identical, -1 otherwise.
  */
 pbool_t PDC_region_info_transfer_t_is_equal(const region_info_transfer_t *reg1,
-                                          const region_info_transfer_t *reg2);
+                                            const region_info_transfer_t *reg2);
 
 /**
  * @brief Copy a region info transfer to another region.
@@ -276,12 +276,13 @@ pbool_t PDC_region_info_transfer_t_is_equal(const region_info_transfer_t *reg1,
  *
  * @return Non-negative on success, negative on failure.
  */
-perr_t PDC_copy_region_info_transfer_t(const region_info_transfer_t *src_reg, region_info_transfer_t *dest_reg);
+perr_t PDC_copy_region_info_transfer_t(const region_info_transfer_t *src_reg,
+                                       region_info_transfer_t *      dest_reg);
 
 /**
  * @brief Calculate the size of a region descriptor in bytes.
  *
- * This function computes the size of the region described by `src_reg` in bytes by 
+ * This function computes the size of the region described by `src_reg` in bytes by
  * multiplying the size of each dimension by the element size (`unit`).
  * The size in bytes is computed as the product of all dimensions, scaled by `unit`.
  *
@@ -296,7 +297,7 @@ uint64_t PDC_get_region_desc_size_bytes(uint64_t *src_reg, int unit, int ndim);
 /**
  * @brief Calculate the size of a region descriptor in elements from region desccriptor in bytes.
  *
- * This function computes the size of the region described by `src_reg` in terms of the 
+ * This function computes the size of the region described by `src_reg` in terms of the
  * number of elements by dividing the given byte size by the element size (`unit`).
  *
  * @param src_reg [IN] Pointer to the source region descriptor (in bytes)
@@ -339,7 +340,7 @@ uint64_t PDC_get_region_desc_size(const uint64_t *src_reg, int ndim);
  * @return Non-negative on success, negative on failure.
  */
 perr_t PDC_copy_region_desc_bytes_to_elements(const uint64_t *src_reg, uint64_t *dest_reg, int unit,
-                                                     int ndim);
+                                              int ndim);
 
 /**
  * @brief Copy a region descriptor from source to destination without unit scaling.
@@ -374,6 +375,6 @@ perr_t PDC_copy_region_desc(const uint64_t *src_reg, uint64_t *dest_reg, int src
  * @return Non-negative on success, negative on failure.
  */
 perr_t PDC_copy_region_desc_elements_to_bytes(const uint64_t *src_reg, uint64_t *dest_reg, int unit,
-                                          int dest_ndim);
+                                              int dest_ndim);
 
 #endif /* PDC_REGION_H */
