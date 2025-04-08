@@ -794,16 +794,7 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     info = HG_Get_info(handle);
 
-    total_mem_size = in.remote_unit;
-    if (in.remote_region.ndim >= 1) {
-        total_mem_size *= in.remote_region.count[0];
-    }
-    if (in.remote_region.ndim >= 2) {
-        total_mem_size *= in.remote_region.count[1];
-    }
-    if (in.remote_region.ndim >= 3) {
-        total_mem_size *= in.remote_region.count[2];
-    }
+    total_mem_size = PDC_get_region_desc_size(in.remote_region.count, in.remote_region.ndim);
 
     /* pthread_mutex_lock(&transfer_request_id_mutex); */
     out.metadata_id = PDC_transfer_request_id_register();
