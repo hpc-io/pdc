@@ -3022,6 +3022,7 @@ PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, metadata_
             out->kvtag.name  = elt->kvtag->name;
             out->kvtag.size  = elt->kvtag->size;
             out->kvtag.value = elt->kvtag->value;
+            out->kvtag.type  = elt->kvtag->type;
             break;
         }
     }
