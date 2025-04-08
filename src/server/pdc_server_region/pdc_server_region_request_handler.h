@@ -794,7 +794,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     info = HG_Get_info(handle);
 
-    total_mem_size = PDC_get_region_desc_size(in.remote_region.count, in.remote_region.ndim);
+    total_mem_size =
+        PDC_get_region_desc_size_bytes(in.remote_region.count, in.remote_unit, in.remote_region.ndim);
 
     /* pthread_mutex_lock(&transfer_request_id_mutex); */
     out.metadata_id = PDC_transfer_request_id_register();
