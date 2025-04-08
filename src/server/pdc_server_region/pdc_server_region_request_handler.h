@@ -360,11 +360,11 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
 
-    set_region_with_dims((local_bulk_args->in).remote_region.start, remote_reg_info->offset,
+    PDC_copy_region_desc((local_bulk_args->in).remote_region.start, remote_reg_info->offset,
                          remote_reg_info->ndim, remote_reg_info->ndim);
-    set_region_with_dims((local_bulk_args->in).remote_region.count, remote_reg_info->size,
+    PDC_copy_region_desc((local_bulk_args->in).remote_region.count, remote_reg_info->size,
                          remote_reg_info->ndim, remote_reg_info->ndim);
-    set_region_with_dims((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
+    PDC_copy_region_desc((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
                          remote_reg_info->ndim);
 /*
     printf("Server transfer request at write branch, index 1 value = %d\n",
@@ -845,11 +845,11 @@ HG_TEST_RPC_CB(transfer_request, handle)
         remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
         remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
 
-        set_region_with_dims((in.remote_region).start, remote_reg_info->offset, remote_reg_info->ndim,
+        PDC_copy_region_desc((in.remote_region).start, remote_reg_info->offset, remote_reg_info->ndim,
                              remote_reg_info->ndim);
-        set_region_with_dims((in.remote_region).count, remote_reg_info->size, remote_reg_info->ndim,
+        PDC_copy_region_desc((in.remote_region).count, remote_reg_info->size, remote_reg_info->ndim,
                              remote_reg_info->ndim);
-        set_region_with_dims((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
+        PDC_copy_region_desc((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
                              remote_reg_info->ndim);
 
 #ifdef PDC_SERVER_CACHE

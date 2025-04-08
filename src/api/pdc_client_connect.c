@@ -1380,7 +1380,6 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     }
     memset(hostname, 0, sizeof(hostname));
     gethostname(hostname, sizeof(hostname));
-    strcpy(hostname, "eno1");
     sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_client_mpi_rank_g == 0) {
         LOG_INFO("==PDC_CLIENT: using %.7s\n", na_info_string);
@@ -3049,8 +3048,8 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, region_info_tra
     FUNC_ENTER(NULL);
     transfer->ndim = ndim;
 
-    set_region_with_dims(offset, transfer->start, ndim, ndim);
-    set_region_with_dims(size, transfer->count, ndim, ndim);
+    PDC_copy_region_desc(offset, transfer->start, ndim, ndim);
+    PDC_copy_region_desc(size, transfer->count, ndim, ndim);
 
     fflush(stdout);
     FUNC_LEAVE(ret_value);
@@ -3504,7 +3503,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     in.obj_id      = obj_id;
 
     in.obj_ndim = obj_ndim;
-    set_region_with_dims(obj_dims, in.obj_dims, in.obj_ndim, in.obj_ndim);
+    PDC_copy_region_desc(obj_dims, in.obj_dims, in.obj_ndim, in.obj_ndim);
 
     // Compute metadata server id
     meta_server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);

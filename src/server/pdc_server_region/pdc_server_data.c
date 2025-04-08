@@ -491,8 +491,8 @@ PDC_Data_Server_region_lock(region_lock_in_t *in, region_lock_out_t *out, hg_han
     PDC_init_region_list(request_region);
     request_region->ndim = ndim;
 
-    set_region_with_dims(in->region.start, request_region->start, ndim, ndim);
-    set_region_with_dims(in->region.count, request_region->count, ndim, ndim);
+    PDC_copy_region_desc(in->region.start, request_region->start, ndim, ndim);
+    PDC_copy_region_desc(in->region.count, request_region->count, ndim, ndim);
 
 #ifdef ENABLE_MULTITHREAD
     hg_thread_mutex_lock(&region_struct_mutex_g);
@@ -638,8 +638,8 @@ PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *out)
     PDC_init_region_list(&request_region);
     request_region.ndim = ndim;
 
-    set_region_with_dims(in->region.start, request_region.start, ndim, ndim);
-    set_region_with_dims(in->region.count, request_region.count, ndim, ndim);
+    PDC_copy_region_desc(in->region.start, request_region.start, ndim, ndim);
+    PDC_copy_region_desc(in->region.count, request_region.count, ndim, ndim);
 
     obj_reg = PDC_Server_get_obj_region(in->obj_id);
     if (obj_reg == NULL) {
@@ -775,7 +775,7 @@ PDC_Data_Server_buf_unmap(const struct hg_info *info, buf_unmap_in_t *in)
     DL_FOREACH_SAFE(target_obj->region_buf_map_head, elt, tmp)
     {
         if (in->remote_obj_id == elt->remote_obj_id &&
-            PDC_region_info_transfer_is_equal(&(in->remote_region), &(elt->remote_region_unit))) {
+            PDC_region_info_transfer_t_is_equal(&(in->remote_region), &(elt->remote_region_unit))) {
 #ifdef ENABLE_MULTITHREAD
             // wait for work to be done, then free
             hg_thread_mutex_lock(&(elt->bulk_args->work_mutex));
@@ -1098,7 +1098,7 @@ PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle)
         {
 
             if (in->remote_obj_id == elt->remote_obj_id &&
-                PDC_region_info_transfer_is_equal(&(in->remote_region), &(elt->remote_region_unit))) {
+                PDC_region_info_transfer_t_is_equal(&(in->remote_region), &(elt->remote_region_unit))) {
                 DL_DELETE(target_meta->region_buf_map_head, elt);
                 free(elt);
             }
@@ -1229,7 +1229,7 @@ PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_lis
     DL_FOREACH(new_obj_reg->region_buf_map_head, tmp)
     {
         if (tmp->remote_obj_id == in->remote_obj_id &&
-            PDC_region_info_transfer_is_equal(&(in->remote_region_unit), &(tmp->remote_region_unit))) {
+            PDC_region_info_transfer_t_is_equal(&(in->remote_region_unit), &(tmp->remote_region_unit))) {
             dup = 1;
         }
     }
@@ -1295,7 +1295,7 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
 
     DL_FOREACH(target_obj->region_buf_map_head, tmp)
     {
-        if (PDC_region_info_transfer_is_equal(&region, &(tmp->remote_region_unit)) == 1) {
+        if (PDC_region_info_transfer_t_is_equal(&region, &(tmp->remote_region_unit)) == 1) {
             ret_value = tmp->remote_data_ptr;
             break;
         }
@@ -1305,7 +1305,7 @@ PDC_Server_maybe_allocate_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t 
         size_t i;
 
         size_t region_size =
-            get_region_with_dims_size_bytes((uint64_t *)&(region.count), type_size, region.ndim) / type_size;
+            PDC_get_region_desc_size_bytes((uint64_t *)&(region.count), type_size, region.ndim) / type_size;
         region_buf_map_t *buf_map_ptr = NULL;
 
         ret_value = malloc(region_size);
@@ -1349,7 +1349,7 @@ PDC_Server_get_region_buf_ptr(pdcid_t obj_id, region_info_transfer_t region)
 
     DL_FOREACH(target_obj->region_buf_map_head, tmp)
     {
-        if (PDC_region_info_transfer_is_equal(&region, &(tmp->remote_region_unit)) == 1) {
+        if (PDC_region_info_transfer_t_is_equal(&region, &(tmp->remote_region_unit)) == 1) {
             ret_value = tmp->remote_data_ptr;
             break;
         }
@@ -8225,8 +8225,8 @@ add_storage_region_to_buf(void **in_buf, uint64_t *buf_alloc, uint64_t *buf_off,
     region_info_transfer_t *region_info = (region_info_transfer_t *)(buf + *buf_off);
     region_info->ndim                   = region->ndim;
 
-    set_region_with_dims(region->count, region_info->count, region_info->ndim, region_info->ndim);
-    set_region_with_dims(region->start, region_info->start, region_info->ndim, region_info->ndim);
+    PDC_copy_region_desc(region->count, region_info->count, region_info->ndim, region_info->ndim);
+    PDC_copy_region_desc(region->start, region_info->start, region_info->ndim, region_info->ndim);
 
     (*buf_off) += sizeof(region_info_transfer_t);
     uint64_t *offset = (uint64_t *)(buf + *buf_off);

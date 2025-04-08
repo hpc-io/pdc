@@ -253,90 +253,127 @@ perr_t PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_ty
                           pdc_lock_mode_t lock_mode);
 
 /**
- * Check if two region info transfer are identical
+ * @brief Check if two region info transfers are identical.
  *
- * \param reg1 [IN]             Pointer to region info transfer to compare
- * \param reg2 [IN]             Pointer to region info transfer to compare
+ * Compares two region info transfer structures (`reg1` and `reg2`) to determine if they 
+ * are equal. The comparison checks if all bytes within the structures match.
  *
- * \return 1 if they are the same/-1 otherwise
+ * @param reg1 [IN] Pointer to the first region info transfer to compare.
+ * @param reg2 [IN] Pointer to the second region info transfer to compare.
+ *
+ * @return 1 if the region info transfers are identical, -1 otherwise.
  */
-pbool_t PDC_region_info_transfer_is_equal(const region_info_transfer_t *reg1,
+pbool_t PDC_region_info_transfer_t_is_equal(const region_info_transfer_t *reg1,
                                           const region_info_transfer_t *reg2);
 
 /**
- * Set region info transfer
+ * @brief Copy a region info transfer to another region.
  *
- * \param src_reg [IN]            Pointer to src region info transfer
- * \param dest_reg [IN]             Pointer to region to compare
+ * Copies the data from one region info transfer structure (`src_reg`) to another (`dest_reg`).
  *
- * \return Non-negative on Success/Negative on failure
+ * @param src_reg [IN] Pointer to the source region info transfer to copy from.
+ * @param dest_reg [OUT] Pointer to the destination region info transfer to copy to.
+ *
+ * @return Non-negative on success, negative on failure.
  */
-perr_t PDC_set_region_info_transfer(const region_info_transfer_t *src_reg, region_info_transfer_t *dest_reg);
+perr_t PDC_copy_region_info_transfer_t(const region_info_transfer_t *src_reg, region_info_transfer_t *dest_reg);
 
 /**
- * Get size in bytes of region with dimensions
- * \param src_reg [IN] Pointer to the source region
- * \param unit [IN] Size of each element in source and destination regions
- * \param ndim [IN] Number of dimensions in source region
+ * @brief Calculate the size of a region descriptor in bytes.
  *
- * \return size in bytes of src_reg
+ * This function computes the size of the region described by `src_reg` in bytes by 
+ * multiplying the size of each dimension by the element size (`unit`).
+ * The size in bytes is computed as the product of all dimensions, scaled by `unit`.
+ *
+ * @param src_reg [IN] Pointer to the source region descriptor (in elements)
+ * @param unit [IN] Size of each element in bytes
+ * @param ndim [IN] Number of dimensions in the region descriptor
+ *
+ * @return The size of the region in bytes.
  */
-uint64_t get_region_with_dims_size_bytes(uint64_t *src_reg, int unit, int ndim);
+uint64_t PDC_get_region_desc_size_bytes(uint64_t *src_reg, int unit, int ndim);
 
 /**
- * Get the size in elements of region with dimensions from region with dimentions and bytes
- * \param src_reg [IN] Pointer to the source region
- * \param unit [IN] Size of each element in source and destination regions
- * \param ndim [IN] Number of dimensions in source region
+ * @brief Calculate the size of a region descriptor in elements from region desccriptor in bytes.
  *
- * \return size in bytes of src_reg
+ * This function computes the size of the region described by `src_reg` in terms of the 
+ * number of elements by dividing the given byte size by the element size (`unit`).
+ *
+ * @param src_reg [IN] Pointer to the source region descriptor (in bytes)
+ * @param unit [IN] Size of each element in bytes
+ * @param ndim [IN] Number of dimensions in the region descriptor
+ *
+ * @return The size of the region in terms of the number of elements.
  */
-uint64_t get_region_with_dims_size_from_region_size_bytes(const uint64_t *src_reg, int unit, int ndim);
+uint64_t PDC_get_region_desc_size_from_bytes_to_elements(const uint64_t *src_reg, int unit, int ndim);
 
 /**
- * Get the size in elements of region with dimensions
- * \param src_reg [IN] Pointer to the source region
- * \param ndim [IN] Number of dimensions in source region
+ * @brief Calculate the total size of a region descriptor in elements.
  *
- * \return size in elements of src_reg
+ * This function computes the total size of the region described by `src_reg`,
+ * by multiplying the dimensions of the region. The size is returned in terms
+ * of the number of elements, not bytes.
+ *
+ * @param src_reg [IN] Pointer to the source region descriptor (in elements)
+ * @param ndim [IN] Number of dimensions in the region descriptor
+ *
+ * @return The total size of the region in terms of the number of elements.
  */
-uint64_t get_region_with_dims_size(const uint64_t *src_reg, int ndim);
+uint64_t PDC_get_region_desc_size(const uint64_t *src_reg, int ndim);
 
 /**
- * set size in bytes of region with dimensions
- * \param src_reg [IN] Pointer to the source region
- * \param dest_reg [IN] Pointer to the destination region
- * \param unit [IN] Size of each element in source and destion regions
- * \param ndim [IN] Number of dimensions in destination region
+ * @brief Convert a region descriptor from byte units to element units.
  *
- * \return Non-negative on Success/Negative on failure
+ * Copies the region dimensions from the source descriptor to the destination descriptor,
+ * converting each dimension from bytes to elements by dividing by the element size.
+ * For each dimension i:
+ * dest_reg[i] = src_reg[i] / unit
+ *
+ * Both source and destination pointers must be non-null.
+ *
+ * @param src_reg [IN] Pointer to the source region descriptor (in bytes)
+ * @param dest_reg [OUT] Pointer to the destination region descriptor (in elements)
+ * @param unit [IN] Size of each element in bytes
+ * @param ndim [IN] Number of dimensions in the region
+ *
+ * @return Non-negative on success, negative on failure.
  */
-perr_t set_region_in_elements_from_region_size_bytes(const uint64_t *src_reg, uint64_t *dest_reg, int unit,
+perr_t PDC_copy_region_desc_bytes_to_elements(const uint64_t *src_reg, uint64_t *dest_reg, int unit,
                                                      int ndim);
 
 /**
- * Set dest region  equal to source region taking into account the dimensions
- * Validates that the source and destination addresses are not null
- * \param src_reg [IN] Pointer to the start address of source region
- * \param dest_rewg [IN] Point to the start address of the destination region
- * \param unit [IN] Size of each element in source and destion regions
+ * @brief Copy a region descriptor from source to destination without unit scaling.
  *
- * \return Non-negative on Success/Negative on failure
+ * Copies each dimension from the source region descriptor to the destination region
+ * descriptor without applying any scaling. The number of dimensions may differ between
+ * source and destination, in which case only the common number of dimensions is copied.
+ *
+ * Validates that both source and destination pointers are not NULL.
+ *
+ * @param src_reg [IN] Pointer to the source region descriptor
+ * @param dest_reg [OUT] Pointer to the destination region descriptor
+ * @param src_ndim [IN] Number of dimensions in the source region
+ * @param dest_ndim [IN] Number of dimensions in the destination region
+ *
+ * @return Non-negative on success, negative on failure.
  */
-perr_t set_region_with_dims(const uint64_t *src_reg, uint64_t *dest_reg, int src_ndim, int dest_ndim);
+perr_t PDC_copy_region_desc(const uint64_t *src_reg, uint64_t *dest_reg, int src_ndim, int dest_ndim);
 
 /**
- * Set dest region equal to source region taking into account the dimensions in bytes
- * E.g., it sets the dest region sizes equal to the src region size * unit
- * Validates that the source and destination addresses are not null
- * \param src_reg [IN] Pointer to the start address of source region
- * \param dest_reg [IN] Point to the start address of the destination region
- * \param unit [IN] Size of each element in source and destion regions
- * \param dest_ndim [IN] number of dimensions of destination region
+ * @brief Copy a region descriptor from element units to byte units.
  *
- * \return Non-negative on Success/Negative on failure
+ * Sets each dimension of the destination region descriptor equal to the
+ * corresponding dimension of the source descriptor multiplied by the element size in bytes.
+ * For the i-th dimension: dest_reg[i] = src_reg[i] * unit
+ *
+ * @param src_reg [IN] Pointer to the source region descriptor (in elements)
+ * @param dest_reg [OUT] Pointer to the destination region descriptor (in bytes)
+ * @param unit [IN] Size of each element in bytes
+ * @param dest_ndim [IN] Number of dimensions in the destination region
+ *
+ * @return Non-negative on success, negative on failure.
  */
-perr_t set_region_with_dims_to_size_bytes(const uint64_t *src_reg, uint64_t *dest_reg, int unit,
+perr_t PDC_copy_region_desc_elements_to_bytes(const uint64_t *src_reg, uint64_t *dest_reg, int unit,
                                           int dest_ndim);
 
 #endif /* PDC_REGION_H */

@@ -113,7 +113,6 @@ main(int argc, char **argv)
 #endif
     char hostname[256];
     gethostname(hostname, 256);
-    strcpy(hostname, "eno1");
     if (rank == 0) {
         LOG_INFO("number of dimensions in this test is %d\n", ndim);
         LOG_INFO("data size = %llu\n", (long long unsigned)data_size);
