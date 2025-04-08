@@ -138,7 +138,7 @@ server_open_storage(char *storage_location, pdcid_t obj_id)
  * \return 1 if they are the same/-1 otherwise
  */
 static int
-region_list_is_equal(region_list_t *a, region_list_t *b)
+region_list_t_is_equal(region_list_t *a, region_list_t *b)
 {
     int      ret_value = -1;
     uint32_t i;
@@ -146,7 +146,7 @@ region_list_is_equal(region_list_t *a, region_list_t *b)
     FUNC_ENTER(NULL);
 
     if (a == NULL || b == NULL) {
-        printf("==PDC_SERVER: region_list_is_equal() - passed NULL value!\n");
+        printf("==PDC_SERVER: region_list_t_is_equal() - passed NULL value!\n");
         ret_value = -1;
         goto done;
     }
@@ -283,7 +283,7 @@ PDC_Server_local_region_lock_status(PDC_mapping_info_t *mapped_region, int *lock
     // iterate the target metadata's region_lock_head (linked list) to search for queried region
     DL_FOREACH(res_meta->region_lock_head, elt)
     {
-        if (region_list_is_equal(request_region, elt) == 1) {
+        if (region_list_t_is_equal(request_region, elt) == 1) {
             *lock_status            = 1;
             elt->reg_dirty_from_buf = 1;
 
@@ -597,7 +597,7 @@ PDC_Server_release_lock_request(uint64_t obj_id, struct pdc_region_info *region)
 #endif
     DL_FOREACH_SAFE(new_obj_reg->region_lock_request_head, elt, tmp)
     {
-        if (region_list_is_equal(request_region, elt) == 1) {
+        if (region_list_t_is_equal(request_region, elt) == 1) {
             out.ret = 1;
             HG_Respond(elt->lock_handle, NULL, NULL, &out);
             HG_Destroy(elt->lock_handle);
@@ -653,7 +653,7 @@ PDC_Data_Server_region_release(region_lock_in_t *in, region_lock_out_t *out)
 #endif
     DL_FOREACH_SAFE(obj_reg->region_lock_head, tmp1, tmp2)
     {
-        if (region_list_is_equal(&request_region, tmp1) == 1) {
+        if (region_list_t_is_equal(&request_region, tmp1) == 1) {
             // Found the requested region lock, remove from the linked list
             found = 1;
             DL_DELETE(obj_reg->region_lock_head, tmp1);

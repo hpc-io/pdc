@@ -2200,9 +2200,8 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
     out.ret = 1;
     HG_Respond(bulk_args->handle, NULL, NULL, &out);
 
-    ndim = bulk_args->remote_region.ndim;
-    expected_size =
-    PDC_get_region_desc_size_bytes(bulk_args->remote_region.count, type_extent, ndim);
+    ndim          = bulk_args->remote_region.ndim;
+    expected_size = PDC_get_region_desc_size_bytes(bulk_args->remote_region.count, type_extent, ndim);
 
     /* There are some transforms, e.g. type_casting in which the transform size
      * will match the expected size.  Other transforms such as compression
@@ -2778,8 +2777,8 @@ HG_TEST_RPC_CB(region_release, handle)
                             data_size_to  = (size_t *)malloc(sizeof(size_t));
                             *data_ptrs_to = data_buf;
                             PDC_copy_region_desc_bytes_to_elements((eltt2->remote_region_unit).count,
-                                                                          data_size_to, in.region.ndim,
-                                                                          in.data_unit);
+                                                                   data_size_to, in.region.ndim,
+                                                                   in.data_unit);
                         }
 
                         hg_ret =
@@ -2915,8 +2914,8 @@ HG_TEST_RPC_CB(region_release, handle)
                             data_size_to  = (size_t *)malloc(sizeof(size_t));
                             *data_ptrs_to = data_buf;
                             PDC_copy_region_desc_bytes_to_elements((eltt2->remote_region_unit).count,
-                                                                          data_size_to, in.region.ndim,
-                                                                          in.data_unit);
+                                                                   data_size_to, in.region.ndim,
+                                                                   in.data_unit);
                         }
                         /* Create a new block handle to read the data */
                         hg_ret =
