@@ -75,7 +75,7 @@ main(int argc, char **argv)
 
     if (nproc <= 16)
         LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, pdc_offset[0],
-                  pdc_offset[1], pdc_offset[2], pdc_size[0], pdc_size[1], pdc_size[2]);
+                 pdc_offset[1], pdc_offset[2], pdc_size[0], pdc_size[1], pdc_size[2]);
 
     // Tag retrieval
     sprintf(tag_name, "%llu-%llu\n", pdc_offset[1], pdc_offset[2]);
@@ -95,7 +95,7 @@ main(int argc, char **argv)
 #endif
         if (value_size != 4 * sizeof(double))
             LOG_INFO("Error: Round %d: tag retrival result size %llu / %llu \n", r, value_size,
-                      4 * sizeof(double));
+                     4 * sizeof(double));
         if (tag_value)
             free(tag_value);
     }

@@ -124,7 +124,7 @@ main(int argc, char **argv)
 
     if (nproc <= 16)
         LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
-                  offset[2], size[0], size[1], size[2]);
+                 offset[2], size[0], size[1], size[2]);
 
     for (r = 0; r < round; r++) {
         if (r == round - 1 && use_chunk_cache > 0)
@@ -189,7 +189,7 @@ main(int argc, char **argv)
     }
 
     LOG_INFO("Rank %d: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3],
-              cnt[4], cnt[5], cnt[6], cnt[7], cnt[8], cnt[9]);
+             cnt[4], cnt[5], cnt[6], cnt[7], cnt[8], cnt[9]);
     MPI_Barrier(MPI_COMM_WORLD);
 
     //=============PATTERN 2===============
@@ -212,7 +212,7 @@ main(int argc, char **argv)
 
     if (nproc <= 16)
         LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
-                  offset[2], size[0], size[1], size[2]);
+                 offset[2], size[0], size[1], size[2]);
 
     if (rank == 0)
         opensees_data = (double *)malloc(sizeof(double) * dims[0] * opensees_size * opensees_size);

@@ -92,7 +92,7 @@ main(int argc, char **argv)
 
     if (nproc <= 16)
         LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
-                  offset[2], size[0], size[1], size[2]);
+                 offset[2], size[0], size[1], size[2]);
 
 #ifdef ENABLE_MPI
     t0 = MPI_Wtime();
