@@ -44,7 +44,7 @@ main(int argc, char **argv)
     readt = ceil(1.0 * dims[0] / chunk_size[0]) * chunk_size[0] / devide_factor;
 
     if (rank == 0)
-        LOG_ERROR("Round %d, use chunk cache %d, devide factor %d\n", round, use_chunk_cache, devide_factor);
+        LOG_INFO("Round %d, use chunk cache %d, devide factor %d\n", round, use_chunk_cache, devide_factor);
 
     fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
@@ -96,7 +96,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: read metadata took %.4lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: read metadata took %.4lf\n", r, t1 - t0);
     }
 
     H5Dclose(meta_dset);
@@ -123,7 +123,7 @@ main(int argc, char **argv)
     data = (double *)malloc(sizeof(double) * size[0] * size[1] * size[2]);
 
     if (nproc <= 16)
-        LOG_ERROR("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
+        LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
                   offset[2], size[0], size[1], size[2]);
 
     for (r = 0; r < round; r++) {
@@ -143,7 +143,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d, Read from HDF5 took %.4lf\n", r, t1 - t0);
+            LOG_INFO("Round %d, Read from HDF5 took %.4lf\n", r, t1 - t0);
 
         if (r != round - 1) {
             // leave dset open for following patterns
@@ -185,10 +185,10 @@ main(int argc, char **argv)
         t1 = MPI_Wtime();
 
         if (rank == 0)
-            LOG_ERROR("Round %d: Scanning data took %.4lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: Scanning data took %.4lf\n", r, t1 - t0);
     }
 
-    LOG_ERROR("Rank %d: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3],
+    LOG_INFO("Rank %d: %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", rank, cnt[0], cnt[1], cnt[2], cnt[3],
               cnt[4], cnt[5], cnt[6], cnt[7], cnt[8], cnt[9]);
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -211,7 +211,7 @@ main(int argc, char **argv)
     mspace = H5Screate_simple(4, size, NULL);
 
     if (nproc <= 16)
-        LOG_ERROR("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
+        LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
                   offset[2], size[0], size[1], size[2]);
 
     if (rank == 0)
@@ -234,7 +234,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: rank 0 read OpenSees 200x200m data took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: rank 0 read OpenSees 200x200m data took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
@@ -277,7 +277,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: all ranks read ssi_downsample data took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: all ranks read ssi_downsample data took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
@@ -320,7 +320,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: all ranks read rec_downsample data took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: all ranks read rec_downsample data took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
@@ -361,7 +361,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: rank 0 read 1 time-history took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: rank 0 read 1 time-history took %.6lf\n", r, t1 - t0);
 
     } // End for round
 
