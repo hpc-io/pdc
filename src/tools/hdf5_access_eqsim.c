@@ -8,6 +8,7 @@
 #include "mpi.h"
 
 #include "hdf5.h"
+#include "pdc_logger.h"
 
 int
 main(int argc, char **argv)
