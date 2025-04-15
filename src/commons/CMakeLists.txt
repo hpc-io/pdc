@@ -74,6 +74,7 @@ install(
     ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_id_pkg.h
     ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_malloc.h
     ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_linkedlist.h
+    ${PDC_SOURCE_DIR}/src/commons/logging/include/pdc_logger.h
   DESTINATION
     ${PDC_INSTALL_INCLUDE_DIR}
   COMPONENT
