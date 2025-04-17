@@ -957,6 +957,9 @@ drc_access_again:
         LOG_INFO("==PDC_SERVER[%d]: Read cache enabled!\n", pdc_server_rank_g);
 #endif
 
+    // Initialize IDIOMS
+    PDC_Server_metadata_index_init(pdc_server_size_g, pdc_server_rank_g);
+
     // TODO: support restart with different number of servers than previous run
     char checkpoint_file[ADDR_MAX + sizeof(int) + 1];
     if (is_restart_g == 1) {
@@ -994,9 +997,6 @@ drc_access_again:
     hg_atomic_set32(&close_server_g, 0);
 
     n_metadata_g = 0;
-
-    // Initialize IDIOMS
-    PDC_Server_metadata_index_init(pdc_server_size_g, pdc_server_rank_g);
 
     // PDC transfer_request infrastructures
     PDC_server_transfer_request_init();

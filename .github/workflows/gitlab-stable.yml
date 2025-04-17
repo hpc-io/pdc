@@ -1,0 +1,28 @@
+name: GitLab
+
+on:
+  push:
+    branches:
+      - stable
+
+jobs:
+  sync-with-gitlab:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          
+      - name: Setup git
+        run: |
+          git config --global user.name "PDC BOT"
+          git config --global user.email "pdc@example.com"
+    
+      - name: Update branch
+        run: |
+          git fetch stable
+          git remote add gitlab https://${{ secrets.GITLAB_TOKEN_NAME }}:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_URL }}
+          git checkout stable
+          git push -f gitlab -u stable
