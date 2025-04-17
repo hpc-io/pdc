@@ -138,12 +138,14 @@ extern pbool_t err_occurred;
 #define PGOTO_ERROR(ret_val, ...)                                                                            \
     do {                                                                                                     \
         LOG_ERROR(__VA_ARGS__);                                                                              \
+        LOG_JUST_PRINT("\n");                                                                                \
         PGOTO_DONE(ret_val);                                                                                 \
     } while (0)
 
 #define PGOTO_ERROR_VOID(...)                                                                                \
     do {                                                                                                     \
         LOG_ERROR(__VA_ARGS__);                                                                              \
+        LOG_JUST_PRINT("\n");                                                                                \
         PGOTO_DONE_VOID;                                                                                     \
     } while (0)
 
