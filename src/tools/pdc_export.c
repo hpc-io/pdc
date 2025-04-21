@@ -216,7 +216,7 @@ main(int argc, char *argv[])
             }
         }
         if (head == NULL) {
-            LOG_ERRO("Unable to open/locate checkpoint file(s).\n");
+            LOG_ERROR("Unable to open/locate checkpoint file(s).\n");
             return 1;
         }
         else {

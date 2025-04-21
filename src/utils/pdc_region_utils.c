@@ -1,4 +1,5 @@
 #include "pdc_region.h"
+#include "pdc_private.h"
 #include "pdc_logger.h"
 #include <string.h>
 
@@ -163,4 +164,164 @@ detect_region_contained(uint64_t *offset, uint64_t *size, uint64_t *offset2, uin
         }
     }
     return 1;
+}
+
+pbool_t
+PDC_region_info_transfer_t_is_equal(const region_info_transfer_t *reg1, const region_info_transfer_t *reg2)
+{
+    FUNC_ENTER(NULL);
+
+    pbool_t ret_value = true;
+
+    if (reg1 == NULL && reg2 == NULL)
+        PGOTO_DONE(true);
+    if (reg1 == NULL || reg2 == NULL)
+        PGOTO_DONE(false);
+
+    if (reg1->ndim != reg2->ndim)
+        PGOTO_DONE(false);
+
+    for (int i = 0; i < reg1->ndim; i++) {
+        if (reg1->start[i] != reg2->start[i]) {
+            PGOTO_DONE(false);
+        }
+        if (reg1->count[i] != reg2->count[i]) {
+            PGOTO_DONE(false);
+        }
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_copy_region_info_transfer_t(const region_info_transfer_t *src_reg, region_info_transfer_t *dest_reg)
+{
+    FUNC_ENTER(NULL);
+
+    int ret_value = SUCCEED;
+
+    if (src_reg == NULL)
+        PGOTO_ERROR(FAIL, "src_reg was NULL");
+    if (dest_reg == NULL)
+        PGOTO_ERROR(FAIL, "dest_reg was NULL");
+
+    memcpy(dest_reg, src_reg, sizeof(region_info_transfer_t));
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+uint64_t
+PDC_get_region_desc_size_bytes(uint64_t *src_reg, int unit, int ndim)
+{
+    FUNC_ENTER(NULL);
+
+    if (src_reg == NULL)
+        LOG_WARNING("src_reg was NULL\n");
+    if (ndim == 0)
+        return 0;
+
+    uint64_t region_size = 1;
+
+    for (int i = 0; i < ndim; i++) {
+        region_size *= src_reg[i];
+    }
+
+    FUNC_LEAVE(region_size * unit);
+}
+
+uint64_t
+PDC_get_region_desc_size_from_bytes_to_elements(const uint64_t *src_reg, int unit, int ndim)
+{
+    FUNC_ENTER(NULL);
+
+    if (src_reg == NULL)
+        LOG_WARNING("src_reg was NULL\n");
+
+    uint64_t total_elements = 1;
+
+    for (int i = 0; i < ndim; i++) {
+        total_elements *= src_reg[i] / unit;
+    }
+
+    FUNC_LEAVE(total_elements);
+}
+
+uint64_t
+PDC_get_region_desc_size(const uint64_t *src_reg, int ndim)
+{
+    FUNC_ENTER(NULL);
+
+    if (src_reg == NULL)
+        LOG_WARNING("src_reg was NULL\n");
+    if (ndim == 0)
+        return 0;
+
+    uint64_t total_elements = 1;
+    for (int i = 0; i < ndim; i++) {
+        total_elements *= src_reg[i];
+    }
+
+    FUNC_LEAVE(total_elements);
+}
+
+perr_t
+PDC_copy_region_desc_bytes_to_elements(const uint64_t *src_reg, uint64_t *dest_reg, int unit, int ndim)
+{
+    FUNC_ENTER(NULL);
+
+    int ret_value = SUCCEED;
+
+    if (src_reg == NULL)
+        PGOTO_ERROR(FAIL, "src_reg was NULL");
+    if (dest_reg == NULL)
+        PGOTO_ERROR(FAIL, "dest_reg was NULL");
+
+    for (int i = 0; i < ndim; i++) {
+        dest_reg[i] = src_reg[i] / unit;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_copy_region_desc(const uint64_t *src_reg, uint64_t *dest_reg, int src_ndim, int dest_ndim)
+{
+    FUNC_ENTER(NULL);
+
+    int ret_value = SUCCEED;
+
+    if (src_ndim != dest_ndim)
+        LOG_WARNING("src_ndim was not equal to dest_ndim");
+    if (src_reg == NULL)
+        PGOTO_ERROR(FAIL, "src_reg was NULL");
+    if (dest_reg == NULL)
+        PGOTO_ERROR(FAIL, "dest_reg was NULL");
+
+    memcpy(dest_reg, src_reg, dest_ndim * sizeof(uint64_t));
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_copy_region_desc_elements_to_bytes(const uint64_t *src_reg, uint64_t *dest_reg, int unit, int dest_ndim)
+{
+    FUNC_ENTER(NULL);
+
+    int ret_value = SUCCEED;
+
+    if (src_reg == NULL)
+        PGOTO_ERROR(FAIL, "src_reg was NULL");
+    if (dest_reg == NULL)
+        PGOTO_ERROR(FAIL, "dest_reg was NULL");
+
+    for (int i = 0; i < dest_ndim; i++) {
+        dest_reg[i] = src_reg[i] * unit;
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
 }

@@ -53,7 +53,6 @@ extern struct timeval last_cache_activity_timeval_g;
 #define NA_STRING_INFO_LEN           ADDR_MAX / 2
 #define HOSTNAME_LEN                 ADDR_MAX / 8
 #define TMP_DIR_STRING_LEN           ADDR_MAX / 2
-#define DIM_MAX                      4
 #define TAG_LEN_MAX                  2048
 #define OBJ_NAME_MAX                 TAG_LEN_MAX / 2
 #define PDC_SERVER_ID_INTERVEL       1000000000ull
@@ -197,14 +196,6 @@ typedef struct region_list_t {
     struct region_list_t *next;
     // NOTE: when modified, need to change init and deep_cp routines
 } region_list_t;
-
-// Similar structure PDC_region_info_t defined in pdc_obj_pkg.h
-// TODO: currently only support upto four dimensions
-typedef struct region_info_transfer_t {
-    size_t   ndim;
-    uint64_t start_0, start_1, start_2, start_3;
-    uint64_t count_0, count_1, count_2, count_3;
-} region_info_transfer_t;
 
 typedef struct pdc_metadata_transfer_t {
     int32_t     user_id;
@@ -791,9 +782,7 @@ typedef struct {
     hg_bulk_t              local_bulk_handle;
     region_info_transfer_t remote_region;
     uint64_t               obj_id;
-    uint64_t               obj_dim0;
-    uint64_t               obj_dim1;
-    uint64_t               obj_dim2;
+    uint64_t               obj_dims[DIM_MAX];
     size_t                 remote_unit;
     int32_t                obj_ndim;
     uint32_t               meta_server_id;
@@ -1251,45 +1240,17 @@ hg_proc_region_info_transfer_t(hg_proc_t proc, void *data)
         return ret;
     }
 
-    ret = hg_proc_uint64_t(proc, &struct_data->start_0);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint64_t(proc, &(struct_data->start[i]));
+        if (ret != HG_SUCCESS) {
+            return ret;
+        }
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->start_1);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->start_2);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->start_3);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->count_0);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->count_1);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->count_2);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->count_3);
-    if (ret != HG_SUCCESS) {
-
-        return ret;
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint64_t(proc, &(struct_data->count[i]));
+        if (ret != HG_SUCCESS) {
+            return ret;
+        }
     }
 
     return ret;
@@ -2687,17 +2648,11 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         return ret;
     }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim0);
-    if (ret != HG_SUCCESS) {
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim1);
-    if (ret != HG_SUCCESS) {
-        return ret;
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_dim2);
-    if (ret != HG_SUCCESS) {
-        return ret;
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint64_t(proc, &struct_data->obj_dims[i]);
+        if (ret != HG_SUCCESS) {
+            return ret;
+        }
     }
     ret = hg_proc_hg_size_t(proc, &struct_data->remote_unit);
     if (ret != HG_SUCCESS) {

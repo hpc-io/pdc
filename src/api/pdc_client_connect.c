@@ -3047,30 +3047,10 @@ pack_region_metadata(int ndim, uint64_t *offset, uint64_t *size, region_info_tra
 
     FUNC_ENTER(NULL);
     transfer->ndim = ndim;
-    if (ndim >= 1) {
-        transfer->start_0 = offset[0];
-        transfer->count_0 = size[0];
-    }
-    else {
-        transfer->start_0 = 0;
-        transfer->count_0 = 0;
-    }
-    if (ndim >= 2) {
-        transfer->count_1 = size[1];
-        transfer->start_1 = offset[1];
-    }
-    else {
-        transfer->start_1 = 0;
-        transfer->count_1 = 0;
-    }
-    if (ndim >= 3) {
-        transfer->count_2 = size[2];
-        transfer->start_2 = offset[2];
-    }
-    else {
-        transfer->start_2 = 0;
-        transfer->count_2 = 0;
-    }
+
+    PDC_copy_region_desc(offset, transfer->start, ndim, ndim);
+    PDC_copy_region_desc(size, transfer->count, ndim, ndim);
+
     fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
@@ -3521,16 +3501,9 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     in.access_type = access_type;
     in.remote_unit = unit;
     in.obj_id      = obj_id;
-    in.obj_ndim    = obj_ndim;
-    if (in.obj_ndim >= 1) {
-        in.obj_dim0 = obj_dims[0];
-    }
-    if (in.obj_ndim >= 2) {
-        in.obj_dim1 = obj_dims[1];
-    }
-    if (in.obj_ndim >= 3) {
-        in.obj_dim2 = obj_dims[2];
-    }
+
+    in.obj_ndim = obj_ndim;
+    PDC_copy_region_desc(obj_dims, in.obj_dims, in.obj_ndim, in.obj_ndim);
 
     // Compute metadata server id
     meta_server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
@@ -6586,8 +6559,8 @@ PDC_Client_read_with_storage_meta(int nobj, region_storage_meta_t **all_storage_
         prev_fname = fname;
 
         // TODO: currently assumes 1d data and 1 storage region per object
-        storage_start = all_storage_meta[i]->region_transfer.start_0;
-        storage_count = all_storage_meta[i]->region_transfer.count_0;
+        storage_start = all_storage_meta[i]->region_transfer.start[0];
+        storage_count = all_storage_meta[i]->region_transfer.count[0];
         req_start     = storage_start;
         req_count     = storage_count;
         file_offset   = all_storage_meta[i]->offset;

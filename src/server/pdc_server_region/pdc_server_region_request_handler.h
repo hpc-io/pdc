@@ -359,21 +359,17 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     remote_reg_info->ndim   = (local_bulk_args->in.remote_region).ndim;
     remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
     remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
-    if (remote_reg_info->ndim >= 1) {
-        (remote_reg_info->offset)[0] = (local_bulk_args->in.remote_region).start_0;
-        (remote_reg_info->size)[0]   = (local_bulk_args->in.remote_region).count_0;
-        obj_dims[0]                  = (local_bulk_args->in).obj_dim0;
-    }
-    if (remote_reg_info->ndim >= 2) {
-        (remote_reg_info->offset)[1] = (local_bulk_args->in.remote_region).start_1;
-        (remote_reg_info->size)[1]   = (local_bulk_args->in.remote_region).count_1;
-        obj_dims[1]                  = (local_bulk_args->in).obj_dim1;
-    }
-    if (remote_reg_info->ndim >= 3) {
-        (remote_reg_info->offset)[2] = (local_bulk_args->in.remote_region).start_2;
-        (remote_reg_info->size)[2]   = (local_bulk_args->in.remote_region).count_2;
-        obj_dims[2]                  = (local_bulk_args->in).obj_dim2;
-    }
+
+    PDC_copy_region_desc((local_bulk_args->in).remote_region.start, remote_reg_info->offset,
+                         remote_reg_info->ndim, remote_reg_info->ndim);
+    PDC_copy_region_desc((local_bulk_args->in).remote_region.count, remote_reg_info->size,
+                         remote_reg_info->ndim, remote_reg_info->ndim);
+    PDC_copy_region_desc((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
+                         remote_reg_info->ndim);
+/*
+    printf("Server transfer request at write branch, index 1 value = %d\n",
+           *((int *)(local_bulk_args->data_buf + sizeof(int))));
+*/
 #ifdef PDC_SERVER_CACHE
     PDC_transfer_request_data_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                         remote_reg_info, (void *)local_bulk_args->data_buf,
@@ -798,16 +794,9 @@ HG_TEST_RPC_CB(transfer_request, handle)
 
     info = HG_Get_info(handle);
 
-    total_mem_size = in.remote_unit;
-    if (in.remote_region.ndim >= 1) {
-        total_mem_size *= in.remote_region.count_0;
-    }
-    if (in.remote_region.ndim >= 2) {
-        total_mem_size *= in.remote_region.count_1;
-    }
-    if (in.remote_region.ndim >= 3) {
-        total_mem_size *= in.remote_region.count_2;
-    }
+    total_mem_size =
+        PDC_get_region_desc_size_bytes(in.remote_region.count, in.remote_unit, in.remote_region.ndim);
+
     /* pthread_mutex_lock(&transfer_request_id_mutex); */
     out.metadata_id = PDC_transfer_request_id_register();
     /* pthread_mutex_unlock(&transfer_request_id_mutex); */
@@ -842,28 +831,19 @@ HG_TEST_RPC_CB(transfer_request, handle)
                                      local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
     }
     else {
-        // in.access_type == PDC_READ
-
         remote_reg_info = (struct pdc_region_info *)malloc(sizeof(struct pdc_region_info));
 
         remote_reg_info->ndim   = (in.remote_region).ndim;
         remote_reg_info->offset = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
         remote_reg_info->size   = (uint64_t *)malloc(remote_reg_info->ndim * sizeof(uint64_t));
-        if (remote_reg_info->ndim >= 1) {
-            (remote_reg_info->offset)[0] = (in.remote_region).start_0;
-            (remote_reg_info->size)[0]   = (in.remote_region).count_0;
-            obj_dims[0]                  = in.obj_dim0;
-        }
-        if (remote_reg_info->ndim >= 2) {
-            (remote_reg_info->offset)[1] = (in.remote_region).start_1;
-            (remote_reg_info->size)[1]   = (in.remote_region).count_1;
-            obj_dims[1]                  = in.obj_dim1;
-        }
-        if (remote_reg_info->ndim >= 3) {
-            (remote_reg_info->offset)[2] = (in.remote_region).start_2;
-            (remote_reg_info->size)[2]   = (in.remote_region).count_2;
-            obj_dims[2]                  = in.obj_dim2;
-        }
+
+        PDC_copy_region_desc((in.remote_region).start, remote_reg_info->offset, remote_reg_info->ndim,
+                             remote_reg_info->ndim);
+        PDC_copy_region_desc((in.remote_region).count, remote_reg_info->size, remote_reg_info->ndim,
+                             remote_reg_info->ndim);
+        PDC_copy_region_desc((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
+                             remote_reg_info->ndim);
+
 #ifdef PDC_SERVER_CACHE
         PDC_transfer_request_data_read_from(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
                                             (void *)local_bulk_args->data_buf, in.remote_unit);

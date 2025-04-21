@@ -128,16 +128,6 @@ perr_t PDC_Meta_Server_buf_map(buf_map_in_t *in, region_buf_map_t *new_buf_map_p
 perr_t PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in, hg_handle_t *handle);
 
 /**
- * Check if two regions are identical
- *
- * \param reg1 [IN]             Region to compare
- * \param reg2 [IN]             Region to compare
- *
- * \return 1 if they are the same/-1 otherwise
- */
-pbool_t PDC_region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2);
-
-/**
  * Check if two regions overlap
  *
  * \param a [IN]                Region to check overlap
