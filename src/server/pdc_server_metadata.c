@@ -76,36 +76,6 @@ double   server_hash_insert_time_g  = 0.0;
 double   server_bloom_init_time_g   = 0.0;
 uint32_t n_metadata_g               = 0;
 
-pbool_t
-PDC_region_is_identical(region_info_transfer_t reg1, region_info_transfer_t reg2)
-{
-    pbool_t ret_value = 0;
-
-    FUNC_ENTER(NULL);
-
-    if (reg1.ndim != reg2.ndim)
-        PGOTO_DONE(ret_value);
-    if (reg1.ndim >= 1) {
-        if (reg1.count_0 != reg2.count_0 || reg1.start_0 != reg2.start_0)
-            PGOTO_DONE(ret_value);
-    }
-    if (reg1.ndim >= 2) {
-        if (reg1.count_1 != reg2.count_1 || reg1.start_1 != reg2.start_1)
-            PGOTO_DONE(ret_value);
-    }
-    if (reg1.ndim >= 3) {
-        if (reg1.count_2 != reg2.count_2 || reg1.start_2 != reg2.start_2)
-            PGOTO_DONE(ret_value);
-    }
-    if (reg1.ndim >= 4) {
-        if (reg1.count_3 != reg2.count_3 || reg1.start_3 != reg2.start_3)
-            PGOTO_DONE(ret_value);
-    }
-    ret_value = 1;
-done:
-    FUNC_LEAVE(ret_value);
-}
-
 /*
  * Check if two hash keys are equal
  *
