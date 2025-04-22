@@ -92,8 +92,8 @@ main(int argc, char **argv)
     data = (double *)malloc(sizeof(double) * local_size[0] * local_size[1] * local_size[2]);
 
     if (nproc <= 16)
-        LOG_ERROR("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
-                  offset[2], size[0], size[1], size[2]);
+        LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, offset[0], offset[1],
+                 offset[2], size[0], size[1], size[2]);
 
 #ifdef ENABLE_MPI
     t0 = MPI_Wtime();
@@ -105,7 +105,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (rank == 0)
-        LOG_ERROR("Read from HDF5 took %.4lf\n", t1 - t0);
+        LOG_INFO("Read from HDF5 took %.4lf\n", t1 - t0);
 #endif
 
     H5Sclose(mspace);
@@ -185,7 +185,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (rank == 0)
-        LOG_ERROR("Write data to server took %.4lf\n", t1 - t0);
+        LOG_INFO("Write data to server took %.4lf\n", t1 - t0);
 #endif
 
     // Construct query constraints
@@ -206,7 +206,7 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
     t1 = MPI_Wtime();
     if (rank == 0)
-        LOG_ERROR("Query data took %.4lf\n", t1 - t0);
+        LOG_INFO("Query data took %.4lf\n", t1 - t0);
 #endif
 
     /* PDCselection_print(&sel); */

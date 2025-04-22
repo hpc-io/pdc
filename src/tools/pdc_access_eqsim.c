@@ -74,8 +74,8 @@ main(int argc, char **argv)
     remote_reg    = PDCregion_create(3, pdc_offset, pdc_size);
 
     if (nproc <= 16)
-        LOG_ERROR("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, pdc_offset[0],
-                  pdc_offset[1], pdc_offset[2], pdc_size[0], pdc_size[1], pdc_size[2]);
+        LOG_INFO("Rank %d: offset %llu, %llu, %llu size %llu, %llu, %llu\n", rank, pdc_offset[0],
+                 pdc_offset[1], pdc_offset[2], pdc_size[0], pdc_size[1], pdc_size[2]);
 
     // Tag retrieval
     sprintf(tag_name, "%llu-%llu\n", pdc_offset[1], pdc_offset[2]);
@@ -91,11 +91,11 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: tag retrival query took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: tag retrival query took %.6lf\n", r, t1 - t0);
 #endif
         if (value_size != 4 * sizeof(double))
-            LOG_ERROR("Error: Round %d: tag retrival result size %llu / %llu \n", r, value_size,
-                      4 * sizeof(double));
+            LOG_INFO("Error: Round %d: tag retrival result size %llu / %llu \n", r, value_size,
+                     4 * sizeof(double));
         if (tag_value)
             free(tag_value);
     }
@@ -119,7 +119,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: rank 0 read OpenSees 200x200m data from server took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: rank 0 read OpenSees 200x200m data from server took %.6lf\n", r, t1 - t0);
 #endif
 
         if (rank == 0)
@@ -178,7 +178,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: all ranks read ssi_downsample data from server took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: all ranks read ssi_downsample data from server took %.6lf\n", r, t1 - t0);
 #endif
 
         for (i = 0; i < batchsize; i++)
@@ -235,7 +235,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: all ranks read rec_downsample data from server took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: all ranks read rec_downsample data from server took %.6lf\n", r, t1 - t0);
 #endif
 
         for (i = 0; i < batchsize; i++)
@@ -278,7 +278,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_ERROR("Round %d: rank 0 read single time series from server took %.6lf\n", r, t1 - t0);
+            LOG_INFO("Round %d: rank 0 read single time series from server took %.6lf\n", r, t1 - t0);
 #endif
     } // End for round
 

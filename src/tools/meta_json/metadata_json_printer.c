@@ -1,4 +1,5 @@
 #include "metadata_json_printer.h"
+#include "pdc_logger.h"
 
 int
 init_printer(MD_JSON_ARGS *md_json_args)
