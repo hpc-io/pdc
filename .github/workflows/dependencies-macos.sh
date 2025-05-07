@@ -4,7 +4,7 @@ set -eu -o pipefail
 
 export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=FALSE
 
-brew install open-mpi automake
+brew install open-mpi automake libtool
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.18.0.tar.gz
