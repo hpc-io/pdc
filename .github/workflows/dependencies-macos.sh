@@ -7,9 +7,9 @@ export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=FALSE
 brew install open-mpi automake m4 libtool
 
 # libfabric
-wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.18.0.tar.gz
-tar xf v1.18.0.tar.gz
-cd libfabric-1.18.0
+wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.20.0.tar.gz
+tar xf v1.20.0.tar.gz
+cd libfabric-1.20.0
 ./autogen.sh
 ./configure --disable-usnic --disable-mrail --disable-rstream --disable-perf --disable-efa --disable-psm2 --disable-psm --disable-verbs --disable-shm --disable-static --disable-silent-rules
 make -j2 && sudo make install
