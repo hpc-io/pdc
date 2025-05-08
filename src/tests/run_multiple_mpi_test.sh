@@ -47,6 +47,6 @@ done
 ret="$?"
 # and shutdown the SERVER before exiting
 echo "Close server"
-echo "$mpi_cmd -n 1 $extra_cmd ./close_server"
-$mpi_cmd -n 1 $extra_cmd ./close_server
+echo "$mpi_cmd -n $n_servers $extra_cmd ./close_server"
+$mpi_cmd -n $n_servers $extra_cmd ./close_server
 exit $ret
