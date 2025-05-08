@@ -112,7 +112,7 @@ main(int argc, char **argv)
         ret_value = 1;
         goto done;
     }
-    else if (open12 != open11){
+    else if (open12 != open11) {
         LOG_ERROR("Rank %d opened object o1 with different ID %llu / %llu\n", rank, open12, open11);
         ret_value = 1;
         goto done;

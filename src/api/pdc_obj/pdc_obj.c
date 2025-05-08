@@ -535,8 +535,8 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     pdcid_t               obj_prop;
     size_t                i;
     uint32_t              metadata_server_id;
-    obj_handle           *oh;
-    struct pdc_obj_info  *info;
+    obj_handle *          oh;
+    struct pdc_obj_info * info;
     int                   is_opened = 0;
 
     FUNC_ENTER(NULL);
