@@ -82,6 +82,7 @@ main(int argc, char **argv)
     else {
         LOG_ERROR("Rank %d Fail to create object!\n", rank);
         ret_value = 1;
+        goto done;
     }
     // create second object
     sprintf(obj_name2, "o2_%d", rank);
@@ -92,30 +93,39 @@ main(int argc, char **argv)
     else {
         LOG_ERROR("Rank %d Fail to create object!\n", rank);
         ret_value = 1;
+        goto done;
     }
 
     // open first object twice
-    open11 = PDCobj_open(obj_name1, pdc);
+    open11 = PDCobj_open(obj_name1, cont);
     if (open11 == 0) {
         LOG_ERROR("Rank %d Fail to open object o1\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Open object o1\n", rank);
     }
-    open12 = PDCobj_open(obj_name1, pdc);
+    open12 = PDCobj_open(obj_name1, cont);
     if (open12 == 0) {
         LOG_ERROR("Rank %d Fail to open object o1\n", rank);
         ret_value = 1;
+        goto done;
+    }
+    else if (open12 != open11){
+        LOG_ERROR("Rank %d opened object o1 with different ID %llu / %llu\n", rank, open12, open11);
+        ret_value = 1;
+        goto done;
     }
     else {
-        LOG_INFO("Rank %d Open object o1\n", rank);
+        LOG_INFO("Rank %d Re-open object o1\n", rank);
     }
     // open second object once
-    open21 = PDCobj_open(obj_name2, pdc);
+    open21 = PDCobj_open(obj_name2, cont);
     if (open21 == 0) {
         LOG_ERROR("Rank %d Fail to open object o2\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Open object o2\n", rank);
@@ -124,6 +134,7 @@ main(int argc, char **argv)
     if (PDCobj_close(obj1) < 0) {
         LOG_ERROR("Rank %d Fail to close object o1\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed object o1\n", rank);
@@ -131,6 +142,7 @@ main(int argc, char **argv)
     if (PDCobj_close(open11) < 0) {
         LOG_ERROR("Rank %d Fail to close object open11\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed object open11\n", rank);
@@ -138,6 +150,7 @@ main(int argc, char **argv)
     if (PDCobj_close(open12) < 0) {
         LOG_ERROR("Rank %d Fail to close object open12\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed object open12\n", rank);
@@ -145,6 +158,7 @@ main(int argc, char **argv)
     if (PDCobj_close(obj2) < 0) {
         LOG_ERROR("Rank %d Fail to close object o2\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed object o2\n", rank);
@@ -152,6 +166,7 @@ main(int argc, char **argv)
     if (PDCobj_close(open21) < 0) {
         LOG_ERROR("Rank %d Fail to close object open21\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed object open21\n", rank);
@@ -160,6 +175,7 @@ main(int argc, char **argv)
     if (PDCcont_close(cont) < 0) {
         LOG_ERROR("Rank %d Fail to close container c1\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed container c1\n", rank);
@@ -168,6 +184,7 @@ main(int argc, char **argv)
     if (PDCprop_close(obj_prop) < 0) {
         LOG_ERROR("Rank %d Fail to close property\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed object property\n", rank);
@@ -176,6 +193,7 @@ main(int argc, char **argv)
     if (PDCprop_close(cont_prop) < 0) {
         LOG_ERROR("Rank %d Fail to close property\n", rank);
         ret_value = 1;
+        goto done;
     }
     else {
         LOG_INFO("Rank %d Successfully closed container property\n", rank);
@@ -184,7 +202,10 @@ main(int argc, char **argv)
     if (PDCclose(pdc) < 0) {
         LOG_ERROR("Rank %d Fail to close PDC\n", rank);
         ret_value = 1;
+        goto done;
     }
+
+done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

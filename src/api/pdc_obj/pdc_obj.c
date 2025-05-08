@@ -535,8 +535,28 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     pdcid_t               obj_prop;
     size_t                i;
     uint32_t              metadata_server_id;
+    obj_handle           *oh;
+    struct pdc_obj_info  *info;
+    int                   is_opened = 0;
 
     FUNC_ENTER(NULL);
+
+    // Search if the object has already been opened
+    oh = PDCobj_iter_start(pdc);
+    while (!PDCobj_iter_null(oh)) {
+        info = PDCobj_iter_get_info(oh);
+        if (strcmp(obj_name, info->name) == 0) {
+            is_opened = 1;
+            break;
+        }
+        oh = PDCobj_iter_next(oh, pdc);
+    }
+
+    if (is_opened) {
+        ret_value = info->local_id;
+        PDC_inc_ref(info->local_id);
+        goto done;
+    }
 
     p = (struct _pdc_obj_info *)PDC_malloc(sizeof(struct _pdc_obj_info));
     if (!p)
