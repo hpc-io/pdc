@@ -205,7 +205,8 @@ PDC object APIs
 		* pdc: PDC class ID, returned from PDCInit
 	* Output:
 		* Local object ID
-	* Open a PDC ID created previously by name.
+	* Open a PDC ID created previously by name, if an object is just created or already opened,
+          return the same obj_id. Each open requires a close.
 	* For developers: see pdc_obj.c. Need to communicate with servers for metadata of the object.
 
 * perr_t PDCobj_close(pdcid_t obj_id)
