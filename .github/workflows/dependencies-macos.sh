@@ -2,8 +2,6 @@
 
 set -eu -o pipefail
 
-export HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=FALSE
-
 brew install open-mpi automake m4 libtool
 
 # libfabric
