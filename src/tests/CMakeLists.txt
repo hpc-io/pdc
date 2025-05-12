@@ -42,98 +42,98 @@ endif()
 include_directories(${TEST_EXT_INCLUDE_DIRS})
 
 set(PROGRAMS
-  pdc_init
-#  create_prop
-#  create_region
-#  create_obj_coll
-#  set_prop
-  dup_prop
-  read_obj
-  read_obj_shared
-#  create_cont
-#  create_cont_coll
-  open_cont
-  cont_life
-  cont_iter
-  cont_info
-  cont_del
-  cont_getid
-  cont_tags
-  consistency_semantics
-  create_obj
-  open_obj
-  open_existing_obj
-  obj_info
-  obj_del
-  obj_iter
-  obj_life
-#  obj_dim
-  obj_buf
-  obj_tags
-  obj_put_data
-  obj_get_data
-  read_write_perf
-  read_write_col_perf
-  region_transfer_partial
-  region_transfer_2D_partial
-  region_transfer_3D_partial
-  region_transfer_overlap
-  region_transfer_overlap_2D
-  region_transfer_overlap_3D
-  region_transfer_merge
-  obj_round_robin_io
-  obj_round_robin_io_all
-#  close_server
-#  stat_obj
-  delete_obj
-  vpicio
-  vpicio_mts
-  bdcats
-  vpicio_old
-  bdcats_old
-#  cont_add_del
-#  data_server_meta_test
- kvtag_add_get
-#  kvtag_get
- kvtag_query
-#  obj_transformation
-  region_transfer_query
-  region_transfer
-  region_transfer_status
-  region_transfer_skewed
-  region_transfer_2D
-  # region_transfer_2D_skewed
-  region_transfer_3D
-  # region_transfer_3D_skewed
-  region_transfer_write_only
-  region_transfer_read_only
-  region_transfer_write_read
-  region_transfer_all
-  region_transfer_all_2D
-  region_transfer_all_3D
-  region_transfer_all_append
-  region_transfer_all_append_2D
-  region_transfer_all_append_3D
-  region_transfer_all_split_wait
-  region_transfer_set_dims
-  region_transfer_set_dims_2D
-  region_transfer_set_dims_3D
-  #query_vpic_create_data
-  #query_vpic
-  #query_vpic_multi
-  #query_vpic_multi_preload
-  #query_vpic_multi_nopreload
-  #query_vpic_bin_sds_preload
-  #query_vpic_bin_sds_nopreload
-  #query_vpic_bin_sds1_preload
-  #query_vpic_bin_sds1_nopreload
-  #query_vpic_multi_nopreload1
-  #gen_fastbit_idx
-  #query_vpic_exyz_nopreload
-  #query_vpic_exyz_preload
-  query_data
-  producer_waitall
-  )
+  misc/pdc_init
+  #prop/create_prop
+  #region/create_region
+  #obj/create_obj_coll
+  #propset_prop
+  prop/dup_prop
+  obj/read_obj
+  obj/read_obj_shared
+  #cont/create_cont
+  #cont/create_cont_coll
+  cont/open_cont
+  cont/cont_life
+  cont/cont_iter
+  cont/cont_info
+  cont/cont_del
+  cont/cont_getid
+  cont/cont_tags
+  misc/consistency_semantics
+  obj/create_obj
+  obj/open_obj
+  obj/open_existing_obj
+  obj/obj_info
+  obj/obj_del
+  obj/obj_iter
+  obj/obj_life
+  #obj/obj_dim
+  obj/obj_buf
+  obj/obj_tags
+  obj/obj_put_data
+  obj/obj_get_data
+  misc/read_write_perf
+  misc/read_write_col_perf
+  region/region_transfer_partial
+  region/region_transfer_2D_partial
+  region/region_transfer_3D_partial
+  region/region_transfer_overlap
+  region/region_transfer_overlap_2D
+  region/region_transfer_overlap_3D
+  region/region_transfer_merge
+  obj/obj_round_robin_io
+  obj/obj_round_robin_io_all
+  #misc/close_server
+  #obj/stat_obj
+  obj/delete_obj
+  misc/vpicio
+  misc/vpicio_mts
+  misc/bdcats
+  deprecated/vpicio_old
+  deprecated/bdcats_old
+  #cont/cont_add_del
+  #misc/data_server_meta_test
+  tags/kvtag_add_get
+  #tags/kvtag_get
+  tags/kvtag_query
+  #deprecated/obj_transformation
+  region/region_transfer_query
+  region/region_transfer
+  region/region_transfer_status
+  region/region_transfer_skewed
+  region/region_transfer_2D
+  #region/region_transfer_2D_skewed
+  region/region_transfer_3D
+  #region/region_transfer_3D_skewed
+  region/region_transfer_write_only
+  region/region_transfer_read_only
+  region/region_transfer_write_read
+  region/region_transfer_all
+  region/region_transfer_all_2D
+  region/region_transfer_all_3D
+  region/region_transfer_all_append
+  region/region_transfer_all_append_2D
+  region/region_transfer_all_append_3D
+  region/region_transfer_all_split_wait
+  region/region_transfer_set_dims
+  region/region_transfer_set_dims_2D
+  region/region_transfer_set_dims_3D
+  #query/query_vpic_create_data
+  #query/query_vpic
+  #query/query_vpic_multi
+  #query/query_vpic_multi_preload
+  #query/query_vpic_multi_nopreload
+  #query/query_vpic_bin_sds_preload
+  #query/query_vpic_bin_sds_nopreload
+  #query/query_vpic_bin_sds1_preload
+  #query/query_vpic_bin_sds1_nopreload
+  #query/query_vpic_multi_nopreload1
+  #misc/gen_fastbit_idx
+  #query/query_vpic_exyz_nopreload
+  #query/query_vpic_exyz_preload
+  query/query_data
+  misc/producer_waitall
+)
 
 # TODO: Check if import_vpic.c is needed. If yes, we have to add the following :
 # if (HDF5_FOUND) 
@@ -143,31 +143,48 @@ set(PROGRAMS
 #   message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
 # endif()
 
-
 foreach(program ${PROGRAMS})
-  add_executable(${program} ${program}.c)
-  target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
-  target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
-endforeach(program)
+  get_filename_component(program_name ${program} NAME)
+  get_filename_component(program_dir ${program} DIRECTORY)
+
+  set(SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${program}.c")
+
+  if(EXISTS ${SOURCE_FILE})
+    add_executable(${program_name} ${SOURCE_FILE})
+    target_include_directories(${program_name} PRIVATE "${CMAKE_SOURCE_DIR}/include")
+    target_link_libraries(${program_name} pdc pdc_commons ${TEST_EXT_LIB})
+  else()
+    message(WARNING "Source file ${SOURCE_FILE} not found, skipping ${program_name}.")
+  endif()
+endforeach()
 
 if(BUILD_MPI_TESTING)
   set(MPI_PROGRAMS
-    kvtag_range_query_scale
-    kvtag_affix_query_scale
-    kvtag_add_get_benchmark
-    kvtag_add_get_scale
-    llsm_idioms_bench
-    idioms_ci_test
+    tags/kvtag_range_query_scale
+    tags/kvtag_affix_query_scale
+    tags/kvtag_add_get_benchmark
+    tags/kvtag_add_get_scale
+    misc/llsm_idioms_bench
+    misc/idioms_ci_test
   )
 
   foreach(program ${MPI_PROGRAMS})
-    add_executable(${program} ${program}.c)
-    if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(${program} PRIVATE ${SUPPRESSED_LIST})
+    get_filename_component(program_name ${program} NAME)
+    get_filename_component(program_dir ${program} DIRECTORY)
+  
+    set(SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${program_dir}/${program_name}.c")
+  
+    if(EXISTS ${SOURCE_FILE})
+      add_executable(${program_name} ${SOURCE_FILE})
+      if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(${program_name} PRIVATE ${SUPPRESSED_LIST})
+      endif()
+      target_link_libraries(${program_name} pdc pdc_commons ${TEST_EXT_LIB})
+      target_include_directories(${program_name} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+    else()
+      message(WARNING "Source file ${SOURCE_FILE} not found, skipping ${program_name}.")
     endif()
-    target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
-    target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
-  endforeach(program)
+  endforeach()
 endif()
 
 
@@ -175,10 +192,10 @@ if(UUID_FOUND)
   message(STATUS "UUID library found: ${UUID_LIBRARIES}")
   message(STATUS "UUID include directory: ${UUID_INCLUDE_DIRS}")
   set(ENHANCED_PROGRAMS 
-  dart_algo_sim
-  dart_attr_dist_test
-  dart_func_test
-  dart_test
+    dart/dart_algo_sim
+    dart/dart_attr_dist_test
+    dart/dart_func_test
+    dart/dart_test
   )
 
   set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES})
@@ -198,9 +215,18 @@ if(UUID_FOUND)
   endif(PDC_ENABLE_JULIA)
 
   foreach(program ${ENHANCED_PROGRAMS})
-    add_executable(${program} ${program}.c ${EXTRA_SRC_FILE})
-    target_link_libraries(${program} pdc pdc_commons ${TEST_EXT_LIB})
-    target_include_directories(${program} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+    get_filename_component(program_name ${program} NAME)
+    get_filename_component(program_dir ${program} DIRECTORY)
+
+    set(SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${program}.c")
+
+    if(EXISTS ${SOURCE_FILE})
+      add_executable(${program_name} ${SOURCE_FILE} ${EXTRA_SRC_FILE})
+      target_link_libraries(${program_name} pdc pdc_commons ${TEST_EXT_LIB})
+      target_include_directories(${program_name} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+    else()
+      message(WARNING "Source file ${SOURCE_FILE} not found, skipping ${program_name}.")
+    endif()
   endforeach(program)
 endif(UUID_FOUND)
 
@@ -211,13 +237,13 @@ set(SCRIPTS
   run_multiple_test.sh
   run_multiple_mpi_test.sh
   run_checkpoint_restart_test.sh
-  )
+)
 
 foreach(script ${SCRIPTS})
   file(
-       COPY ${script} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-       FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE
-    )
+    COPY ${script} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE
+  )
 endforeach(script)
 
 
@@ -229,7 +255,7 @@ endforeach(script)
 OPTION(GEN_TRANSFORM_LIB "Create a transform library" OFF)
 if(GEN_TRANSFORM_LIB)
   FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
-  set(PDC_TRANSFORMS_SRCS pdc_transforms_lib.c)
+  set(PDC_TRANSFORMS_SRCS transforms/pdc_transforms_lib.c)
   add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
   target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
 endif()
@@ -237,7 +263,7 @@ endif()
 # *******************************************
 # Create a transform library for testing
 # *******************************************
-set(PDC_ANALYSIS_SRCS pdc_analysis_lib.c)
+set(PDC_ANALYSIS_SRCS analysis/pdc_analysis_lib.c)
 add_library(pdcanalysis ${PDC_ANALYSIS_SRCS})
 target_link_libraries(pdcanalysis pdc)
 
