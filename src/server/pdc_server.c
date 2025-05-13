@@ -58,6 +58,7 @@
 #include "pdc_server_region_cache.h"
 #include "pdc_server_region_transfer_metadata_query.h"
 #include "pdc_logger.h"
+#include "pdc_malloc.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>

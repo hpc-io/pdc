@@ -43,6 +43,7 @@
 #include "pdc_transforms_common.h"
 #include "pdc_client_connect.h"
 #include "pdc_logger.h"
+#include "pdc_malloc.h"
 
 #include "mercury.h"
 #include "mercury_macros.h"
@@ -1354,11 +1355,7 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 {
     perr_t ret_value = SUCCEED;
     char   na_info_string[NA_STRING_INFO_LEN];
-<<<<<<< HEAD
     char * hostname;
-=======
-    char *hostname;
->>>>>>> c74a2853 (free hostname)
     int    local_server_id;
     /* Set the default mercury transport
      * but enable overriding that to any of:
