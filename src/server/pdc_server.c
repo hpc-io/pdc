@@ -783,7 +783,11 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     int                 i         = 0;
     char                self_addr_string[ADDR_MAX];
     char                na_info_string[NA_STRING_INFO_LEN];
+<<<<<<< HEAD
     char *              hostname;
+=======
+    char*               hostname;
+>>>>>>> c74a2853 (free hostname)
     struct hg_init_info init_info = {0};
 
     /* Set the default mercury transport
@@ -821,15 +825,12 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
         hostname = PDC_malloc(HOSTNAME_LEN);
         memset(hostname, 0, HOSTNAME_LEN);
         gethostname(hostname, HOSTNAME_LEN - 1);
-    } else {
-        find_hostname = false;
     }
     snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_server_rank_g == 0)
         LOG_INFO("==PDC_SERVER[%d]: using %s\n", pdc_server_rank_g, na_info_string);
 
-    if (find_hostname)
-        free(hostname);
+    free(hostname);
 
     // Clean up all the tmp files etc
     HG_Cleanup();

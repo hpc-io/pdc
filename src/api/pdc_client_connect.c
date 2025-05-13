@@ -1354,7 +1354,11 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 {
     perr_t ret_value = SUCCEED;
     char   na_info_string[NA_STRING_INFO_LEN];
+<<<<<<< HEAD
     char * hostname;
+=======
+    char*  hostname;
+>>>>>>> c74a2853 (free hostname)
     int    local_server_id;
     /* Set the default mercury transport
      * but enable overriding that to any of:
@@ -1379,11 +1383,9 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
         hg_transport = default_hg_transport;
     }
     if ((hostname = getenv("HG_HOST")) == NULL) {
-        hostname = malloc(HOSTNAME_LEN);
+        hostname = PDC_malloc(HOSTNAME_LEN);
         memset(hostname, 0, HOSTNAME_LEN);
         gethostname(hostname, HOSTNAME_LEN - 1);
-    } else {
-        find_hostname = false;
     }
     sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_client_mpi_rank_g == 0) {
@@ -1391,8 +1393,7 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
         fflush(stdout);
     }
 
-    if (find_hostname)
-        free(hostname);
+    free(hostname);
 
 // gni starts here
 #ifdef PDC_HAS_CRAY_DRC
