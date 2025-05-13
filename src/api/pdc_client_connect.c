@@ -1354,7 +1354,7 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 {
     perr_t ret_value = SUCCEED;
     char   na_info_string[NA_STRING_INFO_LEN];
-    char*  hostname;
+    char * hostname;
     int    local_server_id;
     /* Set the default mercury transport
      * but enable overriding that to any of:
