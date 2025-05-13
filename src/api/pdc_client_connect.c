@@ -1357,7 +1357,7 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 <<<<<<< HEAD
     char * hostname;
 =======
-    char*  hostname;
+    char *hostname;
 >>>>>>> c74a2853 (free hostname)
     int    local_server_id;
     /* Set the default mercury transport

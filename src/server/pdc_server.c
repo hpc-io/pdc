@@ -786,7 +786,7 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
 <<<<<<< HEAD
     char *              hostname;
 =======
-    char*               hostname;
+    char *hostname;
 >>>>>>> c74a2853 (free hostname)
     struct hg_init_info init_info = {0};
 
