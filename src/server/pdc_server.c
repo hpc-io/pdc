@@ -818,13 +818,18 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
         hg_transport = default_hg_transport;
     }
     if ((hostname = getenv("HG_HOST")) == NULL) {
-        hostname = malloc(HOSTNAME_LEN);
+        hostname = PDC_malloc(HOSTNAME_LEN);
         memset(hostname, 0, HOSTNAME_LEN);
         gethostname(hostname, HOSTNAME_LEN - 1);
+    } else {
+        find_hostname = false;
     }
     snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_server_rank_g == 0)
         LOG_INFO("==PDC_SERVER[%d]: using %s\n", pdc_server_rank_g, na_info_string);
+
+    if (find_hostname)
+        free(hostname);
 
     // Clean up all the tmp files etc
     HG_Cleanup();

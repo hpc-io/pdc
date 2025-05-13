@@ -1382,12 +1382,17 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
         hostname = malloc(HOSTNAME_LEN);
         memset(hostname, 0, HOSTNAME_LEN);
         gethostname(hostname, HOSTNAME_LEN - 1);
+    } else {
+        find_hostname = false;
     }
     sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
     if (pdc_client_mpi_rank_g == 0) {
         LOG_INFO("==PDC_CLIENT: using %s\n", na_info_string);
         fflush(stdout);
     }
+
+    if (find_hostname)
+        free(hostname);
 
 // gni starts here
 #ifdef PDC_HAS_CRAY_DRC
