@@ -28,4 +28,4 @@ jobs:
 
       - name: Test PDC
         working-directory: build
-        run: ctest -L serial
+        run: ctest -L serial --output-on-failure

@@ -33,4 +33,4 @@ jobs:
           sudo sh -c 'echo "`ipconfig getifaddr en0` PDC" >> /etc/hosts'
           sudo scutil --set HostName PDC
           export HG_TRANSPORT="sockets"
-          ctest -L serial
+          ctest -L serial --output-on-failure
