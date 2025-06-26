@@ -1,14 +1,14 @@
 .. _advanced_topics:
 
-Advanced Topics
-===============
+**4.** Advanced Topics
+======================
 
-Asynchronous I/O and Event Handling 
+**4.1** Asynchronous I/O and Event Handling 
+-------------------------------------------
+
+**4.2** Scalability and Performance 
 -----------------------------------
 
-Scalability and Performance 
----------------------------
-
-Integration with MPI and Libraries
-----------------------------------
+**4.3** Integration with MPI and Libraries
+------------------------------------------
 

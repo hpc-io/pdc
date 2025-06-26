@@ -1,10 +1,10 @@
 .. _core_concepts:
 
-Core Concepts
-=============
+**2.** Core Concepts
+====================
 
-Architecture of PDC
--------------------
+**2.1.** Architecture of PDC
+----------------------------
 
 PDC is built on a distributed client-server architecture that is optimized 
 for high-performance computing environments.The client-server model involves 
@@ -38,8 +38,8 @@ searching and querying. Some primary features include asynchronous data transfer
 region-based memory and data binding, and the automatic coordination that occurs 
 between memory locations and object storage containers.
 
-PDC abstractions
-----------------
+**2.2.** PDC abstractions
+-------------------------
 
 PDC provides several core abstractions for modeling and managing data.
 
@@ -64,8 +64,8 @@ Regions
 - Used during data transfer to read/write a portion of the object
 - Support multidimensional sub-regions for structured data (e.g., matrices, cubes)
 
-Properties and Descriptions 
----------------------------
+**2.3.** Properties and Descriptions 
+------------------------------------
 
 Properties in PDC determine how objects, containers, and transfers behave. 
 These are customizable structures associated with entities at creation time. 
@@ -93,8 +93,8 @@ Data Transfer Properties decide how data is moved. In the PDC realm, this is
 through access mode (reading and writing directly), buffer alignment, and 
 event-handling settings for different async operations. 
 
-Data Acess Lifecycle 
---------------------
+**2.4.** Data Acess Lifecycle 
+-----------------------------
 
 The typical workflow for interacting with PDC objects is described below.
 

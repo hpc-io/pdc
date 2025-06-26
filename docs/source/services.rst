@@ -1,25 +1,25 @@
 .. _services:
 
-Services
-========
+**3.** Services
+===============
 
-Creating Containers and Objects
+**3.1.** Creating Containers and Objects
+----------------------------------------
+
+**3.2.** Writing and Reading Data
+---------------------------------
+
+**3.3.** Data Types and Layout
+------------------------------
+
+**3.4.** Querying 
+-----------------
+
+**3.5.** Transform and Analysis
 -------------------------------
 
-Writing and Reading Data
-------------------------
-
-Data Types and Layout
----------------------
-
-Querying 
---------
-
-Transform and Analysis
+**3.6.** Data Movement
 ----------------------
 
-Data Movement
--------------
-
-Metadata Management
--------------------
+**3.7.** Metadata Management
+----------------------------

@@ -1,4 +1,4 @@
 .. _contributing:
 
-Contributing
-============
+**8.** Contributing
+===================

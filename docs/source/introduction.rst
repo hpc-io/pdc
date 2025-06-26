@@ -1,10 +1,10 @@
 .. _introduction:
 
-Introduction
-============
+**1.** Introduction
+===================
 
-What is PDC
------------
+**1.1.** What is PDC
+--------------------
 
 Proactive Data Containers (PDC) software provides an object-focused data 
 management API, a runtime system with a set of scalable data object 
@@ -48,8 +48,8 @@ Traditional I/O models like MPI-IO or DeltaV are limited in scalability.
 PDC is able to provide asynchronous, and object-based APIs that separate 
 data definition from storage. This makes PDC more scalable and adaptive to data handling.
 
-Installation
-------------
+**1.2.** Installation
+---------------------
 
 Prerequisites 
 ~~~~~~~~~~~~~
@@ -60,10 +60,12 @@ Building from Source
 Spack Installation
 ~~~~~~~~~~~~~~~~~~
 
-First PDC Program
------------------
+**1.3.** First PDC Program
+--------------------------
 
-This example walks through the essential steps for writing a basic PDC application: initializing the PDC layer, creating a container and an object, and performing a simple region-based data transfer. It is intended as a starting point for new users.
+This example walks through the essential steps for writing a basic PDC application: 
+initializing the PDC layer, creating a container and an object, and performing a 
+simple region-based data transfer. It is intended as a starting point for new users.
 
 .. note::
 
@@ -126,5 +128,5 @@ by closing the transfer request, regions, object, container, and the
 PDC context itself (lines 35–40). While simplified, this is the typical 
 workflow that underlies more advanced PDC programs.
 
-Compiling and Running
-~~~~~~~~~~~~~~~~~~~~~
+**1.4.** Running the PDC Server and Client Application
+------------------------------------------------------

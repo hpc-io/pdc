@@ -1,7 +1,7 @@
 .. _client_api: 
 
-Client API
-================
+**5.** Client API
+=================
 
-C API Overview 
---------------
+**5.1.** C API Overview 
+-----------------------

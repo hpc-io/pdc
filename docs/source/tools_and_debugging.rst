@@ -1,19 +1,19 @@
 .. _tools_and_debugging:
 
-Tools and Debugging
-===================
+**7.** Tools and Debugging
+==========================
 
-Logging
--------
+**7.1** Logging
+---------------
 
-Profiling and Tracing
+**7.2** Profiling and Tracing
+-----------------------------
+
+**7.3** Common Errors
 ---------------------
 
-Common Errors
--------------
+**7.4** Utilities
+-----------------
 
-Utilities
----------
-
-Interfaces 
-----------
+**7.5** Interfaces 
+------------------
