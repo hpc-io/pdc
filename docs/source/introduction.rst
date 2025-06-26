@@ -1,14 +1,76 @@
-================================
+.. _introduction:
+
 Introduction
-================================
+============
 
-Emerging high performance computing (HPC) systems are expected to be deployed with an unprecedented level of complexity, due to a very deep system memory/storage hierarchy. This hierarchy is expected to range from CPU cache through several levels of volatile memory to non-volatile memory, traditional hard disks, and tape. Simple and efficient methods of data management and movement through this hierarchy is critical for scientific applications using exascale systems. Existing storage system and I/O (SSIO) technologies face severe challenges in dealing with these requirements. POSIX and MPI I/O standards that are the basis for existing I/O libraries and parallel file systems present fundamental challenges in the areas of scalable metadata operations, semantics-based data movement performance tuning, asynchronous operation, and support for scalable consistency of distributed operations.
+What is PDC
+-----------
 
-Moving toward new paradigms for SSIO in the extreme-scale era, we propose to investigate novel object- based data abstractions and storage mechanisms that take advantage of the deep storage hierarchy and enable proactive automated performance tuning. In order to achieve these overarching goals, we propose a fundamental new data abstraction, called Proactive Data Containers (PDC). A PDC is a container within a locus of storage (memory, NVRAM, disk, etc.) that stores science data in an object-oriented manner. Managing data as objects enables powerful optimization opportunities for data movement and transformations. In this project, we will research: 1) formulation of object-oriented PDCs and their mapping in different levels of the exascale storage hierarchy; 2) efficient strategies for moving data in deep storage hierarchies using PDCs; 3) techniques for transforming and reorganizing data based on application requirements; and 4) novel analysis paradigms for enabling data transformations and user-defined analysis on data in PDCs. The intent of our research is to move the field of HPC SSIO in a direction where it may ultimately be possible to develop scientific applications without the need to perform cumbersome and inefficient tuning to optimize data movement on every system the application runs on.
+Proactive Data Containers (PDC) software provides an object-focused data 
+management API, a runtime system with a set of scalable data object 
+management services, and tools for managing data objects stored in the PDC 
+system. The PDC API allows efficient and transparent data movement in complex 
+memory and storage hierarchy. The PDC runtime system performs data movement 
+asynchronously and provides scalable metadata operations to find and 
+manipulate data objects.
 
-.. image:: ../source/images/pdc.png
-	:width: 600
-	:align: center
-	:alt: An overview of Proactive Data Container structures across multiple storage layers (or loci).
+PDC revolutionizes how data is managed and accessed by using object-centric 
+abstractions to represent data that moves in the high-performance computing (HPC) 
+memory and storage subsystems. PDC manages extensive metadata to describe data 
+objects to find desired data efficiently as well as to store information in the data objects.
 
-PDCs will have an impact in many science areas, given the importance of the data management and I/O software stack in achieving science discoveries at scale. The foundations of the novel data management and storage paradigm approaches and formalisms proposed in this research are expected to be applicable to a broad range of scientific and engineering problems that utilize computational and experimental facilities for predictive understanding of physical processes through data analytics and visualization. The proposed techniques are expected to accelerate the crucial process of data-driven exploration and knowledge discovery. While we will work closely with a set of key DOE science applications in the areas of cosmology, climate, genomics, and high-energy density physics to evaluate our research, the proposed new I/O paradigm will be broadly applicable to all users of DOE HPC facilities.
+More information and publications about PDC are available at:
+
+  https://sdm.lbl.gov/pdc
+
+If you use PDC in your research, please cite the following:
+
+Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, 
+Soumagne, Jerome, Vishwanath, Venkat, Warren, Richard, and Tessier, François. 
+*Proactive Data Containers (PDC) v0.1*. Computer Software. https://github.com/hpc-io/pdc. 
+USDOE. 11 May. 2017. Web. doi:`10.11578/dc.20210325.1 <https://doi.org/10.11578/dc.20210325.1>`_
+
+Key Features
+~~~~~~~~~~~~
+
+The key features of PDC include object-based data abstractions, scalable 
+metadata indexing, asynchronous I/O, integration with MPI, and support for complex storage hierarchies. 
+
+Key Benefits
+~~~~~~~~~~~~
+
+The key benefits of PDC include reducing issues and bottlenecks with I/O,  
+optimizing performance in key distributive systems, enhancing scalability and 
+flexibility for HPC applications, and simplifying overall data management, movement, and access. 
+
+Comparison with Standardized Data Accessing Models
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Traditional I/O models like MPI-IO or DeltaV are limited in scalability. 
+PDC is able to provide asynchronous, and object-based APIs that separate 
+data definition from storage. This makes PDC more scalable and adaptive to data handling.
+
+Installation
+------------
+
+Prerequisites 
+~~~~~~~~~~~~~
+
+Building from Source
+~~~~~~~~~~~~~~~~~~~~
+
+First PDC Program
+-----------------
+
+Introductory/Minimal Working Program
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+An introductory/minimal working program of PDC will firstly initialize PDC. Then,
+the program will move on to create a container and an object. Lastly, the program 
+will write and read the data, and then finalize its location.
+
+Walkthrough of Basic Programming Logic
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Compiling and Running
+~~~~~~~~~~~~~~~~~~~~~
