@@ -56,8 +56,8 @@ Prepare Work Space
 ~~~~~~~~~~~~~~~~~~
 
 Before installing the dependencies and downloading the code repository, we assume 
-there is a directory created for your installation already, e.g. `$WORK_SPACE` and 
-that you are in the `$WORK_SPACE` directory.
+there is a directory created for your installation already, e.g. ``$WORK_SPACE`` and 
+that you are in the ``$WORK_SPACE`` directory.
 
 .. code-block:: Bash
 
@@ -120,7 +120,6 @@ Install libfabric
    export PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
    echo 'export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh
    echo 'export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh
-
 
 .. note::
 
@@ -210,7 +209,7 @@ Test Your PDC Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PDC's ``ctest`` contains both sequential and parallel (MPI) tests, and can be run 
-with the following in the `build` directory.
+with the following in the ``build`` directory.
 
 .. code-block:: Bash
 
@@ -335,8 +334,8 @@ for example, you can start 4 PDC servers using the following command:
 
    mpirun -np 4 ./pdc_server.exe
 
-**1.5.** Compiling & Running PDC Client(s)
-------------------------------------------
+**1.5.** Building & Running PDC Client(s)
+-----------------------------------------
 
 Before running a PDC client application, ensure that the PDC server(s) are
 running. You can run a single client application using the following command:

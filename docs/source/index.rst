@@ -12,10 +12,8 @@ Here’s how to navigate:
 
 - **Getting Started**  
   Learn the basics of PDC, including core concepts, architecture, and key services. Start here if you're new to PDC.
-
 - **Developer & API Guide**  
   Explore the client API, internal design considerations, and tools to help you develop and debug PDC-based applications.
-
 - **Community and Contributions**  
   Find guidelines for contributing to PDC and additional reference material in the appendix.
 
@@ -26,6 +24,8 @@ Use the table of contents below to explore the sections in more detail
    :caption: Getting Started
 
    introduction
+   pdcpy
+   hdf5_vol
    core_concepts
    services
    advanced_topics
