@@ -23,8 +23,8 @@ restart=" "
 for test_exe in $test_args
 do
     # START the server (in the background)
-    echo "$run_cmd ./pdc_server.exe $restart &"
-    $run_cmd ./pdc_server.exe $restart &
+    echo "$run_cmd ./pdc_server $restart &"
+    $run_cmd ./pdc_server $restart &
     # WAIT a bit...
     sleep 1
     echo "testing: $test_exe"

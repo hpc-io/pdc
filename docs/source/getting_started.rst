@@ -276,7 +276,7 @@ Run 2 server processes in the background
 
 .. code-block:: Bash
 
-	mpiexec -np 2 $PDC_DIR/bin/pdc_server.exe &
+	mpiexec -np 2 $PDC_DIR/bin/pdc_server &
 
 Run 4 client processes that concurrently create 1000 objects and then create and query 1000 tags:
 
@@ -291,7 +291,7 @@ Run 4 server processes, each on one compute node in the background:
 
 .. code-block:: Bash
 
-	srun -N 4 -n 4 -c 2 --mem=25600 --cpu_bind=cores $PDC_DIR/bin/pdc_server.exe &
+	srun -N 4 -n 4 -c 2 --mem=25600 --cpu_bind=cores $PDC_DIR/bin/pdc_server &
 
 Run 64 client processes that concurrently create 1000 objects and then create and query 100000 tags:
 

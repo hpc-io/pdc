@@ -28,14 +28,14 @@ rm -rf $OUTDIR/*
 
 PARTITION_METHOD=1
 
-cp $PDC_DIR/bin/pdc_server.exe $OUTDIR
+cp $PDC_DIR/bin/pdc_server $OUTDIR
 cp $PDC_DIR/bin/close_server $OUTDIR
 cp vpicio_batch $OUTDIR
 export SUBMIT_DIR=$(pwd)
 cd $OUTDIR
 echo $(pwd)
 rm -rf $OUTDIR/*.csv $SUBMIT_DIR/vpicio_batch_no_delay/* $SUBMIT_DIR/vpicio_batch_delay/*
-export cmd="srun -N $SERVERS -n $SERVERS -c 64 --cpu_bind=cores $SERVER_COMMON_CMD ./pdc_server.exe"
+export cmd="srun -N $SERVERS -n $SERVERS -c 64 --cpu_bind=cores $SERVER_COMMON_CMD ./pdc_server"
 echo $cmd
 $cmd &
 sleep 3
@@ -51,7 +51,7 @@ rm -rf $OUTDIR/pdc_data
 rm -rf $OUTDIR/pdc_tmp
 rm -rf $OUTDIR/*.csv
 
-export cmd="srun -N $SERVERS -n $SERVERS -c 64 --cpu_bind=cores $SERVER_COMMON_CMD ./pdc_server.exe"
+export cmd="srun -N $SERVERS -n $SERVERS -c 64 --cpu_bind=cores $SERVER_COMMON_CMD ./pdc_server"
 echo $cmd
 $cmd &
 sleep 3

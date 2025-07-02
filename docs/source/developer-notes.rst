@@ -595,7 +595,7 @@ To run a test, let's lunch pdc_server with 4 cores:
 
     cd $PDC_HOME/build
     rm -rf ./pdc_tmp # optional if you need to clean up the PDC tmp directory
-    srun -N 1 -n  4 -c 2 --mem=25600 --cpu_bind=cores ./bin/pdc_server.exe &
+    srun -N 1 -n  4 -c 2 --mem=25600 --cpu_bind=cores ./bin/pdc_server &
 
 To debug the client, you can run the following command:
 
@@ -610,6 +610,6 @@ But if you need to debug the server, you can prepend ``srun`` with ``ddt --conne
 
     cd $PDC_HOME/build
     rm -rf ./pdc_tmp # optional if you need to clean up the PDC tmp directory
-    ddt --connect srun -N 1 -n  4 -c 2 --mem=25600 --cpu_bind=cores ./bin/pdc_server.exe &
+    ddt --connect srun -N 1 -n  4 -c 2 --mem=25600 --cpu_bind=cores ./bin/pdc_server &
 
 We recommend to use 1 node when debugging PDC, but if memory is not sufficient, you can use more nodes. 

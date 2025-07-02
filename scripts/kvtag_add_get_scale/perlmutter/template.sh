@@ -29,7 +29,7 @@ mkdir -p $PDC_TMPDIR
 let TOTALPROC=$NCLIENT*$N_NODE
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
-SERVER=$EXECPATH/pdc_server.exe
+SERVER=$EXECPATH/pdc_server
 CLIENT=$EXECPATH/kvtag_add_get_scale
 CLOSE=$EXECPATH/close_server
 

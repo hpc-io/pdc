@@ -81,6 +81,6 @@
   + This multidataset_plugin implementation is designed for wrapping HDF5 operations and call HDF5 multidataset. We demonstrate that PDC can substitute a storage structure comparable to HDF5. Therefore, it is possible to make direct comparison between these two. Currently, only write is implemented in this example.
 ```
 0. cd C_plus_plus_example;make
-1. mpiexec -n 1 ./pdc_server.exe &
+1. mpiexec -n 1 ./pdc_server &
 2. mpiexec -n 1 ./region_transfer_1D_append
 ```

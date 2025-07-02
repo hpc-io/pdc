@@ -457,7 +457,7 @@ perlmutter-metrics:
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/pdc-tmp-metrics"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/pdc-data-metrics"
         PDC_CLIENT_LOOKUP: "NONE"
-        PDC_SERVER: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/pdc_server.exe"
+        PDC_SERVER: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/pdc_server"
         PDC_SERVER_CLOSE: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/close_server"
         PDC_CLIENT: "${PDC_BUILD_PATH}/perlmutter/metrics/bin/vpicio_mts"
         PDC_JOB_OUTPUT: "pdc-metrics.log"

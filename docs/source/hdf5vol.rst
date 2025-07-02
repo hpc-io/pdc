@@ -45,7 +45,7 @@ To compile and run examples:
 	$ cd vol-pdc/examples
 	$ cmake .
 	$ make
-	$ mpirun -N 1 -n 1 -c 1 <pdc installation directory>/bin/pdc_server.exe &
+	$ mpirun -N 1 -n 1 -c 1 <pdc installation directory>/bin/pdc_server &
 	$ mpirun -N 1 -n 1 -c 1 ./h5pdc_vpicio test
 	$ mpirun -N 1 -n 1 -c 1 <pdc installation directory>/bin/close_server
 

@@ -22,8 +22,8 @@ echo $all_test
 rm -rf pdc_tmp pdc_data
 
 # START the server (in the background)
-echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &"
-$mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &
+echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server &"
+$mpi_cmd -n $n_servers $extra_cmd ./pdc_server &
 
 # WAIT a bit, for 1 second
 sleep 1

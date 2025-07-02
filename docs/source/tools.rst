@@ -163,7 +163,7 @@ Examples:
 
 .. code-block:: Bash
 
-	$ srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap /path/to/pdc_server.exe &
+	$ srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap /path/to/pdc_server &
 	==PDC_SERVER[0]: using [./pdc_tmp/] as tmp dir, 1 OSTs, 1 OSTs per data file, 0% to BB
 	==PDC_SERVER[0]: using ofi+tcp
 	==PDC_SERVER[0]: without multi-thread!
@@ -201,7 +201,7 @@ Examples:
 
 .. code-block:: Bash
 
-	$ srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap /path/to/pdc_server.exe &
+	$ srun -N 1 -n 1 -c 2 --mem=25600 --cpu_bind=cores --gres=craynetwork:1 --overlap /path/to/pdc_server &
 	==PDC_SERVER[0]: using [./pdc_tmp/] as tmp dir, 1 OSTs, 1 OSTs per data file, 0% to BB
 	==PDC_SERVER[0]: using ofi+tcp
 	==PDC_SERVER[0]: without multi-thread!
