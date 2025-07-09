@@ -25,10 +25,53 @@ Soumagne, Jerome, Vishwanath, Venkat, Warren, Richard, and Tessier, François.
 *Proactive Data Containers (PDC) v0.1*. Computer Software. https://github.com/hpc-io/pdc. 
 USDOE. 11 May. 2017. Web. doi:`10.11578/dc.20210325.1 <https://doi.org/10.11578/dc.20210325.1>`_
 
-**1.2.** Installation
----------------------
+**1.2.** Installation Types
+---------------------------
 
-We recommend using GCC 7 or a later version. Intel and Cray compilers also work.
+PDC offers the following methods of installation.
+
+.. note::
+
+    Using the Python Interface (PDCpy)
+    or HDF5 VOL Connector will require
+    installing PDC either directly through the source code or via spack.
+
+1. :ref:`Spack <spack>`
+2. :ref:`C Interface <c-interface>`
+3. :ref:`Python Interface (PDCpy) <python-interface-pdc-py>`
+4. :ref:`HDF5 VOL Connector <hdf5-vol-connector>`
+
+.. _spack:
+
+**1.3.** Spack Installation
+---------------------------
+
+Spack is a package manager for supercomputers, Linux, and macOS. 
+It makes installing scientific software easy.
+More information about Spack can be found at: https://spack.io.
+PDC and its dependencies can be installed with spack:
+
+Dependencies
+~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   # Clone the Spack repository
+
+   git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+
+   # Install PDC and its dependencies
+   ./spack/bin/spack install pdc
+
+   # Verify the installation
+   pdc --version
+
+.. _c-interface:
+
+**1.4.** C Interface
+--------------------
+
+We recommend using GCC version 7 or later. Intel and Cray compilers also work.
 
 Dependencies
 ~~~~~~~~~~~~
@@ -204,7 +247,6 @@ Install PDC
    (i.e., Mercury) uses the ``socket`` protocol, the only one supported in 
    MacOS: ``export HG_TRANSPORT="sockets"``.
 
-
 Test Your PDC Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -228,27 +270,9 @@ the ``timeout`` parameter when calling ``ctest``:
    on a compute node, you can submit an interactive job on Perlmutter: 
    ``salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx``
 
-Spack Installation
-~~~~~~~~~~~~~~~~~~
-
-Spack is a package manager for supercomputers, Linux, and macOS. 
-It makes installing scientific software easy.
-More information about Spack can be found at: https://spack.io.
-PDC and its dependencies can be installed with spack:
-
-.. code-block:: bash
-
-   # Clone the Spack repository
-   git clone -c feature.manyFiles=true https://github.com/spack/spack.git
-
-   # Install PDC and its dependencies
-   ./spack/bin/spack install pdc
-
-   # Verify the installation
-   pdc --version
 
 **1.3.** First PDC Program
---------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This example walks through the essential steps for writing a basic PDC application: 
 initializing the PDC layer, creating a container and an object, and performing a 
@@ -315,8 +339,8 @@ by closing the transfer request, regions, object, container, and the
 PDC context itself (lines 35–40). While simplified, this is the typical 
 workflow that underlies more advanced PDC programs.
 
-**1.4.** Running PDC Server(s)
-------------------------------
+Running PDC Server(s)
+~~~~~~~~~~~~~~~~~~~~~
 
 PDC works in a client-server architecture, therefore, before running any PDC
 client application, you need to start the PDC server(s) first.
@@ -334,8 +358,8 @@ for example, you can start 4 PDC servers using the following command:
 
    mpirun -np 4 ./pdc_server.exe
 
-**1.5.** Building & Running PDC Client(s)
------------------------------------------
+Building & Running PDC Client(s)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Before running a PDC client application, ensure that the PDC server(s) are
 running. You can run a single client application using the following command:
@@ -349,3 +373,117 @@ You can also run multiple client applications in parallel using MPI:
 .. code-block:: bash
 
    mpirun -np 4 ./client_app
+
+.. _python-interface-pdc-py:
+
+**1.5.** Python Interface (PDCpy)
+---------------------------------
+
+With the rise of Python in the HPC community, PDC now provides a Python
+binding called PDCpy, which allows users to interact with PDC using Python.
+The repository for PDCpy can be found at `PDCpy GitHub Repository <https://github.com/hpc-io/PDCpy>`_.
+The documentation for PDCpy's API is available at `PDCpy Documentation <https://hpc-io.github.io/PDCpy/>`_.
+
+PDCpy is compatible with openmpi and mpich. If neither compiler is installed, 
+it will attempt to compile without mpi support, which will fail if you compile 
+pdc with mpi support.
+
+Dependencies
+~~~~~~~~~~~~
+
+First ensure PDC is installed either compiled directly from the  
+source code or via spack (see instructions above).
+
+.. note::
+
+    The Python interface currently only works with the `develop`
+    branch of PDC.
+
+Then clone the PDCpy repository:
+
+.. code-block:: Bash
+
+    git clone https://github.com/hpc-io/PDCpy.git
+
+Installation
+~~~~~~~~~~~~
+
+Make sure the following environment variables are correct:
+
+1. `PDC_DIR`: path to PDC installation
+2. `MERCURY_DIR`: path to mercury installation
+3. `LD_LIBRARY_PATH`: contains path to `libpdc.so`
+
+.. code-block:: Bash
+
+    pip install PDCpy    
+
+.. _hdf5-vol-connector:
+
+**1.6.** HDF5 VOL Connector
+---------------------------
+
+The following instructions are for installing PDC on Linux and Cray machines. 
+These instructions assume that PDC and its dependencies have all already been 
+installed from source (libfabric and Mercury).
+
+Building HDF5
+~~~~~~~~~~~~~
+
+First set ``HDF5_DIR`` to the directory where you want to install HDF5, e.g. ``$WORK_SPACE/install/hdf5``.
+
+.. code-block:: bash
+
+   wget "https://www.hdfgroup.org/package/hdf5-1-12-1-tar-gz/?wpdmdl=15727&refresh=612559667d6521629837670"
+   mv index.html?wpdmdl=15727&refresh=612559667d6521629837670 hdf5-1.12.1.tar.gz
+   tar zxf hdf5-1.12.1.tar.gz
+   cd hdf5-1.12.1
+   ./configure --prefix=$HDF5_DIR
+   make
+   make check
+   make install
+   make check-install
+
+Building VOL-PDC
+~~~~~~~~~~~~~~~~
+
+First set ``HDF5_INCLUDE_DIR``, ``HDF5_LIBRARY``, and ```HDF5_DIR``` to the 
+appropriate paths where HDF5 is installed, e.g. ``$HDF5_DIR/include```, 
+``$HDF5_DIR/lib```, and ``$HDF5_DIR`` respectively.
+
+.. code-block:: bash
+
+   git clone https://github.com/hpc-io/vol-pdc.git
+   cd vol-pdc
+   mkdir build
+   cd build
+   cmake ../ -DHDF5_INCLUDE_DIR=$HDF5_INCLUDE_DIR -DHDF5_LIBRARY=$HDF5_LIBRARY -DBUILD_SHARED_LIBS=ON -DHDF5_DIR=$HDF5_DIR
+   make
+   make install
+
+Building & Running VOL-PDC Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The VOL-PDC examples can be built with the following commands:
+
+.. code-block:: bash
+
+   cd vol-pdc/examples
+   cmake .
+   make
+
+The following assumes ``PDC_BIN_DIR`` is set to the directory 
+where the PDC binaries are installed, e.g. ``$PDC_DIR/bin``.
+Then, to run the any of the examples you first start the PDC server(s).
+You can then launch the example. Finally, you must close the PDC server(s).
+For instance, to run the ``h5pdc_vpicio`` example, you can use the following commands:
+
+.. code-block:: bash
+
+   # Start the PDC server(s) in the background
+   mpirun -N 1 -n 1 -c 1 ./$PDC_BIN_DIR/pdc_server &
+   # Run the example
+   mpirun -N 1 -n 1 -c 1 ./h5pdc_vpicio test
+   # Close the PDC server(s)
+   mpirun -N 1 -n 1 -c 1 ./$PDC_BIN_DIR/close_server
+

@@ -24,8 +24,6 @@ Use the table of contents below to explore the sections in more detail
    :caption: Getting Started
 
    introduction
-   pdcpy
-   hdf5_vol
    core_concepts
    services
    advanced_topics
