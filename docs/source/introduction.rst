@@ -30,7 +30,7 @@ USDOE. 11 May. 2017. Web. doi:`10.11578/dc.20210325.1 <https://doi.org/10.11578/
 
 PDC offers the following methods for installing core dependencies:
 
-1. :ref:`Spack <spack>`
+1. :ref:`Spack <link_spack>`
 2. :ref:`PDC Source <pdc-source>`
 
 .. note::
@@ -55,7 +55,7 @@ PDC offers the following installation targets:
     All installation targets require the PDC core dependencies to be installed
     either via spack or built directly from the source code.
 
-.. _spack:
+.. _link_spack:
 
 Spack
 ~~~~~
@@ -598,3 +598,25 @@ PDC as the back-end. This makes it easy to adopt PDC in existing HDF5 workflows.
 
 **1.8.** Common Installation Errors
 -----------------------------------
+
+No Provider Found
+~~~~~~~~~~~~~~~~~
+
+.. code-block:: bash
+
+   ./pdc_server
+   [INFO] PDC_SERVER[0]: Using [./pdc_tmp/] as tmp dir, 1 OSTs, 1 OSTs per data file, 0% to BB
+   [INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set
+   [INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set
+   [INFO] PDC_SERVER[0]: Connection string: ofi+tcp://ta1-pc:7000
+   # [85521.394212] mercury->fatal: [error] /home/ta1/src/workspace/source/mercury/src/na/na_ofi.c:2832
+   # na_ofi_verify_info(): No provider found for "tcp;ofi_rxm" provider on domain "ta1-pc"
+   [15:47:33.391315] [ERROR] [pdc_server.c:837] PDC_SERVER[0]: Error with HG_Init()
+   [15:47:33.391329] [ERROR] [pdc_server.c:2164] PDC_SERVER[0]: Error with PDC_Server_init
+   [15:47:33.391343] [ERROR] [pdc_server.c:990] PDC_SERVER[0]: pdc_remote_server_info_g was NULL
+   [15:47:33.391347] [ERROR] [pdc_server.c:1047] PDC_SERVER[0]: Error with PDC_Server_destroy_client_info
+
+Mercury was unable to find a valid provider based on your hostname (``ta1-pc`` in this case).
+Please review the connection string (``ofi+tcp://ta1-pc:7000``) and ensure that the appropriate
+transport and host are set. If you're unsure which transport or host to use, you can run ``fi_info``
+(found in the ``bin`` directory of your libfabric installation) to list available network providers.
