@@ -40,5 +40,5 @@ pip install -r requirements.txt
 
 ### 3. Build the html
 ```bash
-python -m sphinx -T -b html -d _build/doctrees -D language=en source html
+python3.8 -m sphinx -T -b html -d _build/doctrees -D language=en source html
 ```
