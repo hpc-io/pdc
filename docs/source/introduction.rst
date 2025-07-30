@@ -28,22 +28,75 @@ USDOE. 11 May. 2017. Web. doi:`10.11578/dc.20210325.1 <https://doi.org/10.11578/
 **1.2.** Installation
 ---------------------
 
-We recommend using GCC 7 or a later version. Intel and Cray compilers also work.
+PDC offers the following methods for installing core dependencies:
 
-Dependencies
-~~~~~~~~~~~~
+1. :ref:`Spack <spack>`
+2. :ref:`PDC Source <pdc-source>`
 
-The following dependencies need to be installed:
+.. note::
 
-1. **MPI** (TODO: PUT_VERSION)
-2. **libfabric** (TODO: PUT_VERSION)
-3. **Mercury** (TODO: PUT_VERSION)
+    To view an exhaustive list of compile-time options please see :ref:`compile_time_options`.
 
-PDC can use either MPICH or OpenMPI as the MPI library, if your system 
+PDC offers the following installation targets:
+
+1. :ref:`C API <c-api>`
+2. :ref:`Python API (PDCpy) <python-api-pdc-py>`
+3. :ref:`HDF5 VOL Connector (VOL-PDC) <hdf5-vol-connector>`
+
+.. figure:: ../_static/image/pdc-installation.png
+   :alt: PDC Installation Diagram
+   :align: center
+   :class: bordered-image
+
+   Installation workflow to install the different client targets offered by PDC.
+
+.. note::
+
+    All installation targets require the PDC core dependencies to be installed
+    either via spack or built directly from the source code.
+
+.. _spack:
+
+Spack
+~~~~~
+
+Spack is a package manager for supercomputers, Linux, and macOS. 
+It makes installing scientific software easy.
+More information about Spack can be found at: https://spack.io.
+PDC and its dependencies can be installed with spack:
+
+.. code-block:: bash
+
+   # Clone the Spack repository
+   git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+
+   # Source the Spack setup script
+   . ./spack/share/spack/setup-env.sh
+
+   # Create a new environment for PDC
+   spack env create pdc-env
+   spack env activate pdc-env
+
+   # Add PDC to the environment with tests enabled
+   spack add pdc
+   HG_HOST=eth0 spack install -test=root --verbose pdc ^libfabric fabrics=tcp,rxm
+
+   # Load PDC to verify the installation
+   spack load pdc
+   pdc --version
+
+.. _pdc-source:
+
+PDC Source
+~~~~~~~~~~
+
+We recommend using GCC version 7 or later. Intel and Cray compilers also work.
+
+When building PDC from source, either MPICH or OpenMPI can be used as the MPI library, if your system
 doesn't have one installed, follow `MPICH Installers’ Guide <https://www.mpich.org/documentation/guides>`_ 
 or `Installing Open MPI <https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html>`_
 
-We provide detailed instructions for installing libfabric, Mercury, and PDC below.
+We provide detailed instructions for installing libfabric, Mercury, and the PDC library below.
 
 .. attention:: 
 
@@ -51,11 +104,10 @@ We provide detailed instructions for installing libfabric, Mercury, and PDC belo
    needed to run PDC in the ``$WORK_SPACE/pdc_env.sh`` file, which can be used for 
    future PDC runs with ``source $WORK_SPACE/pdc_env.sh``.
 
-
 Prepare Work Space
 ~~~~~~~~~~~~~~~~~~
 
-Before installing the dependencies and downloading the code repository, we assume 
+Before installing the dependencies and downloading the code repositories, we assume
 there is a directory created for your installation already, e.g. ``$WORK_SPACE`` and 
 that you are in the ``$WORK_SPACE`` directory.
 
@@ -133,7 +185,6 @@ Install libfabric
    When installing on MacOS, make sure to enable ``sockets`` with the following configure command:
    ``./configure CFLAG=-O2 --enable-sockets=yes --enable-tcp=yes --enable-udp=yes --enable-rxm=yes``
 
-
 Install Mercury
 ~~~~~~~~~~~~~~~
 
@@ -170,8 +221,8 @@ Install Mercury
    When installing on MacOS, specify the ``sockets`` protocol used by Mercury by replacing 
    the cmake command from ``-DNA_OFI_TESTING_PROTOCOL=tcp`` to ``-DNA_OFI_TESTING_PROTOCOL=sockets``
 
-Install PDC
-~~~~~~~~~~~
+Install PDC Source
+~~~~~~~~~~~~~~~~~~
 
 .. code-block:: Bash
 
@@ -204,9 +255,8 @@ Install PDC
    (i.e., Mercury) uses the ``socket`` protocol, the only one supported in 
    MacOS: ``export HG_TRANSPORT="sockets"``.
 
-
-Test Your PDC Installation
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Test Your PDC Source Installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 PDC's ``ctest`` contains both sequential and parallel (MPI) tests, and can be run 
 with the following in the ``build`` directory.
@@ -222,42 +272,175 @@ the ``timeout`` parameter when calling ``ctest``:
 
    ctest --timeout 120
 
+If PDC was built without support for MPI, you can run only the sequential (non-MPI) tests
+using the ``-L serial`` parameter:
+
+.. code-block:: Bash
+
+    ctest -L serial
+
 .. note::
 
    If you are using PDC on an HPC system, e.g. Perlmutter@NERSC, ``ctest`` should be run 
    on a compute node, you can submit an interactive job on Perlmutter: 
    ``salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx``
 
-Spack Installation
-~~~~~~~~~~~~~~~~~~
+.. _c-api:
 
-Spack is a package manager for supercomputers, Linux, and macOS. 
-It makes installing scientific software easy.
-More information about Spack can be found at: https://spack.io.
-PDC and its dependencies can be installed with spack:
+**1.3.** C API
+--------------
 
-.. code-block:: bash
+.. _python-api-pdc-py:
 
-   # Clone the Spack repository
-   git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+**1.4.** Python API (PDCpy)
+---------------------------------
 
-   # Install PDC and its dependencies
-   ./spack/bin/spack install pdc
+Due to the rise of Python in the HPC community, PDC provides Python
+bindings, which allows users to interact with PDC using Python.
+The repository for PDCpy can be found at `PDCpy GitHub Repository <https://github.com/hpc-io/PDCpy>`_.
+The documentation for PDCpy's API is available at `PDCpy Documentation <https://hpc-io.github.io/PDCpy/>`_.
 
-   # Verify the installation
-   pdc --version
+PDCpy is compatible with OpenMPI and MPICH. If neither MPI library is installed,
+it will attempt to compile without MPI support, which will fail if you compile
+PDC with MPI support.
 
-**1.3.** First PDC Program
---------------------------
+Dependencies
+~~~~~~~~~~~~
 
-This example walks through the essential steps for writing a basic PDC application: 
-initializing the PDC layer, creating a container and an object, and performing a 
-simple region-based data transfer. It is intended as a starting point for new users.
+First ensure PDC is installed either compiled directly from the
+source code or via spack (see instructions above).
 
 .. note::
 
-   This example omits detailed error checking for clarity. In practice, always check the return values of PDC API calls. 
+    The Python interface currently only works with the `develop`
+    branch of PDC.
+
+Then clone the PDCpy repository:
+
+.. code-block:: Bash
+
+    git clone https://github.com/hpc-io/PDCpy.git
+
+Installation
+~~~~~~~~~~~~
+
+Make sure the following environment variables are correct:
+
+1. `PDC_DIR`: path to PDC installation
+2. `MERCURY_DIR`: path to mercury installation
+3. `LD_LIBRARY_PATH`: contains path to `libpdc.so`
+
+.. code-block:: Bash
+
+    pip install PDCpy
+
+
+.. _hdf5-vol-connector:
+
+**1.5.** HDF5 VOL Connector (VOL-PDC)
+-------------------------------------
+
+The following instructions are for installing PDC on Linux and Cray machines.
+These instructions assume that PDC and its dependencies have all already been
+installed from source (libfabric and Mercury).
+
+Building HDF5
+~~~~~~~~~~~~~
+
+First set ``HDF5_DIR`` to the directory where you want to install HDF5, e.g. ``$WORK_SPACE/install/hdf5``.
+
+.. code-block:: bash
+
+   wget "https://www.hdfgroup.org/package/hdf5-1-12-1-tar-gz/?wpdmdl=15727&refresh=612559667d6521629837670"
+   mv index.html?wpdmdl=15727&refresh=612559667d6521629837670 hdf5-1.12.1.tar.gz
+   tar zxf hdf5-1.12.1.tar.gz
+   cd hdf5-1.12.1
+   ./configure --prefix=$HDF5_DIR
+   make
+   make check
+   make install
+   make check-install
+
+Building VOL-PDC
+~~~~~~~~~~~~~~~~
+
+First set ``HDF5_INCLUDE_DIR``, ``HDF5_LIBRARY``, and ```HDF5_DIR``` to the
+appropriate paths where HDF5 is installed, e.g. ``$HDF5_DIR/include```,
+``$HDF5_DIR/lib```, and ``$HDF5_DIR`` respectively.
+
+.. code-block:: bash
+
+   git clone https://github.com/hpc-io/vol-pdc.git
+   cd vol-pdc
+   mkdir build
+   cd build
+   cmake ../ -DHDF5_INCLUDE_DIR=$HDF5_INCLUDE_DIR -DHDF5_LIBRARY=$HDF5_LIBRARY -DBUILD_SHARED_LIBS=ON -DHDF5_DIR=$HDF5_DIR
+   make
+   make install
+
+Building Running VOL-PDC Examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The VOL-PDC examples can be built with the following commands:
+
+.. code-block:: bash
+
+   cd vol-pdc/examples
+   cmake .
+   make
+
+The following assumes ``PDC_BIN_DIR`` is set to the directory
+where the PDC binaries are installed, e.g. ``$PDC_DIR/bin``.
+Then, to run the any of the examples you first start the PDC server(s).
+You can then launch the example. Finally, you must close the PDC server(s).
+For instance, to run the ``h5pdc_vpicio`` example, you can use the following commands:
+
+.. code-block:: bash
+
+   # Start the PDC server(s) in the background
+   mpirun -N 1 -n 1 -c 1 ./$PDC_BIN_DIR/pdc_server &
+   # Run the example
+   mpirun -N 1 -n 1 -c 1 ./h5pdc_vpicio test
+   # Close the PDC server(s)
+   mpirun -N 1 -n 1 -c 1 ./$PDC_BIN_DIR/close_server
+
+**1.6** Running PDC Server(s)
+-----------------------------
+
+PDC works in a client-server architecture, therefore, before running any PDC
+client application, you need to start the PDC server(s) first.
+First ensure that the PDC server is built and installed correctly,
+then you can start a single PDC server instance with the following command:
+
+.. code-block:: bash
+
+   ./pdc_server
+
+You can also start multiple PDC server instances on different nodes,
+for example, you can start 4 PDC servers using the following command:
+
+.. code-block:: bash
+
+   mpirun -np 4 ./pdc_server
+
+**1.7.** First PDC Program
+--------------------------
+
+This section offers the following examples for different PDC target installations:
+
+1. :ref:`C API First Program <c-api-first-program>`
+2. :ref:`PDCpy First Program <pdcpy-first-program>`
+3. :ref:`VOL-PDC First Program <vol-pdc-first-program>`
+
+.. note::
+
+   All examples omit detailed error checking for clarity. In practice, always check the return values of PDC API calls. 
    See the section TODO_FIX_REFERENCE for more information on detecting and handling PDC errors.
+
+.. _c-api-first-program:
+
+C API First Program
+~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: c
    :linenos:
@@ -275,7 +458,7 @@ simple region-based data transfer. It is intended as a starting point for new us
        int region_size = 64;
        uint64_t dims[1] = {region_size};
        pdcid_t obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-       PDCprop_set_obj_type(obj_prop, PDC_INT);
+       PDCprop_set_obj_type(obj_prop, PDC_DOUBLE);
        PDCprop_set_obj_dims(obj_prop, 1, dims);
 
        // Create object
@@ -312,40 +495,106 @@ the data range to transfer (lines 23–29). The program performs a region-based
 write transfer of the data to the PDC object, starting and waiting for the 
 transfer to complete (lines 31–33). Finally, it cleans up all PDC resources 
 by closing the transfer request, regions, object, container, and the 
-PDC context itself (lines 35–40). While simplified, this is the typical 
-workflow that underlies more advanced PDC programs.
+PDC context itself (lines 35–40).
 
-**1.4.** Running PDC Server(s)
-------------------------------
+.. _pdcpy-first-program:
 
-PDC works in a client-server architecture, therefore, before running any PDC
-client application, you need to start the PDC server(s) first.
-First ensure that the PDC server is built and installed correctly, 
-then you can start a single PDC server instance with the following command:
+PDCpy First Program
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+   :linenos:
+
+   import pdc
+   import numpy as np
+
+   def main():
+      cont = pdc.Container()
+      prop = Object.Properties(
+         64,
+         pdc.Type.DOUBLE,
+      )
+      obj = cont.create_object("my_object", prop)
+      data = np.fromiter(np.double, 64)
+      obj.set_data(data)
+
+It begins by creating a PDC container and defining object properties such as size 
+and data type (lines 6–9). An object is then created within the container using 
+these properties (line 10). A NumPy array of 64 double-precision values is prepared 
+to serve as the data buffer (line 11). The data is written to the PDC object using 
+the set_data() method (line 12), which handles the region creation and data transfer 
+internally.
+
+.. _vol-pdc-first-program:
+
+VOL-PDC First Program
+~~~~~~~~~~~~~~~~~~~~~
+
+To use the PDC VOL connector with the HDF5 C API, ensure that your environment is configured as follows:
 
 .. code-block:: bash
 
-   ./pdc_server.exe
+   export HDF5_PLUGIN_PATH=$VOL_DIR/lib
+   export HDF5_VOL_CONNECTOR="pdc under_vol=0;under_info={}"
+   export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$PDC_DIR/lib:$VOL_DIR/lib:$LD_LIBRARY_PATH"
+   # Optional: preload the connector
+   export LD_PRELOAD=$VOL_DIR/install/lib/libhdf5_vol_pdc.so
 
-You can also start multiple PDC server instances on different nodes,
-for example, you can start 4 PDC servers using the following command:
+With this configuration, HDF5 operations in your C application will transparently use PDC for data management.
 
-.. code-block:: bash
+Here is a simple HDF5 program in C that creates a dataset and writes a buffer to it using PDC as the underlying VOL connector:
 
-   mpirun -np 4 ./pdc_server.exe
+.. code-block:: c
+   :linenos:
 
-**1.5.** Building & Running PDC Client(s)
------------------------------------------
+   #include "hdf5.h"
+   #include <stdio.h>
 
-Before running a PDC client application, ensure that the PDC server(s) are
-running. You can run a single client application using the following command:
+   #define FILE_NAME "example.h5"
+   #define DATASET_NAME "my_dataset"
+   #define DIM0 64
 
-.. code-block:: bash
+   int main() {
+       hid_t file_id, dataspace_id, dataset_id;
+       herr_t status;
 
-   ./client_app
+       // Initialize data
+       double data[DIM0];
+       for (int i = 0; i < DIM0; i++)
+           data[i] = (double)i;
 
-You can also run multiple client applications in parallel using MPI:
+       // Create a new file using the default properties (VOL connector is set via env)
+       file_id = H5Fcreate(FILE_NAME, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
-.. code-block:: bash
+       // Define dataspace for dataset
+       hsize_t dims[1] = {DIM0};
+       dataspace_id = H5Screate_simple(1, dims, NULL);
 
-   mpirun -np 4 ./client_app
+       // Create the dataset
+       dataset_id = H5Dcreate2(file_id, DATASET_NAME, H5T_NATIVE_DOUBLE,
+                               dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+
+       // Write data to the dataset
+       status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+
+       // Close resources
+       H5Dclose(dataset_id);
+       H5Sclose(dataspace_id);
+       H5Fclose(file_id);
+
+       if (status < 0) {
+           fprintf(stderr, "Error writing data\n");
+           return 1;
+       }
+
+       printf("Data written successfully using PDC VOL.\n");
+       return 0;
+   }
+
+This example performs a standard HDF5 dataset creation and write operation. 
+With the VOL environment variables set appropriately HDF5 will use 
+PDC as the back-end. This makes it easy to adopt PDC in existing HDF5 workflows.
+
+
+**1.8.** Common Installation Errors
+-----------------------------------
