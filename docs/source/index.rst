@@ -25,7 +25,7 @@ Use the table of contents below to explore the sections in more detail
 
    introduction
    core_concepts
-   services
+   using_pdc
    advanced_topics
 
 .. toctree::

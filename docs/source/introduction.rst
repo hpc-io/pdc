@@ -404,8 +404,8 @@ For instance, to run the ``h5pdc_vpicio`` example, you can use the following com
    # Close the PDC server(s)
    mpirun -N 1 -n 1 -c 1 ./$PDC_BIN_DIR/close_server
 
-**1.6** Running PDC Server(s)
------------------------------
+**1.6** Managing PDC Server(s)
+------------------------------
 
 PDC works in a client-server architecture, therefore, before running any PDC
 client application, you need to start the PDC server(s) first.
@@ -414,14 +414,38 @@ then you can start a single PDC server instance with the following command:
 
 .. code-block:: bash
 
-   ./pdc_server
+   pdc_server
 
 You can also start multiple PDC server instances on different nodes,
 for example, you can start 4 PDC servers using the following command:
 
 .. code-block:: bash
 
-   mpirun -np 4 ./pdc_server
+   mpirun -np 4 pdc_server
+
+The following command shows how to close a PDC server:
+
+.. code-block:: bash 
+
+   close_server
+
+If multiple PDC server(s) were launched using ``mpirun`` they can be closed with the following command:
+
+.. code-block:: bash 
+
+   mpirun -np 4 close_server
+
+If there is prexisting data that needs to be loaded then the ``pdc_server``
+must be launched with the ``restart`` parameter as shown below:
+
+.. code-block:: bash 
+
+   mpirun -np 4 pdc_server restart
+
+.. important::
+
+   If ``pdc_server`` is not launched with the ``restart`` command it will not 
+   load the pre-existing data.
 
 **1.7.** First PDC Program
 --------------------------
@@ -489,13 +513,13 @@ C API First Program
    }
 
 It first initializes the PDC environment and creates a 
-container and object with specified properties (lines 7–21). It then 
+container and object with specified properties (lines 7-21). It then 
 prepares a data buffer and defines local and global regions representing 
-the data range to transfer (lines 23–29). The program performs a region-based 
+the data range to transfer (lines 23-29). The program performs a region-based 
 write transfer of the data to the PDC object, starting and waiting for the 
-transfer to complete (lines 31–33). Finally, it cleans up all PDC resources 
+transfer to complete (lines 31-33). Finally, it cleans up all PDC resources 
 by closing the transfer request, regions, object, container, and the 
-PDC context itself (lines 35–40).
+PDC context itself (lines 35-40).
 
 .. _pdcpy-first-program:
 
@@ -519,7 +543,7 @@ PDCpy First Program
       obj.set_data(data)
 
 It begins by creating a PDC container and defining object properties such as size 
-and data type (lines 6–9). An object is then created within the container using 
+and data type (lines 6-9). An object is then created within the container using 
 these properties (line 10). A NumPy array of 64 double-precision values is prepared 
 to serve as the data buffer (line 11). The data is written to the PDC object using 
 the set_data() method (line 12), which handles the region creation and data transfer 
@@ -604,7 +628,7 @@ No Provider Found
 
 .. code-block:: bash
 
-   ./pdc_server
+   pdc_server
    [INFO] PDC_SERVER[0]: Using [./pdc_tmp/] as tmp dir, 1 OSTs, 1 OSTs per data file, 0% to BB
    [INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set
    [INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set

@@ -4,7 +4,7 @@
 ======================
 
 **6.1** Asynchronous Input/Output and Event Handling 
-======================
+====================================================
 		
 PDC’s architecture enables efficient asynchronous I/O operations, allowing computation and communication to overlap, which improves application performance especially in HPC environments.
 
@@ -27,7 +27,7 @@ Waiting for events:
 
 
 **6.2** Scalability and Performance
-======================
+===================================
 
 Data placement:
 		
@@ -43,7 +43,7 @@ PDC server tuning:
 
 
 **6.3** Integration with MPI and Libraries
-======================
+==========================================
 
 Using PDC with MPI:
 

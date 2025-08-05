@@ -1,7 +1,7 @@
-.. _services:
+.. _using_pdc:
 
-**3.** Services
-===============
+**3.** Using PDC
+================
 
 **3.1.** Creating Containers and Objects
 ----------------------------------------
