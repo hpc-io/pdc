@@ -66,7 +66,11 @@
 #include <inttypes.h>
 #include <math.h>
 #include <sys/time.h>
-#include <errno.h>
+#include "pdc_timing.h"
+#include "errno.h"
+
+/* #define TANG_DEBUG 1 */
+#define RING_ARC_SIZE 64
 
 int                    is_client_debug_g      = 0;
 pdc_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -144,6 +148,7 @@ static hg_id_t metadata_delete_by_id_register_id_g;
 static hg_id_t metadata_update_register_id_g;
 static hg_id_t metadata_add_tag_register_id_g;
 static hg_id_t metadata_add_kvtag_register_id_g;
+static hg_id_t metadata_check_prefix_register_id_g;
 static hg_id_t metadata_del_kvtag_register_id_g;
 static hg_id_t metadata_get_kvtag_register_id_g;
 static hg_id_t region_lock_register_id_g;
@@ -1341,6 +1346,7 @@ drc_access_again:
     metadata_update_register_id_g          = PDC_metadata_update_register(*hg_class);
     metadata_add_tag_register_id_g         = PDC_metadata_add_tag_register(*hg_class);
     metadata_add_kvtag_register_id_g       = PDC_metadata_add_kvtag_register(*hg_class);
+    metadata_check_prefix_register_id_g    = PDC_metadata_check_prefix_register(*hg_class);
     metadata_del_kvtag_register_id_g       = PDC_metadata_del_kvtag_register(*hg_class);
     metadata_get_kvtag_register_id_g       = PDC_metadata_get_kvtag_register(*hg_class);
     region_lock_register_id_g              = PDC_region_lock_register(*hg_class);
@@ -6393,6 +6399,75 @@ done:
     HG_Destroy(metadata_add_kvtag_handle);
 
     FUNC_LEAVE(ret_value);
+}
+/***
+ * Check if the prefix exists in the PHT
+ * @param server: The server to check against
+ * @param prefix: The prefix to check
+ * 
+ * This function will send mercury RPC request to the server and check if the prefix exists
+ */
+
+static perr_t
+PDC_check_prefix(uint32_t server, char *prefix){
+
+}
+
+uint32_t
+PDC_get_server_using_pht(uint32_t key_hash) {
+    int ring_size = pdc_server_num_g * RING_ARC_SIZE;
+    uint64_t mapped_hash = key_hash % ring_size;
+
+    for (int i = 0; i < pdc_server_num_g; i++) {
+        int node_pos = (i + 1) * ceil(ring_size / (float)pdc_server_num_g);
+
+        if (mapped_hash <= node_pos) {
+            return i;
+        }
+    }
+
+    // Wrap around
+    return 0; 
+}
+
+uint32_t PDC_prefix_binary_search(char *prefix, char **target_prefix, bool is_leaf){
+    int target_server = -1;
+    int max = strlen(prefix) - 1;
+    int mid = 1;
+    char *slice;
+
+    while (mid <= max){
+        slice = malloc((mid + 1) * sizeof(char));
+        strncpy(slice, prefix, mid);
+        slice[mid] = '\0';
+        char *prefix_bin = string_to_binary(slice);
+        uint32_t hash_value = prefix_hash(prefix_bin);
+        target_server = PDC_get_server_using_pht(hash_value);
+        //void *resp = PDC_check_if_prefix_exists(target_server, slice);
+        
+        /** TODO: Check if the prefix bucket is redirected, make another call here */
+
+        *target_prefix = malloc((mid + 1) * sizeof(char));
+        strncpy(*target_prefix, slice, mid);
+        (*target_prefix)[mid] = '\0';
+
+        /*** If the prefix exists and a leaf node, return the target server */
+
+
+        free(slice);
+        return target_server;
+    }
+
+}
+
+static perr_t
+PDC_add_metadata_key(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont) {
+    char *prefix;
+    char *key_name;
+    perr_t ret_value = SUCCEED;
+
+    key_name = kvtag->name;
+    prefix = string_to_binary(key_name);
 }
 
 static hg_return_t

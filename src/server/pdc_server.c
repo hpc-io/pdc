@@ -147,6 +147,7 @@ int               gen_fastbit_idx_g            = 0;
 int               use_fastbit_idx_g            = 0;
 int               use_rocksdb_g                = 0;
 int               use_sqlite3_g                = 0;
+int               use_pht_g                    = 0;
 char *            gBinningOption               = NULL;
 
 double server_write_time_g                  = 0.0;
@@ -1928,6 +1929,7 @@ PDC_Server_mercury_register()
     PDC_region_release_register(hg_class_g);
     PDC_gen_cont_id_register(hg_class_g);
     PDC_metadata_add_kvtag_register(hg_class_g);
+    PDC_metadata_check_prefix_register(hg_class_g);
     PDC_metadata_get_kvtag_register(hg_class_g);
     PDC_metadata_del_kvtag_register(hg_class_g);
     PDC_send_rpc_register(hg_class_g);

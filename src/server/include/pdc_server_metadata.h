@@ -380,4 +380,14 @@ perr_t PDC_free_cont_hash_table();
  */
 perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out);
 
+/**
+ * Check if there is any object with the given prefix
+ *
+ * \param in [IN]               Input structure received from client
+ * \param out [IN]              Output structure to be sent back to the client
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_out_t *out);
+
 #endif /* PDC_SERVER_METADATA_H */

@@ -224,6 +224,46 @@ PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
     FUNC_LEAVE(ret_value);
 }
 
+uint32_t prefix_hash(const char *key){
+    uint32_t hash = 0;
+    int i = 1;
+    while (*key) {
+        if (*key == '\0') break;
+        if (*key == '#') {
+            *key++;
+            continue;
+        };
+        if (*key == '0') {
+            hash = (hash*193) + (i * 90);
+        } else {
+            hash = (hash*193) + (i * 270);
+        }
+        *key++;
+        i++;
+    }
+    return hash;
+}
+
+char* string_to_binary(void *ptr){
+    char *str = (char *)ptr;
+    size_t len = strlen(str);
+    char *binStr = malloc(len*8 + 1);
+    for (int i = 0; i < len; i++){
+        char c = str[i];
+        for (int j=7; j>=0; j--) {
+            binStr[(i*8) + 7 - j] = (c & (1 << j)) ? '1' : '0';
+        }
+    }
+    binStr[len*8] = '\0';
+    return binStr;
+}
+
+uint32_t
+PDC_get_server_by_obj_id_pht(uint64_t obj_id, int n_server)
+{
+
+}
+
 int
 PDC_get_var_type_size(pdc_var_type_t dtype)
 {
@@ -964,6 +1004,13 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in   ATTRIBUTE(unused),
 {
     FUNC_ENTER(NULL);
     FUNC_LEAVE(SUCCEED);
+}
+
+perr_t
+PDC_Server_check_prefix(metadata_check_prefix_in_t *in ATTRIBUTE(unused),
+                     metadata_check_prefix_out_t *out ATTRIBUTE(unused))
+{
+    return SUCCEED;
 }
 perr_t
 PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in ATTRIBUTE(unused), hg_handle_t *handle ATTRIBUTE(unused))
@@ -1830,6 +1877,31 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
     HG_Get_input(handle, &in);
     if (strcmp(in.kvtag.name, "PDC_NOOP") != 0) {
         PDC_Server_add_kvtag(&in, &out);
+    }
+    else {
+        LOG_INFO("Received NOOP\n");
+        out.ret = 1;
+    }
+
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+HG_TEST_RPC_CB(metadata_check_prefix, handle)
+{
+       FUNC_ENTER(NULL);
+
+    hg_return_t                 ret_value = HG_SUCCESS;
+    metadata_check_prefix_in_t  in;
+    metadata_check_prefix_out_t  out;
+
+    HG_Get_input(handle, &in);
+    if (strcmp(in.prefix, "PDC_NOOP") != 0) {
+        PDC_Server_check_prefix(&in, &out);
     }
     else {
         LOG_INFO("Received NOOP\n");
@@ -6160,6 +6232,7 @@ PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
 PDC_FUNC_DECLARE_REGISTER(send_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_check_prefix, metadata_check_prefix_in_t, metadata_check_prefix_out_t)
 PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
 PDC_FUNC_DECLARE_REGISTER(metadata_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
