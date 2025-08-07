@@ -182,6 +182,17 @@ int set_remove(Set *set, SetValue data);
 int set_query(Set *set, SetValue data);
 
 /**
+ * Copy the contents of one set to another.
+ *
+ * @param target        The set to copy values into.
+ * @param source        The set to copy values from.
+ * @return              Zero on success, or -1 if it was not possible to
+ *                      allocate memory for the new entries.
+ */
+int set_copy(Set *target, Set* source);
+
+
+/**
  * Retrieve the number of entries in a set
  *
  * @param set           The set.

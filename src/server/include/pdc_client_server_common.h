@@ -517,6 +517,14 @@ typedef struct {
     int32_t ret;
 } metadata_delete_by_id_out_t;
 
+typedef struct {
+    char* prefix;
+} metadata_check_prefix_in_t;
+
+typedef struct {
+    int32_t ret;
+} metadata_check_prefix_out_t;
+
 /* Define region_lock_out_t */
 typedef struct {
     int32_t ret;
@@ -1726,6 +1734,16 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
     }
 
     FUNC_LEAVE(ret);
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_check_prefix_in_t(hg_proc_t proc, void *data) {
+    return HG_SUCCESS;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_check_prefix_out_t(hg_proc_t proc, void *data) {
+    return HG_SUCCESS;
 }
 
 /* Define hg_proc_metadata_get_kvtag_in_t */
@@ -4204,6 +4222,7 @@ hg_id_t PDC_metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_update_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_check_prefix_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_send_rpc_register(hg_class_t *hg_class);
@@ -4752,6 +4771,24 @@ perr_t PDC_create_shm_segment(region_list_t *region);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf);
+
+/**
+ * Convert a string to binary
+ *
+ * \param ptr[IN]               Pointer to the string
+ *
+ * \return Binary representation of the string
+ */
+char* string_to_binary(void *ptr);
+
+/**
+ * Calculate the hash value of a string
+ *
+ * \param key[IN]               String to be hashed
+ *
+ * \return Hash value of the string
+ */
+uint32_t prefix_hash(const char *key);
 
 /**
  * Duplicate a kvtag
