@@ -30,11 +30,11 @@ Use the table of contents below to explore the sections in more detail
 
 .. toctree::
    :maxdepth: 2
-   :caption: Developer & API Guide
+   :caption: Client API/Tools & Develop Guide
 
    client_api
+   client_tools
    developer_guide
-   tools_and_debugging
 
 .. toctree::
    :maxdepth: 1

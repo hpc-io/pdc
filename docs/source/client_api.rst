@@ -8,14 +8,14 @@ It includes the types, core layer functions, properties, containers,
 objects, and region management functions. Use the links below to 
 quickly navigate to each subsection:
 
-- :ref:`client_api_types` — Types used in the Client API
-- :ref:`client_api_layer` — Initialization and shutdown functions for the PDC layer
-- :ref:`client_api_properties` — Functions for creating and closing properties
-- :ref:`client_api_containers` — Functions for creating and managing containers
-- :ref:`client_api_objects` — Functions for creating and managing objects
-- :ref:`client_api_object_tags` — Functions for creating and managing object tags
-- :ref:`client_api_regions` — Functions for creating and managing regions
-- :ref:`client_api_object_data_transfers` — Functions for object data transfers
+- :ref:`client_api_types` - Types used in the Client API
+- :ref:`client_api_layer` - Initialization and shutdown functions for the PDC layer
+- :ref:`client_api_properties` - Functions for creating and closing properties
+- :ref:`client_api_containers` - Functions for creating and managing containers
+- :ref:`client_api_objects` - Functions for creating and managing objects
+- :ref:`client_api_object_tags` - Functions for creating and managing object tags
+- :ref:`client_api_regions` - Functions for creating and managing regions
+- :ref:`client_api_object_data_transfers` - Functions for object data transfers
 
 .. _client_api_types:
 
@@ -79,7 +79,7 @@ quickly navigate to each subsection:
 .. doxygenfunction:: PDCcont_create_col
    :project: PDC
 
-.. doxygenfuntion:: PDCcont_open
+.. doxygenfunction:: PDCcont_open
    :project: PDC
 
 .. doxygenfunction:: PDCcont_open_col
