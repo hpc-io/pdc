@@ -62,12 +62,16 @@ typedef enum {
 
 typedef enum { PDC_BLOCK = 0, PDC_NOBLOCK = 1 } pdc_lock_mode_t;
 
+/**
+ * @brief Enum defining the consistency model for PDC objects:
+ */
 typedef enum {
-    PDC_CONSISTENCY_DEFAULT  = 0,
-    PDC_CONSISTENCY_POSIX    = 1,
-    PDC_CONSISTENCY_COMMIT   = 2,
-    PDC_CONSISTENCY_SESSION  = 3,
-    PDC_CONSISTENCY_EVENTUAL = 4
+    /// @brief Synchronous region writes and reads. Operations
+    ///        are immediately visible to all processes (POSIX semantics)
+    PDC_CONSISTENCY_POSIX = 1,
+    /// @brief Asynchronous updates. Reads may return stale data
+    ///        until updates propagate (eventual consistency).
+    PDC_CONSISTENCY_EVENTUAL = 2
 } pdc_consistency_t;
 typedef struct _pdc_id_info obj_handle;
 
@@ -292,7 +296,7 @@ perr_t PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partiti
  *                              returned by PDCprop_create(PDC_OBJ_CREATE)
 
  * \param consistency [IN]      Consistency semantics required
- *                              e.g., PDC_CONSISTENCY_DEFAULT, PDC_CONSISTENCY_POSIX, etc
+ *                              e.g., PDC_CONSISTENCY_EVENTUAL or PDC_CONSISTENCY_POSIX.
  *
  * \return Non-negative on success/Negative on failure
  */

@@ -41,6 +41,9 @@ quickly navigate to each subsection:
 .. doxygenenum:: pdc_prop_type_t
    :project: PDC
 
+.. doxygenenum:: pdc_consistency_t
+   :project: PDC
+
 .. _client_api_layer:
 
 **5.2.** PDC Layer
