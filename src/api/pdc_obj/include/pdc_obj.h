@@ -31,13 +31,37 @@
 /* Public Typedefs */
 /*******************/
 typedef enum { PDC_NA = 0, PDC_READ = 1, PDC_WRITE = 2 } pdc_access_t;
+
+/**
+ * @brief Partitioning strategy for PDC regions of an object.
+ *
+ * An abstract region of an object can be partitioned in four ways.
+ *
+ * The default is PDC_REGION_STATIC.
+ */
 typedef enum {
-    PDC_OBJ_STATIC     = 0,
-    PDC_REGION_STATIC  = 1,
+    /// @brief Object static partitioning.
+    /// Input transfer requests are directly packed with a one-to-one mapping.
+    /// The target data server is determined at object create/open time.
+    PDC_OBJ_STATIC = 0,
+
+    /// @brief Region static partitioning.
+    /// Each region is equally partitioned across all data servers.
+    PDC_REGION_STATIC = 1,
+
+    /// @brief Region dynamic partitioning.
+    /// The metadata server selects the data server dynamically based on
+    /// current system load to balance region assignments.
     PDC_REGION_DYNAMIC = 2,
-    PDC_REGION_LOCAL   = 3
+
+    /// @brief Node-local region placement.
+    /// The metadata server selects a data server on the same node (or closest)
+    /// to the client transferring the request.
+    PDC_REGION_LOCAL = 3
 } pdc_region_partition_t;
+
 typedef enum { PDC_BLOCK = 0, PDC_NOBLOCK = 1 } pdc_lock_mode_t;
+
 typedef enum {
     PDC_CONSISTENCY_DEFAULT  = 0,
     PDC_CONSISTENCY_POSIX    = 1,

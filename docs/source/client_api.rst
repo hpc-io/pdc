@@ -26,6 +26,21 @@ quickly navigate to each subsection:
 .. doxygentypedef:: perr_t
    :project: PDC
 
+.. doxygentypedef:: pdc_var_type_t
+   :project: PDC
+
+.. doxygenenum:: pdc_prop_type_t
+   :project: PDC
+
+.. doxygenenum:: pdc_region_partition_t
+   :project: PDC
+
+.. doxygenenum:: pdc_lifetime_t
+   :project: PDC
+
+.. doxygenenum:: pdc_prop_type_t
+   :project: PDC
+
 .. _client_api_layer:
 
 **5.2.** PDC Layer
@@ -68,6 +83,9 @@ quickly navigate to each subsection:
    :project: PDC
 
 .. doxygenfunction:: PDCobj_close
+   :project: PDC
+
+.. doxygenfunction:: PDCprop_obj_dup
    :project: PDC
 
 .. _client_api_regions:
