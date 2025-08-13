@@ -86,10 +86,10 @@ typedef pdc_c_var_type_t pdc_var_type_t;
 
 // FIXME: common data structure should be defined in a group of common header files.
 typedef struct pdc_kvtag_t {
-    char    *name;
+    char *   name;
     uint32_t size;
     int8_t   type;
-    void    *value;
+    void *   value;
 } pdc_kvtag_t;
 
 /**
@@ -111,8 +111,8 @@ typedef struct pdc_histogram_t {
     pdc_var_type_t dtype;
     int            nbin;
     double         incr;
-    double        *range;
-    uint64_t      *bin;
+    double *       range;
+    uint64_t *     bin;
 } pdc_histogram_t;
 
 #define SUCCEED 0
