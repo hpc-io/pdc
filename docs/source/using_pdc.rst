@@ -1,6 +1,6 @@
 .. _using_pdc:
 
-**3.0.** Using PDC
+**3.** Using PDC
 ==================
 
 This section provides a practical overview of how to use the PDC
@@ -20,9 +20,7 @@ Complete Examples
 ~~~~~~~~~~~~~~~~~
 
 - :ref:`Example: 2D Region Transfers <2D-region-transfer>`
-- :ref:`Example: 3D Region Transfers <3D-region-transfer>`
 - :ref:`Example: 2D Batch Region Transfer <2D-batch-region-transfer>`
-- :ref:`Example: 3D Batch Region Transfer <3D-batch-region-transfer>`
 - :ref:`Example: Get & Put Object <get-put-object>`
 
 3.1. Initializing PDC
@@ -219,8 +217,8 @@ For scenarios involving many objects or regions, PDC supports batch transfers to
     PDCregion_close(reg);
     PDCregion_close(reg_global);
 
-Full Examples
-=============
+Complete Examples
+-----------------
 
 .. _2D-region-transfer:
 
@@ -329,139 +327,6 @@ Full Examples
                 return ret_value;
         }
 
-
-.. _3D-region-transfer:
-
-3D Region Transfer Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: C
-
-        #include <stdio.h>
-        #include <stdlib.h>
-        #include <string.h>
-        #include <getopt.h>
-        #include <time.h>
-        #include <inttypes.h>
-        #include <unistd.h>
-        #include <sys/time.h>
-        #include "pdc.h"
-
-        #define BUF_LEN 256
-
-        int main(int argc, char **argv)
-        {
-                pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
-                pdcid_t obj1, obj2;
-                char cont_name[128], obj_name1[128], obj_name2[128];
-                pdcid_t transfer_request;
-
-                int rank = 0, size = 1, i;
-                int ret_value = 0;
-
-                uint64_t offset[3], offset_length[3];
-                uint64_t dims[3];
-
-                int *data      = (int *)malloc(sizeof(int) * BUF_LEN);
-                int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-                dims[0]        = BUF_LEN / 16;
-                dims[1]        = 4;
-                dims[2]        = 4;
-
-                #ifdef ENABLE_MPI
-                MPI_Init(&argc, &argv);
-                MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-                MPI_Comm_size(MPI_COMM_WORLD, &size);
-                #endif
-
-                pdc = PDCinit("pdc");
-
-                cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-                sprintf(cont_name, "c%d", rank);
-                cont = PDCcont_create(cont_name, cont_prop);
-
-                obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-                PDCprop_set_obj_type(obj_prop, PDC_INT);
-                PDCprop_set_obj_dims(obj_prop, 3, dims);
-                PDCprop_set_obj_user_id(obj_prop, getuid());
-                PDCprop_set_obj_time_step(obj_prop, 0);
-                PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
-                PDCprop_set_obj_tags(obj_prop, "tag0=1");
-
-                sprintf(obj_name1, "o1_%d", rank);
-                obj1 = PDCobj_create(cont, obj_name1, obj_prop);
-                sprintf(obj_name2, "o2_%d", rank);
-                obj2 = PDCobj_create(cont, obj_name2, obj_prop);
-
-                offset[0]        = 0;
-                offset_length[0] = BUF_LEN;
-                reg              = PDCregion_create(1, offset, offset_length);
-
-                offset[0]        = 0;
-                offset[1]        = 0;
-                offset[2]        = 0;
-                offset_length[0] = BUF_LEN / 16;
-                offset_length[1] = 4;
-                offset_length[2] = 4;
-                reg_global       = PDCregion_create(3, offset, offset_length);
-
-                for (i = 0; i < BUF_LEN; ++i)
-                        data[i] = i;
-
-                transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
-                PDCregion_transfer_start(transfer_request);
-                PDCregion_transfer_wait(transfer_request);
-                PDCregion_transfer_close(transfer_request);
-
-                PDCregion_close(reg);
-                PDCregion_close(reg_global);
-
-                offset[0]        = 0;
-                offset_length[0] = BUF_LEN;
-                reg              = PDCregion_create(1, offset, offset_length);
-
-                offset[0]        = 0;
-                offset[1]        = 0;
-                offset[2]        = 0;
-                offset_length[0] = BUF_LEN / 16;
-                offset_length[1] = 4;
-                offset_length[2] = 4;
-                reg_global       = PDCregion_create(3, offset, offset_length);
-
-                transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
-                PDCregion_transfer_start(transfer_request);
-                PDCregion_transfer_wait(transfer_request);
-                PDCregion_transfer_close(transfer_request);
-
-                for (i = 0; i < BUF_LEN; ++i) {
-                        if (data_read[i] != i) {
-                        ret_value = 1;
-                        break;
-                        }
-                }
-
-                PDCregion_close(reg);
-                PDCregion_close(reg_global);
-
-                PDCobj_close(obj1);
-                PDCobj_close(obj2);
-                PDCcont_close(cont);
-                PDCprop_close(obj_prop);
-                PDCprop_close(cont_prop);
-
-                free(data);
-                free(data_read);
-
-                PDCclose(pdc);
-
-                #ifdef ENABLE_MPI
-                MPI_Finalize();
-                #endif
-
-                return ret_value;
-        }
-
-
 .. _2D-batch-region-transfer:
 
 2D Batch Region Transfer Example
@@ -503,69 +368,6 @@ Full Examples
 
                         mem_regions[i] = PDCregion_create(2, (uint64_t[]){0, 0}, (uint64_t[]){10, 10});
                         obj_regions[i] = PDCregion_create(2, offsets[i], (uint64_t[]){10, 10});
-                        transfers[i] = PDCregion_transfer_create(buffers[i], PDC_WRITE, obj_id, obj_regions[i], mem_regions[i]);
-                }
-
-                // Start and wait all transfers
-                PDCregion_transfer_start_all(4, transfers);
-                PDCregion_transfer_wait_all(4, transfers);
-
-                // Cleanup
-                for (int i = 0; i < 4; i++) {
-                        PDCregion_close(mem_regions[i]);
-                        PDCregion_close(obj_regions[i]);
-                        PDCregion_transfer_close(transfers[i]);
-                        free(buffers[i]);
-                }
-
-                PDCobj_close(obj_id);
-                PDCprop_close(prop);
-                PDCclose(pdc_id);
-
-                return 0;
-        }
-
-.. _3D-batch-region-transfer:
-
-3D Batch Region Transfer Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: C
-
-        #include <stdio.h>
-        #include <stdlib.h>
-        #include <string.h>
-        #include "pdc.h"
-
-        int main() {
-                // Initialize PDC
-                pdcid_t pdc_id = PDCinit("pdc");
-                pdcid_t prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
-
-                // Set object dimensions
-                uint64_t dims[3] = {64, 64, 64};
-                PDCprop_set_obj_dims(prop, dims);
-                PDCprop_set_obj_type(prop, PDC_FLOAT);
-
-                // Create object
-                pdcid_t obj_id = PDCobj_create(pdc_id, "3d_obj", prop);
-
-                // Create memory and object regions for 4 different 8x8x8 regions
-                uint64_t offsets[4][3] = {
-                        {0, 0, 0}, {8, 8, 8}, {16, 16, 16}, {24, 24, 24}
-                };
-
-                float *buffers[4];
-                pdcid_t mem_regions[4], obj_regions[4], transfers[4];
-
-                for (int i = 0; i < 4; i++) {
-                        buffers[i] = malloc(sizeof(float) * 8 * 8 * 8);
-                        for (int j = 0; j < 512; j++) {
-                        buffers[i][j] = (float)(i * 1000 + j);
-                        }
-
-                        mem_regions[i] = PDCregion_create(3, (uint64_t[]){0, 0, 0}, (uint64_t[]){8, 8, 8});
-                        obj_regions[i] = PDCregion_create(3, offsets[i], (uint64_t[]){8, 8, 8});
                         transfers[i] = PDCregion_transfer_create(buffers[i], PDC_WRITE, obj_id, obj_regions[i], mem_regions[i]);
                 }
 
