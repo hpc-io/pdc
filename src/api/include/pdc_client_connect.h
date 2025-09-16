@@ -208,7 +208,7 @@ uint32_t PDC_get_client_data_server();
 perr_t PDC_Client_read_server_addr_from_file();
 
 /**
- * Client request of an obj id by sending object name
+ * Client request of an obj id by sending object name.
  *
  * \param obj_name [IN]         Name of the object
  * \param cont_id[IN]           Container ID (obtained from metadata server)
@@ -220,32 +220,37 @@ perr_t PDC_Client_read_server_addr_from_file();
 perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj_create_prop,
                                     pdcid_t *meta_id, uint32_t *data_server_id, uint32_t *metadata_server_id);
 
-perr_t PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim,
-                                   uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
+/**
+ * The bulk_handle pointer is set to the bulk handle created.
+ * The caller is responsible for calling HG_Bulk_free
+ */
+perr_t PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, uint32_t data_server_id,
+                                   int obj_ndim, uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
                                    uint64_t *remote_size, size_t unit, pdc_access_t access_type,
                                    pdcid_t *metadata_id);
 
 int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 
-perr_t PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id,
-                                       char *bulk_buf, hg_size_t bulk_size, uint64_t *metadata_id,
+perr_t PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
+                                       uint32_t data_server_id, char *bulk_buf, hg_size_t bulk_size,
+                                       uint64_t *metadata_id,
 #ifdef ENABLE_MPI
                                        MPI_Comm comm);
 #else
                                        int comm);
 #endif
 
-perr_t PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, int n_objs,
-                                                  uint32_t metadata_server_id, uint8_t is_write,
+perr_t PDC_Client_transfer_request_metadata_query(hg_bulk_t *bulk_handle, char *buf, uint64_t total_buf_size,
+                                                  int n_objs, uint32_t metadata_server_id, uint8_t is_write,
                                                   uint64_t *output_buf_size, uint64_t *query_id);
 
-perr_t PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, uint64_t query_id,
-                                                   uint32_t metadata_server_id);
+perr_t PDC_Client_transfer_request_metadata_query2(hg_bulk_t *bulk_handle, char *buf, uint64_t total_buf_size,
+                                                   uint64_t query_id, uint32_t metadata_server_id);
 
 perr_t PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_server_id,
                                           pdc_transfer_status_t *completed);
 
-perr_t PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id,
+perr_t PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t *transfer_request_id,
                                             uint32_t data_server_id);
 
 perr_t PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_server_id,

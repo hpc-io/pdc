@@ -47,11 +47,9 @@ PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, in
         ret_value = PDC_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_LOCAL);
 
     if (ret_value == 0)
-        PGOTO_ERROR(ret_value, "PDC_obj_create failed");
-
-    id_info = PDC_find_id(ret_value);
-    if (id_info == NULL)
-        PGOTO_ERROR(0, "PDC_find_id failed for object id: %d", ret_value);
+        PGOTO_ERROR(0, "PDC_obj_create failed");
+    if ((id_info = PDC_find_id(ret_value)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", ret_value);
 
     p = (struct _pdc_obj_info *)(id_info->obj_ptr);
 
@@ -69,21 +67,20 @@ PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id)
 {
     FUNC_ENTER(NULL);
 
-    perr_t                ret_value = FAIL;
+    perr_t                ret_value = SUCCEED;
     struct _pdc_id_info * objinfo;
     struct _pdc_obj_info *obj;
     int                   client_rank, client_size;
 
     MPI_Comm_size(MPI_COMM_WORLD, &client_size);
     if (client_size < 2)
-        PGOTO_ERROR(ret_value, "Requires at least two processes");
+        PGOTO_ERROR(FAIL, "Requires at least two processes");
 
     MPI_Comm_rank(MPI_COMM_WORLD, &client_rank);
 
     if (client_rank == 0) {
-        objinfo = PDC_find_id(obj_id);
-        if (objinfo == NULL)
-            PGOTO_ERROR(ret_value, "Cannot locate object ID");
+        if ((objinfo = PDC_find_id(obj_id)) == NULL)
+            PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_id);
         obj = (struct _pdc_obj_info *)(objinfo->obj_ptr);
         if (obj->location == PDC_OBJ_LOCAL)
             PGOTO_ERROR(FAIL, "Trying to encode local object");
@@ -110,9 +107,8 @@ PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id)
 
     MPI_Comm_rank(MPI_COMM_WORLD, &client_rank);
     if (client_rank != 0) {
-        objinfo = PDC_find_id(obj_id);
-        if (objinfo == NULL)
-            PGOTO_ERROR(ret_value, "Cannot locate object ID");
+        if ((objinfo = PDC_find_id(obj_id)) == NULL)
+            PGOTO_ERROR(ret_value, "Failed to find PDC ID: %d", obj_id);
         obj                        = (struct _pdc_obj_info *)(objinfo->obj_ptr);
         obj->obj_info_pub->meta_id = meta_id;
     }

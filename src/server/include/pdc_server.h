@@ -71,7 +71,6 @@ extern int      use_sqlite3_g;
 /*****************************/
 /* Library-private Variables */
 /*****************************/
-hg_thread_mutex_t hash_table_new_mutex_g;
 hg_thread_mutex_t pdc_client_addr_mutex_g;
 hg_thread_mutex_t pdc_metadata_hash_table_mutex_g;
 hg_thread_mutex_t pdc_container_hash_table_mutex_g;

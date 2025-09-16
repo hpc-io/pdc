@@ -1626,13 +1626,11 @@ PDC_Client_finalize()
         LOG_INFO("T_memcpy: %.2f\n", memcpy_time_g);
 #endif
 
-    hg_ret = HG_Context_destroy(send_context_g);
-    if (hg_ret != HG_SUCCESS)
+    if (HG_Context_destroy(send_context_g) != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Error with HG_Context_destroy");
 
-    hg_ret = HG_Finalize(send_class_g);
-    if (hg_ret != HG_SUCCESS)
-        LOG_WARNING("Error with HG_Finalize\n");
+    if (HG_Finalize(send_class_g) != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Error with HG_Finalize");
 
 done:
     FUNC_LEAVE(ret_value);
@@ -2424,8 +2422,17 @@ PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc
     hg_atomic_set32(&atomic_work_todo_g, 1);
     PDC_Client_check_response(&send_context_g);
     *out = lookup_args.data;
-    LOG_DEBUG("rank = %d, PDC_Client_query_metadata_name_timestep = %u\n", pdc_client_mpi_rank_g,
-              out[0]->data_server_id);
+
+    /**
+     * Not necessarily an error. If the obj does not exist
+     * then this will be NULL. Still need to return as FAIL
+     * otherwise calling code will expect *out to be non-NULL.
+     */
+    if (*out == NULL) {
+        LOG_INFO("Object metadata does not exist\n");
+        PGOTO_DONE(FAIL);
+    }
+
 done:
     HG_Destroy(metadata_query_handle);
 
@@ -2974,8 +2981,9 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t data_server_id, char *bulk_buf,
-                                hg_size_t bulk_size, uint64_t *metadata_id,
+PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
+                                uint32_t data_server_id, char *bulk_buf, hg_size_t bulk_size,
+                                uint64_t *metadata_id,
 #ifdef ENABLE_MPI
                                 MPI_Comm comm)
 #else
@@ -3015,8 +3023,9 @@ PDC_Client_transfer_request_all(int n_objs, pdc_access_t access_type, uint32_t d
                        transfer_request_all_register_id_g, &client_send_transfer_request_all_handle);
 
     // Create bulk handles
-    hg_ret = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, &bulk_size, HG_BULK_READWRITE,
+    hg_ret       = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, &bulk_size, HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
+    *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
@@ -3076,8 +3085,8 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, uint64_t query_id,
-                                            uint32_t metadata_server_id)
+PDC_Client_transfer_request_metadata_query2(hg_bulk_t *bulk_handle, char *buf, uint64_t total_buf_size,
+                                            uint64_t query_id, uint32_t metadata_server_id)
 {
     FUNC_ENTER(NULL);
 
@@ -3110,6 +3119,7 @@ PDC_Client_transfer_request_metadata_query2(char *buf, uint64_t total_buf_size, 
     // For sending metadata
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&(in.total_buf_size), HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
+    *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
@@ -3137,8 +3147,8 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, int n_objs,
-                                           uint32_t metadata_server_id, uint8_t is_write,
+PDC_Client_transfer_request_metadata_query(hg_bulk_t *bulk_handle, char *buf, uint64_t total_buf_size,
+                                           int n_objs, uint32_t metadata_server_id, uint8_t is_write,
                                            uint64_t *output_buf_size, uint64_t *query_id)
 {
     FUNC_ENTER(NULL);
@@ -3174,6 +3184,7 @@ PDC_Client_transfer_request_metadata_query(char *buf, uint64_t total_buf_size, i
     // For sending metadata
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&(in.total_buf_size), HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
+    *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
@@ -3203,7 +3214,8 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, uint32_t data_server_id)
+PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t *transfer_request_id,
+                                     uint32_t data_server_id)
 {
     FUNC_ENTER(NULL);
 
@@ -3238,6 +3250,7 @@ PDC_Client_transfer_request_wait_all(int n_objs, pdcid_t *transfer_request_id, u
     // For sending metadata
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&transfer_request_id, (hg_size_t *)&(in.total_buf_size),
                             HG_BULK_READWRITE, &(in.local_bulk_handle));
+    *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
@@ -3269,8 +3282,8 @@ done:
 }
 
 perr_t
-PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, int obj_ndim,
-                            uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
+PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, uint32_t data_server_id,
+                            int obj_ndim, uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
                             uint64_t *remote_size, size_t unit, pdc_access_t access_type,
                             pdcid_t *metadata_id)
 {
@@ -3328,6 +3341,7 @@ PDC_Client_transfer_request(void *buf, pdcid_t obj_id, uint32_t data_server_id, 
     // Create bulk handle
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&buf, (hg_size_t *)&total_data_size, HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
+    *bulk_handle = in.local_bulk_handle;
 
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
@@ -4597,9 +4611,8 @@ PDC_Client_write_id(pdcid_t local_obj_id, struct pdc_region_info *region, void *
     pdc_metadata_t *      meta;
     perr_t                ret_value = SUCCEED;
 
-    info = PDC_find_id(local_obj_id);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "obj_id %" PRIu64 " invalid", local_obj_id);
+    if ((info = PDC_find_id(local_obj_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_obj_id);
 
     object = (struct _pdc_obj_info *)(info->obj_ptr);
     meta   = object->metadata;
@@ -4820,15 +4833,20 @@ PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
 
     obj_ids = (uint64_t *)PDC_malloc(sizeof(uint64_t) * nobj);
     for (i = 0; i < nobj; i++) {
-        id_info    = PDC_find_id(local_obj_ids[i]);
+        if ((id_info = PDC_find_id(local_obj_ids[i])) == NULL) {
+            LOG_ERROR("Failed to find PDC ID: %d\n", local_obj_ids[i]);
+            continue;
+        }
         obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
     }
 
-    id_info      = PDC_find_id(local_cont_id);
+    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_cont_id);
     cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
 
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, ADD_OBJ);
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -4846,15 +4864,20 @@ PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
 
     obj_ids = (uint64_t *)PDC_malloc(sizeof(uint64_t) * nobj);
     for (i = 0; i < nobj; i++) {
-        id_info    = PDC_find_id(local_obj_ids[i]);
+        if ((id_info = PDC_find_id(local_obj_ids[i])) == NULL) {
+            LOG_ERROR("Failed to find PDC ID: %d\n", local_obj_ids[i]);
+            continue;
+        }
         obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
     }
 
-    id_info      = PDC_find_id(local_cont_id);
+    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_cont_id);
     cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
 
     ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, DEL_OBJ);
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -4873,9 +4896,8 @@ PDC_Client_add_tags_to_container(pdcid_t cont_id, char *tags)
     uint64_t               cont_meta_id;
     cont_add_tags_rpc_in_t add_tag_rpc_in;
 
-    info = PDC_find_id(cont_id);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "cont_id %" PRIu64 " invalid", cont_id);
+    if ((info = PDC_find_id(cont_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", cont_id);
 
     object       = (struct _pdc_cont_info *)(info->obj_ptr);
     cont_meta_id = object->cont_info_pub->meta_id;
@@ -6937,8 +6959,9 @@ PDCobj_put_data(const char *obj_name, void *data, uint64_t size, pdcid_t cont_id
     struct _pdc_id_info *  id_info = NULL;
     pdcid_t                transfer_request;
 
-    id_info = PDC_find_id(cont_id);
-    info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
+    if ((id_info = PDC_find_id(cont_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", cont_id);
+    info = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, info->cont_pt->pdc->local_id);
     PDCprop_set_obj_type(obj_prop, PDC_CHAR);

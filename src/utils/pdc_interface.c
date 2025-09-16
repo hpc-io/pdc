@@ -156,8 +156,8 @@ PDC_dec_ref(pdcid_t id)
     struct PDC_id_type * type_ptr;
 
     /* General lookup of the ID */
-    if (NULL == (id_ptr = PDC_find_id(id)))
-        PGOTO_ERROR(FAIL, "Cannot locate ID");
+    if ((id_ptr = PDC_find_id(id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", id);
 
     ret_value = hg_atomic_decr32(&(id_ptr->count));
     if (ret_value == 0) {
@@ -217,8 +217,8 @@ PDC_inc_ref(pdcid_t id)
     struct _pdc_id_info *id_ptr;
 
     /* General lookup of the ID */
-    if (NULL == (id_ptr = PDC_find_id(id)))
-        PGOTO_ERROR(0, "Cannot locate ID");
+    if ((id_ptr = PDC_find_id(id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", id);
 
     /* Set return value */
     ret_value = hg_atomic_incr32(&(id_ptr->count));

@@ -266,7 +266,7 @@ main(int argc, char **argv)
         t0 = MPI_Wtime();
         PDC_get_time_str(cur_time);
         if (rank == 0)
-            LOG_ERROR("[%s] Transfer create time: %.5e\n", cur_time, t0 - t1);
+            LOG_INFO("[%s] Transfer create time: %.5e\n", cur_time, t0 - t1);
 #endif
 
 #ifdef ENABLE_MPI

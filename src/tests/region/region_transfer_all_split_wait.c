@@ -70,10 +70,6 @@ main(int argc, char **argv)
 
     dims[0] = BUF_LEN;
 
-    // create a pdc
-    pdc = PDCinit("pdc");
-    LOG_INFO("create a new pdc\n");
-
     // create a container property
     TASSERT((pdc = PDCinit("pdc")) != 0, "Call to PDCinit succeeded", "Call to PDCinit failed");
     // create a container property

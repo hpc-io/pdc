@@ -22,8 +22,8 @@ n_client="$5"
 test_args="$6 $7 $8"
 # if [ -x $test_exe ]; then echo "testing: $test_exe"; else echo "test: $test_exe not found or not and executable" && exit -2; fi
 # START the server (in the background)
-echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server.exe &"
-$mpi_cmd -n $n_servers $extra_cmd $PDC_DIR/bin/./pdc_server.exe &
+echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server &"
+$mpi_cmd -n $n_servers $extra_cmd $PDC_DIR/bin/./pdc_server &
 # WAIT a bit...
 sleep 1
 # RUN the actual test(s)

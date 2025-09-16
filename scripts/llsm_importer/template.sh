@@ -59,7 +59,7 @@ mkdir -p $PDC_TMPDIR
 
 EXECPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/install/pdc/share/test/bin
 TOOLPATH=/global/cfs/cdirs/m2621/wzhang5/perlmutter/source/pdc/tools/build
-SERVER=$EXECPATH/pdc_server.exe
+SERVER=$EXECPATH/pdc_server
 CLIENT=$TOOLPATH/llsm_importer
 CLOSE=$EXECPATH/close_server
 

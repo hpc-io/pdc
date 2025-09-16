@@ -1,5 +1,5 @@
 /global/cscratch1/sd/qkt561/VPIC
-srun -N 4 -n 4 -c 64 --cpu_bind=cores --gres=craynetwork:1 --mem=21600 --overlap ./pdc_server.exe
+srun -N 4 -n 4 -c 64 --cpu_bind=cores --gres=craynetwork:1 --mem=21600 --overlap ./pdc_server
 
 ==PDC_SERVER[0]: using [./pdc_tmp/] as tmp dir, 1 OSTs, 1 OSTs per data file, 0% to BB
 ==PDC_SERVER[0]: using ofi+tcp
@@ -35,7 +35,7 @@ srun: Step created for job 58094687
 ==PDC_SERVER[0]: Checkpoint file [./pdc_tmp/metadata_checkpoint.0]
 ==PDC_SERVER: checkpointed 80 objects, with 0 regions 
 total close time = 1.325264
-srun -N 4 -n 4 -c 64 --cpu_bind=cores --gres=craynetwork:1 --mem=21600 --overlap ./pdc_server.exe
+srun -N 4 -n 4 -c 64 --cpu_bind=cores --gres=craynetwork:1 --mem=21600 --overlap ./pdc_server
 srun -N 4 -n 128 -c 2 --cpu_bind=cores --gres=craynetwork:1 --mem=51200 --overlap ./vpicio_batch 10 10 524288 2 0 0
 
 ==PDC_SERVER[0]: using [./pdc_tmp/] as tmp dir, 1 OSTs, 1 OSTs per data file, 0% to BB

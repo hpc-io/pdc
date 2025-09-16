@@ -92,10 +92,10 @@ else()
     target_link_libraries(pdc_server_lib ${MERCURY_LIBRARY} ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES})
 endif()
 
-add_executable(pdc_server.exe
+add_executable(pdc_server
                pdc_server_main.c
 )
-target_link_libraries(pdc_server.exe pdc_server_lib)
+target_link_libraries(pdc_server pdc_server_lib)
 
 
 add_executable(pdc_server_metadata_index_test
@@ -107,7 +107,7 @@ target_link_libraries(pdc_server_metadata_index_test pdc_server_lib)
 if(NOT ${PDC_INSTALL_BIN_DIR} MATCHES ${PROJECT_BINARY_DIR}/bin)
 install(
   TARGETS
-    pdc_server.exe
+    pdc_server
     pdc_server_lib
   LIBRARY DESTINATION ${PDC_INSTALL_LIB_DIR}
   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}

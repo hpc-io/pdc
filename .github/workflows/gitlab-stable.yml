@@ -22,7 +22,7 @@ jobs:
     
       - name: Update branch
         run: |
-          git fetch stable
+          git fetch origin stable
           git remote add gitlab https://${{ secrets.GITLAB_TOKEN_NAME }}:${{ secrets.GITLAB_TOKEN }}@${{ secrets.GITLAB_URL }}
           git checkout stable
           git push -f gitlab -u stable

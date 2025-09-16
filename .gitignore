@@ -11,6 +11,9 @@ src/install
 # ignore vscode files
 .vscode
 
+# ignore intellij files
+.idea
+
 # ignore macos files
 .DS_Store
 

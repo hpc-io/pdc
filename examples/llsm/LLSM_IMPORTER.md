@@ -58,7 +58,7 @@ cd $WORK_SPACE/source/pdc/scripts/llsm_importer
 
 Modify the template script `template.sh`. 
 
-Change `EXECPATH` to where your `pdc_server.exe` is installed
+Change `EXECPATH` to where your `pdc_server` is installed
 Change `TOOLPATH` to where your `llsm_importer` artifact is.
 
 Change `LLSM_DATA_PATH` to where your sample dataset is. For exmaple, 

@@ -637,7 +637,7 @@ install(
 
 #install(
 #  FILES
-#    ${PDC_BINARY_DIR}/bin/pdc_server.exe
+#    ${PDC_BINARY_DIR}/bin/pdc_server
 #    ${PDC_BINARY_DIR}/bin/close_server
 #  DESTINATION
 #    ${CMAKE_INSTALL_PREFIX}/bin

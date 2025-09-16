@@ -1,0 +1,27 @@
+name: Ubuntu (multithread)
+
+on:
+  pull_request:
+    branches: [ stable, develop ]
+
+  push:
+    branches: [ stable, develop ]
+
+  workflow_dispatch:
+
+jobs:
+  PDC:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Dependencies
+        run: .github/workflows/dependencies-linux.sh
+
+      - name: Build PDC
+        run: |
+          mkdir build && cd build
+          cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DPDC_ENABLE_PROFILING=ON -DPDC_ENABLE_MULTITHREAD=ON -DCMAKE_C_COMPILER=mpicc -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          make -j2
