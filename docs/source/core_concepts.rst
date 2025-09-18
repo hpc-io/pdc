@@ -86,7 +86,7 @@ container-related functions.
 - **Lifetime**  
   Containers can be created with a specified lifetime, such as *persistent* or *transient*. 
   Persistent containers remain accessible across multiple sessions, whereas transient containers 
-  exist only for the duration of a program’s execution.
+  exist only for the duration of a program's execution.
 
 - **Creation and Opening**  
   Containers can be created and opened either individually or collectively (across multiple ranks), 

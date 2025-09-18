@@ -33,10 +33,6 @@ PDC offers the following methods for installing core dependencies:
 1. :ref:`Spack <link_spack>`
 2. :ref:`PDC Source <pdc-source>`
 
-.. note::
-
-    To view an exhaustive list of compile-time options please see :ref:`compile_time_options`.
-
 PDC offers the following installation targets:
 
 1. :ref:`C API <c-api>`
@@ -48,12 +44,12 @@ PDC offers the following installation targets:
    :align: center
    :class: bordered-image
 
-   Installation workflow to install the different client targets offered by PDC.
+   Installation workflow to install the client targets offered by PDC.
 
 .. note::
 
     All installation targets require the PDC core dependencies to be installed
-    either via spack or built directly from the source code.
+    either via spack or directly from the compiled source code.
 
 .. _link_spack:
 
@@ -78,8 +74,7 @@ PDC and its dependencies can be installed with spack:
    spack env activate pdc-env
 
    # Add PDC to the environment with tests enabled
-   spack add pdc
-   HG_HOST=eth0 spack install -test=root --verbose pdc ^libfabric fabrics=tcp,rxm
+   HG_HOST=eth0 spack install --add --test=root --verbose pdc ^libfabric fabrics=tcp,rxm
 
    # Load PDC to verify the installation
    spack load pdc
@@ -87,13 +82,17 @@ PDC and its dependencies can be installed with spack:
 
 .. _pdc-source:
 
+.. note::
+
+    To view an exhaustive list of compile-time options please see :ref:`compile_time_options`.
+
 PDC Source
 ~~~~~~~~~~
 
 We recommend using GCC version 7 or later. Intel and Cray compilers also work.
 
 When building PDC from source, either MPICH or OpenMPI can be used as the MPI library, if your system
-doesn't have one installed, follow `MPICH Installers’ Guide <https://www.mpich.org/documentation/guides>`_ 
+doesn't have one installed, follow `MPICH Installers Guide <https://www.mpich.org/documentation/guides>`_ 
 or `Installing Open MPI <https://docs.open-mpi.org/en/v5.0.x/installing-open-mpi/quickstart.html>`_
 
 We provide detailed instructions for installing libfabric, Mercury, and the PDC library below.
@@ -332,7 +331,7 @@ The following table lists all available compile-time options for PDC, along with
      - Use compiler attribute for unused variables.
      - 🟢
    * - PDC_SERVER_CACHE
-     - OFF
+     - ON
      - Enable server caching.
      - 🟢
    * - PDC_TIMING
@@ -372,8 +371,8 @@ Legend:
 Test Your PDC Source Installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-PDC's ``ctest`` contains both sequential and parallel (MPI) tests, and can be run 
-with the following in the ``build`` directory.
+PDC has both sequential and parallel (MPI) tests which can be run 
+with using the following command in the ``build`` directory.
 
 .. code-block:: Bash
 
@@ -543,13 +542,13 @@ The following command shows how to close a PDC server:
 
    close_server
 
-If multiple PDC server(s) were launched using ``mpirun`` they can be closed with the following command:
+If multiple PDC servers were launched using ``mpirun`` they can be closed with the following command:
 
 .. code-block:: bash 
 
    mpirun -np 4 close_server
 
-If there is prexisting data that needs to be loaded then the ``pdc_server``
+If there is pre-existing data that needs to be loaded, then ``pdc_server``
 must be launched with the ``restart`` parameter as shown below:
 
 .. code-block:: bash 

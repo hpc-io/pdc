@@ -131,7 +131,7 @@ When the object and its property are no longer needed, they should be closed to 
 
 .. _region-lifecycle:
 
-Regions define logical subranges within a PDC object and are used to specify what part of the object’s data will be transferred between memory and storage.
+Regions define logical subranges within a PDC object and are used to specify what part of the object's data will be transferred between memory and storage.
 
 Transfers can be performed in three main modes:
 
@@ -345,7 +345,7 @@ Complete Examples
                 pdcid_t prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
 
                 // Set object dimensions
-                uint64_t dims[2] = {100, 100};
+                uint64_t dims[2] = {40, 10};
                 PDCprop_set_obj_dims(prop, dims);
                 PDCprop_set_obj_type(prop, PDC_INT);
 
@@ -354,7 +354,7 @@ Complete Examples
 
                 // Create memory and object regions for 4 different 10x10 regions
                 uint64_t offsets[4][2] = {
-                        {0, 0}, {10, 10}, {20, 20}, {30, 30}
+                        {0, 0}, {10, 0}, {20, 0}, {30, 0}
                 };
 
                 int *buffers[4];
@@ -363,7 +363,7 @@ Complete Examples
                 for (int i = 0; i < 4; i++) {
                         buffers[i] = malloc(sizeof(int) * 10 * 10);
                         for (int j = 0; j < 100; j++) {
-                        buffers[i][j] = i * 1000 + j;
+                            buffers[i][j] = i * 1000 + j;
                         }
 
                         mem_regions[i] = PDCregion_create(2, (uint64_t[]){0, 0}, (uint64_t[]){10, 10});
