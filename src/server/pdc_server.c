@@ -128,7 +128,6 @@ hg_atomic_int32_t close_server_g;
 char              pdc_server_tmp_dir_g[TMP_DIR_STRING_LEN];
 int               is_restart_g                 = 0;
 int               pdc_server_rank_g            = 0;
-int               pdc_server_size_g            = 1;
 int               write_to_bb_percentage_g     = 0;
 int               pdc_nost_per_file_g          = 0;
 int               nclient_per_node             = 0;
@@ -147,7 +146,6 @@ int               gen_fastbit_idx_g            = 0;
 int               use_fastbit_idx_g            = 0;
 int               use_rocksdb_g                = 0;
 int               use_sqlite3_g                = 0;
-int               use_pht_g                    = 0;
 char *            gBinningOption               = NULL;
 
 double server_write_time_g                  = 0.0;
@@ -923,6 +921,8 @@ drc_access_again:
         LOG_INFO("Read cache enabled\n");
 #endif
 
+    // Initialize PHT for metadata
+    PDC_Server_metadata_pht_init(pdc_server_size_g, pdc_server_rank_g);
     // Initialize IDIOMS
     PDC_Server_metadata_index_init(pdc_server_size_g, pdc_server_rank_g);
 
@@ -1930,6 +1930,8 @@ PDC_Server_mercury_register()
     PDC_gen_cont_id_register(hg_class_g);
     PDC_metadata_add_kvtag_register(hg_class_g);
     PDC_metadata_check_prefix_register(hg_class_g);
+    PDC_metadata_create_bucket_register(hg_class_g);
+    PDC_metadata_key_add_register(hg_class_g);
     PDC_metadata_get_kvtag_register(hg_class_g);
     PDC_metadata_del_kvtag_register(hg_class_g);
     PDC_send_rpc_register(hg_class_g);
@@ -2121,6 +2123,71 @@ PDC_Server_get_env()
     }
 
     FUNC_LEAVE_VOID();
+}
+
+perr_t
+PDC_Server2Server_create_bucket(char *prefix, uint32_t *server_id) {
+    FUNC_ENTER(NULL);
+
+    perr_t                         ret_value = SUCCEED;
+    hg_return_t                    hg_ret    = 0;
+    hg_handle_t                    metadata_create_bucket_handle;
+    metadata_create_bucket_in_t    in;
+    metadata_create_bucket_out_t   out;
+
+    uint64_t hash_value = prefix_hash(prefix);
+    *server_id = PDC_get_server_using_pht(hash_value);
+
+    in.prefix = strdup(prefix);
+    if (*server_id == pdc_server_rank_g){
+        ret_value = PDC_Server_create_bucket(&in, &out);
+        if (ret_value != SUCCEED) PGOTO_ERROR(FAIL, "Failed to get local storage location");
+    } else {
+        if (PDC_Server_lookup_server_id(*server_id) != SUCCEED)
+            PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+        
+        hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[*(uint32_t *)server_id].addr, metadata_create_bucket_register_id_g,
+              &metadata_create_bucket_handle);
+        
+        hg_ret = HG_Forward(metadata_create_bucket_handle, metadata_create_bucket_server_rpc_cb, NULL, &in);
+        
+        if (hg_ret != HG_SUCCESS){
+            HG_Destroy(metadata_create_bucket_handle);
+            PGOTO_ERROR(FAIL, "Could not start HG_Forward");
+        }
+        
+        if (hg_ret != SUCCEED)
+            LOG_ERROR("Add create_bucket server2server NOT successful");
+        
+        HG_Destroy(metadata_create_bucket_handle);
+    }
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+hg_return_t
+metadata_create_bucket_server_rpc_cb(const struct hg_cb_info *callback_info)
+{
+
+    FUNC_ENTER(NULL);
+    hg_return_t         ret_value;
+    hg_handle_t         handle             = callback_info->info.forward.handle;
+    metadata_create_bucket_out_t *result   = (metadata_create_bucket_out_t *)callback_info->arg;
+    /* Get output from server*/
+
+    metadata_create_bucket_out_t output;
+    ret_value = HG_Get_output(handle, &output);
+    result = &output;
+
+    if (ret_value != HG_SUCCESS) {
+        PGOTO_ERROR(HG_OTHER_ERROR, "Error with HG_Get_output");
+    }
+    printf("metadata_create_bucket_rpc_cb: output.ret = %d\n", output.ret);
+done:
+
+    // hg_atomic_decr32(&atomic_work_todo_g);
+    HG_Free_output(handle, &output);
+    FUNC_LEAVE(ret_value);
 }
 
 int

@@ -60,6 +60,7 @@ endif()
 add_library(pdc_server_lib
                pdc_server.c
                pdc_server_metadata_index.c
+               pdc_server_metadata_pht.c
                pdc_server_metadata.c
                pdc_client_server_common.c
                dablooms/pdc_dablooms.c

@@ -41,6 +41,7 @@
 #include "mpi.h"
 #endif
 
+#include "pdc_pht.h"
 #include "pdc_utlist.h"
 #include "pdc_hash_table.h"
 #include "pdc_dablooms.h"
@@ -449,7 +450,6 @@ PDC_Server_init_hash_table()
                                        PDC_Server_container_hash_value_free);
 
     is_hash_table_init_g = 1;
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -2753,7 +2753,7 @@ PDC_Server_add_kvtag_someta(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
 perr_t
 PDC_Server_add_metadata_key(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
 {
-    
+    return SUCCEED;
 }
 perr_t
 PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
@@ -2825,66 +2825,6 @@ done:
     if (unlocked == 0)
         hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
 #endif
-    FUNC_LEAVE(ret_value);
-}
-
-perr_t
-PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_out_t *out)
-{
-    perr_t ret_value = SUCCEED;
-#ifdef ENABLE_MULTITHREAD
-    int unlocked;
-#endif
-    FUNC_ENTER(NULL);
-
-#ifdef ENABLE_TIMING
-    struct timeval pdc_timer_start;
-    struct timeval pdc_timer_end;
-    double         ht_total_sec;
-    gettimeofday(&pdc_timer_start, 0);
-#endif
-
-    out->ret = -1;
-
-#ifdef ENABLE_MULTITHREAD
-    // Obtain lock for hash table
-    unlocked = 0;
-    hg_thread_mutex_lock(&pdc_metadata_hash_table_mutex_g);
-#endif
-
-    out->ret = 0;
-
-done:
-#ifdef ENABLE_MULTITHREAD
-    // ^ Release hash table lock
-    hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-    unlocked = 1;
-#endif
-
-#ifdef ENABLE_TIMING
-    // Timing
-    gettimeofday(&pdc_timer_end, 0);
-    ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
-#endif
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_lock(&pdc_time_mutex_g);
-#endif
-
-#ifdef ENABLE_TIMING
-    server_update_time_g += ht_total_sec;
-#endif
-
-#ifdef ENABLE_MULTITHREAD
-    hg_thread_mutex_unlock(&pdc_time_mutex_g);
-#endif
-
-#ifdef ENABLE_MULTITHREAD
-    if (unlocked == 0)
-        hg_thread_mutex_unlock(&pdc_metadata_hash_table_mutex_g);
-#endif
-    fflush(stdout);
-
     FUNC_LEAVE(ret_value);
 }
 
