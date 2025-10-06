@@ -1,30 +1,27 @@
 #include "pdc_dllist.h"
-#include "pdc_set.h"
 #include <stdlib.h>
 
-struct _DoublyLinkedListItem{
+// Now define the actual structures
+struct DoublyLinkedListItem {
     void * key;
     void * value;
-    struct _DoublyLinkedListItem *prev;
-    struct _DoublyLinkedListItem *next;
+    struct DoublyLinkedListItem *prev;  // Use 'struct' keyword
+    struct DoublyLinkedListItem *next;  // Use 'struct' keyword
 };
 
-struct _DoublyLinkedList {
+struct DoublyLinkedList {
     DoublyLinkedListItem * head;
     DoublyLinkedListHashFunc hash_func;
     DoublyLinkedListEqualFunc equal_func;
-    DoublyLinkedListKeyFreeFunc key_free_func;
     unsigned int count;
 };
-
-DoublyLinkedList *dllist_init(DoublyLinkedListHashFunc hash_func, DoublyLinkedListEqualFunc equal_func, DoublyLinkedListKeyFreeFunc key_free_func){
+DoublyLinkedList *dllist_init(DoublyLinkedListHashFunc hash_func, DoublyLinkedListEqualFunc equal_func){
     DoublyLinkedList *list = malloc(sizeof(DoublyLinkedList));
     if (!list) {
         return NULL; // Memory allocation failed
     }
     list->hash_func = hash_func;
     list->equal_func = equal_func;
-    list->key_free_func = key_free_func;
     list->head = NULL;
     list->count = 0;
     return list;
@@ -68,6 +65,8 @@ int dllist_destroy(void *ptr){
     DoublyLinkedListItem *tmp = NULL;
     DL_FOREACH_SAFE(list->head, elt, tmp) {
         DL_DELETE(list->head, elt);
+        free(elt->value);
+        free(elt->key);
         free(elt);
     }
 }

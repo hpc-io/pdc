@@ -54,38 +54,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *      DL_APPEND(list, item);
  * }
  **/
+
+// Function pointer typedefs
 typedef void* DoublyLinkedListKey;
 typedef void* DoublyLinkedListValue;
-typedef struct _DoublyLinkedList DoublyLinkedList;
-typedef struct _DoublyLinkedListItem DoublyLinkedListItem;
-
-/**
- * Hash function used to generate hash values for keys used in a hash
- * table.
- *
- * @param data  The data to generate a hash value for.
- * @return       The hash value.
- */
 
 typedef unsigned int (*DoublyLinkedListHashFunc)(DoublyLinkedListKey data);
-
-/**
- * Function used to compare two keys for equality.
- *
- * @return   Non-zero if the two keys are equal, zero if the keys are
- *           not equal.
- */
-
 typedef int (*DoublyLinkedListEqualFunc)(DoublyLinkedListKey value1, DoublyLinkedListKey value2);
-
-/**
- * Type of function used to free keys when entries are removed from a
- * hash table.
- */
-
 typedef void (*DoublyLinkedListKeyFreeFunc)(DoublyLinkedListKey value);
 
-DoublyLinkedList *dllist_init(DoublyLinkedListHashFunc hash_func, DoublyLinkedListEqualFunc equal_func, DoublyLinkedListKeyFreeFunc key_free_func);
+typedef struct DoublyLinkedListItem DoublyLinkedListItem;
+typedef struct DoublyLinkedList DoublyLinkedList;
+
+
+DoublyLinkedList *dllist_init(DoublyLinkedListHashFunc hash_func, DoublyLinkedListEqualFunc equal_func);
 int dllist_insert(DoublyLinkedList *list, void *key, void *value);
 int *dllist_search_key(DoublyLinkedList *list, void *key);
 int *dllist_search_range(DoublyLinkedList *list, void *start_key, bool include_start, void *end_key, bool include_end);

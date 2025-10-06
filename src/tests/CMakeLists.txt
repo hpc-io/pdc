@@ -81,6 +81,8 @@ set(PROGRAMS
   misc/bdcats
   tags/kvtag_add_get
   tags/kvtag_query
+  pht/pht_create_bucket
+  pht/pht_add_key
   region/region_transfer_query
   region/region_transfer
   region/region_transfer_status
@@ -262,9 +264,11 @@ add_test(NAME obj_life          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME obj_buf           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_buf )
 add_test(NAME obj_tags          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
 add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get)
-add_test(NAME kvtag_query     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
+add_test(NAME kvtag_query       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
+add_test(NAME pht_create_bucket WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_create_bucket)
+add_test(NAME pht_add_key       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_add_key)
 if(PDC_ENABLE_IDIOMS)
-add_test(NAME idioms_ci_test     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
+add_test(NAME idioms_ci_test    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
 endif()
 add_test(NAME obj_info          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_info )
 add_test(NAME obj_put_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
