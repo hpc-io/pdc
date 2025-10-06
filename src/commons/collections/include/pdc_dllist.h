@@ -56,23 +56,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  **/
 
 // Function pointer typedefs
-typedef void* DoublyLinkedListKey;
-typedef void* DoublyLinkedListValue;
+typedef void *DoublyLinkedListKey;
+typedef void *DoublyLinkedListValue;
 
 typedef unsigned int (*DoublyLinkedListHashFunc)(DoublyLinkedListKey data);
 typedef int (*DoublyLinkedListEqualFunc)(DoublyLinkedListKey value1, DoublyLinkedListKey value2);
 typedef void (*DoublyLinkedListKeyFreeFunc)(DoublyLinkedListKey value);
 
 typedef struct DoublyLinkedListItem DoublyLinkedListItem;
-typedef struct DoublyLinkedList DoublyLinkedList;
-
+typedef struct DoublyLinkedList     DoublyLinkedList;
 
 DoublyLinkedList *dllist_init(DoublyLinkedListHashFunc hash_func, DoublyLinkedListEqualFunc equal_func);
-int dllist_insert(DoublyLinkedList *list, void *key, void *value);
-int *dllist_search_key(DoublyLinkedList *list, void *key);
-int *dllist_search_range(DoublyLinkedList *list, void *start_key, bool include_start, void *end_key, bool include_end);
-int dllist_destroy(void *list);
- /**
+int               dllist_insert(DoublyLinkedList *list, void *key, void *value);
+int *             dllist_search_key(DoublyLinkedList *list, void *key);
+int *dllist_search_range(DoublyLinkedList *list, void *start_key, bool include_start, void *end_key,
+                         bool include_end);
+int  dllist_destroy(void *list);
+/**
  * --------------------------------------------------
  *
  * For doubly-linked lists, the append and delete macros are O(1)
