@@ -521,18 +521,18 @@ typedef struct {
 } metadata_delete_by_id_out_t;
 
 typedef struct {
-    char* prefix;
+    char *prefix;
 } metadata_check_prefix_in_t;
 
 typedef struct {
-    int32_t ret;
-    bool found;
-    bool leaf;
+    int32_t  ret;
+    bool     found;
+    bool     leaf;
     uint32_t server_id;
 } metadata_check_prefix_out_t;
 
 typedef struct {
-    char* prefix;
+    char *prefix;
 } metadata_create_bucket_in_t;
 
 typedef struct {
@@ -540,9 +540,9 @@ typedef struct {
 } metadata_create_bucket_out_t;
 
 typedef struct {
-    char* prefix;
-    char* key;
-    void* value;
+    char *   prefix;
+    char *   key;
+    void *   value;
     uint32_t size;
 } metadata_key_add_in_t;
 
@@ -1762,11 +1762,12 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
 }
 
 static HG_INLINE hg_return_t
-hg_proc_metadata_check_prefix_in_t(hg_proc_t proc, void *data) {
+hg_proc_metadata_check_prefix_in_t(hg_proc_t proc, void *data)
+{
     FUNC_ENTER(NULL);
 
-    hg_return_t                     ret;
-    metadata_check_prefix_in_t      *struct_data = (metadata_check_prefix_in_t *)data;
+    hg_return_t                 ret;
+    metadata_check_prefix_in_t *struct_data = (metadata_check_prefix_in_t *)data;
 
     ret = hg_proc_hg_string_t(proc, &struct_data->prefix);
     if (ret != HG_SUCCESS) {
@@ -1777,11 +1778,12 @@ hg_proc_metadata_check_prefix_in_t(hg_proc_t proc, void *data) {
 }
 
 static HG_INLINE hg_return_t
-hg_proc_metadata_check_prefix_out_t(hg_proc_t proc, void *data) {
+hg_proc_metadata_check_prefix_out_t(hg_proc_t proc, void *data)
+{
     FUNC_ENTER(NULL);
 
-    hg_return_t                     ret;
-    metadata_check_prefix_out_t    *struct_data = (metadata_check_prefix_out_t *)data;
+    hg_return_t                  ret;
+    metadata_check_prefix_out_t *struct_data = (metadata_check_prefix_out_t *)data;
 
     ret = hg_proc_hg_bool_t(proc, &struct_data->found);
     if (ret != HG_SUCCESS) {
@@ -1804,11 +1806,12 @@ hg_proc_metadata_check_prefix_out_t(hg_proc_t proc, void *data) {
 }
 
 static HG_INLINE hg_return_t
-hg_proc_metadata_create_bucket_in_t(hg_proc_t proc, void *data) {
+hg_proc_metadata_create_bucket_in_t(hg_proc_t proc, void *data)
+{
     FUNC_ENTER(NULL);
 
-    hg_return_t                    ret;
-    metadata_create_bucket_in_t   *struct_data = (metadata_create_bucket_in_t *)data;
+    hg_return_t                  ret;
+    metadata_create_bucket_in_t *struct_data = (metadata_create_bucket_in_t *)data;
 
     printf("In hg_proc_metadata_create_bucket_in_t %s\n", struct_data->prefix);
     ret = hg_proc_hg_string_t(proc, &struct_data->prefix);
@@ -1820,11 +1823,12 @@ hg_proc_metadata_create_bucket_in_t(hg_proc_t proc, void *data) {
 }
 
 static HG_INLINE hg_return_t
-hg_proc_metadata_create_bucket_out_t(hg_proc_t proc, void *data) {
+hg_proc_metadata_create_bucket_out_t(hg_proc_t proc, void *data)
+{
     FUNC_ENTER(NULL);
 
-    hg_return_t                     ret;
-    metadata_create_bucket_out_t    *struct_data = (metadata_create_bucket_out_t *)data;
+    hg_return_t                   ret;
+    metadata_create_bucket_out_t *struct_data = (metadata_create_bucket_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
     if (ret != HG_SUCCESS) {
@@ -1901,23 +1905,27 @@ static HG_INLINE hg_return_t
 hg_proc_metadata_key_add_in_t(hg_proc_t proc, void *data)
 {
     FUNC_ENTER(NULL);
-    hg_return_t             ret;
-    metadata_key_add_in_t   *struct_data = (metadata_key_add_in_t *)data;
+    hg_return_t            ret;
+    metadata_key_add_in_t *struct_data = (metadata_key_add_in_t *)data;
 
     ret = hg_proc_hg_string_t(proc, &struct_data->key);
-    if (ret != HG_SUCCESS) FUNC_LEAVE(ret);
+    if (ret != HG_SUCCESS)
+        FUNC_LEAVE(ret);
     printf("In hg_proc_metadata_key_add_in_t Key:%s\n", struct_data->key);
 
     ret = hg_proc_hg_string_t(proc, &struct_data->prefix);
-    if (ret != HG_SUCCESS) FUNC_LEAVE(ret);
+    if (ret != HG_SUCCESS)
+        FUNC_LEAVE(ret);
     printf("In hg_proc_metadata_key_add_in_t Prefix:%s\n", struct_data->prefix);
-    
+
     ret = hg_proc_raw(proc, struct_data->value, struct_data->size);
-    if (ret != HG_SUCCESS) FUNC_LEAVE(ret);
+    if (ret != HG_SUCCESS)
+        FUNC_LEAVE(ret);
     printf("In hg_proc_metadata_key_add_in_t Value:%p\n", struct_data->value);
 
     ret = hg_proc_uint32_t(proc, &struct_data->size);
-    if (ret != HG_SUCCESS) FUNC_LEAVE(ret);
+    if (ret != HG_SUCCESS)
+        FUNC_LEAVE(ret);
     printf("In hg_proc_metadata_key_add_in_t Size:%d\n", struct_data->size);
 
     FUNC_LEAVE(ret);
@@ -1928,11 +1936,12 @@ hg_proc_metadata_key_add_out_t(hg_proc_t proc, void *data)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t               ret;
+    hg_return_t             ret;
     metadata_key_add_out_t *struct_data = (metadata_key_add_out_t *)data;
 
     ret = hg_proc_int32_t(proc, &struct_data->ret);
-    if (ret != HG_SUCCESS) FUNC_LEAVE(ret);
+    if (ret != HG_SUCCESS)
+        FUNC_LEAVE(ret);
 
     FUNC_LEAVE(ret);
 }
@@ -4908,7 +4917,7 @@ perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf);
  *
  * \return Binary representation of the string
  */
-char* string_to_binary(void *ptr);
+char *string_to_binary(void *ptr);
 
 /**
  * Calculate the hash value of a string
@@ -4986,5 +4995,5 @@ perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint6
                                       int is_write);
 
 uint32_t PDC_get_server_using_pht(uint64_t key_hash);
-perr_t PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_out_t *out);
+perr_t   PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_out_t *out);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

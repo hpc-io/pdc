@@ -405,7 +405,9 @@ set_num_entries(Set *set)
     FUNC_LEAVE(set->entries);
 }
 
-int set_copy(Set *target, Set* source){
+int
+set_copy(Set *target, Set *source)
+{
     SetIterator iterator;
     SetValue    value;
     set_iterate(source, &iterator);

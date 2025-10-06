@@ -46,7 +46,7 @@ main()
 
     // create a pdc
     TASSERT((pdc = PDCinit("pdc")) != 0, "Call to PDCinit succeeded", "Call to PDCinit failed");
-        // create a container property
+    // create a container property
     TASSERT((cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc)) != 0, "Call to PDCprop_create succeeded",
             "Call to PDCprop_create failed");
     // create a container
@@ -80,7 +80,8 @@ main()
     kvtag3.size  = sizeof(double);
 
     TASSERT(PDC_metadata_key_add(obj1, &kvtag1, false) >= 0,
-            "Call to PDC_metadata_key_add succeeded for obj1", "Call to PDC_metadata_key_add failed for obj1");
+            "Call to PDC_metadata_key_add succeeded for obj1",
+            "Call to PDC_metadata_key_add failed for obj1");
     // close pdc
     TASSERT(PDCclose(pdc) >= 0, "Call to PDCclose succeeded", "Call to PDCclose failed");
 

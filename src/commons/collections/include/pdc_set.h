@@ -189,8 +189,7 @@ int set_query(Set *set, SetValue data);
  * @return              Zero on success, or -1 if it was not possible to
  *                      allocate memory for the new entries.
  */
-int set_copy(Set *target, Set* source);
-
+int set_copy(Set *target, Set *source);
 
 /**
  * Retrieve the number of entries in a set

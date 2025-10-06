@@ -381,5 +381,4 @@ perr_t PDC_free_cont_hash_table();
  */
 perr_t PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out);
 
-
 #endif /* PDC_SERVER_METADATA_H */

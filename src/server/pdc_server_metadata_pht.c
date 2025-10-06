@@ -54,13 +54,14 @@
 #include "pdc_logger.h"
 #include "pdc_pht.h"
 
-
 uint32_t metadata_server_id_g  = 0;
 uint32_t metadata_num_server_g = 0;
 
 PrefixTable *metadata_pht_key_g = NULL;
 
-unsigned int pht_string_hash(void *vlocation) {
+unsigned int
+pht_string_hash(void *vlocation)
+{
     unsigned int   result = 5381;
     unsigned char *p;
 
@@ -74,10 +75,12 @@ unsigned int pht_string_hash(void *vlocation) {
     return result;
 }
 
-int pht_string_comparator(const void *key1, const void *key2){
-    char *ch1 = (char *) key1;
-    char *ch2 = (char *) key2;
-    int diff = strcmp(ch1, ch2);
+int
+pht_string_comparator(const void *key1, const void *key2)
+{
+    char *ch1  = (char *)key1;
+    char *ch2  = (char *)key2;
+    int   diff = strcmp(ch1, ch2);
     return diff < 0 ? -1 : diff > 0 ? 1 : 0;
 }
 
@@ -89,9 +92,9 @@ PDC_Server_metadata_pht_init(uint32_t num_server, uint32_t server_id)
 {
     FUNC_ENTER(NULL);
 
-    metadata_server_id_g = num_server;
-    metadata_num_server_g  = server_id;
-    metadata_pht_key_g     = prefix_table_init(PHT_BUCKET_SIZE, string_hash, string_equal);
+    metadata_server_id_g  = num_server;
+    metadata_num_server_g = server_id;
+    metadata_pht_key_g    = prefix_table_init(PHT_BUCKET_SIZE, string_hash, string_equal);
 
     FUNC_LEAVE_VOID();
 }
@@ -121,11 +124,11 @@ PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_ou
     printf("PDC_Server_check_prefix: metadata_pht_key_g = %d\n", metadata_pht_key_g->key_count);
     HashTableValue *value = hash_table_lookup(metadata_pht_key_g->map, in->prefix);
     printf("PDC_Server_check_prefix: value = %p\n", value);
-    PrefixTableBucket *bucket = (PrefixTableBucket *) value;
+    PrefixTableBucket *bucket = (PrefixTableBucket *)value;
     printf("PDC_Server_check_prefix: isLeaf = %d\n", bucket->isLeaf);
-    out->found = (bucket != NULL) ? 1 : 0;
-    out->leaf = prefix_table_bucket_is_leaf(bucket);
-    out->ret = 1;
+    out->found     = (bucket != NULL) ? 1 : 0;
+    out->leaf      = prefix_table_bucket_is_leaf(bucket);
+    out->ret       = 1;
     out->server_id = metadata_server_id_g;
 
 done:
@@ -195,7 +198,7 @@ PDC_Server_create_bucket(metadata_create_bucket_in_t *in, metadata_create_bucket
         goto done; // already exists
     }
     PrefixTableBucket *new_bucket = prefix_table_bucket_init(pht_string_hash, pht_string_comparator);
-    new_bucket->prefix = strdup(in->prefix);
+    new_bucket->prefix            = strdup(in->prefix);
     hash_table_insert(metadata_pht_key_g->map, new_bucket->prefix, new_bucket);
     printf("PDC_Server_create_bucket: new_bucket = %p\n", new_bucket);
     out->ret = 1;
@@ -233,7 +236,6 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-
 perr_t
 PDC_Server_bucket_split(metadata_create_bucket_in_t *in, metadata_create_bucket_out_t *out)
 {
@@ -267,7 +269,7 @@ PDC_Server_bucket_split(metadata_create_bucket_in_t *in, metadata_create_bucket_
         goto done; // already exists
     }
     PrefixTableBucket *new_bucket = prefix_table_bucket_init(pht_string_hash, pht_string_comparator);
-    new_bucket->prefix = strdup(in->prefix);
+    new_bucket->prefix            = strdup(in->prefix);
     hash_table_insert(metadata_pht_key_g->map, new_bucket->prefix, new_bucket);
     printf("PDC_Server_create_bucket: new_bucket = %p\n", new_bucket);
     out->ret = 1;
@@ -330,7 +332,7 @@ PDC_Server_metadata_key_add(metadata_key_add_in_t *in, metadata_key_add_out_t *o
     printf("PDC_Server_metadata_key_add: metadata_pht_key_g = %d\n", metadata_pht_key_g->key_count);
     HashTableValue *value = hash_table_lookup(metadata_pht_key_g->map, in->prefix);
     printf("PDC_Server_metadata_key_add: value = %p\n", value);
-    PrefixTableBucket *bucket = (PrefixTableBucket *) value;
+    PrefixTableBucket *bucket = (PrefixTableBucket *)value;
     if (bucket == NULL) {
         perror("bucket is NULL");
         ret_value = FAIL;
@@ -340,8 +342,10 @@ PDC_Server_metadata_key_add(metadata_key_add_in_t *in, metadata_key_add_out_t *o
     Set *prevSet = dllist_search_key(bucket->store, in->key);
     if (prevSet != NULL) {
         set_insert(prevSet, in->value);
-    } else {
-        if (bucket->store->count >= PHT_BUCKET_SIZE) pht_bucket_split(bucket);
+    }
+    else {
+        if (bucket->store->count >= PHT_BUCKET_SIZE)
+            pht_bucket_split(bucket);
         Set *newSet = set_new(metadata_pht_key_g->hash_cb, metadata_pht_key_g->equal_cb);
         set_insert(newSet, in->value);
         dllist_insert(bucket->store, strdup(in->key), newSet);
@@ -380,8 +384,10 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-int pht_bucket_split(PrefixTableBucket *bucket){
-    char *left_prefix = malloc(sizeof(char) * (strlen(bucket->prefix) + 2));
+int
+pht_bucket_split(PrefixTableBucket *bucket)
+{
+    char *left_prefix  = malloc(sizeof(char) * (strlen(bucket->prefix) + 2));
     char *right_prefix = malloc(sizeof(char) * (strlen(bucket->prefix) + 2));
     sprintf(left_prefix, "%s0", bucket->prefix);
     sprintf(right_prefix, "%s1", bucket->prefix);
@@ -389,32 +395,36 @@ int pht_bucket_split(PrefixTableBucket *bucket){
     PDC_Server2Server_create_bucket(left_prefix, &left_server_id);
     PDC_Server2Server_create_bucket(right_prefix, &right_server_id);
     bucket->isLeaf = false;
-    bucket->left = left_prefix;
-    bucket->right = right_prefix;
+    bucket->left   = left_prefix;
+    bucket->right  = right_prefix;
 
     DoublyLinkedListItem *elt = NULL;
-    DL_FOREACH(bucket->store->head, elt) {
-        char key_prefix = string_to_binary(elt->key);
-        bool is_left = strcmp(key_prefix, left_prefix) == 0;
-        bool is_right = strcmp(key_prefix, right_prefix) == 0;
-        uint32_t server_id = is_left ? left_server_id : right_server_id;
-        if (is_left || is_right){
+    DL_FOREACH(bucket->store->head, elt)
+    {
+        char     key_prefix = string_to_binary(elt->key);
+        bool     is_left    = strcmp(key_prefix, left_prefix) == 0;
+        bool     is_right   = strcmp(key_prefix, right_prefix) == 0;
+        uint32_t server_id  = is_left ? left_server_id : right_server_id;
+        if (is_left || is_right) {
             if (server_id == metadata_server_id_g) {
-                PrefixTableBucket *child_bucket = hash_table_lookup(metadata_pht_key_g->map, is_left ? left_prefix : right_prefix);
-                if (child_bucket == NULL) return -1; // error
+                PrefixTableBucket *child_bucket =
+                    hash_table_lookup(metadata_pht_key_g->map, is_left ? left_prefix : right_prefix);
+                if (child_bucket == NULL)
+                    return -1; // error
                 dllist_insert(child_bucket->store, elt->key, elt->value);
-            } else {
-                metadata_key_add_in_t add_in;
+            }
+            else {
+                metadata_key_add_in_t  add_in;
                 metadata_key_add_out_t add_out;
                 add_in.prefix = is_left ? left_prefix : right_prefix;
-                add_in.key = elt->key;
-                add_in.value = elt->value;
-                add_in.size = sizeof(Set *);
-                //PDC_Client_metadata_key_add(server_id, &add_in, &add_out);
+                add_in.key    = elt->key;
+                add_in.value  = elt->value;
+                add_in.size   = sizeof(Set *);
+                // PDC_Client_metadata_key_add(server_id, &add_in, &add_out);
             }
         }
     }
-    //dllist_destroy(bucket->store);
+    // dllist_destroy(bucket->store);
     bucket->store = NULL;
     return 0;
 }

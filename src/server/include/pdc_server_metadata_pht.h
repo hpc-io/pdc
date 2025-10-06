@@ -13,7 +13,7 @@
 
 #define PHT_BUCKET_SIZE 1024
 
-void PDC_Server_metadata_pht_init(uint32_t num_server, uint32_t server_id);
+void   PDC_Server_metadata_pht_init(uint32_t num_server, uint32_t server_id);
 perr_t PDC_Server_add_metadata();
 /**
  * Create a bucket with the given prefix

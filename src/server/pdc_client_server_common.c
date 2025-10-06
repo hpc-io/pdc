@@ -55,10 +55,10 @@
 #include "pdc_timing.h"
 #include "pdc_server_region_cache.h"
 
-int               pdc_server_size_g = 1;
-static hg_context_t *     send_context_g     = NULL;
-hg_id_t           metadata_create_bucket_register_id_g;
-static            hg_atomic_int32_t atomic_work_todo_g;
+int                      pdc_server_size_g = 1;
+static hg_context_t *    send_context_g    = NULL;
+hg_id_t                  metadata_create_bucket_register_id_g;
+static hg_atomic_int32_t atomic_work_todo_g;
 
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
@@ -229,20 +229,24 @@ PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
     FUNC_LEAVE(ret_value);
 }
 
-uint64_t prefix_hash(const char *key){
+uint64_t
+prefix_hash(const char *key)
+{
     uint64_t hash = 0;
-    uint64_t len = strlen(key);
-    int i = 1;
+    uint64_t len  = strlen(key);
+    int      i    = 1;
     while (i < len) {
-        if (*key == '\0') break;
+        if (*key == '\0')
+            break;
         if (*key == '#') {
             *key++;
             continue;
         };
         if (*key == '0') {
-            hash = (hash*193) + (i * 90);
-        } else {
-            hash = (hash*193) + (i * 270);
+            hash = (hash * 193) + (i * 90);
+        }
+        else {
+            hash = (hash * 193) + (i * 270);
         }
         *key++;
         i++;
@@ -250,17 +254,19 @@ uint64_t prefix_hash(const char *key){
     return hash;
 }
 
-char* string_to_binary(void *ptr){
-    char *str = (char *)ptr;
-    size_t len = strlen(str);
-    char *binStr = malloc(len*8 + 1);
-    for (int i = 0; i < len; i++){
+char *
+string_to_binary(void *ptr)
+{
+    char * str    = (char *)ptr;
+    size_t len    = strlen(str);
+    char * binStr = malloc(len * 8 + 1);
+    for (int i = 0; i < len; i++) {
         char c = str[i];
-        for (int j=7; j>=0; j--) {
-            binStr[(i*8) + 7 - j] = (c & (1 << j)) ? '1' : '0';
+        for (int j = 7; j >= 0; j--) {
+            binStr[(i * 8) + 7 - j] = (c & (1 << j)) ? '1' : '0';
         }
     }
-    binStr[len*8] = '\0';
+    binStr[len * 8] = '\0';
     return binStr;
 }
 
@@ -1013,21 +1019,22 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in   ATTRIBUTE(unused),
 }
 
 perr_t
-PDC_Server_check_prefix(metadata_check_prefix_in_t *in ATTRIBUTE(unused),
-                     metadata_check_prefix_out_t *out ATTRIBUTE(unused))
+PDC_Server_check_prefix(metadata_check_prefix_in_t *in   ATTRIBUTE(unused),
+                        metadata_check_prefix_out_t *out ATTRIBUTE(unused))
 {
     return SUCCEED;
 }
 
 perr_t
-PDC_Server_create_bucket(metadata_create_bucket_in_t *in ATTRIBUTE(unused),
-                         metadata_create_bucket_out_t *out ATTRIBUTE(unused)){
+PDC_Server_create_bucket(metadata_create_bucket_in_t *in   ATTRIBUTE(unused),
+                         metadata_create_bucket_out_t *out ATTRIBUTE(unused))
+{
     return SUCCEED;
 }
 
 perr_t
-PDC_Server_metadata_key_add(metadata_key_add_in_t *in ATTRIBUTE(unused),
-                     metadata_key_add_out_t *out ATTRIBUTE(unused))
+PDC_Server_metadata_key_add(metadata_key_add_in_t *in   ATTRIBUTE(unused),
+                            metadata_key_add_out_t *out ATTRIBUTE(unused))
 {
     return SUCCEED;
 }
@@ -1912,11 +1919,11 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
 
 HG_TEST_RPC_CB(metadata_check_prefix, handle)
 {
-       FUNC_ENTER(NULL);
+    FUNC_ENTER(NULL);
 
     hg_return_t                 ret_value = HG_SUCCESS;
     metadata_check_prefix_in_t  in;
-    metadata_check_prefix_out_t  out;
+    metadata_check_prefix_out_t out;
 
     HG_Get_input(handle, &in);
     if (strcmp(in.prefix, "PDC_NOOP") != 0) {
@@ -1937,18 +1944,19 @@ HG_TEST_RPC_CB(metadata_check_prefix, handle)
 
 HG_TEST_RPC_CB(metadata_key_add, handle)
 {
-       FUNC_ENTER(NULL);
+    FUNC_ENTER(NULL);
 
-    hg_return_t                 ret_value = HG_SUCCESS;
-    metadata_key_add_in_t       in;
-    metadata_key_add_out_t      out;
+    hg_return_t            ret_value = HG_SUCCESS;
+    metadata_key_add_in_t  in;
+    metadata_key_add_out_t out;
 
     printf("metadata_key_add %s\n", &in.prefix);
     HG_Get_input(handle, &in);
     if (strcmp(in.prefix, "PDC_NOOP") != 0) {
         printf("PDC_Server_metadata_key_add\n");
         PDC_Server_metadata_key_add(&in, &out);
-    } else {
+    }
+    else {
         LOG_INFO("Received NOOP\n");
         out.ret = 1;
     }
@@ -1963,11 +1971,11 @@ HG_TEST_RPC_CB(metadata_key_add, handle)
 
 HG_TEST_RPC_CB(metadata_create_bucket, handle)
 {
-       FUNC_ENTER(NULL);
+    FUNC_ENTER(NULL);
 
-    hg_return_t                     ret_value = HG_SUCCESS;
-    metadata_create_bucket_in_t     in;
-    metadata_create_bucket_out_t    out;
+    hg_return_t                  ret_value = HG_SUCCESS;
+    metadata_create_bucket_in_t  in;
+    metadata_create_bucket_out_t out;
 
     HG_Get_input(handle, &in);
     if (strcmp(in.prefix, "PDC_NOOP") != 0) {
@@ -6302,9 +6310,11 @@ PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
 PDC_FUNC_DECLARE_REGISTER(send_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
-PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_check_prefix, metadata_check_prefix_in_t, metadata_check_prefix_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_check_prefix, metadata_check_prefix_in_t,
+                                 metadata_check_prefix_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_key_add, metadata_key_add_in_t, metadata_key_add_out_t)
-PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_create_bucket, metadata_create_bucket_in_t, metadata_create_bucket_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_create_bucket, metadata_create_bucket_in_t,
+                                 metadata_create_bucket_out_t)
 PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
 PDC_FUNC_DECLARE_REGISTER(metadata_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
@@ -7069,8 +7079,9 @@ PDCselection_print_all(pdc_selection_t *sel)
 }
 
 uint32_t
-PDC_get_server_using_pht(uint64_t key_hash) {
-    int ring_size = pdc_server_size_g * RING_ARC_SIZE;
+PDC_get_server_using_pht(uint64_t key_hash)
+{
+    int      ring_size   = pdc_server_size_g * RING_ARC_SIZE;
     uint64_t mapped_hash = key_hash % ring_size;
 
     for (int i = 0; i < pdc_server_size_g; i++) {
@@ -7082,5 +7093,5 @@ PDC_get_server_using_pht(uint64_t key_hash) {
     }
 
     // Wrap around
-    return 0; 
+    return 0;
 }

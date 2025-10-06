@@ -12,19 +12,19 @@
 #define ROOT_PREFIX "#"
 
 typedef struct DoublyLinkedListItem {
-    char *key;
-    void *value;
+    char *                   key;
+    void *                   value;
     struct DoublyLinkedList *prev; /* needed for a doubly-linked list only */
     struct DoublyLinkedList *next; /* needed for singly- or doubly-linked lists */
 } DoublyLinkedListItem;
 
 typedef struct DoublyLinkedList {
     DoublyLinkedListItem *head; /* first element in list */
-    unsigned int count;
+    unsigned int          count;
 } DoublyLinkedList;
 
-typedef void* PrefixTableKey;
-typedef void* PrefixTableValue;
+typedef void *PrefixTableKey;
+typedef void *PrefixTableValue;
 
 /**
  * Hash function used to generate hash values for keys used in a hash
@@ -61,20 +61,20 @@ struct _PrefixTableBucket {
     char *left;
     char *right;
 
-    char *prefix;
+    char *            prefix;
     DoublyLinkedList *store;
 };
 
 struct _PrefixTable {
-    HashTable *map;
-    size_t bucket_size;
-    size_t key_count;
-    PrefixTableHashFunc hash_cb;
+    HashTable *          map;
+    size_t               bucket_size;
+    size_t               key_count;
+    PrefixTableHashFunc  hash_cb;
     PrefixTableEqualFunc equal_cb;
 };
 
 typedef struct _PrefixTableBucket PrefixTableBucket;
-typedef struct _PrefixTable PrefixTable;
+typedef struct _PrefixTable       PrefixTable;
 
 /**
  * Initializes a new prefix table.
@@ -84,7 +84,8 @@ typedef struct _PrefixTable PrefixTable;
  * @param equal_cb     Function to compare keys for equality.
  * @return             A pointer to the initialized prefix table, or NULL on failure.
  */
-PrefixTable* prefix_table_init(unsigned int bucket_size, PrefixTableHashFunc hash_cb, PrefixTableEqualFunc equal_cb);
+PrefixTable *prefix_table_init(unsigned int bucket_size, PrefixTableHashFunc hash_cb,
+                               PrefixTableEqualFunc equal_cb);
 
 /**
  * Inserts a key-value pair into the prefix table.
@@ -117,7 +118,8 @@ int prefix_table_exact_search(PrefixTable *pht, void *key, void **result);
  * @param result        Pointer to store the found values, or NULL if not found.
  * @return              0 on success, or a negative error code on failure.
  */
-int prefix_table_range_search(PrefixTable *pht, void *start_key, bool include_start, void *end_key, bool include_end, void **result);
+int prefix_table_range_search(PrefixTable *pht, void *start_key, bool include_start, void *end_key,
+                              bool include_end, void **result);
 
 /**
  * Counts the number of keys in the prefix table.
@@ -141,7 +143,7 @@ void prefix_table_destroy(PrefixTable *pht);
  * @param equal_cb  Equality comparison callback.
  * @return          A pointer to the initialized bucket, or NULL on failure.
  */
-PrefixTableBucket* prefix_table_bucket_init(PrefixTableHashFunc hash_cb, PrefixTableEqualFunc equal_cb);
+PrefixTableBucket *prefix_table_bucket_init(PrefixTableHashFunc hash_cb, PrefixTableEqualFunc equal_cb);
 
 /**
  * Checks if a bucket is a leaf node.

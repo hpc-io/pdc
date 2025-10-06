@@ -2126,39 +2126,42 @@ PDC_Server_get_env()
 }
 
 perr_t
-PDC_Server2Server_create_bucket(char *prefix, uint32_t *server_id) {
+PDC_Server2Server_create_bucket(char *prefix, uint32_t *server_id)
+{
     FUNC_ENTER(NULL);
 
-    perr_t                         ret_value = SUCCEED;
-    hg_return_t                    hg_ret    = 0;
-    hg_handle_t                    metadata_create_bucket_handle;
-    metadata_create_bucket_in_t    in;
-    metadata_create_bucket_out_t   out;
+    perr_t                       ret_value = SUCCEED;
+    hg_return_t                  hg_ret    = 0;
+    hg_handle_t                  metadata_create_bucket_handle;
+    metadata_create_bucket_in_t  in;
+    metadata_create_bucket_out_t out;
 
     uint64_t hash_value = prefix_hash(prefix);
-    *server_id = PDC_get_server_using_pht(hash_value);
+    *server_id          = PDC_get_server_using_pht(hash_value);
 
     in.prefix = strdup(prefix);
-    if (*server_id == pdc_server_rank_g){
+    if (*server_id == pdc_server_rank_g) {
         ret_value = PDC_Server_create_bucket(&in, &out);
-        if (ret_value != SUCCEED) PGOTO_ERROR(FAIL, "Failed to get local storage location");
-    } else {
+        if (ret_value != SUCCEED)
+            PGOTO_ERROR(FAIL, "Failed to get local storage location");
+    }
+    else {
         if (PDC_Server_lookup_server_id(*server_id) != SUCCEED)
             PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
-        
-        hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[*(uint32_t *)server_id].addr, metadata_create_bucket_register_id_g,
-              &metadata_create_bucket_handle);
-        
+
+        hg_ret = HG_Create(hg_context_g, pdc_remote_server_info_g[*(uint32_t *)server_id].addr,
+                           metadata_create_bucket_register_id_g, &metadata_create_bucket_handle);
+
         hg_ret = HG_Forward(metadata_create_bucket_handle, metadata_create_bucket_server_rpc_cb, NULL, &in);
-        
-        if (hg_ret != HG_SUCCESS){
+
+        if (hg_ret != HG_SUCCESS) {
             HG_Destroy(metadata_create_bucket_handle);
             PGOTO_ERROR(FAIL, "Could not start HG_Forward");
         }
-        
+
         if (hg_ret != SUCCEED)
             LOG_ERROR("Add create_bucket server2server NOT successful");
-        
+
         HG_Destroy(metadata_create_bucket_handle);
     }
 done:
@@ -2170,14 +2173,14 @@ metadata_create_bucket_server_rpc_cb(const struct hg_cb_info *callback_info)
 {
 
     FUNC_ENTER(NULL);
-    hg_return_t         ret_value;
-    hg_handle_t         handle             = callback_info->info.forward.handle;
-    metadata_create_bucket_out_t *result   = (metadata_create_bucket_out_t *)callback_info->arg;
+    hg_return_t                   ret_value;
+    hg_handle_t                   handle = callback_info->info.forward.handle;
+    metadata_create_bucket_out_t *result = (metadata_create_bucket_out_t *)callback_info->arg;
     /* Get output from server*/
 
     metadata_create_bucket_out_t output;
     ret_value = HG_Get_output(handle, &output);
-    result = &output;
+    result    = &output;
 
     if (ret_value != HG_SUCCESS) {
         PGOTO_ERROR(HG_OTHER_ERROR, "Error with HG_Get_output");
