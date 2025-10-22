@@ -228,103 +228,110 @@ Complete Examples
 .. code-block:: C
 
         #include <stdio.h>
-        #include <stdlib.h>
-        #include <unistd.h>
-        #include <inttypes.h>
         #include "pdc.h"
 
         #define BUF_LEN 128
 
-        int main(int argc, char **argv)
+        int
+        main(int argc, char **argv)
         {
-                pdcid_t pdc, cont_prop, cont, obj_prop, reg, reg_global;
-                pdcid_t obj1, obj2;
-                char cont_name[128], obj_name1[128], obj_name2[128];
-                pdcid_t transfer_request;
-                int rank = 0, size = 1, i;
-                int ret_value = 0;
-                uint64_t offset[3], offset_length[3];
-                uint64_t dims[2];
-                int *data = (int *)malloc(sizeof(int) * BUF_LEN);
-                int *data_read = (int *)malloc(sizeof(int) * BUF_LEN);
-                dims[0] = BUF_LEN / 4;
-                dims[1] = 4;
+            pdcid_t  pdc, cont_prop, cont, obj_prop, memory_region, obj_region;
+            pdcid_t  obj;
+            char     cont_name[128], obj_name[128];
+            pdcid_t  transfer_request;
+            int      rank = 0, size = 1, i;
+            int      ret_value = 0;
+            uint64_t offset[3], offset_length[3];
+            uint64_t dims[2];
+            int     *data_write = (int *)malloc(sizeof(int) * BUF_LEN);
+            int     *data_read  = (int *)malloc(sizeof(int) * BUF_LEN);
 
-                #ifdef ENABLE_MPI
-                MPI_Init(&argc, &argv);
-                MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-                MPI_Comm_size(MPI_COMM_WORLD, &size);
-                #endif
+        #ifdef ENABLE_MPI
+            MPI_Init(&argc, &argv);
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            MPI_Comm_size(MPI_COMM_WORLD, &size);
+        #endif
 
-                pdc = PDCinit("pdc");
-                cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-                sprintf(cont_name, "c%d", rank);
-                cont = PDCcont_create(cont_name, cont_prop);
-                obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
-                PDCprop_set_obj_type(obj_prop, PDC_INT);
-                PDCprop_set_obj_dims(obj_prop, 2, dims);
-                PDCprop_set_obj_user_id(obj_prop, getuid());
-                PDCprop_set_obj_time_step(obj_prop, 0);
-                PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
-                PDCprop_set_obj_tags(obj_prop, "tag0=1");
+            // Initialize PDC runtime
+            pdc = PDCinit("pdc");
 
-                sprintf(obj_name1, "o1_%d", rank);
-                obj1 = PDCobj_create(cont, obj_name1, obj_prop);
-                sprintf(obj_name2, "o2_%d", rank);
-                obj2 = PDCobj_create(cont, obj_name2, obj_prop);
+            // Configure and create container
+            cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+            sprintf(cont_name, "c%d", rank);
+            cont = PDCcont_create(cont_name, cont_prop);
 
-                offset[0] = 0;
-                offset_length[0] = BUF_LEN;
-                reg = PDCregion_create(1, offset, offset_length);
-                offset[0] = 0;
-                offset[1] = 0;
-                offset_length[0] = BUF_LEN / 4;
-                offset_length[1] = 4;
-                reg_global = PDCregion_create(2, offset, offset_length);
+            // Configure and create object
+            obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+            PDCprop_set_obj_type(obj_prop, PDC_INT);
+            dims[0] = BUF_LEN / 4;
+            dims[1] = 4;
+            PDCprop_set_obj_dims(obj_prop, 2, dims);
+            sprintf(obj_name, "o1_%d", rank);
+            obj = PDCobj_create(cont, obj_name, obj_prop);
 
-                for (i = 0; i < BUF_LEN; ++i)
-                        data[i] = i;
+            // Configure regions
+            offset[0]        = 0;
+            offset[1]        = 0;
+            offset_length[0] = BUF_LEN / 4;
+            offset_length[1] = 4;
 
-                transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
-                PDCregion_transfer_start(transfer_request);
-                PDCregion_transfer_wait(transfer_request);
-                PDCregion_transfer_close(transfer_request);
-                PDCregion_close(reg);
-                PDCregion_close(reg_global);
+            // Create local region and object region
+            memory_region = PDCregion_create(1, offset, offset_length);
+            obj_region    = PDCregion_create(2, offset, offset_length);
 
-                offset[0] = 0;
-                offset_length[0] = BUF_LEN;
-                reg = PDCregion_create(1, offset, offset_length);
-                offset[0] = 0;
-                offset[1] = 0;
-                offset_length[0] = BUF_LEN / 4;
-                offset_length[1] = 4;
-                reg_global = PDCregion_create(2, offset, offset_length);
+            // Initialize memory buffer
+            for (i = 0; i < BUF_LEN; ++i)
+                data_write[i] = i;
 
-                transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj1, reg, reg_global);
-                PDCregion_transfer_start(transfer_request);
-                PDCregion_transfer_wait(transfer_request);
-                PDCregion_transfer_close(transfer_request);
+            // Create, start, wait, and close write data transfer
+            transfer_request = PDCregion_transfer_create(data_write, PDC_WRITE, obj, memory_region, obj_region);
+            PDCregion_transfer_start(transfer_request);
+            PDCregion_transfer_wait(transfer_request);
+            PDCregion_transfer_close(transfer_request);
 
-                for (i = 0; i < BUF_LEN; ++i)
-                        if (data_read[i] != i)
-                        ret_value = 1;
+            // Create, start, wait, and close read data transfer
+            transfer_request = PDCregion_transfer_create(data_read, PDC_READ, obj, memory_region, obj_region);
+            PDCregion_transfer_start(transfer_request);
+            PDCregion_transfer_wait(transfer_request);
+            PDCregion_transfer_close(transfer_request);
 
-                PDCregion_close(reg);
-                PDCregion_close(reg_global);
-                PDCobj_close(obj1);
-                PDCobj_close(obj2);
-                PDCcont_close(cont);
-                PDCprop_close(obj_prop);
-                PDCprop_close(cont_prop);
-                free(data);
-                free(data_read);
-                PDCclose(pdc);
+            // Validate data
+            if (memcmp(data_read, data_write, sizeof(int) * BUF_LEN)) {
+                printf("Data read was invalid\n");
+                ret_value = 1;
+            }
 
-                #ifdef ENABLE_MPI
-                MPI_Finalize();
-                #endif
-                return ret_value;
+            // Close regions
+            PDCregion_close(memory_region);
+            PDCregion_close(obj_region);
+
+            // Close object
+            PDCobj_close(obj);
+
+            // Close container
+            PDCcont_close(cont);
+
+            // Close object and container properties
+            PDCprop_close(obj_prop);
+            PDCprop_close(cont_prop);
+
+            // Close PDC runtime
+            PDCclose(pdc);
+
+            // Free memory buffers
+            free(data_write);
+            free(data_read);
+
+        #ifdef ENABLE_MPI
+            MPI_Finalize();
+        #endif
+
+            if (ret_value)
+                printf("Example had an error\n");
+            else
+                printf("Example ran successfully\n");
+
+            return ret_value;
         }
 
 .. _2D-batch-region-transfer:
@@ -335,59 +342,132 @@ Complete Examples
 .. code-block:: C
 
         #include <stdio.h>
-        #include <stdlib.h>
-        #include <string.h>
         #include "pdc.h"
 
-        int main() {
-                // Initialize PDC
-                pdcid_t pdc_id = PDCinit("pdc");
-                pdcid_t prop = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+        #define BUF_LEN       400
+        #define CHUNK_LEN     100
+        #define NUM_TRANSFERS (BUF_LEN / CHUNK_LEN)
 
-                // Set object dimensions
-                uint64_t dims[2] = {40, 10};
-                PDCprop_set_obj_dims(prop, dims);
-                PDCprop_set_obj_type(prop, PDC_INT);
+        int
+        main(int argc, char **argv)
+        {
+            pdcid_t  pdc, cont_prop, cont, obj_prop;
+            pdcid_t  obj_id;
+            pdcid_t  memory_regions[4], obj_regions[4], transfers[4];
+            char     cont_name[128], obj_name[128];
+            int      rank = 0, size = 1, i;
+            int      ret_value = 0;
+            uint64_t dims[2];
+            uint64_t offsets[2];
+            uint64_t region_size[2];
+            int     *data_write;
+            int     *data_read;
 
-                // Create object
-                pdcid_t obj_id = PDCobj_create(pdc_id, "2d_obj", prop);
+            // Allocate buffers
+            data_write = (int *)malloc(sizeof(int) * BUF_LEN);
+            data_read  = (int *)calloc(BUF_LEN, sizeof(int));
 
-                // Create memory and object regions for 4 different 10x10 regions
-                uint64_t offsets[4][2] = {
-                        {0, 0}, {10, 0}, {20, 0}, {30, 0}
-                };
+        #ifdef ENABLE_MPI
+            MPI_Init(&argc, &argv);
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            MPI_Comm_size(MPI_COMM_WORLD, &size);
+        #endif
 
-                int *buffers[4];
-                pdcid_t mem_regions[4], obj_regions[4], transfers[4];
+            // Initialize PDC runtime
+            pdc = PDCinit("pdc");
 
-                for (int i = 0; i < 4; i++) {
-                        buffers[i] = malloc(sizeof(int) * 10 * 10);
-                        for (int j = 0; j < 100; j++) {
-                            buffers[i][j] = i * 1000 + j;
-                        }
+            // Configure and create container
+            cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+            sprintf(cont_name, "c%d", rank);
+            cont = PDCcont_create(cont_name, cont_prop);
 
-                        mem_regions[i] = PDCregion_create(2, (uint64_t[]){0, 0}, (uint64_t[]){10, 10});
-                        obj_regions[i] = PDCregion_create(2, offsets[i], (uint64_t[]){10, 10});
-                        transfers[i] = PDCregion_transfer_create(buffers[i], PDC_WRITE, obj_id, obj_regions[i], mem_regions[i]);
-                }
+            // Configure and create object
+            obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+            dims[0]  = 40; // total height
+            dims[1]  = 10; // total width (total = 400 elements)
+            PDCprop_set_obj_dims(obj_prop, 2, dims);
+            PDCprop_set_obj_type(obj_prop, PDC_INT);
+            sprintf(obj_name, "o1_%d", rank);
+            obj_id = PDCobj_create(cont, obj_name, obj_prop);
 
-                // Start and wait all transfers
-                PDCregion_transfer_start_all(4, transfers);
-                PDCregion_transfer_wait_all(4, transfers);
+            // Define region size (10x10) and number of transfers
+            region_size[0] = 10;
+            region_size[1] = 10;
 
-                // Cleanup
-                for (int i = 0; i < 4; i++) {
-                        PDCregion_close(mem_regions[i]);
-                        PDCregion_close(obj_regions[i]);
-                        PDCregion_transfer_close(transfers[i]);
-                        free(buffers[i]);
-                }
+            // Initialize memory buffer
+            for (i = 0; i < BUF_LEN; i++)
+                data_write[i] = i;
 
-                PDCobj_close(obj_id);
-                PDCprop_close(prop);
-                PDCclose(pdc_id);
+            // Create memory and object regions and start write transfers
+            for (i = 0; i < NUM_TRANSFERS; i++) {
+                offsets[0] = i * 10; // offset along first dimension (object)
+                offsets[1] = 0;      // offset along second dimension
 
-                return 0;
+                // Minimal change: memory region always starts at {0,0}
+                memory_regions[i] = PDCregion_create(2, (uint64_t[]){0, 0}, region_size);
+                obj_regions[i]    = PDCregion_create(2, offsets, region_size);
+
+                // Create region transfer for writing correct slice of buffer
+                transfers[i] = PDCregion_transfer_create(data_write + i * CHUNK_LEN, // offset in local memory
+                                                        PDC_WRITE, obj_id, memory_regions[i], obj_regions[i]);
+            }
+
+            // Start and wait for all writes
+            PDCregion_transfer_start_all(transfers, NUM_TRANSFERS);
+            PDCregion_transfer_wait_all(transfers, NUM_TRANSFERS);
+
+            // Close write transfers
+            for (i = 0; i < NUM_TRANSFERS; i++)
+                PDCregion_transfer_close(transfers[i]);
+
+            // Now read back into data_read in four slices
+            for (i = 0; i < NUM_TRANSFERS; i++) {
+                transfers[i] = PDCregion_transfer_create(data_read + i * CHUNK_LEN, // offset in local memory
+                                                        PDC_READ, obj_id, memory_regions[i], obj_regions[i]);
+            }
+
+            // Start and wait for all reads
+            PDCregion_transfer_start_all(transfers, NUM_TRANSFERS);
+            PDCregion_transfer_wait_all(transfers, NUM_TRANSFERS);
+
+            // Close read transfers and regions
+            for (i = 0; i < NUM_TRANSFERS; i++) {
+                PDCregion_transfer_close(transfers[i]);
+                PDCregion_close(memory_regions[i]);
+                PDCregion_close(obj_regions[i]);
+            }
+
+            // Validate read-back
+            if (memcmp(data_read, data_write, sizeof(int) * BUF_LEN) != 0) {
+                printf("Data read was invalid\n");
+                ret_value = 1;
+            }
+
+            // Close object and container
+            PDCobj_close(obj_id);
+            PDCcont_close(cont);
+
+            // Close object and container properties
+            PDCprop_close(obj_prop);
+            PDCprop_close(cont_prop);
+
+            // Close PDC runtime
+            PDCclose(pdc);
+
+            // Free memory buffers
+            free(data_write);
+            free(data_read);
+
+        #ifdef ENABLE_MPI
+            MPI_Finalize();
+        #endif
+
+            if (ret_value)
+                printf("Example had an error\n");
+            else
+                printf("Example ran successfully\n");
+
+            return ret_value;
         }
 
 .. _get-put-object:
@@ -402,45 +482,89 @@ Get Put Object Example
         #include <string.h>
         #include "pdc.h"
 
-        int main(int argc, char **argv)
+        #define BUF_LEN 128 // size of data buffer
+
+        int
+        main(int argc, char **argv)
         {
-                pdcid_t pdc, cont_prop, cont;
-                pdcid_t obj1, obj2;
-                char cont_name[128], obj_name1[128], obj_name2[128];
-                char *data = (char *)malloc(sizeof(double) * 128);
+            pdcid_t pdc, cont_prop, cont;
+            pdcid_t obj1, obj2;
+            char    cont_name[128], obj_name1[128], obj_name2[128];
+            int    *data_write, *data_read;
+            int     rank      = 0, size, i;
+            int     ret_value = 0;
 
-                #ifdef ENABLE_MPI
-                MPI_Init(&argc, &argv);
-                #endif
+        #ifdef ENABLE_MPI
+            MPI_Init(&argc, &argv);
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            MPI_Comm_size(MPI_COMM_WORLD, &size);
+        #endif
 
-                pdc = PDCinit("pdc");
-                cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
-                sprintf(cont_name, "c%d", 0);
-                cont = PDCcont_create(cont_name, cont_prop);
+            // Allocate buffers
+            data_write = (int *)malloc(sizeof(int) * BUF_LEN);
+            data_read  = (int *)calloc(BUF_LEN, sizeof(int));
 
-                memset(data, 1, 128 * sizeof(double));
-                sprintf(obj_name1, "o1_%d", 0);
-                obj1 = PDCobj_put_data(obj_name1, data, 16 * sizeof(double), cont);
+            // Initialize PDC runtime
+            pdc = PDCinit("pdc");
 
-                memset(data, 2, 128 * sizeof(double));
-                sprintf(obj_name2, "o2_%d", 0);
-                obj2 = PDCobj_put_data(obj_name2, data, 128 * sizeof(double), cont);
+            // Initialize memory buffer
+            for (i = 0; i < BUF_LEN; i++)
+                data_write[i] = i;
 
-                memset(data, 0, 128 * sizeof(double));
-                PDCobj_get_data(obj1, data, 16 * sizeof(double));
+            // Configure and create container
+            cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+            sprintf(cont_name, "c%d", rank);
+            cont = PDCcont_create(cont_name, cont_prop);
 
-                memset(data, 0, 128 * sizeof(double));
-                PDCobj_get_data(obj2, data, 128 * sizeof(double));
+            // Initialize data and put first object
+            sprintf(obj_name1, "o1_%d", rank);
+            obj1 = PDCobj_put_data(obj_name1, data_write, BUF_LEN * sizeof(int), cont);
 
-                PDCobj_close(obj1);
-                PDCobj_close(obj2);
-                PDCcont_close(cont);
-                PDCprop_close(cont_prop);
-                free(data);
-                PDCclose(pdc);
+            // Initialize data and put second object
+            sprintf(obj_name2, "o2_%d", rank);
+            obj2 = PDCobj_put_data(obj_name2, data_write, BUF_LEN * sizeof(int), cont);
 
-                #ifdef ENABLE_MPI
-                MPI_Finalize();
-                #endif
-                return 0;
+            // Get first object
+            PDCobj_get_data(obj1, data_read, BUF_LEN * sizeof(int));
+
+            // Validate first object
+            if (memcmp(data_write, data_read, BUF_LEN * sizeof(int)) != 0) {
+                printf("Data read was invalid for obj1\n");
+                ret_value = 1;
+            }
+
+            // Get second object
+            PDCobj_get_data(obj2, data_read, BUF_LEN * sizeof(int));
+
+            // Validate second object
+            if (memcmp(data_write, data_read, BUF_LEN * sizeof(int)) != 0) {
+                printf("Data read was invalid for obj2\n");
+                ret_value = 1;
+            }
+
+            // Close objects and container
+            PDCobj_close(obj1);
+            PDCobj_close(obj2);
+            PDCcont_close(cont);
+
+            // Close container property
+            PDCprop_close(cont_prop);
+
+            // Close PDC runtime
+            PDCclose(pdc);
+
+            // Free memory buffers
+            free(data_write);
+            free(data_read);
+
+        #ifdef ENABLE_MPI
+            MPI_Finalize();
+        #endif
+
+            if (ret_value)
+                printf("Example had an error\n");
+            else
+                printf("Example ran successfully\n");
+
+            return ret_value;
         }

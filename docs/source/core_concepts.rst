@@ -53,6 +53,20 @@ Objects
 - Structured as multidimensional arrays (e.g., 1D, 2D, or 3D) to support scientific data layouts
 - Can be queried, updated, and transferred without referencing physical storage directly  
 
+Object Metadata
+~~~~~~~~~~~~~~~
+
+- Two types: predefined and custom
+- **Predefined metadata** (automatically maintained by PDC):
+  
+  - `object_name` — the name of the object
+  - `dimensions` — the shape of the object (e.g., 1D, 2D, 3D)
+  - `timestep` — the simulation or data timestep associated with this object
+  - `creation_time` — timestamp when the object was created
+
+- **Custom metadata**: user defined key-value pairs.
+- Supports efficient creation, insertion, update, and deletion operations
+
 Regions
 ~~~~~~~
 
@@ -138,44 +152,51 @@ precise control over how the object is created, accessed, and managed.
   Functions allow querying and modifying object properties and dimensions dynamically, supporting 
   evolving data and usage patterns.
 
-**2.4.** Data Acess Lifecycle 
------------------------------
+**2.4.** Data Access Lifecycle
+------------------------------
 
-The typical workflow for interacting with PDC objects is described below.
+The data access lifecycle in PDC describes the sequence of steps through which 
+data objects are defined, connected to storage regions, transferred, and finalized. 
+This process enables structured, efficient, and flexible management of data in both 
+individual and distributed environments.
 
-Object Creation  
+Object Creation
 ~~~~~~~~~~~~~~~
 
-1. Define object properties (datatype, size, etc.).
-2. Create or select a container.
-3. Call PDCobj_create() to allocate the object with metadata.
+The lifecycle begins with the creation of an object within a selected container.  
+At this stage, object attributes such as data type, size, dimensionality, and associated 
+metadata are defined. The container serves as the logical namespace for the object, 
+organizing related objects and their properties. Once configured, the object becomes 
+accessible for subsequent I/O and metadata operations.
 
-Allocation of Regions & Containers
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Region Definition and Association
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. Use PDCregion_create() to define the region to write or read from.
-2. The region is tied to an object and a memory location.
-3. Multiple regions can be created for batch or parallel operations.
+Before data can be transferred, one or more local and target regions are defined to specify which 
+portions the memory space and subsets of an object are involved in an operation. These regions 
+provide a mapping between in-memory data and the logical layout of objects, enabling 
+fine-grained control over data placement and movement. Multiple regions may be 
+created and transferred to support batch or parallel operations.
 
-Asynchronous & Synchronous Data Transfers  
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Data Transfer Modes
+~~~~~~~~~~~~~~~~~~~
 
-**Asynchronous**
+Data can be exchanged between memory and storage using either asynchronous or 
+synchronous modes.  
 
-1. Initiated using PDCbuf_obj_map() 
-2. Completion checked with PDCregion_transfer_start() and PDCregion_transfer_wait()
-3. Enables overlapping of computation and communication
+- **Asynchronous Transfers**  
+  Allow computation and communication to overlap by decoupling data movement from 
+  execution flow. This mode is well suited for performance-critical and parallel workloads.  
 
-**Synchronous**
-
-1. Blocking operations that ensure data is transferred before proceeding
-2. Useful for simple or sequential workflows
+- **Synchronous Transfers**  
+  Complete data movement before proceeding, providing predictable behavior and 
+  simplifying coordination in sequential workflows.
 
 Finalization
 ~~~~~~~~~~~~
 
-Once all of the operations are completed:
-
-1. Call PDCobj_close() and PDCcont_close() to release all handles 
-2. Use PDCclose() to clean up the PDC environment 
-3. Ensure that all resources have been flushed and deallocated
+After all data transfers and operations have completed, the associated resources 
+are released in an orderly manner. Containers and objects are closed, data buffers 
+are flushed to ensure consistency, and any temporary or transient entities are 
+cleaned up. Finalization marks the end of the object's lifecycle within the current 
+execution context, ensuring all resources are safely deallocated.

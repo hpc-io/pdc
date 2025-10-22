@@ -1,6 +1,6 @@
 .. _client_api:
 
-**5.** Client API
+**4.** Client API
 =================
 
 This section documents the main Client API for PDC. 
@@ -19,7 +19,7 @@ quickly navigate to each subsection:
 
 .. _client_api_types:
 
-**5.1.** Types
+**4.1.** Types
 --------------
 
 .. doxygentypedef:: pdcid_t
@@ -48,7 +48,7 @@ quickly navigate to each subsection:
 
 .. _client_api_layer:
 
-**5.2.** PDC Layer
+**4.2.** PDC Layer
 ------------------
 
 .. doxygenfunction:: PDCinit
@@ -59,7 +59,7 @@ quickly navigate to each subsection:
 
 .. _client_api_properties:
 
-**5.3.** Properties
+**4.3.** Properties
 -------------------
 
 .. doxygenfunction:: PDCprop_create
@@ -70,7 +70,7 @@ quickly navigate to each subsection:
 
 .. _client_api_containers:
 
-**5.4.** Containers
+**4.4.** Containers
 -------------------
 
 .. doxygenfunction:: PDCcont_create
@@ -93,7 +93,7 @@ quickly navigate to each subsection:
 
 .. _client_api_objects:
 
-**5.5.** Objects
+**4.4.** Objects
 ----------------
 
 .. doxygenfunction:: PDCobj_create
@@ -152,7 +152,7 @@ quickly navigate to each subsection:
 
 .. _client_api_object_tags:
 
-**5.6.** Object Tags
+**4.6.** Object Tags
 --------------------
 
 .. doxygenfunction:: PDCprop_set_obj_tags
@@ -165,7 +165,7 @@ quickly navigate to each subsection:
    :project: PDC
 .. _client_api_regions:
 
-**5.7.** Regions
+**4.7.** Regions
 ----------------
 
 .. doxygenfunction:: PDCregion_create
@@ -176,7 +176,7 @@ quickly navigate to each subsection:
 
 .. _client_api_object_data_transfers:
 
-**5.8.** Object Data Transfers
+**4.8.** Object Data Transfers
 ------------------------------
 
 .. doxygenfunction:: PDCregion_transfer_start

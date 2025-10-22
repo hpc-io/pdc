@@ -1,11 +1,11 @@
 .. _contributing:
 
-**8.** Contributing
+**6.** Contributing
 ===================
 
 This page contains the standards for the PDC projects, covering coding, repository management, pull requests, documentation, and tests.
 
-**8.1.** Coding Standards
+**6.1.** Coding Standards
 -------------------------
 
 - PDC uses the ``clang-format`` check for all ``.c``, ``.h``, ``.cpp``, ``.hpp`` files.
@@ -27,7 +27,7 @@ This page contains the standards for the PDC projects, covering coding, reposito
   - **L2 (if needed)**: algorithm description, data structure description, complex code, optimizations
   - Should be looked at in the review process
 
-**8.2.** Repository
+**6.2.** Repository
 -------------------
 
 Branches Policy
@@ -84,13 +84,15 @@ Labels Policy
   - Include type prefix for: ``bug``, ``CI``, ``documentation``, ``enhancement``, ``new feature``, ``question``, ``tests``
   - Include decision prefix for: ``duplicate``, ``help wanted``, ``invalid``, ``wontfix``
 
-- **Issue Title Format**::
+- **Issue Title Format**
 
-   [Proposed Due Date][Priority][Type][Composer ID][Title][Related PR#]
+  .. code-block:: text
 
-   Example:  
-   [2023/06/23][Medium][DOC][PR#49][wzhang] Dart Integration - missing documentation  
-   [2023/06/23][Low][DOC][N/A][wzhang] Periodical Format Check
+     [Proposed Due Date][Priority][Type][Composer ID][Title][Related PR#]
+
+     Example:
+     [2023/06/23][Medium][DOC][PR#49][wzhang] Dart Integration - missing documentation
+     [2023/06/23][Low][DOC][N/A][wzhang] Periodical Format Check
 
 - Most go to labels, others such as PR and Issues references should be disclosed by reference.
 - Before working on an issue, make sure it has the appropriate labels.

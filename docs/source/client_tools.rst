@@ -1,6 +1,6 @@
 .. _client_tools:
 
-**6.** Client Tools
+**5.** Client Tools
 ===================
 
 The PDC Client Tools provide a set of command-line utilities for interacting with 
@@ -10,7 +10,7 @@ They are intended to simplify common client-side operations and to provide insig
 into the contents and organization of PDC-managed objects. This section describes 
 how to build the tools and details the primary commands available to users.
 
-**6.1** Building PDC Tools
+**5.1** Building PDC Tools
 --------------------------
 
 .. code-block:: Bash
@@ -19,7 +19,7 @@ how to build the tools and details the primary commands available to users.
         $ cmake .
         $ make
 
-**6.2** PDC Tool Commands
+**5.2** PDC Tool Commands
 -------------------------
 
 - :ref:`pdc_ls` - List objects in a PDC metadata checkpoint or directory of checkpoints.

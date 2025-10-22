@@ -26,7 +26,7 @@ Use the table of contents below to explore the sections in more detail
    introduction
    core_concepts
    using_pdc
-   advanced_topics
+.. advanced_topics
 
 .. toctree::
    :maxdepth: 2
@@ -34,11 +34,11 @@ Use the table of contents below to explore the sections in more detail
 
    client_api
    client_tools
-   developer_guide
+.. developer_guide
 
 .. toctree::
    :maxdepth: 1
    :caption: Community and Contributions
 
    contributing
-   appendix
+.. appendix
