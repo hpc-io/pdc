@@ -140,9 +140,14 @@ if(BUILD_MPI_TESTING)
     tags/kvtag_affix_query_scale
     tags/kvtag_add_get_benchmark
     tags/kvtag_add_get_scale
+  )
+
+if(PDC_ENABLE_IDIOMS)
+  list(APPEND MPI_PROGRAMS
     misc/llsm_idioms_bench
     misc/idioms_ci_test
   )
+endif()
 
   foreach(program ${MPI_PROGRAMS})
     get_filename_component(program_name ${program} NAME)
@@ -262,7 +267,9 @@ add_test(NAME obj_buf           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME obj_tags          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
 add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get)
 add_test(NAME kvtag_query     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
+if(PDC_ENABLE_IDIOMS)
 add_test(NAME idioms_ci_test     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
+endif()
 add_test(NAME obj_info          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_info )
 add_test(NAME obj_put_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_put_data )
 add_test(NAME obj_get_data      WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_get_data )
@@ -333,7 +340,9 @@ set_tests_properties(obj_buf            PROPERTIES LABELS serial)
 set_tests_properties(obj_tags           PROPERTIES LABELS serial)
 set_tests_properties(kvtag_add_get      PROPERTIES LABELS serial)
 set_tests_properties(kvtag_query        PROPERTIES LABELS serial)
+if(PDC_ENABLE_IDIOMS)
 set_tests_properties(idioms_ci_test     PROPERTIES LABELS serial)
+endif()
 set_tests_properties(obj_info           PROPERTIES LABELS serial)
 set_tests_properties(obj_put_data       PROPERTIES LABELS serial)
 set_tests_properties(obj_get_data       PROPERTIES LABELS serial)
