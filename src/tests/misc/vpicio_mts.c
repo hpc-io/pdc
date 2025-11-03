@@ -132,12 +132,12 @@ main(int argc, char **argv)
     for (uint64_t i = 0; i < numparticles; i++) {
         id[i] = i;
         q[i]  = i * 2;
-        dx[i]  = uniform_random_number() * x_dim;
-        dy[i]  = uniform_random_number() * y_dim;
-        dz[i]  = ((float)id[i] / numparticles) * z_dim;
-        ux[i]  = uniform_random_number() * x_dim;
-        uy[i]  = uniform_random_number() * y_dim;
-        uz[i]  = (q[i] / numparticles) * z_dim;
+        dx[i] = uniform_random_number() * x_dim;
+        dy[i] = uniform_random_number() * y_dim;
+        dz[i] = ((float)id[i] / numparticles) * z_dim;
+        ux[i] = uniform_random_number() * x_dim;
+        uy[i] = uniform_random_number() * y_dim;
+        uz[i] = (q[i] / numparticles) * z_dim;
     }
 
     offset_local[0]  = 0;
