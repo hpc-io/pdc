@@ -1425,11 +1425,6 @@ PDC_Server_restart(char *filename)
     if (file == NULL)
         PGOTO_ERROR(FAIL, "Error with fopen, filename: [%s]", filename);
 
-    /* char *slurm_jobid = getenv("SLURM_JOB_ID"); */
-    /* if (slurm_jobid == NULL) { */
-    /*     LOG_ERROR("Error getting slurm job id from SLURM_JOB_ID\n"); */
-    /* } */
-
     if (fread(&n_cont, sizeof(int), 1, file) != 1) {
         LOG_ERROR("Read failed for n_count\n");
     }

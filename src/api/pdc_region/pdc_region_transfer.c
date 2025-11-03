@@ -831,9 +831,6 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
 {
     FUNC_ENTER(NULL);
 
-    /* setLogLevel(LOG_LEVEL_DEBUG); */
-    /* LOG_DEBUG("Enter %s\n", __func__); */
-
     perr_t                               ret_value = SUCCEED;
     int                                  i, j, index, size, output_size, remain_size, n_objs;
     pdc_transfer_request_start_all_pkg **transfer_requests;
@@ -894,9 +891,6 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
         index             = unique_server_xfer_idx[current_index];
         n_objs            = unique_server_nboj[current_index];
 
-        /* LOG_DEBUG("Send to server %d, iter %d\n",
-         * transfer_requests[index]->transfer_request->metadata_server_id, i); */
-
         pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
         PDC_Client_transfer_request_metadata_query(
             &bulk_handle, buf, total_buf_size, n_objs,
@@ -922,8 +916,6 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
             previous = transfer_request_end;
         }
 
-        /* LOG_DEBUG("Receive from server %d, iter %d\n",
-         * transfer_requests[index]->transfer_request->metadata_server_id, i); */
     }
 
     if (unique_server_xfer_idx)
@@ -964,9 +956,6 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
     }
 
     transfer_requests = (pdc_transfer_request_start_all_pkg **)PDC_free(transfer_requests);
-
-    /* LOG_DEBUG("Leave %s\n", __func__); */
-    /* setLogLevel(LOG_LEVEL_INFO); */
 
     FUNC_LEAVE(ret_value);
 }

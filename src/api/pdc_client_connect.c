@@ -1631,11 +1631,8 @@ PDC_Client_finalize()
     if (HG_Context_destroy(send_context_g) != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Error with HG_Context_destroy");
 
-    hg_ret = HG_Finalize(send_class_g);
-    if (pdc_client_mpi_rank_g == 0) {
-        if (hg_ret != HG_SUCCESS)
-            LOG_WARNING("Error with HG_Finalize\n");
-    }
+    if (HG_Finalize(send_class_g) != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Error with HG_Finalize");
 
 done:
     FUNC_LEAVE(ret_value);
