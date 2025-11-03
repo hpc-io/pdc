@@ -60,13 +60,12 @@ main(int argc, char **argv)
 #else
     int comm = 1;
 #endif
-    float *     x, *y, *z, *px, *py, *pz;
-    int *       id1, *id2;
+    float *     dx, *dy, *dz, *ux, *uy, *uz, *q;
+    int *       id;
     int         x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
     uint64_t    numparticles, dims[1], offset_local[1], offset_remote[1], mysize[1];
     double      t0, t1;
-    const char *obj_names[] = {"obj-var-xx",  "obj-var-yy",  "obj-var-zz", "obj-var-pxx",
-                               "obj-var-pyy", "obj-var-pzz", "id1",        "id2"};
+    const char *obj_names[] = {"dX", "dY", "dZ", "Ux", "Uy", "Uz", "q", "i"};
     char        obj_name[64];
 
     pdcid_t transfer_requests[8];
@@ -90,17 +89,17 @@ main(int argc, char **argv)
 
     dims[0] = numparticles * size;
 
-    x  = (float *)malloc(numparticles * sizeof(float));
-    y  = (float *)malloc(numparticles * sizeof(float));
-    z  = (float *)malloc(numparticles * sizeof(float));
-    px = (float *)malloc(numparticles * sizeof(float));
-    py = (float *)malloc(numparticles * sizeof(float));
-    pz = (float *)malloc(numparticles * sizeof(float));
+    dx = (float *)malloc(numparticles * sizeof(float));
+    dy = (float *)malloc(numparticles * sizeof(float));
+    dz = (float *)malloc(numparticles * sizeof(float));
+    ux = (float *)malloc(numparticles * sizeof(float));
+    uy = (float *)malloc(numparticles * sizeof(float));
+    uz = (float *)malloc(numparticles * sizeof(float));
+    q  = (float *)malloc(numparticles * sizeof(float));
 
-    id1 = (int *)malloc(numparticles * sizeof(int));
-    id2 = (int *)malloc(numparticles * sizeof(int));
+    id = (int *)malloc(numparticles * sizeof(int));
 
-    void *data_ptrs[] = {&x[0], &y[0], &z[0], &px[0], &py[0], &pz[0], &id1[0], &id2[0]};
+    void *data_ptrs[] = {&dx[0], &dy[0], &dz[0], &ux[0], &uy[0], &uz[0], &id[0], &q[0]};
 
     // create a pdc
     pdc_id = PDCinit("pdc");
@@ -131,14 +130,14 @@ main(int argc, char **argv)
     PDCprop_set_obj_type(obj_prop_int, PDC_INT);
 
     for (uint64_t i = 0; i < numparticles; i++) {
-        id1[i] = i;
-        id2[i] = i * 2;
-        x[i]   = uniform_random_number() * x_dim;
-        y[i]   = uniform_random_number() * y_dim;
-        z[i]   = ((float)id1[i] / numparticles) * z_dim;
-        px[i]  = uniform_random_number() * x_dim;
-        py[i]  = uniform_random_number() * y_dim;
-        pz[i]  = ((float)id2[i] / numparticles) * z_dim;
+        id[i] = i;
+        q[i]  = i * 2;
+        dx[i]  = uniform_random_number() * x_dim;
+        dy[i]  = uniform_random_number() * y_dim;
+        dz[i]  = ((float)id[i] / numparticles) * z_dim;
+        ux[i]  = uniform_random_number() * x_dim;
+        uy[i]  = uniform_random_number() * y_dim;
+        uz[i]  = (q[i] / numparticles) * z_dim;
     }
 
     offset_local[0]  = 0;
@@ -151,10 +150,10 @@ main(int argc, char **argv)
 
     for (int iter = 0; iter < steps; iter++) {
         // Change data for different steps for verification
-        id1[0]                = rank + iter;
-        id2[0]                = rank + iter * 2;
-        id1[numparticles - 1] = rank - iter;
-        id2[numparticles - 1] = rank - iter * 2;
+        id[0]                = rank + iter;
+        q[0]                 = rank + iter * 2;
+        id[numparticles - 1] = rank - iter;
+        q[numparticles - 1]  = rank - iter * 2;
 
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
@@ -165,7 +164,7 @@ main(int argc, char **argv)
 
         for (int i = 0; i < 8; i++) {
             sprintf(obj_name, "%s-%d", obj_names[i], iter);
-            pdcid_t obj_prop = (i < 6) ? obj_prop_float : obj_prop_int;
+            pdcid_t obj_prop = (i < 7) ? obj_prop_float : obj_prop_int;
             obj_ids[i]       = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0, comm);
             if (obj_ids[i] == 0) {
                 LOG_ERROR("Error getting an object id of %s from server\n", obj_name);
@@ -296,14 +295,14 @@ main(int argc, char **argv)
         LOG_ERROR("Failed to close PDC\n");
         return FAIL;
     }
-    free(x);
-    free(y);
-    free(z);
-    free(px);
-    free(py);
-    free(pz);
-    free(id1);
-    free(id2);
+    free(dx);
+    free(dy);
+    free(dz);
+    free(ux);
+    free(uy);
+    free(uz);
+    free(id);
+    free(q);
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
