@@ -915,7 +915,6 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
 
             previous = transfer_request_end;
         }
-
     }
 
     if (unique_server_xfer_idx)
