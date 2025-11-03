@@ -926,6 +926,8 @@ drc_access_again:
 
 #ifdef PDC_ENABLE_IDIOMS
     // Initialize IDIOMS
+    if (pdc_server_rank_g == 0)
+        LOG_INFO("IDIOMS index enabled\n");
     PDC_Server_metadata_index_init(pdc_server_size_g, pdc_server_rank_g);
 #endif
 
