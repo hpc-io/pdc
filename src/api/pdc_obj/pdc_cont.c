@@ -69,7 +69,8 @@ PDCcont_create(const char *cont_name, pdcid_t cont_prop_id)
         PGOTO_ERROR(0, "PDC pub container memory allocation failed");
     p->cont_info_pub->name = strdup(cont_name);
 
-    id_info   = PDC_find_id(cont_prop_id);
+    if ((id_info = PDC_find_id(cont_prop_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", cont_prop_id);
     cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
 
     p->cont_pt = (struct _pdc_cont_prop *)PDC_calloc(1, sizeof(struct _pdc_cont_prop));
@@ -119,7 +120,8 @@ PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
         PGOTO_ERROR(0, "PDC pub container memory allocation failed");
     p->cont_info_pub->name = strdup(cont_name);
 
-    id_info   = PDC_find_id(cont_prop_id);
+    if ((id_info = PDC_find_id(cont_prop_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", cont_prop_id);
     cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
 
     p->cont_pt = (struct _pdc_cont_prop *)PDC_calloc(1, sizeof(struct _pdc_cont_prop));
@@ -168,7 +170,8 @@ PDC_cont_create_local(pdcid_t pdc, const char *cont_name, uint64_t cont_meta_id)
 
     cont_prop_id = PDCprop_create(PDC_CONT_CREATE, pdc);
 
-    id_info    = PDC_find_id(cont_prop_id);
+    if ((id_info = PDC_find_id(cont_prop_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", cont_prop_id);
     cont_prop  = (struct _pdc_cont_prop *)(id_info->obj_ptr);
     p->cont_pt = (struct _pdc_cont_prop *)PDC_calloc(1, sizeof(struct _pdc_cont_prop));
     if (!p->cont_pt)
@@ -309,9 +312,8 @@ PDC_cont_get_info(pdcid_t cont_id)
     struct _pdc_cont_info *info      = NULL;
     struct _pdc_id_info *  id_info   = NULL;
 
-    id_info = PDC_find_id(cont_id);
-    if (id_info == NULL)
-        PGOTO_ERROR(NULL, "Cannot locate object");
+    if ((id_info = PDC_find_id(cont_id)) == NULL)
+        PGOTO_ERROR(NULL, "Failed to find PDC ID: %d", cont_id);
 
     info      = (struct _pdc_cont_info *)(id_info->obj_ptr);
     ret_value = (struct _pdc_cont_info *)PDC_calloc(1, sizeof(struct _pdc_cont_info));
@@ -446,9 +448,8 @@ PDCcont_persist(pdcid_t cont_id)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
-    info = PDC_find_id(cont_id);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate container ID");
+    if ((info = PDC_find_id(cont_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", cont_id);
 
     ((struct _pdc_cont_info *)info->obj_ptr)->cont_pt->cont_life = PDC_PERSIST;
 
@@ -464,9 +465,8 @@ PDCprop_set_cont_lifetime(pdcid_t cont_prop, pdc_lifetime_t cont_lifetime)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
-    info = PDC_find_id(cont_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate container property ID");
+    if ((info = PDC_find_id(cont_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", cont_prop);
     ((struct _pdc_cont_prop *)(info->obj_ptr))->cont_life = cont_lifetime;
 
 done:

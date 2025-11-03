@@ -73,9 +73,10 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         p->cont_life    = PDC_PERSIST;
         new_id_c        = PDC_id_register(PDC_CONT_PROP, p);
         p->cont_prop_id = new_id_c;
-        id_info         = PDC_find_id(pdcid);
-        pdc_class       = (struct _pdc_class *)(id_info->obj_ptr);
-        p->pdc          = (struct _pdc_class *)PDC_calloc(1, sizeof(struct _pdc_class));
+        if ((id_info = PDC_find_id(pdcid)) == NULL)
+            PGOTO_ERROR(0, "Failed to find PDC ID: %d", id_info);
+        pdc_class = (struct _pdc_class *)(id_info->obj_ptr);
+        p->pdc    = (struct _pdc_class *)PDC_calloc(1, sizeof(struct _pdc_class));
         if (p->pdc == NULL)
             PGOTO_ERROR(0, "PDC class allocation failed");
         if (pdc_class->name)
@@ -104,9 +105,10 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         q->buf                            = NULL;
         new_id_o                          = PDC_id_register(PDC_OBJ_PROP, q);
         q->obj_prop_pub->obj_prop_id      = new_id_o;
-        id_info                           = PDC_find_id(pdcid);
-        pdc_class                         = (struct _pdc_class *)(id_info->obj_ptr);
-        q->pdc                            = (struct _pdc_class *)PDC_calloc(1, sizeof(struct _pdc_class));
+        if ((id_info = PDC_find_id(pdcid)) == NULL)
+            PGOTO_ERROR(0, "Failed to find PDC ID: %d", pdcid);
+        pdc_class = (struct _pdc_class *)(id_info->obj_ptr);
+        q->pdc    = (struct _pdc_class *)PDC_calloc(1, sizeof(struct _pdc_class));
         if (q->pdc == NULL)
             PGOTO_ERROR(0, "PDC class allocation failed");
         if (pdc_class->name)
@@ -136,9 +138,8 @@ PDCprop_obj_dup(pdcid_t prop_id)
     pdcid_t               new_id;
     size_t                i;
 
-    prop = PDC_find_id(prop_id);
-    if (prop == NULL)
-        PGOTO_ERROR(0, "Cannot locate object property");
+    if ((prop = PDC_find_id(prop_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", prop_id);
     info = (struct _pdc_obj_prop *)(prop->obj_ptr);
 
     q = (struct _pdc_obj_prop *)PDC_calloc(1, sizeof(struct _pdc_obj_prop));
@@ -293,9 +294,8 @@ PDCcont_prop_get_info(pdcid_t cont_prop)
     struct _pdc_cont_prop *info      = NULL;
     struct _pdc_id_info *  prop;
 
-    prop = PDC_find_id(cont_prop);
-    if (prop == NULL)
-        PGOTO_ERROR(NULL, "Cannot allocate container property");
+    if ((prop = PDC_find_id(cont_prop)) == NULL)
+        PGOTO_ERROR(NULL, "Failed to find PDC ID: %d", cont_prop);
     info = (struct _pdc_cont_prop *)(prop->obj_ptr);
 
     ret_value = (struct _pdc_cont_prop *)PDC_calloc(1, sizeof(struct _pdc_cont_prop));
@@ -325,9 +325,8 @@ PDCobj_prop_get_info(pdcid_t obj_prop)
     struct _pdc_id_info * prop;
     size_t                i;
 
-    prop = PDC_find_id(obj_prop);
-    if (prop == NULL)
-        PGOTO_ERROR(NULL, "Cannot locate object property");
+    if ((prop = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(NULL, "Failed to find PDC ID: %d", obj_prop);
     info = (struct _pdc_obj_prop *)(prop->obj_ptr);
 
     ret_value = (struct pdc_obj_prop *)PDC_calloc(1, sizeof(struct pdc_obj_prop));
@@ -355,9 +354,8 @@ PDC_obj_prop_get_info(pdcid_t obj_prop)
     struct _pdc_id_info * prop;
     size_t                i;
 
-    prop = PDC_find_id(obj_prop);
-    if (prop == NULL)
-        PGOTO_ERROR(NULL, "Cannot locate object property");
+    if ((prop = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(NULL, "Failed to find PDC ID: %d", obj_prop);
     info = (struct _pdc_obj_prop *)(prop->obj_ptr);
 
     ret_value = (struct _pdc_obj_prop *)PDC_calloc(1, sizeof(struct _pdc_obj_prop));

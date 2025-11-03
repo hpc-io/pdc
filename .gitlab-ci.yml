@@ -16,13 +16,13 @@ stages:
         # For complete details on the GitHub API please see:
         # https://developer.github.com/v3/repos/statuses
         - |
-          curl -L \
-          -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          "https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}" \
-          -d "{\"state\":\"${CI_JOB_NAME}\",\"description\":\"${STATUS_MESSAGE}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${STATUS_NAME}\"}"
+            curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}" \
+            -d "{\"state\":\"${CI_JOB_NAME}\",\"description\":\"${STATUS_MESSAGE}\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${STATUS_NAME}\"}"
 
 pending:
     stage: .pre
@@ -50,20 +50,22 @@ failure:
 perlmutter-authorize:
     stage: authorize
     rules:
-    - if: '$METRICS == null'
-      when: manual
+        - if: '$METRICS == null'
+    when: manual
     script:
         - |
-          curl -L \
-          -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          "https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}" \
-          -d "{\"state\":\"pending\",\"description\":\"Running...\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${STATUS_NAME}\"}"
+            curl -L \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${STATUS_PROJECT}/statuses/${CI_COMMIT_SHA}" \
+            -d "{\"state\":\"pending\",\"description\":\"Running...\",\"target_url\":\"${CI_PIPELINE_URL}\",\"context\":\"${STATUS_NAME}\"}"
 
 perlmutter-no-cache-build:
     stage: build
+    rules:
+        - if: '$METRICS == null'
     needs:
         - perlmutter-authorize
     id_tokens:
@@ -91,11 +93,13 @@ perlmutter-no-cache-build:
 
 perlmutter-cache-build:
     stage: build
-    needs:
-        - perlmutter-authorize
     id_tokens:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
+    rules:
+        - if: '$METRICS == null'
+    needs:
+        - perlmutter-authorize
     allow_failure: false
     tags:
         - perlmutter
@@ -127,7 +131,7 @@ perlmutter-no-cache-parallel-pdc:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-no-cache-build
     tags:
@@ -150,7 +154,7 @@ perlmutter-no-cache-parallel-obj:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-no-cache-build
         - perlmutter-no-cache-parallel-pdc
@@ -174,7 +178,7 @@ perlmutter-no-cache-parallel-cont:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-no-cache-build
         - perlmutter-no-cache-parallel-pdc
@@ -198,7 +202,7 @@ perlmutter-no-cache-parallel-prop:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-no-cache-build
         - perlmutter-no-cache-parallel-pdc
@@ -222,7 +226,7 @@ perlmutter-no-cache-parallel-region:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-no-cache-build
         - perlmutter-no-cache-parallel-pdc
@@ -246,7 +250,7 @@ perlmutter-no-cache-parallel-region-all:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-no-cache-build
         - perlmutter-no-cache-parallel-pdc
@@ -275,9 +279,10 @@ perlmutter-cache-parallel-pdc:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-cache-build
+    allow_failure: false
     tags:
         - perlmutter
     variables:
@@ -298,7 +303,7 @@ perlmutter-cache-parallel-obj:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-cache-build
         - perlmutter-cache-parallel-pdc
@@ -322,7 +327,7 @@ perlmutter-cache-parallel-cont:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-cache-build
         - perlmutter-cache-parallel-pdc
@@ -346,7 +351,7 @@ perlmutter-cache-parallel-prop:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-cache-build
         - perlmutter-cache-parallel-pdc
@@ -370,7 +375,7 @@ perlmutter-cache-parallel-region:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-cache-build
         - perlmutter-cache-parallel-pdc
@@ -394,7 +399,7 @@ perlmutter-cache-parallel-region-all:
         SITE_ID_TOKEN:
             aud: https://gitlab.com/
     rules:
-    - if: '$METRICS == null'
+        - if: '$METRICS == null'
     needs:
         - perlmutter-cache-build
         - perlmutter-cache-parallel-pdc

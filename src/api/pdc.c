@@ -213,8 +213,8 @@ PDCclose(pdcid_t pdcid)
 
     pdc_id_list_g = (struct pdc_id_list *)(intptr_t)PDC_free(pdc_id_list_g);
 
-    // Finalize METADATA
-    PDC_Client_finalize();
+    if (PDC_Client_finalize() != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_finalize");
 
 done:
     FUNC_LEAVE(ret_value);

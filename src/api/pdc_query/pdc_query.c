@@ -265,20 +265,10 @@ PDCquery_get_histogram(pdcid_t obj_id)
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
-    /*
-        struct _pdc_obj_info *obj_prop;
-        uint64_t              meta_id = 0;
-    */
-    if (PDC_find_id(obj_id) == NULL) {
-        ret_value = 1;
-    }
-    /*
-        if (PDC_find_id(obj_id) != NULL) {
-            obj_prop = PDC_obj_get_info(obj_id);
-            meta_id  = obj_prop->obj_info_pub->meta_id;
-        }
-        else
-            meta_id = obj_id;
-    */
+
+    if (PDC_find_id(obj_id) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", obj_id);
+
+done:
     FUNC_LEAVE(ret_value);
 }

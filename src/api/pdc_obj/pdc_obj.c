@@ -136,7 +136,8 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         meta_id = 0;
     }
     else {
-        id_info = PDC_find_id(cont_id);
+        if ((id_info = PDC_find_id(cont_id)) == NULL)
+            PGOTO_ERROR(0, "Failed to find PDC ID: %d", cont_id);
         /* struct _pdc_cont_info field */
         cont_info = (struct _pdc_cont_info *)(id_info->obj_ptr);
 
@@ -169,7 +170,8 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
         meta_id                         = p->cont->cont_info_pub->meta_id;
     }
 
-    id_info  = PDC_find_id(obj_prop_id);
+    if ((id_info = PDC_find_id(obj_prop_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", cont_id);
     obj_prop = (struct _pdc_obj_prop *)(id_info->obj_ptr);
 
     /* struct _pdc_obj_prop field */
@@ -639,9 +641,8 @@ PDCprop_set_obj_user_id(pdcid_t obj_prop, uint32_t user_id)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     ((struct _pdc_obj_prop *)(info->obj_ptr))->user_id = user_id;
 
 done:
@@ -656,9 +657,8 @@ PDCprop_set_obj_app_name(pdcid_t obj_prop, char *app_name)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     if (((struct _pdc_obj_prop *)(info->obj_ptr))->app_name != NULL) {
         ((struct _pdc_obj_prop *)(info->obj_ptr))->app_name =
             (char *)PDC_free(((struct _pdc_obj_prop *)(info->obj_ptr))->app_name);
@@ -677,9 +677,8 @@ PDCprop_set_obj_time_step(pdcid_t obj_prop, uint32_t time_step)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     ((struct _pdc_obj_prop *)(info->obj_ptr))->time_step = time_step;
 
 done:
@@ -694,9 +693,8 @@ PDCprop_set_obj_data_loc(pdcid_t obj_prop, char *loc)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     if (((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc != NULL) {
         ((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc =
             (char *)PDC_free(((struct _pdc_obj_prop *)(info->obj_ptr))->data_loc);
@@ -715,9 +713,8 @@ PDCprop_set_obj_tags(pdcid_t obj_prop, char *tags)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     if (((struct _pdc_obj_prop *)(info->obj_ptr))->tags != NULL) {
         ((struct _pdc_obj_prop *)(info->obj_ptr))->tags =
             (char *)PDC_free(((struct _pdc_obj_prop *)(info->obj_ptr))->tags);
@@ -740,9 +737,8 @@ PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
     if (ndim <= 0)
         PGOTO_ERROR(FAIL, "Invalid ndim size: %d", ndim);
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     prop = (struct _pdc_obj_prop *)(info->obj_ptr);
     if (ndim > (PDC_int_t)prop->obj_prop_pub->ndim) {
         if (prop->obj_prop_pub->ndim > 0)
@@ -765,9 +761,8 @@ PDCprop_set_obj_type(pdcid_t obj_prop, pdc_var_type_t type)
     struct _pdc_id_info * info;
     struct _pdc_obj_prop *prop;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     prop                     = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->obj_prop_pub->type = type;
 
@@ -784,9 +779,8 @@ PDCprop_set_obj_transfer_region_type(pdcid_t obj_prop, pdc_region_partition_t re
     struct _pdc_id_info * info;
     struct _pdc_obj_prop *prop;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     prop                                 = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->obj_prop_pub->region_partition = region_partition;
 
@@ -803,9 +797,8 @@ PDCprop_set_obj_consistency_semantics(pdcid_t obj_prop, pdc_consistency_t consis
     struct _pdc_id_info * info;
     struct _pdc_obj_prop *prop;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     prop                            = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->obj_prop_pub->consistency = consistency;
 
@@ -822,9 +815,8 @@ PDCprop_set_obj_buf(pdcid_t obj_prop, void *buf)
     struct _pdc_id_info * info;
     struct _pdc_obj_prop *prop;
 
-    info = PDC_find_id(obj_prop);
-    if (info == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object property ID");
+    if ((info = PDC_find_id(obj_prop)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_prop);
     prop      = (struct _pdc_obj_prop *)(info->obj_ptr);
     prop->buf = buf;
 
@@ -842,10 +834,8 @@ PDCobj_set_dims(pdcid_t obj_id, int ndim, uint64_t *dims)
     struct _pdc_obj_info *object;
     int                   reset;
 
-    info = PDC_find_id(obj_id);
-    if (info == NULL) {
-        LOG_ERROR("PDCobj_set_dims: cannnot find obj id");
-    }
+    if ((info = PDC_find_id(obj_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_id);
     object = (struct _pdc_obj_info *)(info->obj_ptr);
     if (object->local_transfer_request_size) {
         // We do not allow setting obj dims while the region transfer requests are taking places.
@@ -879,15 +869,14 @@ PDCobj_get_dims(pdcid_t obj_id, int *ndim, uint64_t **dims)
     struct _pdc_id_info * info;
     struct _pdc_obj_info *object;
 
-    info = PDC_find_id(obj_id);
-    if (info == NULL) {
-        LOG_ERROR("PDCobj_set_dims: cannnot find obj id");
-    }
+    if ((info = PDC_find_id(obj_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_id);
     object = (struct _pdc_obj_info *)(info->obj_ptr);
     *ndim  = object->obj_pt->obj_prop_pub->ndim;
     *dims  = (uint64_t *)PDC_malloc(sizeof(uint64_t) * ndim[0]);
     memcpy(*dims, object->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * ndim[0]);
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -901,9 +890,8 @@ PDCobj_buf_retrieve(pdcid_t obj_id)
     struct _pdc_obj_info *object;
     void **               buffer;
 
-    info = PDC_find_id(obj_id);
-    if (info == NULL)
-        PGOTO_ERROR(NULL, "Cannot locate object ID");
+    if ((info = PDC_find_id(obj_id)) == NULL)
+        PGOTO_ERROR(NULL, "Failed to find PDC ID: %d", obj_id);
     object    = (struct _pdc_obj_info *)(info->obj_ptr);
     buffer    = &(object->obj_pt->buf);
     ret_value = buffer;
@@ -922,9 +910,8 @@ PDC_obj_get_info(pdcid_t obj_id)
     struct _pdc_id_info * obj;
     size_t                i;
 
-    obj = PDC_find_id(obj_id);
-    if (obj == NULL)
-        PGOTO_ERROR(NULL, "Cannot locate object");
+    if ((obj = PDC_find_id(obj_id)) == NULL)
+        PGOTO_ERROR(NULL, "Failed to find PDC ID: %d", obj_id);
 
     info      = (struct _pdc_obj_info *)(obj->obj_ptr);
     ret_value = (struct _pdc_obj_info *)PDC_calloc(1, sizeof(struct _pdc_obj_info));

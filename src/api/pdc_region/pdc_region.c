@@ -193,19 +193,19 @@ PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t 
     struct _pdc_id_info *   reginfo1, *reginfo2;
     struct pdc_region_info *reg1, *reg2;
 
-    reginfo1 = PDC_find_id(local_reg);
-    reg1     = (struct pdc_region_info *)(reginfo1->obj_ptr);
+    if ((reginfo1 = PDC_find_id(local_reg)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_reg);
+    reg1 = (struct pdc_region_info *)(reginfo1->obj_ptr);
 
-    objinfo2 = PDC_find_id(remote_obj);
-    if (objinfo2 == NULL)
-
-        PGOTO_ERROR(FAIL, "Cannot locate remote object ID");
+    if ((objinfo2 = PDC_find_id(remote_obj)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", remote_obj);
     obj2           = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
     remote_meta_id = obj2->obj_info_pub->meta_id;
     remote_type    = obj2->obj_pt->obj_prop_pub->type;
 
-    reginfo2 = PDC_find_id(remote_reg);
-    reg2     = (struct pdc_region_info *)(reginfo2->obj_ptr);
+    if ((reginfo2 = PDC_find_id(remote_reg)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %d", remote_reg);
+    reg2 = (struct pdc_region_info *)(reginfo2->obj_ptr);
     if (obj2->obj_pt->obj_prop_pub->ndim != reg2->ndim)
         PGOTO_ERROR(FAIL, "Remote object dimension and region dimension does not match");
     for (i = 0; i < reg2->ndim; i++)
@@ -239,9 +239,8 @@ PDCregion_get_info(pdcid_t reg_id)
     struct pdc_region_info *info      = NULL;
     struct _pdc_id_info *   region;
 
-    region = PDC_find_id(reg_id);
-    if (region == NULL)
-        PGOTO_ERROR(NULL, "Cannot locate region");
+    if ((region = PDC_find_id(reg_id)) == NULL)
+        PGOTO_ERROR(NULL, "Failed to find PDC ID: %d", reg_id);
 
     info      = (struct pdc_region_info *)(region->obj_ptr);
     ret_value = info;
@@ -261,15 +260,13 @@ PDCbuf_obj_unmap(pdcid_t remote_obj_id, pdcid_t remote_reg_id)
     struct pdc_region_info *reginfo;
     pdc_var_type_t          data_type;
 
-    info1 = PDC_find_id(remote_obj_id);
-    if (info1 == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object ID");
+    if ((info1 = PDC_find_id(remote_obj_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", remote_obj_id);
     object1   = (struct _pdc_obj_info *)(info1->obj_ptr);
     data_type = object1->obj_pt->obj_prop_pub->type;
 
-    info1 = PDC_find_id(remote_reg_id);
-    if (info1 == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate region ID");
+    if ((info1 = PDC_find_id(remote_obj_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", remote_obj_id);
     reginfo = (struct pdc_region_info *)(info1->obj_ptr);
 
     ret_value =
@@ -296,9 +293,8 @@ PDCreg_obtain_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type, pdc
     pbool_t                 obtained;
     struct _pdc_id_info *   info1;
 
-    info1 = PDC_find_id(obj_id);
-    if (info1 == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object ID");
+    if ((info1 = PDC_find_id(obj_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_id);
     object_info = (struct _pdc_obj_info *)(info1->obj_ptr);
     // object_info = PDC_obj_get_info(obj_id);
     data_type   = object_info->obj_pt->obj_prop_pub->type;
@@ -323,9 +319,8 @@ PDCreg_release_lock(pdcid_t obj_id, pdcid_t reg_id, pdc_access_t access_type)
     pdc_var_type_t          data_type;
     struct _pdc_id_info *   info1;
 
-    info1 = PDC_find_id(obj_id);
-    if (info1 == NULL)
-        PGOTO_ERROR(FAIL, "Cannot locate object ID");
+    if ((info1 = PDC_find_id(obj_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_id);
     object_info = (struct _pdc_obj_info *)(info1->obj_ptr);
     // object_info = PDC_obj_get_info(obj_id);
     data_type   = object_info->obj_pt->obj_prop_pub->type;

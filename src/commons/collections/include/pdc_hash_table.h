@@ -49,6 +49,12 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern "C" {
 #endif
 
+#ifdef ENABLE_MULTITHREAD
+#include "mercury_thread_mutex.h"
+
+extern hg_thread_mutex_t hash_table_new_mutex_g;
+#endif
+
 /**
  * A hash table structure.
  */
