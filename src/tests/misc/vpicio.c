@@ -51,10 +51,10 @@ print_usage()
 int
 main(int argc, char **argv)
 {
-    int     rank = 0, size = 1;
-    pdcid_t pdc_id, cont_prop, cont_id, region_local, region_remote;
-    pdcid_t obj_prop_float, obj_prop_int;
-    pdcid_t obj_ids[8];
+    int         rank = 0, size = 1;
+    pdcid_t     pdc_id, cont_prop, cont_id, region_local, region_remote;
+    pdcid_t     obj_prop_float, obj_prop_int;
+    pdcid_t     obj_ids[8];
     float *     dx, *dy, *dz, *ux, *uy, *uz, *q;
     int *       id;
     int         x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
