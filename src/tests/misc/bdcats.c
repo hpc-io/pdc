@@ -53,11 +53,6 @@ main(int argc, char **argv)
     int     rank = 0, size = 1;
     pdcid_t pdc_id, cont_id, region_local, region_remote;
     pdcid_t obj_ids[8];
-#ifdef ENABLE_MPI
-    MPI_Comm comm;
-#else
-    int comm = 1;
-#endif
     float *     dx, *dy, *dz, *ux, *uy, *uz, *q;
     int *       id;
     int         x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
@@ -72,7 +67,6 @@ main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
     numparticles = NPARTICLES;

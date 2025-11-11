@@ -55,11 +55,6 @@ main(int argc, char **argv)
     pdcid_t pdc_id, cont_prop, cont_id, region_local, region_remote;
     pdcid_t obj_prop_float, obj_prop_int;
     pdcid_t obj_ids[8];
-#ifdef ENABLE_MPI
-    MPI_Comm comm;
-#else
-    int comm = 1;
-#endif
     float *     dx, *dy, *dz, *ux, *uy, *uz, *q;
     int *       id;
     int         x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
@@ -74,7 +69,6 @@ main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
     numparticles = NPARTICLES;
@@ -167,7 +161,7 @@ main(int argc, char **argv)
             sprintf(obj_name, "%s-%d", obj_names[i], iter);
             pdcid_t obj_prop = (i < 7) ? obj_prop_float : obj_prop_int;
 #ifdef ENABLE_MPI
-            obj_ids[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0, comm);
+            obj_ids[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0, MPI_COMM_WORLD);
 #else
             obj_ids[i] = PDCobj_create(cont_id, obj_name, obj_prop);
 #endif
