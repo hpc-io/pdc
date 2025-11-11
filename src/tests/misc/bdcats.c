@@ -77,14 +77,16 @@ main(int argc, char **argv)
 #endif
 
     numparticles = NPARTICLES;
-    if (argc == 4) {
+    if (argc >= 2)
         numparticles = atoll(argv[1]);
-        steps        = atoi(argv[2]);
-        sleeptime    = atoi(argv[3]);
-    }
+    if (argc >= 3)
+        steps = atoi(argv[2]);
+    if (argc >= 4)
+        sleeptime = atoi(argv[3]);
+
     if (rank == 0)
-        LOG_INFO("Writing %" PRIu64 " number of particles for %d steps with %d clients.\n", numparticles,
-                 steps, size);
+        LOG_INFO("Reading %" PRIu64 " particles per rank for %d steps with %d sec sleep time.\n",
+                 numparticles, steps, sleeptime);
 
     dims[0] = numparticles * size;
 
