@@ -45,7 +45,7 @@ uniform_random_number()
 void
 print_usage()
 {
-    LOG_JUST_PRINT("Usage: srun -n ./bdcats_mts #particles #steps sleep_time(s)\n");
+    LOG_JUST_PRINT("Usage: srun -n ./bdcats #particles #steps sleep_time(s)\n");
 }
 
 int
