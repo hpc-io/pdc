@@ -270,8 +270,6 @@ main(int argc, char **argv)
 #endif
     } // End for steps
 
-    PDC_timing_report("write");
-
     if (PDCprop_close(obj_prop_float) != SUCCEED) {
         LOG_ERROR("Failed to close obj_prop_float\n");
         return FAIL;

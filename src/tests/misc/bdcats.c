@@ -32,7 +32,6 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -239,8 +238,6 @@ main(int argc, char **argv)
             LOG_INFO("Obj close time: %.5e\n", t1 - t0);
 #endif
     } // End for steps
-
-    PDC_timing_report("write");
 
     if (PDCregion_close(region_local) != SUCCEED) {
         LOG_ERROR("Failed to close local region \n");
