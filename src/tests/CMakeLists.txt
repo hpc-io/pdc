@@ -79,8 +79,6 @@ set(PROGRAMS
   obj/delete_obj
   misc/vpicio
   misc/bdcats
-  deprecated/vpicio_old
-  deprecated/bdcats_old
   tags/kvtag_add_get
   tags/kvtag_query
   region/region_transfer_query
