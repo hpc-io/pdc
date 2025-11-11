@@ -98,7 +98,7 @@ main(int argc, char **argv)
 
     id = (int *)malloc(numparticles * sizeof(int));
 
-    void *data_ptrs[] = {&dx[0], &dy[0], &dz[0], &ux[0], &uy[0], &uz[0], &id[0], &q[0]};
+    void *data_ptrs[] = {&dx[0], &dy[0], &dz[0], &ux[0], &uy[0], &uz[0], &q[0], &id[0]};
 
     // create a pdc
     pdc_id = PDCinit("pdc");
