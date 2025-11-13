@@ -33,7 +33,6 @@ PDC provides several core abstractions for modeling and managing data.
 .. figure:: ../_static/image/pdc-containers-objects-regions.png
    :alt: PDC containers, objects, and regions
    :align: center
-   :class: bordered-image
    :scale: 70%
 
    Relationship between PDC containers, objects, and regions.
