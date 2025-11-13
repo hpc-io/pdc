@@ -10,10 +10,12 @@ vision for PDC.
 **7.2.** Current Focus (Ongoing)
 --------------------------------
 
-- **Stability and Performance**
-  - Continue improving metadata and data transfer scalability across large-scale HPC systems.
-  - Optimize communication via Mercury and MPI layers.
-  - Enhance fault tolerance and recovery mechanisms for PDC servers.
+- **Transformations**
+  - Research is currently focused on enabling flexible and efficient in-flight data transformations within PDC. 
+    The goal is to allow data to be transformed transparently during movement between storage and memory, reducing 
+    application complexity and improving performance. Efforts include defining abstractions for expressing transformation pipelines, 
+    integrating them with I/O operations, and exploring strategies to optimize execution without requiring 
+    manual intervention from application developers.
 
 - **User Experience**
   - Streamline configuration with clearer environment variables and default parameters.

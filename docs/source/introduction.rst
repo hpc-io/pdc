@@ -656,21 +656,31 @@ PDCpy First Program
    import numpy as np
 
    def main():
-      cont = pdc.Container()
-      prop = Object.Properties(
-         64,
-         pdc.Type.DOUBLE,
+      cont = pdc.Container('my_container', lifetime=pdc.Container.Lifetime.TRANSIENT)
+      
+      prop = pdc.Object.Properties(
+         dims=(64,),
+         type=pdc.Type.DOUBLE,
       )
+      
       obj = cont.create_object("my_object", prop)
-      data = np.fromiter(np.double, 64)
-      obj.set_data(data)
+      
+      data = np.arange(64, dtype=np.double)
+      obj.set_data(data).wait()
+      
+      all_data = obj.get_data().wait()
+      print(all_data)
 
-It begins by creating a PDC container and defining object properties such as size 
-and data type (lines 6-9). An object is then created within the container using 
-these properties (line 10). A NumPy array of 64 double-precision values is prepared 
-to serve as the data buffer (line 11). The data is written to the PDC object using 
-the set_data() method (line 12), which handles the region creation and data transfer 
-internally.
+   if __name__ == "__main__":
+      main()
+
+It begins by creating a PDC container with a specified name and lifetime (line 6). 
+Object properties, including the number of elements and data type, are then defined 
+using pdc.Object.Properties (lines 8-11). A PDC object is created within the container 
+using these properties (line 13). A NumPy array of 64 double-precision values is prepared 
+as the data buffer (line 15). The data is written to the PDC object using the set_data() 
+method (line 16), and .wait() ensures that the transfer is completed. Finally, the stored 
+data is retrieved using get_data() and printed (lines 18-19).
 
 .. _vol-pdc-first-program:
 

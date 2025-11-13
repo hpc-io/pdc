@@ -25,7 +25,8 @@ Complete Examples
 - :ref:`Example: 2D Region Transfers <2D-region-transfer>`
 - :ref:`Example: 2D Batch Region Transfer <2D-batch-region-transfer>`
 - :ref:`Example: Get & Put Object <get-put-object>`
-
+- :ref:`Example: Add & Get KV Tag: <add-get-kvtag>`
+- :ref:`Example: Querying Object Data: <querying-object-data>`
 **3.2.** Initializing PDC
 -------------------------
 
@@ -229,6 +230,7 @@ For scenarios involving many objects or regions, PDC supports batch transfers to
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: C
+    :linenos:
 
         #include <stdio.h>
         #include "pdc.h"
@@ -343,6 +345,7 @@ For scenarios involving many objects or regions, PDC supports batch transfers to
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: C
+    :linenos:
 
         #include <stdio.h>
         #include "pdc.h"
@@ -479,6 +482,7 @@ Get Put Object Example
 ~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: C
+    :linenos:
 
         #include <stdio.h>
         #include <stdlib.h>
@@ -570,4 +574,194 @@ Get Put Object Example
                 printf("Example ran successfully\n");
 
             return ret_value;
+        }
+
+.. _add-get-kvtag:
+
+Add Get KV Tag
+~~~~~~~~~~~~~~
+
+.. code-block:: C
+    :linenos:
+
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <string.h>
+        #include "pdc.h"
+
+        int main() {
+            pdcid_t pdc, cont_prop, cont, obj_prop1, obj_prop2, obj1, obj2;
+            pdc_kvtag_t kvtag1, kvtag2, kvtag3;
+            char *v1 = "value1";
+            int v2 = 2;
+            double v3 = 3.45;
+            pdc_var_type_t type1, type2, type3;
+            void *value1, *value2, *value3;
+            psize_t value_size;
+
+            // create a pdc
+            pdc = PDCinit("pdc");
+
+            // create container property and container
+            cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+            cont = PDCcont_create("c1", cont_prop);
+
+            // create object properties
+            obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc);
+            obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc);
+
+            // create objects
+            obj1 = PDCobj_create(cont, "o1", obj_prop1);
+            obj2 = PDCobj_create(cont, "o2", obj_prop2);
+
+            // define key-value tags
+            kvtag1.name = "key1string";
+            kvtag1.value = (void *)v1;
+            kvtag1.type = PDC_STRING;
+            kvtag1.size = strlen(v1) + 1;
+
+            kvtag2.name = "key2int";
+            kvtag2.value = (void *)&v2;
+            kvtag2.type = PDC_INT;
+            kvtag2.size = sizeof(int);
+
+            kvtag3.name = "key3double";
+            kvtag3.value = (void *)&v3;
+            kvtag3.type = PDC_DOUBLE;
+            kvtag3.size = sizeof(double);
+
+            // put tags for obj1
+            PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size);
+            PDCobj_put_tag(obj1, kvtag2.name, kvtag2.value, kvtag2.type, kvtag2.size);
+
+            // put tag for obj2
+            PDCobj_put_tag(obj2, kvtag3.name, kvtag3.value, kvtag3.type, kvtag3.size);
+
+            // get tags
+            PDCobj_get_tag(obj1, kvtag1.name, (void *)&value1, (void *)&type1, (void *)&value_size);
+            PDCobj_get_tag(obj2, kvtag1.name, (void *)&value2, (void *)&type2, (void *)&value_size);
+            PDCobj_get_tag(obj2, kvtag3.name, (void *)&value3, (void *)&type3, (void *)&value_size);
+
+            // delete and put new tag for obj1
+            PDCobj_del_tag(obj1, kvtag1.name);
+            v1 = "New Value After Delete";
+            kvtag1.value = (void *)v1;
+            kvtag1.size = strlen(v1) + 1;
+            PDCobj_put_tag(obj1, kvtag1.name, kvtag1.value, kvtag1.type, kvtag1.size);
+            PDCobj_get_tag(obj1, kvtag1.name, (void *)&value1, (void *)&type1, (void *)&value_size);
+
+            // close objects, container, properties, and pdc
+            PDCobj_close(obj1);
+            PDCobj_close(obj2);
+            PDCcont_close(cont);
+            PDCprop_close(obj_prop1);
+            PDCprop_close(obj_prop2);
+            PDCprop_close(cont_prop);
+            PDCclose(pdc);
+
+            return 0;
+        }
+
+.. _querying-object-data:
+
+Querying Object Data
+~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: C
+
+        #include <stdio.h>
+        #include <stdlib.h>
+        #include <string.h>
+        #include <unistd.h>
+        #include "pdc.h"
+
+        int main(int argc, char **argv) {
+            int rank = 0, size = 1;
+            uint64_t size_MB;
+            pdcid_t obj_id = -1;
+            struct pdc_region_info region;
+            uint64_t i, dims[1];
+            pdc_selection_t sel;
+            char *obj_name;
+            int my_data_count;
+            pdc_metadata_t *metadata;
+            pdcid_t pdc, cont_prop, cont, obj_prop;
+            int ndim = 1;
+            int *mydata;
+
+        #ifdef ENABLE_MPI
+            MPI_Init(&argc, &argv);
+            MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+            MPI_Comm_size(MPI_COMM_WORLD, &size);
+        #endif
+
+            if (argc < 3)
+                return 1;
+
+            obj_name = argv[1];
+            size_MB  = atoi(argv[2]) * 1048576; // convert MB to bytes
+
+            // create a PDC
+            pdc = PDCinit("pdc");
+
+            // create container property and container
+            cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+            cont = PDCcont_create("c1", cont_prop);
+
+            // create object property
+            obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+
+            my_data_count = size_MB / size;
+            dims[0] = my_data_count;
+            PDCprop_set_obj_dims(obj_prop, 1, dims);
+            PDCprop_set_obj_user_id(obj_prop, getuid());
+            PDCprop_set_obj_time_step(obj_prop, 0);
+            PDCprop_set_obj_app_name(obj_prop, "DataServerTest");
+            PDCprop_set_obj_tags(obj_prop, "tag0=1");
+            PDCprop_set_obj_type(obj_prop, PDC_INT);
+
+            // create object (only rank 0)
+            if (rank == 0)
+                obj_id = PDCobj_create(cont, obj_name, obj_prop);
+
+        #ifdef ENABLE_MPI
+            MPI_Barrier(MPI_COMM_WORLD);
+        #endif
+
+            region.ndim = ndim;
+            region.offset = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+            region.size   = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
+            region.offset[0] = rank * my_data_count;
+            region.size[0]   = my_data_count;
+
+            mydata = (int *)malloc(my_data_count);
+            for (i = 0; i < my_data_count / sizeof(int); i++)
+                mydata[i] = i + rank * 1000;
+
+            PDC_Client_write(metadata, &region, mydata);
+
+            // construct a simple query example
+            int lo0 = 1000;
+            pdc_query_t *q0 = PDCquery_create(obj_id, PDC_LT, PDC_INT, &lo0);
+            PDCquery_sel_region(q0, &region);
+
+            PDCquery_get_selection(q0, &sel);
+            PDCselection_print(&sel);
+
+            // free resources
+            PDCquery_free_all(q0);
+            PDCregion_free(&region);
+            PDCselection_free(&sel);
+            free(mydata);
+
+            PDCcont_close(cont);
+            PDCprop_close(cont_prop);
+            PDCprop_close(obj_prop);
+            PDCclose(pdc);
+
+        #ifdef ENABLE_MPI
+            MPI_Finalize();
+        #endif
+
+            return 0;
         }

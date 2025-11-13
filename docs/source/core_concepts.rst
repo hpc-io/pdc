@@ -174,19 +174,22 @@ provide a mapping between in-memory data and the logical layout of objects, enab
 fine-grained control over data placement. Multiple regions may be 
 transferred at once to support batch operations.
 
-Data Transfer Modes
+Consistency Options
 ~~~~~~~~~~~~~~~~~~~
 
-Data can be exchanged between memory and storage using either asynchronous or 
-synchronous I/O.  
+Data can be exchanged between memory and storage using different consistency models, 
+such as synchronous (POSIX) or asynchronous (eventual) I/O. 
+Applications can choose or even dynamically adjust the consistency mode depending on their 
+specific requirements-favoring strict consistency when immediate visibility of updates is critical,
+or opting for eventual consistency to improve performance and overlap computation with data movement 
+in parallel or distributed workflows.
 
-- **Asynchronous Transfers**  
-  Allow computation and communication to overlap by decoupling data movement from 
-  execution flow. 
+- **POSIX Consistency**  
+  Synchronous reads and writes are enforced. 
+  All operations are immediately visible to all processes, ensuring strict consistency.
 
-- **Synchronous Transfers**  
-  Complete data movement before proceeding, 
-    simplifying coordination in sequential workflows.
+- **Eventual Consistency**  
+  Updates are performed asynchronously. Reads may return stale data until updates propagate, allowing computation and communication to overlap and improving performance in parallel workflows.
 
 Finalization
 ~~~~~~~~~~~~
