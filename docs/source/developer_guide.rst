@@ -8,7 +8,6 @@
 
 PDC’s architecture enables efficient asynchronous I/O operations, allowing computation and communication to overlap, which improves application performance especially in HPC environments.
 
-
 Using asynchronous APIs: 
 
 * PDC provides non-blocking APIs for data transfer such as PDCregion_transfer_start() which initiates a transfer without waiting for completion

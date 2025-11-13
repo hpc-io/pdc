@@ -14,7 +14,7 @@ Servers are background processes that carry out these operations as
 requested by the clients. Communication between clients and servers 
 is handled via Mercury RPCs and, when enabled, MPI. This architecture 
 supports scalable, asynchronous, and metadata-rich operations that decouple 
-the data model from physical data location.
+the data model from the physical data location.
 
 Data Management and Movement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -22,9 +22,7 @@ Data Management and Movement
 PDC manages both data and metadata in a way that optimizes movement across 
 deep memory hierarchies. Data is stored in objects and moved asynchronously 
 through region-based APIs, while metadata is distributed and indexed to support 
-scalable querying. Key features of this model include asynchronous data transfers, 
-region-aware memory binding, and automatic coordination between memory and 
-storage locations.
+scalable querying.  
 
 **2.2.** PDC abstractions
 -------------------------
@@ -173,24 +171,24 @@ Region Definition and Association
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Before data can be transferred, one or more local and target regions are defined to specify which 
-portions the memory space and subsets of an object are involved in an operation. These regions 
+portions  of the memory space and subsets of an object are involved in an operation. These regions 
 provide a mapping between in-memory data and the logical layout of objects, enabling 
-fine-grained control over data placement and movement. Multiple regions may be 
-created and transferred to support batch or parallel operations.
+fine-grained control over data placement. Multiple regions may be 
+transferred at once to support batch operations.
 
 Data Transfer Modes
 ~~~~~~~~~~~~~~~~~~~
 
 Data can be exchanged between memory and storage using either asynchronous or 
-synchronous modes.  
+synchronous I/O.  
 
 - **Asynchronous Transfers**  
   Allow computation and communication to overlap by decoupling data movement from 
-  execution flow. This mode is well suited for performance-critical and parallel workloads.  
+  execution flow. 
 
 - **Synchronous Transfers**  
-  Complete data movement before proceeding, providing predictable behavior and 
-  simplifying coordination in sequential workflows.
+  Complete data movement before proceeding, 
+    simplifying coordination in sequential workflows.
 
 Finalization
 ~~~~~~~~~~~~
