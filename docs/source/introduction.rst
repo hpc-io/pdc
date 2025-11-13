@@ -35,14 +35,13 @@ PDC offers the following methods for installing core dependencies:
 
 PDC offers the following installation targets:
 
-1. :ref:`C API <c-api>`
+1. `C API`
 2. :ref:`Python API (PDCpy) <python-api-pdc-py>`
 3. :ref:`HDF5 VOL Connector (VOL-PDC) <hdf5-vol-connector>`
 
 .. figure:: ../_static/image/pdc-installation.png
    :alt: PDC Installation Diagram
    :align: center
-   :class: bordered-image
 
    Installation workflow to install the client targets offered by PDC.
 
@@ -353,6 +352,22 @@ Legend:
 - 🟡 = Partially/experimentally supported
 - 🔴 = Not supported or currently disabled
 
+Several parameters can be specified at compile-time
+and then subsequently overwritten at runtime by
+setting the appropriate environment variable.
+
+Runtime Options
+~~~~~~~~~~~~~~~
+
+- PDC_DATA_LOC: Data directory path.
+- PDC_TMPDIR: Metadata directory path.
+- PDC_BB_LOC: Burst buffer directory path.
+- PDC_SERVER_CACHE_MAX_SIZE: Max server side cache size (GB).
+- PDC_SERVER_IDLE_CACHE_FLUSH_TIME: Time interval of the server side cache inactivity before automatic flush (sec).
+- PDC_SERVER_CACHE_NO_FLUSH: Disable the flushing of the server side cache.
+- HG_TRANSPORT: Specifies the Mercury communication transport protocol.
+- HG_HOST: Defines the hostname or IP address used by the Mercury network layer.
+
 .. note::
 
    ``-DCMAKE_C_COMPILER=mpicc -DMPI_RUN_CMD=mpiexec`` may need to be 
@@ -397,11 +412,6 @@ using the ``-L serial`` parameter:
    If you are using PDC on an HPC system, e.g. Perlmutter@NERSC, ``ctest`` should be run 
    on a compute node, you can submit an interactive job on Perlmutter: 
    ``salloc --nodes 1 --qos interactive --time 01:00:00 --constraint cpu --account=mxxxx``
-
-.. _c-api:
-
-**1.3.** C API
---------------
 
 .. _python-api-pdc-py:
 
@@ -757,3 +767,13 @@ Mercury was unable to find a valid provider based on your hostname (``ta1-pc`` i
 Please review the connection string (``ofi+tcp://ta1-pc:7000``) and ensure that the appropriate
 transport and host are set. If you're unsure which transport or host to use, you can run ``fi_info``
 (found in the ``bin`` directory of your libfabric installation) to list available network providers.
+
+
+**1.9.** Contact and Additional Information
+-------------------------------------------
+
+For questions, collaborations, or feedback, please open an issue on the project's GitHub page.  
+You can also explore the **PDC Dashboard** for an evaluation of **VPIC**, a particle simulation I/O kernel.
+
+- **Project Page:** `https://github.com/hpc-io/pdc <https://github.com/hpc-io/pdc>`_
+- **PDC Dashboard:** `Google Sheets Link <https://docs.google.com/spreadsheets/d/1Ho5W4U56lT03OHS5AVFhn9hT6eJIfBj-sCa20F--3VY/edit?gid=1616818039#gid=1616818039>`_

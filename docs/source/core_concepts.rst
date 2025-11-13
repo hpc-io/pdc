@@ -80,9 +80,7 @@ Regions
 -------------------
 
 Properties determine how objects, containers, etc., behave. 
-A property list is created using ``PDCprop_create(x)``, where ``x`` is 
-the entity type (``PDC_CONTAINER``, ``PDC_OBJ``, etc.). Once created, the 
-property list can be configured through additional function calls that 
+Once created, the property list can be configured through additional function calls that 
 append or modify properties. These customized property lists can then be 
 used in later calls to control the behavior of the associated entities. Some 
 examples of configurable properties are shown below.

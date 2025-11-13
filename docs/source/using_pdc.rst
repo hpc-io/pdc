@@ -3,6 +3,9 @@
 **3.** Using PDC
 ==================
 
+**3.1.** Overview
+-----------------
+
 This section provides a practical overview of how to use the PDC
 library to manage and transfer data in high-performance computing environments. 
 It walks through the essential steps of initializing PDC, creating containers 
@@ -23,8 +26,8 @@ Complete Examples
 - :ref:`Example: 2D Batch Region Transfer <2D-batch-region-transfer>`
 - :ref:`Example: Get & Put Object <get-put-object>`
 
-3.1. Initializing PDC
----------------------
+**3.2.** Initializing PDC
+-------------------------
 
 .. _initializing-pdc:
 
@@ -47,8 +50,8 @@ At the end of the application a corresponding deinitialization function should b
     If a function returns a ``perr_t``, a negative value indicates an error.
 
 
-3.2. Container Lifecycle
--------------------------
+**3.3.** Container Lifecycle
+----------------------------
 
 .. _container-lifecycle:
 
@@ -83,8 +86,8 @@ The following functions should be used to free both the container and its associ
     PDCcont_close(cont_id);
     PDCcont_close(cont_col_id);
 
-3.3. Object Lifecycle
----------------------
+**3.4.** Object Lifecycle
+-------------------------
 
 .. _object-lifecycle:
 
@@ -126,8 +129,8 @@ When the object and its property are no longer needed, they should be closed to 
     PDCobj_close(obj_id);
     PDCobj_close(obj_col_id);
 
-3.4. Region Transfer Lifecycle
-------------------------------
+**3.5. Region Transfer Lifecycle**
+----------------------------------
 
 .. _region-lifecycle:
 
@@ -217,8 +220,8 @@ For scenarios involving many objects or regions, PDC supports batch transfers to
     PDCregion_close(reg);
     PDCregion_close(reg_global);
 
-Complete Examples
------------------
+**3.6.** Complete Examples
+--------------------------
 
 .. _2D-region-transfer:
 

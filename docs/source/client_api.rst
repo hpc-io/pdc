@@ -8,19 +8,20 @@ It includes the types, core layer functions, properties, containers,
 objects, and region management functions. Use the links below to 
 quickly navigate to each subsection:
 
-- :ref:`client_api_types` - Types used in the Client API
-- :ref:`client_api_layer` - Initialization and shutdown functions for the PDC layer
-- :ref:`client_api_properties` - Functions for creating and closing properties
-- :ref:`client_api_containers` - Functions for creating and managing containers
-- :ref:`client_api_objects` - Functions for creating and managing objects
-- :ref:`client_api_object_tags` - Functions for creating and managing object tags
-- :ref:`client_api_regions` - Functions for creating and managing regions
-- :ref:`client_api_object_data_transfers` - Functions for object data transfers
+- :ref:`client_api_data_types` - Data types used in the Client API.
+- :ref:`client_api_layer` - Initialization and shutdown functions for the PDC layer.
+- :ref:`client_api_properties` - Functions for creating and closing properties.
+- :ref:`client_api_containers` - Functions for creating and managing containers.
+- :ref:`client_api_objects` - Functions for creating and managing objects.
+- :ref:`client_api_object_tags` - Functions for creating and managing object tags.
+- :ref:`client_api_regions` - Functions for creating and managing regions.
+- :ref:`client_api_object_data_transfers` - Functions for object data transfers.
+- :ref:`client_api_object_data_querying` - Functions for querying object data.
 
-.. _client_api_types:
+.. _client_api_data_types:
 
-**4.1.** Types
---------------
+**4.1.** Data Types
+-------------------
 
 .. doxygentypedef:: pdcid_t
    :project: PDC
@@ -40,10 +41,28 @@ quickly navigate to each subsection:
 .. doxygenenum:: pdc_lifetime_t
    :project: PDC
 
-.. doxygenenum:: pdc_prop_type_t
+.. doxygenenum:: pdc_consistency_t
    :project: PDC
 
-.. doxygenenum:: pdc_consistency_t
+.. doxygenenum:: pdc_prop_name_t
+   :project: PDC
+
+.. doxygenenum:: pdc_query_op_t
+   :project: PDC
+
+.. doxygenenum:: pdc_query_combine_op_t
+   :project: PDC
+
+.. doxygenenum:: pdc_query_get_op_t
+   :project: PDC
+
+.. doxygentypedef:: pdc_selection_t
+   :project: PDC
+
+.. doxygentypedef:: pdc_query_constraint_t
+   :project: PDC
+
+.. doxygentypedef:: pdc_query_t
    :project: PDC
 
 .. _client_api_layer:
@@ -198,4 +217,48 @@ quickly navigate to each subsection:
    :project: PDC
 
 .. doxygenfunction:: PDCobj_get_data
+   :project: PDC
+
+.. _client_api_object_data_querying:
+
+**4.9** Object Data Querying
+----------------------------
+
+.. doxygenfunction:: PDCquery_create
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_and
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_or
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_sel_region
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_get_selection
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_get_data
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_get_histogram
+   :project: PDC
+
+.. doxygenfunction:: PDCselection_free
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_free
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_free_all
+   :project: PDC
+
+.. doxygenfunction:: PDCquery_print
+   :project: PDC
+
+.. doxygenfunction:: PDCselection_print
+   :project: PDC
+
+.. doxygenfunction:: PDCselection_print_all
    :project: PDC

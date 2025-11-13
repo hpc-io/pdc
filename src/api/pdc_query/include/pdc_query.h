@@ -39,7 +39,7 @@ typedef struct pdc_query_constraint_t {
     pdc_query_op_t op2;
     double         value2;
 
-    void *  storage_region_list_head;
+    void   *storage_region_list_head;
     pdcid_t origin_server;
     int     n_sent;
     int     n_recv;
@@ -47,12 +47,12 @@ typedef struct pdc_query_constraint_t {
 
 typedef struct pdc_query_t {
     pdc_query_constraint_t *constraint;
-    struct pdc_query_t *    left;
-    struct pdc_query_t *    right;
+    struct pdc_query_t     *left;
+    struct pdc_query_t     *right;
     pdc_query_combine_op_t  combine_op;
     struct pdc_region_info *region;            // used only on client
-    void *                  region_constraint; // used only on server
-    pdc_selection_t *       sel;
+    void                   *region_constraint; // used only on server
+    pdc_selection_t        *sel;
 } pdc_query_t;
 
 // Request structure for async read/write
@@ -62,9 +62,9 @@ struct pdc_request {
     int                     n_client;
     int                     n_update;
     pdc_access_t            access_type;
-    void *                  metadata;
+    void                   *metadata;
     struct pdc_region_info *region;
-    void *                  buf;
+    void                   *buf;
 
     char *shm_base;
     char  shm_addr[128];
@@ -72,11 +72,11 @@ struct pdc_request {
     int   shm_size;
 
     int       n_buf_arr;
-    void ***  buf_arr;
-    int *     buf_arr_idx;
-    char **   shm_base_arr;
-    char **   shm_addr_arr;
-    int *     shm_fd_arr;
+    void   ***buf_arr;
+    int      *buf_arr_idx;
+    char    **shm_base_arr;
+    char    **shm_addr_arr;
+    int      *shm_fd_arr;
     uint64_t *shm_size_arr;
 
     void *storage_meta;
@@ -119,20 +119,6 @@ pdc_query_t *PDCquery_and(pdc_query_t *query1, pdc_query_t *query2);
  * \return ******
  */
 pdc_query_t *PDCquery_or(pdc_query_t *query1, pdc_query_t *query2);
-
-/**
- * Query an object based on a specific metadata (attribute) name and value
- *
- * \param cont_id [IN]          Container ID, 0 for all containers
- * \param prop_name [IN]        Metadta field name
- * \param prop_value [IN]       Metadta field value
- * \param out_ids[OUT]          Result object ids
- * \param n_out[OUT]            Number of results
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCobj_prop_query(pdcid_t cont_id, enum pdc_prop_name_t prop_name, void *prop_value, pdcid_t **out_ids,
-                         size_t *n_out);
 
 /**
  * *********
@@ -183,17 +169,6 @@ perr_t PDCquery_get_data(pdcid_t obj_id, pdc_selection_t *sel, void *obj_data);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCquery_get_histogram(pdcid_t obj_id);
-
-/**
- * *********
- *
- * \param query [IN]             *********
- * \param sel [IN]               *********
- * \param data [IN]              *********
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCquery_get_sel_data(pdc_query_t *query, pdc_selection_t *sel, void *data);
 
 /**
  * ********
