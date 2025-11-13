@@ -25,8 +25,9 @@ Complete Examples
 - :ref:`Example: 2D Region Transfers <2D-region-transfer>`
 - :ref:`Example: 2D Batch Region Transfer <2D-batch-region-transfer>`
 - :ref:`Example: Get & Put Object <get-put-object>`
-- :ref:`Example: Add & Get KV Tag: <add-get-kvtag>`
-- :ref:`Example: Querying Object Data: <querying-object-data>`
+- :ref:`Example: Add & Get KV Tag <add-get-kvtag>`
+- :ref:`Example: Querying Object Data <querying-object-data>`
+
 **3.2.** Initializing PDC
 -------------------------
 

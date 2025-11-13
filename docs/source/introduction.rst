@@ -415,7 +415,7 @@ using the ``-L serial`` parameter:
 
 .. _python-api-pdc-py:
 
-**1.4.** Python API (PDCpy)
+**1.3.** Python API (PDCpy)
 ---------------------------------
 
 Due to the rise of Python in the HPC community, PDC provides Python
@@ -460,7 +460,7 @@ Make sure the following environment variables are correct:
 
 .. _hdf5-vol-connector:
 
-**1.5.** HDF5 VOL Connector (VOL-PDC)
+**1.4.** HDF5 VOL Connector (VOL-PDC)
 -------------------------------------
 
 The following instructions are for installing PDC on Linux and Cray machines.
@@ -527,7 +527,7 @@ For instance, to run the ``h5pdc_vpicio`` example, you can use the following com
    # Close the PDC server(s)
    mpirun -N 1 -n 1 -c 1 ./$PDC_BIN_DIR/close_server
 
-**1.6** Managing PDC Server(s)
+**1.5** Managing PDC Server(s)
 ------------------------------
 
 PDC works in a client-server architecture, therefore, before running any PDC
@@ -570,7 +570,7 @@ must be launched with the ``restart`` parameter as shown below:
    If ``pdc_server`` is not launched with the ``restart`` command it will not 
    load the pre-existing data.
 
-**1.7.** First PDC Program
+**1.6.** First PDC Program
 --------------------------
 
 This section offers the following examples for different PDC target installations:
@@ -753,7 +753,7 @@ With the VOL environment variables set appropriately HDF5 will use
 PDC as the back-end. This makes it easy to adopt PDC in existing HDF5 workflows.
 
 
-**1.8.** Common Installation Errors
+**1.7.** Common Installation Errors
 -----------------------------------
 
 No Provider Found
@@ -779,7 +779,7 @@ transport and host are set. If you're unsure which transport or host to use, you
 (found in the ``bin`` directory of your libfabric installation) to list available network providers.
 
 
-**1.9.** Contact and Additional Information
+**1.8.** Contact and Additional Information
 -------------------------------------------
 
 For questions, collaborations, or feedback, please open an issue on the project's GitHub page.  
