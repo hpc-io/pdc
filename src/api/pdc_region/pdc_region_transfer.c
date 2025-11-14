@@ -855,43 +855,42 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
     remain_size = input_size - size;
     output_size = 0;
 
-    index = 0;
     qsort(transfer_requests, size, sizeof(pdc_transfer_request_start_all_pkg *),
           sort_by_metadata_server_start_all);
-    for (i = 1; i < size; ++i) {
-        if (transfer_requests[i]->transfer_request->metadata_server_id !=
-            transfer_requests[i - 1]->transfer_request->metadata_server_id) {
-            n_objs = i - index;
-            pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
-            PDC_Client_transfer_request_metadata_query(
-                &bulk_handle, buf, total_buf_size, n_objs,
-                transfer_requests[index]->transfer_request->metadata_server_id, is_write, &output_buf_size,
-                &query_id);
-            PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
-            buf = (char *)PDC_free(buf);
-            if (query_id) {
-                output_buf = (char *)PDC_malloc(output_buf_size);
-                PDC_Client_transfer_request_metadata_query2(
-                    &bulk_handle, output_buf, output_buf_size, query_id,
-                    transfer_requests[index]->transfer_request->metadata_server_id);
-                PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
-                unpack_region_metadata_query(output_buf, transfer_requests + index, &transfer_request_head,
-                                             &transfer_request_end, &output_size);
-                output_buf = (char *)PDC_free(output_buf);
-                if (transfer_request_front_head) {
-                    previous->next = transfer_request_head;
-                }
-                else {
-                    transfer_request_front_head = transfer_request_head;
-                }
-                previous = transfer_request_end;
-            }
-            index = i;
-        }
+
+    // Each iteration finds the first transfer that has a target meta server different from the previous one
+    // index is the first transfer index
+    int  current_unique_idx     = 0;
+    int *unique_server_xfer_idx = NULL;
+    int *unique_server_nboj     = NULL;
+    if (size > 0) {
+        unique_server_xfer_idx = (int *)PDC_calloc(size, sizeof(int));
+        unique_server_nboj     = (int *)PDC_calloc(size, sizeof(int));
     }
 
-    if (size) {
-        n_objs = size - index;
+    // Iterate through the input array
+    for (i = 0; i < size; ++i) {
+        if (i == 0 || transfer_requests[i]->transfer_request->metadata_server_id !=
+                          transfer_requests[i - 1]->transfer_request->metadata_server_id) {
+            // Check if the current element is different from the previous one
+            // or if it's the first element
+            unique_server_xfer_idx[current_unique_idx] = i;
+            unique_server_nboj[current_unique_idx]     = 1;
+
+            current_unique_idx++;
+        }
+        else {
+            unique_server_nboj[current_unique_idx - 1]++;
+        }
+    }
+    int num_unique_server_ids = current_unique_idx;
+
+    // Now we will try to distribute the metadata requests to different servers across clients
+    for (i = 0; i < num_unique_server_ids; i++) {
+        int current_index = (pdc_client_mpi_rank_g + i) % num_unique_server_ids;
+        index             = unique_server_xfer_idx[current_index];
+        n_objs            = unique_server_nboj[current_index];
+
         pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
         PDC_Client_transfer_request_metadata_query(
             &bulk_handle, buf, total_buf_size, n_objs,
@@ -899,7 +898,6 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
             &query_id);
         PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
         buf = (char *)PDC_free(buf);
-        // If it is a valid query ID, then it means regions are overlapping.
         if (query_id) {
             output_buf = (char *)PDC_malloc(output_buf_size);
             PDC_Client_transfer_request_metadata_query2(
@@ -909,15 +907,20 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
             unpack_region_metadata_query(output_buf, transfer_requests + index, &transfer_request_head,
                                          &transfer_request_end, &output_size);
             output_buf = (char *)PDC_free(output_buf);
-            if (transfer_request_front_head) {
+
+            if (transfer_request_front_head)
                 previous->next = transfer_request_head;
-            }
-            else {
+            else
                 transfer_request_front_head = transfer_request_head;
-            }
+
             previous = transfer_request_end;
         }
     }
+
+    if (unique_server_xfer_idx)
+        free(unique_server_xfer_idx);
+    if (unique_server_nboj)
+        free(unique_server_nboj);
 
     if (output_size) {
         transfer_request_output = (pdc_transfer_request_start_all_pkg **)PDC_malloc(

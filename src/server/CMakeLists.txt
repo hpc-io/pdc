@@ -23,6 +23,9 @@ if(PDC_ENABLE_ZFP)
     # find_path(ZFP_INCLUDE_DIR include/zfp.h)
 endif()
 
+if(PDC_ENABLE_IDIOMS)
+    add_definitions(-DPDC_ENABLE_IDIOMS=1)
+endif()
 
 include_directories(
   ${PDC_COMMON_INCLUDE_DIRS}
