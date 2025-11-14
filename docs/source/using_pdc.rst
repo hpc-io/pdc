@@ -131,7 +131,7 @@ When the object and its property are no longer needed, they should be closed to 
     PDCobj_close(obj_id);
     PDCobj_close(obj_col_id);
 
-**3.5. Region Transfer Lifecycle**
+**3.5.** Region Transfer Lifecycle
 ----------------------------------
 
 .. _region-lifecycle:

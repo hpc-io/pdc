@@ -6,24 +6,38 @@
 **1.1.** What is PDC
 --------------------
 
-Proactive Data Containers (PDC) software provides an object-focused data management API, 
-a runtime system with a set of scalable data object management services, and tools for 
-managing data objects stored in the PDC system. The PDC API allows efficient and 
-transparent data movement in complex memory and storage hierarchy. The PDC runtime 
-system performs data movement asynchronously and provides scalable metadata operations 
-to find and manipulate data objects. PDC revolutionizes how data is managed and accessed 
-by using object-centric abstractions to represent data that moves in the high-performance 
-computing (HPC) memory and storage subsystems. PDC manages extensive metadata to describe 
-data objects to find desired data efficiently as well as to store information in the data objects.
+Proactive Data Containers (PDC) is an object-focused data management API, 
+a runtime system with a set of scalable data object management services, 
+and tools for managing data objects stored in the PDC system.
 
-More information and publications about PDC are available at https://sdm.lbl.gov/pdc.
+The main goal of PDC is to simplify data management by providing abstractions of 
+data and metadata as Objects, organized in Containers. To allow multiple parallel processes, 
+a.k.a., Message Passing Interface (MPI) ranks, concurrent access (reads and writes) 
+to data in objects, PDC provides an abstraction of Regions. Metadata is organized with 
+Attributes managed in key-value (KV) pairs.
 
-If you use PDC in your research, please cite the following:
+Simplicity of the PDC comes from its application programming interface (API), 
+which allows users to describe an object, add metadata (attributes) to the 
+object, and concurrently access the object. PDC allows efficient and transparent 
+data movement in complex memory and storage hierarchy without application programmers 
+needing to move the data in the hierarchy. The runtime system of PDC performs data 
+movement asynchronously and provides scalable metadata operations to find and manipulate 
+data objects. PDC revolutionizes how data is managed and accessed by using object-centric 
+abstractions to represent data that moves in the high-performance computing (HPC) memory 
+and storage subsystems. PDC manages extensive metadata to describe data objects to find 
+desired data efficiently as well as to store information in the data objects. PDC decides 
+on data layouts to take advantage of underlying parallel file systems transparently from 
+the users. Users can query the metadata to find the data objects and portions of the 
+data objects (i.e., regions) and access them.
 
-Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, 
-Soumagne, Jerome, Vishwanath, Venkat, Warren, Richard, and Tessier, François. 
-*Proactive Data Containers (PDC) v0.1*. Computer Software. https://github.com/hpc-io/pdc. 
-USDOE. 11 May. 2017. Web. doi:`10.11578/dc.20210325.1 <https://doi.org/10.11578/dc.20210325.1>`_
+Overall, PDC is a novel data management software for easing the pain of managing 
+data in HPC systems and allowing runtime systems to make intelligent decisions 
+regarding data movement. Core concepts of PDC are available 
+in :doc:`Core Concepts <core_concepts>`..
+
+To cite PDC, use the following.
+
+Suren Byna, Bin Dong, Houjun Tang, Quincey Koziol, Jingqing Mu, Jerome Soumagne, Venkat Vishwanath, Richard Warren, and François Tessier, "Proactive Data Containers (PDC) v0.1. Computer Software", https://github.com/hpc-io/pdc. USDOE. 11 May. 2017. Web. doi:10.11578/dc.20210325.1
 
 **1.2.** Installation
 ---------------------
