@@ -3,28 +3,7 @@
 **2.** Core Concepts
 ====================
 
-**2.1.** Architecture of PDC
-----------------------------
-
-PDC is built on a distributed client-server architecture optimized for 
-high-performance computing (HPC) environments. In this model, clients 
-are user processes that interact with the PDC client library and API 
-to initiate data creation, movement, querying, and transformation. 
-Servers are background processes that carry out these operations as 
-requested by the clients. Communication between clients and servers 
-is handled via Mercury RPCs and, when enabled, MPI. This architecture 
-supports scalable, asynchronous, and metadata-rich operations that decouple 
-the data model from the physical data location.
-
-Data Management and Movement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-PDC manages both data and metadata in a way that optimizes movement across 
-deep memory hierarchies. Data is stored in objects and moved asynchronously 
-through region-based APIs, while metadata is distributed and indexed to support 
-scalable querying.  
-
-**2.2.** PDC abstractions
+**2.1.** PDC abstractions
 -------------------------
 
 PDC provides several core abstractions for modeling and managing data.
@@ -74,6 +53,27 @@ Regions
 
 .. note::
    PDC currently supports a maximum of 3 dimensions for both objects and regions.
+
+**2.2.** Architecture of PDC
+----------------------------
+
+PDC is built on a distributed client-server architecture optimized for 
+high-performance computing (HPC) environments. In this model, clients 
+are user processes that interact with the PDC client library and API 
+to initiate data creation, movement, querying, and transformation. 
+Servers are background processes that carry out these operations as 
+requested by the clients. Communication between clients and servers 
+is handled via Mercury RPCs and, when enabled, MPI. This architecture 
+supports scalable, asynchronous, and metadata-rich operations that decouple 
+the data model from the physical data location.
+
+Data Management and Movement
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PDC manages both data and metadata in a way that optimizes movement across 
+deep memory hierarchies. Data is stored in objects and moved asynchronously 
+through region-based APIs, while metadata is distributed and indexed to support 
+scalable querying.  
 
 **2.3.** Properties
 -------------------
