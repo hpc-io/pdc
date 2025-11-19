@@ -42,12 +42,10 @@ Suren Byna, Bin Dong, Houjun Tang, Quincey Koziol, Jingqing Mu, Jerome Soumagne,
 **1.2.** Installation
 ---------------------
 
-PDC offers the following methods for installing core dependencies:
-
-1. :ref:`Spack <link_spack>`
-2. :ref:`PDC Source <pdc-source>`
-
-PDC offers the following installation targets:
+PDC offers several installation targets, 
+including C and Python APIs, as well as support 
+for use as an HDF5 VOL connector. These options are listed below, 
+and the accompanying figure illustrates the installation path for each:
 
 1. `C API`
 2. :ref:`Python API (PDCpy) <python-api-pdc-py>`
@@ -57,7 +55,13 @@ PDC offers the following installation targets:
    :alt: PDC Installation Diagram
    :align: center
 
-   Installation workflow to install the client targets offered by PDC.
+Installation workflow to install the client targets offered by PDC.
+
+As seen in the figure above,
+   PDC offers the following methods for installing core dependencies:
+
+1. :ref:`Spack <link_spack>`
+2. :ref:`PDC Source <pdc-source>`
 
 .. note::
 
