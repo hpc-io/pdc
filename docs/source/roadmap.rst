@@ -22,32 +22,26 @@ vision for PDC.
   - Expand documentation and example workflows for common HPC use cases.
 
 - **Interoperability**
-  - Strengthen integration with HDF5, ADIOS, and other I/O frameworks.
-  - Improve support for various network transports through Mercury (``ofi``, ``tcp``, ``verbs``, etc.).
+  - Strengthen integration with HDF5 and other I/O frameworks.
 
 **7.3.** Short-Term Goals (Next 6-12 Months)
 --------------------------------------------
 
-- Implement enhanced **data caching and eviction policies** to reduce I/O latency.
-- Improve **burst buffer management** for hybrid memory/storage architectures.
-- Extend **metadata indexing** and search capabilities.
-- Add more comprehensive **unit and integration tests** in CI pipelines.
-- Expand **PDC client APIs** in C and Python with better documentation and examples.
+- Implement enhanced client-side data caching and eviction 
+  policies to automatically exchange data from other MPI ranks and from multiple nodes.
 
 **7.4.** Medium-Term Goals (1-2 Years)
 --------------------------------------
 
-- Introduce **multi-tier data management** (memory, SSD, disk, object storage).
-- Develop **asynchronous data movement and prefetching** mechanisms.
-- Enhance **seurity and authentication** (e.g., Cray DRC, token-based access).
-- Support **federated PDC deployments** across distributed sites.
+- Integrate data movement between multiple HPC systems and between HPC and Cloud object storage systems.
+- Compound data type support for regions.
 
 **7.5.** Long-Term Vision (Beyond 2 Years)
 ------------------------------------------
 
-- Enable **self-optimizing data placement** based on access patterns and system telemetry.
-- Integrate with **workflow and data provenance frameworks** for end-to-end data lifecycle management.
-- Expand **AI-driven data management features**, such as automated cache tuning and prediction-based prefetching.
+- Integrate with workflow and data provenance frameworks for end-to-end data lifecycle management.
+- Expand AI-driven data management features, such as automated cache tuning and prediction-based prefetching.
 - Achieve production-grade stability and adoption across DOE and large HPC facilities.
+- Integrate PDC in DOE applications and workflows.
 
 *Last updated: November 2025*
