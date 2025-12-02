@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
+#include "pdc_client_server_common.h"
 #include "test_helper.h"
 
 void

@@ -33,7 +33,18 @@
 /*******************/
 /* Public Typedefs */
 /*******************/
-typedef int                perr_t;
+
+/**
+ * @brief PDC error
+ *
+ * Negative indicates error success otherwise
+ */
+typedef int perr_t;
+/**
+ * @brief PDC ID
+ *
+ * 0 indicates error success otherwise
+ */
 typedef uint64_t           pdcid_t;
 typedef unsigned long long psize_t;
 typedef bool               pbool_t;
@@ -42,6 +53,35 @@ typedef int    PDC_int_t;
 typedef float  PDC_float_t;
 typedef double PDC_double_t;
 
+/**
+ * @brief PDC variable types
+ *
+ * List of all variable types:
+ *
+ * - PDC_UNKNOWN    = 0    : error
+ * - PDC_SHORT      = 1    : short types
+ * - PDC_INT        = 2    : integer types (identical to int32_t)
+ * - PDC_UINT       = 3    : unsigned integer types (identical to uint32_t)
+ * - PDC_LONG       = 4    : long types
+ * - PDC_INT8       = 5    : 8-bit integer types
+ * - PDC_UINT8      = 6    : 8-bit unsigned integer types
+ * - PDC_INT16      = 7    : 16-bit integer types
+ * - PDC_UINT16     = 8    : 16-bit unsigned integer types
+ * - PDC_INT32      = 9    : 32-bit integer types, already listed as PDC_INT
+ * - PDC_UINT32     = 10   : 32-bit unsigned integer types
+ * - PDC_INT64      = 11   : 64-bit integer types
+ * - PDC_UINT64     = 12   : 64-bit unsigned integer types
+ * - PDC_FLOAT      = 13   : floating-point types
+ * - PDC_DOUBLE     = 14   : double types
+ * - PDC_CHAR       = 15   : character types
+ * - PDC_STRING     = 16   : string types
+ * - PDC_BOOLEAN    = 17   : boolean types
+ * - PDC_VOID_PTR   = 18   : void pointer type
+ * - PDC_SIZE_T     = 19   : size_t type
+ * - PDC_BULKI      = 20   : BULKI type
+ * - PDC_BULKI_ENT  = 21   : BULKI_ENTITY type
+ * - PDC_TYPE_COUNT = 22   : number of variable types (must be last)
+ */
 typedef pdc_c_var_type_t pdc_var_type_t;
 
 // FIXME: common data structure should be defined in a group of common header files.
@@ -52,7 +92,18 @@ typedef struct pdc_kvtag_t {
     void *   value;
 } pdc_kvtag_t;
 
-typedef enum { PDC_PERSIST, PDC_TRANSIENT } pdc_lifetime_t;
+/**
+ * @brief Lifetime of a PDC container
+ *
+ * The default is PDC_PERSIST
+ */
+typedef enum {
+    /// @brief The container persists beyond the lifetime of the creating process.
+    PDC_PERSIST,
+    /// @brief The container exists only for the duration
+    /// of the creating process and is deleted when the process exits.
+    PDC_TRANSIENT
+} pdc_lifetime_t;
 
 typedef enum { PDC_SERVER_DEFAULT = 0, PDC_SERVER_PER_CLIENT = 1 } pdc_server_selection_t;
 

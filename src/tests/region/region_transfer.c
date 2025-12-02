@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
+#include "pdc_private.h"
 #include "test_helper.h"
 
 #define BUF_LEN 128

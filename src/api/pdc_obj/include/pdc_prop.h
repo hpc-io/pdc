@@ -43,7 +43,18 @@ struct pdc_obj_prop {
 /*******************/
 /* Public Typedefs */
 /*******************/
-typedef enum { PDC_CONT_CREATE = 0, PDC_OBJ_CREATE } pdc_prop_type_t;
+
+/**
+ * @brief Type of a PDC property
+ *
+ * Indicates what the property is used for when creating objects or containers.
+ */
+typedef enum {
+    /// @brief Property applies to container creation.
+    PDC_CONT_CREATE = 0,
+    /// @brief Property applies to object creation.
+    PDC_OBJ_CREATE
+} pdc_prop_type_t;
 
 /*********************/
 /* Public Prototypes */
@@ -97,26 +108,5 @@ struct _pdc_cont_prop *PDCcont_prop_get_info(pdcid_t prop_id);
  * \return Pointer to pdc_obj_prop struct/Null on failure
  */
 struct pdc_obj_prop *PDCobj_prop_get_info(pdcid_t prop_id);
-
-/**
- * Send updated metadata (stored as property) to metadata server
- *
- * \param obj_id[IN]            Object ID
- * \param prop_id[IN]           Object property
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCprop_update(pdcid_t obj_id, pdcid_t prop_id);
-
-/**
- * **********
- *
- * \param obj_id[IN]            Object ID
- * \param tag_name [IN]         Metadta field name
- * \param tag_value [IN]        Metadta field value
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCtag_get(pdcid_t obj_id, char *tag_name, void *tag_value);
 
 #endif /* PDC_PROP_H */

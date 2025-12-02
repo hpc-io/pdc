@@ -28,6 +28,9 @@
 #include <getopt.h>
 #include <time.h>
 #include "pdc.h"
+#include "pdc_client_connect.h"
+#include "dart_core.h"
+#include "string_utils.h"
 #include "test_helper.h"
 
 int
@@ -99,7 +102,7 @@ main(int argc, char *argv[])
     if (argc < 5) {
         if (rank == 0)
             print_usage(argv[0]);
-        PGOTO_DONE(ret_value);
+        TGOTO_DONE(ret_value);
     }
     n_obj         = atoi(argv[1]);
     round         = atoi(argv[2]);
@@ -155,9 +158,9 @@ main(int argc, char *argv[])
             if (is_using_dart &&
                 PDC_Client_insert_obj_ref_into_dart(hash_algo, kvtag.name, value, strlen(value), PDC_STRING,
                                                     ref_type, (uint64_t)obj_ids[i]) < 0)
-                PGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d\n", i + my_obj_s);
+                TGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d\n", i + my_obj_s);
             else if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
-                PGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d\n", i + my_obj_s);
+                TGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d\n", i + my_obj_s);
         }
         if (rank == 0)
             LOG_JUST_PRINT("Rank %d: Added %d kvtag to the %d th object\n", rank, round, i);
@@ -189,7 +192,7 @@ main(int argc, char *argv[])
             if (PDC_Client_search_obj_ref_through_dart(hash_algo, exact_query, ref_type, &nres, &pdc_ids) <
                 0) {
 #endif
-                PGOTO_ERROR(TFAIL, "Failed to PDC_Client_search_obj_ref_through_dart_mpi\n", kvtag.name,
+                TGOTO_ERROR(TFAIL, "Failed to PDC_Client_search_obj_ref_through_dart_mpi\n", kvtag.name,
                             rank);
             }
         }
@@ -199,7 +202,7 @@ main(int argc, char *argv[])
 #else
             if (PDC_Client_query_kvtag(&kvtag, &nres, &pdc_ids) < 0) {
 #endif
-                PGOTO_ERROR(TFAIL, "Failed to query kvtag [%s] with rank %d\n", kvtag.name, rank);
+                TGOTO_ERROR(TFAIL, "Failed to query kvtag [%s] with rank %d\n", kvtag.name, rank);
             }
         }
     }

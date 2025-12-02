@@ -121,20 +121,6 @@ pdc_query_t *PDCquery_and(pdc_query_t *query1, pdc_query_t *query2);
 pdc_query_t *PDCquery_or(pdc_query_t *query1, pdc_query_t *query2);
 
 /**
- * Query an object based on a specific metadata (attribute) name and value
- *
- * \param cont_id [IN]          Container ID, 0 for all containers
- * \param prop_name [IN]        Metadta field name
- * \param prop_value [IN]       Metadta field value
- * \param out_ids[OUT]          Result object ids
- * \param n_out[OUT]            Number of results
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCobj_prop_query(pdcid_t cont_id, enum pdc_prop_name_t prop_name, void *prop_value, pdcid_t **out_ids,
-                         size_t *n_out);
-
-/**
  * *********
  *
  * \param query [IN]             *********
@@ -183,17 +169,6 @@ perr_t PDCquery_get_data(pdcid_t obj_id, pdc_selection_t *sel, void *obj_data);
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCquery_get_histogram(pdcid_t obj_id);
-
-/**
- * *********
- *
- * \param query [IN]             *********
- * \param sel [IN]               *********
- * \param data [IN]              *********
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCquery_get_sel_data(pdc_query_t *query, pdc_selection_t *sel, void *data);
 
 /**
  * ********

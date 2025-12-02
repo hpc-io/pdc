@@ -1,57 +1,42 @@
-.. PDC documentation master file, created by
-   sphinx-quickstart on Thu Apr 15 14:28:56 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Proactive Data Containers (PDC)
 ===============================
 
-Proactive Data Containers (PDC) software provides an object-focused data management API, a runtime system with a set of scalable data object management services, and tools for managing data objects stored in the PDC system. The PDC API allows efficient and transparent data movement in complex memory and storage hierarchy. The PDC runtime system performs data movement asynchronously and provides scalable metadata operations to find and manipulate data objects. PDC revolutionizes how data is managed and accessed by using object-centric abstractions to represent data that moves in the high-performance computing (HPC) memory and storage subsystems. PDC manages extensive metadata to describe data objects to find desired data efficiently as well as to store information in the data objects.
+Welcome to the documentation for **Proactive Data Containers (PDC)** — 
+a high-performance data management framework designed to support flexible, scalable, 
+and efficient data movement and access across diverse memory and storage systems.
 
-More information and publications of PDC is available at https://sdm.lbl.gov/pdc
+Whether you're a new user, a developer integrating PDC into your application, or a 
+contributor to the project, this documentation provides the resources you need to get started and dive deeper.
 
-If you use PDC in your research, please use the following citation:
+Here’s how to navigate:
 
-Byna, Suren, Dong, Bin, Tang, Houjun, Koziol, Quincey, Mu, Jingqing, Soumagne, Jerome, Vishwanath, Venkat, Warren, Richard, and Tessier, François. Proactive Data Containers (PDC) v0.1. Computer Software. https://github.com/hpc-io/pdc. USDOE. 11 May. 2017. Web. doi:10.11578/dc.20210325.1.
+- **Getting Started**  
+  Learn the basics of PDC, including core concepts, architecture, and key services. Start here if you're new to PDC.
+- **Developer & API Guide**  
+  Explore the client API, internal design considerations, and tools to help you develop and debug PDC-based applications.
+- **Community and Contributions**  
+  Find guidelines for contributing to PDC and additional reference material in the appendix.
+
+Use the table of contents below to explore the sections in more detail
 
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started
 
-   getting_started
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Overview
-   
    introduction
-   hdf5vol
+   core_concepts
+   using_pdc
 
 .. toctree::
    :maxdepth: 2
-   :caption: Resources
+   :caption: Client API/Tools & Develop Guide
 
-   hellopdcexample
-   examples
-   api
-   tools
-
+   client_api
+   client_tools
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Developer Documentation
+   :maxdepth: 1
+   :caption: Community and Contributions
 
-   developer-notes
-   documentation/objects
-   documentation/regions
-   documentation/query
-   documentation/analysis
-   documentation/transformation
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   contributing
+   roadmap

@@ -63,3 +63,9 @@ div.rst-content dl dt {
     color: #65419d;
     border-left: 3px solid #65419d;
 }
+
+.bordered-image {
+    border: 2px solid #555;
+    padding: 4px;
+    border-radius: 4px;
+}
