@@ -127,13 +127,13 @@ and optional dependencies along with their recommended versions below:
 
 * **Supporting libraries**:
 
-  - libfabric (version 1.18.0)
-  - Mercury (version 2.2.0)
+  - libfabric (version 1.18.0 or later)
+  - Mercury (version 2.2.0 or later)
 
 * **Optional dependencies**:
 
-  - Python (required if using the PDC Python API) — version 3.x
-  - HDF5 (required if using the PDC HDF5 API) — version 1.12.1
+  - Python (required if using the PDC Python API, version 3.x or later)
+  - HDF5 (required if using the PDC HDF5 API, version 1.12.1 or later)
 
 We provide detailed instructions for installing libfabric, Mercury, and the PDC library below.
 

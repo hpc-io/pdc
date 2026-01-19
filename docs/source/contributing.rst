@@ -130,7 +130,7 @@ Pull Request Template
 Issues
 ------
 
-- **Implemented**: PDC has four templates to help create issues. Users can still open blank issues.
+- PDC has four templates to help create issues. Users can still open blank issues.
 
 **Bug Report template:**
 
