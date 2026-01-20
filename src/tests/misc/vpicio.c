@@ -32,7 +32,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
-#include "test_helper.h"
+#include "pdc_timing.h"
 
 #define NPARTICLES 8388608
 
@@ -45,390 +45,262 @@ uniform_random_number()
 void
 print_usage()
 {
-    LOG_JUST_PRINT("Usage: srun -n ./vpicio #particles\n");
+    LOG_JUST_PRINT("Usage: srun -n ./vpicio #particles #steps sleep_time(s)\n");
 }
 
 int
 main(int argc, char **argv)
 {
-    int     rank = 0, size = 1;
-    pdcid_t pdc_id, cont_prop, cont_id;
-    pdcid_t obj_prop_xx, obj_prop_yy, obj_prop_zz, obj_prop_pxx, obj_prop_pyy, obj_prop_pzz, obj_prop_id11,
-        obj_prop_id22;
-    pdcid_t obj_xx, obj_yy, obj_zz, obj_pxx, obj_pyy, obj_pzz, obj_id11, obj_id22;
-    pdcid_t region_x, region_y, region_z, region_px, region_py, region_pz, region_id1, region_id2;
-    pdcid_t region_xx, region_yy, region_zz, region_pxx, region_pyy, region_pzz, region_id11, region_id22;
-    perr_t  ret_value = TSUCCEED;
-#ifdef ENABLE_MPI
-    MPI_Comm comm;
-#else
-    int comm = 1;
-#endif
-    float *   x, *y, *z;
-    float *   px, *py, *pz;
-    int *     id1, *id2;
-    int       x_dim = 64;
-    int       y_dim = 64;
-    int       z_dim = 64;
-    uint64_t  numparticles, i;
-    uint64_t  dims[1];
-    int       ndim = 1;
-    uint64_t *offset;
-    uint64_t *offset_remote;
-    uint64_t *mysize;
-    double    t0, t1;
+    int         rank = 0, size = 1;
+    pdcid_t     pdc_id, cont_prop, cont_id, region_local, region_remote;
+    pdcid_t     obj_prop_float, obj_prop_int;
+    pdcid_t     obj_ids[8];
+    float *     dx, *dy, *dz, *ux, *uy, *uz, *q;
+    int *       id;
+    int         x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
+    uint64_t    numparticles, dims[1], offset_local[1], offset_remote[1], mysize[1];
+    double      t0, t1;
+    const char *obj_names[] = {"dX", "dY", "dZ", "Ux", "Uy", "Uz", "q", "i"};
+    char        obj_name[64];
 
-    pdcid_t transfer_request_x, transfer_request_y, transfer_request_z, transfer_request_px,
-        transfer_request_py, transfer_request_pz, transfer_request_id1, transfer_request_id2;
+    pdcid_t transfer_requests[8];
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
 #endif
 
     numparticles = NPARTICLES;
-    if (argc == 2) {
+    if (argc >= 2)
         numparticles = atoll(argv[1]);
-        if (rank == 0)
-            LOG_INFO("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
-    }
+    if (argc >= 3)
+        steps = atoi(argv[2]);
+    if (argc >= 4)
+        sleeptime = atoi(argv[3]);
+
+    if (rank == 0)
+        LOG_INFO("Writing %" PRIu64 " particles per rank for %d steps with %d sec sleep time.\n",
+                 numparticles, steps, sleeptime);
 
     dims[0] = numparticles * size;
 
-    x = (float *)malloc(numparticles * sizeof(float));
-    y = (float *)malloc(numparticles * sizeof(float));
-    z = (float *)malloc(numparticles * sizeof(float));
+    dx = (float *)malloc(numparticles * sizeof(float));
+    dy = (float *)malloc(numparticles * sizeof(float));
+    dz = (float *)malloc(numparticles * sizeof(float));
+    ux = (float *)malloc(numparticles * sizeof(float));
+    uy = (float *)malloc(numparticles * sizeof(float));
+    uz = (float *)malloc(numparticles * sizeof(float));
+    q  = (float *)malloc(numparticles * sizeof(float));
 
-    px = (float *)malloc(numparticles * sizeof(float));
-    py = (float *)malloc(numparticles * sizeof(float));
-    pz = (float *)malloc(numparticles * sizeof(float));
+    id = (int *)malloc(numparticles * sizeof(int));
 
-    id1 = (int *)malloc(numparticles * sizeof(int));
-    id2 = (int *)malloc(numparticles * sizeof(int));
+    void *data_ptrs[] = {&dx[0], &dy[0], &dz[0], &ux[0], &uy[0], &uz[0], &q[0], &id[0]};
 
     // create a pdc
-    TASSERT((pdc_id = PDCinit("pdc")) != 0, "Call to PDCinit succeeded", "Call to PDCinit failed");
+    pdc_id = PDCinit("pdc");
+
     // create a container property
-    TASSERT((cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id)) != 0, "Call to PDCprop_create succeeded",
-            "Call to PDCprop_create failed");
+    cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
+    if (cont_prop <= 0) {
+        LOG_ERROR("Failed to create container property");
+        return FAIL;
+    }
     // create a container
-    TASSERT((cont_id = PDCcont_create_col("c1", cont_prop)) != 0, "Call to PDCcont_create_col succeeded",
-            "Call to PDCcont_create_col failed");
+    cont_id = PDCcont_create_col("c1", cont_prop);
+    if (cont_id <= 0) {
+        LOG_ERROR("Failed to create container");
+        return FAIL;
+    }
     // create an object property
-    TASSERT((obj_prop_xx = PDCprop_create(PDC_OBJ_CREATE, pdc_id)) != 0, "Call to PDCprop_create succeeded",
-            "Call to PDCprop_create failed");
+    obj_prop_float = PDCprop_create(PDC_OBJ_CREATE, pdc_id);
+    PDCprop_set_obj_dims(obj_prop_float, 1, dims);
+    PDCprop_set_obj_type(obj_prop_float, PDC_FLOAT);
+    PDCprop_set_obj_user_id(obj_prop_float, getuid());
+    PDCprop_set_obj_app_name(obj_prop_float, "VPICIO");
+    PDCprop_set_obj_transfer_region_type(obj_prop_float, PDC_REGION_STATIC);
 
-    TASSERT(PDCprop_set_obj_transfer_region_type(obj_prop_xx, PDC_REGION_LOCAL) >= 0,
-            "Call to PDCprop_set_obj_transfer_region_type succeeded",
-            "Call to PDCprop_set_obj_transfer_region_type failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_xx, PDC_FLOAT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-    TASSERT(PDCprop_set_obj_dims(obj_prop_xx, 1, dims) >= 0, "Call to PDCprop_set_obj_dims succeeded",
-            "Call to PDCprop_set_obj_dims failed");
-    TASSERT(PDCprop_set_obj_user_id(obj_prop_xx, getuid()) >= 0, "Call to PDCprop_set_obj_user_id succeeded",
-            "Call to PDCprop_set_obj_user_id failed");
-    TASSERT(PDCprop_set_obj_time_step(obj_prop_xx, 0) >= 0, "Call to PDCprop_set_obj_time_step succeeded",
-            "Call to PDCprop_set_obj_time_step failed");
-    TASSERT(PDCprop_set_obj_app_name(obj_prop_xx, "VPICIO") >= 0, "Call to PDCprop_set_obj_user_id succeeded",
-            "Call to PDCprop_set_obj_user_id failed");
-    TASSERT(PDCprop_set_obj_tags(obj_prop_xx, "tag0=1") >= 0, "Call to PDCprop_set_obj_tags succeeded",
-            "Call to PDCprop_set_obj_tags failed");
+    obj_prop_int = PDCprop_obj_dup(obj_prop_float);
+    PDCprop_set_obj_type(obj_prop_int, PDC_INT);
 
-    TASSERT((obj_prop_yy = PDCprop_obj_dup(obj_prop_xx)) != 0, "Call to PDCprop_obj_dup succeeded",
-            "Call to PDCprop_obj_dup failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_yy, PDC_FLOAT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-
-    TASSERT((obj_prop_zz = PDCprop_obj_dup(obj_prop_xx)) != 0, "Call to PDCprop_obj_dup succeeded",
-            "Call to PDCprop_obj_dup failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_zz, PDC_FLOAT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-
-    TASSERT((obj_prop_pxx = PDCprop_obj_dup(obj_prop_xx)) != 0, "Call to PDCprop_obj_dup succeeded",
-            "Call to PDCprop_obj_dup failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_pxx, PDC_FLOAT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-
-    TASSERT((obj_prop_pyy = PDCprop_obj_dup(obj_prop_xx)) != 0, "Call to PDCprop_obj_dup succeeded",
-            "Call to PDCprop_obj_dup failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_pyy, PDC_FLOAT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-
-    TASSERT((obj_prop_pzz = PDCprop_obj_dup(obj_prop_xx)) != 0, "Call to PDCprop_obj_dup succeeded",
-            "Call to PDCprop_obj_dup failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_pzz, PDC_FLOAT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-
-    TASSERT((obj_prop_id11 = PDCprop_obj_dup(obj_prop_xx)) != 0, "Call to PDCprop_obj_dup succeeded",
-            "Call to PDCprop_obj_dup failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_id11, PDC_INT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-
-    TASSERT((obj_prop_id22 = PDCprop_obj_dup(obj_prop_xx)) != 0, "Call to PDCprop_obj_dup succeeded",
-            "Call to PDCprop_obj_dup failed");
-    TASSERT(PDCprop_set_obj_type(obj_prop_id22, PDC_INT) >= 0, "Call to PDCprop_set_obj_type succeeded",
-            "Call to PDCprop_set_obj_type failed");
-
-    for (i = 0; i < numparticles; i++) {
-        id1[i] = i;
-        id2[i] = i * 2;
-        x[i]   = uniform_random_number() * x_dim;
-        y[i]   = uniform_random_number() * y_dim;
-        z[i]   = ((float)id1[i] / numparticles) * z_dim;
-        px[i]  = uniform_random_number() * x_dim;
-        py[i]  = uniform_random_number() * y_dim;
-        pz[i]  = ((float)id2[i] / numparticles) * z_dim;
+    for (uint64_t i = 0; i < numparticles; i++) {
+        id[i] = i;
+        q[i]  = i * 2;
+        dx[i] = uniform_random_number() * x_dim;
+        dy[i] = uniform_random_number() * y_dim;
+        dz[i] = ((float)id[i] / numparticles) * z_dim;
+        ux[i] = uniform_random_number() * x_dim;
+        uy[i] = uniform_random_number() * y_dim;
+        uz[i] = (q[i] / numparticles) * z_dim;
     }
 
-    offset           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset_remote    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    mysize           = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    offset[0]        = 0;
+    offset_local[0]  = 0;
     offset_remote[0] = rank * numparticles;
     mysize[0]        = numparticles;
 
-    // create regions
-    TASSERT((region_x = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_y = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_z = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_px = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_py = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_pz = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_id1 = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_id2 = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
+    // create local and remote region
+    region_local  = PDCregion_create(ndim, offset_local, mysize);
+    region_remote = PDCregion_create(ndim, offset_remote, mysize);
 
-    TASSERT((region_xx = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_yy = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_zz = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_pxx = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_pyy = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_pzz = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_id11 = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
-    TASSERT((region_id22 = PDCregion_create(ndim, offset, mysize)) != 0, "Call to PDCregion_create succeeded",
-            "Call to PDCregion_create failed");
+    for (int iter = 0; iter < steps; iter++) {
+        // Change data for different steps for verification
+        id[0]                = rank + iter;
+        q[0]                 = rank + iter * 2;
+        id[numparticles - 1] = rank - iter;
+        q[numparticles - 1]  = rank - iter * 2;
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    t0 = MPI_Wtime();
+        MPI_Barrier(MPI_COMM_WORLD);
+        if (rank == 0)
+            LOG_INFO("\n#Step  %d\n", iter);
+        t0 = MPI_Wtime();
 #endif
 
-    TASSERT((obj_xx = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop_xx, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
-    TASSERT((obj_yy = PDCobj_create_mpi(cont_id, "obj-var-yy", obj_prop_yy, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
-    TASSERT((obj_zz = PDCobj_create_mpi(cont_id, "obj-var-zz", obj_prop_zz, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
-    TASSERT((obj_pxx = PDCobj_create_mpi(cont_id, "obj-var-pxx", obj_prop_pxx, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
-    TASSERT((obj_pyy = PDCobj_create_mpi(cont_id, "obj-var-pyy", obj_prop_pyy, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
-    TASSERT((obj_pzz = PDCobj_create_mpi(cont_id, "obj-var-pzz", obj_prop_pzz, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
-    TASSERT((obj_id11 = PDCobj_create_mpi(cont_id, "id11", obj_prop_id11, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
-    TASSERT((obj_id22 = PDCobj_create_mpi(cont_id, "id22", obj_prop_id22, 0, comm)) != 0,
-            "Call to PDCobj_create_mpi succeeded", "Call to PDCobj_create_mpi failed");
+        for (int i = 0; i < 8; i++) {
+            sprintf(obj_name, "%s-%d", obj_names[i], iter);
+            pdcid_t obj_prop = (i < 7) ? obj_prop_float : obj_prop_int;
+#ifdef ENABLE_MPI
+            obj_ids[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0, MPI_COMM_WORLD);
+#else
+            obj_ids[i] = PDCobj_create(cont_id, obj_name, obj_prop);
+#endif
+            if (obj_ids[i] == 0) {
+                LOG_ERROR("Error getting an object id of %s from server\n", obj_name);
+                return FAIL;
+            }
+        }
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    t1 = MPI_Wtime();
-    if (rank == 0)
-        LOG_INFO("Obj create time: %.5e\n", t1 - t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+        if (rank == 0)
+            LOG_INFO("Obj create time: %.5e\n", t1 - t0);
 #endif
 
-    TASSERT((transfer_request_x = PDCregion_transfer_create(&x[0], PDC_WRITE, obj_xx, region_x, region_xx)) !=
-                0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
-    TASSERT((transfer_request_y = PDCregion_transfer_create(&y[0], PDC_WRITE, obj_yy, region_y, region_yy)) !=
-                0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
-    TASSERT((transfer_request_z = PDCregion_transfer_create(&z[0], PDC_WRITE, obj_zz, region_z, region_zz)) !=
-                0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
-    TASSERT((transfer_request_px =
-                 PDCregion_transfer_create(&px[0], PDC_WRITE, obj_pxx, region_px, region_pxx)) != 0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
-    TASSERT((transfer_request_py =
-                 PDCregion_transfer_create(&py[0], PDC_WRITE, obj_pyy, region_py, region_pyy)) != 0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
-    TASSERT((transfer_request_pz =
-                 PDCregion_transfer_create(&pz[0], PDC_WRITE, obj_pzz, region_pz, region_pzz)) != 0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
-    TASSERT((transfer_request_id1 =
-                 PDCregion_transfer_create(&id1[0], PDC_WRITE, obj_id11, region_id1, region_id11)) != 0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
-    TASSERT((transfer_request_id2 =
-                 PDCregion_transfer_create(&id2[0], PDC_WRITE, obj_id22, region_id2, region_id22)) != 0,
-            "Call to PDCregion_transfer_create succeeded", "Call to PDCregion_transfer_create failed");
+        for (int i = 0; i < 8; i++) {
+            transfer_requests[i] =
+                PDCregion_transfer_create(data_ptrs[i], PDC_WRITE, obj_ids[i], region_local, region_remote);
+            if (transfer_requests[i] == 0) {
+                LOG_ERROR("%s transfer request creation failed\n", obj_names[i]);
+                return FAIL;
+            }
+        }
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    t0 = MPI_Wtime();
-    if (rank == 0)
-        LOG_INFO("Transfer create time: %.5e\n", t0 - t1);
+        MPI_Barrier(MPI_COMM_WORLD);
+        t0 = MPI_Wtime();
+        if (rank == 0)
+            LOG_INFO("Transfer create time: %.5e\n", t0 - t1);
 #endif
-
-    TASSERT(PDCregion_transfer_start(transfer_request_x) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
-    TASSERT(PDCregion_transfer_start(transfer_request_y) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
-    TASSERT(PDCregion_transfer_start(transfer_request_z) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
-    TASSERT(PDCregion_transfer_start(transfer_request_px) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
-    TASSERT(PDCregion_transfer_start(transfer_request_py) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
-    TASSERT(PDCregion_transfer_start(transfer_request_pz) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
-    TASSERT(PDCregion_transfer_start(transfer_request_id1) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
-    TASSERT(PDCregion_transfer_start(transfer_request_id2) >= 0, "Call to PDCregion_transfer_start succeeded",
-            "Call to PDCregion_transfer_start failed");
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    t1 = MPI_Wtime();
-    if (rank == 0)
-        LOG_INFO("Transfer start time: %.5e\n", t1 - t0);
+        if (PDCregion_transfer_start_all_mpi(transfer_requests, 8, MPI_COMM_WORLD) != SUCCEED) {
+#else
+        if (PDCregion_transfer_start_all(transfer_requests, 8) != SUCCEED) {
 #endif
-
-    TASSERT(PDCregion_transfer_wait(transfer_request_x) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_wait(transfer_request_y) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_wait(transfer_request_z) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_wait(transfer_request_px) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_wait(transfer_request_py) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_wait(transfer_request_pz) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_wait(transfer_request_id1) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_wait(transfer_request_id2) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
+            LOG_ERROR("Failed to start transfer requests\n");
+            return FAIL;
+        }
 
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    t0 = MPI_Wtime();
-    if (rank == 0)
-        LOG_INFO("Transfer wait time: %.5e\n", t0 - t1);
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+        if (rank == 0)
+            LOG_INFO("Transfer start time: %.5e\n", t1 - t0);
 #endif
+        // Emulate compute with sleep
+        if (iter != steps - 1) {
+            if (rank == 0)
+                LOG_INFO("Sleep start: %llu.00\n", sleeptime);
+            sleep(sleeptime);
+            if (rank == 0)
+                LOG_INFO("Sleep end: %llu.00\n", sleeptime);
+        }
 
-    TASSERT(PDCregion_transfer_close(transfer_request_x) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_close(transfer_request_y) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_close(transfer_request_z) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_close(transfer_request_px) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_close(transfer_request_py) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_close(transfer_request_pz) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_close(transfer_request_id1) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-    TASSERT(PDCregion_transfer_close(transfer_request_id2) >= 0, "Call to PDCregion_transfer_close succeeded",
-            "Call to PDCregion_transfer_close failed");
-
-    PDC_timing_report("write");
 #ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    t1 = MPI_Wtime();
-    if (rank == 0)
-        LOG_INFO("Transfer close time: %.5e\n", t1 - t0);
+        MPI_Barrier(MPI_COMM_WORLD);
+        t0 = MPI_Wtime();
 #endif
 
-    TASSERT(PDCobj_close(obj_xx) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_yy) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_zz) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_pxx) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_pyy) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_pzz) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_id11) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_id22) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_xx) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_yy) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_zz) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_pxx) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_pyy) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_pzz) >= 0, "Call to PDCobj_close succeeded", "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_id11) >= 0, "Call to PDCobj_close succeeded",
-            "Call to PDCobj_close failed");
-    TASSERT(PDCobj_close(obj_prop_id22) >= 0, "Call to PDCobj_close succeeded",
-            "Call to PDCobj_close failed");
-    TASSERT(PDCregion_close(region_x) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_y) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_z) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_px) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_py) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_pz) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_id1) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_id2) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_xx) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_yy) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_zz) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_pxx) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_pyy) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_pzz) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_id11) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    TASSERT(PDCregion_close(region_id22) >= 0, "Call to PDCregion_close succeeded",
-            "Call to PDCregion_close failed");
-    // close a container
-    TASSERT(PDCcont_close(cont_id) >= 0, "Call to PDCcont_close succeeded", "Call to PDCcont_close failed");
-    // close a container property
-    TASSERT(PDCprop_close(cont_prop) >= 0, "Call to PDCprop_close succeeded", "Call to PDCprop_close failed");
-    TASSERT(PDCclose(pdc_id) >= 0, "Call to PDCclose succeeded", "Call to PDCclose failed");
+        if (PDCregion_transfer_wait_all(transfer_requests, 8) != SUCCEED) {
+            LOG_ERROR("Failed to transfer wait all\n");
+            return FAIL;
+        }
 
-    free(offset);
-    free(offset_remote);
-    free(mysize);
-    free(x);
-    free(y);
-    free(z);
-    free(px);
-    free(py);
-    free(pz);
-    free(id1);
-    free(id2);
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+        if (rank == 0)
+            LOG_INFO("Transfer wait time: %.5e\n", t1 - t0);
+#endif
 
-done:
+        for (int j = 0; j < 8; j++) {
+            if (PDCregion_transfer_close(transfer_requests[j]) != SUCCEED) {
+                LOG_ERROR("region transfer close failed\n");
+                return FAIL;
+            }
+        }
+
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        t0 = MPI_Wtime();
+        if (rank == 0)
+            LOG_INFO("Transfer close time: %.5e\n", t0 - t1);
+#endif
+
+        for (int i = 0; i < 8; i++) {
+            if (PDCobj_close(obj_ids[i]) != SUCCEED) {
+                LOG_ERROR("Failed to close object #%d\n", i);
+                return FAIL;
+            }
+        }
+
+#ifdef ENABLE_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+        t1 = MPI_Wtime();
+        if (rank == 0)
+            LOG_INFO("Obj close time: %.5e\n", t1 - t0);
+#endif
+    } // End for steps
+
+    if (PDCprop_close(obj_prop_float) != SUCCEED) {
+        LOG_ERROR("Failed to close obj_prop_float\n");
+        return FAIL;
+    }
+    if (PDCprop_close(obj_prop_int) != SUCCEED) {
+        LOG_ERROR("Failed to close obj_prop_int\n");
+        return FAIL;
+    }
+    if (PDCregion_close(region_local) != SUCCEED) {
+        LOG_ERROR("Failed to close local region \n");
+        return FAIL;
+    }
+    if (PDCobj_close(region_remote) != SUCCEED) {
+        LOG_ERROR("Failed to close remote region\n");
+        return FAIL;
+    }
+    if (PDCcont_close(cont_id) != SUCCEED) {
+        LOG_ERROR("Failed to close container\n");
+        return FAIL;
+    }
+    if (PDCprop_close(cont_prop) != SUCCEED) {
+        LOG_ERROR("Failed to close property\n");
+        return FAIL;
+    }
+    if (PDCclose(pdc_id) != SUCCEED) {
+        LOG_ERROR("Failed to close PDC\n");
+        return FAIL;
+    }
+    free(dx);
+    free(dy);
+    free(dz);
+    free(ux);
+    free(uy);
+    free(uz);
+    free(id);
+    free(q);
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
-    return ret_value;
+    return 0;
 }
