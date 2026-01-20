@@ -100,13 +100,13 @@ main(int argc, char **argv)
             "Call to PDCobj_get_tag succeeded for obj1", "Call to PDCobj_get_tag failed for obj1");
     if (strcmp(tag_value, tag_value_ret) != 0) {
         LOG_ERROR("Wrong tag value at object 1, expected = %s, get %s\n", tag_value, tag_value_ret);
-        PGOTO_DONE(TFAIL);
+        TGOTO_DONE(TFAIL);
     }
     TASSERT(PDCobj_get_tag(obj1, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size) >= 0,
             "Call to PDCobj_get_tag succeeded for obj1", "Call to PDCobj_get_tag failed for obj1");
     if (strcmp(tag_value2, tag_value_ret) != 0) {
         LOG_ERROR("Wrong tag value 2 at object 1, expected = %s, get %s\n", tag_value2, tag_value_ret);
-        PGOTO_DONE(TFAIL);
+        TGOTO_DONE(TFAIL);
     }
 
     // get tags in obj2
@@ -114,13 +114,13 @@ main(int argc, char **argv)
             "Call to PDCobj_get_tag succeeded for obj2", "Call to PDCobj_get_tag failed for obj2");
     if (strcmp(tag_value, tag_value_ret) != 0) {
         LOG_ERROR("Wrong tag value at object 2, expected = %s, get %s\n", tag_value, tag_value_ret);
-        PGOTO_DONE(TFAIL);
+        TGOTO_DONE(TFAIL);
     }
     TASSERT(PDCobj_get_tag(obj2, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size) >= 0,
             "Call to PDCobj_get_tag succeeded for obj2", "Call to PDCobj_get_tag failed for obj2");
     if (strcmp(tag_value2, tag_value_ret) != 0) {
         LOG_ERROR("Wrong tag value 2 at object 2, expected = %s, get %s\n", tag_value2, tag_value_ret);
-        PGOTO_DONE(TFAIL);
+        TGOTO_DONE(TFAIL);
     }
 
     // close objects

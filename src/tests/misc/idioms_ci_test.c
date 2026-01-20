@@ -29,7 +29,9 @@
 #include <time.h>
 #include <inttypes.h>
 #include <assert.h>
+
 #include "pdc.h"
+#include "pdc_client_connect.h"
 #include "test_helper.h"
 
 dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
@@ -334,7 +336,7 @@ main(int argc, char *argv[])
 
     // prepare container
     if (prepare_container(&pdc, &cont_prop, &cont, &obj_prop, world_rank) < 0)
-        PGOTO_ERROR(FAIL, "Failed to prepare container");
+        TGOTO_ERROR(FAIL, "Failed to prepare container");
 
     if (world_rank == 0)
         LOG_INFO("Initialization Done\n");
@@ -365,7 +367,7 @@ main(int argc, char *argv[])
     // we are performing 1000 insertion operations for string value and 1000 times for numerical values.
     ret_value = insert_index_records(world_rank, world_size);
     if (ret_value == FAIL)
-        PGOTO_ERROR(FAIL, "CLIENT %d failed to insert index records\n", world_rank);
+        TGOTO_ERROR(FAIL, "CLIENT %d failed to insert index records\n", world_rank);
 
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
