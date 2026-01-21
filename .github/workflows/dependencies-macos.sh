@@ -5,6 +5,7 @@ set -eu -o pipefail
 brew install open-mpi automake m4 libtool
 
 export CMAKE_POLICY_VERSION_MINIMUM=3.5
+export CFLAGS="-Wno-error=incompatible-function-pointer-types"
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.15.2.tar.gz
