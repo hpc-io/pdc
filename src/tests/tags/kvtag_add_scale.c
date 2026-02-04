@@ -30,6 +30,23 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
+#if defined(ENABLE_MPI) && !defined(KVTAG_SCALE_SERIAL)
+#define KVTAG_SCALE_USE_MPI 1
+#endif
+
+#ifdef KVTAG_SCALE_SERIAL
+#include <sys/time.h>
+
+static double
+kvtag_scale_now(void)
+{
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
+}
+#endif
+
 int
 assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {
@@ -78,10 +95,13 @@ main(int argc, char *argv[])
     pdc_kvtag_t kvtag;
     int         ret_value = SUCCEED;
 
-#ifdef ENABLE_MPI
+#ifdef KVTAG_SCALE_USE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+    proc_num = 1;
+    my_rank  = 0;
 #endif
     if (argc < 3) {
         if (my_rank == 0)
@@ -127,9 +147,11 @@ main(int argc, char *argv[])
     // create a number of objects, add at least one tag to that object
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
 
-#ifdef ENABLE_MPI
+#ifdef KVTAG_SCALE_USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
+#else
+    stime = kvtag_scale_now();
 #endif
 
     for (i = 0; i < my_obj; i++) {
@@ -138,8 +160,8 @@ main(int argc, char *argv[])
         if (obj_ids[i] <= 0)
             PGOTO_ERROR(FAIL, "Failed to create object");
 
-        if (i > 0 && i % obj_1percent == 0) {
-#ifdef ENABLE_MPI
+        if (i > 0 && obj_1percent > 0 && i % obj_1percent == 0) {
+#ifdef KVTAG_SCALE_USE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
@@ -153,9 +175,11 @@ main(int argc, char *argv[])
         }
     }
 
-#ifdef ENABLE_MPI
+#ifdef KVTAG_SCALE_USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
+#else
+    total_time = kvtag_scale_now() - stime;
 #endif
 
     if (my_rank == 0)
@@ -168,17 +192,19 @@ main(int argc, char *argv[])
     kvtag.type  = PDC_INT;
     kvtag.size  = sizeof(int);
 
-#ifdef ENABLE_MPI
+#ifdef KVTAG_SCALE_USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
+#else
+    stime = kvtag_scale_now();
 #endif
     for (i = 0; i < my_add_tag; i++) {
         v = i + my_add_tag_s;
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
             PGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d", i + my_obj_s);
 
-        if (i % tag_1percent == 0) {
-#ifdef ENABLE_MPI
+        if (tag_1percent > 0 && i % tag_1percent == 0) {
+#ifdef KVTAG_SCALE_USE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
@@ -192,9 +218,11 @@ main(int argc, char *argv[])
         }
     }
 
-#ifdef ENABLE_MPI
+#ifdef KVTAG_SCALE_USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
+#else
+    total_time = kvtag_scale_now() - stime;
 #endif
     if (my_rank == 0)
         LOG_INFO("Total time to add tags to %11d objects: %7.2f , throughput %10.2f \n", n_add_tag,
@@ -208,7 +236,7 @@ main(int argc, char *argv[])
     }
 
 done:
-#ifdef ENABLE_MPI
+#ifdef KVTAG_SCALE_USE_MPI
     MPI_Finalize();
 #endif
 
