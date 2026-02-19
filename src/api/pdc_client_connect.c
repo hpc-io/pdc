@@ -3035,11 +3035,11 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
 
     hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
                         &transfer_args, &in);
-
-    /* #ifdef ENABLE_MPI */
-    /*     if (comm != 0) */
-    /*         MPI_Barrier(comm); */
-    /* #endif */
+#ifdef ENABLE_MPI
+    // Synchronization must be handled by the caller at a fixed phase boundary. This function can be
+    // invoked a different number of times across ranks.
+    (void)comm;
+#endif
 
     PDC_Client_transfer_pthread_create();
 
@@ -3057,11 +3057,6 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_all(): Could not start HG_Forward()");
 
     PDC_Client_wait_pthread_progress();
-
-    /* #ifdef ENABLE_MPI */
-    /*     if (comm != 0) */
-    /*         MPI_Barrier(comm); */
-    /* #endif */
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();

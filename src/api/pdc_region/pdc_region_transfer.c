@@ -1287,7 +1287,7 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     FUNC_ENTER(NULL);
 
     perr_t    ret_value = SUCCEED;
-    int       index, i, j;
+    int       index, i, j, phase;
     int       n_objs;
     uint64_t *metadata_id;
     char **   read_bulk_buf;
@@ -1295,17 +1295,49 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     size_t    bulk_buf_size;
     int *     bulk_buf_ref;
     hg_bulk_t bulk_handle;
+    int *     group_start_idx = NULL;
+    int *     group_n_objs    = NULL;
+    int       n_groups        = 0;
+    int       max_groups      = 0;
 
-    if (size == 0)
+    if (size == 0 && comm == 0)
         PGOTO_DONE(ret_value);
 
-    metadata_id   = (uint64_t *)PDC_malloc(sizeof(uint64_t) * size);
-    read_bulk_buf = (char **)PDC_malloc(sizeof(char *) * size);
-    index         = 0;
-    for (i = 1; i < size; ++i) {
-        if (transfer_requests[i]->data_server_id != transfer_requests[i - 1]->data_server_id) {
+    if (size > 0) {
+        metadata_id     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * size);
+        read_bulk_buf   = (char **)PDC_malloc(sizeof(char *) * size);
+        group_start_idx = (int *)PDC_malloc(sizeof(int) * size);
+        group_n_objs    = (int *)PDC_malloc(sizeof(int) * size);
+
+        index = 0;
+        for (i = 1; i < size; ++i) {
+            if (transfer_requests[i]->data_server_id != transfer_requests[i - 1]->data_server_id) {
+                group_start_idx[n_groups] = index;
+                group_n_objs[n_groups]    = i - index;
+                n_groups++;
+                index = i;
+            }
+        }
+        group_start_idx[n_groups] = index;
+        group_n_objs[n_groups]    = size - index;
+        n_groups++;
+    }
+
+#ifdef ENABLE_MPI
+    if (comm != 0) {
+        MPI_Allreduce(&n_groups, &max_groups, 1, MPI_INT, MPI_MAX, comm);
+    }
+#endif
+    if (comm == 0) {
+        max_groups = n_groups;
+    }
+
+    for (phase = 0; phase < max_groups; ++phase) {
+        if (phase < n_groups) {
+            index  = group_start_idx[phase];
+            n_objs = group_n_objs[phase];
+
             // Freed at the wait operation (inside PDC_client_connect call)
-            n_objs = i - index;
             PDC_Client_pack_all_requests(n_objs, transfer_requests + index,
                                          transfer_requests[index]->transfer_request->access_type, &bulk_buf,
                                          &bulk_buf_size, read_bulk_buf + index);
@@ -1313,9 +1345,10 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
             bulk_buf_ref[0] = n_objs;
             PDC_Client_transfer_request_all(
                 &bulk_handle, n_objs, transfer_requests[index]->transfer_request->access_type,
-                transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size, metadata_id + index, comm);
+                transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size, metadata_id + index, 0);
             PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
-            for (j = index; j < i; ++j) {
+
+            for (j = index; j < index + n_objs; ++j) {
                 // All requests share the same bulk buffer, reference counter is also shared among all
                 // requests.
                 transfer_requests[j]->transfer_request->bulk_buf[transfer_requests[j]->index] = bulk_buf;
@@ -1328,37 +1361,26 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
                 transfer_requests[j]->transfer_request->metadata_id[transfer_requests[j]->index] =
                     metadata_id[j];
             }
-            index = i;
         }
-    }
-    if (size) {
-        // Freed at the wait operation (inside PDC_client_connect call)
-        n_objs = size - index;
-        PDC_Client_pack_all_requests(n_objs, transfer_requests + index,
-                                     transfer_requests[index]->transfer_request->access_type, &bulk_buf,
-                                     &bulk_buf_size, read_bulk_buf + index);
-        bulk_buf_ref    = (int *)PDC_malloc(sizeof(int));
-        bulk_buf_ref[0] = n_objs;
-        PDC_Client_transfer_request_all(
-            &bulk_handle, n_objs, transfer_requests[index]->transfer_request->access_type,
-            transfer_requests[index]->data_server_id, bulk_buf, bulk_buf_size, metadata_id + index, comm);
-        PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
-
-        for (j = index; j < size; ++j) {
-            // All requests share the same bulk buffer, reference counter is also shared among all
-            // requests.
-            transfer_requests[j]->transfer_request->bulk_buf[transfer_requests[j]->index]     = bulk_buf;
-            transfer_requests[j]->transfer_request->bulk_buf_ref[transfer_requests[j]->index] = bulk_buf_ref;
-            if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
-                transfer_requests[j]->transfer_request->read_bulk_buf[transfer_requests[j]->index] =
-                    read_bulk_buf[j];
-            }
-            transfer_requests[j]->transfer_request->metadata_id[transfer_requests[j]->index] = metadata_id[j];
+#ifdef ENABLE_MPI
+        if (comm != 0) {
+            MPI_Barrier(comm);
         }
+#endif
     }
 
-    read_bulk_buf = (char **)PDC_free(read_bulk_buf);
-    metadata_id   = (uint64_t *)PDC_free(metadata_id);
+    if (group_n_objs) {
+        group_n_objs = (int *)PDC_free(group_n_objs);
+    }
+    if (group_start_idx) {
+        group_start_idx = (int *)PDC_free(group_start_idx);
+    }
+    if (read_bulk_buf) {
+        read_bulk_buf = (char **)PDC_free(read_bulk_buf);
+    }
+    if (metadata_id) {
+        metadata_id = (uint64_t *)PDC_free(metadata_id);
+    }
 
 done:
     FUNC_LEAVE(ret_value);
@@ -1496,12 +1518,9 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
         MPI_Barrier(comm);
 #endif
 
-    // Start write requests
-    if (write_size > 0)
-        PDC_Client_start_all_requests(write_transfer_requests, write_size, comm);
-    // Start read requests
-    if (read_size > 0)
-        PDC_Client_start_all_requests(read_transfer_requests, read_size, comm);
+    // Start write and read requests in fixed phases so collective sync points match across ranks.
+    PDC_Client_start_all_requests(write_transfer_requests, write_size, comm);
+    PDC_Client_start_all_requests(read_transfer_requests, read_size, comm);
 
     // For POSIX consistency, we block here until the data is received by the server
     if (posix_size > 0) {
