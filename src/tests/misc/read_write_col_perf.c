@@ -197,7 +197,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        ret   = PDCregion_transfer_start(transfer_request);
+        ret = PDCregion_transfer_start(transfer_request);
 #ifdef ENABLE_MPI
         write_reg_transfer_start_time += MPI_Wtime() - start;
 #endif
@@ -209,7 +209,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        ret   = PDCregion_transfer_wait(transfer_request);
+        ret = PDCregion_transfer_wait(transfer_request);
 #ifdef ENABLE_MPI
         write_reg_transfer_wait_time += MPI_Wtime() - start;
 #endif
@@ -265,7 +265,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        ret   = PDCregion_transfer_start(transfer_request);
+        ret = PDCregion_transfer_start(transfer_request);
 #ifdef ENABLE_MPI
         read_reg_transfer_start_time += MPI_Wtime() - start;
 #endif
@@ -278,7 +278,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         start = MPI_Wtime();
 #endif
-        ret   = PDCregion_transfer_wait(transfer_request);
+        ret = PDCregion_transfer_wait(transfer_request);
 #ifdef ENABLE_MPI
         read_reg_transfer_wait_time += MPI_Wtime() - start;
 #endif
