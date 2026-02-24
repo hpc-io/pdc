@@ -3035,12 +3035,6 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
 
     hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
                         &transfer_args, &in);
-#ifdef ENABLE_MPI
-    // Synchronization must be handled by the caller at a fixed phase boundary. This function can be
-    // invoked a different number of times across ranks.
-    (void)comm;
-#endif
-
     PDC_Client_transfer_pthread_create();
 
 #ifdef PDC_TIMING
