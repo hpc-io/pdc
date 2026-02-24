@@ -194,17 +194,25 @@ main(int argc, char **argv)
             ret_value = 1;
         }
 
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
+#endif
         ret   = PDCregion_transfer_start(transfer_request);
+#ifdef ENABLE_MPI
         write_reg_transfer_start_time += MPI_Wtime() - start;
+#endif
         if (ret != SUCCEED) {
             LOG_INFO("PDCregion_transfer_start failed");
             ret_value = 1;
         }
 
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
+#endif
         ret   = PDCregion_transfer_wait(transfer_request);
+#ifdef ENABLE_MPI
         write_reg_transfer_wait_time += MPI_Wtime() - start;
+#endif
         if (ret != SUCCEED) {
             LOG_INFO("PDCregion_transfer_wait failed");
             ret_value = 1;
@@ -254,18 +262,26 @@ main(int argc, char **argv)
             ret_value = 1;
         }
 
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
+#endif
         ret   = PDCregion_transfer_start(transfer_request);
+#ifdef ENABLE_MPI
         read_reg_transfer_start_time += MPI_Wtime() - start;
+#endif
 
         if (ret != SUCCEED) {
             LOG_ERROR("PDCregion_transfer_start failed");
             exit(-1);
         }
 
+#ifdef ENABLE_MPI
         start = MPI_Wtime();
+#endif
         ret   = PDCregion_transfer_wait(transfer_request);
+#ifdef ENABLE_MPI
         read_reg_transfer_wait_time += MPI_Wtime() - start;
+#endif
 
         if (ret != SUCCEED) {
             LOG_ERROR("PDCregion_transfer_wait failed");
