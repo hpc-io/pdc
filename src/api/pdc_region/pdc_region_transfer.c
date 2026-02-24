@@ -1513,11 +1513,6 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
                                            &posix_transfer_request_id, &posix_size);
     PDC_Client_transfer_pthread_cnt_add(size);
 
-#ifdef ENABLE_MPI
-    if (comm != 0)
-        MPI_Barrier(comm);
-#endif
-
     // Start write and read requests in fixed phases so collective sync points match across ranks.
     PDC_Client_start_all_requests(write_transfer_requests, write_size, comm);
     PDC_Client_start_all_requests(read_transfer_requests, read_size, comm);
