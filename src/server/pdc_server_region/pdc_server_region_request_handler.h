@@ -268,6 +268,9 @@ transfer_request_wait_all_bulk_transfer_cb(const struct hg_cb_info *info)
     char *                ptr;
     int *                 handle_ref;
     pdc_transfer_status_t status;
+#ifdef PDC_TIMING
+    double start_time = local_bulk_args->start_time;
+#endif
 
     // free is in PDC_finish_request
     fast_return = 1;
@@ -306,8 +309,8 @@ transfer_request_wait_all_bulk_transfer_cb(const struct hg_cb_info *info)
 #ifdef PDC_TIMING
     double end = MPI_Wtime();
 
-    pdc_server_timings->PDCreg_transfer_request_wait_all_rpc += end - local_bulk_args->start_time;
-    pdc_timestamp_register(pdc_transfer_request_wait_all_timestamps, local_bulk_args->start_time, end);
+    pdc_server_timings->PDCreg_transfer_request_wait_all_rpc += end - start_time;
+    pdc_timestamp_register(pdc_transfer_request_wait_all_timestamps, start_time, end);
 #endif
 
     FUNC_LEAVE(ret);
