@@ -2984,7 +2984,8 @@ done:
 
 perr_t
 PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
-                                uint32_t data_server_id, char *bulk_buf, hg_size_t bulk_size,
+                                uint32_t data_server_id, void **bulk_buf_ptrs, hg_size_t *bulk_sizes,
+                                int n_bulk_bufs, hg_size_t bulk_size,
                                 uint64_t *metadata_id,
 #ifdef ENABLE_MPI
                                 MPI_Comm comm)
@@ -3025,7 +3026,7 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
                        transfer_request_all_register_id_g, &client_send_transfer_request_all_handle);
 
     // Create bulk handles
-    hg_ret       = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, &bulk_size, HG_BULK_READWRITE,
+    hg_ret = HG_Bulk_create(hg_class, (hg_uint32_t)n_bulk_bufs, bulk_buf_ptrs, bulk_sizes, HG_BULK_READWRITE,
                             &(in.local_bulk_handle));
     *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
