@@ -232,13 +232,16 @@ perr_t PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t ob
 int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 
 perr_t PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
-                                       uint32_t data_server_id, void **bulk_buf_ptrs, hg_size_t *bulk_sizes,
-                                       int n_bulk_bufs, hg_size_t bulk_size, uint64_t *metadata_id,
+                                       uint32_t data_server_id, void **bulk_buf_ptrs,
+                                       hg_size_t *bulk_sizes, int n_bulk_bufs, hg_size_t bulk_size,
+                                       uint64_t **metadata_slots, int async_reply,
 #ifdef ENABLE_MPI
                                        MPI_Comm comm);
 #else
                                        int comm);
 #endif
+
+perr_t PDC_Client_wait_start_all_replies(void);
 
 perr_t PDC_Client_transfer_request_metadata_query(hg_bulk_t *bulk_handle, char *buf, uint64_t total_buf_size,
                                                   int n_objs, uint32_t metadata_server_id, uint8_t is_write,

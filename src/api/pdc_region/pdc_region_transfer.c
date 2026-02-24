@@ -1331,13 +1331,12 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
 {
     FUNC_ENTER(NULL);
 
-    perr_t     ret_value = SUCCEED;
-    int        index, i, j, phase;
-    int        n_objs;
-    uint64_t * metadata_id    = NULL;
-    char **    read_bulk_buf  = NULL;
-    char *     bulk_buf       = NULL;
-    void **    bulk_buf_ptrs  = NULL;
+    perr_t    ret_value = SUCCEED;
+    int       index, i, j, phase;
+    int       n_objs;
+    char **   read_bulk_buf = NULL;
+    char *    bulk_buf      = NULL;
+    void **   bulk_buf_ptrs = NULL;
     hg_size_t *bulk_buf_sizes = NULL;
     int        n_bulk_bufs    = 0;
     size_t     bulk_buf_size;
@@ -1352,7 +1351,6 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         PGOTO_DONE(ret_value);
 
     if (size > 0) {
-        metadata_id     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * size);
         read_bulk_buf   = (char **)PDC_malloc(sizeof(char *) * size);
         group_start_idx = (int *)PDC_malloc(sizeof(int) * size);
         group_n_objs    = (int *)PDC_malloc(sizeof(int) * size);
@@ -1392,10 +1390,16 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
                                          &bulk_buf_sizes, &n_bulk_bufs);
             bulk_buf_ref    = (int *)PDC_malloc(sizeof(int));
             bulk_buf_ref[0] = n_objs;
+            uint64_t **metadata_slots = (uint64_t **)PDC_malloc(sizeof(uint64_t *) * n_objs);
+            for (j = 0; j < n_objs; ++j) {
+                pdc_transfer_request_start_all_pkg *req = transfer_requests[index + j];
+                metadata_slots[j] =
+                    &(req->transfer_request->metadata_id[req->index]);
+            }
             PDC_Client_transfer_request_all(
                 &bulk_handle, n_objs, transfer_requests[index]->transfer_request->access_type,
                 transfer_requests[index]->data_server_id, bulk_buf_ptrs, bulk_buf_sizes, n_bulk_bufs,
-                bulk_buf_size, metadata_id + index, 0);
+                bulk_buf_size, metadata_slots, 1, 0);
             if (bulk_buf_ptrs) {
                 bulk_buf_ptrs = (void **)PDC_free(bulk_buf_ptrs);
             }
@@ -1414,8 +1418,6 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
                     transfer_requests[j]->transfer_request->read_bulk_buf[transfer_requests[j]->index] =
                         read_bulk_buf[j];
                 }
-                transfer_requests[j]->transfer_request->metadata_id[transfer_requests[j]->index] =
-                    metadata_id[j];
             }
         }
 #ifdef ENABLE_MPI
@@ -1434,10 +1436,6 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     if (read_bulk_buf) {
         read_bulk_buf = (char **)PDC_free(read_bulk_buf);
     }
-    if (metadata_id) {
-        metadata_id = (uint64_t *)PDC_free(metadata_id);
-    }
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -1903,6 +1901,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
 
     if (!size)
         PGOTO_DONE(ret_value);
+
+    // start_all may return before transfer-request metadata IDs are populated by async RPC callbacks.
+    // Ensure IDs are ready before constructing wait_all RPC payloads.
+    PDC_Client_wait_start_all_replies();
 
     transferinfos = (struct _pdc_id_info **)PDC_malloc(size * sizeof(struct _pdc_id_info *));
 

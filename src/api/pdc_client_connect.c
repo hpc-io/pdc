@@ -118,6 +118,7 @@ int                  query_id_g         = 0;
 // When a work is put in the queue, increase todo_g by 1
 // When a work is done and popped from the queue, decrease (todo_g) by 1.
 static hg_atomic_int32_t atomic_work_todo_g;
+static hg_atomic_int32_t atomic_start_all_reply_todo_g;
 hg_atomic_int32_t        bulk_todo_g;
 // When a work is initialized, set done_g flag to 0.
 // When a work is done, set done_g flag to 1 using atomic cas operation.
@@ -363,6 +364,18 @@ PDC_Client_wait_pthread_progress()
     }
 
     FUNC_LEAVE_VOID();
+}
+
+perr_t
+PDC_Client_wait_start_all_replies(void)
+{
+    FUNC_ENTER(NULL);
+
+    while (hg_atomic_get32(&atomic_start_all_reply_todo_g) > 0) {
+        usleep(1000);
+    }
+
+    FUNC_LEAVE(SUCCEED);
 }
 
 perr_t
@@ -628,6 +641,55 @@ client_send_transfer_request_all_rpc_cb(const struct hg_cb_info *callback_info)
 done:
     hg_atomic_decr32(&atomic_work_todo_g);
     HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+struct _pdc_transfer_request_all_async_args {
+    int        n_objs;
+    uint64_t **metadata_slots;
+};
+
+static hg_return_t
+client_send_transfer_request_all_async_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                                  ret_value = HG_SUCCESS;
+    hg_handle_t                                  handle;
+    transfer_request_all_out_t                   output;
+    struct _pdc_transfer_request_all_async_args *args;
+    int                                          i;
+
+    args   = (struct _pdc_transfer_request_all_async_args *)callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS || output.ret != 1) {
+        LOG_ERROR("transfer_request_all async callback failed");
+        if (args && args->metadata_slots) {
+            for (i = 0; i < args->n_objs; ++i) {
+                if (args->metadata_slots[i])
+                    *(args->metadata_slots[i]) = 0;
+            }
+        }
+    }
+    else if (args && args->metadata_slots) {
+        for (i = 0; i < args->n_objs; ++i) {
+            if (args->metadata_slots[i])
+                *(args->metadata_slots[i]) = output.metadata_id + i;
+        }
+    }
+
+    hg_atomic_decr32(&atomic_start_all_reply_todo_g);
+    HG_Free_output(handle, &output);
+    HG_Destroy(handle);
+
+    if (args) {
+        if (args->metadata_slots)
+            args->metadata_slots = (uint64_t **)PDC_free(args->metadata_slots);
+        args = (struct _pdc_transfer_request_all_async_args *)PDC_free(args);
+    }
 
     FUNC_LEAVE(ret_value);
 }
@@ -1539,6 +1601,7 @@ PDC_Client_init()
         }
 
         hg_atomic_init32(&atomic_work_todo_g, 0);
+        hg_atomic_init32(&atomic_start_all_reply_todo_g, 0);
         hg_atomic_init32(&response_done_g, 0);
         hg_atomic_init32(&bulk_todo_g, 0);
         hg_atomic_init32(&bulk_transfer_done_g, 0);
@@ -2985,7 +3048,8 @@ done:
 perr_t
 PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
                                 uint32_t data_server_id, void **bulk_buf_ptrs, hg_size_t *bulk_sizes,
-                                int n_bulk_bufs, hg_size_t bulk_size, uint64_t *metadata_id,
+                                int n_bulk_bufs, hg_size_t bulk_size,
+                                uint64_t **metadata_slots, int async_reply,
 #ifdef ENABLE_MPI
                                 MPI_Comm comm)
 #else
@@ -3001,6 +3065,7 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
     int                                   i;
     hg_handle_t                           client_send_transfer_request_all_handle;
     struct _pdc_transfer_request_all_args transfer_args;
+    struct _pdc_transfer_request_all_async_args *async_args = NULL;
     char                                  cur_time[64];
 
 #ifdef PDC_TIMING
@@ -3031,11 +3096,23 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
-    hg_atomic_set32(&atomic_work_todo_g, 1);
+    if (async_reply) {
+        async_args = (struct _pdc_transfer_request_all_async_args *)PDC_malloc(
+            sizeof(struct _pdc_transfer_request_all_async_args));
+        async_args->n_objs         = n_objs;
+        async_args->metadata_slots = metadata_slots;
+        hg_atomic_incr32(&atomic_start_all_reply_todo_g);
 
-    hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
-                        &transfer_args, &in);
-    PDC_Client_transfer_pthread_create();
+        hg_ret = HG_Forward(client_send_transfer_request_all_handle,
+                            client_send_transfer_request_all_async_rpc_cb, async_args, &in);
+        PDC_Client_transfer_pthread_create();
+    }
+    else {
+        hg_atomic_set32(&atomic_work_todo_g, 1);
+        hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
+                            &transfer_args, &in);
+        PDC_Client_transfer_pthread_create();
+    }
 
 #ifdef PDC_TIMING
     if (access_type == PDC_READ) {
@@ -3047,8 +3124,20 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
     start = MPI_Wtime();
 #endif
 
-    if (hg_ret != HG_SUCCESS)
+    if (hg_ret != HG_SUCCESS) {
+        if (async_reply && async_args) {
+            hg_atomic_decr32(&atomic_start_all_reply_todo_g);
+            if (async_args->metadata_slots)
+                async_args->metadata_slots = (uint64_t **)PDC_free(async_args->metadata_slots);
+            async_args = (struct _pdc_transfer_request_all_async_args *)PDC_free(async_args);
+        }
+        HG_Destroy(client_send_transfer_request_all_handle);
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_all(): Could not start HG_Forward()");
+    }
+
+    if (async_reply) {
+        FUNC_LEAVE(ret_value);
+    }
 
     PDC_Client_wait_pthread_progress();
 
@@ -3064,7 +3153,8 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
     }
 #endif
     for (i = 0; i < n_objs; ++i) {
-        metadata_id[i] = transfer_args.metadata_id + i;
+        if (metadata_slots && metadata_slots[i])
+            *(metadata_slots[i]) = transfer_args.metadata_id + i;
     }
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer request failed");
