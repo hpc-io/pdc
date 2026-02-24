@@ -47,21 +47,21 @@
 
 #define PDC_MERGE_TRANSFER_MIN_COUNT 50
 
-static int    pdc_start_all_profile_init_g         = 0;
-static int    pdc_start_all_profile_enabled_g      = 0;
-static double pdc_start_all_prepare_loop_time_g    = 0.0;
-static double pdc_start_all_prepare_meta_write_g   = 0.0;
-static double pdc_start_all_prepare_meta_read_g    = 0.0;
-static double pdc_start_all_meta_pack_time_g       = 0.0;
-static double pdc_start_all_meta_query_time_g      = 0.0;
-static double pdc_start_all_meta_query2_time_g     = 0.0;
-static double pdc_start_all_meta_unpack_time_g     = 0.0;
+static int    pdc_start_all_profile_init_g       = 0;
+static int    pdc_start_all_profile_enabled_g    = 0;
+static double pdc_start_all_prepare_loop_time_g  = 0.0;
+static double pdc_start_all_prepare_meta_write_g = 0.0;
+static double pdc_start_all_prepare_meta_read_g  = 0.0;
+static double pdc_start_all_meta_pack_time_g     = 0.0;
+static double pdc_start_all_meta_query_time_g    = 0.0;
+static double pdc_start_all_meta_query2_time_g   = 0.0;
+static double pdc_start_all_meta_unpack_time_g   = 0.0;
 
 static int
 pdc_start_all_profile_enabled(void)
 {
     if (pdc_start_all_profile_init_g == 0) {
-        const char *env = getenv("PDC_PROFILE_START_ALL");
+        const char *env                 = getenv("PDC_PROFILE_START_ALL");
         pdc_start_all_profile_enabled_g = (env != NULL && atoi(env) != 0) ? 1 : 0;
         pdc_start_all_profile_init_g    = 1;
     }
@@ -1034,8 +1034,8 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     int                   write_size, read_size, output_size;
     struct _pdc_id_info * transferinfo;
     pdc_transfer_request *transfer_request;
-    int                   ret_value      = SUCCEED;
-    int                   profile_on     = pdc_start_all_profile_enabled();
+    int                   ret_value  = SUCCEED;
+    int                   profile_on = pdc_start_all_profile_enabled();
     double                t0;
 
     write_request_pkgs             = NULL;
@@ -1076,7 +1076,8 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
 
         if (transfer_request->region_partition == PDC_REGION_STATIC) {
             int set_output_buf = 0;
-            /* For 1D writes, subregions are contiguous in new_buf; avoid per-server memcpy/output_buf copies. */
+            /* For 1D writes, subregions are contiguous in new_buf; avoid per-server memcpy/output_buf copies.
+             */
             if (transfer_request->access_type == PDC_WRITE && transfer_request->remote_region_ndim > 1) {
                 set_output_buf = 1;
             }
@@ -1457,22 +1458,20 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         n_objs = group_n_objs[phase];
 
         // Freed at the wait operation (inside PDC_client_connect call)
-        PDC_Client_pack_all_requests(n_objs, transfer_requests + index,
-                                     transfer_requests[index]->transfer_request->access_type, &bulk_buf,
-                                     &bulk_buf_size, read_bulk_buf + index, &bulk_buf_ptrs,
-                                     &bulk_buf_sizes, &n_bulk_bufs);
-        bulk_buf_ref    = (int *)PDC_malloc(sizeof(int));
-        bulk_buf_ref[0] = n_objs;
+        PDC_Client_pack_all_requests(
+            n_objs, transfer_requests + index, transfer_requests[index]->transfer_request->access_type,
+            &bulk_buf, &bulk_buf_size, read_bulk_buf + index, &bulk_buf_ptrs, &bulk_buf_sizes, &n_bulk_bufs);
+        bulk_buf_ref              = (int *)PDC_malloc(sizeof(int));
+        bulk_buf_ref[0]           = n_objs;
         uint64_t **metadata_slots = (uint64_t **)PDC_malloc(sizeof(uint64_t *) * n_objs);
         for (j = 0; j < n_objs; ++j) {
             pdc_transfer_request_start_all_pkg *req = transfer_requests[index + j];
-            metadata_slots[j] =
-                &(req->transfer_request->metadata_id[req->index]);
+            metadata_slots[j]                       = &(req->transfer_request->metadata_id[req->index]);
         }
-        PDC_Client_transfer_request_all(
-            &bulk_handle, n_objs, transfer_requests[index]->transfer_request->access_type,
-            transfer_requests[index]->data_server_id, bulk_buf_ptrs, bulk_buf_sizes, n_bulk_bufs,
-            bulk_buf_size, metadata_slots, 1, 0);
+        PDC_Client_transfer_request_all(&bulk_handle, n_objs,
+                                        transfer_requests[index]->transfer_request->access_type,
+                                        transfer_requests[index]->data_server_id, bulk_buf_ptrs,
+                                        bulk_buf_sizes, n_bulk_bufs, bulk_buf_size, metadata_slots, 1, 0);
         if (bulk_buf_ptrs) {
             bulk_buf_ptrs = (void **)PDC_free(bulk_buf_ptrs);
         }
@@ -1484,9 +1483,8 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         for (j = index; j < index + n_objs; ++j) {
             // All requests share the same bulk buffer, reference counter is also shared among all
             // requests.
-            transfer_requests[j]->transfer_request->bulk_buf[transfer_requests[j]->index] = bulk_buf;
-            transfer_requests[j]->transfer_request->bulk_buf_ref[transfer_requests[j]->index] =
-                bulk_buf_ref;
+            transfer_requests[j]->transfer_request->bulk_buf[transfer_requests[j]->index]     = bulk_buf;
+            transfer_requests[j]->transfer_request->bulk_buf_ref[transfer_requests[j]->index] = bulk_buf_ref;
             if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
                 transfer_requests[j]->transfer_request->read_bulk_buf[transfer_requests[j]->index] =
                     read_bulk_buf[j];
@@ -1688,17 +1686,17 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
         int    k;
         double metrics[14], max_metrics[14];
 
-        t_total    = pdc_start_all_now() - t_total_start;
-        metrics[0] = t_total;
-        metrics[1] = t_prepare;
-        metrics[2] = pdc_start_all_prepare_loop_time_g;
-        metrics[3] = pdc_start_all_prepare_meta_write_g;
-        metrics[4] = pdc_start_all_prepare_meta_read_g;
-        metrics[5] = pdc_start_all_meta_pack_time_g;
-        metrics[6] = pdc_start_all_meta_query_time_g;
-        metrics[7] = pdc_start_all_meta_query2_time_g;
-        metrics[8] = pdc_start_all_meta_unpack_time_g;
-        metrics[9] = t_start_write;
+        t_total     = pdc_start_all_now() - t_total_start;
+        metrics[0]  = t_total;
+        metrics[1]  = t_prepare;
+        metrics[2]  = pdc_start_all_prepare_loop_time_g;
+        metrics[3]  = pdc_start_all_prepare_meta_write_g;
+        metrics[4]  = pdc_start_all_prepare_meta_read_g;
+        metrics[5]  = pdc_start_all_meta_pack_time_g;
+        metrics[6]  = pdc_start_all_meta_query_time_g;
+        metrics[7]  = pdc_start_all_meta_query2_time_g;
+        metrics[8]  = pdc_start_all_meta_unpack_time_g;
+        metrics[9]  = t_start_write;
         metrics[10] = t_start_read;
         metrics[11] = t_posix_wait;
         metrics[12] = t_cleanup;
@@ -1723,8 +1721,7 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
                      max_metrics[0], max_metrics[1], max_metrics[2], max_metrics[3], max_metrics[4],
                      max_metrics[5], max_metrics[6], max_metrics[7], max_metrics[8], max_metrics[9],
                      max_metrics[10], max_metrics[11], max_metrics[12], max_metrics[13], size, write_size,
-                     read_size,
-                     posix_size);
+                     read_size, posix_size);
         }
     }
 
