@@ -2985,8 +2985,7 @@ done:
 perr_t
 PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
                                 uint32_t data_server_id, void **bulk_buf_ptrs, hg_size_t *bulk_sizes,
-                                int n_bulk_bufs, hg_size_t bulk_size,
-                                uint64_t *metadata_id,
+                                int n_bulk_bufs, hg_size_t bulk_size, uint64_t *metadata_id,
 #ifdef ENABLE_MPI
                                 MPI_Comm comm)
 #else

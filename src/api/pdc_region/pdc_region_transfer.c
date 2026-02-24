@@ -1178,20 +1178,20 @@ finish_start_all_requests(pdc_transfer_request_start_all_pkg **write_transfer_re
 static perr_t
 PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **transfer_requests,
                              pdc_access_t access_type, char **bulk_buf_ptr, size_t *total_buf_size_ptr,
-                             char **read_bulk_buf, void ***bulk_buf_ptrs_ptr,
-                             hg_size_t **bulk_buf_sizes_ptr, int *n_bulk_bufs_ptr)
+                             char **read_bulk_buf, void ***bulk_buf_ptrs_ptr, hg_size_t **bulk_buf_sizes_ptr,
+                             int *n_bulk_bufs_ptr)
 {
     FUNC_ENTER(NULL);
 
-    perr_t      ret_value = SUCCEED;
-    char *      bulk_buf  = NULL;
-    char *      ptr       = NULL;
-    char *      ptr2      = NULL;
-    size_t      total_buf_size, obj_data_size, total_obj_data_size, unit;
-    size_t      metadata_size, region_metadata_size = 0;
-    int         i, j, seg_idx;
-    void **     bulk_buf_ptrs  = NULL;
-    hg_size_t * bulk_buf_sizes = NULL;
+    perr_t     ret_value = SUCCEED;
+    char *     bulk_buf  = NULL;
+    char *     ptr       = NULL;
+    char *     ptr2      = NULL;
+    size_t     total_buf_size, obj_data_size, total_obj_data_size, unit;
+    size_t     metadata_size, region_metadata_size = 0;
+    int        i, j, seg_idx;
+    void **    bulk_buf_ptrs  = NULL;
+    hg_size_t *bulk_buf_sizes = NULL;
 
     *bulk_buf_ptr       = NULL;
     *bulk_buf_ptrs_ptr  = NULL;
@@ -1199,7 +1199,7 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
     *n_bulk_bufs_ptr    = 0;
 
     // metadata header: [obj_id, obj_ndim, remote_ndim, unit] repeated by object
-    metadata_size      = n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t));
+    metadata_size       = n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t));
     total_obj_data_size = 0;
     for (i = 0; i < n_objs; ++i) {
         obj_data_size = transfer_requests[i]->remote_size[0] * transfer_requests[i]->transfer_request->unit;
@@ -1207,13 +1207,14 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
             obj_data_size *= transfer_requests[i]->remote_size[j];
         }
         total_obj_data_size += obj_data_size;
-        region_metadata_size += sizeof(uint64_t) *
-                                (transfer_requests[i]->transfer_request->remote_region_ndim * 2 +
-                                 transfer_requests[i]->transfer_request->obj_ndim);
+        region_metadata_size +=
+            sizeof(uint64_t) * (transfer_requests[i]->transfer_request->remote_region_ndim * 2 +
+                                transfer_requests[i]->transfer_request->obj_ndim);
     }
 
     if (access_type == PDC_WRITE) {
-        // Keep metadata contiguous, but avoid copying payload bytes by exposing user buffers as bulk segments.
+        // Keep metadata contiguous, but avoid copying payload bytes by exposing user buffers as bulk
+        // segments.
         total_buf_size = metadata_size + region_metadata_size + total_obj_data_size;
         bulk_buf       = (char *)PDC_malloc(metadata_size + region_metadata_size);
         ptr            = bulk_buf;
@@ -1231,19 +1232,20 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
             ptr += sizeof(size_t);
         }
 
-        bulk_buf_ptrs  = (void **)PDC_malloc(sizeof(void *) * (1 + n_objs * 2));
-        bulk_buf_sizes = (hg_size_t *)PDC_malloc(sizeof(hg_size_t) * (1 + n_objs * 2));
+        bulk_buf_ptrs     = (void **)PDC_malloc(sizeof(void *) * (1 + n_objs * 2));
+        bulk_buf_sizes    = (hg_size_t *)PDC_malloc(sizeof(hg_size_t) * (1 + n_objs * 2));
         bulk_buf_ptrs[0]  = bulk_buf;
         bulk_buf_sizes[0] = (hg_size_t)metadata_size;
-        seg_idx = 1;
+        seg_idx           = 1;
 
         for (i = 0; i < n_objs; ++i) {
-            size_t region_seg_size = sizeof(uint64_t) *
-                                     (transfer_requests[i]->transfer_request->remote_region_ndim * 2 +
-                                      transfer_requests[i]->transfer_request->obj_ndim);
+            size_t region_seg_size =
+                sizeof(uint64_t) * (transfer_requests[i]->transfer_request->remote_region_ndim * 2 +
+                                    transfer_requests[i]->transfer_request->obj_ndim);
             char *region_seg_ptr = ptr2;
 
-            obj_data_size = transfer_requests[i]->remote_size[0] * transfer_requests[i]->transfer_request->unit;
+            obj_data_size =
+                transfer_requests[i]->remote_size[0] * transfer_requests[i]->transfer_request->unit;
             for (j = 1; j < transfer_requests[i]->transfer_request->remote_region_ndim; ++j) {
                 obj_data_size *= transfer_requests[i]->remote_size[j];
             }
@@ -1273,10 +1275,10 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
         else
             total_buf_size = metadata_size + region_metadata_size;
 
-        bulk_buf      = (char *)PDC_malloc(total_buf_size);
-        ptr           = bulk_buf;
-        ptr2          = bulk_buf;
-        bulk_buf_ptrs = (void **)PDC_malloc(sizeof(void *));
+        bulk_buf       = (char *)PDC_malloc(total_buf_size);
+        ptr            = bulk_buf;
+        ptr2           = bulk_buf;
+        bulk_buf_ptrs  = (void **)PDC_malloc(sizeof(void *));
         bulk_buf_sizes = (hg_size_t *)PDC_malloc(sizeof(hg_size_t));
 
         for (i = 0; i < n_objs; ++i) {
@@ -1292,7 +1294,8 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
         }
 
         for (i = 0; i < n_objs; ++i) {
-            obj_data_size = transfer_requests[i]->remote_size[0] * transfer_requests[i]->transfer_request->unit;
+            obj_data_size =
+                transfer_requests[i]->remote_size[0] * transfer_requests[i]->transfer_request->unit;
             for (j = 1; j < transfer_requests[i]->transfer_request->remote_region_ndim; ++j) {
                 obj_data_size *= transfer_requests[i]->remote_size[j];
             }
@@ -1328,22 +1331,22 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
 {
     FUNC_ENTER(NULL);
 
-    perr_t    ret_value = SUCCEED;
-    int       index, i, j, phase;
-    int       n_objs;
-    uint64_t *metadata_id   = NULL;
-    char **   read_bulk_buf = NULL;
-    char *    bulk_buf      = NULL;
-    void **   bulk_buf_ptrs = NULL;
+    perr_t     ret_value = SUCCEED;
+    int        index, i, j, phase;
+    int        n_objs;
+    uint64_t * metadata_id    = NULL;
+    char **    read_bulk_buf  = NULL;
+    char *     bulk_buf       = NULL;
+    void **    bulk_buf_ptrs  = NULL;
     hg_size_t *bulk_buf_sizes = NULL;
-    int       n_bulk_bufs = 0;
-    size_t    bulk_buf_size;
-    int *     bulk_buf_ref;
-    hg_bulk_t bulk_handle;
-    int *     group_start_idx = NULL;
-    int *     group_n_objs    = NULL;
-    int       n_groups        = 0;
-    int       max_groups      = 0;
+    int        n_bulk_bufs    = 0;
+    size_t     bulk_buf_size;
+    int *      bulk_buf_ref;
+    hg_bulk_t  bulk_handle;
+    int *      group_start_idx = NULL;
+    int *      group_n_objs    = NULL;
+    int        n_groups        = 0;
+    int        max_groups      = 0;
 
     if (size == 0 && comm == 0)
         PGOTO_DONE(ret_value);
