@@ -47,6 +47,39 @@
 
 #define PDC_MERGE_TRANSFER_MIN_COUNT 50
 
+static int    pdc_start_all_profile_init_g         = 0;
+static int    pdc_start_all_profile_enabled_g      = 0;
+static double pdc_start_all_prepare_loop_time_g    = 0.0;
+static double pdc_start_all_prepare_meta_write_g   = 0.0;
+static double pdc_start_all_prepare_meta_read_g    = 0.0;
+static double pdc_start_all_meta_pack_time_g       = 0.0;
+static double pdc_start_all_meta_query_time_g      = 0.0;
+static double pdc_start_all_meta_query2_time_g     = 0.0;
+static double pdc_start_all_meta_unpack_time_g     = 0.0;
+
+static int
+pdc_start_all_profile_enabled(void)
+{
+    if (pdc_start_all_profile_init_g == 0) {
+        const char *env = getenv("PDC_PROFILE_START_ALL");
+        pdc_start_all_profile_enabled_g = (env != NULL && atoi(env) != 0) ? 1 : 0;
+        pdc_start_all_profile_init_g    = 1;
+    }
+    return pdc_start_all_profile_enabled_g;
+}
+
+static double
+pdc_start_all_now(void)
+{
+#ifdef ENABLE_MPI
+    return MPI_Wtime();
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (double)ts.tv_sec + (double)ts.tv_nsec * 1e-9;
+#endif
+}
+
 /**
  * PDC region transfer class. Contains essential information for performing non-blocking PDC client I/O
  * operations
@@ -833,12 +866,14 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
 
     perr_t                               ret_value = SUCCEED;
     int                                  i, j, index, size, output_size, remain_size, n_objs;
+    int                                  profile_on = pdc_start_all_profile_enabled();
     pdc_transfer_request_start_all_pkg **transfer_requests;
     pdc_transfer_request_start_all_pkg * transfer_request_head, *transfer_request_front_head,
         *transfer_request_end, **transfer_request_output, *previous = NULL;
     uint64_t  total_buf_size, output_buf_size, query_id;
     char *    buf, *output_buf;
     hg_bulk_t bulk_handle;
+    double    t0;
 
     transfer_request_output     = NULL;
     transfer_request_front_head = NULL;
@@ -891,21 +926,39 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
         index             = unique_server_xfer_idx[current_index];
         n_objs            = unique_server_nboj[current_index];
 
+        if (profile_on)
+            t0 = pdc_start_all_now();
         pack_region_metadata_query(transfer_requests + index, n_objs, &buf, &total_buf_size);
+        if (profile_on)
+            pdc_start_all_meta_pack_time_g += pdc_start_all_now() - t0;
+
+        if (profile_on)
+            t0 = pdc_start_all_now();
         PDC_Client_transfer_request_metadata_query(
             &bulk_handle, buf, total_buf_size, n_objs,
             transfer_requests[index]->transfer_request->metadata_server_id, is_write, &output_buf_size,
             &query_id);
+        if (profile_on)
+            pdc_start_all_meta_query_time_g += pdc_start_all_now() - t0;
         PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
         buf = (char *)PDC_free(buf);
         if (query_id) {
             output_buf = (char *)PDC_malloc(output_buf_size);
+            if (profile_on)
+                t0 = pdc_start_all_now();
             PDC_Client_transfer_request_metadata_query2(
                 &bulk_handle, output_buf, output_buf_size, query_id,
                 transfer_requests[index]->transfer_request->metadata_server_id);
+            if (profile_on)
+                pdc_start_all_meta_query2_time_g += pdc_start_all_now() - t0;
             PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
+
+            if (profile_on)
+                t0 = pdc_start_all_now();
             unpack_region_metadata_query(output_buf, transfer_requests + index, &transfer_request_head,
                                          &transfer_request_end, &output_size);
+            if (profile_on)
+                pdc_start_all_meta_unpack_time_g += pdc_start_all_now() - t0;
             output_buf = (char *)PDC_free(output_buf);
 
             if (transfer_request_front_head)
@@ -981,8 +1034,9 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     int                   write_size, read_size, output_size;
     struct _pdc_id_info * transferinfo;
     pdc_transfer_request *transfer_request;
-    int                   set_output_buf = 0;
     int                   ret_value      = SUCCEED;
+    int                   profile_on     = pdc_start_all_profile_enabled();
+    double                t0;
 
     write_request_pkgs             = NULL;
     read_request_pkgs              = NULL;
@@ -990,6 +1044,17 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     read_size                      = 0;
     posix_size_ptr[0]              = 0;
     *posix_transfer_request_id_ptr = (pdcid_t *)PDC_malloc(sizeof(pdcid_t) * size);
+
+    if (profile_on) {
+        pdc_start_all_prepare_loop_time_g  = 0.0;
+        pdc_start_all_prepare_meta_write_g = 0.0;
+        pdc_start_all_prepare_meta_read_g  = 0.0;
+        pdc_start_all_meta_pack_time_g     = 0.0;
+        pdc_start_all_meta_query_time_g    = 0.0;
+        pdc_start_all_meta_query2_time_g   = 0.0;
+        pdc_start_all_meta_unpack_time_g   = 0.0;
+        t0                                 = pdc_start_all_now();
+    }
 
     for (i = 0; i < size; ++i) {
         if ((transferinfo = PDC_find_id(transfer_request_id[i])) == NULL)
@@ -1010,7 +1075,9 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                            transfer_request->access_type, &(transfer_request->new_buf));
 
         if (transfer_request->region_partition == PDC_REGION_STATIC) {
-            if (transfer_request->access_type == PDC_WRITE) {
+            int set_output_buf = 0;
+            /* For 1D writes, subregions are contiguous in new_buf; avoid per-server memcpy/output_buf copies. */
+            if (transfer_request->access_type == PDC_WRITE && transfer_request->remote_region_ndim > 1) {
                 set_output_buf = 1;
             }
             static_region_partition(transfer_request->new_buf, transfer_request->remote_region_ndim, unit,
@@ -1033,7 +1100,13 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
                 // For read, we do not need the value of buf because we are not transferring data from client
                 // to server
                 if (transfer_request->access_type == PDC_WRITE) {
-                    request_pkgs->buf = transfer_request->output_buf[j];
+                    if (transfer_request->output_buf) {
+                        request_pkgs->buf = transfer_request->output_buf[j];
+                    }
+                    else {
+                        request_pkgs->buf =
+                            transfer_request->new_buf + transfer_request->sub_offsets[j][0] * unit;
+                    }
                 }
                 request_pkgs->next = NULL;
                 if (transfer_request->access_type == PDC_WRITE) {
@@ -1110,6 +1183,9 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             set_obj_server_bufs(transfer_request);
         }
     }
+    if (profile_on) {
+        pdc_start_all_prepare_loop_time_g = pdc_start_all_now() - t0;
+    }
 
     if (write_size) {
         write_transfer_request = (pdc_transfer_request_start_all_pkg **)PDC_malloc(
@@ -1119,7 +1195,11 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             write_transfer_request[i] = request_pkgs;
             request_pkgs              = request_pkgs->next;
         }
+        if (profile_on)
+            t0 = pdc_start_all_now();
         register_metadata(write_transfer_request, write_size, 1, &transfer_request_output, &output_size);
+        if (profile_on)
+            pdc_start_all_prepare_meta_write_g = pdc_start_all_now() - t0;
         *write_transfer_request_ptr = transfer_request_output;
         *write_size_ptr             = output_size;
         qsort(*write_transfer_request_ptr, *write_size_ptr, sizeof(pdc_transfer_request_start_all_pkg *),
@@ -1137,7 +1217,11 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             read_transfer_request[i] = request_pkgs;
             request_pkgs             = request_pkgs->next;
         }
+        if (profile_on)
+            t0 = pdc_start_all_now();
         register_metadata(read_transfer_request, read_size, 0, &transfer_request_output, &output_size);
+        if (profile_on)
+            pdc_start_all_prepare_meta_read_g = pdc_start_all_now() - t0;
         *read_transfer_request_ptr = transfer_request_output;
         *read_size_ptr             = output_size;
         qsort(*read_transfer_request_ptr, *read_size_ptr, sizeof(pdc_transfer_request_start_all_pkg *),
@@ -1345,9 +1429,8 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     int *      group_start_idx = NULL;
     int *      group_n_objs    = NULL;
     int        n_groups        = 0;
-    int        max_groups      = 0;
 
-    if (size == 0 && comm == 0)
+    if (size == 0)
         PGOTO_DONE(ret_value);
 
     if (size > 0) {
@@ -1369,61 +1452,46 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         n_groups++;
     }
 
-#ifdef ENABLE_MPI
-    if (comm != 0) {
-        MPI_Allreduce(&n_groups, &max_groups, 1, MPI_INT, MPI_MAX, comm);
-    }
-#endif
-    if (comm == 0) {
-        max_groups = n_groups;
-    }
+    for (phase = 0; phase < n_groups; ++phase) {
+        index  = group_start_idx[phase];
+        n_objs = group_n_objs[phase];
 
-    for (phase = 0; phase < max_groups; ++phase) {
-        if (phase < n_groups) {
-            index  = group_start_idx[phase];
-            n_objs = group_n_objs[phase];
+        // Freed at the wait operation (inside PDC_client_connect call)
+        PDC_Client_pack_all_requests(n_objs, transfer_requests + index,
+                                     transfer_requests[index]->transfer_request->access_type, &bulk_buf,
+                                     &bulk_buf_size, read_bulk_buf + index, &bulk_buf_ptrs,
+                                     &bulk_buf_sizes, &n_bulk_bufs);
+        bulk_buf_ref    = (int *)PDC_malloc(sizeof(int));
+        bulk_buf_ref[0] = n_objs;
+        uint64_t **metadata_slots = (uint64_t **)PDC_malloc(sizeof(uint64_t *) * n_objs);
+        for (j = 0; j < n_objs; ++j) {
+            pdc_transfer_request_start_all_pkg *req = transfer_requests[index + j];
+            metadata_slots[j] =
+                &(req->transfer_request->metadata_id[req->index]);
+        }
+        PDC_Client_transfer_request_all(
+            &bulk_handle, n_objs, transfer_requests[index]->transfer_request->access_type,
+            transfer_requests[index]->data_server_id, bulk_buf_ptrs, bulk_buf_sizes, n_bulk_bufs,
+            bulk_buf_size, metadata_slots, 1, 0);
+        if (bulk_buf_ptrs) {
+            bulk_buf_ptrs = (void **)PDC_free(bulk_buf_ptrs);
+        }
+        if (bulk_buf_sizes) {
+            bulk_buf_sizes = (hg_size_t *)PDC_free(bulk_buf_sizes);
+        }
+        PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
 
-            // Freed at the wait operation (inside PDC_client_connect call)
-            PDC_Client_pack_all_requests(n_objs, transfer_requests + index,
-                                         transfer_requests[index]->transfer_request->access_type, &bulk_buf,
-                                         &bulk_buf_size, read_bulk_buf + index, &bulk_buf_ptrs,
-                                         &bulk_buf_sizes, &n_bulk_bufs);
-            bulk_buf_ref              = (int *)PDC_malloc(sizeof(int));
-            bulk_buf_ref[0]           = n_objs;
-            uint64_t **metadata_slots = (uint64_t **)PDC_malloc(sizeof(uint64_t *) * n_objs);
-            for (j = 0; j < n_objs; ++j) {
-                pdc_transfer_request_start_all_pkg *req = transfer_requests[index + j];
-                metadata_slots[j]                       = &(req->transfer_request->metadata_id[req->index]);
-            }
-            PDC_Client_transfer_request_all(&bulk_handle, n_objs,
-                                            transfer_requests[index]->transfer_request->access_type,
-                                            transfer_requests[index]->data_server_id, bulk_buf_ptrs,
-                                            bulk_buf_sizes, n_bulk_bufs, bulk_buf_size, metadata_slots, 1, 0);
-            if (bulk_buf_ptrs) {
-                bulk_buf_ptrs = (void **)PDC_free(bulk_buf_ptrs);
-            }
-            if (bulk_buf_sizes) {
-                bulk_buf_sizes = (hg_size_t *)PDC_free(bulk_buf_sizes);
-            }
-            PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
-
-            for (j = index; j < index + n_objs; ++j) {
-                // All requests share the same bulk buffer, reference counter is also shared among all
-                // requests.
-                transfer_requests[j]->transfer_request->bulk_buf[transfer_requests[j]->index] = bulk_buf;
-                transfer_requests[j]->transfer_request->bulk_buf_ref[transfer_requests[j]->index] =
-                    bulk_buf_ref;
-                if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
-                    transfer_requests[j]->transfer_request->read_bulk_buf[transfer_requests[j]->index] =
-                        read_bulk_buf[j];
-                }
+        for (j = index; j < index + n_objs; ++j) {
+            // All requests share the same bulk buffer, reference counter is also shared among all
+            // requests.
+            transfer_requests[j]->transfer_request->bulk_buf[transfer_requests[j]->index] = bulk_buf;
+            transfer_requests[j]->transfer_request->bulk_buf_ref[transfer_requests[j]->index] =
+                bulk_buf_ref;
+            if (transfer_requests[j]->transfer_request->access_type == PDC_READ) {
+                transfer_requests[j]->transfer_request->read_bulk_buf[transfer_requests[j]->index] =
+                    read_bulk_buf[j];
             }
         }
-#ifdef ENABLE_MPI
-        if (comm != 0) {
-            MPI_Barrier(comm);
-        }
-#endif
     }
 
     if (group_n_objs) {
@@ -1548,6 +1616,13 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
     int                                  write_size = 0, read_size = 0, posix_size = 0, merged_size = 0;
     pdc_transfer_request_start_all_pkg **write_transfer_requests = NULL, **read_transfer_requests = NULL;
     pdcid_t *                            posix_transfer_request_id, *merged_request_id;
+    int                                  profile_on = pdc_start_all_profile_enabled();
+    double                               t0, t_total_start;
+    double                               t_prepare = 0.0, t_start_write = 0.0, t_start_read = 0.0;
+    double                               t_posix_wait = 0.0, t_cleanup = 0.0, t_barrier = 0.0, t_total = 0.0;
+
+    if (profile_on)
+        t_total_start = pdc_start_all_now();
 
     // Merge the transfer_request_ids when they are operating on the same obj and have contiguous off, len
     if (size > PDC_MERGE_TRANSFER_MIN_COUNT) {
@@ -1561,28 +1636,97 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
 
     // Split write and read requests. Handle them separately.
     // [Tang] NOTE: prepare_start_all_requests include several metadata RPC operations
+    if (profile_on)
+        t0 = pdc_start_all_now();
     ret_value = prepare_start_all_requests(transfer_request_id, size, &write_transfer_requests,
                                            &read_transfer_requests, &write_size, &read_size,
                                            &posix_transfer_request_id, &posix_size);
+    if (profile_on)
+        t_prepare = pdc_start_all_now() - t0;
     PDC_Client_transfer_pthread_cnt_add(size);
 
     // Start write and read requests in fixed phases so collective sync points match across ranks.
+    if (profile_on)
+        t0 = pdc_start_all_now();
     PDC_Client_start_all_requests(write_transfer_requests, write_size, comm);
+    if (profile_on)
+        t_start_write = pdc_start_all_now() - t0;
+    if (profile_on)
+        t0 = pdc_start_all_now();
     PDC_Client_start_all_requests(read_transfer_requests, read_size, comm);
+    if (profile_on)
+        t_start_read = pdc_start_all_now() - t0;
 
     // For POSIX consistency, we block here until the data is received by the server
     if (posix_size > 0) {
         LOG_ERROR("Wait for posix requests\n");
+        if (profile_on)
+            t0 = pdc_start_all_now();
         PDCregion_transfer_wait_all(posix_transfer_request_id, posix_size);
+        if (profile_on)
+            t_posix_wait = pdc_start_all_now() - t0;
         posix_transfer_request_id = (pdcid_t *)PDC_free(posix_transfer_request_id);
     }
 
     // Clean up memory
+    if (profile_on)
+        t0 = pdc_start_all_now();
     finish_start_all_requests(write_transfer_requests, read_transfer_requests, write_size, read_size);
+    if (profile_on)
+        t_cleanup = pdc_start_all_now() - t0;
 #ifdef ENABLE_MPI
-    if (comm != 0)
+    if (comm != 0) {
+        if (profile_on)
+            t0 = pdc_start_all_now();
         MPI_Barrier(comm);
+        if (profile_on)
+            t_barrier = pdc_start_all_now() - t0;
+    }
 #endif
+
+    if (profile_on) {
+        int    k;
+        double metrics[14], max_metrics[14];
+
+        t_total    = pdc_start_all_now() - t_total_start;
+        metrics[0] = t_total;
+        metrics[1] = t_prepare;
+        metrics[2] = pdc_start_all_prepare_loop_time_g;
+        metrics[3] = pdc_start_all_prepare_meta_write_g;
+        metrics[4] = pdc_start_all_prepare_meta_read_g;
+        metrics[5] = pdc_start_all_meta_pack_time_g;
+        metrics[6] = pdc_start_all_meta_query_time_g;
+        metrics[7] = pdc_start_all_meta_query2_time_g;
+        metrics[8] = pdc_start_all_meta_unpack_time_g;
+        metrics[9] = t_start_write;
+        metrics[10] = t_start_read;
+        metrics[11] = t_posix_wait;
+        metrics[12] = t_cleanup;
+        metrics[13] = t_barrier;
+
+#ifdef ENABLE_MPI
+        if (comm != 0) {
+            MPI_Reduce(metrics, max_metrics, 14, MPI_DOUBLE, MPI_MAX, 0, comm);
+        }
+        else
+#endif
+        {
+            for (k = 0; k < 14; ++k)
+                max_metrics[k] = metrics[k];
+        }
+
+        if (pdc_client_mpi_rank_g == 0) {
+            LOG_INFO("START_ALL_PROFILE max(s): total=%.6f prepare=%.6f prep_loop=%.6f prep_meta_w=%.6f "
+                     "prep_meta_r=%.6f meta_pack=%.6f meta_q1=%.6f meta_q2=%.6f meta_unpack=%.6f "
+                     "start_w=%.6f start_r=%.6f posix_wait=%.6f cleanup=%.6f barrier=%.6f "
+                     "size=%d write=%d read=%d posix=%d\n",
+                     max_metrics[0], max_metrics[1], max_metrics[2], max_metrics[3], max_metrics[4],
+                     max_metrics[5], max_metrics[6], max_metrics[7], max_metrics[8], max_metrics[9],
+                     max_metrics[10], max_metrics[11], max_metrics[12], max_metrics[13], size, write_size,
+                     read_size,
+                     posix_size);
+        }
+    }
 
     FUNC_LEAVE(ret_value);
 }
