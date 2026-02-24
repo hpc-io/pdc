@@ -1289,9 +1289,9 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
     perr_t    ret_value = SUCCEED;
     int       index, i, j, phase;
     int       n_objs;
-    uint64_t *metadata_id;
-    char **   read_bulk_buf;
-    char *    bulk_buf;
+    uint64_t *metadata_id   = NULL;
+    char **   read_bulk_buf = NULL;
+    char *    bulk_buf      = NULL;
     size_t    bulk_buf_size;
     int *     bulk_buf_ref;
     hg_bulk_t bulk_handle;
