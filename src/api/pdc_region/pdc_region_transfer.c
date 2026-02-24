@@ -1331,12 +1331,12 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
 {
     FUNC_ENTER(NULL);
 
-    perr_t    ret_value = SUCCEED;
-    int       index, i, j, phase;
-    int       n_objs;
-    char **   read_bulk_buf = NULL;
-    char *    bulk_buf      = NULL;
-    void **   bulk_buf_ptrs = NULL;
+    perr_t     ret_value = SUCCEED;
+    int        index, i, j, phase;
+    int        n_objs;
+    char **    read_bulk_buf  = NULL;
+    char *     bulk_buf       = NULL;
+    void **    bulk_buf_ptrs  = NULL;
     hg_size_t *bulk_buf_sizes = NULL;
     int        n_bulk_bufs    = 0;
     size_t     bulk_buf_size;
@@ -1388,18 +1388,17 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
                                          transfer_requests[index]->transfer_request->access_type, &bulk_buf,
                                          &bulk_buf_size, read_bulk_buf + index, &bulk_buf_ptrs,
                                          &bulk_buf_sizes, &n_bulk_bufs);
-            bulk_buf_ref    = (int *)PDC_malloc(sizeof(int));
-            bulk_buf_ref[0] = n_objs;
+            bulk_buf_ref              = (int *)PDC_malloc(sizeof(int));
+            bulk_buf_ref[0]           = n_objs;
             uint64_t **metadata_slots = (uint64_t **)PDC_malloc(sizeof(uint64_t *) * n_objs);
             for (j = 0; j < n_objs; ++j) {
                 pdc_transfer_request_start_all_pkg *req = transfer_requests[index + j];
-                metadata_slots[j] =
-                    &(req->transfer_request->metadata_id[req->index]);
+                metadata_slots[j]                       = &(req->transfer_request->metadata_id[req->index]);
             }
-            PDC_Client_transfer_request_all(
-                &bulk_handle, n_objs, transfer_requests[index]->transfer_request->access_type,
-                transfer_requests[index]->data_server_id, bulk_buf_ptrs, bulk_buf_sizes, n_bulk_bufs,
-                bulk_buf_size, metadata_slots, 1, 0);
+            PDC_Client_transfer_request_all(&bulk_handle, n_objs,
+                                            transfer_requests[index]->transfer_request->access_type,
+                                            transfer_requests[index]->data_server_id, bulk_buf_ptrs,
+                                            bulk_buf_sizes, n_bulk_bufs, bulk_buf_size, metadata_slots, 1, 0);
             if (bulk_buf_ptrs) {
                 bulk_buf_ptrs = (void **)PDC_free(bulk_buf_ptrs);
             }

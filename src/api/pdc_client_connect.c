@@ -3048,8 +3048,8 @@ done:
 perr_t
 PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
                                 uint32_t data_server_id, void **bulk_buf_ptrs, hg_size_t *bulk_sizes,
-                                int n_bulk_bufs, hg_size_t bulk_size,
-                                uint64_t **metadata_slots, int async_reply,
+                                int n_bulk_bufs, hg_size_t bulk_size, uint64_t **metadata_slots,
+                                int async_reply,
 #ifdef ENABLE_MPI
                                 MPI_Comm comm)
 #else
@@ -3058,15 +3058,15 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
 {
     FUNC_ENTER(NULL);
 
-    perr_t                                ret_value = SUCCEED;
-    hg_return_t                           hg_ret    = HG_SUCCESS;
-    transfer_request_all_in_t             in;
-    hg_class_t *                          hg_class;
-    int                                   i;
-    hg_handle_t                           client_send_transfer_request_all_handle;
-    struct _pdc_transfer_request_all_args transfer_args;
+    perr_t                                       ret_value = SUCCEED;
+    hg_return_t                                  hg_ret    = HG_SUCCESS;
+    transfer_request_all_in_t                    in;
+    hg_class_t *                                 hg_class;
+    int                                          i;
+    hg_handle_t                                  client_send_transfer_request_all_handle;
+    struct _pdc_transfer_request_all_args        transfer_args;
     struct _pdc_transfer_request_all_async_args *async_args = NULL;
-    char                                  cur_time[64];
+    char                                         cur_time[64];
 
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
