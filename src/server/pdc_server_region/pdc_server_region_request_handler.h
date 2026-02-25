@@ -163,17 +163,16 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     FUNC_LEAVE(ret);
 }
 
-hg_return_t
-transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
+static hg_return_t
+transfer_request_all_bulk_transfer_write_do(struct transfer_request_all_local_bulk_args *local_bulk_args)
 {
     FUNC_ENTER(NULL);
 
-    struct transfer_request_all_local_bulk_args *local_bulk_args = info->arg;
-    transfer_request_all_data                    request_data;
-    hg_return_t                                  ret = HG_SUCCESS;
-    struct pdc_region_info *                     remote_reg_info;
-    int                                          i;
-    char                                         cur_time[64];
+    transfer_request_all_data request_data;
+    hg_return_t               ret = HG_SUCCESS;
+    struct pdc_region_info *  remote_reg_info;
+    int                       i;
+    char                      cur_time[64];
 
     gettimeofday(&last_cache_activity_timeval_g, NULL);
 
@@ -252,6 +251,33 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
 #endif
 
     FUNC_LEAVE(ret);
+}
+
+static void *
+transfer_request_all_bulk_transfer_write_worker(void *arg)
+{
+    struct transfer_request_all_local_bulk_args *local_bulk_args = arg;
+    (void)transfer_request_all_bulk_transfer_write_do(local_bulk_args);
+    return NULL;
+}
+
+hg_return_t
+transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
+{
+    FUNC_ENTER(NULL);
+
+    struct transfer_request_all_local_bulk_args *local_bulk_args = info->arg;
+    pthread_t                                    worker;
+    int                                          rc;
+
+    rc = pthread_create(&worker, NULL, transfer_request_all_bulk_transfer_write_worker, local_bulk_args);
+    if (rc == 0) {
+        pthread_detach(worker);
+        FUNC_LEAVE(HG_SUCCESS);
+    }
+
+    LOG_ERROR("pthread_create failed in transfer_request_all_bulk_transfer_write_cb, fallback inline");
+    FUNC_LEAVE(transfer_request_all_bulk_transfer_write_do(local_bulk_args));
 }
 
 hg_return_t
