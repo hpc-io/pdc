@@ -2050,13 +2050,19 @@ PDC_Server_get_env()
     }
 
     // Get number of OST per file
-    pdc_nost_per_file_g = lustre_total_ost_g;
+    pdc_nost_per_file_g = (lustre_total_ost_g > 16) ? 16 : lustre_total_ost_g;
     tmp_env_char        = getenv("PDC_NOST_PER_FILE");
     if (tmp_env_char != NULL) {
         pdc_nost_per_file_g = atoi(tmp_env_char);
         // Make sure it is a sane value
-        if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > lustre_total_ost_g) {
+        if (pdc_nost_per_file_g < 1) {
             pdc_nost_per_file_g = 1;
+        }
+        if (pdc_nost_per_file_g > lustre_total_ost_g) {
+            pdc_nost_per_file_g = lustre_total_ost_g;
+        }
+        if (pdc_nost_per_file_g > 16) {
+            pdc_nost_per_file_g = 16;
         }
     }
 
