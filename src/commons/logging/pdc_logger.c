@@ -151,7 +151,7 @@ _log_message(bool is_server, PDC_LogLevel level, const char *file, const char *f
                 fprintf(logFile, "[%s.%06ld] [%s] [%s:%d] PDC_SERVER: %s", timestr, tv.tv_usec, prefix,
                         filename, line_number, message);
             else
-                fprintf(logFile, "[%s.%06ld] [%s] [%s:%d] PC_CLIENT: %s", timestr, tv.tv_usec, prefix,
+                fprintf(logFile, "[%s.%06ld] [%s] [%s:%d] PDC_CLIENT: %s", timestr, tv.tv_usec, prefix,
                         filename, line_number, message);
 #endif
         }
@@ -165,7 +165,7 @@ _log_message(bool is_server, PDC_LogLevel level, const char *file, const char *f
             if (is_server)
                 fprintf(logFile, "[%s] PDC_SERVER: %s", prefix, message);
             else
-                fprintf(logFile, "[%s] PC_CLIENT: %s", prefix, message);
+                fprintf(logFile, "[%s] PDC_CLIENT: %s", prefix, message);
 #endif
         }
     }
