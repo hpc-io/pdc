@@ -61,7 +61,7 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 void
 print_usage(char *name)
 {
-    /* Modified: Changed usage to only require n_obj and n_add_tag */
+    // required parameters: n_obj and n_add_tag
     LOG_JUST_PRINT("%s n_obj n_add_tag\n", name);
 }
 
@@ -83,7 +83,6 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    /* Modified: Changed argc check from 4 to 3 (removed n_query parameter) */
     if (argc < 3) {
         if (my_rank == 0)
             print_usage(argv[0]);
@@ -91,7 +90,6 @@ main(int argc, char *argv[])
     }
     n_obj     = atoi(argv[1]);
     n_add_tag = atoi(argv[2]);
-    /* Removed: n_query assignment */
 
     if (n_add_tag > n_obj) {
         if (my_rank == 0)
@@ -100,15 +98,12 @@ main(int argc, char *argv[])
     }
 
     assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
-    /* Removed: assign_work_to_rank call for n_query */
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
 
     obj_1percent = my_obj / 100;
     tag_1percent = my_add_tag / 100;
-    /* Removed: query_1percent calculation */
 
     if (my_rank == 0)
-        /* Modified: Removed n_query from log message */
         LOG_INFO("Create %d obj, %d tags\n", my_obj, my_add_tag);
 
     // create a pdc
@@ -129,7 +124,7 @@ main(int argc, char *argv[])
     if (obj_prop <= 0)
         PGOTO_ERROR(FAIL, "Failed to create object property");
 
-    // Create a number of objects, add at least one tag to that object
+    // create a number of objects, add at least one tag to that object
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
 
 #ifdef ENABLE_MPI
@@ -205,13 +200,10 @@ main(int argc, char *argv[])
         LOG_INFO("Total time to add tags to %11d objects: %7.2f , throughput %10.2f \n", n_add_tag,
                  total_time, n_add_tag / total_time);
 
-    /* Removed: All query-related code (values allocation, get_tag loop, verification loop) */
-
-    /* Added: Free obj_ids array before cleanup */
     free(obj_ids);
 
     if (my_rank == 0) {
-        /* Modified: Changed message to reflect tag addition completion */
+        // confirming tag addition completion
         LOG_INFO("Done adding tags\n");
     }
 

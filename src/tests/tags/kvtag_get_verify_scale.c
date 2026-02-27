@@ -61,7 +61,7 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 void
 print_usage(char *name)
 {
-    /* Modified: Changed usage to only require n_obj and n_query */
+    // required parameters: n_obj and n_query
     LOG_JUST_PRINT("%s n_obj n_query\n", name);
 }
 
@@ -70,9 +70,7 @@ main(int argc, char *argv[])
 {
     pdcid_t     pdc, cont_prop, cont;
     pdcid_t *   obj_ids;
-    /* Modified: Removed n_add_tag variable, kept n_query */
     int         n_obj, n_query, my_obj, my_obj_s, my_query, my_query_s;
-    /* Removed: obj_1percent and tag_1percent */
     int         query_1percent = 0;
     int         proc_num, my_rank, i;
     char        obj_name[128];
@@ -82,7 +80,7 @@ main(int argc, char *argv[])
     pdc_var_type_t value_type;
     size_t         value_size;
     int            ret_value = SUCCEED;
-    /* Added: Counters for verification statistics */
+    // counters for verification statistics
     int            verified_success = 0;
     int            verified_fail = 0;
     int            all_verified_success = 0;
@@ -93,14 +91,12 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #endif
-    /* Modified: Changed argc check from 4 to 3 (removed n_add_tag parameter) */
     if (argc < 3) {
         if (my_rank == 0)
             print_usage(argv[0]);
         PGOTO_DONE(FAIL);
     }
     n_obj   = atoi(argv[1]);
-    /* Removed: n_add_tag assignment */
     n_query = atoi(argv[2]);
 
     if (n_query > n_obj) {
@@ -109,15 +105,12 @@ main(int argc, char *argv[])
         PGOTO_DONE(FAIL);
     }
 
-    /* Removed: assign_work_to_rank call for n_add_tag */
     assign_work_to_rank(my_rank, proc_num, n_query, &my_query, &my_query_s);
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
 
-    /* Removed: obj_1percent and tag_1percent calculations */
     query_1percent = my_query / 100;
 
     if (my_rank == 0)
-        /* Modified: Log message shows only query count */
         LOG_INFO("Open %d obj, query %d tags\n", my_obj, my_query);
 
     // create a pdc
@@ -128,15 +121,11 @@ main(int argc, char *argv[])
     if (cont_prop <= 0)
         PGOTO_ERROR(FAIL, "Failed to create container property");
 
-    /* Added: Open existing container instead of creating new one */
     // Open the existing container
     cont = PDCcont_open("c1", pdc);
     if (cont <= 0)
         PGOTO_ERROR(FAIL, "Failed to open container");
 
-    /* Removed: object property creation - not needed for opening existing objects */
-
-    /* Added: Open existing objects instead of creating new ones */
     // Open existing objects
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
 
@@ -145,14 +134,14 @@ main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
 
-    /* Modified: Changed from PDCobj_create to PDCobj_open */
+    // open already created PDC objects and query tags
     for (i = 0; i < my_obj; i++) {
         sprintf(obj_name, "obj%d", my_obj_s + i);
         obj_ids[i] = PDCobj_open(obj_name, pdc);
         if (obj_ids[i] <= 0)
             PGOTO_ERROR(FAIL, "Failed to open object");
 
-        /* Added: Progress reporting for object opening (reusing original format) */
+        // progress reporting for object opening
         if (i > 0 && query_1percent > 0 && i % query_1percent == 0) {
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
@@ -174,13 +163,9 @@ main(int argc, char *argv[])
 #endif
 
     if (my_rank == 0)
-        /* Modified: Changed message from "create" to "open" */
         LOG_INFO("Total time to open %11d objects: %7.2f , throughput %10.2f \n", n_obj, total_time,
                  n_obj / total_time);
 
-    /* Removed: All tag addition code (kvtag initialization and put_tag loop) */
-
-    /* Added: Initialize kvtag for query operations */
     // Setup kvtag for queries
     kvtag.name = "Group";
 
@@ -218,22 +203,19 @@ main(int argc, char *argv[])
         LOG_INFO("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
                  total_time, n_query / total_time);
 
-    /* Modified: Changed expected value calculation and added verification counting */
-    // The first program adds tags with value = i + my_add_tag_s
-    // Since we're querying the first my_query objects, and assuming they were tagged
-    // by ranks in order, we need to calculate the expected value
+    // `kvtag_add_get_scale' program adds tags with value = i + my_add_tag_s
+    // calculate and checking the expected value
     for (i = 0; i < my_query; i++) {
-        /* Modified: Calculate expected value based on how tags were originally assigned */
-        // When tags were added, each rank tagged objects starting from my_add_tag_s
-        // For verification, we need to determine which rank added the tag and its offset
+        // when tags were added, each rank tagged objects starting from my_add_tag_s
+        // for verification, we need to determine which rank added the tag and its offset
         int expected_value = i + my_query_s;  // Assuming tags were added in order starting from 0
 
-        /* Added: Count successful and failed verifications instead of immediate error */
+        // count successful and failed verifications instead of immediate error
         if (*(int *)(values[i]) == expected_value) {
             verified_success++;
         } else {
             verified_fail++;
-            /* Optional: Log first few failures for debugging */
+            // log first 10 failures for debugging
             if (verified_fail <= 10) {
                 LOG_ERROR("Verification failed for obj%d: expected %d, got %d\n",
                           i + my_query_s, expected_value, *(int *)(values[i]));
@@ -243,10 +225,9 @@ main(int argc, char *argv[])
     }
 
     free(values);
-    /* Added: Free obj_ids array */
     free(obj_ids);
 
-    /* Added: Aggregate verification statistics across all ranks */
+    // aggregate verification statistics across all ranks
 #ifdef ENABLE_MPI
     MPI_Reduce(&verified_success, &all_verified_success, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&verified_fail, &all_verified_fail, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -256,7 +237,7 @@ main(int argc, char *argv[])
 #endif
 
     if (my_rank == 0) {
-        /* Modified: Enhanced completion message with verification statistics */
+        // completion message with verification statistics
         LOG_INFO("==============================================================\n");
         LOG_INFO("Verification Summary:\n");
         LOG_INFO("  Total queries:        %11d\n", n_query);
@@ -275,7 +256,7 @@ main(int argc, char *argv[])
         }
     }
 
-    /* Added: Set return value based on verification results */
+    // set return value based on verification results
     if (verified_fail > 0) {
         ret_value = FAIL;
     }
