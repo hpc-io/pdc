@@ -136,6 +136,8 @@ if(BUILD_MPI_TESTING)
     tags/kvtag_affix_query_scale
     tags/kvtag_add_get_benchmark
     tags/kvtag_add_get_scale
+    tags/kvtag_add_scale
+    tags/kvtag_get_verify_scale
   )
 
 if(PDC_ENABLE_IDIOMS)
