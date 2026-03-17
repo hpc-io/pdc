@@ -405,6 +405,32 @@ set_num_entries(Set *set)
     FUNC_LEAVE(set->entries);
 }
 
+int
+set_copy(Set *target, Set *source)
+{
+    SetIterator iterator;
+    SetValue    value;
+    set_iterate(source, &iterator);
+
+    while (set_iter_has_more(&iterator)) {
+
+        /* Read the next value */
+
+        value = set_iter_next(&iterator);
+        /* Has this value been put into the new set already?
+         * If so, do not insert this again */
+
+        if (set_query(target, value) == 0) {
+            if (!set_insert(target, value)) {
+                /* Failed to insert */
+                set_free(target);
+                return -1;
+            }
+        }
+    }
+    return 0;
+}
+
 SetValue *
 set_to_array(Set *set)
 {
