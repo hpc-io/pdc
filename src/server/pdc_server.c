@@ -949,7 +949,7 @@ drc_access_again:
     }
     else {
         // We are starting a brand new server
-        transfer_request_metadata_query_init(pdc_server_size_g, NULL);
+        transfer_request_metadata_query_init_bulki(pdc_server_size_g, NULL);
         if (is_hash_table_init_g != 1) {
             ret_value = PDC_Server_init_hash_table();
             if (ret_value != SUCCEED)
@@ -1454,14 +1454,18 @@ PDC_Server_checkpoint()
               BULKI_singleton_ENTITY("dataserver_regions", PDC_STRING),
               dataserver_regions_array);
 
-    // ========== Section 4: Transfer Request Metadata Query ==========
-    char *    query_checkpoint;
-    uint64_t  query_checkpoint_size;
-    transfer_request_metadata_query_checkpoint(&query_checkpoint, &query_checkpoint_size);
+    // transfer request metadata query
+    BULKI *transfer_query_bulki = NULL;
+    ret_value = transfer_request_metadata_query_checkpoint_bulki(&transfer_query_bulki);
+
+    if (ret_value != SUCCEED || transfer_query_bulki == NULL) {
+        LOG_ERROR("Failed to create transfer query checkpoint\n");
+        PGOTO_ERROR(FAIL, "Transfer query checkpoint failed");
+    }
 
     BULKI_put(checkpoint_bulki,
               BULKI_singleton_ENTITY("transfer_query", PDC_STRING),
-              BULKI_ENTITY(query_checkpoint, query_checkpoint_size, PDC_UINT8, PDC_CLS_ARRAY));
+              BULKI_ENTITY(transfer_query_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
 
     // ========== Serialize and Write ==========
     serialized_buffer = BULKI_serialize(checkpoint_bulki, &serialized_size);
@@ -1940,19 +1944,28 @@ PDC_Server_restart(char *filename)
         }
     }
 
-    // ========== Section 4: Restore Transfer Query ==========
+    // restore transfer query
     BULKI_Entity *transfer_query_ent = BULKI_get(checkpoint_bulki,
                                                  BULKI_singleton_ENTITY("transfer_query", PDC_STRING));
-    if (transfer_query_ent != NULL) {
-        // Create a buffer copy from the BULKI entity data
-        char *checkpoint_buf = (char *)PDC_malloc(transfer_query_ent->count);
-        memcpy(checkpoint_buf, transfer_query_ent->data, transfer_query_ent->count);
 
-        // Call the init function with the checkpoint buffer
-        transfer_request_metadata_query_init(pdc_server_size_g, checkpoint_buf);
+    if (transfer_query_ent != NULL && transfer_query_ent->pdc_type == PDC_BULKI) {
+        // Extract the nested BULKI containing transfer query data
+        BULKI *transfer_query_bulki = (BULKI *)transfer_query_ent->data;
 
-        // Free the buffer
-        checkpoint_buf = (char *)PDC_free(checkpoint_buf);
+        // initialize transfer query system with BULKI checkpoint
+        ret_value = transfer_request_metadata_query_init_bulki(pdc_server_size_g, transfer_query_bulki);
+        if (ret_value != SUCCEED) {
+            LOG_ERROR("Failed to restore transfer query from checkpoint\n");
+            PGOTO_ERROR(FAIL, "Transfer query restoration failed");
+        }
+    }
+    else {
+        // note: no transfer query data in checkpoint, initialize fresh
+        ret_value = transfer_request_metadata_query_init_bulki(pdc_server_size_g, NULL);
+        if (ret_value != SUCCEED) {
+            LOG_ERROR("Failed to initialize transfer query system\n");
+            PGOTO_ERROR(FAIL, "Transfer query initialization failed");
+        }
     }
 
     // Clean up

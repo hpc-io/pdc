@@ -53,6 +53,128 @@ static uint64_t transfer_request_metadata_query_append(uint64_t obj_id, int ndim
 static uint64_t metadata_query_buf_create(pdc_obj_region_metadata *regions, int size,
                                           uint64_t *total_buf_size_ptr);
 
+perr_t
+transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *checkpoint_bulki)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+
+    metadata_server_objs     = NULL;
+    metadata_server_objs_end = NULL;
+    metadata_query_buf_head  = NULL;
+    metadata_query_buf_end   = NULL;
+    pdc_server_size          = pdc_server_size_input;
+    data_server_bytes        = (uint64_t *)PDC_calloc(pdc_server_size, sizeof(uint64_t));
+    query_id_g               = 100000;
+
+    pthread_mutex_init(&metadata_query_mutex, NULL);
+
+    if (checkpoint_bulki != NULL) {
+        BULKI_Entity *objects_array = BULKI_get(checkpoint_bulki,
+                                                BULKI_singleton_ENTITY("objects", PDC_STRING));
+
+        if (objects_array == NULL || objects_array->pdc_type != PDC_BULKI) {
+            LOG_ERROR("Invalid transfer query checkpoint: missing or invalid 'objects' field\n");
+            PGOTO_ERROR(FAIL, "Invalid checkpoint format");
+        }
+
+        BULKI_Entity_Iterator *obj_iter = Bent_iterator_init(objects_array, NULL, PDC_BULKI);
+
+        while (Bent_iterator_has_next_BULKI(obj_iter)) {
+            BULKI *obj_bulki = Bent_iterator_next_BULKI(obj_iter);
+
+            pdc_obj_metadata_pkg *obj_pkg =
+                (pdc_obj_metadata_pkg *)PDC_malloc(sizeof(pdc_obj_metadata_pkg));
+
+            BULKI_Entity *obj_id_ent = BULKI_get(obj_bulki,
+                                                 BULKI_singleton_ENTITY("obj_id", PDC_STRING));
+            if (obj_id_ent == NULL) {
+                LOG_ERROR("Missing obj_id in checkpoint object\n");
+                PDC_free(obj_pkg);
+                continue;
+            }
+            memcpy(&obj_pkg->obj_id, obj_id_ent->data, sizeof(uint64_t));
+
+            BULKI_Entity *ndim_ent = BULKI_get(obj_bulki,
+                                               BULKI_singleton_ENTITY("ndim", PDC_STRING));
+            if (ndim_ent == NULL) {
+                LOG_ERROR("Missing ndim in checkpoint object\n");
+                PDC_free(obj_pkg);
+                continue;
+            }
+            memcpy(&obj_pkg->ndim, ndim_ent->data, sizeof(int));
+
+            obj_pkg->regions = NULL;
+            obj_pkg->regions_end = NULL;
+            obj_pkg->next = NULL;
+
+            BULKI_Entity *regions_array = BULKI_get(obj_bulki,
+                                                    BULKI_singleton_ENTITY("regions", PDC_STRING));
+
+            if (regions_array != NULL && regions_array->pdc_type == PDC_BULKI) {
+                BULKI_Entity_Iterator *region_iter = Bent_iterator_init(regions_array, NULL, PDC_BULKI);
+
+                while (Bent_iterator_has_next_BULKI(region_iter)) {
+                    BULKI *region_bulki = Bent_iterator_next_BULKI(region_iter);
+
+                    pdc_region_metadata_pkg *region_pkg =
+                        (pdc_region_metadata_pkg *)PDC_malloc(sizeof(pdc_region_metadata_pkg));
+
+                    region_pkg->reg_offset = (uint64_t *)PDC_malloc(sizeof(uint64_t) * obj_pkg->ndim * 2);
+                    region_pkg->reg_size = region_pkg->reg_offset + obj_pkg->ndim;
+
+                    BULKI_Entity *server_id_ent = BULKI_get(region_bulki,
+                                                            BULKI_singleton_ENTITY("data_server_id", PDC_STRING));
+                    if (server_id_ent != NULL) {
+                        memcpy(&region_pkg->data_server_id, server_id_ent->data, sizeof(uint32_t));
+                    } else {
+                        LOG_ERROR("Missing data_server_id in checkpoint region\n");
+                        PDC_free(region_pkg->reg_offset);
+                        PDC_free(region_pkg);
+                        continue;
+                    }
+
+                    BULKI_Entity *offset_size_ent = BULKI_get(region_bulki,
+                                                              BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING));
+                    if (offset_size_ent != NULL) {
+                        memcpy(region_pkg->reg_offset, offset_size_ent->data,
+                               sizeof(uint64_t) * obj_pkg->ndim * 2);
+                    } else {
+                        LOG_ERROR("Missing reg_offset_size in checkpoint region\n");
+                        PDC_free(region_pkg->reg_offset);
+                        PDC_free(region_pkg);
+                        continue;
+                    }
+
+                    region_pkg->next = NULL;
+
+                    if (obj_pkg->regions == NULL) {
+                        obj_pkg->regions = region_pkg;
+                        obj_pkg->regions_end = region_pkg;
+                    } else {
+                        obj_pkg->regions_end->next = region_pkg;
+                        obj_pkg->regions_end = region_pkg;
+                    }
+                }
+            }
+
+            if (metadata_server_objs == NULL) {
+                metadata_server_objs = obj_pkg;
+                metadata_server_objs_end = obj_pkg;
+            } else {
+                metadata_server_objs_end->next = obj_pkg;
+                metadata_server_objs_end = obj_pkg;
+            }
+        }
+
+        LOG_DEBUG("Transfer query checkpoint restored successfully\n");
+    }
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 /**
  * Entry function for this class. Should be only called once at the beginning of Server init.
  * If checkpoint is not NULL, then load previously checkpointed metadata to static variables.
@@ -163,6 +285,86 @@ transfer_request_metadata_query_finalize()
     metadata_server_objs = NULL;
 
     pthread_mutex_destroy(&metadata_query_mutex);
+
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                   ret_value = SUCCEED;
+    pdc_obj_metadata_pkg *   obj_temp;
+    pdc_region_metadata_pkg *region_temp;
+    int                      obj_count = 0;
+    BULKI *                  bulki = NULL;
+
+//    if (checkpoint_bulki == NULL) {
+//        LOG_ERROR("checkpoint_bulki output parameter is NULL\n");
+//        PGOTO_ERROR(FAIL, "Invalid parameter");
+//    }
+
+    pthread_mutex_lock(&metadata_query_mutex);
+
+    bulki = BULKI_init(1);
+    BULKI_Entity *objects_array = empty_BULKI_Array_Entity();
+
+    obj_temp = metadata_server_objs;
+    while (obj_temp) {
+        BULKI *obj_bulki = BULKI_init(3);
+
+        BULKI_put(obj_bulki,
+                  BULKI_singleton_ENTITY("obj_id", PDC_STRING),
+                  BULKI_ENTITY(&obj_temp->obj_id, 1, PDC_UINT64, PDC_CLS_ITEM));
+
+        BULKI_put(obj_bulki,
+                  BULKI_singleton_ENTITY("ndim", PDC_STRING),
+                  BULKI_ENTITY(&obj_temp->ndim, 1, PDC_INT, PDC_CLS_ITEM));
+
+        BULKI_Entity *regions_array = empty_BULKI_Array_Entity();
+
+        region_temp = obj_temp->regions;
+        while (region_temp) {
+            BULKI *region_bulki = BULKI_init(2);
+
+            BULKI_put(region_bulki,
+                      BULKI_singleton_ENTITY("data_server_id", PDC_STRING),
+                      BULKI_ENTITY(&region_temp->data_server_id, 1, PDC_UINT32, PDC_CLS_ITEM));
+
+            BULKI_put(region_bulki,
+                      BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING),
+                      BULKI_ENTITY(region_temp->reg_offset, obj_temp->ndim * 2,
+                                   PDC_UINT64, PDC_CLS_ARRAY));
+
+            BULKI_ENTITY_append_BULKI(regions_array, region_bulki);
+            region_temp = region_temp->next;
+        }
+
+        BULKI_put(obj_bulki,
+                  BULKI_singleton_ENTITY("regions", PDC_STRING),
+                  regions_array);
+
+        BULKI_ENTITY_append_BULKI(objects_array, obj_bulki);
+
+        obj_count++;
+        obj_temp = obj_temp->next;
+    }
+
+    BULKI_put(bulki,
+              BULKI_singleton_ENTITY("objects", PDC_STRING),
+              objects_array);
+
+    pthread_mutex_unlock(&metadata_query_mutex);
+
+    *checkpoint_bulki = bulki;
+
+    LOG_DEBUG("Transfer query checkpoint created: %d objects\n", obj_count);
+
+done:
+    if (ret_value != SUCCEED && bulki != NULL) {
+        BULKI_free(bulki, 1);
+    }
 
     FUNC_LEAVE(ret_value);
 }
