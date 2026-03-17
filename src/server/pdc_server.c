@@ -77,6 +77,14 @@ sqlite3 *sqlite3_db_g;
 #include "bulki.h"
 #include "bulki_serde.h"
 
+// PDC checkpoint version management
+#define PDC_CHECKPOINT_MAGIC_2026  "PDC26.03"  // Year 2026, month 03
+#define PDC_CHECKPOINT_MAGIC_2027  "PDC27.01"  // Year 2027, month 01
+
+#define PDC_CHECKPOINT_MAGIC_LEN 8  // All must be same length
+#define PDC_CHECKPOINT_MAGIC_CURRENT PDC_CHECKPOINT_MAGIC_2026
+#define PDC_CHECKPOINT_VERSION_MATCH(m, v) (strncmp((m), (v), 8) == 0)
+
 // Check how long PDC has run every OP_INTERVAL operations
 #define PDC_CHECKPOINT_CHK_OP_INTERVAL 2000
 // Checkpoint every INTERVAL_SEC second and at least OP_INTERVAL operations
@@ -1194,16 +1202,12 @@ PDC_Server_checkpoint()
     HashTablePair     pair;
     char              checkpoint_file[ADDR_MAX], checkpoint_file_local[ADDR_MAX], cmd[4096];
     HashTableIterator hash_table_iter;
-//    char *            checkpoint;
     char *            env_char;
-//    uint64_t          checkpoint_size;
     bool              use_tmpfs = false;
     FILE *            file;
 
     // BULKI-specific variables
     BULKI *checkpoint_bulki = NULL;
-    size_t serialized_size = 0;
-    void * serialized_buffer = NULL;
 
 #ifdef PDC_TIMING
     // Timing
@@ -1234,7 +1238,12 @@ PDC_Server_checkpoint()
     // Initialize BULKI structure - estimate initial capacity
     checkpoint_bulki = BULKI_init(10);  // todo: this should be 4
 
-    // ========== Section 1: Checkpoint Containers ==========
+    // BULKI version number for validation
+    BULKI_put(checkpoint_bulki,
+              BULKI_singleton_ENTITY("version_number", PDC_STRING),
+              BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM));
+
+    // checkpoint containers
     n_entry = hash_table_num_entries(container_hash_table_g);
 
     BULKI_Entity *containers_array = empty_BULKI_Array_Entity();
@@ -1468,8 +1477,6 @@ PDC_Server_checkpoint()
               BULKI_ENTITY(transfer_query_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
 
     // ========== Serialize and Write ==========
-    serialized_buffer = BULKI_serialize(checkpoint_bulki, &serialized_size);
-
     if (use_tmpfs)
         file = fopen(checkpoint_file_local, "wb");
     else
@@ -1478,17 +1485,13 @@ PDC_Server_checkpoint()
     if (file == NULL)
         PGOTO_ERROR(FAIL, "Checkpoint file open error");
 
-    // Write BULKI magic header for validation
-    uint32_t magic = 0x424C4B49; // "BLKI" in hex
-    fwrite(&magic, sizeof(uint32_t), 1, file);
-
-    // Write serialized data
-    fwrite(serialized_buffer, serialized_size, 1, file);
-    fclose(file);
+    // note: BULKI_Entity_serialize_to_file() still do in-memory serialization
+    // note: need to implement a streaming file writing without in-memory serialization
+    BULKI_serialize_to_file(checkpoint_bulki, file);
+    file = NULL;  // file was closed by BULKI_serialize_to_file()
 
     // Clean up
     BULKI_free(checkpoint_bulki, 1);
-    serialized_buffer = PDC_free(serialized_buffer);
 
     if (use_tmpfs) {
 #ifdef PDC_TIMING
@@ -1575,9 +1578,8 @@ PDC_Server_restart(char *filename)
     BULKI_Entity *   containers_array = NULL;
     BULKI_Entity *   metadata_entries_array = NULL;
     BULKI_Entity *   dataserver_regions_array = NULL;
-    void *           file_buffer = NULL;
-    size_t           file_size;
-    uint32_t         magic;
+    char magic[PDC_CHECKPOINT_MAGIC_LEN + 1];
+    FILE *           file = NULL;
 
 #ifdef PDC_TIMING
     double start = MPI_Wtime();
@@ -1588,38 +1590,39 @@ PDC_Server_restart(char *filename)
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "Error with PDC_Server_init_hash_table");
 
-    // Read entire file into memory
-    FILE *file = fopen(filename, "rb");
-    if (file == NULL)
+    // open file
+    file = fopen(filename, "rb");
+    if (file == NULL) {
         PGOTO_ERROR(FAIL, "Error with fopen, filename: [%s]", filename);
-
-    fseek(file, 0, SEEK_END);
-    file_size = ftell(file);
-    fseek(file, 0, SEEK_SET);
-
-    file_buffer = PDC_malloc(file_size);
-    if (fread(file_buffer, file_size, 1, file) != 1) {
-        LOG_ERROR("Failed to read checkpoint file\n");
-        fclose(file);
-        PGOTO_ERROR(FAIL, "Read failed for checkpoint file");
-    }
-    fclose(file);
-
-    // Validate magic header
-    memcpy(&magic, file_buffer, sizeof(uint32_t));
-    if (magic != 0x424C4B49) {
-        LOG_ERROR("Invalid checkpoint file magic header\n");
-        PGOTO_ERROR(FAIL, "Invalid checkpoint format");
     }
 
-    // Deserialize BULKI
-    checkpoint_bulki = BULKI_deserialize((char *)file_buffer + sizeof(uint32_t));
+    // Read and validate magic header
+//    fread(magic, 1, PDC_CHECKPOINT_MAGIC_LEN, file);
+//    magic[PDC_CHECKPOINT_MAGIC_LEN] = '\0';
+//    if (!PDC_CHECKPOINT_VERSION_MATCH(magic, PDC_CHECKPOINT_MAGIC_CURRENT)) {
+//        LOG_ERROR("Invalid checkpoint file magic header: '%s'\n", magic);
+//        fclose(file);
+//        PGOTO_ERROR(FAIL, "Invalid checkpoint format");
+//    }
+
+    // Note: BULKI_deserialize_from_file will close the file
+    checkpoint_bulki = BULKI_deserialize_from_file(file);
+    file = NULL;  // File was closed by BULKI_deserialize_from_file
+
     if (checkpoint_bulki == NULL) {
         LOG_ERROR("Failed to deserialize checkpoint file\n");
         PGOTO_ERROR(FAIL, "Deserialization failed");
     }
 
-    // ========== Section 1: Restore Containers ==========
+    BULKI_Entity *version_entity = BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("version_number", PDC_STRING));
+    int equal = BULKI_Entity_equal(version_entity, BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM));
+    if (!equal) {
+        LOG_ERROR("Checkpoint version mismatch: expected '%s', found '%s'\n",
+                  PDC_CHECKPOINT_MAGIC_CURRENT, version_entity ? (char *)version_entity->data : "NULL");
+        PGOTO_ERROR(FAIL, "Checkpoint version mismatch");
+    }
+
+    // restore containers
     containers_array = BULKI_get(checkpoint_bulki,
                                  BULKI_singleton_ENTITY("containers", PDC_STRING));
 
