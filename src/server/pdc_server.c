@@ -1235,8 +1235,8 @@ PDC_Server_checkpoint()
     if (pdc_server_rank_g == 0)
         LOG_INFO("Checkpoint file [%s]\n", checkpoint_file);
 
-    // Initialize BULKI structure - estimate initial capacity
-    checkpoint_bulki = BULKI_init(10);  // todo: this should be 4
+    // initialize BULKI structure - estimate initial capacity
+    checkpoint_bulki = BULKI_init(5);
 
     // BULKI version number for validation
     BULKI_put(checkpoint_bulki,
@@ -1260,7 +1260,7 @@ PDC_Server_checkpoint()
                   BULKI_singleton_ENTITY("hash_key", PDC_STRING),
                   BULKI_ENTITY(&hash_key, 1, PDC_UINT32, PDC_CLS_ITEM));
 
-        // Store the container structure as binary blob
+        // store the container structure as binary blob
         BULKI_put(container_entry,
                   BULKI_singleton_ENTITY("cont_data", PDC_STRING),
                   BULKI_ENTITY(cont_head, sizeof(pdc_cont_hash_table_entry_t), PDC_UINT8, PDC_CLS_ARRAY));
@@ -1272,7 +1272,7 @@ PDC_Server_checkpoint()
               BULKI_singleton_ENTITY("containers", PDC_STRING),
               containers_array);
 
-    // ========== Section 2: Checkpoint Metadata Hash Table ==========
+    // checkpoint metadata hash table
     n_entry = hash_table_num_entries(metadata_hash_table_g);
 
     BULKI_Entity *metadata_entries_array = empty_BULKI_Array_Entity();
@@ -1295,20 +1295,20 @@ PDC_Server_checkpoint()
                   BULKI_singleton_ENTITY("hash_key", PDC_STRING),
                   BULKI_ENTITY(&hash_key, 1, PDC_UINT32, PDC_CLS_ITEM));
 
-        // Array of metadata objects
+        // array of metadata objects
         BULKI_Entity *metadata_objs_array = empty_BULKI_Array_Entity();
 
-        // Iterate every metadata structure in current entry
+        // iterate every metadata structure in current entry
         DL_FOREACH(head->metadata, elt)
         {
-            BULKI *metadata_obj = BULKI_init(4);    // todo: maybe this should be 3
+            BULKI *metadata_obj = BULKI_init(3);
 
-            // Store metadata structure
+            // store metadata structure
             BULKI_put(metadata_obj,
                       BULKI_singleton_ENTITY("metadata", PDC_STRING),
                       BULKI_ENTITY(elt, sizeof(pdc_metadata_t), PDC_UINT8, PDC_CLS_ARRAY));
 
-            // ========== KV Tags ==========
+            // kv tags
             DL_COUNT(elt->kvtag_list_head, kvlist_elt, n_kvtag);
 
             BULKI_Entity *kvtags_array = empty_BULKI_Array_Entity();
@@ -1316,7 +1316,6 @@ PDC_Server_checkpoint()
             {
                 BULKI *kvtag_entry = BULKI_init(4);
 
-                key_len = strlen(kvlist_elt->kvtag->name) + 1;
                 BULKI_put(kvtag_entry,
                           BULKI_singleton_ENTITY("key", PDC_STRING),
                           BULKI_singleton_ENTITY(kvlist_elt->kvtag->name, PDC_STRING));
@@ -1341,7 +1340,7 @@ PDC_Server_checkpoint()
                       BULKI_singleton_ENTITY("kvtags", PDC_STRING),
                       kvtags_array);
 
-            // ========== Storage Regions ==========
+            // storage regions
             n_region = 0;
             DL_COUNT(elt->storage_region_list_head, region_elt, n_region);
 
@@ -1352,12 +1351,12 @@ PDC_Server_checkpoint()
                 {
                     BULKI *region_entry = BULKI_init(3);
 
-                    // Store region structure
+                    // store region structure
                     BULKI_put(region_entry,
                               BULKI_singleton_ENTITY("region", PDC_STRING),
                               BULKI_ENTITY(region_elt, sizeof(region_list_t), PDC_UINT8, PDC_CLS_ARRAY));
 
-                    // Store histogram if present
+                    // store histogram if present
                     int has_hist = 0;
                     if (region_elt->region_hist != NULL)
                         has_hist = 1;
@@ -1412,20 +1411,20 @@ PDC_Server_checkpoint()
 
             metadata_size++;
             region_count += n_region;
-        } // End for metadata entry linked list
+        } // end for metadata entry linked list
 
         BULKI_put(hash_entry,
                   BULKI_singleton_ENTITY("metadata_objects", PDC_STRING),
                   metadata_objs_array);
 
         BULKI_ENTITY_append_BULKI(metadata_entries_array, hash_entry);
-    } // End for hash table metadata entry
+    } // end for hash table metadata entry
 
     BULKI_put(checkpoint_bulki,
               BULKI_singleton_ENTITY("metadata_entries", PDC_STRING),
               metadata_entries_array);
 
-    // ========== Section 3: Data Server Regions ==========
+    // data server regions
     data_server_region_t *region = NULL;
     DL_COUNT(dataserver_region_g, region, n_objs);
 
@@ -1433,7 +1432,7 @@ PDC_Server_checkpoint()
 
     DL_FOREACH(dataserver_region_g, region)
     {
-        BULKI *dataserver_obj = BULKI_init(3);
+        BULKI *dataserver_obj = BULKI_init(2);
 
         BULKI_put(dataserver_obj,
                   BULKI_singleton_ENTITY("obj_id", PDC_STRING),
@@ -1519,8 +1518,8 @@ PDC_Server_checkpoint()
 #endif
 
 #ifdef PDC_TIMING
-    LOG_INFO("Checkpointed %10d objects, with %10d regions, took %7.2fs (BULKI size: %zu bytes)\n",
-             metadata_size, region_count, checkpoint_time_rank, serialized_size);
+    LOG_INFO("Checkpointed %10d objects, with %10d regions, took %7.2fs\n",
+             metadata_size, region_count, checkpoint_time_rank);
 
     gettimeofday(&pdc_timer_end, 0);
     checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
@@ -1660,7 +1659,7 @@ PDC_Server_restart(char *filename)
         }
     }
 
-    // ========== Section 2: Restore Metadata ==========
+    // restore metadata
     metadata_entries_array = BULKI_get(checkpoint_bulki,
                                        BULKI_singleton_ENTITY("metadata_entries", PDC_STRING));
 
@@ -1670,20 +1669,20 @@ PDC_Server_restart(char *filename)
         while (Bent_iterator_has_next_BULKI(entry_iter)) {
             BULKI *hash_entry = Bent_iterator_next_BULKI(entry_iter);
 
-            // Extract n_obj
+            // extract n_obj
             BULKI_Entity *n_obj_ent = BULKI_get(hash_entry,
                                                 BULKI_singleton_ENTITY("n_obj", PDC_STRING));
             int count;
             memcpy(&count, n_obj_ent->data, sizeof(int));
 
-            // Extract hash key
+            // extract hash key
             BULKI_Entity *hash_key_ent = BULKI_get(hash_entry,
                                                    BULKI_singleton_ENTITY("hash_key", PDC_STRING));
             hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
             memcpy(hash_key, hash_key_ent->data, sizeof(uint32_t));
             total_mem_usage_g += sizeof(uint32_t);
 
-            // Reconstruct hash table entry
+            // reconstruct hash table entry
             entry           = (pdc_hash_table_entry_head *)PDC_malloc(sizeof(pdc_hash_table_entry_head));
             entry->n_obj    = 0;
             entry->bloom    = NULL;
@@ -1692,7 +1691,7 @@ PDC_Server_restart(char *filename)
 
             metadata = (pdc_metadata_t *)PDC_calloc(sizeof(pdc_metadata_t), count);
 
-            // Extract metadata objects array
+            // extract metadata objects array
             BULKI_Entity *metadata_objs_array = BULKI_get(hash_entry,
                                                           BULKI_singleton_ENTITY("metadata_objects", PDC_STRING));
 
@@ -1703,12 +1702,12 @@ PDC_Server_restart(char *filename)
                 while (Bent_iterator_has_next_BULKI(obj_iter) && i < count) {
                     BULKI *metadata_obj = Bent_iterator_next_BULKI(obj_iter);
 
-                    // Extract metadata structure
+                    // extract metadata structure
                     BULKI_Entity *metadata_ent = BULKI_get(metadata_obj,
                                                            BULKI_singleton_ENTITY("metadata", PDC_STRING));
                     memcpy(metadata + i, metadata_ent->data, sizeof(pdc_metadata_t));
 
-                    // Initialize pointers
+                    // initialize pointers
                     (metadata + i)->storage_region_list_head       = NULL;
                     (metadata + i)->region_lock_head               = NULL;
                     (metadata + i)->region_map_head                = NULL;
@@ -1719,7 +1718,7 @@ PDC_Server_restart(char *filename)
                     (metadata + i)->kvtag_list_head                = NULL;
                     (metadata + i)->all_storage_region_distributed = 0;
 
-                    // ========== Restore KV Tags ==========
+                    // restore kv tags
                     BULKI_Entity *kvtags_array = BULKI_get(metadata_obj,
                                                            BULKI_singleton_ENTITY("kvtags", PDC_STRING));
 
@@ -1732,24 +1731,24 @@ PDC_Server_restart(char *filename)
                             pdc_kvtag_list_t *kvtag_list = (pdc_kvtag_list_t *)PDC_calloc(1, sizeof(pdc_kvtag_list_t));
                             kvtag_list->kvtag            = (pdc_kvtag_t *)PDC_malloc(sizeof(pdc_kvtag_t));
 
-                            // Extract key
+                            // extract key
                             BULKI_Entity *key_ent = BULKI_get(kvtag_entry,
                                                                 BULKI_singleton_ENTITY("key", PDC_STRING));
                             int key_len = strlen((char *)key_ent->data) + 1;
                             kvtag_list->kvtag->name = PDC_malloc(key_len);
                             memcpy(kvtag_list->kvtag->name, key_ent->data, key_len);
 
-                            // Extract size
+                            // extract size
                             BULKI_Entity *size_ent = BULKI_get(kvtag_entry,
                                                                BULKI_singleton_ENTITY("size", PDC_STRING));
                             memcpy(&kvtag_list->kvtag->size, size_ent->data, sizeof(uint32_t));
 
-                            // Extract type
+                            // extract type
                             BULKI_Entity *type_ent = BULKI_get(kvtag_entry,
                                                                BULKI_singleton_ENTITY("type", PDC_STRING));
                             memcpy(&kvtag_list->kvtag->type, type_ent->data, sizeof(int8_t));
 
-                            // Extract value
+                            // extract value
                             BULKI_Entity *value_ent = BULKI_get(kvtag_entry,
                                                                  BULKI_singleton_ENTITY("value", PDC_STRING));
                             kvtag_list->kvtag->value = PDC_malloc(kvtag_list->kvtag->size);
@@ -1759,7 +1758,7 @@ PDC_Server_restart(char *filename)
                         }
                     }
 
-                    // ========== Restore Storage Regions ==========
+                    // restore storage regions
                     BULKI_Entity *regions_array = BULKI_get(metadata_obj,
                                                             BULKI_singleton_ENTITY("regions", PDC_STRING));
 
@@ -1773,12 +1772,12 @@ PDC_Server_restart(char *filename)
 
                             region_list = (region_list_t *)PDC_malloc(sizeof(region_list_t));
 
-                            // Extract region structure
+                            // extract region structure
                             BULKI_Entity *region_ent = BULKI_get(region_entry,
                                                                  BULKI_singleton_ENTITY("region", PDC_STRING));
                             memcpy(region_list, region_ent->data, sizeof(region_list_t));
 
-                            // Extract histogram flag
+                            // extract histogram flag
                             BULKI_Entity *has_hist_ent = BULKI_get(region_entry,
                                                                    BULKI_singleton_ENTITY("has_hist", PDC_STRING));
                             int has_hist;
@@ -1825,7 +1824,7 @@ PDC_Server_restart(char *filename)
                                 }
                             }
 
-                            // Initialize region_list fields
+                            // initialize region_list fields
                             region_list->buf       = NULL;
                             region_list->data_size = 1;
                             for (idx = 0; idx < region_list->ndim; idx++)
@@ -1877,7 +1876,7 @@ PDC_Server_restart(char *filename)
 
             entry->metadata = NULL;
 
-            // Insert metadata to hash table
+            // insert metadata to hash table
             for (i = 0; i < count; i++) {
                 elt = metadata + i;
                 ret_value = PDC_Server_hash_table_list_insert(entry, elt);
@@ -1887,7 +1886,7 @@ PDC_Server_restart(char *filename)
         }
     }
 
-    // ========== Section 3: Restore Data Server Regions ==========
+    // restore data server regions
     dataserver_regions_array = BULKI_get(checkpoint_bulki,
                                          BULKI_singleton_ENTITY("dataserver_regions", PDC_STRING));
 
@@ -1902,12 +1901,12 @@ PDC_Server_restart(char *filename)
             new_obj_reg->fd               = -1;
             new_obj_reg->storage_location = (char *)PDC_malloc(sizeof(char) * ADDR_MAX);
 
-            // Extract obj_id
+            // extract obj_id
             BULKI_Entity *obj_id_ent = BULKI_get(dataserver_obj,
                                                  BULKI_singleton_ENTITY("obj_id", PDC_STRING));
             memcpy(&new_obj_reg->obj_id, obj_id_ent->data, sizeof(uint64_t));
 
-            // Extract regions
+            // extract regions
             BULKI_Entity *ds_regions_array = BULKI_get(dataserver_obj,
                                                        BULKI_singleton_ENTITY("regions", PDC_STRING));
 
@@ -1923,7 +1922,7 @@ PDC_Server_restart(char *filename)
                                                          BULKI_singleton_ENTITY("region", PDC_STRING));
                     memcpy(region_list, region_ent->data, sizeof(region_list_t));
 
-                    // Initialize fields (similar to above)
+                    // initialize fields (similar to above)
                     region_list->buf       = NULL;
                     region_list->data_size = 1;
                     for (idx = 0; idx < region_list->ndim; idx++)
@@ -1971,9 +1970,8 @@ PDC_Server_restart(char *filename)
         }
     }
 
-    // Clean up
+    // clean up
     BULKI_free(checkpoint_bulki, 1);
-    file_buffer = PDC_free(file_buffer);
 
 #ifdef ENABLE_MPI
     MPI_Reduce(&nobj, &all_nobj, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -1994,6 +1992,11 @@ PDC_Server_restart(char *filename)
     }
 
 done:
+    // ensure file is closed if error occurred before BULKI_deserialize_from_file
+    if (file != NULL) {
+        fclose(file);
+    }
+
     FUNC_LEAVE(ret_value);
 }
 
