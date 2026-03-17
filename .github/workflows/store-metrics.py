@@ -92,43 +92,43 @@ with open(sys.argv[2], 'r') as f:
 
     for line in lines:
         if 'Obj create time' in line:
-            t = float(line.split(':')[1])
+            t = float(line.split(':')[-1])
             obj_create_time_file_agg += t
             total_time_file_agg += t
             observed_time_file_agg += t
             obj_create_time_node.append(t)
         elif 'Transfer create time' in line:
-            t = float(line.split(':')[1])
+            t = float(line.split(':')[-1])
             xfer_create_time_file_agg += t
             total_time_file_agg += t
             observed_time_file_agg += t
             xfer_create_time_node.append(t)                     
         elif 'Transfer start time' in line:
-            t = float(line.split(':')[1])
+            t = float(line.split(':')[-1])
             xfer_start_time_file_agg += t
             total_time_file_agg += t
             observed_time_file_agg += t
             xfer_start_time_node.append(t)
         elif 'Transfer wait time' in line:
-            t = float(line.split(':')[1])
+            t = float(line.split(':')[-1])
             xfer_wait_time_file_agg += t
             total_time_file_agg += t
             observed_time_file_agg += t
             xfer_wait_time_node.append(t)        
         elif 'Transfer close time' in line:
-            t = float(line.split(':')[1])
+            t = float(line.split(':')[-1])
             xfer_close_time_file_agg += t
             total_time_file_agg += t
             observed_time_file_agg += t
             xfer_close_time_node.append(t)
         elif 'Obj close time' in line:
-            t = float(line.split(':')[1])
+            t = float(line.split(':')[-1])
             obj_close_time_file_agg += t
             total_time_file_agg += t
             observed_time_file_agg += t
             obj_close_time_node.append(t)
         elif 'Sleep end' in line:
-            t = float(line.split(':')[1])
+            t = float(line.split(':')[-1])
             sleep_time_file_agg += t
             observed_time_file_agg += t
             sleep_time_node.append(t)
@@ -136,8 +136,8 @@ with open(sys.argv[2], 'r') as f:
         if 'PDC Metadata servers, running with' in line and (pdc_metadata_servers is None or pdc_metadata_clients is None):
             parts = line.split()
             
-            pdc_metadata_servers = parts[2]
-            pdc_metadata_clients = parts[8]
+            pdc_metadata_servers = parts[3]
+            pdc_metadata_clients = parts[9]
 
     obj_create_time_file.append(obj_create_time_file_agg)
     obj_close_time_file.append(obj_close_time_file_agg)
@@ -270,7 +270,7 @@ if len(obj_create_time_node) > 0:
             'xfer_wait_time_step': xfer_wait_time_node[step],
             'xfer_close_time_step': xfer_close_time_node[step],
             'obj_close_time_step': obj_close_time_node[step],
-            'sleep_time_step': sleep_time_node[step] if len(sleep_time_node) < step else 0
+            'sleep_time_step': sleep_time_node[step] if step < len(sleep_time_node) else 0
         }
 
         lines.append(line)

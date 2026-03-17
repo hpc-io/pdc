@@ -1,15 +1,17 @@
 name: NERSC
 
 on:
-  pull_request_target
+  pull_request
 
 env:
   PR_NUMBER: ${{ github.event.number }}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   authorize:
-    environment:
-      ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository && 'external' || 'internal' }}
     runs-on: ubuntu-latest
     steps:
       - run: true
