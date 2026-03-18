@@ -180,7 +180,8 @@ main(int argc, char *argv[])
         // count successful and failed verifications instead of immediate error
         if (*(int *)(values[i]) == expected_value) {
             verified_success++;
-        } else {
+        }
+        else {
             verified_fail++;
             // log first 10 failures for debugging
             if (verified_fail <= 10) {
@@ -196,7 +197,7 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        LOG_INFO("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
+        LOG_INFO("Total time to retrieve %11d tag from %11d objects: %7.2f , throughput %10.2f \n", n_query, n_obj,
                  total_time, n_query / total_time);
 
     free(values);
@@ -216,11 +217,9 @@ main(int argc, char *argv[])
         LOG_INFO("==============================================================\n");
         LOG_INFO("Verification Summary:\n");
         LOG_INFO("  Total queries:        %11d\n", n_query);
-        LOG_INFO("  Successfully verified: %11d (%6.2f%%)\n",
-                 all_verified_success,
+        LOG_INFO("  Successfully verified: %11d (%6.2f%%)\n", all_verified_success,
                  100.0 * all_verified_success / n_query);
-        LOG_INFO("  Failed verification:   %11d (%6.2f%%)\n",
-                 all_verified_fail,
+        LOG_INFO("  Failed verification:   %11d (%6.2f%%)\n", all_verified_fail,
                  100.0 * all_verified_fail / n_query);
         LOG_INFO("==============================================================\n");
 

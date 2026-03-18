@@ -1465,7 +1465,6 @@ PDC_Server_checkpoint()
     // transfer request metadata query
     BULKI *transfer_query_bulki = NULL;
     ret_value = transfer_request_metadata_query_checkpoint_bulki(&transfer_query_bulki);
-
     if (ret_value != SUCCEED || transfer_query_bulki == NULL) {
         LOG_ERROR("Failed to create transfer query checkpoint\n");
         PGOTO_ERROR(FAIL, "Transfer query checkpoint failed");
@@ -1595,16 +1594,7 @@ PDC_Server_restart(char *filename)
         PGOTO_ERROR(FAIL, "Error with fopen, filename: [%s]", filename);
     }
 
-    // Read and validate magic header
-//    fread(magic, 1, PDC_CHECKPOINT_MAGIC_LEN, file);
-//    magic[PDC_CHECKPOINT_MAGIC_LEN] = '\0';
-//    if (!PDC_CHECKPOINT_VERSION_MATCH(magic, PDC_CHECKPOINT_MAGIC_CURRENT)) {
-//        LOG_ERROR("Invalid checkpoint file magic header: '%s'\n", magic);
-//        fclose(file);
-//        PGOTO_ERROR(FAIL, "Invalid checkpoint format");
-//    }
-
-    // Note: BULKI_deserialize_from_file will close the file
+    // note: BULKI_deserialize_from_file will close the file
     checkpoint_bulki = BULKI_deserialize_from_file(file);
     file = NULL;  // File was closed by BULKI_deserialize_from_file
 
@@ -1613,11 +1603,13 @@ PDC_Server_restart(char *filename)
         PGOTO_ERROR(FAIL, "Deserialization failed");
     }
 
+    // read and validate bulki version
     BULKI_Entity *version_entity = BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("version_number", PDC_STRING));
     int equal = BULKI_Entity_equal(version_entity, BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM));
     if (!equal) {
         LOG_ERROR("Checkpoint version mismatch: expected '%s', found '%s'\n",
-                  PDC_CHECKPOINT_MAGIC_CURRENT, version_entity ? (char *)version_entity->data : "NULL");
+                  PDC_CHECKPOINT_MAGIC_CURRENT,
+                  version_entity ? (char *)version_entity->data : "NULL");
         PGOTO_ERROR(FAIL, "Checkpoint version mismatch");
     }
 
@@ -1981,17 +1973,16 @@ PDC_Server_restart(char *filename)
     all_n_region = total_region;
 #endif
 
-#ifdef PDC_TIMING
-    if (pdc_server_rank_g == 0)
-        LOG_ERROR("Total restart time = %.6f\n", MPI_Wtime() - start);
-#endif
-
     if (pdc_server_rank_g == 0) {
-        LOG_INFO("Recovered %d containers, %d objects, %d regions from checkpoint file \n",
+        LOG_INFO("Server restarted from saved session, "
+                 "successfully loaded %d containers, %d objects, %d regions...\n",
                  all_cont, all_nobj, all_n_region);
     }
 
 done:
+#ifdef PDC_TIMING
+    pdc_server_timings->PDCserver_restart += MPI_Wtime() - start;
+#endif
     // ensure file is closed if error occurred before BULKI_deserialize_from_file
     if (file != NULL) {
         fclose(file);
