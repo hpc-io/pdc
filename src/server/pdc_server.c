@@ -1579,7 +1579,7 @@ PDC_Server_restart(char *filename)
     char magic[PDC_CHECKPOINT_MAGIC_LEN + 1];
     FILE *           file = NULL;
 
-#ifdef PDC_TIMING
+#if defined(PDC_TIMING) || defined(ENABLE_MPI)
     double start = MPI_Wtime();
 #endif
 
@@ -1982,6 +1982,13 @@ PDC_Server_restart(char *filename)
 done:
 #ifdef PDC_TIMING
     pdc_server_timings->PDCserver_restart += MPI_Wtime() - start;
+#endif
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!pdc_server_rank_g) {
+        LOG_INFO("total restart time = %lf\n", MPI_Wtime() - start);
+    }
 #endif
     // ensure file is closed if error occurred before BULKI_deserialize_from_file
     if (file != NULL) {
