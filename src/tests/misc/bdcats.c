@@ -123,7 +123,11 @@ main(int argc, char **argv)
 #endif
         for (int i = 0; i < 8; i++) {
             sprintf(obj_name, "%s-%d", obj_names[i], iter);
+#ifdef ENABLE_MPI
+            obj_ids[i] = PDCobj_open_col(obj_name, pdc_id);
+#else
             obj_ids[i] = PDCobj_open(obj_name, pdc_id);
+#endif
             if (obj_ids[i] == 0) {
                 LOG_ERROR("Error getting an object id of %s from server\n", obj_name);
                 return FAIL;
