@@ -42,11 +42,12 @@ main(int argc, char *argv[])
     int    rank;
     double start;
     MPI_Init(&argc, &argv);
-
+#endif
+    pdc = PDCinit("pdc");
+#ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     start = MPI_Wtime();
 #endif
-    pdc = PDCinit("pdc");
 
     PDC_Client_close_all_server();
 
@@ -54,6 +55,7 @@ main(int argc, char *argv[])
         LOG_ERROR("Failed to close PDC\n");
 
 #ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
     if (!rank) {
         LOG_INFO("total close time = %lf\n", MPI_Wtime() - start);
     }
