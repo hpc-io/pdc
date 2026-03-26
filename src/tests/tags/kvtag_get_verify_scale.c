@@ -68,23 +68,23 @@ print_usage(char *name)
 int
 main(int argc, char *argv[])
 {
-    pdcid_t     pdc, cont_prop, cont;
-    pdcid_t *   obj_ids;
-    int         n_obj, n_query, my_obj, my_obj_s, n_tag, n_tag_s;
-    int         obj_1percent = 0;
-    int         proc_num, my_rank, i;
-    char        obj_name[128];
-    double      stime, total_time, percent_time;
-    pdc_kvtag_t kvtag;
-    void **     values;
+    pdcid_t        pdc, cont_prop, cont;
+    pdcid_t *      obj_ids;
+    int            n_obj, n_query, my_obj, my_obj_s, n_tag, n_tag_s;
+    int            obj_1percent = 0;
+    int            proc_num, my_rank, i;
+    char           obj_name[128];
+    double         stime, total_time, percent_time;
+    pdc_kvtag_t    kvtag;
+    void **        values;
     pdc_var_type_t value_type;
     size_t         value_size;
     int            ret_value = SUCCEED;
     // counters for verification statistics
-    int            verified_success = 0;
-    int            verified_fail = 0;
-    int            all_verified_success = 0;
-    int            all_verified_fail = 0;
+    int verified_success     = 0;
+    int verified_fail        = 0;
+    int all_verified_success = 0;
+    int all_verified_fail    = 0;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
@@ -175,7 +175,7 @@ main(int argc, char *argv[])
                            (void *)&value_size) < 0)
             PGOTO_ERROR(FAIL, "Failed to get a kvtag from o%d\n", i + n_tag_s);
 
-        int expected_value = i + n_tag_s;  // Assuming tags were added in order starting from 0
+        int expected_value = i + n_tag_s; // Assuming tags were added in order starting from 0
 
         // count successful and failed verifications instead of immediate error
         if (*(int *)(values[i]) == expected_value) {
@@ -185,8 +185,8 @@ main(int argc, char *argv[])
             verified_fail++;
             // log first 10 failures for debugging
             if (verified_fail <= 10) {
-                LOG_ERROR("Verification failed for obj%d: expected %d, got %d\n",
-                          i + n_tag_s, expected_value, *(int *)(values[i]));
+                LOG_ERROR("Verification failed for obj%d: expected %d, got %d\n", i + n_tag_s, expected_value,
+                          *(int *)(values[i]));
             }
         }
         free(values[i]);
@@ -197,8 +197,8 @@ main(int argc, char *argv[])
     total_time = MPI_Wtime() - stime;
 #endif
     if (my_rank == 0)
-        LOG_INFO("Total time to retrieve %11d tag from %11d objects: %7.2f , throughput %10.2f \n", n_query, n_obj,
-                 total_time, n_query / total_time);
+        LOG_INFO("Total time to retrieve %11d tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
+                 n_obj, total_time, n_query / total_time);
 
     free(values);
     free(obj_ids);
@@ -209,7 +209,7 @@ main(int argc, char *argv[])
     MPI_Reduce(&verified_fail, &all_verified_fail, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #else
     all_verified_success = verified_success;
-    all_verified_fail = verified_fail;
+    all_verified_fail    = verified_fail;
 #endif
 
     if (my_rank == 0) {
@@ -225,7 +225,8 @@ main(int argc, char *argv[])
 
         if (all_verified_fail > 0) {
             LOG_ERROR("WARNING: %d objects failed verification!\n", all_verified_fail);
-        } else {
+        }
+        else {
             LOG_INFO("SUCCESS: All objects verified correctly!\n");
         }
     }

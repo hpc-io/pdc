@@ -71,8 +71,8 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
     pthread_mutex_init(&metadata_query_mutex, NULL);
 
     if (checkpoint_bulki != NULL) {
-        BULKI_Entity *objects_array = BULKI_get(checkpoint_bulki,
-                                                BULKI_singleton_ENTITY("objects", PDC_STRING));
+        BULKI_Entity *objects_array =
+            BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("objects", PDC_STRING));
 
         if (objects_array == NULL || objects_array->pdc_type != PDC_BULKI) {
             LOG_ERROR("Invalid transfer query checkpoint: missing or invalid 'objects' field\n");
@@ -84,11 +84,9 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
         while (Bent_iterator_has_next_BULKI(obj_iter)) {
             BULKI *obj_bulki = Bent_iterator_next_BULKI(obj_iter);
 
-            pdc_obj_metadata_pkg *obj_pkg =
-                (pdc_obj_metadata_pkg *)PDC_malloc(sizeof(pdc_obj_metadata_pkg));
+            pdc_obj_metadata_pkg *obj_pkg = (pdc_obj_metadata_pkg *)PDC_malloc(sizeof(pdc_obj_metadata_pkg));
 
-            BULKI_Entity *obj_id_ent = BULKI_get(obj_bulki,
-                                                 BULKI_singleton_ENTITY("obj_id", PDC_STRING));
+            BULKI_Entity *obj_id_ent = BULKI_get(obj_bulki, BULKI_singleton_ENTITY("obj_id", PDC_STRING));
             if (obj_id_ent == NULL) {
                 LOG_ERROR("Missing obj_id in checkpoint object\n");
                 PDC_free(obj_pkg);
@@ -96,8 +94,7 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
             }
             memcpy(&obj_pkg->obj_id, obj_id_ent->data, sizeof(uint64_t));
 
-            BULKI_Entity *ndim_ent = BULKI_get(obj_bulki,
-                                               BULKI_singleton_ENTITY("ndim", PDC_STRING));
+            BULKI_Entity *ndim_ent = BULKI_get(obj_bulki, BULKI_singleton_ENTITY("ndim", PDC_STRING));
             if (ndim_ent == NULL) {
                 LOG_ERROR("Missing ndim in checkpoint object\n");
                 PDC_free(obj_pkg);
@@ -105,12 +102,11 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
             }
             memcpy(&obj_pkg->ndim, ndim_ent->data, sizeof(int));
 
-            obj_pkg->regions = NULL;
+            obj_pkg->regions     = NULL;
             obj_pkg->regions_end = NULL;
-            obj_pkg->next = NULL;
+            obj_pkg->next        = NULL;
 
-            BULKI_Entity *regions_array = BULKI_get(obj_bulki,
-                                                    BULKI_singleton_ENTITY("regions", PDC_STRING));
+            BULKI_Entity *regions_array = BULKI_get(obj_bulki, BULKI_singleton_ENTITY("regions", PDC_STRING));
 
             if (regions_array != NULL && regions_array->pdc_type == PDC_BULKI) {
                 BULKI_Entity_Iterator *region_iter = Bent_iterator_init(regions_array, NULL, PDC_BULKI);
@@ -122,25 +118,27 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
                         (pdc_region_metadata_pkg *)PDC_malloc(sizeof(pdc_region_metadata_pkg));
 
                     region_pkg->reg_offset = (uint64_t *)PDC_malloc(sizeof(uint64_t) * obj_pkg->ndim * 2);
-                    region_pkg->reg_size = region_pkg->reg_offset + obj_pkg->ndim;
+                    region_pkg->reg_size   = region_pkg->reg_offset + obj_pkg->ndim;
 
-                    BULKI_Entity *server_id_ent = BULKI_get(region_bulki,
-                                                            BULKI_singleton_ENTITY("data_server_id", PDC_STRING));
+                    BULKI_Entity *server_id_ent =
+                        BULKI_get(region_bulki, BULKI_singleton_ENTITY("data_server_id", PDC_STRING));
                     if (server_id_ent != NULL) {
                         memcpy(&region_pkg->data_server_id, server_id_ent->data, sizeof(uint32_t));
-                    } else {
+                    }
+                    else {
                         LOG_ERROR("Missing data_server_id in checkpoint region\n");
                         PDC_free(region_pkg->reg_offset);
                         PDC_free(region_pkg);
                         continue;
                     }
 
-                    BULKI_Entity *offset_size_ent = BULKI_get(region_bulki,
-                                                              BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING));
+                    BULKI_Entity *offset_size_ent =
+                        BULKI_get(region_bulki, BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING));
                     if (offset_size_ent != NULL) {
                         memcpy(region_pkg->reg_offset, offset_size_ent->data,
                                sizeof(uint64_t) * obj_pkg->ndim * 2);
-                    } else {
+                    }
+                    else {
                         LOG_ERROR("Missing reg_offset_size in checkpoint region\n");
                         PDC_free(region_pkg->reg_offset);
                         PDC_free(region_pkg);
@@ -150,21 +148,23 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
                     region_pkg->next = NULL;
 
                     if (obj_pkg->regions == NULL) {
-                        obj_pkg->regions = region_pkg;
+                        obj_pkg->regions     = region_pkg;
                         obj_pkg->regions_end = region_pkg;
-                    } else {
+                    }
+                    else {
                         obj_pkg->regions_end->next = region_pkg;
-                        obj_pkg->regions_end = region_pkg;
+                        obj_pkg->regions_end       = region_pkg;
                     }
                 }
             }
 
             if (metadata_server_objs == NULL) {
-                metadata_server_objs = obj_pkg;
+                metadata_server_objs     = obj_pkg;
                 metadata_server_objs_end = obj_pkg;
-            } else {
+            }
+            else {
                 metadata_server_objs_end->next = obj_pkg;
-                metadata_server_objs_end = obj_pkg;
+                metadata_server_objs_end       = obj_pkg;
             }
         }
 
@@ -298,28 +298,26 @@ transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
     pdc_obj_metadata_pkg *   obj_temp;
     pdc_region_metadata_pkg *region_temp;
     int                      obj_count = 0;
-    BULKI *                  bulki = NULL;
+    BULKI *                  bulki     = NULL;
 
-//    if (checkpoint_bulki == NULL) {
-//        LOG_ERROR("checkpoint_bulki output parameter is NULL\n");
-//        PGOTO_ERROR(FAIL, "Invalid parameter");
-//    }
+    //    if (checkpoint_bulki == NULL) {
+    //        LOG_ERROR("checkpoint_bulki output parameter is NULL\n");
+    //        PGOTO_ERROR(FAIL, "Invalid parameter");
+    //    }
 
     pthread_mutex_lock(&metadata_query_mutex);
 
-    bulki = BULKI_init(1);
+    bulki                       = BULKI_init(1);
     BULKI_Entity *objects_array = empty_BULKI_Array_Entity();
 
     obj_temp = metadata_server_objs;
     while (obj_temp) {
         BULKI *obj_bulki = BULKI_init(3);
 
-        BULKI_put(obj_bulki,
-                  BULKI_singleton_ENTITY("obj_id", PDC_STRING),
+        BULKI_put(obj_bulki, BULKI_singleton_ENTITY("obj_id", PDC_STRING),
                   BULKI_ENTITY(&obj_temp->obj_id, 1, PDC_UINT64, PDC_CLS_ITEM));
 
-        BULKI_put(obj_bulki,
-                  BULKI_singleton_ENTITY("ndim", PDC_STRING),
+        BULKI_put(obj_bulki, BULKI_singleton_ENTITY("ndim", PDC_STRING),
                   BULKI_ENTITY(&obj_temp->ndim, 1, PDC_INT, PDC_CLS_ITEM));
 
         BULKI_Entity *regions_array = empty_BULKI_Array_Entity();
@@ -328,22 +326,17 @@ transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
         while (region_temp) {
             BULKI *region_bulki = BULKI_init(2);
 
-            BULKI_put(region_bulki,
-                      BULKI_singleton_ENTITY("data_server_id", PDC_STRING),
+            BULKI_put(region_bulki, BULKI_singleton_ENTITY("data_server_id", PDC_STRING),
                       BULKI_ENTITY(&region_temp->data_server_id, 1, PDC_UINT32, PDC_CLS_ITEM));
 
-            BULKI_put(region_bulki,
-                      BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING),
-                      BULKI_ENTITY(region_temp->reg_offset, obj_temp->ndim * 2,
-                                   PDC_UINT64, PDC_CLS_ARRAY));
+            BULKI_put(region_bulki, BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING),
+                      BULKI_ENTITY(region_temp->reg_offset, obj_temp->ndim * 2, PDC_UINT64, PDC_CLS_ARRAY));
 
             BULKI_ENTITY_append_BULKI(regions_array, region_bulki);
             region_temp = region_temp->next;
         }
 
-        BULKI_put(obj_bulki,
-                  BULKI_singleton_ENTITY("regions", PDC_STRING),
-                  regions_array);
+        BULKI_put(obj_bulki, BULKI_singleton_ENTITY("regions", PDC_STRING), regions_array);
 
         BULKI_ENTITY_append_BULKI(objects_array, obj_bulki);
 
@@ -351,9 +344,7 @@ transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
         obj_temp = obj_temp->next;
     }
 
-    BULKI_put(bulki,
-              BULKI_singleton_ENTITY("objects", PDC_STRING),
-              objects_array);
+    BULKI_put(bulki, BULKI_singleton_ENTITY("objects", PDC_STRING), objects_array);
 
     pthread_mutex_unlock(&metadata_query_mutex);
 
