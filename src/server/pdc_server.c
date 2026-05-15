@@ -1491,7 +1491,7 @@ PDC_Server_checkpoint()
     checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     if (pdc_server_rank_g == 0)
-        LOG_ERROR("Rank[ ALL]: Total checkpoint time = %.6f\n", checkpoint_time);
+        LOG_INFO("Rank[ ALL]: Total checkpoint time = %.6f\n", checkpoint_time);
 #endif
 
     if (pdc_server_rank_g == 0) {
