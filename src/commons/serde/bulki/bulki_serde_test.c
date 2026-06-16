@@ -338,19 +338,19 @@ test_preallocated_array_roundtrip()
         int    val  = i * 10;
 
         BULKI_put_incremental(item, BULKI_singleton_ENTITY("name", PDC_STRING),
-                                BULKI_singleton_ENTITY("entry", PDC_STRING));
+                              BULKI_singleton_ENTITY("entry", PDC_STRING));
         BULKI_put_incremental(item, BULKI_singleton_ENTITY("value", PDC_STRING),
-                                BULKI_ENTITY(&val, 1, PDC_INT, PDC_CLS_ITEM));
+                              BULKI_ENTITY(&val, 1, PDC_INT, PDC_CLS_ITEM));
         BULKI_ENTITY_append_BULKI_incremental(arr, item);
     }
 
     BULKI_put_incremental(root, BULKI_singleton_ENTITY("entries", PDC_STRING), arr);
 
     {
-        size_t   size;
-        void *   buffer          = BULKI_serialize(root, &size);
-        BULKI *  deserialized    = BULKI_deserialize(buffer);
-        int      equal           = BULKI_equal(root, deserialized);
+        size_t size;
+        void * buffer       = BULKI_serialize(root, &size);
+        BULKI *deserialized = BULKI_deserialize(buffer);
+        int    equal        = BULKI_equal(root, deserialized);
 
         LOG_INFO("preallocated array roundtrip equal: %d\n", equal);
         BULKI_free(deserialized, 1);
@@ -588,7 +588,8 @@ main(int argc, char *argv[])
     LOG_INFO("test_incremental_bulki_put_total_size RST = %d\n", test_incremental_bulki_put_total_size());
     LOG_INFO("test_incremental_entity_array_append_sizes RST = %d\n",
              test_incremental_entity_array_append_sizes());
-    LOG_INFO("test_incremental_bulki_delete_total_size RST = %d\n", test_incremental_bulki_delete_total_size());
+    LOG_INFO("test_incremental_bulki_delete_total_size RST = %d\n",
+             test_incremental_bulki_delete_total_size());
     LOG_INFO("bulki_small_json_serialization_test RST = %d\n", bulki_small_json_serialization_test());
 
     FUNC_LEAVE(0);
