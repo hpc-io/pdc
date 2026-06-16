@@ -102,6 +102,8 @@ set(PROGRAMS
   region/region_transfer_set_dims_3D
   query/query_data
   misc/producer_waitall
+  tags/kvtag_add_scale
+  tags/kvtag_get_verify_scale
 )
 
 # TODO: Check if import_vpic.c is needed. If yes, we have to add the following :
@@ -136,8 +138,6 @@ if(BUILD_MPI_TESTING)
     tags/kvtag_affix_query_scale
     tags/kvtag_add_get_benchmark
     tags/kvtag_add_get_scale
-    tags/kvtag_add_scale
-    tags/kvtag_get_verify_scale
   )
 
 if(PDC_ENABLE_IDIOMS)
@@ -218,6 +218,8 @@ set(SCRIPTS
   run_multiple_test.sh
   run_multiple_mpi_test.sh
   run_checkpoint_restart_test.sh
+  run_checkpoint_restart_test_with_prog_param.sh
+  run_checkpoint_restart_mpi_test_with_prog_param.sh
 )
 
 foreach(script ${SCRIPTS})
@@ -318,7 +320,8 @@ add_test(NAME read_obj_int64   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 add_test(NAME read_obj_uint64  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 uint64)
 add_test(NAME read_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int16)
 add_test(NAME read_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int8)
-add_test(NAME vpicio_bdcats_transfer_request     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
+add_test(NAME vpicio_bdcats_transfer_request    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
+add_test(NAME kvtag_checkpoint_restart          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_checkpoint_restart_test_with_prog_param.sh "./kvtag_add_scale 1000 100" "./kvtag_get_verify_scale 1000 100")
 
 
 set_tests_properties(pdc_init           PROPERTIES LABELS serial)
@@ -391,6 +394,7 @@ set_tests_properties(read_obj_uint64   PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int16    PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int8     PROPERTIES LABELS serial)
 set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS serial)
+set_tests_properties(kvtag_checkpoint_restart      PROPERTIES LABELS serial)
 
 if(BUILD_MPI_TESTING)
     add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int)
@@ -463,6 +467,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME obj_get_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_get_data ${MPI_RUN_CMD} 4 6 )
     add_test(NAME vpicio_bdcats_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_mpi_test.sh ${MPI_RUN_CMD} 4 6 ./vpicio ./bdcats)
     add_test(NAME vpicio_mpi_small_cache WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./vpicio ${MPI_RUN_CMD} 1 16)
+    add_test(NAME kvtag_checkpoint_restart_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_checkpoint_restart_mpi_test_with_prog_param.sh ${MPI_RUN_CMD} 2 4 "./kvtag_add_scale 1000 100" "./kvtag_get_verify_scale 1000 100")
 
     set_tests_properties(read_obj_shared_int                  PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(read_obj_shared_float                PROPERTIES LABELS "parallel;parallel_obj" )
@@ -534,4 +539,5 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(obj_info_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_put_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_get_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
+    set_tests_properties(kvtag_checkpoint_restart_mpi         PROPERTIES LABELS "parallel;parallel_checkpoint" )
 endif()
