@@ -7,7 +7,7 @@
 /** Wire size of a BULKI_Entity header: pdc_class, pdc_type, count, size fields. */
 #define BULKI_ENTITY_WIRE_HEADER_SIZE ((size_t)(sizeof(int8_t) * 2 + sizeof(uint64_t) * 2))
 /** Wire size of a BULKI map header: totalSize, numKeys, headerSize, dataSize, offsets. */
-#define BULKI_WIRE_META_SIZE          ((size_t)(sizeof(uint64_t) * 6))
+#define BULKI_WIRE_META_SIZE ((size_t)(sizeof(uint64_t) * 6))
 
 static size_t        bulki_entity_wire_size(BULKI_Entity *entity);
 static size_t        bulki_wire_size(BULKI *bulki);
@@ -315,10 +315,10 @@ BULKI_ENTITY_append_BULKI_incremental(BULKI_Entity *dest, BULKI *src)
         FUNC_LEAVE(NULL);
     }
 
-    child_size   = bulki_wire_size(src);
+    child_size = bulki_wire_size(src);
     bulki_entity_array_ensure_capacity(dest, sizeof(BULKI));
     memcpy((BULKI *)dest->data + dest->count, src, sizeof(BULKI));
-    dest->size  += child_size;
+    dest->size += child_size;
     dest->count++;
 
     FUNC_LEAVE(dest);
@@ -383,10 +383,10 @@ BULKI_ENTITY_append_BULKI_Entity_incremental(BULKI_Entity *dest, BULKI_Entity *s
         FUNC_LEAVE(NULL);
     }
 
-    child_size   = bulki_entity_wire_size(src);
+    child_size = bulki_entity_wire_size(src);
     bulki_entity_array_ensure_capacity(dest, sizeof(BULKI_Entity));
     memcpy((BULKI_Entity *)dest->data + dest->count, src, sizeof(BULKI_Entity));
-    dest->size  += child_size;
+    dest->size += child_size;
     dest->count++;
 
     FUNC_LEAVE(dest);

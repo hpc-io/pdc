@@ -328,10 +328,10 @@ transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
         }
 
         BULKI_put_incremental(obj_bulki, BULKI_singleton_ENTITY("obj_id", PDC_STRING),
-                  BULKI_ENTITY(&obj_temp->obj_id, 1, PDC_UINT64, PDC_CLS_ITEM));
+                              BULKI_ENTITY(&obj_temp->obj_id, 1, PDC_UINT64, PDC_CLS_ITEM));
 
         BULKI_put_incremental(obj_bulki, BULKI_singleton_ENTITY("ndim", PDC_STRING),
-                  BULKI_ENTITY(&obj_temp->ndim, 1, PDC_INT, PDC_CLS_ITEM));
+                              BULKI_ENTITY(&obj_temp->ndim, 1, PDC_INT, PDC_CLS_ITEM));
 
         BULKI_Entity *regions_array = empty_BULKI_Array_Entity_with_capacity(reg_count > 0 ? reg_count : 1);
 
@@ -340,10 +340,11 @@ transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
             BULKI *region_bulki = BULKI_init(2);
 
             BULKI_put_incremental(region_bulki, BULKI_singleton_ENTITY("data_server_id", PDC_STRING),
-                      BULKI_ENTITY(&region_temp->data_server_id, 1, PDC_UINT32, PDC_CLS_ITEM));
+                                  BULKI_ENTITY(&region_temp->data_server_id, 1, PDC_UINT32, PDC_CLS_ITEM));
 
-            BULKI_put_incremental(region_bulki, BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING),
-                      BULKI_ENTITY(region_temp->reg_offset, obj_temp->ndim * 2, PDC_UINT64, PDC_CLS_ARRAY));
+            BULKI_put_incremental(
+                region_bulki, BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING),
+                BULKI_ENTITY(region_temp->reg_offset, obj_temp->ndim * 2, PDC_UINT64, PDC_CLS_ARRAY));
 
             BULKI_ENTITY_append_BULKI_incremental(regions_array, region_bulki);
             region_temp = region_temp->next;
