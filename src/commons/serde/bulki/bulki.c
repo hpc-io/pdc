@@ -4,6 +4,17 @@
 #include "pdc_timing.h"
 #include "pdc_malloc.h"
 
+/** Wire size of a BULKI_Entity header: pdc_class, pdc_type, count, size fields. */
+#define BULKI_ENTITY_WIRE_HEADER_SIZE ((size_t)(sizeof(int8_t) * 2 + sizeof(uint64_t) * 2))
+/** Wire size of a BULKI map header: totalSize, numKeys, headerSize, dataSize, offsets. */
+#define BULKI_WIRE_META_SIZE          ((size_t)(sizeof(uint64_t) * 6))
+
+static size_t        bulki_entity_wire_size(BULKI_Entity *entity);
+static size_t        bulki_wire_size(BULKI *bulki);
+static void          bulki_refresh_total_size(BULKI *bulki);
+static void          bulki_entity_array_ensure_capacity(BULKI_Entity *dest, size_t element_size);
+static BULKI_Entity *empty_array_entity(pdc_c_var_type_t pdc_type, int initial_capacity);
+
 size_t
 get_BULKI_Entity_size(BULKI_Entity *bulk_entity)
 {
@@ -67,6 +78,102 @@ get_BULKI_size(BULKI *bulki)
     bulki->totalSize = size;
 
     FUNC_LEAVE(size);
+}
+
+/**
+ * Return the serialized byte length of a BULKI_Entity for incremental size updates.
+ *
+ * Uses the cached `entity->size` when set; otherwise falls back to a full
+ * `get_BULKI_Entity_size()` walk. Used by `_incremental` append helpers to avoid
+ * recomputing sibling subtrees on each append.
+ */
+static size_t
+bulki_entity_wire_size(BULKI_Entity *entity)
+{
+    if (entity != NULL && entity->size > 0)
+        return entity->size;
+    return get_BULKI_Entity_size(entity);
+}
+
+/**
+ * Return the serialized byte length of a BULKI map for incremental size updates.
+ *
+ * Uses the cached `bulki->totalSize` when set; otherwise falls back to
+ * `get_BULKI_size()`. Used when appending a BULKI child to an array entity.
+ */
+static size_t
+bulki_wire_size(BULKI *bulki)
+{
+    if (bulki != NULL && bulki->totalSize > 0)
+        return bulki->totalSize;
+    return get_BULKI_size(bulki);
+}
+
+/**
+ * Recompute `bulki->totalSize` from cached header and data region sizes in O(1).
+ *
+ * Assumes `headerSize` and `dataSize` are already accurate (maintained by
+ * `BULKI_put_incremental` / `BULKI_delete_incremental`). Does not walk keys.
+ */
+static void
+bulki_refresh_total_size(BULKI *bulki)
+{
+    bulki->totalSize = BULKI_WIRE_META_SIZE + bulki->header->headerSize + bulki->data->dataSize;
+}
+
+/**
+ * Grow a BULKI_Entity array backing store when `count` reaches `capacity`.
+ *
+ * Doubles capacity (minimum 1) and reallocates `dest->data`. No-op when free
+ * slots remain. Used by `_incremental` append paths to avoid per-element realloc.
+ *
+ * @param dest          Array entity (PDC_CLS_ARRAY, PDC_BULKI or PDC_BULKI_ENT)
+ * @param element_size  sizeof(BULKI) or sizeof(BULKI_Entity)
+ */
+static void
+bulki_entity_array_ensure_capacity(BULKI_Entity *dest, size_t element_size)
+{
+    if (dest->count < dest->capacity)
+        return;
+
+    if (dest->capacity == 0)
+        dest->capacity = 1;
+    else
+        dest->capacity *= 2;
+
+    dest->data = PDC_realloc(dest->data, dest->capacity * element_size);
+}
+
+/**
+ * Allocate an empty array BULKI_Entity, optionally with pre-sized backing storage.
+ *
+ * Shared by `empty_BULKI_Array_Entity_with_capacity` and
+ * `empty_Bent_Array_Entity_with_capacity`. Initializes `size` to the wire header
+ * only; `_incremental` appends add child wire sizes as elements are inserted.
+ *
+ * @param pdc_type           PDC_BULKI or PDC_BULKI_ENT
+ * @param initial_capacity   Slot count to pre-allocate; 0 leaves `data` NULL
+ */
+static BULKI_Entity *
+empty_array_entity(pdc_c_var_type_t pdc_type, int initial_capacity)
+{
+    BULKI_Entity *bulki_entity = (BULKI_Entity *)PDC_calloc(1, sizeof(BULKI_Entity));
+    bulki_entity->pdc_type     = pdc_type;
+    bulki_entity->pdc_class    = PDC_CLS_ARRAY;
+    bulki_entity->count        = 0;
+    bulki_entity->capacity     = 0;
+    bulki_entity->data         = NULL;
+    bulki_entity->size         = BULKI_ENTITY_WIRE_HEADER_SIZE;
+
+    if (initial_capacity > 0) {
+        bulki_entity->capacity = (uint64_t)initial_capacity;
+        if (pdc_type == PDC_BULKI)
+            bulki_entity->data = PDC_calloc((size_t)initial_capacity, sizeof(BULKI));
+        else if (pdc_type == PDC_BULKI_ENT)
+            bulki_entity->data = PDC_calloc((size_t)initial_capacity, sizeof(BULKI_Entity));
+    }
+
+    return bulki_entity;
 }
 
 void
@@ -147,30 +254,28 @@ BULKI_Entity *
 empty_BULKI_Array_Entity()
 {
     FUNC_ENTER(NULL);
+    FUNC_LEAVE(empty_array_entity(PDC_BULKI, 0));
+}
 
-    BULKI_Entity *bulki_entity = (BULKI_Entity *)PDC_calloc(1, sizeof(BULKI_Entity));
-    bulki_entity->pdc_type     = PDC_BULKI;
-    bulki_entity->pdc_class    = PDC_CLS_ARRAY;
-    bulki_entity->count        = 0;
-    bulki_entity->data         = NULL;
-    get_BULKI_Entity_size(bulki_entity);
-
-    FUNC_LEAVE(bulki_entity);
+BULKI_Entity *
+empty_BULKI_Array_Entity_with_capacity(int initial_capacity)
+{
+    FUNC_ENTER(NULL);
+    FUNC_LEAVE(empty_array_entity(PDC_BULKI, initial_capacity));
 }
 
 BULKI_Entity *
 empty_Bent_Array_Entity()
 {
     FUNC_ENTER(NULL);
+    FUNC_LEAVE(empty_array_entity(PDC_BULKI_ENT, 0));
+}
 
-    BULKI_Entity *bulki_entity = (BULKI_Entity *)PDC_calloc(1, sizeof(BULKI_Entity));
-    bulki_entity->pdc_type     = PDC_BULKI_ENT;
-    bulki_entity->pdc_class    = PDC_CLS_ARRAY;
-    bulki_entity->count        = 0;
-    bulki_entity->data         = NULL;
-    get_BULKI_Entity_size(bulki_entity);
-
-    FUNC_LEAVE(bulki_entity);
+BULKI_Entity *
+empty_Bent_Array_Entity_with_capacity(int initial_capacity)
+{
+    FUNC_ENTER(NULL);
+    FUNC_LEAVE(empty_array_entity(PDC_BULKI_ENT, initial_capacity));
 }
 
 BULKI_Entity *
@@ -190,6 +295,31 @@ BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src)
     dest->data  = PDC_realloc(dest->data, dest->count * sizeof(BULKI));
     memcpy(dest->data + (dest->count - 1) * sizeof(BULKI), src, sizeof(BULKI));
     get_BULKI_Entity_size(dest);
+
+    FUNC_LEAVE(dest);
+}
+
+BULKI_Entity *
+BULKI_ENTITY_append_BULKI_incremental(BULKI_Entity *dest, BULKI *src)
+{
+    FUNC_ENTER(NULL);
+
+    size_t child_size;
+
+    if (src == NULL || dest == NULL) {
+        LOG_ERROR("Error: bulki is NULL\n");
+        FUNC_LEAVE(NULL);
+    }
+    if (dest->pdc_class != PDC_CLS_ARRAY || dest->pdc_type != PDC_BULKI) {
+        LOG_ERROR("Error: dest is not an array of BULKI structure\n");
+        FUNC_LEAVE(NULL);
+    }
+
+    child_size   = bulki_wire_size(src);
+    bulki_entity_array_ensure_capacity(dest, sizeof(BULKI));
+    memcpy((BULKI *)dest->data + dest->count, src, sizeof(BULKI));
+    dest->size  += child_size;
+    dest->count++;
 
     FUNC_LEAVE(dest);
 }
@@ -238,6 +368,31 @@ BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src)
 }
 
 BULKI_Entity *
+BULKI_ENTITY_append_BULKI_Entity_incremental(BULKI_Entity *dest, BULKI_Entity *src)
+{
+    FUNC_ENTER(NULL);
+
+    size_t child_size;
+
+    if (src == NULL || dest == NULL) {
+        LOG_ERROR("Error: bulki is NULL\n");
+        FUNC_LEAVE(NULL);
+    }
+    if (dest->pdc_class != PDC_CLS_ARRAY || dest->pdc_type != PDC_BULKI_ENT) {
+        LOG_ERROR("Error: dest is not an array of BULKI_Entity structure\n");
+        FUNC_LEAVE(NULL);
+    }
+
+    child_size   = bulki_entity_wire_size(src);
+    bulki_entity_array_ensure_capacity(dest, sizeof(BULKI_Entity));
+    memcpy((BULKI_Entity *)dest->data + dest->count, src, sizeof(BULKI_Entity));
+    dest->size  += child_size;
+    dest->count++;
+
+    FUNC_LEAVE(dest);
+}
+
+BULKI_Entity *
 BULKI_ENTITY_get_BULKI_Entity(BULKI_Entity *bulki_entity, size_t idx)
 {
     FUNC_ENTER(NULL);
@@ -280,6 +435,10 @@ BULKI_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type, pdc_c_var_cl
         bulki_entity->data = data;
     }
     else {
+        // note: BULKI_ENTITY currently deep-copies payload into BULKI-owned memory.
+        // note: this copy can be avoided by introducing explicit pointer ownership semantics
+        // note: (e.g., borrowed/non-owned data mode) so BULKI can reference external buffers
+        // note: without freeing them in BULKI_Entity_free().
         bulki_entity->data = PDC_calloc(1, size);
         memcpy(bulki_entity->data, data, size);
     }
@@ -317,7 +476,7 @@ BULKI_init(int initial_field_count)
     buiki->data               = PDC_calloc(1, sizeof(BULKI_Data));
     buiki->data->values       = PDC_calloc(buiki->capacity, sizeof(BULKI_Entity));
     buiki->data->dataSize     = 0;
-    get_BULKI_size(buiki);
+    bulki_refresh_total_size(buiki);
 
     FUNC_LEAVE(buiki);
 }
@@ -434,6 +593,45 @@ BULKI_put(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
     FUNC_LEAVE_VOID();
 }
 
+void
+BULKI_put_incremental(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value)
+{
+    FUNC_ENTER(NULL);
+
+    if (bulki == NULL || key == NULL || value == NULL) {
+        LOG_ERROR("Error: bulki, key, or value is NULL\n");
+        FUNC_LEAVE_VOID();
+    }
+    // search for existing key
+    BULKI_Entity *existing_value = BULKI_get(bulki, key);
+    if (existing_value != NULL) {
+        bulki->header->headerSize -= key->size;
+        bulki->data->dataSize -= existing_value->size;
+        memcpy(existing_value, value, sizeof(BULKI_Entity));
+        bulki->header->headerSize += key->size;
+        bulki->data->dataSize += value->size;
+        bulki_refresh_total_size(bulki);
+        FUNC_LEAVE_VOID();
+    }
+    if (bulki->numKeys >= bulki->capacity) {
+        bulki->capacity *= 2;
+        bulki->header->keys = PDC_realloc(bulki->header->keys, bulki->capacity * sizeof(BULKI_Entity));
+        bulki->data->values = PDC_realloc(bulki->data->values, bulki->capacity * sizeof(BULKI_Entity));
+    }
+    memcpy(&bulki->header->keys[bulki->numKeys], key, sizeof(BULKI_Entity));
+    // append bytes for type, size, and key
+    bulki->header->headerSize += key->size;
+
+    memcpy(&bulki->data->values[bulki->numKeys], value, sizeof(BULKI_Entity));
+    // append bytes for class, type, size, and data
+    bulki->data->dataSize += value->size;
+
+    bulki->numKeys++;
+    bulki_refresh_total_size(bulki);
+
+    FUNC_LEAVE_VOID();
+}
+
 BULKI_Entity *
 BULKI_delete(BULKI *bulki, BULKI_Entity *key)
 {
@@ -452,6 +650,28 @@ BULKI_delete(BULKI *bulki, BULKI_Entity *key)
         }
     }
     get_BULKI_size(bulki);
+
+    FUNC_LEAVE(value);
+}
+
+BULKI_Entity *
+BULKI_delete_incremental(BULKI *bulki, BULKI_Entity *key)
+{
+    FUNC_ENTER(NULL);
+
+    BULKI_Entity *value = NULL;
+    for (size_t i = 0; i < bulki->numKeys; i++) {
+        if (BULKI_Entity_equal(&bulki->header->keys[i], key)) {
+            value = &bulki->data->values[i];
+            bulki->header->headerSize -= key->size;
+            bulki->data->dataSize -= value->size;
+            bulki->numKeys--;
+            memcpy(&bulki->header->keys[i], &bulki->header->keys[bulki->numKeys - 1], sizeof(BULKI_Entity));
+            memcpy(&bulki->data->values[i], &bulki->data->values[bulki->numKeys - 1], sizeof(BULKI_Entity));
+            break;
+        }
+    }
+    bulki_refresh_total_size(bulki);
 
     FUNC_LEAVE(value);
 }

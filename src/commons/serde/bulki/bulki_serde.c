@@ -68,6 +68,7 @@ BULKI_Entity_serialize_to_buffer(BULKI_Entity *entity, void *buffer, size_t *off
     FUNC_ENTER(NULL);
 
     // serialize the size
+    // note: redundant tree walk — entity->size is already cached after incremental build; could use it directly
     uint64_t size = (uint64_t)get_BULKI_Entity_size(entity);
     *offset += BULKI_vle_encode_uint(size, buffer + *offset);
 
@@ -122,6 +123,7 @@ BULKI_Entity_serialize(BULKI_Entity *entity, size_t *size)
 {
     FUNC_ENTER(NULL);
 
+    // note: redundant tree walk — entity->size is already cached; serialize_to_buffer recomputes per entity below
     size_t estimated_size = get_BULKI_Entity_size(entity);
     void * buffer         = PDC_calloc(1, estimated_size);
     size_t offset         = 0;
@@ -180,6 +182,7 @@ BULKI_serialize(BULKI *data, size_t *size)
 {
     FUNC_ENTER(NULL);
 
+    // note: redundant tree walk — data->totalSize is already cached after BULKI_put_incremental
     size_t estimated_size = get_BULKI_size(data);
     void * buffer         = PDC_calloc(1, estimated_size);
     size_t offset         = 0;
@@ -201,6 +204,7 @@ BULKI_Entity_serialize_to_file(BULKI_Entity *entity, FILE *fp)
     FUNC_ENTER(NULL);
 
     size_t size;
+    // note: buffer-then-fwrite — builds entire entity in memory before a single fwrite; consider streaming to fp
     void * buffer = BULKI_Entity_serialize(entity, &size);
     fwrite(buffer, size, 1, fp);
     buffer = (void *)PDC_free(buffer);
@@ -215,6 +219,7 @@ BULKI_serialize_to_file(BULKI *bulki, FILE *fp)
     FUNC_ENTER(NULL);
 
     size_t size   = 0;
+    // note: buffer-then-fwrite — full checkpoint serialized to RAM first; consider streaming serialize_to_file
     void * buffer = BULKI_serialize(bulki, &size);
     fwrite(buffer, size, 1, fp);
     buffer = (void *)PDC_free(buffer);

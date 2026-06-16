@@ -275,6 +275,225 @@ test_bulki_in_entitiy()
 }
 
 int
+test_incremental_array_append_sizes()
+{
+    FUNC_ENTER(NULL);
+
+    const int     n_items = 128;
+    BULKI_Entity *arr     = empty_BULKI_Array_Entity_with_capacity(n_items);
+    int           i;
+    int           pass = 1;
+
+    for (i = 0; i < n_items; i++) {
+        BULKI *item = BULKI_init(1);
+        int    val  = i;
+
+        BULKI_put_incremental(item, BULKI_ENTITY("key", 1, PDC_STRING, PDC_CLS_ITEM),
+                              BULKI_ENTITY(&val, 1, PDC_INT, PDC_CLS_ITEM));
+
+        {
+            size_t size_before   = arr->size;
+            size_t expected_step = item->totalSize;
+
+            BULKI_ENTITY_append_BULKI_incremental(arr, item);
+            if (arr->size != size_before + expected_step) {
+                LOG_ERROR("incremental array size mismatch at i=%d\n", i);
+                pass = 0;
+                break;
+            }
+        }
+    }
+
+    if (pass) {
+        size_t recomputed = get_BULKI_Entity_size(arr);
+        if (arr->size != recomputed || arr->count != (uint64_t)n_items) {
+            LOG_ERROR("array size/count mismatch after append\n");
+            pass = 0;
+        }
+    }
+
+    if (pass && arr->capacity < (uint64_t)n_items) {
+        LOG_ERROR("preallocated capacity too small: %zu\n", (size_t)arr->capacity);
+        pass = 0;
+    }
+
+    if (arr != NULL)
+        BULKI_Entity_free(arr, 1);
+
+    FUNC_LEAVE(pass);
+}
+
+int
+test_preallocated_array_roundtrip()
+{
+    FUNC_ENTER(NULL);
+
+    const int     n_items = 64;
+    BULKI *       root    = BULKI_init(1);
+    BULKI_Entity *arr     = empty_BULKI_Array_Entity_with_capacity(n_items);
+    int           i;
+
+    for (i = 0; i < n_items; i++) {
+        BULKI *item = BULKI_init(2);
+        int    val  = i * 10;
+
+        BULKI_put_incremental(item, BULKI_singleton_ENTITY("name", PDC_STRING),
+                                BULKI_singleton_ENTITY("entry", PDC_STRING));
+        BULKI_put_incremental(item, BULKI_singleton_ENTITY("value", PDC_STRING),
+                                BULKI_ENTITY(&val, 1, PDC_INT, PDC_CLS_ITEM));
+        BULKI_ENTITY_append_BULKI_incremental(arr, item);
+    }
+
+    BULKI_put_incremental(root, BULKI_singleton_ENTITY("entries", PDC_STRING), arr);
+
+    {
+        size_t   size;
+        void *   buffer          = BULKI_serialize(root, &size);
+        BULKI *  deserialized    = BULKI_deserialize(buffer);
+        int      equal           = BULKI_equal(root, deserialized);
+
+        LOG_INFO("preallocated array roundtrip equal: %d\n", equal);
+        BULKI_free(deserialized, 1);
+        buffer = (void *)PDC_free(buffer);
+        BULKI_free(root, 1);
+
+        FUNC_LEAVE(equal);
+    }
+}
+
+int
+test_incremental_bulki_put_total_size()
+{
+    FUNC_ENTER(NULL);
+
+    BULKI *bulki = BULKI_init(4);
+    int    pass  = 1;
+
+    BULKI_put_incremental(bulki, BULKI_ENTITY("a", 1, PDC_STRING, PDC_CLS_ITEM),
+                          BULKI_ENTITY("1", 1, PDC_STRING, PDC_CLS_ITEM));
+    BULKI_put_incremental(bulki, BULKI_ENTITY("b", 1, PDC_STRING, PDC_CLS_ITEM),
+                          BULKI_ENTITY("2", 1, PDC_STRING, PDC_CLS_ITEM));
+    BULKI_put_incremental(bulki, BULKI_ENTITY("c", 1, PDC_STRING, PDC_CLS_ITEM),
+                          BULKI_ENTITY("3", 1, PDC_STRING, PDC_CLS_ITEM));
+
+    if (bulki->totalSize != get_BULKI_size(bulki)) {
+        LOG_ERROR("incremental totalSize mismatch after BULKI_put_incremental\n");
+        pass = 0;
+    }
+
+    BULKI_put_incremental(bulki, BULKI_ENTITY("a", 1, PDC_STRING, PDC_CLS_ITEM),
+                          BULKI_ENTITY("updated", 1, PDC_STRING, PDC_CLS_ITEM));
+    if (bulki->totalSize != get_BULKI_size(bulki)) {
+        LOG_ERROR("incremental totalSize mismatch after BULKI_put_incremental replace\n");
+        pass = 0;
+    }
+
+    BULKI_free(bulki, 1);
+    FUNC_LEAVE(pass);
+}
+
+int
+test_incremental_entity_array_append_sizes()
+{
+    FUNC_ENTER(NULL);
+
+    const int     n_items = 64;
+    BULKI_Entity *arr     = empty_Bent_Array_Entity_with_capacity(n_items);
+    int           i;
+    int           pass = 1;
+
+    for (i = 0; i < n_items; i++) {
+        int           val  = i * 3;
+        BULKI_Entity *item = BULKI_ENTITY(&val, 1, PDC_INT, PDC_CLS_ITEM);
+
+        {
+            size_t size_before   = arr->size;
+            size_t expected_step = item->size;
+
+            BULKI_ENTITY_append_BULKI_Entity_incremental(arr, item);
+            if (arr->size != size_before + expected_step) {
+                LOG_ERROR("incremental entity array size mismatch at i=%d\n", i);
+                pass = 0;
+                break;
+            }
+        }
+    }
+
+    if (pass) {
+        size_t recomputed = get_BULKI_Entity_size(arr);
+        if (arr->size != recomputed || arr->count != (uint64_t)n_items) {
+            LOG_ERROR("entity array size/count mismatch after append\n");
+            pass = 0;
+        }
+    }
+
+    if (pass && arr->capacity < (uint64_t)n_items) {
+        LOG_ERROR("preallocated entity array capacity too small: %zu\n", (size_t)arr->capacity);
+        pass = 0;
+    }
+
+    if (arr != NULL)
+        BULKI_Entity_free(arr, 1);
+
+    FUNC_LEAVE(pass);
+}
+
+int
+test_incremental_bulki_delete_total_size()
+{
+    FUNC_ENTER(NULL);
+
+    BULKI *bulki = BULKI_init(4);
+    int    pass  = 1;
+
+    BULKI_put_incremental(bulki, BULKI_ENTITY("a", 1, PDC_STRING, PDC_CLS_ITEM),
+                          BULKI_ENTITY("1", 1, PDC_STRING, PDC_CLS_ITEM));
+    BULKI_put_incremental(bulki, BULKI_ENTITY("b", 1, PDC_STRING, PDC_CLS_ITEM),
+                          BULKI_ENTITY("2", 1, PDC_STRING, PDC_CLS_ITEM));
+    BULKI_put_incremental(bulki, BULKI_ENTITY("c", 1, PDC_STRING, PDC_CLS_ITEM),
+                          BULKI_ENTITY("3", 1, PDC_STRING, PDC_CLS_ITEM));
+
+    if (bulki->numKeys != 3 || bulki->totalSize != get_BULKI_size(bulki)) {
+        LOG_ERROR("incremental setup failed before BULKI_delete_incremental\n");
+        pass = 0;
+        goto done;
+    }
+
+    if (BULKI_delete_incremental(bulki, BULKI_ENTITY("b", 1, PDC_STRING, PDC_CLS_ITEM)) == NULL) {
+        LOG_ERROR("BULKI_delete_incremental did not remove existing key\n");
+        pass = 0;
+        goto done;
+    }
+
+    if (bulki->numKeys != 2 || bulki->totalSize != get_BULKI_size(bulki)) {
+        LOG_ERROR("incremental totalSize mismatch after BULKI_delete_incremental\n");
+        pass = 0;
+        goto done;
+    }
+
+    if (BULKI_get(bulki, BULKI_ENTITY("b", 1, PDC_STRING, PDC_CLS_ITEM)) != NULL) {
+        LOG_ERROR("deleted key still present after BULKI_delete_incremental\n");
+        pass = 0;
+        goto done;
+    }
+
+    if (BULKI_delete_incremental(bulki, BULKI_ENTITY("missing", 1, PDC_STRING, PDC_CLS_ITEM)) != NULL) {
+        LOG_ERROR("BULKI_delete_incremental should return NULL for missing key\n");
+        pass = 0;
+        goto done;
+    }
+
+    if (bulki->numKeys != 2 || bulki->totalSize != get_BULKI_size(bulki)) {
+        LOG_ERROR("incremental totalSize mismatch after missing-key delete\n");
+        pass = 0;
+    }
+
+done:
+    BULKI_free(bulki, 1);
+    FUNC_LEAVE(pass);
+}
+
+int
 bulki_small_json_serialization_test()
 {
     FUNC_ENTER(NULL);
@@ -364,6 +583,12 @@ main(int argc, char *argv[])
     LOG_INFO("test_base_array_entitiy RST = %d\n", test_base_array_entitiy());
     LOG_INFO("test_embedded_entitiy RST = %d\n", test_embedded_entitiy());
     LOG_INFO("test_nested_entitiy RST = %d\n", test_bulki_in_entitiy());
+    LOG_INFO("test_incremental_array_append_sizes RST = %d\n", test_incremental_array_append_sizes());
+    LOG_INFO("test_preallocated_array_roundtrip RST = %d\n", test_preallocated_array_roundtrip());
+    LOG_INFO("test_incremental_bulki_put_total_size RST = %d\n", test_incremental_bulki_put_total_size());
+    LOG_INFO("test_incremental_entity_array_append_sizes RST = %d\n",
+             test_incremental_entity_array_append_sizes());
+    LOG_INFO("test_incremental_bulki_delete_total_size RST = %d\n", test_incremental_bulki_delete_total_size());
     LOG_INFO("bulki_small_json_serialization_test RST = %d\n", bulki_small_json_serialization_test());
 
     FUNC_LEAVE(0);

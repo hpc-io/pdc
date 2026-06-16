@@ -307,44 +307,56 @@ transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
 
     pthread_mutex_lock(&metadata_query_mutex);
 
+    obj_temp = metadata_server_objs;
+    while (obj_temp) {
+        obj_count++;
+        obj_temp = obj_temp->next;
+    }
+
     bulki                       = BULKI_init(1);
-    BULKI_Entity *objects_array = empty_BULKI_Array_Entity();
+    BULKI_Entity *objects_array = empty_BULKI_Array_Entity_with_capacity(obj_count > 0 ? obj_count : 1);
 
     obj_temp = metadata_server_objs;
     while (obj_temp) {
         BULKI *obj_bulki = BULKI_init(3);
+        int    reg_count = 0;
 
-        BULKI_put(obj_bulki, BULKI_singleton_ENTITY("obj_id", PDC_STRING),
+        region_temp = obj_temp->regions;
+        while (region_temp) {
+            reg_count++;
+            region_temp = region_temp->next;
+        }
+
+        BULKI_put_incremental(obj_bulki, BULKI_singleton_ENTITY("obj_id", PDC_STRING),
                   BULKI_ENTITY(&obj_temp->obj_id, 1, PDC_UINT64, PDC_CLS_ITEM));
 
-        BULKI_put(obj_bulki, BULKI_singleton_ENTITY("ndim", PDC_STRING),
+        BULKI_put_incremental(obj_bulki, BULKI_singleton_ENTITY("ndim", PDC_STRING),
                   BULKI_ENTITY(&obj_temp->ndim, 1, PDC_INT, PDC_CLS_ITEM));
 
-        BULKI_Entity *regions_array = empty_BULKI_Array_Entity();
+        BULKI_Entity *regions_array = empty_BULKI_Array_Entity_with_capacity(reg_count > 0 ? reg_count : 1);
 
         region_temp = obj_temp->regions;
         while (region_temp) {
             BULKI *region_bulki = BULKI_init(2);
 
-            BULKI_put(region_bulki, BULKI_singleton_ENTITY("data_server_id", PDC_STRING),
+            BULKI_put_incremental(region_bulki, BULKI_singleton_ENTITY("data_server_id", PDC_STRING),
                       BULKI_ENTITY(&region_temp->data_server_id, 1, PDC_UINT32, PDC_CLS_ITEM));
 
-            BULKI_put(region_bulki, BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING),
+            BULKI_put_incremental(region_bulki, BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING),
                       BULKI_ENTITY(region_temp->reg_offset, obj_temp->ndim * 2, PDC_UINT64, PDC_CLS_ARRAY));
 
-            BULKI_ENTITY_append_BULKI(regions_array, region_bulki);
+            BULKI_ENTITY_append_BULKI_incremental(regions_array, region_bulki);
             region_temp = region_temp->next;
         }
 
-        BULKI_put(obj_bulki, BULKI_singleton_ENTITY("regions", PDC_STRING), regions_array);
+        BULKI_put_incremental(obj_bulki, BULKI_singleton_ENTITY("regions", PDC_STRING), regions_array);
 
-        BULKI_ENTITY_append_BULKI(objects_array, obj_bulki);
+        BULKI_ENTITY_append_BULKI_incremental(objects_array, obj_bulki);
 
-        obj_count++;
         obj_temp = obj_temp->next;
     }
 
-    BULKI_put(bulki, BULKI_singleton_ENTITY("objects", PDC_STRING), objects_array);
+    BULKI_put_incremental(bulki, BULKI_singleton_ENTITY("objects", PDC_STRING), objects_array);
 
     pthread_mutex_unlock(&metadata_query_mutex);
 
