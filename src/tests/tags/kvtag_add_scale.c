@@ -100,8 +100,8 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #else
-    proc_num = 1;
-    my_rank  = 0;
+    proc_num   = 1;
+    my_rank    = 0;
 #endif
     if (argc < 3) {
         if (my_rank == 0)
@@ -151,7 +151,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #else
-    stime = kvtag_scale_now();
+    stime      = kvtag_scale_now();
 #endif
 
     for (i = 0; i < my_obj; i++) {
@@ -196,7 +196,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #else
-    stime = kvtag_scale_now();
+    stime      = kvtag_scale_now();
 #endif
     for (i = 0; i < my_add_tag; i++) {
         v = i + my_add_tag_s;

@@ -108,8 +108,8 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #else
-    proc_num = 1;
-    my_rank  = 0;
+    proc_num             = 1;
+    my_rank              = 0;
 #endif
     if (argc < 3) {
         if (my_rank == 0)
@@ -148,7 +148,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #else
-    stime = kvtag_scale_now();
+    stime                = kvtag_scale_now();
 #endif
 
     // open already created PDC objects and query tags
@@ -178,7 +178,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
 #else
-    total_time = kvtag_scale_now() - stime;
+    total_time           = kvtag_scale_now() - stime;
 #endif
 
     if (my_rank == 0)
@@ -194,7 +194,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #else
-    stime = kvtag_scale_now();
+    stime                = kvtag_scale_now();
 #endif
     for (i = 0; i < n_tag; i++) {
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_type,
@@ -222,7 +222,7 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
 #else
-    total_time = kvtag_scale_now() - stime;
+    total_time           = kvtag_scale_now() - stime;
 #endif
     if (my_rank == 0)
         LOG_INFO("Total time to retrieve %11d tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
