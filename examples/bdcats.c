@@ -33,7 +33,8 @@
 #include <inttypes.h>
 #include "pdc.h"
 
-#define NPARTICLES 8388608
+#define NPARTICLES    8388608
+#define MAX_PARTICLES (NPARTICLES * 2)
 
 double
 uniform_random_number()
@@ -80,6 +81,11 @@ main(int argc, char **argv)
         numparticles = atoll(argv[1]);
         if (rank == 0)
             LOG_INFO("Writing %" PRIu64 " number of particles with %d clients.\n", numparticles, size);
+    }
+
+    if (numparticles > MAX_PARTICLES) {
+        LOG_ERROR("numparticles exceeds max size\n");
+        goto done;
     }
 
     x = (float *)malloc(numparticles * sizeof(float));
@@ -463,6 +469,7 @@ main(int argc, char **argv)
     free(offset_remote);
     free(mysize);
 
+done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

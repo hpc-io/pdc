@@ -52,10 +52,10 @@ PDC_malloc(size_t size)
 
     assert(size);
 
-    if (size)
-        ret_value = malloc(size);
-    else
-        ret_value = NULL;
+    if (size == 0 || size > (size_t)1 << 40) /* 1TB sanity cap */
+        FUNC_LEAVE(NULL);
+
+    ret_value = malloc(size);
 
     if (ret_value)
         PDC_mem_usage_g += size;
@@ -85,10 +85,10 @@ PDC_calloc(size_t count, size_t size)
     assert(count);
     assert(size);
 
-    if (count && size)
-        ret_value = calloc(count, size);
-    else
-        ret_value = NULL;
+    if (count == 0 || size == 0 || count > (size_t)1 << 32 || size > (size_t)1 << 40)
+        FUNC_LEAVE(NULL);
+
+    ret_value = calloc(count, size);
 
     if (ret_value)
         PDC_mem_usage_g += size;

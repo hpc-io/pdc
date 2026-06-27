@@ -1283,11 +1283,13 @@ slice_create(linked_list_t *list, size_t offset, size_t length)
 {
     FUNC_ENTER(NULL);
 
-    slice_t *slice    = PDC_calloc(1, sizeof(slice_t));
-    slice->list       = list;
-    slice->offset     = offset;
-    slice->length     = length;
-    list_entry_t *e   = create_entry();
+    slice_t *slice  = PDC_calloc(1, sizeof(slice_t));
+    slice->list     = list;
+    slice->offset   = offset;
+    slice->length   = length;
+    list_entry_t *e = create_entry();
+    if (e == NULL)
+        FUNC_LEAVE(NULL);
     e->value          = slice;
     list_entry_t *cur = list->slices;
     if (!cur) {
@@ -1314,8 +1316,9 @@ slice_destroy(slice_t *slice)
     while (cur) {
         if (cur->value == slice) {
             if (prev) {
-                prev->next      = cur->next;
-                cur->next->prev = prev;
+                prev->next = cur->next;
+                if (cur->next)
+                    cur->next->prev = prev;
             }
             else {
                 list->slices = cur->next;

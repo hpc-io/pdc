@@ -183,7 +183,7 @@ main(int argc, char *argv[])
     for (iter = 0; iter < round; iter++) {
         v = iter;
         if (is_using_dart) {
-            sprintf(value, "%ld", v);
+            sprintf(value, "%d", v);
             sprintf(exact_query, "%s=%s", kvtag.name, value);
 #ifdef ENABLE_MPI
             if (PDC_Client_search_obj_ref_through_dart_mpi(hash_algo, exact_query, ref_type, &nres, &pdc_ids,

@@ -89,8 +89,12 @@ PDC_Client_attach_metadata_to_local_obj(const char *obj_name, uint64_t obj_id, u
     ((pdc_metadata_t *)obj_info->metadata)->user_id = obj_info->obj_pt->user_id;
     if (NULL != obj_info->obj_pt->app_name)
         strcpy(((pdc_metadata_t *)obj_info->metadata)->app_name, obj_info->obj_pt->app_name);
-    if (NULL != obj_name)
-        strcpy(((pdc_metadata_t *)obj_info->metadata)->obj_name, obj_name);
+    if (NULL != obj_name) {
+        strncpy(((pdc_metadata_t *)obj_info->metadata)->obj_name, obj_name,
+                sizeof(((pdc_metadata_t *)obj_info->metadata)->obj_name));
+        ((pdc_metadata_t *)obj_info->metadata)
+            ->obj_name[sizeof(((pdc_metadata_t *)obj_info->metadata)->obj_name) - 1] = '\0';
+    }
     ((pdc_metadata_t *)obj_info->metadata)->time_step        = obj_info->obj_pt->time_step;
     ((pdc_metadata_t *)obj_info->metadata)->obj_id           = obj_id;
     ((pdc_metadata_t *)obj_info->metadata)->cont_id          = cont_id;
@@ -746,7 +750,11 @@ PDCprop_set_obj_dims(pdcid_t obj_prop, PDC_int_t ndim, uint64_t *dims)
         prop->obj_prop_pub->dims = (uint64_t *)PDC_malloc(ndim * sizeof(uint64_t));
         prop->obj_prop_pub->ndim = ndim;
     }
-    memcpy(prop->obj_prop_pub->dims, dims, ndim * sizeof(uint64_t));
+
+    if (prop->obj_prop_pub->dims != NULL)
+        memcpy(prop->obj_prop_pub->dims, dims, ndim * sizeof(uint64_t));
+    else
+        PGOTO_ERROR(FAIL, "prop->obj_prop->dims was NULL");
 
 done:
     FUNC_LEAVE(ret_value);

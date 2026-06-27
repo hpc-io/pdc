@@ -35,7 +35,11 @@
 
 #include "pdc_timing.h"
 
-#define BUF_LEN 128
+#define BUF_LEN       128
+#define MAX_DATA_SIZE 1000000
+#define GOTO_DONE_ERROR()                                                                                    \
+    ret_value = 1;                                                                                           \
+    goto done;
 
 int
 main(int argc, char **argv)
@@ -75,18 +79,18 @@ main(int argc, char **argv)
         ndim = 3;
     }
     else {
-        LOG_JUST_PRINT("usage: ./read_write_perf n_objects data_size1 datasize2 datasize3");
+        LOG_JUST_PRINT("usage: ./read_write_perf n_objects data_size1 datasize2 datasize3\n");
     }
 
     local_offset[0]    = 0;
     data_size_array[0] = atoi(argv[2]);
     if (ndim == 1) {
-        offset[0]        = rank * data_size_array[0] * 1048576;
+        offset[0]        = (uint64_t)rank * (uint64_t)data_size_array[0] * 1048576;
         offset_length[0] = data_size_array[0] * 1048576;
         data_size        = data_size_array[0] * 1048576;
     }
     else {
-        offset[0]        = rank * data_size_array[0];
+        offset[0]        = (uint64_t)rank * (uint64_t)data_size_array[0];
         offset_length[0] = data_size_array[0];
         data_size        = data_size_array[0];
     }
@@ -95,7 +99,7 @@ main(int argc, char **argv)
         local_offset[1]    = 0;
         offset[1]          = 0;
         data_size_array[1] = atoi(argv[3]);
-        offset_length[1]   = data_size_array[1] * 1048576;
+        offset_length[1]   = (uint64_t)data_size_array[1] * 1048576;
         data_size *= offset_length[1];
         dims[1] = offset_length[1];
     }
@@ -108,14 +112,19 @@ main(int argc, char **argv)
         local_offset[2]    = 0;
         offset[2]          = 0;
         data_size_array[2] = atoi(argv[4]);
-        offset_length[2]   = data_size_array[2] * 1048576;
+        offset_length[2]   = (uint64_t)data_size_array[2] * 1048576;
         data_size *= offset_length[2] * offset_length[1];
 
         dims[1] = offset_length[1];
         dims[2] = offset_length[2];
     }
     n_objects = atoi(argv[1]);
-    int *data = (int *)malloc(sizeof(int) * data_size);
+
+    if (data_size > MAX_DATA_SIZE) {
+        GOTO_DONE_ERROR();
+    }
+
+    int *data = (int *)malloc(sizeof(int) * (size_t)data_size);
 
     char hostname[256];
     gethostname(hostname, 256);
@@ -138,27 +147,27 @@ main(int argc, char **argv)
     // create a container property
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
     if (cont_prop <= 0) {
-        LOG_ERROR("Failed to create container property");
-        ret_value = 1;
+        LOG_ERROR("Failed to create container property\n");
+        GOTO_DONE_ERROR();
     }
     // create a container
     sprintf(cont_name, "c%d", rank);
     cont = PDCcont_create(cont_name, cont_prop);
     if (cont <= 0) {
-        LOG_ERROR("Failed to create container");
-        ret_value = 1;
+        LOG_ERROR("Failed to create container\n");
+        GOTO_DONE_ERROR();
     }
     // create an object property
     obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
     if (obj_prop <= 0) {
-        LOG_ERROR("Failed to create object property");
-        ret_value = 1;
+        LOG_ERROR("Failed to create object property\n");
+        GOTO_DONE_ERROR();
     }
 
     ret = PDCprop_set_obj_type(obj_prop, PDC_INT);
     if (ret != SUCCEED) {
-        LOG_ERROR("Failed to set obj type");
-        ret_value = 1;
+        LOG_ERROR("Failed to set obj type\n");
+        GOTO_DONE_ERROR();
     }
     PDCprop_set_obj_dims(obj_prop, ndim, dims);
     PDCprop_set_obj_user_id(obj_prop, getuid());
@@ -180,8 +189,8 @@ main(int argc, char **argv)
         obj1 = PDCobj_create(cont, obj_name1, obj_prop);
 #endif
         if (obj1 <= 0) {
-            LOG_ERROR("Failed to create object");
-            ret_value = 1;
+            LOG_ERROR("Failed to create object\n");
+            GOTO_DONE_ERROR();
         }
         reg        = PDCregion_create(ndim, local_offset, offset_length);
         reg_global = PDCregion_create(ndim, offset, offset_length);
@@ -190,45 +199,45 @@ main(int argc, char **argv)
 
         transfer_request = PDCregion_transfer_create(data, PDC_WRITE, obj1, reg, reg_global);
         if (transfer_request == 0) {
-            LOG_INFO("PDCregion_transfer_create failed");
-            ret_value = 1;
+            LOG_ERROR("PDCregion_transfer_create failed\n");
+            GOTO_DONE_ERROR();
         }
 
         start = MPI_Wtime();
         ret   = PDCregion_transfer_start(transfer_request);
         write_reg_transfer_start_time += MPI_Wtime() - start;
         if (ret != SUCCEED) {
-            LOG_INFO("PDCregion_transfer_start failed");
-            ret_value = 1;
+            LOG_ERROR("PDCregion_transfer_start failed\n");
+            GOTO_DONE_ERROR();
         }
 
         start = MPI_Wtime();
         ret   = PDCregion_transfer_wait(transfer_request);
         write_reg_transfer_wait_time += MPI_Wtime() - start;
         if (ret != SUCCEED) {
-            LOG_INFO("PDCregion_transfer_wait failed");
-            ret_value = 1;
+            LOG_ERROR("PDCregion_transfer_wait failed\n");
+            GOTO_DONE_ERROR();
         }
 
         ret = PDCregion_transfer_close(transfer_request);
 
         if (ret != SUCCEED) {
-            LOG_INFO("PDCregion_transfer_close failed");
-            ret_value = 1;
+            LOG_ERROR("PDCregion_transfer_close failed\n");
+            GOTO_DONE_ERROR();
         }
 
         if (PDCregion_close(reg) < 0) {
-            LOG_ERROR("Failed to close local region");
-            ret_value = 1;
+            LOG_ERROR("Failed to close local region\n");
+            GOTO_DONE_ERROR();
         }
 
         if (PDCregion_close(reg_global) < 0) {
-            LOG_ERROR("Failed to close global region");
-            ret_value = 1;
+            LOG_ERROR("Failed to close global region\n");
+            GOTO_DONE_ERROR();
         }
         if (PDCobj_close(obj1) < 0) {
-            LOG_ERROR("Failed to close object o1");
-            ret_value = 1;
+            LOG_ERROR("Failed to close object o1\n");
+            GOTO_DONE_ERROR();
         }
     }
 #ifdef PDC_TIMING
@@ -238,8 +247,8 @@ main(int argc, char **argv)
         sprintf(obj_name1, "o1_%d", i);
         obj1 = PDCobj_open(obj_name1, pdc);
         if (obj1 <= 0) {
-            LOG_ERROR("Failed to open object");
-            ret_value = 1;
+            LOG_ERROR("Failed to open object\n");
+            GOTO_DONE_ERROR();
         }
 
         reg        = PDCregion_create(ndim, local_offset, offset_length);
@@ -250,8 +259,8 @@ main(int argc, char **argv)
         transfer_request = PDCregion_transfer_create(data, PDC_READ, obj1, reg, reg_global);
 
         if (transfer_request == 0) {
-            LOG_ERROR("PDCregion_transfer_create failed");
-            ret_value = 1;
+            LOG_ERROR("PDCregion_transfer_create failed\n");
+            GOTO_DONE_ERROR();
         }
 
         start = MPI_Wtime();
@@ -259,8 +268,8 @@ main(int argc, char **argv)
         read_reg_transfer_start_time += MPI_Wtime() - start;
 
         if (ret != SUCCEED) {
-            LOG_ERROR("PDCregion_transfer_start failed");
-            exit(-1);
+            LOG_ERROR("PDCregion_transfer_start failed\n");
+            GOTO_DONE_ERROR();
         }
 
         start = MPI_Wtime();
@@ -268,35 +277,35 @@ main(int argc, char **argv)
         read_reg_transfer_wait_time += MPI_Wtime() - start;
 
         if (ret != SUCCEED) {
-            LOG_ERROR("PDCregion_transfer_wait failed");
-            ret_value = 1;
+            LOG_ERROR("PDCregion_transfer_wait failed\n");
+            GOTO_DONE_ERROR();
         }
 
         ret = PDCregion_transfer_close(transfer_request);
 
         if (ret != SUCCEED) {
-            LOG_ERROR("PDCregion_transfer_close failed");
-            ret_value = 1;
+            LOG_ERROR("PDCregion_transfer_close failed\n");
+            GOTO_DONE_ERROR();
         }
 
         if (ret != SUCCEED) {
-            LOG_ERROR("PDCbuf_obj_unmap failed");
-            ret_value = 1;
+            LOG_ERROR("PDCbuf_obj_unmap failed\n");
+            GOTO_DONE_ERROR();
         }
 
         if (PDCregion_close(reg) < 0) {
-            LOG_ERROR("Failed to close local region");
-            ret_value = 1;
+            LOG_ERROR("Failed to close local region\n");
+            GOTO_DONE_ERROR();
         }
 
         if (PDCregion_close(reg_global) < 0) {
-            LOG_ERROR("Failed to close global region");
-            ret_value = 1;
+            LOG_ERROR("Failed to close global region\n");
+            GOTO_DONE_ERROR();
         }
 
         if (PDCobj_close(obj1) < 0) {
-            LOG_ERROR("Failed to close object o1");
-            ret_value = 1;
+            LOG_ERROR("Failed to close object o1\n");
+            GOTO_DONE_ERROR();
         }
     }
 #ifdef PDC_TIMING
@@ -304,23 +313,23 @@ main(int argc, char **argv)
 #endif
     // close a container
     if (PDCcont_close(cont) < 0) {
-        LOG_ERROR("Failed to close container c1");
-        ret_value = 1;
+        LOG_ERROR("Failed to close container c1\n");
+        GOTO_DONE_ERROR();
     }
     // close a object property
     if (PDCprop_close(obj_prop) < 0) {
-        LOG_ERROR("Failed to close property");
-        ret_value = 1;
+        LOG_ERROR("Failed to close property\n");
+        GOTO_DONE_ERROR();
     }
     // close a container property
     if (PDCprop_close(cont_prop) < 0) {
-        LOG_ERROR("Failed to close property");
-        ret_value = 1;
+        LOG_ERROR("Failed to close property\n");
+        GOTO_DONE_ERROR();
     }
     // close pdc
     if (PDCclose(pdc) < 0) {
-        LOG_ERROR("Failed to close PDC");
-        ret_value = 1;
+        LOG_ERROR("Failed to close PDC\n");
+        GOTO_DONE_ERROR();
     }
 #ifdef ENABLE_MPI
     MPI_Reduce(&write_reg_transfer_start_time, &start, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -349,8 +358,10 @@ main(int argc, char **argv)
     free(data);
 #endif
 
+done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
+
     return ret_value;
 }

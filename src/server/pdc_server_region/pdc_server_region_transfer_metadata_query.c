@@ -186,7 +186,7 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
 
     hg_return_t ret_value = HG_SUCCESS;
     char *      ptr;
-    int         n_objs, reg_count;
+    int         n_objs, reg_count, ndim;
     int         i, j;
 
     metadata_server_objs     = NULL;
@@ -201,6 +201,10 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
 
     if (checkpoint) {
         n_objs = *(int *)ptr;
+        if (n_objs <= 0 || n_objs > 1000000) {
+            LOG_ERROR("transfer_request_metadata_query_init: invalid n_objs %d\n", n_objs);
+            FUNC_LEAVE(FAIL);
+        }
         ptr += sizeof(int);
         for (i = 0; i < n_objs; ++i) {
             if (metadata_server_objs) {
@@ -215,10 +219,21 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
 
             metadata_server_objs_end->obj_id = *(uint64_t *)ptr;
             ptr += sizeof(uint64_t);
-            metadata_server_objs_end->ndim = *(int *)ptr;
+            /* Read ndim into a local, validate it, then use the validated local
+             * for every allocation/copy so the bound is provable to analysis. */
+            ndim = *(int *)ptr;
             ptr += sizeof(int);
-            reg_count = *(int *)ptr;
+            if (ndim <= 0 || ndim > 4) {
+                LOG_ERROR("Invalid ndim %d\n", ndim);
+                FUNC_LEAVE(FAIL);
+            }
+            metadata_server_objs_end->ndim = ndim;
+            reg_count                      = *(int *)ptr;
             ptr += sizeof(int);
+            if (reg_count < 0 || reg_count > 1000000) {
+                LOG_ERROR("Invalid reg_count %d\n", reg_count);
+                FUNC_LEAVE(FAIL);
+            }
 
             metadata_server_objs_end->regions =
                 (pdc_region_metadata_pkg *)PDC_malloc(sizeof(pdc_region_metadata_pkg));
@@ -226,14 +241,14 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
 
             metadata_server_objs_end->regions_end->next = NULL;
             metadata_server_objs_end->regions_end->reg_offset =
-                (uint64_t *)PDC_malloc(sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
+                (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)ndim * 2);
             metadata_server_objs_end->regions_end->reg_size =
-                metadata_server_objs_end->regions_end->reg_offset + metadata_server_objs_end->ndim;
+                metadata_server_objs_end->regions_end->reg_offset + ndim;
             metadata_server_objs_end->regions_end->data_server_id = *(uint32_t *)ptr;
             ptr += sizeof(uint32_t);
             memcpy(metadata_server_objs_end->regions_end->reg_offset, ptr,
-                   sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
-            ptr += sizeof(uint64_t) * metadata_server_objs_end->ndim * 2;
+                   sizeof(uint64_t) * (size_t)ndim * 2);
+            ptr += sizeof(uint64_t) * (size_t)ndim * 2;
 
             for (j = 1; j < reg_count; ++j) {
                 metadata_server_objs_end->regions->next =
@@ -242,14 +257,14 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
 
                 metadata_server_objs_end->regions_end->next = NULL;
                 metadata_server_objs_end->regions_end->reg_offset =
-                    (uint64_t *)PDC_malloc(sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
+                    (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)ndim * 2);
                 metadata_server_objs_end->regions_end->reg_size =
-                    metadata_server_objs_end->regions_end->reg_offset + metadata_server_objs_end->ndim;
+                    metadata_server_objs_end->regions_end->reg_offset + ndim;
                 metadata_server_objs_end->regions_end->data_server_id = *(uint32_t *)ptr;
                 ptr += sizeof(uint32_t);
                 memcpy(metadata_server_objs_end->regions_end->reg_offset, ptr,
-                       sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
-                ptr += sizeof(uint64_t) * metadata_server_objs_end->ndim * 2;
+                       sizeof(uint64_t) * (size_t)ndim * 2);
+                ptr += sizeof(uint64_t) * (size_t)ndim * 2;
             }
         }
     }
@@ -471,7 +486,11 @@ metadata_query_buf_create(pdc_obj_region_metadata *regions, int size, uint64_t *
     // Iterate through all input regions. We compute the total buf size in this loop
     total_data_size                = sizeof(int);
     transfer_request_counter_total = 0;
-    transfer_request_counters      = (int *)PDC_calloc(size, sizeof(int));
+    if (size <= 0 || size > 1000000) {
+        LOG_ERROR("metadata_query_buf_create: invalid size %d\n", size);
+        FUNC_LEAVE(0);
+    }
+    transfer_request_counters = (int *)PDC_calloc(size, sizeof(int));
     for (i = 0; i < size; ++i) {
         temp = metadata_server_objs;
         // First check which obj list
@@ -624,6 +643,10 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     uint8_t                  region_partition;
     pdc_obj_region_metadata *region_metadata;
 
+    if (n_objs <= 0 || n_objs > 1000000) {
+        LOG_ERROR("transfer_request_metadata_query_parse: invalid n_objs %d\n", n_objs);
+        FUNC_LEAVE(0);
+    }
     region_metadata = (pdc_obj_region_metadata *)PDC_malloc(sizeof(pdc_obj_region_metadata) * n_objs);
 
     for (i = 0; i < n_objs; ++i) {

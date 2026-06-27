@@ -74,7 +74,7 @@ TestThread(void *ThreadArgs)
     else
         tests_failed += 1;
 
-    cont_handle *ch = PDCcont_iter_start(args->pdcId);
+    cont_handle *ch = PDCcont_iter_start();
     while (!PDCcont_iter_null(ch)) {
         struct PDC_cont_info *info = PDCcont_iter_get_info(ch);
         LOG_INFO("[%d] container name is: %s\n", args->ThreadRank, info->name);

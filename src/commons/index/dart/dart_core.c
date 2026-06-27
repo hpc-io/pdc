@@ -76,7 +76,11 @@ __dart_space_init(DART *dart, int num_server, int alphabet_size, int extra_tree_
     dart->dart_tree_height =
         (int)ceil(log_with_base((double)dart->alphabet_size, physical_node_num)) + 1 + extra_tree_height;
     // calculate number of all leaf nodes
-    dart->num_vnode          = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
+    dart->num_vnode = (uint64_t)pow(dart->alphabet_size, dart->dart_tree_height);
+    if (dart->num_vnode > (uint64_t)INT32_MAX)
+        dart->num_vnode = (uint64_t)INT32_MAX;
+    if (replication_factor < 1 || replication_factor > 1024)
+        replication_factor = 1024;
     dart->replication_factor = replication_factor;
     // dart_thpool_g            = thpool_init(num_server);
 
@@ -304,8 +308,8 @@ get_reconciled_vnode_id_with_power_of_two_choice_rehashing_2(DART *dart, uint64_
     int ir_idx = (int)ceil((double)(dart->alphabet_size / 2));
 
     // We also calculate the region start position.
-    uint64_t region_start = ((((int)word[0] + ir_idx) % dart->alphabet_size)) *
-                            region_size; // ((reconciled_vnode_idx)/region_size) * (region_size);
+    uint64_t region_start =
+        (((uint64_t)word[0] + (uint64_t)ir_idx) % (uint64_t)(dart->alphabet_size)) * (uint64_t)region_size;
     // Finally, the reconciled vnode index is calculated.
     // reconciled_vnode_idx = (0 + region_start + region_offset) % dart->num_vnode;
     reconciled_vnode_idx = (reconciled_vnode_idx + region_start + region_offset) % dart->num_vnode;

@@ -118,7 +118,7 @@ main(int argc, char **argv)
     region.ndim      = ndim;
     region.offset    = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
     region.size      = (uint64_t *)malloc(sizeof(uint64_t) * ndim);
-    region.offset[0] = rank * my_data_count;
+    region.offset[0] = (uint64_t)rank * my_data_count;
     region.size[0]   = my_data_count;
 
     mydata = (int *)malloc(my_data_count);

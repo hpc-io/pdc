@@ -681,14 +681,21 @@ PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_out_t *o
                 // obj_name change is done through client with delete and add operation.
                 if (in->new_tag != NULL && in->new_tag[0] != 0 &&
                     !(in->new_tag[0] == ' ' && in->new_tag[1] == 0)) {
-                    // add a ',' to separate different tags
-                    target->tags[strlen(target->tags) + 1] = 0;
-                    target->tags[strlen(target->tags)]     = ',';
-                    strcat(target->tags, in->new_tag);
+                    size_t tag_len    = strlen(target->tags);
+                    size_t space_left = TAG_LEN_MAX - tag_len;
+
+                    if (space_left <= 1) {
+                        PGOTO_ERROR(FAIL, "Not enough space to append comma");
+                    }
+
+                    int written = snprintf(target->tags + tag_len, space_left, ",%s", in->new_tag);
+                    if (written < 0 || (size_t)written >= space_left) {
+                        PGOTO_ERROR(FAIL, "Not enough space in target->tags to append new_tag with snprintf");
+                    }
                     out->ret = 1;
                 }
                 else
-                    out->ret = -1;
+                    out->ret = FAIL;
             } // end if (target != NULL)
             else {
                 // Object not found for deletion request
@@ -798,10 +805,19 @@ PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
                     strcpy(target->data_location, in->new_metadata.data_location);
                 if (in->new_metadata.tags[0] != 0 &&
                     !(in->new_metadata.tags[0] == ' ' && in->new_metadata.tags[1] == 0)) {
-                    // add a ',' to separate different tags
-                    target->tags[strlen(target->tags) + 1] = 0;
-                    target->tags[strlen(target->tags)]     = ',';
-                    strcat(target->tags, in->new_metadata.tags);
+                    size_t tag_len    = strlen(target->tags);
+                    size_t space_left = TAG_LEN_MAX - tag_len;
+
+                    if (space_left <= 1) {
+                        PGOTO_ERROR(FAIL, "Not enough space to append comma");
+                    }
+
+                    int written = snprintf(target->tags + tag_len, space_left, ",%s", in->new_metadata.tags);
+                    if (written < 0 || (size_t)written >= space_left) {
+                        PGOTO_ERROR(
+                            FAIL,
+                            "Not enough space in target->tags to append new_metadata.tags with snprintf");
+                    }
                 }
                 if (in->new_metadata.current_state != 0) {
                     target->transform_state          = in->new_metadata.current_state;
@@ -2420,7 +2436,7 @@ PDC_Server_container_add_tags(uint64_t cont_id, char *tags)
     ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
 
     if (cont_entry != NULL && tags != NULL)
-        strcat(cont_entry->tags, tags);
+        strncat(cont_entry->tags, tags, TAG_LEN_MAX - strlen(cont_entry->tags) - 1);
     else
         PGOTO_ERROR(FAIL, "Container %" PRIu64 " not found", cont_id);
 

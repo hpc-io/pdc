@@ -55,7 +55,7 @@ char **
 read_words_from_text(const char *fileName, int *word_count, int *total_word_count, int mpi_rank)
 {
 
-    FILE *file = fopen(fileName, "r"); /* should check the result */
+    FILE *file = fopen(fileName, "r");
     if (file == NULL) {
         LOG_ERROR("File not available\n");
         exit(4);
@@ -137,6 +137,15 @@ main(int argc, char **argv)
     int alphabet_size      = atoi(argv[1]);
     int replication_factor = atoi(argv[2]);
 
+    if (alphabet_size <= 0 || alphabet_size > 256) {
+        LOG_ERROR("Invalid alphabet_size %d\n", alphabet_size);
+        exit(1);
+    }
+    if (replication_factor <= 0 || replication_factor > 10) {
+        LOG_ERROR("Invalid replication_factor %d\n", replication_factor);
+        exit(1);
+    }
+
     int num_client = size;
 
     char **input_word_list  = NULL;
@@ -148,9 +157,13 @@ main(int argc, char **argv)
 
     const char *dict_filename = argv[4];
 
-    int                    index_type = atoi(argv[5]);
-    dart_hash_algo_t       hash_algo  = (dart_hash_algo_t)index_type;
-    dart_object_ref_type_t ref_type   = REF_PRIMARY_ID;
+    int index_type = atoi(argv[5]);
+    if (index_type < 0 || index_type > 3) {
+        LOG_ERROR("Invalid index_type %d\n", index_type);
+        exit(1);
+    }
+    dart_hash_algo_t       hash_algo = (dart_hash_algo_t)index_type;
+    dart_object_ref_type_t ref_type  = REF_PRIMARY_ID;
 
     if (dict_filename == NULL) {
         print_usage();
@@ -166,6 +179,10 @@ main(int argc, char **argv)
         alphabet_size   = 37;
     }
     else {
+        if (strpbrk(dict_filename, ";&|`$<>") != NULL) {
+            LOG_ERROR("Invalid characters in dict filename\n");
+            exit(1);
+        }
         input_word_list = read_words_from_text(dict_filename, &word_count, &total_word_count, rank);
         alphabet_size   = 29;
         if (indexOfStr(dict_filename, "wiki") != -1)
@@ -259,7 +276,7 @@ main(int argc, char **argv)
         char **query_input_list = (char **)calloc(word_count, sizeof(char *));
         for (i = 0; i < word_count; i++) {
             query_input_list[i] = (char *)calloc((strlen(input_word_list[i]) + 1), sizeof(char));
-            strcpy(query_input_list[i], input_word_list[i]);
+            strncpy(query_input_list[i], input_word_list[i], strlen(input_word_list[i]) + 1);
         }
 
 #ifdef ENABLE_MPI
@@ -272,7 +289,7 @@ main(int argc, char **argv)
             int   data = i;
             char *key  = query_input_list[i];
             char  query_str[100];
-            sprintf(query_str, "%s=%s", key, key);
+            snprintf(query_str, 100 - 1, "%s=%s", key, key);
             uint64_t *out;
             int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);
@@ -309,7 +326,7 @@ main(int argc, char **argv)
 
         for (i = 0; i < word_count; i++) {
             query_input_list[i] = (char *)calloc((strlen(input_word_list[i]) + 1), sizeof(char));
-            strcpy(query_input_list[i], input_word_list[i]);
+            strncpy(query_input_list[i], input_word_list[i], (strlen(input_word_list[i]) + 1));
         }
 
 #ifdef ENABLE_MPI
@@ -325,7 +342,7 @@ main(int argc, char **argv)
                 key[4] = '\0'; // trim to prefix of 4.
             }
             char query_str[80];
-            sprintf(query_str, "%s*=%s*", key, key);
+            snprintf(query_str, 80 - 1, "%s*=%s*", key, key);
             uint64_t *out;
             int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);
@@ -361,7 +378,7 @@ main(int argc, char **argv)
         /* ===============  Suffix Query testing ======================= */
         for (i = 0; i < word_count; i++) {
             query_input_list[i] = (char *)calloc((strlen(input_word_list[i]) + 1), sizeof(char));
-            strcpy(query_input_list[i], input_word_list[i]);
+            strncpy(query_input_list[i], input_word_list[i], (strlen(input_word_list[i]) + 1));
         }
 
 #ifdef ENABLE_MPI
@@ -378,7 +395,7 @@ main(int argc, char **argv)
                 key = &key[key_len - 4]; // trim to suffix of 4.
             }
             char query_str[80];
-            sprintf(query_str, "*%s=*%s", key, key);
+            snprintf(query_str, 80 - 1, "*%s=*%s", key, key);
             uint64_t *out;
             int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);
@@ -414,7 +431,7 @@ main(int argc, char **argv)
         /* ===============  Infix Query testing ======================= */
         for (i = 0; i < word_count; i++) {
             query_input_list[i] = (char *)calloc((strlen(input_word_list[i]) + 1), sizeof(char));
-            strcpy(query_input_list[i], input_word_list[i]);
+            strncpy(query_input_list[i], input_word_list[i], (strlen(input_word_list[i]) + 1));
         }
 
 #ifdef ENABLE_MPI
@@ -434,7 +451,7 @@ main(int argc, char **argv)
                 key[4] = '\0'; // trim to prefix of 4.
             }
             char query_str[80];
-            sprintf(query_str, "*%s*=*%s*", key, key);
+            snprintf(query_str, 80 - 1, "*%s*=*%s*", key, key);
             uint64_t *out;
             int       rest_count = 0;
             PDC_Client_search_obj_ref_through_dart(hash_algo, query_str, ref_type, &rest_count, &out);

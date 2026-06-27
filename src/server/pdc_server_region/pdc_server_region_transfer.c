@@ -287,10 +287,16 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
 
     user_specified_data_path = getenv("PDC_DATA_LOC");
     if (user_specified_data_path != NULL) {
+        if (strpbrk(user_specified_data_path, ";&|`$<>") != NULL)
+            user_specified_data_path = NULL;
+    }
+    if (user_specified_data_path != NULL) {
         data_path = user_specified_data_path;
     }
     else {
         data_path = getenv("SCRATCH");
+        if (data_path != NULL && strpbrk(data_path, ";&|`$<>") != NULL)
+            data_path = NULL;
         if (data_path == NULL)
             data_path = ".";
     }
@@ -298,8 +304,9 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
              PDC_get_rank(), PDC_get_rank());
     PDC_mkdir(storage_location);
-
-    fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+    if (strpbrk(storage_location, ";&|`$<>") != NULL)
+        PGOTO_ERROR(FAIL, "Invalid characters in storage location");
+    fd = open(storage_location, O_RDWR | O_CREAT, 0600);
     if (region_info->ndim == 1) {
         lseek(fd, region_info->offset[0] * unit, SEEK_SET);
         io_size = region_info->size[0] * unit;

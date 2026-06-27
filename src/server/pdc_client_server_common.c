@@ -2695,25 +2695,23 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_return_t                          hg_ret;
     region_lock_in_t                     in;
     region_lock_out_t                    out;
-    const struct hg_info *               hg_info = NULL;
-    data_server_region_t *               target_obj;
-    int                                  error     = 0;
-    int                                  dirty_reg = 0;
+    const struct hg_info *               hg_info    = NULL;
+    data_server_region_t *               target_obj = NULL;
+    int                                  error      = 0;
+    int                                  dirty_reg  = 0;
     hg_size_t                            size, size2;
     void *                               data_buf;
     struct pdc_region_info *             server_region;
-    region_list_t *                      elt, *request_region, *tmp, *elt_tmp;
+    region_list_t *                      elt = NULL, *request_region = NULL, *tmp = NULL, *elt_tmp = NULL;
     struct region_lock_update_bulk_args *lock_update_bulk_args = NULL;
     struct buf_map_release_bulk_args *   buf_map_bulk_args = NULL, *obj_map_bulk_args = NULL;
     hg_bulk_t                            lock_local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t                            remote_bulk_handle     = HG_BULK_NULL;
-    struct pdc_region_info *             remote_reg_info;
-    region_buf_map_t *                   eltt, *eltt2, *eltt_tmp;
-    hg_uint32_t /*k, m, */               remote_count;
+    struct pdc_region_info *             remote_reg_info        = NULL;
+    region_buf_map_t *                   eltt = NULL, *eltt2 = NULL, *eltt_tmp = NULL;
+    hg_uint32_t                          remote_count;
     void **                              data_ptrs_to = NULL;
     size_t *                             data_size_to = NULL;
-    // size_t                               type_size    = 0;
-    // size_t                               dims[4]      = {0, 0, 0, 0};
 #ifdef PDC_TIMING
     double start, end;
 #endif
@@ -4703,12 +4701,16 @@ remove_relative_dirs(char *workingDir, char *application)
             *slash = 0;
     }
     k = strlen(workingDir);
+    if (k >= PATH_MAX) {
+        PGOTO_ERROR(NULL, "workingDir length exceeds PATH_MAX");
+    }
     if ((appName[0] == '.') && (appName[1] == '/'))
         appName += 2;
-    sprintf(&workingDir[k], "/%s", appName);
+    snprintf(&workingDir[k], PATH_MAX - k, "/%s", appName);
 
     ret_value = strdup(workingDir);
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -4728,7 +4730,7 @@ PDC_find_in_path(char *workingDir, char *application)
 
     while (next) {
         *next++ = 0;
-        sprintf(checkPath, "%s/%s", pathVar, application);
+        snprintf(checkPath, sizeof(checkPath), "%s/%s", pathVar, application);
         if (stat(checkPath, &fileStat) == 0) {
             PGOTO_DONE(strdup(checkPath));
         }
@@ -4736,7 +4738,7 @@ PDC_find_in_path(char *workingDir, char *application)
         next    = strchr(pathVar, colon);
     }
     if (application[0] == '.') {
-        sprintf(checkPath, "%s/%s", workingDir, application);
+        snprintf(checkPath, sizeof(checkPath), "%s/%s", workingDir, application);
         if (stat(checkPath, &fileStat) == 0) {
             char *foundPath = strrchr(checkPath, '/');
             char *appName   = foundPath + 1;
@@ -4755,7 +4757,7 @@ PDC_find_in_path(char *workingDir, char *application)
                 if (chdir(workingDir) != 0) {
                     LOG_ERROR("Check dir failed\n");
                 }
-                sprintf(&checkPath[offset], "/%s", appName);
+                snprintf(&checkPath[offset], sizeof(checkPath) - offset, "/%s", appName);
                 PGOTO_DONE(strdup(checkPath));
             }
         }
@@ -6458,7 +6460,7 @@ PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
     srand(time(0));
     while (retry < PDC_MAX_TRIAL_NUM) {
         snprintf(shm_addr, ADDR_MAX, "/PDCshm%d", rand());
-        shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0666);
+        shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0644);
         if (shm_fd != -1)
             break;
         retry++;
@@ -6497,7 +6499,7 @@ PDC_create_shm_segment(region_list_t *region)
     /* create the shared memory segment as if it was a file */
     retry = 0;
     while (retry < PDC_MAX_TRIAL_NUM) {
-        region->shm_fd = shm_open(region->shm_addr, O_CREAT | O_RDWR, 0666);
+        region->shm_fd = shm_open(region->shm_addr, O_CREAT | O_RDWR, 0644);
         if (region->shm_fd != -1)
             break;
         retry++;

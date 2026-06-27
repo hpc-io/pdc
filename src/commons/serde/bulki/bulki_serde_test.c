@@ -3,6 +3,9 @@
 #include "pdc_timing.h"
 #include "pdc_malloc.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 int
 test_base_type()
 {
@@ -45,14 +48,22 @@ test_base_type()
     void * buffer = BULKI_serialize(bulki, &size);
 
     // Do some I/O if you like
-    FILE *fp = fopen("test_bulki.bin", "wb");
+    int   fd = open("test_bulki.bin", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    FILE *fp = fdopen(fd, "wb");
     fwrite(buffer, 1, size, fp);
     fclose(fp);
 
     BULKI_free(bulki, 1);
 
     // read the file and deserialize
-    fp = fopen("test_bulki.bin", "rb");
+    fd = open("test_bulki.bin", O_RDONLY);
+    if (fd < 0)
+        FUNC_LEAVE(-1);
+    fp = fdopen(fd, "rb");
+    if (fp == NULL) {
+        close(fd);
+        FUNC_LEAVE(-1);
+    }
     fseek(fp, 0, SEEK_END);
     long fsize = ftell(fp);
     fseek(fp, 0, SEEK_SET); /* same as rewind(f); */
@@ -564,7 +575,8 @@ bulki_small_json_serialization_test()
 
     BULKI_put(dataset, key5, value5);
 
-    FILE *fp = fopen("dataset.bin", "w");
+    int   fd = open("dataset.bin", O_WRONLY | O_CREAT | O_TRUNC, 0644);
+    FILE *fp = fdopen(fd, "w");
     BULKI_serialize_to_file(dataset, fp);
     // fclose(fp);
     // Free the memory

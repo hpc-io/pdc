@@ -220,11 +220,9 @@ gen_random_strings_with_cb(int count, int minlen, int maxlen, int alphabet_size,
         len       = len < minlen ? minlen : len;
         char *str = (char *)calloc(len + 1, sizeof(len));
         for (i = 0; i < len; i++) {
-            int randnum = rand();
-            if (randnum < 0)
-                randnum *= -1;
-            char chr = (char)((randnum % alphabet_size) + 65);
-            str[i]   = chr;
+            unsigned int randnum = (unsigned int)rand();
+            char         chr     = (char)((randnum % alphabet_size) + 65);
+            str[i]               = chr;
         }
         result[c] = str;
         if (insert_cb != NULL && search_cb != NULL) {
@@ -243,49 +241,59 @@ char **
 read_words_from_text(const char *fileName, int *word_count, int **req_count, int prefix_len,
                      insert_key_cb insert_cb, search_key_cb search_cb)
 {
-
-    FILE *file = fopen(fileName, "r"); /* should check the result */
+    FILE *file = fopen(fileName, "r");
     if (file == NULL) {
         LOG_ERROR("File not available\n");
         exit(4);
     }
-    int lines_allocated = 128;
-    int max_line_len    = 512;
 
-    int   i;
-    int   line_count = 0;
-    char *line       = (char *)malloc(sizeof(char) * (2 * max_line_len));
-    char *word       = (char *)malloc(sizeof(char) * (max_line_len));
-    for (i = 0; 1; i++) {
-        int j;
-        if (fgets(line, max_line_len - 1, file) == NULL) {
-            break;
+    int   max_line_len = 512;
+    char *line         = malloc(2 * max_line_len);
+    char *word         = malloc(max_line_len);
+
+    if (!line || !word) {
+        fprintf(stderr, "Memory allocation failed\n");
+        fclose(file);
+        exit(1);
+    }
+
+    int line_count = 0;
+
+    while (fgets(line, max_line_len, file) != NULL) {
+        int j = strlen(line) - 1;
+        while (j >= 0 && (line[j] == '\n' || line[j] == '\r')) {
+            line[j--] = '\0';
         }
-        /* Get rid of CR or LF at end of line */
 
-        for (j = strlen(line) - 1; j >= 0 && (line[j] == '\n' || line[j] == '\r'); j--)
-            ;
-        line[j + 1] = '\0';
+        if (strchr(line, '\n') == NULL && !feof(file)) {
+            fprintf(stderr, "Input line too long at line %d, skipping.\n", line_count + 1);
+            int ch;
+            while ((ch = fgetc(file)) != '\n' && ch != EOF)
+                ;
+            continue;
+        }
+
         int rc;
-        sscanf(line, "%d %s", &rc, word);
-        // (*req_count)[line_count]=rc;
+        if (sscanf(line, "%d %511s", &rc, word) != 2) {
+            fprintf(stderr, "Malformed line at line %d: '%s'\n", line_count + 1, line);
+            continue;
+        }
 
-        if (insert_cb != NULL && search_cb != NULL) {
+        if (insert_cb && search_cb) {
             insert_cb(word, prefix_len);
-
-            int sch = 0;
-            for (sch = 0; sch < rc; sch++) {
+            for (int sch = 0; sch < rc; sch++) {
                 search_cb(word, prefix_len);
             }
         }
+
         line_count++;
     }
+
     free(line);
     free(word);
-    *word_count = line_count;
-    //*total_word_count = i;
-
     fclose(file);
+
+    *word_count = line_count;
     return NULL;
 }
 
@@ -315,8 +323,21 @@ main(int argc, char **argv)
     alphabet_size      = atoi(argv[5]);
     replication_factor = atoi(argv[6]);
 
-    word_count             = atoi(argv[7]);
-    prefix_len             = atoi(argv[8]);
+    word_count = atoi(argv[7]);
+    prefix_len = atoi(argv[8]);
+
+    if (num_server <= 0 || num_server > 65536) {
+        LOG_ERROR("Invalid num_server %d\n", num_server);
+        exit(1);
+    }
+    if (word_count <= 0 || word_count > 100000000) {
+        LOG_ERROR("Invalid word_count %d\n", word_count);
+        exit(1);
+    }
+    if (hashalgo < 0 || hashalgo > 2) {
+        LOG_ERROR("Invalid hashalgo %d\n", hashalgo);
+        exit(1);
+    }
     char **input_word_list = NULL;
     int *  req_count       = NULL;
 
@@ -350,6 +371,10 @@ main(int argc, char **argv)
 
     if (INPUT_TYPE == INPUT_DICTIONARY) {
         // Init dart space.
+        if (strpbrk(txtFilePath, ";&|`$<>") != NULL) {
+            LOG_ERROR("Invalid txtFilePath\n");
+            exit(1);
+        }
         alphabet_size = 29;
         __dart_space_init(&dart_g, num_server, alphabet_size, extra_tree_height, replication_factor, 1024);
         read_words_from_text(txtFilePath, &word_count, &req_count, prefix_len, keyword_insert[hashalgo],

@@ -33,7 +33,8 @@
 #include <inttypes.h>
 #include "pdc.h"
 
-#define NPARTICLES 8388608
+#define NPARTICLES    8388608
+#define MAX_PARTICLES (NPARTICLES * 2)
 
 double
 uniform_random_number()
@@ -91,6 +92,11 @@ main(int argc, char **argv)
     }
 
     dims[0] = numparticles;
+
+    if (numparticles > MAX_PARTICLES) {
+        LOG_ERROR("numparticles exceeds max size\n");
+        goto done;
+    }
 
     x = (float *)malloc(numparticles * sizeof(float));
     y = (float *)malloc(numparticles * sizeof(float));
@@ -548,6 +554,7 @@ main(int argc, char **argv)
     free(id1);
     free(id2);
 
+done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
