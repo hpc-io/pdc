@@ -30,23 +30,6 @@
 #include "pdc.h"
 #include "pdc_client_connect.h"
 
-#if defined(ENABLE_MPI) && !defined(KVTAG_SCALE_SERIAL)
-#define KVTAG_SCALE_USE_MPI 1
-#endif
-
-#ifdef KVTAG_SCALE_SERIAL
-#include <sys/time.h>
-
-static double
-kvtag_scale_now(void)
-{
-    struct timeval tv;
-
-    gettimeofday(&tv, NULL);
-    return (double)tv.tv_sec + (double)tv.tv_usec / 1000000.0;
-}
-#endif
-
 int
 assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
 {
@@ -103,13 +86,10 @@ main(int argc, char *argv[])
     int all_verified_success = 0;
     int all_verified_fail    = 0;
 
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-#else
-    proc_num = 1;
-    my_rank  = 0;
 #endif
     if (argc < 3) {
         if (my_rank == 0)
@@ -144,11 +124,9 @@ main(int argc, char *argv[])
     // Open existing objects
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
 
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
-#else
-    stime = kvtag_scale_now();
 #endif
 
     // open already created PDC objects and query tags
@@ -160,7 +138,7 @@ main(int argc, char *argv[])
 
         // progress reporting for object opening
         if (i > 0 && obj_1percent > 0 && i % obj_1percent == 0) {
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
@@ -174,11 +152,9 @@ main(int argc, char *argv[])
         }
     }
 
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
-#else
-    total_time = kvtag_scale_now() - stime;
 #endif
 
     if (my_rank == 0)
@@ -190,11 +166,9 @@ main(int argc, char *argv[])
 
     values = (void **)calloc(n_tag, sizeof(void *));
 
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
-#else
-    stime = kvtag_scale_now();
 #endif
     for (i = 0; i < n_tag; i++) {
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_type,
@@ -218,11 +192,9 @@ main(int argc, char *argv[])
         free(values[i]);
     }
 
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
     total_time = MPI_Wtime() - stime;
-#else
-    total_time = kvtag_scale_now() - stime;
 #endif
     if (my_rank == 0)
         LOG_INFO("Total time to retrieve %11d tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
@@ -232,7 +204,7 @@ main(int argc, char *argv[])
     free(obj_ids);
 
     // aggregate verification statistics across all ranks
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
     MPI_Reduce(&verified_success, &all_verified_success, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&verified_fail, &all_verified_fail, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 #else
@@ -265,7 +237,7 @@ main(int argc, char *argv[])
     }
 
 done:
-#ifdef KVTAG_SCALE_USE_MPI
+#ifdef ENABLE_MPI
     MPI_Finalize();
 #endif
 

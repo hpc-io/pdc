@@ -9,8 +9,8 @@
 #
 # Example:
 #   ./run_checkpoint_restart_mpi_test_with_prog_param.sh srun 2 4 \
-#       "/path/to/kvtag_add_scale_mpi 1000 100" \
-#       "/path/to/kvtag_get_verify_scale_mpi 1000 100"
+#       "/path/to/kvtag_add_scale 1000 100" \
+#       "/path/to/kvtag_get_verify_scale 1000 100"
 
 extra_cmd=""
 
