@@ -155,8 +155,12 @@ _log_message(bool is_server, PDC_LogLevel level, const char *file, const char *f
 
 #ifdef ENABLE_MPI
         static int my_rank = -1;
-        if (my_rank == -1)
-            my_rank = PDC_get_rank();
+        if (my_rank == -1) {
+            int mpi_initialized = 0;
+            MPI_Initialized(&mpi_initialized);
+            if (mpi_initialized)
+                my_rank = PDC_get_rank();
+        }
 #endif
 
         // Print differently based on log level

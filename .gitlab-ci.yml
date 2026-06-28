@@ -5,6 +5,13 @@ variables:
     PDC_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
     GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}"
 
+# Runs after every job (even on failure/timeout) so generated PDC tmp/data dirs
+# don't accumulate on the runner's persistent filesystem. The guard makes it a
+# no-op for jobs that don't set these variables (build/report/authorize).
+default:
+    after_script:
+        - if [ -n "${PDC_TMPDIR}${PDC_DATA_LOC}" ]; then rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}; fi
+
 stages:
     - authorize
     - build
@@ -138,8 +145,6 @@ perlmutter-no-cache-parallel-pdc:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_pdc
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-obj:
     stage: test
     id_tokens:
@@ -164,8 +169,6 @@ perlmutter-no-cache-parallel-obj:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_obj
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-cont:
     stage: test
     id_tokens:
@@ -190,8 +193,6 @@ perlmutter-no-cache-parallel-cont:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_cont
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-prop:
     stage: test
     id_tokens:
@@ -216,8 +217,6 @@ perlmutter-no-cache-parallel-prop:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_prop
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-region:
     stage: test
     id_tokens:
@@ -242,8 +241,6 @@ perlmutter-no-cache-parallel-region:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_region_transfer
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-region-all:
     stage: test
     id_tokens:
@@ -268,8 +265,6 @@ perlmutter-no-cache-parallel-region-all:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_region_transfer_all
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 # ====================================================================
 # Perlmutter
 # PDC (cache)
@@ -299,8 +294,6 @@ perlmutter-cache-parallel-pdc:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_pdc
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-obj:
     stage: test
     id_tokens:
@@ -325,8 +318,6 @@ perlmutter-cache-parallel-obj:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_obj
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-cont:
     stage: test
     id_tokens:
@@ -351,8 +342,6 @@ perlmutter-cache-parallel-cont:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_cont
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-prop:
     stage: test
     id_tokens:
@@ -377,8 +366,6 @@ perlmutter-cache-parallel-prop:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_prop
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-region:
     stage: test
     id_tokens:
@@ -403,8 +390,6 @@ perlmutter-cache-parallel-region:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_region_transfer
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-region-all:
     stage: test
     id_tokens:
@@ -429,8 +414,6 @@ perlmutter-cache-parallel-region-all:
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_region_transfer_all
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-metrics-build:
     stage: build
     id_tokens:
@@ -504,9 +487,6 @@ perlmutter-metrics:
         - pip install pydrive gspread gspread-dataframe google
         - echo "Storing PDC metrics..."
         - python3 ../../.github/workflows/store-metrics.py Perlmutter ${PDC_JOB_OUTPUT} ${CI_COMMIT_BRANCH} ${SLURM_JOB_ID}
-        - echo "Removing files..."
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 success:
     stage: report
     variables:
