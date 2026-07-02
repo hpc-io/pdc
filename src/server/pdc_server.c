@@ -90,6 +90,13 @@ sqlite3 *sqlite3_db_g;
 // Checkpoint every INTERVAL_SEC second and at least OP_INTERVAL operations
 #define PDC_CHECKPOINT_MIN_INTERVAL_SEC 1800
 
+// Bounds for untrusted checkpoint data
+#define PDC_CHECKPOINT_MAX_METADATA_COUNT    10000000
+#define PDC_CHECKPOINT_MAX_KVTAG_KEY_LEN     65536
+#define PDC_CHECKPOINT_MAX_KVTAG_SIZE        (1u << 24)
+#define PDC_CHECKPOINT_MAX_REGION_COUNT      1000000
+#define PDC_CHECKPOINT_MAX_HIST_NBIN         65536
+
 // Global debug variable to control debug printfs
 int is_debug_g       = 0;
 int pdc_client_num_g = 0;
@@ -1479,12 +1486,16 @@ PDC_Server_checkpoint()
 
     // ========== Serialize and Write ==========
     if (use_tmpfs)
-        file = fopen(checkpoint_file_local, "wb");
+        fd = open(checkpoint_file_local, O_RDWR | O_CREAT | O_TRUNC, 0600);
     else
-        file = fopen(checkpoint_file, "wb");
-
-    if (file == NULL)
+        fd = open(checkpoint_file, O_RDWR | O_CREAT | O_TRUNC, 0600);
+    if (fd < 0)
+        PGOTO_ERROR(FAIL, "Failed to open checkpoint file");
+    file = fdopen(fd, "wb");
+    if (file == NULL) {
+        close(fd);
         PGOTO_ERROR(FAIL, "Checkpoint file open error");
+    }
 
     // note: BULKI_Entity_serialize_to_file() still do in-memory serialization
     // note: need to implement a streaming file writing without in-memory serialization
@@ -1667,7 +1678,11 @@ PDC_Server_restart(char *filename)
             // extract n_obj
             BULKI_Entity *n_obj_ent = BULKI_get(hash_entry, BULKI_singleton_ENTITY("n_obj", PDC_STRING));
             int           count;
+            if (n_obj_ent == NULL)
+                PGOTO_ERROR(FAIL, "Missing n_obj in checkpoint metadata entry");
             memcpy(&count, n_obj_ent->data, sizeof(int));
+            if (count <= 0 || count > PDC_CHECKPOINT_MAX_METADATA_COUNT)
+                PGOTO_ERROR(FAIL, "Suspicious count value %d from checkpoint", count);
 
             // extract hash key
             BULKI_Entity *hash_key_ent =
@@ -1730,14 +1745,27 @@ PDC_Server_restart(char *filename)
                             // extract key
                             BULKI_Entity *key_ent =
                                 BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("key", PDC_STRING));
-                            int key_len             = strlen((char *)key_ent->data) + 1;
+
+                            if (key_ent == NULL || key_ent->data == NULL)
+                                PGOTO_ERROR(FAIL, "Invalid kvtag key in checkpoint");
+                            
+                            int key_len = (int)strlen((char *)key_ent->data) + 1;
+                            if (key_len <= 0 || key_len > PDC_CHECKPOINT_MAX_KVTAG_KEY_LEN)
+                                PGOTO_ERROR(FAIL, "Invalid key_len %d in checkpoint", key_len);
+
                             kvtag_list->kvtag->name = PDC_malloc(key_len);
                             memcpy(kvtag_list->kvtag->name, key_ent->data, key_len);
 
                             // extract size
                             BULKI_Entity *size_ent =
                                 BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("size", PDC_STRING));
-                            memcpy(&kvtag_list->kvtag->size, size_ent->data, sizeof(uint32_t));
+                            if (size_ent == NULL)
+                                PGOTO_ERROR(FAIL, "Missing kvtag size in checkpoint");
+                            uint32_t kv_size;
+                            memcpy(&kv_size, size_ent->data, sizeof(uint32_t));
+                            if (kv_size == 0 || kv_size > PDC_CHECKPOINT_MAX_KVTAG_SIZE)
+                                PGOTO_ERROR(FAIL, "Invalid kvtag size in checkpoint");
+                            kvtag_list->kvtag->size = kv_size;
 
                             // extract type
                             BULKI_Entity *type_ent =
@@ -1747,8 +1775,10 @@ PDC_Server_restart(char *filename)
                             // extract value
                             BULKI_Entity *value_ent =
                                 BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("value", PDC_STRING));
-                            kvtag_list->kvtag->value = PDC_malloc(kvtag_list->kvtag->size);
-                            memcpy(kvtag_list->kvtag->value, value_ent->data, kvtag_list->kvtag->size);
+                            if (value_ent == NULL || value_ent->count != kv_size)
+                                PGOTO_ERROR(FAIL, "Invalid kvtag value size in checkpoint");
+                            kvtag_list->kvtag->value = PDC_malloc((size_t)kv_size);
+                            memcpy(kvtag_list->kvtag->value, value_ent->data, (size_t)kv_size);
 
                             DL_APPEND((metadata + i)->kvtag_list_head, kvtag_list);
                         }
@@ -1761,6 +1791,8 @@ PDC_Server_restart(char *filename)
                     int n_region = 0;
                     if (regions_array != NULL && regions_array->pdc_type == PDC_BULKI) {
                         n_region = regions_array->count;
+                        if (n_region < 0 || n_region > PDC_CHECKPOINT_MAX_REGION_COUNT)
+                            PGOTO_ERROR(FAIL, "Suspicious n_region value %d from checkpoint", n_region);
                         BULKI_Entity_Iterator *region_iter =
                             Bent_iterator_init(regions_array, NULL, PDC_BULKI);
 
@@ -1796,25 +1828,27 @@ PDC_Server_restart(char *filename)
 
                                     BULKI_Entity *nbin_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("nbin", PDC_STRING));
-                                    memcpy(&region_list->region_hist->nbin, nbin_ent->data, sizeof(int));
-
-                                    if (region_list->region_hist->nbin == 0) {
-                                        LOG_ERROR("Checkpoint file histogram size is 0\n");
-                                    }
+                                    int nbin;
+                                    if (nbin_ent == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram nbin in checkpoint");
+                                    memcpy(&nbin, nbin_ent->data, sizeof(int));
+                                    if (nbin <= 0 || nbin > PDC_CHECKPOINT_MAX_HIST_NBIN)
+                                        PGOTO_ERROR(FAIL, "Invalid histogram nbin %d in checkpoint", nbin);
+                                    region_list->region_hist->nbin = nbin;
 
                                     BULKI_Entity *range_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("range", PDC_STRING));
                                     region_list->region_hist->range = (double *)PDC_malloc(
-                                        sizeof(double) * region_list->region_hist->nbin * 2);
+                                        sizeof(double) * (size_t)nbin * 2);
                                     memcpy(region_list->region_hist->range, range_ent->data,
-                                           sizeof(double) * region_list->region_hist->nbin * 2);
+                                           sizeof(double) * (size_t)nbin * 2);
 
                                     BULKI_Entity *bin_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("bin", PDC_STRING));
                                     region_list->region_hist->bin = (uint64_t *)PDC_malloc(
-                                        sizeof(uint64_t) * region_list->region_hist->nbin);
+                                        sizeof(uint64_t) * (size_t)nbin);
                                     memcpy(region_list->region_hist->bin, bin_ent->data,
-                                           sizeof(uint64_t) * region_list->region_hist->nbin);
+                                           sizeof(uint64_t) * (size_t)nbin);
 
                                     BULKI_Entity *incr_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("incr", PDC_STRING));
@@ -1910,6 +1944,9 @@ PDC_Server_restart(char *filename)
                 BULKI_get(dataserver_obj, BULKI_singleton_ENTITY("regions", PDC_STRING));
 
             if (ds_regions_array != NULL && ds_regions_array->pdc_type == PDC_BULKI) {
+                int ds_n_region = ds_regions_array->count;
+                if (ds_n_region < 0 || ds_n_region > PDC_CHECKPOINT_MAX_REGION_COUNT)
+                    PGOTO_ERROR(FAIL, "Suspicious dataserver n_region value %d from checkpoint", ds_n_region);
                 BULKI_Entity_Iterator *ds_region_iter = Bent_iterator_init(ds_regions_array, NULL, PDC_BULKI);
 
                 while (Bent_iterator_has_next_BULKI(ds_region_iter)) {
