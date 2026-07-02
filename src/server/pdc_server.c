@@ -91,11 +91,11 @@ sqlite3 *sqlite3_db_g;
 #define PDC_CHECKPOINT_MIN_INTERVAL_SEC 1800
 
 // Bounds for untrusted checkpoint data
-#define PDC_CHECKPOINT_MAX_METADATA_COUNT    10000000
-#define PDC_CHECKPOINT_MAX_KVTAG_KEY_LEN     65536
-#define PDC_CHECKPOINT_MAX_KVTAG_SIZE        (1u << 24)
-#define PDC_CHECKPOINT_MAX_REGION_COUNT      1000000
-#define PDC_CHECKPOINT_MAX_HIST_NBIN         65536
+#define PDC_CHECKPOINT_MAX_METADATA_COUNT 10000000
+#define PDC_CHECKPOINT_MAX_KVTAG_KEY_LEN  65536
+#define PDC_CHECKPOINT_MAX_KVTAG_SIZE     (1u << 24)
+#define PDC_CHECKPOINT_MAX_REGION_COUNT   1000000
+#define PDC_CHECKPOINT_MAX_HIST_NBIN      65536
 
 // Global debug variable to control debug printfs
 int is_debug_g       = 0;
@@ -1748,7 +1748,7 @@ PDC_Server_restart(char *filename)
 
                             if (key_ent == NULL || key_ent->data == NULL)
                                 PGOTO_ERROR(FAIL, "Invalid kvtag key in checkpoint");
-                            
+
                             int key_len = (int)strlen((char *)key_ent->data) + 1;
                             if (key_len <= 0 || key_len > PDC_CHECKPOINT_MAX_KVTAG_KEY_LEN)
                                 PGOTO_ERROR(FAIL, "Invalid key_len %d in checkpoint", key_len);
@@ -1838,15 +1838,15 @@ PDC_Server_restart(char *filename)
 
                                     BULKI_Entity *range_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("range", PDC_STRING));
-                                    region_list->region_hist->range = (double *)PDC_malloc(
-                                        sizeof(double) * (size_t)nbin * 2);
+                                    region_list->region_hist->range =
+                                        (double *)PDC_malloc(sizeof(double) * (size_t)nbin * 2);
                                     memcpy(region_list->region_hist->range, range_ent->data,
                                            sizeof(double) * (size_t)nbin * 2);
 
                                     BULKI_Entity *bin_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("bin", PDC_STRING));
-                                    region_list->region_hist->bin = (uint64_t *)PDC_malloc(
-                                        sizeof(uint64_t) * (size_t)nbin);
+                                    region_list->region_hist->bin =
+                                        (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)nbin);
                                     memcpy(region_list->region_hist->bin, bin_ent->data,
                                            sizeof(uint64_t) * (size_t)nbin);
 
