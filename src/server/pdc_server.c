@@ -1620,6 +1620,8 @@ PDC_Server_restart(char *filename)
     // read and validate bulki version
     BULKI_Entity *version_entity =
         BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("version_number", PDC_STRING));
+    if (version_entity == NULL)
+        PGOTO_ERROR(FAIL, "Missing version_number in checkpoint");
     int equal = BULKI_Entity_equal(version_entity,
                                    BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM));
     if (!equal) {
@@ -1641,6 +1643,8 @@ PDC_Server_restart(char *filename)
             // Extract hash key
             BULKI_Entity *hash_key_ent =
                 BULKI_get(container_entry, BULKI_singleton_ENTITY("hash_key", PDC_STRING));
+            if (hash_key_ent == NULL || hash_key_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing container hash_key in checkpoint");
             hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
             memcpy(hash_key, hash_key_ent->data, sizeof(uint32_t));
             total_mem_usage_g += sizeof(uint32_t);
@@ -1648,6 +1652,8 @@ PDC_Server_restart(char *filename)
             // Extract container data
             BULKI_Entity *cont_data_ent =
                 BULKI_get(container_entry, BULKI_singleton_ENTITY("cont_data", PDC_STRING));
+            if (cont_data_ent == NULL || cont_data_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing container cont_data in checkpoint");
             cont_entry = (pdc_cont_hash_table_entry_t *)PDC_malloc(sizeof(pdc_cont_hash_table_entry_t));
             memcpy(cont_entry, cont_data_ent->data, sizeof(pdc_cont_hash_table_entry_t));
             total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
@@ -1687,6 +1693,8 @@ PDC_Server_restart(char *filename)
             // extract hash key
             BULKI_Entity *hash_key_ent =
                 BULKI_get(hash_entry, BULKI_singleton_ENTITY("hash_key", PDC_STRING));
+            if (hash_key_ent == NULL || hash_key_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing hash_key in checkpoint metadata entry");
             hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
             memcpy(hash_key, hash_key_ent->data, sizeof(uint32_t));
             total_mem_usage_g += sizeof(uint32_t);
@@ -1715,6 +1723,8 @@ PDC_Server_restart(char *filename)
                     // extract metadata structure
                     BULKI_Entity *metadata_ent =
                         BULKI_get(metadata_obj, BULKI_singleton_ENTITY("metadata", PDC_STRING));
+                    if (metadata_ent == NULL || metadata_ent->data == NULL)
+                        PGOTO_ERROR(FAIL, "Missing metadata in checkpoint");
                     memcpy(metadata + i, metadata_ent->data, sizeof(pdc_metadata_t));
 
                     // initialize pointers
@@ -1770,6 +1780,8 @@ PDC_Server_restart(char *filename)
                             // extract type
                             BULKI_Entity *type_ent =
                                 BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("type", PDC_STRING));
+                            if (type_ent == NULL)
+                                PGOTO_ERROR(FAIL, "Missing kvtag type in checkpoint");
                             memcpy(&kvtag_list->kvtag->type, type_ent->data, sizeof(int8_t));
 
                             // extract value
@@ -1804,11 +1816,15 @@ PDC_Server_restart(char *filename)
                             // extract region structure
                             BULKI_Entity *region_ent =
                                 BULKI_get(region_entry, BULKI_singleton_ENTITY("region", PDC_STRING));
+                            if (region_ent == NULL || region_ent->data == NULL)
+                                PGOTO_ERROR(FAIL, "Missing region in checkpoint");
                             memcpy(region_list, region_ent->data, sizeof(region_list_t));
 
                             // extract histogram flag
                             BULKI_Entity *has_hist_ent =
                                 BULKI_get(region_entry, BULKI_singleton_ENTITY("has_hist", PDC_STRING));
+                            if (has_hist_ent == NULL)
+                                PGOTO_ERROR(FAIL, "Missing has_hist in checkpoint");
                             int has_hist;
                             memcpy(&has_hist, has_hist_ent->data, sizeof(int));
 
@@ -1824,6 +1840,8 @@ PDC_Server_restart(char *filename)
 
                                     BULKI_Entity *dtype_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("dtype", PDC_STRING));
+                                    if (dtype_ent == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram dtype in checkpoint");
                                     memcpy(&region_list->region_hist->dtype, dtype_ent->data, sizeof(int));
 
                                     BULKI_Entity *nbin_ent =
@@ -1838,20 +1856,26 @@ PDC_Server_restart(char *filename)
 
                                     BULKI_Entity *range_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("range", PDC_STRING));
+                                    if (range_ent == NULL || range_ent->data == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram range in checkpoint");
                                     region_list->region_hist->range = (double *)PDC_malloc(
                                         sizeof(double) * (size_t)nbin * 2);
                                     memcpy(region_list->region_hist->range, range_ent->data,
-                                           sizeof(double) * (size_t)nbin * 2);
+                                        sizeof(double) * (size_t)nbin * 2);
 
                                     BULKI_Entity *bin_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("bin", PDC_STRING));
+                                    if (bin_ent == NULL || bin_ent->data == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram bin in checkpoint");
                                     region_list->region_hist->bin = (uint64_t *)PDC_malloc(
                                         sizeof(uint64_t) * (size_t)nbin);
                                     memcpy(region_list->region_hist->bin, bin_ent->data,
-                                           sizeof(uint64_t) * (size_t)nbin);
+                                        sizeof(uint64_t) * (size_t)nbin);
 
                                     BULKI_Entity *incr_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("incr", PDC_STRING));
+                                    if (incr_ent == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram incr in checkpoint");
                                     memcpy(&region_list->region_hist->incr, incr_ent->data, sizeof(double));
                                 }
                             }
@@ -1937,6 +1961,8 @@ PDC_Server_restart(char *filename)
             // extract obj_id
             BULKI_Entity *obj_id_ent =
                 BULKI_get(dataserver_obj, BULKI_singleton_ENTITY("obj_id", PDC_STRING));
+            if (obj_id_ent == NULL || obj_id_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing dataserver obj_id in checkpoint");
             memcpy(&new_obj_reg->obj_id, obj_id_ent->data, sizeof(uint64_t));
 
             // extract regions
@@ -1956,6 +1982,8 @@ PDC_Server_restart(char *filename)
 
                     BULKI_Entity *region_ent =
                         BULKI_get(ds_region, BULKI_singleton_ENTITY("region", PDC_STRING));
+                    if (region_ent == NULL || region_ent->data == NULL)
+                        PGOTO_ERROR(FAIL, "Missing dataserver region in checkpoint");
                     memcpy(region_list, region_ent->data, sizeof(region_list_t));
 
                     // initialize fields (similar to above)
