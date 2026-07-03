@@ -1590,7 +1590,7 @@ PDC_Server_restart(char *filename)
     BULKI_Entity *containers_array         = NULL;
     BULKI_Entity *metadata_entries_array   = NULL;
     BULKI_Entity *dataserver_regions_array = NULL;
-    FILE *        file = NULL;
+    FILE *        file                     = NULL;
 
 #if defined(PDC_TIMING) || defined(ENABLE_MPI)
     double start = MPI_Wtime();
