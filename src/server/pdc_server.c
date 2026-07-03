@@ -1860,10 +1860,10 @@ PDC_Server_restart(char *filename)
                                         (double *)PDC_malloc(sizeof(double) * (size_t)nbin * 2);
                                     if (range_ent == NULL || range_ent->data == NULL)
                                         PGOTO_ERROR(FAIL, "Missing histogram range in checkpoint");
-                                    region_list->region_hist->range = (double *)PDC_malloc(
-                                        sizeof(double) * (size_t)nbin * 2);
+                                    region_list->region_hist->range =
+                                        (double *)PDC_malloc(sizeof(double) * (size_t)nbin * 2);
                                     memcpy(region_list->region_hist->range, range_ent->data,
-                                        sizeof(double) * (size_t)nbin * 2);
+                                           sizeof(double) * (size_t)nbin * 2);
 
                                     BULKI_Entity *bin_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("bin", PDC_STRING));
@@ -1871,10 +1871,10 @@ PDC_Server_restart(char *filename)
                                         (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)nbin);
                                     if (bin_ent == NULL || bin_ent->data == NULL)
                                         PGOTO_ERROR(FAIL, "Missing histogram bin in checkpoint");
-                                    region_list->region_hist->bin = (uint64_t *)PDC_malloc(
-                                        sizeof(uint64_t) * (size_t)nbin);
+                                    region_list->region_hist->bin =
+                                        (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)nbin);
                                     memcpy(region_list->region_hist->bin, bin_ent->data,
-                                        sizeof(uint64_t) * (size_t)nbin);
+                                           sizeof(uint64_t) * (size_t)nbin);
 
                                     BULKI_Entity *incr_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("incr", PDC_STRING));
