@@ -68,7 +68,7 @@ print_usage(char *name)
 int
 main(int argc, char *argv[])
 {
-    pdcid_t        pdc, cont_prop, cont;
+    pdcid_t        pdc, cont;
     pdcid_t *      obj_ids;
     int            n_obj, n_query, my_obj, my_obj_s, n_tag, n_tag_s;
     int            obj_1percent = 0;

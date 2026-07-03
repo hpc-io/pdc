@@ -1576,7 +1576,7 @@ PDC_Server_restart(char *filename)
     FUNC_ENTER(NULL);
 
     perr_t                       ret_value = SUCCEED;
-    int                          i, j, nobj = 0, all_nobj = 0, all_n_region, total_region = 0;
+    int                          i, nobj = 0, all_nobj = 0, all_n_region, total_region = 0;
     int                          all_cont;
     pdc_metadata_t *             metadata, *elt;
     region_list_t *              region_list;
@@ -1590,7 +1590,6 @@ PDC_Server_restart(char *filename)
     BULKI_Entity *containers_array         = NULL;
     BULKI_Entity *metadata_entries_array   = NULL;
     BULKI_Entity *dataserver_regions_array = NULL;
-    char          magic[PDC_CHECKPOINT_MAGIC_LEN + 1];
     FILE *        file = NULL;
 
 #if defined(PDC_TIMING) || defined(ENABLE_MPI)
