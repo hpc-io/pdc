@@ -1820,6 +1820,7 @@ PDC_Server_restart(char *filename)
                             if (region_ent == NULL || region_ent->data == NULL)
                                 PGOTO_ERROR(FAIL, "Missing region in checkpoint");
                             memcpy(region_list, region_ent->data, sizeof(region_list_t));
+                            region_list->region_hist = NULL; // pointer in blob is stale
 
                             // extract histogram flag
                             BULKI_Entity *has_hist_ent =
@@ -1986,6 +1987,7 @@ PDC_Server_restart(char *filename)
                     if (region_ent == NULL || region_ent->data == NULL)
                         PGOTO_ERROR(FAIL, "Missing/invalid dataserver region blob in checkpoint");
                     memcpy(region_list, region_ent->data, sizeof(region_list_t));
+                    region_list->region_hist = NULL; // pointer in blob is stale; rebuilt below if present
 
                     // initialize fields (similar to above)
                     region_list->buf       = NULL;

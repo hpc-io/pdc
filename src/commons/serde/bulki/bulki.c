@@ -874,6 +874,10 @@ BULKI_Entity_free(BULKI_Entity *bulk_entity, int free_struct)
                 bulki_entity_array = NULL;
             }
         }
+        // copilot suggests: BULKI_Entity_free() frees the internals of PDC_BULKI items
+        // but not the BULKI struct itself (BULKI_free(..., 0)), and then clears bulk_entity->data.
+        // For heap-allocated nested BULKI maps (as used in checkpoint trees), this leaks the BULKI
+        // wrapper and makes it impossible to free later.
         else if (bulk_entity->pdc_class == PDC_CLS_ITEM) {
             if (bulk_entity->pdc_type == PDC_BULKI && bulk_entity->data != NULL) {
                 BULKI_free((BULKI *)bulk_entity->data, 0);
