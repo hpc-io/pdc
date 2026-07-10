@@ -665,19 +665,23 @@ BULKI_delete_incremental(BULKI *bulki, BULKI_Entity *key)
     }
 
     BULKI_Entity *value      = NULL;
-    size_t        last_index = bulki->numKeys - 1;
+
+    if (bulki->numKeys == 0) {
+        bulki_refresh_total_size(bulki);
+        FUNC_LEAVE(NULL);
+    }
+
+    size_t last_index = bulki->numKeys - 1;
     for (size_t i = 0; i < bulki->numKeys; i++) {
         if (BULKI_Entity_equal(&bulki->header->keys[i], key)) {
             value = &bulki->data->values[i];
             bulki->header->headerSize -= key->size;
             bulki->data->dataSize -= value->size;
-            bulki->numKeys--;
             if (i != last_index) {
-                memcpy(&bulki->header->keys[i], &bulki->header->keys[bulki->numKeys - 1],
-                       sizeof(BULKI_Entity));
-                memcpy(&bulki->data->values[i], &bulki->data->values[bulki->numKeys - 1],
-                       sizeof(BULKI_Entity));
+                memcpy(&bulki->header->keys[i], &bulki->header->keys[last_index], sizeof(BULKI_Entity));
+                memcpy(&bulki->data->values[i], &bulki->data->values[last_index], sizeof(BULKI_Entity));
             }
+            bulki->numKeys--;
             break;
         }
     }

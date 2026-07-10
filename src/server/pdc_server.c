@@ -1577,7 +1577,7 @@ PDC_Server_restart(char *filename)
 
     perr_t                       ret_value = SUCCEED;
     int                          i, nobj = 0, all_nobj = 0, all_n_region, total_region = 0;
-    int                          all_cont;
+    int                          all_cont = 0;
     pdc_metadata_t *             metadata, *elt;
     region_list_t *              region_list;
     pdc_hash_table_entry_head *  entry;
@@ -1621,8 +1621,10 @@ PDC_Server_restart(char *filename)
         BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("version_number", PDC_STRING));
     if (version_entity == NULL)
         PGOTO_ERROR(FAIL, "Missing version_number in checkpoint");
-    int equal = BULKI_Entity_equal(version_entity,
-                                   BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM));
+    BULKI_Entity *expected_version =
+         BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM);
+    int equal = BULKI_Entity_equal(version_entity, expected_version);
+    BULKI_Entity_free(expected_version, 1);
     if (!equal) {
         LOG_ERROR("Checkpoint version mismatch: expected '%s', found '%s'\n", PDC_CHECKPOINT_MAGIC_CURRENT,
                   version_entity ? (char *)version_entity->data : "NULL");
@@ -1706,7 +1708,7 @@ PDC_Server_restart(char *filename)
             // Init hash table metadata (w/ bloom) with first obj
             PDC_Server_hash_table_list_init(entry, hash_key);
 
-            metadata = (pdc_metadata_t *)PDC_calloc(sizeof(pdc_metadata_t), count);
+            metadata = (pdc_metadata_t *)PDC_calloc(count, sizeof(pdc_metadata_t));
 
             // extract metadata objects array
             BULKI_Entity *metadata_objs_array =
@@ -1855,8 +1857,6 @@ PDC_Server_restart(char *filename)
 
                                     BULKI_Entity *range_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("range", PDC_STRING));
-                                    region_list->region_hist->range =
-                                        (double *)PDC_malloc(sizeof(double) * (size_t)nbin * 2);
                                     if (range_ent == NULL || range_ent->data == NULL)
                                         PGOTO_ERROR(FAIL, "Missing histogram range in checkpoint");
                                     region_list->region_hist->range =
@@ -1866,8 +1866,6 @@ PDC_Server_restart(char *filename)
 
                                     BULKI_Entity *bin_ent =
                                         BULKI_get(histogram, BULKI_singleton_ENTITY("bin", PDC_STRING));
-                                    region_list->region_hist->bin =
-                                        (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)nbin);
                                     if (bin_ent == NULL || bin_ent->data == NULL)
                                         PGOTO_ERROR(FAIL, "Missing histogram bin in checkpoint");
                                     region_list->region_hist->bin =
@@ -1964,6 +1962,8 @@ PDC_Server_restart(char *filename)
             // extract obj_id
             BULKI_Entity *obj_id_ent =
                 BULKI_get(dataserver_obj, BULKI_singleton_ENTITY("obj_id", PDC_STRING));
+            if (obj_id_ent == NULL || obj_id_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing or invalid obj_id in dataserver_regions checkpoint entry");
             memcpy(&new_obj_reg->obj_id, obj_id_ent->data, sizeof(uint64_t));
 
             // extract regions
@@ -1983,6 +1983,8 @@ PDC_Server_restart(char *filename)
 
                     BULKI_Entity *region_ent =
                         BULKI_get(ds_region, BULKI_singleton_ENTITY("region", PDC_STRING));
+                    if (region_ent == NULL || region_ent->data == NULL)
+                        PGOTO_ERROR(FAIL, "Missing/invalid dataserver region blob in checkpoint");
                     memcpy(region_list, region_ent->data, sizeof(region_list_t));
 
                     // initialize fields (similar to above)

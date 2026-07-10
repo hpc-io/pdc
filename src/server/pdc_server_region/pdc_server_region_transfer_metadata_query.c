@@ -331,10 +331,10 @@ transfer_request_metadata_query_checkpoint_bulki(BULKI **checkpoint_bulki)
     int                      obj_count = 0;
     BULKI *                  bulki     = NULL;
 
-    //    if (checkpoint_bulki == NULL) {
-    //        LOG_ERROR("checkpoint_bulki output parameter is NULL\n");
-    //        PGOTO_ERROR(FAIL, "Invalid parameter");
-    //    }
+    if (checkpoint_bulki == NULL) {
+        LOG_ERROR("checkpoint_bulki output parameter is NULL\n");
+        PGOTO_ERROR(FAIL, "Invalid parameter");
+    }
 
     pthread_mutex_lock(&metadata_query_mutex);
 
