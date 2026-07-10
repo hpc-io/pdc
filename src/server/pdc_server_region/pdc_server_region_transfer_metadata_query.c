@@ -119,7 +119,7 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
 
             if (regions_array != NULL && regions_array->pdc_type == PDC_BULKI) {
                 BULKI_Entity_Iterator *region_iter = Bent_iterator_init(regions_array, NULL, PDC_BULKI);
-                int ndim = obj_pkg->ndim;
+                int                    ndim        = obj_pkg->ndim;
 
                 while (Bent_iterator_has_next_BULKI(region_iter)) {
                     BULKI *region_bulki = Bent_iterator_next_BULKI(region_iter);
@@ -127,9 +127,8 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
                     pdc_region_metadata_pkg *region_pkg =
                         (pdc_region_metadata_pkg *)PDC_malloc(sizeof(pdc_region_metadata_pkg));
 
-                    region_pkg->reg_offset =
-                        (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)ndim * 2);
-                    region_pkg->reg_size = region_pkg->reg_offset + ndim;
+                    region_pkg->reg_offset = (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)ndim * 2);
+                    region_pkg->reg_size   = region_pkg->reg_offset + ndim;
 
                     BULKI_Entity *server_id_ent =
                         BULKI_get(region_bulki, BULKI_singleton_ENTITY("data_server_id", PDC_STRING));
