@@ -110,8 +110,8 @@ main(int argc, char *argv[])
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 #else
-    proc_num = 1;
-    my_rank  = 0;
+    proc_num             = 1;
+    my_rank              = 0;
 #endif
     if (argc < 3) {
         if (my_rank == 0)
