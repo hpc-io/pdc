@@ -1,26 +1,26 @@
 /*
- * Copyright Notice for
- * Proactive Data Containers (PDC) Software Library and Utilities
- * -----------------------------------------------------------------------------
+* Copyright Notice for
+* Proactive Data Containers (PDC) Software Library and Utilities
+* -----------------------------------------------------------------------------
 
- *** Copyright Notice ***
+*** Copyright Notice ***
 
- * Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
- * University of California, through Lawrence Berkeley National Laboratory,
- * UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
- * Group (subject to receipt of any required approvals from the U.S. Dept. of
- * Energy).  All rights reserved.
+* Proactive Data Containers (PDC) Copyright (c) 2017, The Regents of the
+* University of California, through Lawrence Berkeley National Laboratory,
+* UChicago Argonne, LLC, operator of Argonne National Laboratory, and The HDF
+* Group (subject to receipt of any required approvals from the U.S. Dept. of
+* Energy).  All rights reserved.
 
- * If you have questions about your rights to use or distribute this software,
- * please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
+* If you have questions about your rights to use or distribute this software,
+* please contact Berkeley Lab's Innovation & Partnerships Office at  IPO@lbl.gov.
 
- * NOTICE.  This Software was developed under funding from the U.S. Department of
- * Energy and the U.S. Government consequently retains certain rights. As such, the
- * U.S. Government has been granted for itself and others acting on its behalf a
- * paid-up, nonexclusive, irrevocable, worldwide license in the Software to
- * reproduce, distribute copies to the public, prepare derivative works, and
- * perform publicly and display publicly, and to permit other to do so.
- */
+* NOTICE.  This Software was developed under funding from the U.S. Department of
+* Energy and the U.S. Government consequently retains certain rights. As such, the
+* U.S. Government has been granted for itself and others acting on its behalf a
+* paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+* reproduce, distribute copies to the public, prepare derivative works, and
+* perform publicly and display publicly, and to permit other to do so.
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,10 +58,30 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
     return 1;
 }
 
+/*
+ * Derive this rank's tag work from its object partition intersected with [0, n_tag).
+ * Each rank tags only objects it created; tag value equals the global object index.
+ */
+static void
+assign_tag_work_from_obj_partition(int my_obj_s, int my_obj, int n_tag, int *my_tag, int *my_tag_s)
+{
+    if (my_obj_s >= n_tag) {
+        *my_tag   = 0;
+        *my_tag_s = 0;
+    }
+    else {
+        *my_tag_s = my_obj_s;
+        *my_tag   = my_obj;
+        if (*my_tag_s + *my_tag > n_tag)
+            *my_tag = n_tag - *my_tag_s;
+    }
+}
+
 void
 print_usage(char *name)
 {
-    LOG_JUST_PRINT("%s n_obj n_add_tag n_query\n", name);
+    // required parameters: n_obj and n_add_tag
+    LOG_JUST_PRINT("%s n_obj n_add_tag\n", name);
 }
 
 int
@@ -69,47 +89,44 @@ main(int argc, char *argv[])
 {
     pdcid_t     pdc, cont_prop, cont, obj_prop;
     pdcid_t *   obj_ids;
-    int         n_obj, n_add_tag, n_query, my_obj, my_obj_s, my_add_tag, my_query, my_add_tag_s, my_query_s;
-    int         obj_1percent = 0, tag_1percent = 0, query_1percent = 0;
+    int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
+    int         obj_1percent = 0, tag_1percent = 0;
     int         proc_num, my_rank, i, v;
     char        obj_name[128];
     double      stime, total_time, percent_time;
     pdc_kvtag_t kvtag;
-    void **     values;
-    pdc_var_type_t value_type;
-    size_t         value_size;
-    int            ret_value = SUCCEED;
+    int         ret_value = SUCCEED;
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+    proc_num = 1;
+    my_rank  = 0;
 #endif
-    if (argc < 4) {
+    if (argc < 3) {
         if (my_rank == 0)
             print_usage(argv[0]);
         PGOTO_DONE(FAIL);
     }
     n_obj     = atoi(argv[1]);
     n_add_tag = atoi(argv[2]);
-    n_query   = atoi(argv[3]);
 
-    if (n_add_tag > n_obj || n_query > n_obj) {
+    if (n_add_tag > n_obj) {
         if (my_rank == 0)
-            LOG_ERROR("n_add_tag or n_query larger than n_obj! Exiting...\n");
+            LOG_ERROR("n_add_tag larger than n_obj! Exiting...\n");
         PGOTO_DONE(FAIL);
     }
 
-    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
-    assign_work_to_rank(my_rank, proc_num, n_query, &my_query, &my_query_s);
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
+    assign_tag_work_from_obj_partition(my_obj_s, my_obj, n_add_tag, &my_add_tag, &my_add_tag_s);
 
-    obj_1percent   = my_obj / 100;
-    tag_1percent   = my_add_tag / 100;
-    query_1percent = my_query / 100;
+    obj_1percent = my_obj / 100;
+    tag_1percent = my_add_tag / 100;
 
     if (my_rank == 0)
-        LOG_INFO("Create %d obj, %d tags, query %d\n", my_obj, my_add_tag, my_query);
+        LOG_INFO("Create %d obj, %d tags\n", my_obj, my_add_tag);
 
     // create a pdc
     pdc = PDCinit("pdc");
@@ -129,7 +146,7 @@ main(int argc, char *argv[])
     if (obj_prop <= 0)
         PGOTO_ERROR(FAIL, "Failed to create object property");
 
-    // Create a number of objects, add at least one tag to that object
+    // create a number of objects, add at least one tag to that object
     obj_ids = (pdcid_t *)calloc(my_obj, sizeof(pdcid_t));
 
 #ifdef ENABLE_MPI
@@ -178,9 +195,9 @@ main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
     for (i = 0; i < my_add_tag; i++) {
-        v = i + my_add_tag_s;
+        v = my_add_tag_s + i;
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
-            PGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d", i + my_obj_s);
+            PGOTO_ERROR(FAIL, "Failed to add a kvtag to obj%d", v);
 
         if (tag_1percent > 0 && i % tag_1percent == 0) {
 #ifdef ENABLE_MPI
@@ -205,48 +222,11 @@ main(int argc, char *argv[])
         LOG_INFO("Total time to add tags to %11d objects: %7.2f , throughput %10.2f \n", n_add_tag,
                  total_time, n_add_tag / total_time);
 
-    values = (void **)calloc(my_query, sizeof(void *));
+    free(obj_ids);
 
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    stime = MPI_Wtime();
-#endif
-    for (i = 0; i < my_query; i++) {
-        if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_type,
-                           (void *)&value_size) < 0)
-            PGOTO_ERROR(FAIL, "Failed to get a kvtag from o%d\n", i + my_query_s);
-
-        if (query_1percent > 0 && i % query_1percent == 0) {
-#ifdef ENABLE_MPI
-            MPI_Barrier(MPI_COMM_WORLD);
-            percent_time = MPI_Wtime() - stime;
-            if (my_rank == 0) {
-                int    current_percentage             = i / query_1percent;
-                int    estimated_current_query_number = n_query / 100 * current_percentage;
-                double tps                            = estimated_current_query_number / percent_time;
-                LOG_INFO("[QRY PROGRESS %3d%% ] %11d queries, %7.2f seconds, TPS: %10.2f \n",
-                         current_percentage, estimated_current_query_number, percent_time, tps);
-            }
-#endif
-        }
-    }
-
-#ifdef ENABLE_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
-    total_time = MPI_Wtime() - stime;
-#endif
-    if (my_rank == 0)
-        LOG_INFO("Total time to retrieve 1 tag from %11d objects: %7.2f , throughput %10.2f \n", n_query,
-                 total_time, n_query / total_time);
-
-    for (i = 0; i < my_query; i++) {
-        if (*(int *)(values[i]) != i + my_add_tag_s)
-            PGOTO_ERROR(FAIL, "Error with retrieved tag from o%d", i + my_query_s);
-        free(values[i]);
-    }
-    free(values);
     if (my_rank == 0) {
-        LOG_INFO("Done checking values\n");
+        // confirming tag addition completion
+        LOG_INFO("Done adding tags\n");
     }
 
 done:

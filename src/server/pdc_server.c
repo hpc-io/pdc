@@ -74,10 +74,28 @@ rocksdb_t *rocksdb_g;
 sqlite3 *sqlite3_db_g;
 #endif
 
+#include "bulki.h"
+#include "bulki_serde.h"
+
+// PDC checkpoint version management
+#define PDC_CHECKPOINT_MAGIC_2026 "PDC26.03" // Year 2026, month 03
+#define PDC_CHECKPOINT_MAGIC_2027 "PDC27.01" // Year 2027, month 01
+
+#define PDC_CHECKPOINT_MAGIC_LEN           8 // All must be same length
+#define PDC_CHECKPOINT_MAGIC_CURRENT       PDC_CHECKPOINT_MAGIC_2026
+#define PDC_CHECKPOINT_VERSION_MATCH(m, v) (strncmp((m), (v), 8) == 0)
+
 // Check how long PDC has run every OP_INTERVAL operations
 #define PDC_CHECKPOINT_CHK_OP_INTERVAL 2000
 // Checkpoint every INTERVAL_SEC second and at least OP_INTERVAL operations
 #define PDC_CHECKPOINT_MIN_INTERVAL_SEC 1800
+
+// Bounds for untrusted checkpoint data
+#define PDC_CHECKPOINT_MAX_METADATA_COUNT 10000000
+#define PDC_CHECKPOINT_MAX_KVTAG_KEY_LEN  65536
+#define PDC_CHECKPOINT_MAX_KVTAG_SIZE     (1u << 24)
+#define PDC_CHECKPOINT_MAX_REGION_COUNT   1000000
+#define PDC_CHECKPOINT_MAX_HIST_NBIN      65536
 
 // Global debug variable to control debug printfs
 int is_debug_g       = 0;
@@ -965,7 +983,7 @@ drc_access_again:
     }
     else {
         // We are starting a brand new server
-        transfer_request_metadata_query_init(pdc_server_size_g, NULL);
+        transfer_request_metadata_query_init_bulki(pdc_server_size_g, NULL);
         if (is_hash_table_init_g != 1) {
             ret_value = PDC_Server_init_hash_table();
             if (ret_value != SUCCEED)
@@ -1210,12 +1228,13 @@ PDC_Server_checkpoint()
     HashTablePair     pair;
     char              checkpoint_file[ADDR_MAX], checkpoint_file_local[ADDR_MAX], cmd[4096];
     HashTableIterator hash_table_iter;
-    char *            checkpoint;
     char *            env_char;
-    uint64_t          checkpoint_size;
     bool              use_tmpfs = false;
     FILE *            file;
     int               fd;
+
+    // BULKI-specific variables
+    BULKI *checkpoint_bulki = NULL;
 
 #ifdef PDC_TIMING
     // Timing
@@ -1248,35 +1267,44 @@ PDC_Server_checkpoint()
     if (pdc_server_rank_g == 0)
         LOG_INFO("Checkpoint file [%s]\n", checkpoint_file);
 
-    if (use_tmpfs)
-        fd = open(checkpoint_file_local, O_RDWR | O_CREAT | O_TRUNC, 0600);
-    else
-        fd = open(checkpoint_file, O_RDWR | O_CREAT | O_TRUNC, 0600);
-    if (fd < 0)
-        PGOTO_ERROR(FAIL, "Failed to open checkpoint file");
-    file = fdopen(fd, "w+");
-    if (file == NULL) {
-        close(fd);
-        PGOTO_ERROR(FAIL, "Checkpoint file open error");
-    }
+    // initialize BULKI structure - estimate initial capacity
+    checkpoint_bulki = BULKI_init(5);
 
-    // Checkpoint containers
+    // BULKI version number for validation
+    BULKI_put_incremental(checkpoint_bulki, BULKI_singleton_ENTITY("version_number", PDC_STRING),
+                          BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM));
+
+    // checkpoint containers
     n_entry = hash_table_num_entries(container_hash_table_g);
-    fwrite(&n_entry, sizeof(int), 1, file);
+
+    BULKI_Entity *containers_array = empty_BULKI_Array_Entity_with_capacity(n_entry > 0 ? n_entry : 1);
 
     hash_table_iterate(container_hash_table_g, &hash_table_iter);
     while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
         pair      = hash_table_iter_next(&hash_table_iter);
         cont_head = pair.value;
 
+        BULKI *container_entry = BULKI_init(2);
+
         hash_key = PDC_get_hash_by_name(cont_head->cont_name);
-        fwrite(&hash_key, sizeof(uint32_t), 1, file);
-        fwrite(cont_head, sizeof(pdc_cont_hash_table_entry_t), 1, file);
+        BULKI_put_incremental(container_entry, BULKI_singleton_ENTITY("hash_key", PDC_STRING),
+                              BULKI_ENTITY(&hash_key, 1, PDC_UINT32, PDC_CLS_ITEM));
+
+        // store the container structure as binary blob
+        BULKI_put_incremental(
+            container_entry, BULKI_singleton_ENTITY("cont_data", PDC_STRING),
+            BULKI_ENTITY(cont_head, sizeof(pdc_cont_hash_table_entry_t), PDC_UINT8, PDC_CLS_ARRAY));
+
+        BULKI_ENTITY_append_BULKI_incremental(containers_array, container_entry);
     }
 
-    // DHT
+    BULKI_put_incremental(checkpoint_bulki, BULKI_singleton_ENTITY("containers", PDC_STRING),
+                          containers_array);
+
+    // checkpoint metadata hash table
     n_entry = hash_table_num_entries(metadata_hash_table_g);
-    fwrite(&n_entry, sizeof(int), 1, file);
+
+    BULKI_Entity *metadata_entries_array = empty_BULKI_Array_Entity_with_capacity(n_entry > 0 ? n_entry : 1);
 
     hash_table_iterate(metadata_hash_table_g, &hash_table_iter);
 
@@ -1284,82 +1312,198 @@ PDC_Server_checkpoint()
         pair = hash_table_iter_next(&hash_table_iter);
         head = pair.value;
 
-        fwrite(&head->n_obj, sizeof(int), 1, file);
-        hash_key = PDC_get_hash_by_name(head->metadata->obj_name);
-        fwrite(&hash_key, sizeof(uint32_t), 1, file);
+        BULKI *hash_entry = BULKI_init(3);
 
-        // Iterate every metadata structure in current entry
+        // Store number of objects
+        BULKI_put_incremental(hash_entry, BULKI_singleton_ENTITY("n_obj", PDC_STRING),
+                              BULKI_ENTITY(&head->n_obj, 1, PDC_INT, PDC_CLS_ITEM));
+
+        hash_key = PDC_get_hash_by_name(head->metadata->obj_name);
+        BULKI_put_incremental(hash_entry, BULKI_singleton_ENTITY("hash_key", PDC_STRING),
+                              BULKI_ENTITY(&hash_key, 1, PDC_UINT32, PDC_CLS_ITEM));
+
+        // array of metadata objects
+        BULKI_Entity *metadata_objs_array =
+            empty_BULKI_Array_Entity_with_capacity(head->n_obj > 0 ? head->n_obj : 1);
+
+        // iterate every metadata structure in current entry
         DL_FOREACH(head->metadata, elt)
         {
-            // Write entire metadata structure
-            fwrite(elt, sizeof(pdc_metadata_t), 1, file);
+            BULKI *metadata_obj = BULKI_init(3);
 
-            // Write kv tags
+            // store metadata structure
+            BULKI_put_incremental(metadata_obj, BULKI_singleton_ENTITY("metadata", PDC_STRING),
+                                  BULKI_ENTITY(elt, sizeof(pdc_metadata_t), PDC_UINT8, PDC_CLS_ARRAY));
+
+            // kv tags
             DL_COUNT(elt->kvtag_list_head, kvlist_elt, n_kvtag);
-            fwrite(&n_kvtag, sizeof(int), 1, file);
+
+            BULKI_Entity *kvtags_array = empty_BULKI_Array_Entity_with_capacity(n_kvtag > 0 ? n_kvtag : 1);
             DL_FOREACH(elt->kvtag_list_head, kvlist_elt)
             {
-                key_len = strlen(kvlist_elt->kvtag->name) + 1;
-                fwrite(&key_len, sizeof(int), 1, file);
-                fwrite(kvlist_elt->kvtag->name, key_len, 1, file);
-                fwrite(&kvlist_elt->kvtag->size, sizeof(uint32_t), 1, file);
-                fwrite(&kvlist_elt->kvtag->type, sizeof(int8_t), 1, file);
-                fwrite(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size, 1, file);
+                BULKI *kvtag_entry = BULKI_init(4);
+
+                BULKI_put_incremental(kvtag_entry, BULKI_singleton_ENTITY("key", PDC_STRING),
+                                      BULKI_singleton_ENTITY(kvlist_elt->kvtag->name, PDC_STRING));
+
+                BULKI_put_incremental(kvtag_entry, BULKI_singleton_ENTITY("size", PDC_STRING),
+                                      BULKI_ENTITY(&kvlist_elt->kvtag->size, 1, PDC_UINT32, PDC_CLS_ITEM));
+
+                BULKI_put_incremental(kvtag_entry, BULKI_singleton_ENTITY("type", PDC_STRING),
+                                      BULKI_ENTITY(&kvlist_elt->kvtag->type, 1, PDC_INT8, PDC_CLS_ITEM));
+
+                BULKI_put_incremental(kvtag_entry, BULKI_singleton_ENTITY("value", PDC_STRING),
+                                      BULKI_ENTITY(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size,
+                                                   PDC_UINT8, PDC_CLS_ARRAY));
+
+                BULKI_ENTITY_append_BULKI_incremental(kvtags_array, kvtag_entry);
             }
 
-            // Write region info
+            BULKI_put_incremental(metadata_obj, BULKI_singleton_ENTITY("kvtags", PDC_STRING), kvtags_array);
+
+            // storage regions
             n_region = 0;
             DL_COUNT(elt->storage_region_list_head, region_elt, n_region);
-            fwrite(&n_region, sizeof(int), 1, file);
+
+            BULKI_Entity *regions_array = empty_BULKI_Array_Entity_with_capacity(n_region > 0 ? n_region : 1);
             if (n_region > 0) {
                 n_write_region = 0;
                 DL_FOREACH(elt->storage_region_list_head, region_elt)
                 {
-                    fwrite(region_elt, sizeof(region_list_t), 1, file);
-                    n_write_region++;
+                    BULKI *region_entry = BULKI_init(3);
+
+                    // store region structure
+                    BULKI_put_incremental(
+                        region_entry, BULKI_singleton_ENTITY("region", PDC_STRING),
+                        BULKI_ENTITY(region_elt, sizeof(region_list_t), PDC_UINT8, PDC_CLS_ARRAY));
+
+                    // store histogram if present
                     int has_hist = 0;
                     if (region_elt->region_hist != NULL)
                         has_hist = 1;
-                    fwrite(&has_hist, sizeof(int), 1, file);
+
+                    BULKI_put_incremental(region_entry, BULKI_singleton_ENTITY("has_hist", PDC_STRING),
+                                          BULKI_ENTITY(&has_hist, 1, PDC_INT, PDC_CLS_ITEM));
+
                     if (has_hist == 1) {
-                        fwrite(&region_elt->region_hist->dtype, sizeof(int), 1, file);
-                        fwrite(&region_elt->region_hist->nbin, sizeof(int), 1, file);
-                        fwrite(region_elt->region_hist->range, sizeof(double),
-                               region_elt->region_hist->nbin * 2, file);
-                        fwrite(region_elt->region_hist->bin, sizeof(uint64_t), region_elt->region_hist->nbin,
-                               file);
-                        fwrite(&region_elt->region_hist->incr, sizeof(double), 1, file);
+                        BULKI *histogram = BULKI_init(5);
+
+                        BULKI_put_incremental(
+                            histogram, BULKI_singleton_ENTITY("dtype", PDC_STRING),
+                            BULKI_ENTITY(&region_elt->region_hist->dtype, 1, PDC_INT, PDC_CLS_ITEM));
+
+                        BULKI_put_incremental(
+                            histogram, BULKI_singleton_ENTITY("nbin", PDC_STRING),
+                            BULKI_ENTITY(&region_elt->region_hist->nbin, 1, PDC_INT, PDC_CLS_ITEM));
+
+                        BULKI_put_incremental(histogram, BULKI_singleton_ENTITY("range", PDC_STRING),
+                                              BULKI_ENTITY(region_elt->region_hist->range,
+                                                           region_elt->region_hist->nbin * 2, PDC_DOUBLE,
+                                                           PDC_CLS_ARRAY));
+
+                        BULKI_put_incremental(histogram, BULKI_singleton_ENTITY("bin", PDC_STRING),
+                                              BULKI_ENTITY(region_elt->region_hist->bin,
+                                                           region_elt->region_hist->nbin, PDC_UINT64,
+                                                           PDC_CLS_ARRAY));
+
+                        BULKI_put_incremental(
+                            histogram, BULKI_singleton_ENTITY("incr", PDC_STRING),
+                            BULKI_ENTITY(&region_elt->region_hist->incr, 1, PDC_DOUBLE, PDC_CLS_ITEM));
+
+                        BULKI_put_incremental(region_entry, BULKI_singleton_ENTITY("histogram", PDC_STRING),
+                                              BULKI_ENTITY(histogram, 1, PDC_BULKI, PDC_CLS_ITEM));
                     }
+
+                    BULKI_ENTITY_append_BULKI_incremental(regions_array, region_entry);
+                    n_write_region++;
                 }
 
                 if (n_write_region != n_region)
                     LOG_ERROR("Error with number of regions\n");
             }
+
+            BULKI_put_incremental(metadata_obj, BULKI_singleton_ENTITY("regions", PDC_STRING), regions_array);
+
+            BULKI_ENTITY_append_BULKI_incremental(metadata_objs_array, metadata_obj);
+
             metadata_size++;
             region_count += n_region;
-        } // End for metadata entry linked list
-    }     // End for hash table metadata entry
+        } // end for metadata entry linked list
 
-    // Note data server region are managed by data server instead of metadata server
+        BULKI_put_incremental(hash_entry, BULKI_singleton_ENTITY("metadata_objects", PDC_STRING),
+                              metadata_objs_array);
+
+        BULKI_ENTITY_append_BULKI_incremental(metadata_entries_array, hash_entry);
+    } // end for hash table metadata entry
+
+    BULKI_put_incremental(checkpoint_bulki, BULKI_singleton_ENTITY("metadata_entries", PDC_STRING),
+                          metadata_entries_array);
+
+    // data server regions
     data_server_region_t *region = NULL;
     DL_COUNT(dataserver_region_g, region, n_objs);
-    fwrite(&n_objs, sizeof(int), 1, file);
+
+    BULKI_Entity *dataserver_regions_array = empty_BULKI_Array_Entity_with_capacity(n_objs > 0 ? n_objs : 1);
+
     DL_FOREACH(dataserver_region_g, region)
     {
-        fwrite(&region->obj_id, sizeof(uint64_t), 1, file);
+        BULKI *dataserver_obj = BULKI_init(2);
+
+        BULKI_put_incremental(dataserver_obj, BULKI_singleton_ENTITY("obj_id", PDC_STRING),
+                              BULKI_ENTITY(&region->obj_id, 1, PDC_UINT64, PDC_CLS_ITEM));
+
         DL_COUNT(region->region_storage_head, region_elt, n_region);
-        fwrite(&n_region, sizeof(int), 1, file);
+
+        BULKI_Entity *ds_regions_array = empty_BULKI_Array_Entity_with_capacity(n_region > 0 ? n_region : 1);
         DL_FOREACH(region->region_storage_head, region_elt)
         {
-            fwrite(region_elt, sizeof(region_list_t), 1, file);
+            BULKI *ds_region = BULKI_init(1);
+            BULKI_put_incremental(ds_region, BULKI_singleton_ENTITY("region", PDC_STRING),
+                                  BULKI_ENTITY(region_elt, sizeof(region_list_t), PDC_UINT8, PDC_CLS_ARRAY));
+
+            BULKI_ENTITY_append_BULKI_incremental(ds_regions_array, ds_region);
         }
+
+        BULKI_put_incremental(dataserver_obj, BULKI_singleton_ENTITY("regions", PDC_STRING),
+                              ds_regions_array);
+
+        BULKI_ENTITY_append_BULKI_incremental(dataserver_regions_array, dataserver_obj);
     }
 
-    transfer_request_metadata_query_checkpoint(&checkpoint, &checkpoint_size);
-    fwrite(&checkpoint_size, sizeof(uint64_t), 1, file);
-    fwrite(checkpoint, checkpoint_size, 1, file);
+    BULKI_put_incremental(checkpoint_bulki, BULKI_singleton_ENTITY("dataserver_regions", PDC_STRING),
+                          dataserver_regions_array);
 
-    fclose(file);
+    // transfer request metadata query
+    BULKI *transfer_query_bulki = NULL;
+    ret_value                   = transfer_request_metadata_query_checkpoint_bulki(&transfer_query_bulki);
+    if (ret_value != SUCCEED || transfer_query_bulki == NULL) {
+        LOG_ERROR("Failed to create transfer query checkpoint\n");
+        PGOTO_ERROR(FAIL, "Transfer query checkpoint failed");
+    }
+
+    BULKI_put_incremental(checkpoint_bulki, BULKI_singleton_ENTITY("transfer_query", PDC_STRING),
+                          BULKI_ENTITY(transfer_query_bulki, 1, PDC_BULKI, PDC_CLS_ITEM));
+
+    // ========== Serialize and Write ==========
+    if (use_tmpfs)
+        fd = open(checkpoint_file_local, O_RDWR | O_CREAT | O_TRUNC, 0600);
+    else
+        fd = open(checkpoint_file, O_RDWR | O_CREAT | O_TRUNC, 0600);
+    if (fd < 0)
+        PGOTO_ERROR(FAIL, "Failed to open checkpoint file");
+    file = fdopen(fd, "wb");
+    if (file == NULL) {
+        close(fd);
+        PGOTO_ERROR(FAIL, "Checkpoint file open error");
+    }
+
+    // note: BULKI_Entity_serialize_to_file() still do in-memory serialization
+    // note: need to implement a streaming file writing without in-memory serialization
+    BULKI_serialize_to_file(checkpoint_bulki, file);
+    file = NULL; // file was closed by BULKI_serialize_to_file()
+
+    // Clean up
+    BULKI_free(checkpoint_bulki, 1);
 
     if (use_tmpfs) {
 #ifdef PDC_TIMING
@@ -1394,7 +1538,7 @@ PDC_Server_checkpoint()
     checkpoint_time = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 
     if (pdc_server_rank_g == 0)
-        LOG_ERROR("Rank[ ALL]: Total checkpoint time = %.6f\n", checkpoint_time);
+        LOG_INFO("Rank[ ALL]: Total checkpoint time = %.6f\n", checkpoint_time);
 #endif
 
     if (pdc_server_rank_g == 0) {
@@ -1431,289 +1575,469 @@ PDC_Server_restart(char *filename)
 {
     FUNC_ENTER(NULL);
 
-    perr_t ret_value = SUCCEED;
-    int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
-                              n_kvtag, key_len, nbin;
-    uint32_t                     kv_size;
-    int                          n_cont, all_cont;
+    perr_t                       ret_value = SUCCEED;
+    int                          i, nobj = 0, all_nobj = 0, all_n_region, total_region = 0;
+    int                          all_cont = 0;
     pdc_metadata_t *             metadata, *elt;
     region_list_t *              region_list;
     pdc_hash_table_entry_head *  entry;
     pdc_cont_hash_table_entry_t *cont_entry;
     uint32_t *                   hash_key;
     unsigned                     idx;
-    uint64_t                     checkpoint_size;
-    char *                       checkpoint_buf;
-#ifdef PDC_TIMING
+
+    // BULKI-specific variables
+    BULKI *       checkpoint_bulki         = NULL;
+    BULKI_Entity *containers_array         = NULL;
+    BULKI_Entity *metadata_entries_array   = NULL;
+    BULKI_Entity *dataserver_regions_array = NULL;
+    FILE *        file                     = NULL;
+
+#if defined(PDC_TIMING) || defined(ENABLE_MPI)
     double start = MPI_Wtime();
 #endif
 
     // init hash table
     ret_value = PDC_Server_init_hash_table();
     if (ret_value != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error wtih PDC_Server_init_hash_table");
+        PGOTO_ERROR(FAIL, "Error with PDC_Server_init_hash_table");
 
-    FILE *file = fopen(filename, "r");
-    if (file == NULL)
+    // open file
+    file = fopen(filename, "rb");
+    if (file == NULL) {
         PGOTO_ERROR(FAIL, "Error with fopen, filename: [%s]", filename);
-
-    if (fread(&n_cont, sizeof(int), 1, file) != 1) {
-        LOG_ERROR("Read failed for n_count\n");
     }
-    all_cont = n_cont;
-    while (n_cont > 0) {
-        hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
-        if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) {
-            LOG_ERROR("Read failed for hash_key\n");
-        }
-        total_mem_usage_g += sizeof(uint32_t);
 
-        // Reconstruct hash table
-        cont_entry = (pdc_cont_hash_table_entry_t *)PDC_malloc(sizeof(pdc_cont_hash_table_entry_t));
-        total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
-        if (fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file) != 1) {
-            LOG_ERROR("Read failed for cont_entry\n");
-        }
+    // note: BULKI_deserialize_from_file will close the file
+    checkpoint_bulki = BULKI_deserialize_from_file(file);
+    file             = NULL; // File was closed by BULKI_deserialize_from_file
+
+    if (checkpoint_bulki == NULL) {
+        LOG_ERROR("Failed to deserialize checkpoint file\n");
+        PGOTO_ERROR(FAIL, "Deserialization failed");
+    }
+
+    // read and validate bulki version
+    BULKI_Entity *version_entity =
+        BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("version_number", PDC_STRING));
+    if (version_entity == NULL)
+        PGOTO_ERROR(FAIL, "Missing version_number in checkpoint");
+    BULKI_Entity *expected_version = BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM);
+    int           equal            = BULKI_Entity_equal(version_entity, expected_version);
+    BULKI_Entity_free(expected_version, 1);
+    if (!equal) {
+        LOG_ERROR("Checkpoint version mismatch: expected '%s', found '%s'\n", PDC_CHECKPOINT_MAGIC_CURRENT,
+                  version_entity ? (char *)version_entity->data : "NULL");
+        PGOTO_ERROR(FAIL, "Checkpoint version mismatch");
+    }
+
+    // restore containers
+    containers_array = BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("containers", PDC_STRING));
+
+    if (containers_array != NULL && containers_array->pdc_type == PDC_BULKI) {
+        BULKI_Entity_Iterator *cont_iter = Bent_iterator_init(containers_array, NULL, PDC_BULKI);
+        all_cont                         = containers_array->count;
+
+        while (Bent_iterator_has_next_BULKI(cont_iter)) {
+            BULKI *container_entry = Bent_iterator_next_BULKI(cont_iter);
+
+            // Extract hash key
+            BULKI_Entity *hash_key_ent =
+                BULKI_get(container_entry, BULKI_singleton_ENTITY("hash_key", PDC_STRING));
+            if (hash_key_ent == NULL || hash_key_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing container hash_key in checkpoint");
+            hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
+            memcpy(hash_key, hash_key_ent->data, sizeof(uint32_t));
+            total_mem_usage_g += sizeof(uint32_t);
+
+            // Extract container data
+            BULKI_Entity *cont_data_ent =
+                BULKI_get(container_entry, BULKI_singleton_ENTITY("cont_data", PDC_STRING));
+            if (cont_data_ent == NULL || cont_data_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing container cont_data in checkpoint");
+            cont_entry = (pdc_cont_hash_table_entry_t *)PDC_malloc(sizeof(pdc_cont_hash_table_entry_t));
+            memcpy(cont_entry, cont_data_ent->data, sizeof(pdc_cont_hash_table_entry_t));
+            total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
 
 #ifdef ENABLE_MULTITHREAD
-        hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
+            hg_thread_mutex_lock(&pdc_container_hash_table_mutex_g);
 #endif
-        if (hash_table_insert(container_hash_table_g, hash_key, cont_entry) != 1) {
-            LOG_ERROR("Hash table insert failed\n");
-            ret_value = FAIL;
-        }
+            if (hash_table_insert(container_hash_table_g, hash_key, cont_entry) != 1) {
+                LOG_ERROR("Hash table insert failed\n");
+                ret_value = FAIL;
+            }
 #ifdef ENABLE_MULTITHREAD
-        hg_thread_mutex_unlock(&pdc_container_hash_table_mutex_g);
+            hg_thread_mutex_unlock(&pdc_container_hash_table_mutex_g);
 #endif
-
-        n_cont--;
-    } // End while
-
-    if (fread(&n_entry, sizeof(int), 1, file) != 1) {
-        LOG_ERROR("Read failed for n_entry\n");
+        }
     }
-    while (n_entry > 0) {
-        if (fread(&count, sizeof(int), 1, file) != 1) {
-            LOG_ERROR("Read failed for count\n");
-        }
 
-        hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
-        if (fread(hash_key, sizeof(uint32_t), 1, file) != 1) {
-            LOG_ERROR("Read failed for hash_key\n");
-        }
-        total_mem_usage_g += sizeof(uint32_t);
+    // restore metadata
+    metadata_entries_array =
+        BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("metadata_entries", PDC_STRING));
 
-        if (count <= 0 || count > 10000000)
-            PGOTO_ERROR(FAIL, "Suspicious count value %d from checkpoint", count);
+    if (metadata_entries_array != NULL && metadata_entries_array->pdc_type == PDC_BULKI) {
+        BULKI_Entity_Iterator *entry_iter = Bent_iterator_init(metadata_entries_array, NULL, PDC_BULKI);
 
-        // Reconstruct hash table
-        entry           = (pdc_hash_table_entry_head *)PDC_malloc(sizeof(pdc_hash_table_entry_head));
-        entry->n_obj    = 0;
-        entry->bloom    = NULL;
-        entry->metadata = NULL;
-        // Init hash table metadata (w/ bloom) with first obj
-        PDC_Server_hash_table_list_init(entry, hash_key);
+        while (Bent_iterator_has_next_BULKI(entry_iter)) {
+            BULKI *hash_entry = Bent_iterator_next_BULKI(entry_iter);
 
-        metadata = (pdc_metadata_t *)PDC_calloc(sizeof(pdc_metadata_t), count);
-        for (i = 0; i < count; i++) {
-            if (fread(metadata + i, sizeof(pdc_metadata_t), 1, file) != 1) {
-                LOG_ERROR("Read failed for metadata\n");
+            // extract n_obj
+            BULKI_Entity *n_obj_ent = BULKI_get(hash_entry, BULKI_singleton_ENTITY("n_obj", PDC_STRING));
+            int           count;
+            if (n_obj_ent == NULL)
+                PGOTO_ERROR(FAIL, "Missing n_obj in checkpoint metadata entry");
+            memcpy(&count, n_obj_ent->data, sizeof(int));
+            if (count <= 0 || count > PDC_CHECKPOINT_MAX_METADATA_COUNT)
+                PGOTO_ERROR(FAIL, "Suspicious count value %d from checkpoint", count);
+
+            // extract hash key
+            BULKI_Entity *hash_key_ent =
+                BULKI_get(hash_entry, BULKI_singleton_ENTITY("hash_key", PDC_STRING));
+            if (hash_key_ent == NULL || hash_key_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing hash_key in checkpoint metadata entry");
+            hash_key = (uint32_t *)PDC_malloc(sizeof(uint32_t));
+            memcpy(hash_key, hash_key_ent->data, sizeof(uint32_t));
+            total_mem_usage_g += sizeof(uint32_t);
+
+            // Reconstruct hash table
+            entry           = (pdc_hash_table_entry_head *)PDC_malloc(sizeof(pdc_hash_table_entry_head));
+            entry->n_obj    = 0;
+            entry->bloom    = NULL;
+            entry->metadata = NULL;
+            // Init hash table metadata (w/ bloom) with first obj
+            PDC_Server_hash_table_list_init(entry, hash_key);
+
+            metadata = (pdc_metadata_t *)PDC_calloc(count, sizeof(pdc_metadata_t));
+
+            // extract metadata objects array
+            BULKI_Entity *metadata_objs_array =
+                BULKI_get(hash_entry, BULKI_singleton_ENTITY("metadata_objects", PDC_STRING));
+
+            if (metadata_objs_array != NULL && metadata_objs_array->pdc_type == PDC_BULKI) {
+                BULKI_Entity_Iterator *obj_iter = Bent_iterator_init(metadata_objs_array, NULL, PDC_BULKI);
+                i                               = 0;
+
+                while (Bent_iterator_has_next_BULKI(obj_iter) && i < count) {
+                    BULKI *metadata_obj = Bent_iterator_next_BULKI(obj_iter);
+
+                    // extract metadata structure
+                    BULKI_Entity *metadata_ent =
+                        BULKI_get(metadata_obj, BULKI_singleton_ENTITY("metadata", PDC_STRING));
+                    if (metadata_ent == NULL || metadata_ent->data == NULL)
+                        PGOTO_ERROR(FAIL, "Missing metadata in checkpoint");
+                    memcpy(metadata + i, metadata_ent->data, sizeof(pdc_metadata_t));
+
+                    // initialize pointers
+                    (metadata + i)->storage_region_list_head       = NULL;
+                    (metadata + i)->region_lock_head               = NULL;
+                    (metadata + i)->region_map_head                = NULL;
+                    (metadata + i)->region_buf_map_head            = NULL;
+                    (metadata + i)->bloom                          = NULL;
+                    (metadata + i)->prev                           = NULL;
+                    (metadata + i)->next                           = NULL;
+                    (metadata + i)->kvtag_list_head                = NULL;
+                    (metadata + i)->all_storage_region_distributed = 0;
+
+                    // restore kv tags
+                    BULKI_Entity *kvtags_array =
+                        BULKI_get(metadata_obj, BULKI_singleton_ENTITY("kvtags", PDC_STRING));
+
+                    if (kvtags_array != NULL && kvtags_array->pdc_type == PDC_BULKI) {
+                        BULKI_Entity_Iterator *kvtag_iter = Bent_iterator_init(kvtags_array, NULL, PDC_BULKI);
+
+                        while (Bent_iterator_has_next_BULKI(kvtag_iter)) {
+                            BULKI *kvtag_entry = Bent_iterator_next_BULKI(kvtag_iter);
+
+                            pdc_kvtag_list_t *kvtag_list =
+                                (pdc_kvtag_list_t *)PDC_calloc(1, sizeof(pdc_kvtag_list_t));
+                            kvtag_list->kvtag = (pdc_kvtag_t *)PDC_malloc(sizeof(pdc_kvtag_t));
+
+                            // extract key
+                            BULKI_Entity *key_ent =
+                                BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("key", PDC_STRING));
+
+                            if (key_ent == NULL || key_ent->data == NULL)
+                                PGOTO_ERROR(FAIL, "Invalid kvtag key in checkpoint");
+
+                            int key_len = (int)strlen((char *)key_ent->data) + 1;
+                            if (key_len <= 0 || key_len > PDC_CHECKPOINT_MAX_KVTAG_KEY_LEN)
+                                PGOTO_ERROR(FAIL, "Invalid key_len %d in checkpoint", key_len);
+
+                            kvtag_list->kvtag->name = PDC_malloc(key_len);
+                            memcpy(kvtag_list->kvtag->name, key_ent->data, key_len);
+
+                            // extract size
+                            BULKI_Entity *size_ent =
+                                BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("size", PDC_STRING));
+                            if (size_ent == NULL)
+                                PGOTO_ERROR(FAIL, "Missing kvtag size in checkpoint");
+                            uint32_t kv_size;
+                            memcpy(&kv_size, size_ent->data, sizeof(uint32_t));
+                            if (kv_size == 0 || kv_size > PDC_CHECKPOINT_MAX_KVTAG_SIZE)
+                                PGOTO_ERROR(FAIL, "Invalid kvtag size in checkpoint");
+                            kvtag_list->kvtag->size = kv_size;
+
+                            // extract type
+                            BULKI_Entity *type_ent =
+                                BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("type", PDC_STRING));
+                            if (type_ent == NULL)
+                                PGOTO_ERROR(FAIL, "Missing kvtag type in checkpoint");
+                            memcpy(&kvtag_list->kvtag->type, type_ent->data, sizeof(int8_t));
+
+                            // extract value
+                            BULKI_Entity *value_ent =
+                                BULKI_get(kvtag_entry, BULKI_singleton_ENTITY("value", PDC_STRING));
+                            if (value_ent == NULL || value_ent->count != kv_size)
+                                PGOTO_ERROR(FAIL, "Invalid kvtag value size in checkpoint");
+                            kvtag_list->kvtag->value = PDC_malloc((size_t)kv_size);
+                            memcpy(kvtag_list->kvtag->value, value_ent->data, (size_t)kv_size);
+
+                            DL_APPEND((metadata + i)->kvtag_list_head, kvtag_list);
+                        }
+                    }
+
+                    // restore storage regions
+                    BULKI_Entity *regions_array =
+                        BULKI_get(metadata_obj, BULKI_singleton_ENTITY("regions", PDC_STRING));
+
+                    int n_region = 0;
+                    if (regions_array != NULL && regions_array->pdc_type == PDC_BULKI) {
+                        n_region = regions_array->count;
+                        if (n_region < 0 || n_region > PDC_CHECKPOINT_MAX_REGION_COUNT)
+                            PGOTO_ERROR(FAIL, "Suspicious n_region value %d from checkpoint", n_region);
+                        BULKI_Entity_Iterator *region_iter =
+                            Bent_iterator_init(regions_array, NULL, PDC_BULKI);
+
+                        while (Bent_iterator_has_next_BULKI(region_iter)) {
+                            BULKI *region_entry = Bent_iterator_next_BULKI(region_iter);
+
+                            region_list = (region_list_t *)PDC_malloc(sizeof(region_list_t));
+
+                            // extract region structure
+                            BULKI_Entity *region_ent =
+                                BULKI_get(region_entry, BULKI_singleton_ENTITY("region", PDC_STRING));
+                            if (region_ent == NULL || region_ent->data == NULL)
+                                PGOTO_ERROR(FAIL, "Missing region in checkpoint");
+                            memcpy(region_list, region_ent->data, sizeof(region_list_t));
+                            region_list->region_hist = NULL; // pointer in blob is stale
+
+                            // extract histogram flag
+                            BULKI_Entity *has_hist_ent =
+                                BULKI_get(region_entry, BULKI_singleton_ENTITY("has_hist", PDC_STRING));
+                            if (has_hist_ent == NULL)
+                                PGOTO_ERROR(FAIL, "Missing has_hist in checkpoint");
+                            int has_hist;
+                            memcpy(&has_hist, has_hist_ent->data, sizeof(int));
+
+                            if (has_hist == 1) {
+                                BULKI_Entity *histogram_ent =
+                                    BULKI_get(region_entry, BULKI_singleton_ENTITY("histogram", PDC_STRING));
+
+                                if (histogram_ent != NULL && histogram_ent->pdc_type == PDC_BULKI) {
+                                    BULKI *histogram = (BULKI *)histogram_ent->data;
+
+                                    region_list->region_hist =
+                                        (pdc_histogram_t *)PDC_malloc(sizeof(pdc_histogram_t));
+
+                                    BULKI_Entity *dtype_ent =
+                                        BULKI_get(histogram, BULKI_singleton_ENTITY("dtype", PDC_STRING));
+                                    if (dtype_ent == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram dtype in checkpoint");
+                                    memcpy(&region_list->region_hist->dtype, dtype_ent->data, sizeof(int));
+
+                                    BULKI_Entity *nbin_ent =
+                                        BULKI_get(histogram, BULKI_singleton_ENTITY("nbin", PDC_STRING));
+                                    int nbin;
+                                    if (nbin_ent == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram nbin in checkpoint");
+                                    memcpy(&nbin, nbin_ent->data, sizeof(int));
+                                    if (nbin <= 0 || nbin > PDC_CHECKPOINT_MAX_HIST_NBIN)
+                                        PGOTO_ERROR(FAIL, "Invalid histogram nbin %d in checkpoint", nbin);
+                                    region_list->region_hist->nbin = nbin;
+
+                                    BULKI_Entity *range_ent =
+                                        BULKI_get(histogram, BULKI_singleton_ENTITY("range", PDC_STRING));
+                                    if (range_ent == NULL || range_ent->data == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram range in checkpoint");
+                                    region_list->region_hist->range =
+                                        (double *)PDC_malloc(sizeof(double) * (size_t)nbin * 2);
+                                    memcpy(region_list->region_hist->range, range_ent->data,
+                                           sizeof(double) * (size_t)nbin * 2);
+
+                                    BULKI_Entity *bin_ent =
+                                        BULKI_get(histogram, BULKI_singleton_ENTITY("bin", PDC_STRING));
+                                    if (bin_ent == NULL || bin_ent->data == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram bin in checkpoint");
+                                    region_list->region_hist->bin =
+                                        (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)nbin);
+                                    memcpy(region_list->region_hist->bin, bin_ent->data,
+                                           sizeof(uint64_t) * (size_t)nbin);
+
+                                    BULKI_Entity *incr_ent =
+                                        BULKI_get(histogram, BULKI_singleton_ENTITY("incr", PDC_STRING));
+                                    if (incr_ent == NULL)
+                                        PGOTO_ERROR(FAIL, "Missing histogram incr in checkpoint");
+                                    memcpy(&region_list->region_hist->incr, incr_ent->data, sizeof(double));
+                                }
+                            }
+
+                            // initialize region_list fields
+                            region_list->buf       = NULL;
+                            region_list->data_size = 1;
+                            for (idx = 0; idx < region_list->ndim; idx++)
+                                region_list->data_size *= region_list->count[idx];
+                            region_list->is_data_ready            = 0;
+                            region_list->shm_fd                   = 0;
+                            region_list->meta                     = (metadata + i);
+                            region_list->prev                     = NULL;
+                            region_list->next                     = NULL;
+                            region_list->overlap_storage_regions  = NULL;
+                            region_list->n_overlap_storage_region = 0;
+                            hg_atomic_init32(&(region_list->buf_map_refcount), 0);
+                            region_list->reg_dirty_from_buf = 0;
+                            region_list->access_type        = PDC_NA;
+                            region_list->bulk_handle        = NULL;
+                            region_list->lock_handle        = NULL;
+                            region_list->addr               = NULL;
+                            region_list->obj_id             = (metadata + i)->obj_id;
+                            region_list->reg_id             = 0;
+                            region_list->from_obj_id        = 0;
+                            region_list->client_id          = 0;
+                            region_list->is_io_done         = 0;
+                            region_list->is_shm_closed      = 0;
+                            region_list->seq_id             = 0;
+                            region_list->sent_to_server     = 0;
+                            region_list->io_cache_region    = NULL;
+
+                            memset(region_list->shm_addr, 0, ADDR_MAX);
+                            memset(region_list->client_ids, 0,
+                                   PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
+
+                            if (strstr(region_list->storage_location, "/global/cscratch") != NULL) {
+                                region_list->data_loc_type = PDC_LUSTRE;
+                            }
+
+                            DL_APPEND((metadata + i)->storage_region_list_head, region_list);
+                        }
+                    }
+
+                    total_region += n_region;
+                    DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
+
+                    i++;
+                }
             }
 
-            (metadata + i)->storage_region_list_head       = NULL;
-            (metadata + i)->region_lock_head               = NULL;
-            (metadata + i)->region_map_head                = NULL;
-            (metadata + i)->region_buf_map_head            = NULL;
-            (metadata + i)->bloom                          = NULL;
-            (metadata + i)->prev                           = NULL;
-            (metadata + i)->next                           = NULL;
-            (metadata + i)->kvtag_list_head                = NULL;
-            (metadata + i)->all_storage_region_distributed = 0;
+            nobj += count;
+            total_mem_usage_g += sizeof(pdc_hash_table_entry_head);
+            total_mem_usage_g += (sizeof(pdc_metadata_t) * count);
 
-            // Read kv tags
-            if (fread(&n_kvtag, sizeof(int), 1, file) != 1) {
-                LOG_ERROR("Read failed for n_kvtag\n");
+            entry->metadata = NULL;
+
+            // insert metadata to hash table
+            for (i = 0; i < count; i++) {
+                elt       = metadata + i;
+                ret_value = PDC_Server_hash_table_list_insert(entry, elt);
+                if (ret_value != SUCCEED)
+                    PGOTO_ERROR(FAIL, "Error with hash table recovering from checkpoint file");
             }
-            for (j = 0; j < n_kvtag; j++) {
-                pdc_kvtag_list_t *kvtag_list = (pdc_kvtag_list_t *)PDC_calloc(1, sizeof(pdc_kvtag_list_t));
-                kvtag_list->kvtag            = (pdc_kvtag_t *)PDC_malloc(sizeof(pdc_kvtag_t));
-                if (fread(&key_len, sizeof(int), 1, file) != 1) {
-                    LOG_ERROR("Read failed for key_len\n");
-                }
-                if (key_len <= 0 || key_len > 65536) {
-                    LOG_ERROR("Invalid key_len\n");
-                    break;
-                }
-                kvtag_list->kvtag->name = PDC_malloc(key_len);
-                if (fread((void *)(kvtag_list->kvtag->name), key_len, 1, file) != 1) {
-                    LOG_ERROR("Read failed for kvtag_list->kvtag->name\n");
-                }
-                if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) {
-                    LOG_ERROR("Read failed for kvtag_list->kvtag->size\n");
-                }
-                kv_size = kvtag_list->kvtag->size;
-                if (kv_size == 0 || kv_size > (1u << 24))
-                    PGOTO_ERROR(FAIL, "Invalid kvtag size in checkpoint");
-                kvtag_list->kvtag->size = kv_size;
-                if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) {
-                    LOG_ERROR("Read failed for kvtag_list->kvtag->type\n");
-                }
-                kvtag_list->kvtag->value = PDC_malloc((size_t)kv_size);
-                if (fread(kvtag_list->kvtag->value, (size_t)kv_size, 1, file) != 1) {
-                    LOG_ERROR("Read failed for kvtag_list->kvtag->value\n");
-                }
-                DL_APPEND((metadata + i)->kvtag_list_head, kvtag_list);
-            }
-
-            if (fread(&n_region, sizeof(int), 1, file) != 1) {
-                LOG_ERROR("Read failed for n_region\n");
-            }
-            if (n_region < 0 || n_region > 1000000)
-                PGOTO_ERROR(FAIL, "Suspicious n_region value %d from checkpoint", n_region);
-
-            /* if (n_region == 0) */
-            /*     continue; */
-
-            total_region += n_region;
-
-            for (j = 0; j < n_region; j++) {
-                region_list = (region_list_t *)PDC_malloc(sizeof(region_list_t));
-                if (fread(region_list, sizeof(region_list_t), 1, file) != 1) {
-                    LOG_ERROR("Read failed for region_list\n");
-                }
-
-                int has_hist = 0;
-                if (fread(&has_hist, sizeof(int), 1, file) != 1) {
-                    LOG_ERROR("Read failed for has_list\n");
-                }
-                if (has_hist == 1) {
-                    region_list->region_hist = (pdc_histogram_t *)PDC_malloc(sizeof(pdc_histogram_t));
-                    if (fread(&region_list->region_hist->dtype, sizeof(int), 1, file) != 1) {
-                        LOG_ERROR("Read failed for region_list->region_hist->dtype\n");
-                    }
-                    if (fread(&region_list->region_hist->nbin, sizeof(int), 1, file) != 1) {
-                        LOG_ERROR("Read failed for region_list->region_hist->nbin\n");
-                    }
-                    nbin = region_list->region_hist->nbin;
-                    if (nbin <= 0 || nbin > 65536) {
-                        LOG_ERROR("Checkpoint file histogram size invalid: %d\n", nbin);
-                        PGOTO_ERROR(FAIL, "Invalid histogram nbin");
-                    }
-                    region_list->region_hist->nbin = nbin;
-
-                    region_list->region_hist->range = (double *)PDC_malloc(sizeof(double) * (size_t)nbin * 2);
-                    region_list->region_hist->bin   = (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)nbin);
-
-                    if (fread(region_list->region_hist->range, sizeof(double), (size_t)nbin * 2, file) != 1) {
-                        LOG_ERROR("Read failed for region_list->region_hist->range\n");
-                    }
-                    if (fread(region_list->region_hist->bin, sizeof(uint64_t), (size_t)nbin, file) != 1) {
-                        LOG_ERROR("Read failed for region_list->region_hist->bin\n");
-                    }
-                    if (fread(&region_list->region_hist->incr, sizeof(double), 1, file) != 1) {
-                        LOG_ERROR("Read failed for region_list->region_hist->incr\n");
-                    }
-                }
-
-                region_list->buf       = NULL;
-                region_list->data_size = 1;
-                for (idx = 0; idx < region_list->ndim; idx++)
-                    region_list->data_size *= region_list->count[idx];
-                region_list->is_data_ready            = 0;
-                region_list->shm_fd                   = 0;
-                region_list->meta                     = (metadata + i);
-                region_list->prev                     = NULL;
-                region_list->next                     = NULL;
-                region_list->overlap_storage_regions  = NULL;
-                region_list->n_overlap_storage_region = 0;
-                hg_atomic_init32(&(region_list->buf_map_refcount), 0);
-                region_list->reg_dirty_from_buf = 0;
-                region_list->access_type        = PDC_NA;
-                region_list->bulk_handle        = NULL;
-                region_list->lock_handle        = NULL;
-                region_list->addr               = NULL;
-                region_list->obj_id             = (metadata + i)->obj_id;
-                region_list->reg_id             = 0;
-                region_list->from_obj_id        = 0;
-                region_list->client_id          = 0;
-                region_list->is_io_done         = 0;
-                region_list->is_shm_closed      = 0;
-                region_list->seq_id             = 0;
-                region_list->sent_to_server     = 0;
-                region_list->io_cache_region    = NULL;
-
-                memset(region_list->shm_addr, 0, ADDR_MAX);
-                memset(region_list->client_ids, 0, PDC_SERVER_MAX_PROC_PER_NODE * sizeof(uint32_t));
-
-                if (strstr(region_list->storage_location, "/global/cscratch") != NULL) {
-                    region_list->data_loc_type = PDC_LUSTRE;
-                }
-
-                DL_APPEND((metadata + i)->storage_region_list_head, region_list);
-            } // For j
-            total_region += n_region;
-
-            DL_SORT((metadata + i)->storage_region_list_head, region_cmp);
-        } // For i
-
-        nobj += count;
-        total_mem_usage_g += sizeof(pdc_hash_table_entry_head);
-        total_mem_usage_g += (sizeof(pdc_metadata_t) * count);
-
-        entry->metadata = NULL;
-
-        // Insert the previously read metadata to the linked list (hash table entry)
-        for (i = 0; i < count; i++) {
-            elt = metadata + i;
-            // Add to hash list and bloom filter
-            ret_value = PDC_Server_hash_table_list_insert(entry, elt);
-            if (ret_value != SUCCEED)
-                PGOTO_ERROR(FAIL, "Error with hash table recovering from checkpoint file");
-        }
-        n_entry--;
-    }
-
-    if (fread(&n_objs, sizeof(int), 1, file) != 1) {
-        LOG_ERROR("Read failed for n_objs\n");
-    }
-
-    for (i = 0; i < n_objs; ++i) {
-        data_server_region_t *new_obj_reg =
-            (data_server_region_t *)PDC_calloc(1, sizeof(struct data_server_region_t));
-        new_obj_reg->fd               = -1;
-        new_obj_reg->storage_location = (char *)PDC_malloc(sizeof(char) * ADDR_MAX);
-        if (fread(&new_obj_reg->obj_id, sizeof(uint64_t), 1, file) != 1) {
-            LOG_ERROR("Read failed for obj_id\n");
-        }
-        if (fread(&n_region, sizeof(int), 1, file) != 1) {
-            LOG_ERROR("Read failed for n_region\n");
-        }
-        DL_APPEND(dataserver_region_g, new_obj_reg);
-        for (j = 0; j < n_region; j++) {
-            region_list_t *new_region_list = (region_list_t *)PDC_malloc(sizeof(region_list_t));
-            if (fread(new_region_list, sizeof(region_list_t), 1, file) != 1) {
-                LOG_ERROR("Read failed for new_region_list\n");
-            }
-            DL_APPEND(new_obj_reg->region_storage_head, new_region_list);
         }
     }
 
-    if (fread(&checkpoint_size, sizeof(uint64_t), 1, file) != 1) {
-        LOG_ERROR("Read failed for checkpoint size\n");
-    }
-    if (checkpoint_size == 0 || checkpoint_size > (1ULL << 32)) {
-        LOG_ERROR("Suspicious checkpoint_size %" PRIu64 "\n", checkpoint_size);
-        PGOTO_ERROR(FAIL, "Invalid checkpoint_size");
-    }
-    checkpoint_buf = (char *)PDC_malloc(checkpoint_size);
-    if (fread(checkpoint_buf, checkpoint_size, 1, file) != 1) {
-        LOG_ERROR("Read failed for checkpoint buf\n");
-    }
-    transfer_request_metadata_query_init(pdc_server_size_g, checkpoint_buf);
-    checkpoint_buf = (char *)PDC_free(checkpoint_buf);
+    // restore data server regions
+    dataserver_regions_array =
+        BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("dataserver_regions", PDC_STRING));
 
-    fclose(file);
-    file = NULL;
+    if (dataserver_regions_array != NULL && dataserver_regions_array->pdc_type == PDC_BULKI) {
+        BULKI_Entity_Iterator *ds_iter = Bent_iterator_init(dataserver_regions_array, NULL, PDC_BULKI);
+
+        while (Bent_iterator_has_next_BULKI(ds_iter)) {
+            BULKI *dataserver_obj = Bent_iterator_next_BULKI(ds_iter);
+
+            data_server_region_t *new_obj_reg =
+                (data_server_region_t *)PDC_calloc(1, sizeof(struct data_server_region_t));
+            new_obj_reg->fd               = -1;
+            new_obj_reg->storage_location = (char *)PDC_malloc(sizeof(char) * ADDR_MAX);
+
+            // extract obj_id
+            BULKI_Entity *obj_id_ent =
+                BULKI_get(dataserver_obj, BULKI_singleton_ENTITY("obj_id", PDC_STRING));
+            if (obj_id_ent == NULL || obj_id_ent->data == NULL)
+                PGOTO_ERROR(FAIL, "Missing or invalid obj_id in dataserver_regions checkpoint entry");
+            memcpy(&new_obj_reg->obj_id, obj_id_ent->data, sizeof(uint64_t));
+
+            // extract regions
+            BULKI_Entity *ds_regions_array =
+                BULKI_get(dataserver_obj, BULKI_singleton_ENTITY("regions", PDC_STRING));
+
+            if (ds_regions_array != NULL && ds_regions_array->pdc_type == PDC_BULKI) {
+                int ds_n_region = ds_regions_array->count;
+                if (ds_n_region < 0 || ds_n_region > PDC_CHECKPOINT_MAX_REGION_COUNT)
+                    PGOTO_ERROR(FAIL, "Suspicious dataserver n_region value %d from checkpoint", ds_n_region);
+                BULKI_Entity_Iterator *ds_region_iter = Bent_iterator_init(ds_regions_array, NULL, PDC_BULKI);
+
+                while (Bent_iterator_has_next_BULKI(ds_region_iter)) {
+                    BULKI *ds_region = Bent_iterator_next_BULKI(ds_region_iter);
+
+                    region_list = (region_list_t *)PDC_malloc(sizeof(region_list_t));
+
+                    BULKI_Entity *region_ent =
+                        BULKI_get(ds_region, BULKI_singleton_ENTITY("region", PDC_STRING));
+                    if (region_ent == NULL || region_ent->data == NULL)
+                        PGOTO_ERROR(FAIL, "Missing/invalid dataserver region blob in checkpoint");
+                    memcpy(region_list, region_ent->data, sizeof(region_list_t));
+                    region_list->region_hist = NULL; // pointer in blob is stale; rebuilt below if present
+
+                    // initialize fields (similar to above)
+                    region_list->buf       = NULL;
+                    region_list->data_size = 1;
+                    for (idx = 0; idx < region_list->ndim; idx++)
+                        region_list->data_size *= region_list->count[idx];
+                    region_list->is_data_ready            = 0;
+                    region_list->shm_fd                   = 0;
+                    region_list->meta                     = NULL;
+                    region_list->prev                     = NULL;
+                    region_list->next                     = NULL;
+                    region_list->overlap_storage_regions  = NULL;
+                    region_list->n_overlap_storage_region = 0;
+                    hg_atomic_init32(&(region_list->buf_map_refcount), 0);
+                    region_list->reg_dirty_from_buf = 0;
+                    region_list->access_type        = PDC_NA;
+
+                    DL_APPEND(new_obj_reg->region_storage_head, region_list);
+                }
+            }
+
+            DL_APPEND(dataserver_region_g, new_obj_reg);
+        }
+    }
+
+    // restore transfer query
+    BULKI_Entity *transfer_query_ent =
+        BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("transfer_query", PDC_STRING));
+
+    if (transfer_query_ent != NULL && transfer_query_ent->pdc_type == PDC_BULKI) {
+        // Extract the nested BULKI containing transfer query data
+        BULKI *transfer_query_bulki = (BULKI *)transfer_query_ent->data;
+
+        // initialize transfer query system with BULKI checkpoint
+        ret_value = transfer_request_metadata_query_init_bulki(pdc_server_size_g, transfer_query_bulki);
+        if (ret_value != SUCCEED) {
+            LOG_ERROR("Failed to restore transfer query from checkpoint\n");
+            PGOTO_ERROR(FAIL, "Transfer query restoration failed");
+        }
+    }
+    else {
+        // note: no transfer query data in checkpoint, initialize fresh
+        ret_value = transfer_request_metadata_query_init_bulki(pdc_server_size_g, NULL);
+        if (ret_value != SUCCEED) {
+            LOG_ERROR("Failed to initialize transfer query system\n");
+            PGOTO_ERROR(FAIL, "Transfer query initialization failed");
+        }
+    }
+
+    // clean up
+    BULKI_free(checkpoint_bulki, 1);
 
 #ifdef ENABLE_MPI
     MPI_Reduce(&nobj, &all_nobj, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -1733,6 +2057,17 @@ done:
 #ifdef PDC_TIMING
     pdc_server_timings->PDCserver_restart += MPI_Wtime() - start;
 #endif
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (!pdc_server_rank_g) {
+        LOG_INFO("total restart time = %lf\n", MPI_Wtime() - start);
+    }
+#endif
+    // ensure file is closed if error occurred before BULKI_deserialize_from_file
+    if (file != NULL) {
+        fclose(file);
+    }
 
     FUNC_LEAVE(ret_value);
 }
