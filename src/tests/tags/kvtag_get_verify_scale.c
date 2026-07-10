@@ -58,6 +58,25 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
     return 1;
 }
 
+/*
+ * Derive this rank's tag work from its object partition intersected with [0, n_tag).
+ * Each rank verifies tags only on objects it owns that were tagged.
+ */
+static void
+assign_tag_work_from_obj_partition(int my_obj_s, int my_obj, int n_tag, int *my_tag, int *my_tag_s)
+{
+    if (my_obj_s >= n_tag) {
+        *my_tag   = 0;
+        *my_tag_s = 0;
+    }
+    else {
+        *my_tag_s = my_obj_s;
+        *my_tag   = my_obj;
+        if (*my_tag_s + *my_tag > n_tag)
+            *my_tag = n_tag - *my_tag_s;
+    }
+}
+
 void
 print_usage(char *name)
 {
@@ -90,6 +109,9 @@ main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+    proc_num = 1;
+    my_rank  = 0;
 #endif
     if (argc < 3) {
         if (my_rank == 0)
@@ -105,8 +127,8 @@ main(int argc, char *argv[])
         PGOTO_DONE(FAIL);
     }
 
-    assign_work_to_rank(my_rank, proc_num, n_query, &n_tag, &n_tag_s);
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
+    assign_tag_work_from_obj_partition(my_obj_s, my_obj, n_query, &n_tag, &n_tag_s);
 
     obj_1percent = my_obj / 100;
 
@@ -173,9 +195,9 @@ main(int argc, char *argv[])
     for (i = 0; i < n_tag; i++) {
         if (PDCobj_get_tag(obj_ids[i], kvtag.name, (void *)&values[i], (void *)&value_type,
                            (void *)&value_size) < 0)
-            PGOTO_ERROR(FAIL, "Failed to get a kvtag from o%d\n", i + n_tag_s);
+            PGOTO_ERROR(FAIL, "Failed to get a kvtag from obj%d\n", n_tag_s + i);
 
-        int expected_value = i + n_tag_s; // Assuming tags were added in order starting from 0
+        int expected_value = n_tag_s + i;
 
         // count successful and failed verifications instead of immediate error
         if (*(int *)(values[i]) == expected_value) {
@@ -185,7 +207,7 @@ main(int argc, char *argv[])
             verified_fail++;
             // log first 10 failures for debugging
             if (verified_fail <= 10) {
-                LOG_ERROR("Verification failed for obj%d: expected %d, got %d\n", i + n_tag_s, expected_value,
+                LOG_ERROR("Verification failed for obj%d: expected %d, got %d\n", n_tag_s + i, expected_value,
                           *(int *)(values[i]));
             }
         }

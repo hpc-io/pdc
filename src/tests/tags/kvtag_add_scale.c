@@ -58,6 +58,25 @@ assign_work_to_rank(int rank, int size, int nwork, int *my_count, int *my_start)
     return 1;
 }
 
+/*
+ * Derive this rank's tag work from its object partition intersected with [0, n_tag).
+ * Each rank tags only objects it created; tag value equals the global object index.
+ */
+static void
+assign_tag_work_from_obj_partition(int my_obj_s, int my_obj, int n_tag, int *my_tag, int *my_tag_s)
+{
+    if (my_obj_s >= n_tag) {
+        *my_tag   = 0;
+        *my_tag_s = 0;
+    }
+    else {
+        *my_tag_s = my_obj_s;
+        *my_tag   = my_obj;
+        if (*my_tag_s + *my_tag > n_tag)
+            *my_tag = n_tag - *my_tag_s;
+    }
+}
+
 void
 print_usage(char *name)
 {
@@ -82,6 +101,9 @@ main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &proc_num);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+#else
+    proc_num = 1;
+    my_rank  = 0;
 #endif
     if (argc < 3) {
         if (my_rank == 0)
@@ -97,8 +119,8 @@ main(int argc, char *argv[])
         PGOTO_DONE(FAIL);
     }
 
-    assign_work_to_rank(my_rank, proc_num, n_add_tag, &my_add_tag, &my_add_tag_s);
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
+    assign_tag_work_from_obj_partition(my_obj_s, my_obj, n_add_tag, &my_add_tag, &my_add_tag_s);
 
     obj_1percent = my_obj / 100;
     tag_1percent = my_add_tag / 100;
@@ -138,7 +160,7 @@ main(int argc, char *argv[])
         if (obj_ids[i] <= 0)
             PGOTO_ERROR(FAIL, "Failed to create object");
 
-        if (i > 0 && i % obj_1percent == 0) {
+        if (i > 0 && obj_1percent > 0 && i % obj_1percent == 0) {
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
@@ -173,17 +195,17 @@ main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
     for (i = 0; i < my_add_tag; i++) {
-        v = i + my_add_tag_s;
+        v = my_add_tag_s + i;
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
-            PGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d", i + my_obj_s);
+            PGOTO_ERROR(FAIL, "Failed to add a kvtag to obj%d", v);
 
-        if (i % tag_1percent == 0) {
+        if (tag_1percent > 0 && i % tag_1percent == 0) {
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
                 int    current_percentage           = i / tag_1percent;
-                int    estimated_current_tag_number = n_obj / 100 * current_percentage;
+                int    estimated_current_tag_number = n_add_tag / 100 * current_percentage;
                 double tps                          = estimated_current_tag_number / percent_time;
                 LOG_INFO("[TAG PROGRESS %3d%% ] %11d tags, %7.2f seconds, TPS: %10.2f \n", current_percentage,
                          estimated_current_tag_number, percent_time, tps);
