@@ -664,7 +664,7 @@ BULKI_delete_incremental(BULKI *bulki, BULKI_Entity *key)
         FUNC_LEAVE(NULL);
     }
 
-    BULKI_Entity *value      = NULL;
+    BULKI_Entity *value = NULL;
 
     if (bulki->numKeys == 0) {
         bulki_refresh_total_size(bulki);

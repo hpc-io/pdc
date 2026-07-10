@@ -1621,9 +1621,8 @@ PDC_Server_restart(char *filename)
         BULKI_get(checkpoint_bulki, BULKI_singleton_ENTITY("version_number", PDC_STRING));
     if (version_entity == NULL)
         PGOTO_ERROR(FAIL, "Missing version_number in checkpoint");
-    BULKI_Entity *expected_version =
-         BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM);
-    int equal = BULKI_Entity_equal(version_entity, expected_version);
+    BULKI_Entity *expected_version = BULKI_ENTITY(PDC_CHECKPOINT_MAGIC_CURRENT, 1, PDC_STRING, PDC_CLS_ITEM);
+    int           equal            = BULKI_Entity_equal(version_entity, expected_version);
     BULKI_Entity_free(expected_version, 1);
     if (!equal) {
         LOG_ERROR("Checkpoint version mismatch: expected '%s', found '%s'\n", PDC_CHECKPOINT_MAGIC_CURRENT,
