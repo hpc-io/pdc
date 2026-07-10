@@ -98,9 +98,18 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
             if (ndim_ent == NULL) {
                 LOG_ERROR("Missing ndim in checkpoint object\n");
                 PDC_free(obj_pkg);
-                continue;
+                PGOTO_ERROR(FAIL, "Missing ndim in transfer query checkpoint");
             }
-            memcpy(&obj_pkg->ndim, ndim_ent->data, sizeof(int));
+            {
+                int ndim;
+                memcpy(&ndim, ndim_ent->data, sizeof(int));
+                if (ndim <= 0 || ndim > DIM_MAX) {
+                    LOG_ERROR("Invalid ndim %d in transfer query checkpoint\n", ndim);
+                    PDC_free(obj_pkg);
+                    PGOTO_ERROR(FAIL, "Invalid ndim in transfer query checkpoint");
+                }
+                obj_pkg->ndim = ndim;
+            }
 
             obj_pkg->regions     = NULL;
             obj_pkg->regions_end = NULL;
@@ -110,6 +119,7 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
 
             if (regions_array != NULL && regions_array->pdc_type == PDC_BULKI) {
                 BULKI_Entity_Iterator *region_iter = Bent_iterator_init(regions_array, NULL, PDC_BULKI);
+                int ndim = obj_pkg->ndim;
 
                 while (Bent_iterator_has_next_BULKI(region_iter)) {
                     BULKI *region_bulki = Bent_iterator_next_BULKI(region_iter);
@@ -117,8 +127,9 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
                     pdc_region_metadata_pkg *region_pkg =
                         (pdc_region_metadata_pkg *)PDC_malloc(sizeof(pdc_region_metadata_pkg));
 
-                    region_pkg->reg_offset = (uint64_t *)PDC_malloc(sizeof(uint64_t) * obj_pkg->ndim * 2);
-                    region_pkg->reg_size   = region_pkg->reg_offset + obj_pkg->ndim;
+                    region_pkg->reg_offset =
+                        (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)ndim * 2);
+                    region_pkg->reg_size = region_pkg->reg_offset + ndim;
 
                     BULKI_Entity *server_id_ent =
                         BULKI_get(region_bulki, BULKI_singleton_ENTITY("data_server_id", PDC_STRING));
@@ -129,21 +140,26 @@ transfer_request_metadata_query_init_bulki(int pdc_server_size_input, BULKI *che
                         LOG_ERROR("Missing data_server_id in checkpoint region\n");
                         PDC_free(region_pkg->reg_offset);
                         PDC_free(region_pkg);
-                        continue;
+                        PGOTO_ERROR(FAIL, "Missing data_server_id in transfer query checkpoint");
                     }
 
                     BULKI_Entity *offset_size_ent =
                         BULKI_get(region_bulki, BULKI_singleton_ENTITY("reg_offset_size", PDC_STRING));
-                    if (offset_size_ent != NULL) {
-                        memcpy(region_pkg->reg_offset, offset_size_ent->data,
-                               sizeof(uint64_t) * obj_pkg->ndim * 2);
-                    }
-                    else {
+                    if (offset_size_ent == NULL || offset_size_ent->data == NULL) {
                         LOG_ERROR("Missing reg_offset_size in checkpoint region\n");
                         PDC_free(region_pkg->reg_offset);
                         PDC_free(region_pkg);
-                        continue;
+                        PGOTO_ERROR(FAIL, "Missing reg_offset_size in transfer query checkpoint");
                     }
+                    if ((size_t)offset_size_ent->count != (size_t)ndim * 2) {
+                        LOG_ERROR("Invalid reg_offset_size count %zu (expected %zu) in checkpoint\n",
+                                  (size_t)offset_size_ent->count, (size_t)ndim * 2);
+                        PDC_free(region_pkg->reg_offset);
+                        PDC_free(region_pkg);
+                        PGOTO_ERROR(FAIL, "Invalid reg_offset_size in transfer query checkpoint");
+                    }
+                    memcpy(region_pkg->reg_offset, offset_size_ent->data,
+                           sizeof(uint64_t) * (size_t)ndim * 2);
 
                     region_pkg->next = NULL;
 
