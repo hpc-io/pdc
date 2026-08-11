@@ -13,6 +13,7 @@ typedef struct transfer_request_all_data {
     int *      remote_ndim;
     char **    data_buf;
     int        n_objs;
+    uint8_t *  writeout_strategy;
 } transfer_request_all_data;
 
 typedef struct pdc_transfer_request_status {
@@ -31,12 +32,9 @@ pthread_mutex_t              transfer_request_id_mutex;
 uint64_t                     transfer_request_id_g;
 
 perr_t PDC_server_transfer_request_init();
-
 perr_t PDC_server_transfer_request_finalize();
-
-int try_reset_dims();
-
-int get_server_rank();
+int    try_reset_dims();
+int    get_server_rank();
 
 /*
  * Create a new linked list node for a region transfer request and append it to the end of the linked list.
@@ -78,7 +76,7 @@ pdcid_t PDC_transfer_request_id_register();
 
 perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
-                                      int is_write);
+                                      int is_write, pdc_region_writeout_strategy_t strategy);
 
 int clean_write_bulk_data(transfer_request_all_data *request_data);
 

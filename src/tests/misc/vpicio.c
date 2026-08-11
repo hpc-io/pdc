@@ -78,10 +78,15 @@ main(int argc, char **argv)
         steps = atoi(argv[2]);
     if (argc >= 4)
         sleeptime = atoi(argv[3]);
+    pdc_region_writeout_strategy_t writeout_strategy = STORE_REGION_BY_REGION_SINGLE_FILE;
+    if (argc >= 5)
+        writeout_strategy = (pdc_region_writeout_strategy_t)atoi(argv[4]);
 
-    if (rank == 0)
+    if (rank == 0) {
         LOG_INFO("Writing %" PRIu64 " particles per rank for %d steps with %d sec sleep time.\n",
                  numparticles, steps, sleeptime);
+        LOG_INFO("Using writeout strategy: %d\n", (int)writeout_strategy);
+    }
 
     dims[0] = numparticles * size;
 
@@ -119,6 +124,9 @@ main(int argc, char **argv)
     PDCprop_set_obj_user_id(obj_prop_float, getuid());
     PDCprop_set_obj_app_name(obj_prop_float, "VPICIO");
     PDCprop_set_obj_transfer_region_type(obj_prop_float, PDC_REGION_STATIC);
+    PDCprop_set_obj_writeout_strategy(obj_prop_float, writeout_strategy);
+    uint32_t split = (uint32_t)numparticles;
+    PDCprop_set_obj_split_elems(obj_prop_float, &split, 1);
 
     obj_prop_int = PDCprop_obj_dup(obj_prop_float);
     PDCprop_set_obj_type(obj_prop_int, PDC_INT);

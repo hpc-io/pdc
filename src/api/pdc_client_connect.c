@@ -2653,13 +2653,16 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
 
     // Fill input structure
     memset(&in, 0, sizeof(in));
-    in.data.obj_name         = obj_name;
-    in.data.cont_id          = cont_id;
-    in.data.time_step        = create_prop->time_step;
-    in.data.user_id          = create_prop->user_id;
-    in.data_type             = create_prop->obj_prop_pub->type;
-    in.data.data_server_id   = PDC_CLIENT_DATA_SERVER();
-    in.data.region_partition = create_prop->obj_prop_pub->region_partition;
+    in.data.obj_name          = obj_name;
+    in.data.cont_id           = cont_id;
+    in.data.time_step         = create_prop->time_step;
+    in.data.user_id           = create_prop->user_id;
+    in.data_type              = create_prop->obj_prop_pub->type;
+    in.data.data_server_id    = PDC_CLIENT_DATA_SERVER();
+    in.data.region_partition  = create_prop->obj_prop_pub->region_partition;
+    in.data.writeout_strategy = create_prop->obj_prop_pub->writeout_strategy;
+    for (int i = 0; i < DIM_MAX; i++)
+        in.data.obj_split_elems[i] = create_prop->obj_prop_pub->obj_split_elems[i];
     LOG_DEBUG("prepare for sending region partition %d with obj name %s\n", (int)in.data.region_partition,
               obj_name);
     *data_server_id = in.data.data_server_id;
@@ -3289,7 +3292,7 @@ perr_t
 PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, uint32_t data_server_id,
                             int obj_ndim, uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
                             uint64_t *remote_size, size_t unit, pdc_access_t access_type,
-                            pdcid_t *metadata_id)
+                            pdcid_t *metadata_id, pdc_region_writeout_strategy_t writeout_strategy)
 {
     FUNC_ENTER(NULL);
 
@@ -3313,9 +3316,10 @@ PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, u
         PGOTO_ERROR(FAIL, "Invalid PDC type");
 
     LOG_DEBUG("rank = %d, data_server_id = %u\n", pdc_client_mpi_rank_g, data_server_id);
-    in.access_type = access_type;
-    in.remote_unit = unit;
-    in.obj_id      = obj_id;
+    in.access_type       = access_type;
+    in.writeout_strategy = (uint8_t)writeout_strategy;
+    in.remote_unit       = unit;
+    in.obj_id            = obj_id;
 
     in.obj_ndim = obj_ndim;
     PDC_copy_region_desc(obj_dims, in.obj_dims, in.obj_ndim, in.obj_ndim);

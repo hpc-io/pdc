@@ -31,6 +31,17 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
+#ifdef ENABLE_MPI
+#include <mpi.h>
+#else
+static inline double
+MPI_Wtime(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + tv.tv_usec * 1e-6;
+}
+#endif
 #include "pdc_analysis.h"
 
 #include "pdc_timing.h"

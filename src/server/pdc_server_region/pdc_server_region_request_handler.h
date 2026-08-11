@@ -103,7 +103,8 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
 #else
         PDC_Server_transfer_request_io(request_data.obj_id[i], request_data.obj_ndim[i],
                                        request_data.obj_dims[i], remote_reg_info, (void *)ptr,
-                                       request_data.unit[i], 0);
+                                       request_data.unit[i], 0,
+                                       (pdc_region_writeout_strategy_t)request_data.writeout_strategy[i]);
 #endif
 #if 0
         LOG_ERROR("server read array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]); uint64_t k; 
@@ -204,22 +205,15 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
         remote_reg_info->offset = request_data.remote_offset[i];
         remote_reg_info->size   = request_data.remote_length[i];
 #ifdef PDC_SERVER_CACHE
-        PDC_transfer_request_data_write_out(request_data.obj_id[i], request_data.obj_ndim[i],
-                                            request_data.obj_dims[i], remote_reg_info,
-                                            (void *)request_data.data_buf[i], request_data.unit[i]);
+        PDC_transfer_request_data_write_out(
+            request_data.obj_id[i], request_data.obj_ndim[i], request_data.obj_dims[i], remote_reg_info,
+            (void *)request_data.data_buf[i], request_data.unit[i],
+            (pdc_region_writeout_strategy_t)request_data.writeout_strategy[i]);
 #else
         PDC_Server_transfer_request_io(request_data.obj_id[i], request_data.obj_ndim[i],
                                        request_data.obj_dims[i], remote_reg_info,
-                                       (void *)request_data.data_buf[i], request_data.unit[i], 1);
-#endif
-
-#if 0
-        uint64_t j;
-        LOG_ERROR("server write array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]);
-        for ( j = 0; j < remote_reg_info->size[0]; ++j ) {
-            LOG_ERROR("%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
-        }
-        LOG_ERROR("\n");
+                                       (void *)request_data.data_buf[i], request_data.unit[i], 1,
+                                       (pdc_region_writeout_strategy_t)request_data.writeout_strategy[i]);
 #endif
         pthread_mutex_lock(&transfer_request_status_mutex);
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
@@ -345,18 +339,16 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
                          remote_reg_info->ndim, remote_reg_info->ndim);
     PDC_copy_region_desc((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
                          remote_reg_info->ndim);
-/*
-    printf("Server transfer request at write branch, index 1 value = %d\n",
-           *((int *)(local_bulk_args->data_buf + sizeof(int))));
-*/
 #ifdef PDC_SERVER_CACHE
-    PDC_transfer_request_data_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
-                                        remote_reg_info, (void *)local_bulk_args->data_buf,
-                                        local_bulk_args->in.remote_unit);
+    PDC_transfer_request_data_write_out(
+        local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims, remote_reg_info,
+        (void *)local_bulk_args->data_buf, local_bulk_args->in.remote_unit,
+        (pdc_region_writeout_strategy_t)local_bulk_args->in.writeout_strategy);
 #else
     PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
                                    remote_reg_info, (void *)local_bulk_args->data_buf,
-                                   local_bulk_args->in.remote_unit, 1);
+                                   local_bulk_args->in.remote_unit, 1,
+                                   (pdc_region_writeout_strategy_t)local_bulk_args->in.writeout_strategy);
 #endif
     pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_finish_request(local_bulk_args->transfer_request_id);
@@ -813,7 +805,8 @@ HG_TEST_RPC_CB(transfer_request, handle)
                                             (void *)local_bulk_args->data_buf, in.remote_unit);
 #else
         PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
-                                       (void *)local_bulk_args->data_buf, in.remote_unit, 0);
+                                       (void *)local_bulk_args->data_buf, in.remote_unit, 0,
+                                       (pdc_region_writeout_strategy_t)in.writeout_strategy);
 #endif
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    (const hg_size_t *)&(local_bulk_args->total_mem_size), HG_BULK_READWRITE,

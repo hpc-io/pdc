@@ -57,6 +57,8 @@ PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, in
     MPI_Bcast(&(p->obj_info_pub->metadata_server_id), 1, MPI_UINT32_T, rank_id, comm);
     MPI_Bcast(&(((pdc_metadata_t *)p->metadata)->data_server_id), 1, MPI_UINT32_T, rank_id, comm);
     MPI_Bcast(&(((pdc_metadata_t *)p->metadata)->region_partition), 1, MPI_UINT8_T, rank_id, comm);
+    MPI_Bcast(&(((pdc_metadata_t *)p->metadata)->writeout_strategy), 1, MPI_UINT8_T, rank_id, comm);
+    MPI_Bcast(((pdc_metadata_t *)p->metadata)->obj_split_elems, DIM_MAX, MPI_UINT32_T, rank_id, comm);
 
 done:
     FUNC_LEAVE(ret_value);

@@ -809,32 +809,35 @@ PDC_metadata_t_to_transfer_t(pdc_metadata_t *meta, pdc_metadata_transfer_t *tran
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "NULL input");
 
-    transfer->user_id          = meta->user_id;
-    transfer->app_name         = meta->app_name;
-    transfer->obj_name         = meta->obj_name;
-    transfer->time_step        = meta->time_step;
-    transfer->data_type        = meta->data_type;
-    transfer->obj_id           = meta->obj_id;
-    transfer->cont_id          = meta->cont_id;
-    transfer->data_server_id   = meta->data_server_id;
-    transfer->region_partition = meta->region_partition;
-    transfer->consistency      = meta->consistency;
-    transfer->ndim             = meta->ndim;
-    transfer->dims0            = meta->dims[0];
-    transfer->dims1            = meta->dims[1];
-    transfer->dims2            = meta->dims[2];
-    transfer->dims3            = meta->dims[3];
-    transfer->tags             = meta->tags;
-    transfer->data_location    = meta->data_location;
-    transfer->current_state    = meta->transform_state;
-    transfer->t_storage_order  = meta->current_state.storage_order;
-    transfer->t_dtype          = meta->current_state.dtype;
-    transfer->t_ndim           = meta->current_state.ndim;
-    transfer->t_dims0          = meta->current_state.dims[0];
-    transfer->t_dims1          = meta->current_state.dims[1];
-    transfer->t_dims2          = meta->current_state.dims[2];
-    transfer->t_dims3          = meta->current_state.dims[3];
-    transfer->t_meta_index     = meta->current_state.meta_index;
+    transfer->user_id           = meta->user_id;
+    transfer->app_name          = meta->app_name;
+    transfer->obj_name          = meta->obj_name;
+    transfer->time_step         = meta->time_step;
+    transfer->data_type         = meta->data_type;
+    transfer->obj_id            = meta->obj_id;
+    transfer->cont_id           = meta->cont_id;
+    transfer->data_server_id    = meta->data_server_id;
+    transfer->region_partition  = meta->region_partition;
+    transfer->consistency       = meta->consistency;
+    transfer->writeout_strategy = meta->writeout_strategy;
+    for (int i = 0; i < DIM_MAX; i++)
+        transfer->obj_split_elems[i] = meta->obj_split_elems[i];
+    transfer->ndim            = meta->ndim;
+    transfer->dims0           = meta->dims[0];
+    transfer->dims1           = meta->dims[1];
+    transfer->dims2           = meta->dims[2];
+    transfer->dims3           = meta->dims[3];
+    transfer->tags            = meta->tags;
+    transfer->data_location   = meta->data_location;
+    transfer->current_state   = meta->transform_state;
+    transfer->t_storage_order = meta->current_state.storage_order;
+    transfer->t_dtype         = meta->current_state.dtype;
+    transfer->t_ndim          = meta->current_state.ndim;
+    transfer->t_dims0         = meta->current_state.dims[0];
+    transfer->t_dims1         = meta->current_state.dims[1];
+    transfer->t_dims2         = meta->current_state.dims[2];
+    transfer->t_dims3         = meta->current_state.dims[3];
+    transfer->t_meta_index    = meta->current_state.meta_index;
 
 done:
     FUNC_LEAVE(ret_value);
@@ -850,19 +853,22 @@ PDC_transfer_t_to_metadata_t(pdc_metadata_transfer_t *transfer, pdc_metadata_t *
     if (NULL == meta || NULL == transfer)
         PGOTO_ERROR(FAIL, "NULL input");
 
-    meta->user_id          = transfer->user_id;
-    meta->data_type        = transfer->data_type;
-    meta->obj_id           = transfer->obj_id;
-    meta->cont_id          = transfer->cont_id;
-    meta->data_server_id   = transfer->data_server_id;
-    meta->region_partition = transfer->region_partition;
-    meta->consistency      = transfer->consistency;
-    meta->time_step        = transfer->time_step;
-    meta->ndim             = transfer->ndim;
-    meta->dims[0]          = transfer->dims0;
-    meta->dims[1]          = transfer->dims1;
-    meta->dims[2]          = transfer->dims2;
-    meta->dims[3]          = transfer->dims3;
+    meta->user_id           = transfer->user_id;
+    meta->data_type         = transfer->data_type;
+    meta->obj_id            = transfer->obj_id;
+    meta->cont_id           = transfer->cont_id;
+    meta->data_server_id    = transfer->data_server_id;
+    meta->region_partition  = transfer->region_partition;
+    meta->consistency       = transfer->consistency;
+    meta->writeout_strategy = transfer->writeout_strategy;
+    for (int i = 0; i < DIM_MAX; i++)
+        meta->obj_split_elems[i] = transfer->obj_split_elems[i];
+    meta->time_step = transfer->time_step;
+    meta->ndim      = transfer->ndim;
+    meta->dims[0]   = transfer->dims0;
+    meta->dims[1]   = transfer->dims1;
+    meta->dims[2]   = transfer->dims2;
+    meta->dims[3]   = transfer->dims3;
 
     strcpy(meta->app_name, transfer->app_name);
     strcpy(meta->obj_name, transfer->obj_name);
@@ -2568,10 +2574,12 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
                          remote_reg_info->ndim);
 #ifdef PDC_SERVER_CACHE
     PDC_transfer_request_data_write_out(bulk_args->remote_obj_id, 0, NULL, remote_reg_info,
-                                        (void *)bulk_args->data_buf, (bulk_args->in).data_unit);
+                                        (void *)bulk_args->data_buf, (bulk_args->in).data_unit,
+                                        (pdc_region_writeout_strategy_t)(bulk_args->in).writeout_strategy);
 #else
     PDC_Server_transfer_request_io(bulk_args->remote_obj_id, 0, NULL, remote_reg_info, bulk_args->data_buf,
-                                   (bulk_args->in).data_unit, 1);
+                                   (bulk_args->in).data_unit, 1,
+                                   (pdc_region_writeout_strategy_t)(bulk_args->in).writeout_strategy);
 #endif
 
     // Perform lock release function
@@ -2857,8 +2865,9 @@ HG_TEST_RPC_CB(region_release, handle)
                         PDC_transfer_request_data_read_from(obj_map_bulk_args->remote_obj_id, 0, NULL,
                                                             remote_reg_info, data_buf, in.data_unit);
 #else
-                        PDC_Server_transfer_request_io(obj_map_bulk_args->remote_obj_id, 0, NULL,
-                                                       remote_reg_info, data_buf, in.data_unit, 0);
+                        PDC_Server_transfer_request_io(
+                            obj_map_bulk_args->remote_obj_id, 0, NULL, remote_reg_info, data_buf,
+                            in.data_unit, 0, PDC_get_obj_writeout_strategy(obj_map_bulk_args->remote_obj_id));
 #endif
                         size  = HG_Bulk_get_size(eltt2->local_bulk_handle);
                         size2 = HG_Bulk_get_size(remote_bulk_handle);

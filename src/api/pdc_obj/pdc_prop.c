@@ -96,15 +96,17 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         q->obj_prop_pub->ndim = 1;
         q->obj_prop_pub->dims = (uint64_t *)PDC_calloc(1, q->obj_prop_pub->ndim * sizeof(uint64_t));
         q->obj_prop_pub->type = PDC_UNKNOWN;
-        q->obj_prop_pub->region_partition = PDC_REGION_STATIC;
-        q->obj_prop_pub->consistency      = PDC_CONSISTENCY_EVENTUAL;
-        q->data_loc                       = NULL;
-        q->app_name                       = NULL;
-        q->time_step                      = 0;
-        q->tags                           = NULL;
-        q->buf                            = NULL;
-        new_id_o                          = PDC_id_register(PDC_OBJ_PROP, q);
-        q->obj_prop_pub->obj_prop_id      = new_id_o;
+        q->obj_prop_pub->region_partition  = PDC_REGION_STATIC;
+        q->obj_prop_pub->consistency       = PDC_CONSISTENCY_EVENTUAL;
+        q->obj_prop_pub->writeout_strategy = STORE_REGION_BY_REGION_SINGLE_FILE;
+        memset(q->obj_prop_pub->obj_split_elems, 0, sizeof(uint32_t) * DIM_MAX);
+        q->data_loc                  = NULL;
+        q->app_name                  = NULL;
+        q->time_step                 = 0;
+        q->tags                      = NULL;
+        q->buf                       = NULL;
+        new_id_o                     = PDC_id_register(PDC_OBJ_PROP, q);
+        q->obj_prop_pub->obj_prop_id = new_id_o;
         if ((id_info = PDC_find_id(pdcid)) == NULL)
             PGOTO_ERROR(0, "Failed to find PDC ID: %d", pdcid);
         pdc_class = (struct _pdc_class *)(id_info->obj_ptr);
@@ -157,13 +159,16 @@ PDCprop_obj_dup(pdcid_t prop_id)
     q->obj_prop_pub = (struct pdc_obj_prop *)PDC_malloc(sizeof(struct pdc_obj_prop));
     if (!q->obj_prop_pub)
         PGOTO_ERROR(0, "PDC object property memory allocation failed");
-    new_id                            = PDC_id_register(PDC_OBJ_PROP, q);
-    q->obj_prop_pub->obj_prop_id      = new_id;
-    q->obj_prop_pub->ndim             = info->obj_prop_pub->ndim;
-    q->obj_prop_pub->dims             = (uint64_t *)PDC_malloc(info->obj_prop_pub->ndim * sizeof(uint64_t));
-    q->obj_prop_pub->type             = info->obj_prop_pub->type;
-    q->obj_prop_pub->region_partition = info->obj_prop_pub->region_partition;
-    q->obj_prop_pub->consistency      = info->obj_prop_pub->consistency;
+    new_id                             = PDC_id_register(PDC_OBJ_PROP, q);
+    q->obj_prop_pub->obj_prop_id       = new_id;
+    q->obj_prop_pub->ndim              = info->obj_prop_pub->ndim;
+    q->obj_prop_pub->dims              = (uint64_t *)PDC_malloc(info->obj_prop_pub->ndim * sizeof(uint64_t));
+    q->obj_prop_pub->type              = info->obj_prop_pub->type;
+    q->obj_prop_pub->region_partition  = info->obj_prop_pub->region_partition;
+    q->obj_prop_pub->consistency       = info->obj_prop_pub->consistency;
+    q->obj_prop_pub->writeout_strategy = info->obj_prop_pub->writeout_strategy;
+    for (int j = 0; j < DIM_MAX; j++)
+        q->obj_prop_pub->obj_split_elems[j] = info->obj_prop_pub->obj_split_elems[j];
     for (i = 0; i < info->obj_prop_pub->ndim; i++)
         (q->obj_prop_pub->dims)[i] = (info->obj_prop_pub->dims)[i];
 

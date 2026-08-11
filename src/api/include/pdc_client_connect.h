@@ -227,7 +227,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
 perr_t PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, uint32_t data_server_id,
                                    int obj_ndim, uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
                                    uint64_t *remote_size, size_t unit, pdc_access_t access_type,
-                                   pdcid_t *metadata_id);
+                                   pdcid_t *metadata_id, pdc_region_writeout_strategy_t writeout_strategy);
 
 int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 

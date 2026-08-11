@@ -81,7 +81,8 @@ typedef struct pdc_transfer_request {
     pdc_region_partition_t region_partition;
 
     // Consistency semantics required by user
-    pdc_consistency_t consistency;
+    pdc_consistency_t              consistency;
+    pdc_region_writeout_strategy_t writeout_strategy;
 
     // Dynamic object partitioning (static region partitioning and dynamic region partitioning)
     int       n_obj_servers;
@@ -327,6 +328,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->metadata_server_id = obj2->obj_info_pub->metadata_server_id;
     p->unit               = PDC_get_var_type_size(p->mem_type);
     p->consistency        = obj2->obj_pt->obj_prop_pub->consistency;
+    p->writeout_strategy  = obj2->obj_pt->obj_prop_pub->writeout_strategy;
     p->merged_request_id  = 0;
     p->is_done            = 0;
     PDCregion_transfer_init_bulk_handles(p);
@@ -1198,7 +1200,7 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
      *     remote remote_ndim: sizeof(int)
      *     unit: sizeof(size_t)
      */
-    metadata_size = n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t));
+    metadata_size = n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t) + sizeof(uint8_t));
     // Data size, including region offsets/length pairs and actual data for I/O.
     /*
      * For each of objects
@@ -1250,6 +1252,8 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
         MEMCPY_INC(&(transfer_requests[i]->transfer_request->obj_ndim), sizeof(int));
         MEMCPY_INC(&(transfer_requests[i]->transfer_request->remote_region_ndim), sizeof(int));
         MEMCPY_INC(&unit, sizeof(size_t));
+        uint8_t ws = (uint8_t)transfer_requests[i]->transfer_request->writeout_strategy;
+        MEMCPY_INC(&ws, sizeof(uint8_t));
     }
 
     for (i = 0; i < n_objs; ++i) {
@@ -1624,7 +1628,7 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
                 transfer_request->obj_servers[i], transfer_request->obj_ndim, transfer_request->obj_dims,
                 transfer_request->remote_region_ndim, transfer_request->output_offsets[i],
                 transfer_request->output_sizes[i], unit, transfer_request->access_type,
-                transfer_request->metadata_id + i);
+                transfer_request->metadata_id + i, transfer_request->writeout_strategy);
             PDCregion_transfer_add_bulk_handle(transfer_request, bulk_handle);
         }
     }
@@ -1645,7 +1649,7 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
             transfer_request->data_server_id, transfer_request->obj_ndim, transfer_request->obj_dims,
             transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
             transfer_request->remote_region_size, unit, transfer_request->access_type,
-            transfer_request->metadata_id);
+            transfer_request->metadata_id, transfer_request->writeout_strategy);
         PDCregion_transfer_add_bulk_handle(transfer_request, bulk_handle);
     }
 

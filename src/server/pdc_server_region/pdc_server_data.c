@@ -4069,11 +4069,6 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     uint64_t              i, j, pos;
     uint64_t *            overlap_offset, *overlap_size;
     char *                tmp_buf;
-#if 0
-    size_t                total_write_size = 0, local_write_size;
-    int is_overlap;
-#endif
-    FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
     double start = MPI_Wtime(), start_posix;
 #endif

@@ -217,6 +217,8 @@ typedef struct pdc_metadata_transfer_t {
     uint32_t data_server_id;
     uint8_t  region_partition;
     uint8_t  consistency;
+    uint8_t  writeout_strategy;
+    uint32_t obj_split_elems[DIM_MAX];
 
     // The following support state changes to objects
     // as a result of a transform.
@@ -358,6 +360,8 @@ typedef struct pdc_metadata_t {
     uint32_t       data_server_id;
     uint8_t        region_partition;
     uint8_t        consistency;
+    uint8_t        writeout_strategy;
+    uint32_t       obj_split_elems[DIM_MAX];
 
     char              tags[TAG_LEN_MAX];
     pdc_kvtag_list_t *kvtag_list_head;
@@ -547,6 +551,8 @@ typedef struct {
     uint8_t                data_type;
     size_t                 data_unit;
     uint8_t                lock_mode;
+    uint8_t                writeout_strategy;
+    uint32_t               obj_split_elems[DIM_MAX];
 } region_lock_in_t;
 
 /* FIXME:  The bulk_args->in structure (shown below) appears is defined as a
@@ -788,7 +794,9 @@ typedef struct {
     int32_t                obj_ndim;
     uint32_t               meta_server_id;
 
-    uint8_t access_type;
+    uint8_t  access_type;
+    uint8_t  writeout_strategy;
+    uint32_t obj_split_elems[DIM_MAX];
 } transfer_request_in_t;
 
 /* Define transfer_request_out_t */
@@ -1302,6 +1310,16 @@ hg_proc_region_lock_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         FUNC_LEAVE(ret);
     }
+    ret = hg_proc_uint8_t(proc, &struct_data->writeout_strategy);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint32_t(proc, &struct_data->obj_split_elems[i]);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+    }
 
     FUNC_LEAVE(ret);
 }
@@ -1627,6 +1645,16 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint8_t(proc, &struct_data->consistency);
     if (ret != HG_SUCCESS) {
         FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->writeout_strategy);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint32_t(proc, &struct_data->obj_split_elems[i]);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
     }
     // Added to support transforms
     ret = hg_proc_int32_t(proc, &struct_data->current_state);
@@ -2641,6 +2669,16 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
     ret = hg_proc_uint8_t(proc, &struct_data->access_type);
     if (ret != HG_SUCCESS) {
         FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->writeout_strategy);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint32_t(proc, &struct_data->obj_split_elems[i]);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
     }
 
     FUNC_LEAVE(ret);
@@ -4817,6 +4855,6 @@ hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);
 
 perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
-                                      int is_write);
+                                      int is_write, pdc_region_writeout_strategy_t strategy);
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */
