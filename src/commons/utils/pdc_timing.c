@@ -4,7 +4,9 @@
 #include "pdc_malloc.h"
 #include "pdc_logger.h"
 #include "assert.h"
+#ifdef ENABLE_MPI
 #include "mpi.h"
+#endif
 
 #ifdef PDC_TIMING
 static double pdc_base_time;

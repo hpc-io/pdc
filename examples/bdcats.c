@@ -109,7 +109,7 @@ main(int argc, char **argv)
 
         // open objects
 #ifdef ENABLE_MPI
-    obj_xx = PDCobj_open_col("obj-var-xx", pdc_id);
+    obj_xx = PDCobj_open_coll("obj-var-xx", pdc_id, MPI_COMM_WORLD);
 #else
     obj_xx   = PDCobj_open("obj-var-xx", pdc_id);
 #endif
@@ -118,7 +118,7 @@ main(int argc, char **argv)
         exit(-1);
     }
 #ifdef ENABLE_MPI
-    obj_yy = PDCobj_open_col("obj-var-yy", pdc_id);
+    obj_yy = PDCobj_open_coll("obj-var-yy", pdc_id, MPI_COMM_WORLD);
 #else
     obj_yy   = PDCobj_open("obj-var-xx", pdc_id);
 #endif
@@ -127,7 +127,7 @@ main(int argc, char **argv)
         exit(-1);
     }
 #ifdef ENABLE_MPI
-    obj_zz = PDCobj_open_col("obj-var-zz", pdc_id);
+    obj_zz = PDCobj_open_coll("obj-var-zz", pdc_id, MPI_COMM_WORLD);
 #else
     obj_zz   = PDCobj_open("obj-var-xx", pdc_id);
 #endif
@@ -136,7 +136,7 @@ main(int argc, char **argv)
         exit(-1);
     }
 #ifdef ENABLE_MPI
-    obj_pxx = PDCobj_open_col("obj-var-pxx", pdc_id);
+    obj_pxx = PDCobj_open_coll("obj-var-pxx", pdc_id, MPI_COMM_WORLD);
 #else
     obj_pxx  = PDCobj_open("obj-var-xx", pdc_id);
 #endif
@@ -145,7 +145,7 @@ main(int argc, char **argv)
         exit(-1);
     }
 #ifdef ENABLE_MPI
-    obj_pyy = PDCobj_open_col("obj-var-pyy", pdc_id);
+    obj_pyy = PDCobj_open_coll("obj-var-pyy", pdc_id, MPI_COMM_WORLD);
 #else
     obj_pyy  = PDCobj_open("obj-var-xx", pdc_id);
 #endif
@@ -154,7 +154,7 @@ main(int argc, char **argv)
         exit(-1);
     }
 #ifdef ENABLE_MPI
-    obj_pzz = PDCobj_open_col("obj-var-pzz", pdc_id);
+    obj_pzz = PDCobj_open_coll("obj-var-pzz", pdc_id, MPI_COMM_WORLD);
 #else
     obj_pzz  = PDCobj_open("obj-var-xx", pdc_id);
 #endif
@@ -163,7 +163,7 @@ main(int argc, char **argv)
         exit(-1);
     }
 #ifdef ENABLE_MPI
-    obj_id11 = PDCobj_open_col("id11", pdc_id);
+    obj_id11 = PDCobj_open_coll("id11", pdc_id, MPI_COMM_WORLD);
 #else
     obj_id11 = PDCobj_open("obj-var-xx", pdc_id);
 #endif
@@ -172,7 +172,7 @@ main(int argc, char **argv)
         exit(-1);
     }
 #ifdef ENABLE_MPI
-    obj_id22 = PDCobj_open_col("id22", pdc_id);
+    obj_id22 = PDCobj_open_coll("id22", pdc_id, MPI_COMM_WORLD);
 #else
     obj_id22 = PDCobj_open("obj-var-xx", pdc_id);
 #endif

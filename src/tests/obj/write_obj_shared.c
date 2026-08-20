@@ -148,7 +148,7 @@ main(int argc, char **argv)
     PDCprop_set_obj_tags(obj_prop, "tag0=1");
 
     // Create a object
-    global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm);
+    global_obj = PDCobj_create_coll(cont, obj_name, obj_prop, 0, comm);
     // global_obj = PDCobj_create(cont, obj_name, obj_prop);
 
     if (global_obj <= 0) {
