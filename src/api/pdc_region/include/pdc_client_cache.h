@@ -22,47 +22,37 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef PDC_H
-#define PDC_H
+#ifndef PDC_CLIENT_CACHE_H
+#define PDC_CLIENT_CACHE_H
 
-#include "pdc_config.h"
 #include "pdc_public.h"
-#include "pdc_prop.h"
-#include "pdc_cont.h"
-#include "pdc_logger.h"
-
-#ifdef ENABLE_MPI
-#include "pdc_mpi.h"
-#endif
-
 #include "pdc_obj.h"
-#include "pdc_region.h"
-#include "pdc_client_cache.h"
-#include "pdc_query.h"
-#include "pdc_analysis.h"
-#include "pdc_transform.h"
+#include "pdc_client_cache_dl.h"
+#include "pdc_client_cache_prefetch.h"
 
-int PDC_timing_report(const char *prefix);
+extern pdcid_t pdc_id;
+extern size_t  total_buf_size;
+extern int     total_item_num;
 
-/*********************/
-/* Public Prototypes */
-/*********************/
-/**
- * Initialize the PDC layer
- *
- * \param pdc_name [IN]         Name of the PDC
- *
- * \return PDC id on success / 0 on failure
- */
-pdcid_t PDCinit(const char *pdc_name);
+/****************************************************/
+/* Private Functions for Client-side Region Caching */
+/****************************************************/
 
-/**
- * Close the PDC layer
- *
- * \param pdc_id [IN]           ID of the PDC
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCclose(pdcid_t pdcid);
+perr_t PDC_client_cache_init(pdcid_t pdcid);
 
-#endif
+int PDC_client_cache_search(pdcid_t obj_id, int ndim, uint64_t unit, uint64_t *offset, uint64_t *size,
+                            void *buf);
+
+perr_t PDC_client_cache_insert(pdcid_t obj_id, int ndim, uint64_t unit, uint64_t *offset, uint64_t *size,
+                               void *buf);
+
+perr_t PDC_client_cache_update(pdcid_t obj_id, int ndim, uint64_t unit, uint64_t *offset, uint64_t *size,
+                               void *buf);
+
+perr_t PDC_client_cache_evict();
+
+void PDC_client_cache_timelog(double start_time, const char *message);
+
+perr_t PDC_client_cache_finalize();
+
+#endif /* PDC_CLIENT_CACHE_H */

@@ -22,47 +22,25 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
-#ifndef PDC_H
-#define PDC_H
+#ifndef PDC_CLIENT_CACHE_PREFETCH_H
+#define PDC_CLIENT_CACHE_PREFETCH_H
 
-#include "pdc_config.h"
 #include "pdc_public.h"
-#include "pdc_prop.h"
-#include "pdc_cont.h"
-#include "pdc_logger.h"
-
-#ifdef ENABLE_MPI
-#include "pdc_mpi.h"
-#endif
-
 #include "pdc_obj.h"
-#include "pdc_region.h"
-#include "pdc_client_cache.h"
-#include "pdc_query.h"
-#include "pdc_analysis.h"
-#include "pdc_transform.h"
 
-int PDC_timing_report(const char *prefix);
+/*******************************************************/
+/* Public Functions for Client-side Region Prefetching */
+/*******************************************************/
+extern int obj_prefetch_list_len;
 
-/*********************/
-/* Public Prototypes */
-/*********************/
-/**
- * Initialize the PDC layer
- *
- * \param pdc_name [IN]         Name of the PDC
- *
- * \return PDC id on success / 0 on failure
- */
-pdcid_t PDCinit(const char *pdc_name);
+perr_t PDCregion_receive_prefetch_hint(pdcid_t *obj_arr, pdcid_t *reg_arr, int obj_array_len);
+perr_t PDCregion_prefetch_by_objid();
+perr_t PDCregion_print_prefetch_list();
 
-/**
- * Close the PDC layer
- *
- * \param pdc_id [IN]           ID of the PDC
- *
- * \return Non-negative on success/Negative on failure
- */
-perr_t PDCclose(pdcid_t pdcid);
+/*******************************************************/
+/* Private Functions for Client-side Region Prefetching */
+/*******************************************************/
 
-#endif
+perr_t PDC_client_cache_prefetch_init();
+
+#endif /* PDC_CLIENT_CACHE_PREFETCH_H */

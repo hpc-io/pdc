@@ -100,6 +100,8 @@ set(PROGRAMS
   region/region_transfer_set_dims
   region/region_transfer_set_dims_2D
   region/region_transfer_set_dims_3D
+  region/region_transfer_clientcache
+  region/region_transfer_clientcache_prefetch
   query/query_data
   misc/producer_waitall
 )
@@ -316,6 +318,8 @@ add_test(NAME read_obj_int64   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 add_test(NAME read_obj_uint64  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 uint64)
 add_test(NAME read_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int16)
 add_test(NAME read_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int8)
+add_test(NAME region_transfer_clientcache        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_clientcache)
+add_test(NAME region_transfer_clientcache_prefetch WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_clientcache_prefetch)
 add_test(NAME vpicio_bdcats_transfer_request     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
 
 
@@ -388,6 +392,8 @@ set_tests_properties(read_obj_int64    PROPERTIES LABELS serial)
 set_tests_properties(read_obj_uint64   PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int16    PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int8     PROPERTIES LABELS serial)
+set_tests_properties(region_transfer_clientcache                  PROPERTIES LABELS serial)
+set_tests_properties(region_transfer_clientcache_prefetch         PROPERTIES LABELS serial)
 set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS serial)
 
 if(BUILD_MPI_TESTING)

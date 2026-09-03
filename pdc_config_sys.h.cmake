@@ -15,6 +15,9 @@
 /* Define the max region cache size in GB */
 #cmakedefine PDC_SERVER_CACHE_MAX_GB @PDC_SERVER_CACHE_MAX_GB@
 
+/* Define if you want to enable client-side cache */
+#cmakedefine ENABLE_CLIENT_CACHE
+
 /* Define region cache flush time interval */
 #cmakedefine PDC_SERVER_CACHE_FLUSH_TIME @PDC_SERVER_CACHE_FLUSH_TIME@
 

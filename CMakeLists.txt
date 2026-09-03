@@ -501,6 +501,22 @@ if(PDC_ENABLE_ZFP)
     set(ENABLE_ZFP 1)
 endif()
 
+#-----------------------------------------------------------------------------
+# Client-side cache option
+#-----------------------------------------------------------------------------
+option(PDC_CLIENT_CACHE "Enable client-side cache." OFF)
+if(PDC_CLIENT_CACHE)
+    set(ENABLE_CLIENT_CACHE 1)
+    set(PDC_CLIENT_CACHE_NUM_CHUNKS         "4"        CACHE STRING "Client cache: number of chunks")
+    set(PDC_CLIENT_CACHE_MAX_ITEM_SIZE      "67108864" CACHE STRING "Client cache: max item size (bytes)")
+    set(PDC_CLIENT_CACHE_MAX_SLOTS_PER_NODE "340"       CACHE STRING "Client cache: max slots per node")
+    add_compile_definitions(
+        NUM_CHUNKS=${PDC_CLIENT_CACHE_NUM_CHUNKS}
+        MAX_ITEM_SIZE=${PDC_CLIENT_CACHE_MAX_ITEM_SIZE}
+        MAX_SLOTS_PER_NODE=${PDC_CLIENT_CACHE_MAX_SLOTS_PER_NODE}
+    )
+endif()
+
 # Check availability of symbols
 #-----------------------------------------------------------------------------
 check_symbol_exists(malloc_usable_size "malloc.h" HAVE_MALLOC_USABLE_SIZE)
