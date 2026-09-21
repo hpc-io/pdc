@@ -33,8 +33,9 @@
 #include <inttypes.h>
 #include "pdc.h"
 
-#define NPARTICLES 8388608
-#define N_OBJS     8
+#define NPARTICLES    8388608
+#define MAX_PARTICLES (NPARTICLES * 2)
+#define N_OBJS        8
 
 double
 uniform_random_number()
@@ -819,6 +820,8 @@ main(int argc, char **argv)
     free(pz);
     free(id1);
     free(id2);
+
+done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

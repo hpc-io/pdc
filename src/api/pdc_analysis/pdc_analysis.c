@@ -575,17 +575,17 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
                 remaining     = 0;
 
                 if (current_total == thisIter->totalElements) {
-                    if (nextBlock)
+                    if (nextBlock != NULL)
                         *nextBlock = NULL;
                     thisIter->sliceNext = 0;
                     thisIter->srcNext   = NULL;
-                    if (dims)
+                    if (dims != NULL)
                         dims[0] = dims[1] = 0;
-                    if (nextBlock)
+                    if (nextBlock != NULL)
                         *nextBlock = NULL;
                     PGOTO_DONE(0);
                 }
-                if (nextBlock)
+                if (nextBlock != NULL)
                     *nextBlock = thisIter->srcNext;
                 thisIter->srcNext = NULL;
                 remaining         = thisIter->totalElements - current_total;
@@ -600,7 +600,7 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
             else if (thisIter->sliceNext && (thisIter->sliceNext % thisIter->sliceResetCount) == 0) {
                 offset            = ++thisIter->srcBlockCount * thisIter->elementsPerBlock;
                 thisIter->srcNext = thisIter->srcStart + offset + thisIter->skipCount;
-                if (nextBlock)
+                if (nextBlock != NULL)
                     *nextBlock = thisIter->srcNext;
             }
             else {
@@ -615,7 +615,7 @@ PDCobj_data_getNextBlock(pdcid_t iter, void **nextBlock, size_t *dims)
                 if (thisIter->ndim > 2)
                     dims[2] = thisIter->dims[2];
                 if (thisIter->ndim > 3)
-                    dims[2] = thisIter->dims[3];
+                    dims[3] = thisIter->dims[3];
             }
             PGOTO_DONE(thisIter->elementsPerBlock);
         }

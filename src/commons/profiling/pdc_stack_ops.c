@@ -269,7 +269,9 @@ void __attribute__((constructor)) profile_init(void)
     size_override = getenv("PROFILE_HASHTABLESIZE");
     if (size_override != NULL) {
         int override_value = atoi(size_override);
-        if (override_value > 0) {
+        /* Bound the user-supplied size on both ends to avoid an unbounded
+         * allocation in the hashtable backend. */
+        if (override_value > 0 && override_value <= (1 << 20)) {
             default_HashtableSize = override_value;
         }
     }

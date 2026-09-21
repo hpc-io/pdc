@@ -336,11 +336,14 @@ pdc_metadata_t *find_metadata_by_id(uint64_t obj_id);
 perr_t PDC_Server_get_metadata_by_id_with_cb(uint64_t obj_id, perr_t (*cb)(), void *args);
 
 /**
- * Check if an object has metadata in current server
+ * Check if an object has metadata on the current server
+ *
+ * Ownership is based on presence in the local metadata hash table, not on the
+ * creation rank encoded in obj_id (which can differ after elastic restart).
  *
  * \param obj_id [IN]           Object ID
  *
- * \return 1 if metadata is stored locally/-1 otherwise
+ * \return 1 if metadata is stored locally, 0 otherwise
  */
 int PDC_Server_has_metadata(pdcid_t obj_id);
 

@@ -764,6 +764,8 @@ static inline rbt_node_t *
 rbt_sibling(rbt_node_t *node)
 {
     FUNC_ENTER(NULL);
+    if (!node || !node->parent)
+        FUNC_LEAVE(NULL);
     FUNC_LEAVE((node == node->parent->left) ? node->parent->right : node->parent->left);
 }
 
@@ -772,7 +774,7 @@ rbt_find_next(rbt_node_t *node)
 {
     FUNC_ENTER(NULL);
 
-    if (!node->right)
+    if (!node || !node->right)
         FUNC_LEAVE(NULL);
 
     rbt_node_t **next = &(node->right);
@@ -788,7 +790,7 @@ rbt_find_prev(rbt_node_t *node)
 {
     FUNC_ENTER(NULL);
 
-    if (!node->left)
+    if (!node || !node->left)
         FUNC_LEAVE(NULL);
 
     rbt_node_t **prev = &(node->left);
@@ -927,7 +929,7 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
                 else {
                     (*n)->parent->right = (*n)->left;
                 }
-                if (n && *n && (*n)->left) {
+                if ((*n)->left) {
                     (*n)->left->parent = *node;
                 }
             }
@@ -938,12 +940,12 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
                 else {
                     (*n)->parent->left = (*n)->right;
                 }
-                if (n && *n && (*n)->right) {
+                if ((*n)->right) {
                     (*n)->right->parent = *node;
                 }
             }
 
-            if (n && *n) {
+            if (*n) {
                 rbt_free_node(rbt, n, &prev_value, v);
             }
             rbt->size = rbt->size - 1;
@@ -970,7 +972,7 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
                 }
             }
 
-            if (node && *node) {
+            if (*node) {
                 rbt_free_node(rbt, node, &((*node)->value), v);
             }
             rbt->size = rbt->size - 1;
@@ -987,7 +989,7 @@ rbt_remove(rbt_t *rbt, void *k, size_t klen, void **v)
             (*node)->parent->right = NULL;
     }
 
-    if (node && *node) {
+    if (*node) {
         rbt_free_node(rbt, node, &((*node)->value), v);
     }
     rbt->size = rbt->size - 1;

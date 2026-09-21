@@ -65,7 +65,7 @@ main(int argc, char **argv)
         TGOTO_DONE(TFAIL);
     }
 
-    sprintf(obj_name, "%s_%d", argv[1], rank);
+    snprintf(obj_name, sizeof(obj_name), "%s_%d", argv[1], rank);
 
     size_MB = atoi(argv[2]);
 

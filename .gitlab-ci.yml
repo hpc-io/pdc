@@ -5,11 +5,19 @@ variables:
     PDC_INSTALL_PATH: "${CI_PROJECT_DIR}/install"
     GIT_CLONE_PATH: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}"
 
+# Runs after every job (even on failure/timeout) so generated PDC tmp/data dirs
+# don't accumulate on the runner's persistent filesystem. The guard makes it a
+# no-op for jobs that don't set these variables (build/report/authorize).
+default:
+    after_script:
+        - if [ -n "${PDC_TMPDIR}${PDC_DATA_LOC}" ]; then rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}; fi
+
 stages:
     - authorize
     - build
     - test
     - metrics
+    - report
 
 .report-status:
     script:
@@ -31,27 +39,12 @@ pending:
     extends:
         - .report-status
 
-success:
-    stage: .post
-    variables:
-        STATUS_MESSAGE: "Successfully passed all tests on Perlmutter!"
-    extends:
-        - .report-status
-
-failure:
-    stage: .post
-    variables:
-        STATUS_MESSAGE: "Failed to pass all tests on Perlmutter!"
-    extends:
-        - .report-status
-    rules:
-        - when: on_failure
-
 perlmutter-authorize:
     stage: authorize
     rules:
         - if: '$METRICS == null'
     when: manual
+    allow_failure: false # ensures pipeline doesn't skip ahead
     script:
         - |
             curl -L \
@@ -77,13 +70,15 @@ perlmutter-no-cache-build:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
-        - module load libfabric
+        - module unload libfabric darshan
         - module list
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/no-cache
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
-        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/no-cache
+        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=OFF -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/no-cache
         - make -j
         - make install
     artifacts:
@@ -106,13 +101,15 @@ perlmutter-cache-build:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
-        - module load libfabric
+        - module unload libfabric darshan
         - module list
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/cache
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
-        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DPDC_SERVER_CACHE_MAX_GB=1 -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/cache
+        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DPDC_SERVER_CACHE_MAX_GB=1 -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/cache
         - make -j
         - make install
     artifacts:
@@ -139,15 +136,15 @@ perlmutter-no-cache-parallel-pdc:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-pdc"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-pdc"
-    script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+    script:    
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_pdc
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-obj:
     stage: test
     id_tokens:
@@ -163,15 +160,15 @@ perlmutter-no-cache-parallel-obj:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-obj"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-obj"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_obj
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-cont:
     stage: test
     id_tokens:
@@ -187,15 +184,15 @@ perlmutter-no-cache-parallel-cont:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-cont"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-cont"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_cont
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-prop:
     stage: test
     id_tokens:
@@ -211,15 +208,15 @@ perlmutter-no-cache-parallel-prop:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-prop"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-prop"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_prop
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-region:
     stage: test
     id_tokens:
@@ -235,15 +232,15 @@ perlmutter-no-cache-parallel-region:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-region"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-region"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_region_transfer
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-no-cache-parallel-region-all:
     stage: test
     id_tokens:
@@ -259,15 +256,15 @@ perlmutter-no-cache-parallel-region-all:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-region-all"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-region-all"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
         - ctest -L parallel_region_transfer_all
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 # ====================================================================
 # Perlmutter
 # PDC (cache)
@@ -288,15 +285,15 @@ perlmutter-cache-parallel-pdc:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-pdc"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-pdc"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_pdc
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-obj:
     stage: test
     id_tokens:
@@ -312,15 +309,15 @@ perlmutter-cache-parallel-obj:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-obj"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-obj"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_obj
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-cont:
     stage: test
     id_tokens:
@@ -336,15 +333,15 @@ perlmutter-cache-parallel-cont:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-cont"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-cont"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_cont
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-prop:
     stage: test
     id_tokens:
@@ -360,15 +357,15 @@ perlmutter-cache-parallel-prop:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-prop"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-prop"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_prop
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-region:
     stage: test
     id_tokens:
@@ -384,15 +381,15 @@ perlmutter-cache-parallel-region:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-region"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-region"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_region_transfer
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-cache-parallel-region-all:
     stage: test
     id_tokens:
@@ -408,15 +405,15 @@ perlmutter-cache-parallel-region-all:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-region-all"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-region-all"
     script:        
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
         - ctest -L parallel_region_transfer_all
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
-
 perlmutter-metrics-build:
     stage: build
     id_tokens:
@@ -430,13 +427,15 @@ perlmutter-metrics-build:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
-        - module load libfabric
+        - module unload libfabric darshan
         - module list
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/metrics
         - cd ${PDC_BUILD_PATH}/perlmutter/metrics
-        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DMERCURY_DIR=$MERCURY_DIR -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/metrics
+        - cmake ../../.. -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=$PDC_DIR -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=cc -DMPI_RUN_CMD="srun -A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64" -DCMAKE_INSTALL_PREFIX=${PDC_INSTALL_PATH}/perlmutter/metrics
         - make -j
         - make install
     artifacts:
@@ -456,8 +455,9 @@ perlmutter-metrics:
     tags:
         - perlmutter
     variables:
-        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=${PDC_QUEUE} --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 00:30:00"
+        SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=${PDC_QUEUE} --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 01:00:00"
         SUPERCOMPUTER: "perlmutter"
+        LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/pdc-tmp-metrics"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/pdc-data-metrics"
@@ -470,8 +470,11 @@ perlmutter-metrics:
         - hostname
         - echo "JOBID ${SLURM_JOB_ID}"
         - export NERSC_HOST=`cat /etc/clustername`
+        - export MPICH_OFI_USE_PROVIDER="tcp;ofi_rxm"
+        - module unload libfabric darshan
         - module load python
-        - export LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
+        - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter
         - let TOTAL_PROCESSES=$PDC_N_CLIENTS*$PDC_N_NODES
         - echo "Starting PDC servers..."
@@ -484,5 +487,22 @@ perlmutter-metrics:
         - pip install pydrive gspread gspread-dataframe google
         - echo "Storing PDC metrics..."
         - python3 ../../.github/workflows/store-metrics.py Perlmutter ${PDC_JOB_OUTPUT} ${CI_COMMIT_BRANCH} ${SLURM_JOB_ID}
-        - echo "Removing files..."
-        - rm -rf ${PDC_TMPDIR} ${PDC_DATA_LOC}
+success:
+    stage: report
+    variables:
+        STATUS_MESSAGE: "Successfully passed all tests on Perlmutter!"
+    extends:
+        - .report-status
+    needs:
+        - perlmutter-no-cache-parallel-region-all
+        - perlmutter-cache-parallel-region-all
+    rules:
+        - if: '$METRICS == null'
+
+failure:
+    stage: report
+    variables:
+        STATUS_MESSAGE: "Failed to pass all tests on Perlmutter!"
+    extends:
+        - .report-status
+    when: on_failure

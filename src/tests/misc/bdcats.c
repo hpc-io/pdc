@@ -77,6 +77,19 @@ main(int argc, char **argv)
     if (argc >= 4)
         sleeptime = atoi(argv[3]);
 
+    if (numparticles == 0 || numparticles > 1073741824ULL) {
+        LOG_ERROR("Invalid numparticles value: %" PRIu64 "\n", numparticles);
+        return FAIL;
+    }
+    if (steps <= 0 || steps > 100000) {
+        LOG_ERROR("Invalid steps value: %d\n", steps);
+        return FAIL;
+    }
+    if (sleeptime < 0 || sleeptime > 86400) {
+        LOG_ERROR("Invalid sleeptime value: %d\n", sleeptime);
+        return FAIL;
+    }
+
     if (rank == 0)
         LOG_INFO("Reading %" PRIu64 " particles per rank for %d steps with %d sec sleep time.\n",
                  numparticles, steps, sleeptime);
@@ -123,7 +136,11 @@ main(int argc, char **argv)
 #endif
         for (int i = 0; i < 8; i++) {
             sprintf(obj_name, "%s-%d", obj_names[i], iter);
+#ifdef ENABLE_MPI
+            obj_ids[i] = PDCobj_open_col(obj_name, pdc_id);
+#else
             obj_ids[i] = PDCobj_open(obj_name, pdc_id);
+#endif
             if (obj_ids[i] == 0) {
                 LOG_ERROR("Error getting an object id of %s from server\n", obj_name);
                 return FAIL;

@@ -38,6 +38,12 @@
 #include "pdc_logger.h"
 #include "pdc_timing.h"
 
+#ifdef IS_PDC_SERVER
+#include "pdc_server_rescale.h"
+#else
+#include "pdc_hash_table.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -210,13 +216,160 @@ PDC_get_local_server_id(int my_rank, int n_client_per_server, int n_server)
     FUNC_LEAVE(ret_value);
 }
 
+#ifndef IS_PDC_SERVER
+/* Client session map loaded from obj_id_home_map.bin after elastic restart. */
+static HashTable *client_obj_id_home_map_g = NULL;
+
+static unsigned int
+client_obj_id_hash(HashTableKey vlocation)
+{
+    FUNC_ENTER(NULL);
+
+    uint64_t v = *((uint64_t *)vlocation);
+
+    FUNC_LEAVE((unsigned int)(v ^ (v >> 32)));
+}
+
+static int
+client_obj_id_equal(HashTableKey vlocation1, HashTableKey vlocation2)
+{
+    FUNC_ENTER(NULL);
+    FUNC_LEAVE(*((uint64_t *)vlocation1) == *((uint64_t *)vlocation2));
+}
+
+static void
+client_obj_id_key_free(HashTableKey key)
+{
+    FUNC_ENTER(NULL);
+    key = (HashTableKey)PDC_free((uint64_t *)key);
+    FUNC_LEAVE_VOID();
+}
+
+static void
+client_obj_id_value_free(HashTableValue value)
+{
+    FUNC_ENTER(NULL);
+    value = (HashTableValue)PDC_free((uint32_t *)value);
+    FUNC_LEAVE_VOID();
+}
+
+void
+PDC_Client_clear_obj_id_home_map(void)
+{
+    FUNC_ENTER(NULL);
+
+    if (client_obj_id_home_map_g != NULL) {
+        hash_table_free(client_obj_id_home_map_g);
+        client_obj_id_home_map_g = NULL;
+    }
+
+    FUNC_LEAVE_VOID();
+}
+
+perr_t
+PDC_Client_install_obj_id_home_map(uint32_t n_server, uint64_t n_entries, const pdc_obj_id_home_rec_t *recs)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t    ret_value = SUCCEED;
+    uint64_t  i;
+    uint64_t *key = NULL;
+    uint32_t *val = NULL;
+
+    (void)n_server;
+
+    PDC_Client_clear_obj_id_home_map();
+
+    if (n_entries == 0 || recs == NULL)
+        PGOTO_DONE(SUCCEED);
+
+    client_obj_id_home_map_g = hash_table_new(client_obj_id_hash, client_obj_id_equal);
+    if (client_obj_id_home_map_g == NULL)
+        PGOTO_ERROR(FAIL, "Cannot create client obj_id home map");
+    hash_table_register_free_functions(client_obj_id_home_map_g, client_obj_id_key_free,
+                                       client_obj_id_value_free);
+
+    for (i = 0; i < n_entries; i++) {
+        key = (uint64_t *)PDC_malloc(sizeof(uint64_t));
+        val = (uint32_t *)PDC_malloc(sizeof(uint32_t));
+        if (key == NULL || val == NULL)
+            PGOTO_ERROR(FAIL, "Cannot allocate client obj_id home map entry");
+        *key = recs[i].id;
+        *val = recs[i].home;
+        if (hash_table_insert(client_obj_id_home_map_g, key, val) != 1)
+            PGOTO_ERROR(FAIL, "Failed to insert client obj_id %" PRIu64 " -> home %u", recs[i].id,
+                        recs[i].home);
+        key = NULL;
+        val = NULL;
+    }
+
+done:
+    if (ret_value != SUCCEED) {
+        if (key != NULL)
+            key = (uint64_t *)PDC_free(key);
+        if (val != NULL)
+            val = (uint32_t *)PDC_free(val);
+        PDC_Client_clear_obj_id_home_map();
+    }
+    FUNC_LEAVE(ret_value);
+}
+
+int
+PDC_Client_lookup_obj_id_home(uint64_t obj_id, uint32_t *home_out)
+{
+    FUNC_ENTER(NULL);
+
+    uint32_t *home;
+
+    if (client_obj_id_home_map_g == NULL || home_out == NULL)
+        FUNC_LEAVE(0);
+
+    home = (uint32_t *)hash_table_lookup(client_obj_id_home_map_g, &obj_id);
+    if (home == NULL)
+        FUNC_LEAVE(0);
+
+    *home_out = *home;
+    FUNC_LEAVE(1);
+}
+#endif /* !IS_PDC_SERVER */
+
 uint32_t
 PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
 {
     FUNC_ENTER(NULL);
 
-    // TODO: need a smart way to deal with server number change
     uint32_t ret_value = 0;
+
+#ifdef IS_PDC_SERVER
+    /*
+     * After elastic restart, creation rank encoded in obj_id may differ from
+     * metadata home. Consult the server-side map built during migration.
+     * Misses (e.g. IDs created after migrate) fall through to the legacy formula.
+     */
+    {
+        uint32_t home = 0;
+
+        if (PDC_Server_lookup_obj_id_home(obj_id, &home)) {
+            if (n_server > 0)
+                home %= (uint32_t)n_server;
+            FUNC_LEAVE(home);
+        }
+    }
+#else
+    /*
+     * Client: consult sidecar map loaded at connect after elastic restart.
+     * Absent map or miss → legacy creation-rank formula.
+     */
+    {
+        uint32_t home = 0;
+
+        if (PDC_Client_lookup_obj_id_home(obj_id, &home)) {
+            if (n_server > 0)
+                home %= (uint32_t)n_server;
+            FUNC_LEAVE(home);
+        }
+    }
+#endif
 
     ret_value = (uint32_t)(obj_id / PDC_SERVER_ID_INTERVEL) - 1;
     ret_value %= n_server;
@@ -335,6 +488,27 @@ PDC_get_server_by_name(char *name, int n_server)
     // TODO: need a smart way to deal with server number change
     uint32_t ret_value;
     ret_value = PDC_get_hash_by_name(name) % n_server;
+
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Canonical metadata home rank: (hash(name) + time_step) % n_server.
+ * Used by create, name+timestep query, and elastic migration.
+ */
+uint32_t
+PDC_metadata_home_rank(const char *name, int32_t time_step, int n_server)
+{
+    FUNC_ENTER(NULL);
+
+    uint32_t ret_value = 0;
+    uint32_t hash_name_value;
+
+    if (name == NULL || n_server <= 0)
+        FUNC_LEAVE(0);
+
+    hash_name_value = PDC_get_hash_by_name(name);
+    ret_value       = (hash_name_value + (uint32_t)time_step) % (uint32_t)n_server;
 
     FUNC_LEAVE(ret_value);
 }
@@ -2315,9 +2489,9 @@ transform_and_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_inf
     if (remote_reg_info == NULL)
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed");
 
-    remote_reg_info->ndim        = (bulk_args->remote_region).ndim;
-    remote_reg_info->offset      = (uint64_t *)PDC_malloc(sizeof(uint64_t));
-    remote_reg_info->size        = (uint64_t *)PDC_malloc(sizeof(uint64_t));
+    remote_reg_info->ndim = (bulk_args->remote_region).ndim;
+    remote_reg_info->offset = (uint64_t *)PDC_malloc(sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)PDC_malloc(sizeof(uint64_t));
     (remote_reg_info->offset)[0] = (bulk_args->remote_region).start[0];
     if (use_transform_size)
         (remote_reg_info->size)[0] = transform_size;
@@ -2558,9 +2732,9 @@ buf_map_region_release_bulk_transfer_cb(const struct hg_cb_info *hg_cb_info)
     if (remote_reg_info == NULL)
         PGOTO_ERROR(HG_OTHER_ERROR, "remote_reg_info memory allocation failed");
 
-    remote_reg_info->ndim   = (bulk_args->remote_region_nounit).ndim;
+    remote_reg_info->ndim = (bulk_args->remote_region_nounit).ndim;
     remote_reg_info->offset = (uint64_t *)PDC_malloc(remote_reg_info->ndim * sizeof(uint64_t));
-    remote_reg_info->size   = (uint64_t *)PDC_malloc(remote_reg_info->ndim * sizeof(uint64_t));
+    remote_reg_info->size = (uint64_t *)PDC_malloc(remote_reg_info->ndim * sizeof(uint64_t));
 
     PDC_copy_region_desc(bulk_args->remote_region_nounit.start, remote_reg_info->offset,
                          remote_reg_info->ndim, remote_reg_info->ndim);
@@ -2695,25 +2869,23 @@ HG_TEST_RPC_CB(region_release, handle)
     hg_return_t                          hg_ret;
     region_lock_in_t                     in;
     region_lock_out_t                    out;
-    const struct hg_info *               hg_info = NULL;
-    data_server_region_t *               target_obj;
-    int                                  error     = 0;
-    int                                  dirty_reg = 0;
+    const struct hg_info *               hg_info    = NULL;
+    data_server_region_t *               target_obj = NULL;
+    int                                  error      = 0;
+    int                                  dirty_reg  = 0;
     hg_size_t                            size, size2;
     void *                               data_buf;
     struct pdc_region_info *             server_region;
-    region_list_t *                      elt, *request_region, *tmp, *elt_tmp;
+    region_list_t *                      elt = NULL, *request_region = NULL, *tmp = NULL, *elt_tmp = NULL;
     struct region_lock_update_bulk_args *lock_update_bulk_args = NULL;
     struct buf_map_release_bulk_args *   buf_map_bulk_args = NULL, *obj_map_bulk_args = NULL;
     hg_bulk_t                            lock_local_bulk_handle = HG_BULK_NULL;
     hg_bulk_t                            remote_bulk_handle     = HG_BULK_NULL;
-    struct pdc_region_info *             remote_reg_info;
-    region_buf_map_t *                   eltt, *eltt2, *eltt_tmp;
-    hg_uint32_t /*k, m, */               remote_count;
+    struct pdc_region_info *             remote_reg_info        = NULL;
+    region_buf_map_t *                   eltt = NULL, *eltt2 = NULL, *eltt_tmp = NULL;
+    hg_uint32_t                          remote_count;
     void **                              data_ptrs_to = NULL;
     size_t *                             data_size_to = NULL;
-    // size_t                               type_size    = 0;
-    // size_t                               dims[4]      = {0, 0, 0, 0};
 #ifdef PDC_TIMING
     double start, end;
 #endif
@@ -2862,7 +3034,7 @@ HG_TEST_RPC_CB(region_release, handle)
                         PDC_Server_transfer_request_io(obj_map_bulk_args->remote_obj_id, 0, NULL,
                                                        remote_reg_info, data_buf, in.data_unit, 0);
 #endif
-                        size  = HG_Bulk_get_size(eltt2->local_bulk_handle);
+                        size = HG_Bulk_get_size(eltt2->local_bulk_handle);
                         size2 = HG_Bulk_get_size(remote_bulk_handle);
                         if (size != size2) {
                             error = 1;
@@ -4703,12 +4875,16 @@ remove_relative_dirs(char *workingDir, char *application)
             *slash = 0;
     }
     k = strlen(workingDir);
+    if (k >= PATH_MAX) {
+        PGOTO_ERROR(NULL, "workingDir length exceeds PATH_MAX");
+    }
     if ((appName[0] == '.') && (appName[1] == '/'))
         appName += 2;
-    sprintf(&workingDir[k], "/%s", appName);
+    snprintf(&workingDir[k], PATH_MAX - k, "/%s", appName);
 
     ret_value = strdup(workingDir);
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -4728,7 +4904,7 @@ PDC_find_in_path(char *workingDir, char *application)
 
     while (next) {
         *next++ = 0;
-        sprintf(checkPath, "%s/%s", pathVar, application);
+        snprintf(checkPath, sizeof(checkPath), "%s/%s", pathVar, application);
         if (stat(checkPath, &fileStat) == 0) {
             PGOTO_DONE(strdup(checkPath));
         }
@@ -4736,7 +4912,7 @@ PDC_find_in_path(char *workingDir, char *application)
         next    = strchr(pathVar, colon);
     }
     if (application[0] == '.') {
-        sprintf(checkPath, "%s/%s", workingDir, application);
+        snprintf(checkPath, sizeof(checkPath), "%s/%s", workingDir, application);
         if (stat(checkPath, &fileStat) == 0) {
             char *foundPath = strrchr(checkPath, '/');
             char *appName   = foundPath + 1;
@@ -4755,7 +4931,7 @@ PDC_find_in_path(char *workingDir, char *application)
                 if (chdir(workingDir) != 0) {
                     LOG_ERROR("Check dir failed\n");
                 }
-                sprintf(&checkPath[offset], "/%s", appName);
+                snprintf(&checkPath[offset], sizeof(checkPath) - offset, "/%s", appName);
                 PGOTO_DONE(strdup(checkPath));
             }
         }
@@ -5284,7 +5460,7 @@ PDC_add_task_to_list(pdc_task_list_t **target_list, perr_t (*cb)(), void *cb_arg
 #ifdef ENABLE_MULTITHREAD
                      void *_mutex)
 #else
-                     void *_mutex    ATTRIBUTE(unused))
+                     void *_mutex ATTRIBUTE(unused))
 #endif
 {
     FUNC_ENTER(NULL);
@@ -5327,7 +5503,7 @@ PDC_del_task_from_list(pdc_task_list_t **target_list, pdc_task_list_t *del,
 #ifdef ENABLE_MULTITHREAD
                        void *_mutex)
 #else
-                       void *_mutex  ATTRIBUTE(unused))
+                       void *_mutex ATTRIBUTE(unused))
 #endif
 {
     FUNC_ENTER(NULL);
@@ -6458,7 +6634,7 @@ PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf)
     srand(time(0));
     while (retry < PDC_MAX_TRIAL_NUM) {
         snprintf(shm_addr, ADDR_MAX, "/PDCshm%d", rand());
-        shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0666);
+        shm_fd = shm_open(shm_addr, O_CREAT | O_RDWR, 0644);
         if (shm_fd != -1)
             break;
         retry++;
@@ -6497,7 +6673,7 @@ PDC_create_shm_segment(region_list_t *region)
     /* create the shared memory segment as if it was a file */
     retry = 0;
     while (retry < PDC_MAX_TRIAL_NUM) {
-        region->shm_fd = shm_open(region->shm_addr, O_CREAT | O_RDWR, 0666);
+        region->shm_fd = shm_open(region->shm_addr, O_CREAT | O_RDWR, 0644);
         if (region->shm_fd != -1)
             break;
         retry++;

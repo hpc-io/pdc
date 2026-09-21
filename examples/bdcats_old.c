@@ -33,7 +33,8 @@
 #include <inttypes.h>
 #include "pdc.h"
 
-#define NPARTICLES 8388608
+#define NPARTICLES    8388608
+#define MAX_PARTICLES (NPARTICLES * 2)
 
 double
 uniform_random_number()
@@ -390,6 +391,7 @@ main(int argc, char **argv)
     free(offset_remote);
     free(mysize);
 
+done:
 #ifdef ENABLE_MPI
     MPI_Finalize();
 #endif

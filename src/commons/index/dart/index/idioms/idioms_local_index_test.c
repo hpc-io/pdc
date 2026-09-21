@@ -287,9 +287,9 @@ client_insert_data(dummy_client_t *client, int id)
     char    value[64];
     char    int_key[64];
     int64_t int_value = (int64_t)id;
-    sprintf(key, "str%03dstr", id, id);
+    sprintf(key, "str%03dstr", id);
     sprintf(int_key, "int%s", "key");
-    sprintf(value, "str%03dstr", id, id, id);
+    sprintf(value, "str%03dstr", id);
     uint64_t u64_id = (uint64_t)id;
     perr_t   result = SUCCEED;
     // generate a request for each client
@@ -378,9 +378,9 @@ client_delete_data(dummy_client_t *client, int id)
     char    value[64];
     char    int_key[64];
     int64_t int_value = (int64_t)id;
-    sprintf(key, "str%03dstr", id, id);
+    sprintf(key, "str%03dstr", id);
     sprintf(int_key, "int%s", key);
-    sprintf(value, "str%03dstr", id, id, id);
+    sprintf(value, "str%03dstr", id);
     uint64_t u64_id = (uint64_t)id;
     // generate a request for each client
     index_hash_result_t *hash_result       = NULL;
@@ -463,7 +463,7 @@ basic_test()
     perr_t delete_rst = client_delete_data(&clients[0], 10);
     assert(delete_rst == SUCCEED);
 
-    sprintf(query, "%d_%d=\"%d_%d\"", 10, 10);
+    sprintf(query, "%d_%d=\"%d_%d\"", 10, 10, 10, 10);
     rst_ids   = NULL;
     rst_count = client_perform_search(&clients[0], query, &rst_ids);
     assert(rst_count == 0);

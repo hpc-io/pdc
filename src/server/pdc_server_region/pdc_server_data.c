@@ -85,6 +85,18 @@ char     pdc_cache_file_path_g[ADDR_MAX];
 query_task_t *          query_task_list_head_g      = NULL;
 cache_storage_region_t *cache_storage_region_head_g = NULL;
 
+static const char *
+safe_data_path(const char *path, const char *fallback)
+{
+    if (path == NULL)
+        return fallback;
+    if (strpbrk(path, ";&|`$<>") != NULL) {
+        LOG_ERROR("Invalid characters in data path env var, using fallback\n");
+        return fallback;
+    }
+    return path;
+}
+
 static int
 fill_storage_path(char *storage_location, pdcid_t obj_id)
 {
@@ -97,13 +109,7 @@ fill_storage_path(char *storage_location, pdcid_t obj_id)
     char *data_path                = NULL;
     char *user_specified_data_path = getenv("PDC_DATA_LOC");
 
-    if (user_specified_data_path != NULL)
-        data_path = user_specified_data_path;
-    else {
-        data_path = getenv("SCRATCH");
-        if (data_path == NULL)
-            data_path = ".";
-    }
+    data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
              pdc_server_rank_g, pdc_server_rank_g);
@@ -132,7 +138,7 @@ server_open_storage(char *storage_location, pdcid_t obj_id)
 
     fill_storage_path(storage_location, obj_id);
 
-    FUNC_LEAVE(open(storage_location, O_RDWR | O_CREAT, 0666));
+    FUNC_LEAVE(open(storage_location, O_RDWR | O_CREAT, 0600));
 }
 
 /*
@@ -400,7 +406,7 @@ PDC_Server_register_obj_region_by_pointer(data_server_region_t **new_obj_reg_ptr
         }
         if (new_obj_reg->fd < 0) {
             new_obj_reg->close_flag = close_flag;
-            new_obj_reg->fd         = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0666);
+            new_obj_reg->fd         = open(new_obj_reg->storage_location, O_RDWR | O_CREAT, 0600);
             if (new_obj_reg->fd < 0)
                 PGOTO_DONE(ret_value);
         }
@@ -1153,14 +1159,7 @@ PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_lis
         new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
         // Generate a location for data storage for data server to write
         user_specified_data_path = getenv("PDC_DATA_LOC");
-
-        if (user_specified_data_path != NULL)
-            data_path = user_specified_data_path;
-        else {
-            data_path = getenv("SCRATCH");
-            if (data_path == NULL)
-                data_path = ".";
-        }
+        data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
         snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
                  in->remote_obj_id, pdc_server_rank_g, pdc_server_rank_g);
@@ -1178,7 +1177,7 @@ PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_lis
             LOG_INFO("Storage_location is %s\n", storage_location);
         }
 #endif
-        new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0666);
+        new_obj_reg->fd = open(storage_location, O_RDWR | O_CREAT, 0600);
         if (new_obj_reg->fd == -1)
             PGOTO_ERROR(NULL, "open %s failed\n", storage_location);
         new_obj_reg->storage_location = strdup(storage_location);
@@ -1821,22 +1820,29 @@ PDC_Server_cache_region_to_BB(region_list_t *region)
     if (pdc_cache_file_ptr_g == NULL) {
         char *bb_data_path = getenv("PDC_BB_LOC");
         if (bb_data_path != NULL) {
-            sprintf(pdc_cache_file_path_g, "%s/PDCcacheBB.%d", bb_data_path, pdc_server_rank_g);
+            if (strpbrk(bb_data_path, ";&|`$<>") != NULL)
+                bb_data_path = NULL;
+        }
+        if (bb_data_path != NULL) {
+            snprintf(pdc_cache_file_path_g, sizeof(pdc_cache_file_path_g), "%s/PDCcacheBB.%d", bb_data_path,
+                     pdc_server_rank_g);
         }
         else {
             char *user_specified_data_path = getenv("PDC_DATA_LOC");
-            if (user_specified_data_path != NULL)
-                bb_data_path = user_specified_data_path;
-            else {
-                bb_data_path = getenv("SCRATCH");
-                if (bb_data_path == NULL)
-                    bb_data_path = ".";
-            }
-            sprintf(pdc_cache_file_path_g, "%s/PDCcacheBB.%d", bb_data_path, pdc_server_rank_g);
+            bb_data_path =
+                (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
+            snprintf(pdc_cache_file_path_g, sizeof(pdc_cache_file_path_g), "%s/PDCcacheBB.%d", bb_data_path,
+                     pdc_server_rank_g);
             LOG_ERROR("No PDC_BB_LOC specified, use [%s]\n", bb_data_path);
         }
-
-        pdc_cache_file_ptr_g = fopen(pdc_cache_file_path_g, "ab");
+        int _cfd = open(pdc_cache_file_path_g, O_WRONLY | O_CREAT | O_APPEND, 0600);
+        if (_cfd >= 0) {
+            pdc_cache_file_ptr_g = fdopen(_cfd, "ab");
+            if (pdc_cache_file_ptr_g == NULL)
+                close(_cfd);
+        }
+        else
+            pdc_cache_file_ptr_g = NULL;
         if (NULL == pdc_cache_file_ptr_g)
             PGOTO_ERROR(FAIL, "fopen failed [%s]\n", pdc_cache_file_path_g);
         n_fopen_g++;
@@ -1864,10 +1870,12 @@ PDC_Server_cache_region_to_BB(region_list_t *region)
 #endif
 
     // Prepare update
-    strcpy(region->storage_location, pdc_cache_file_path_g);
-    region->offset = offset;
-    strcpy(region->cache_location, pdc_cache_file_path_g);
-    region->cache_offset = offset;
+    strncpy(region->storage_location, pdc_cache_file_path_g, sizeof(region->storage_location) - 1);
+    region->storage_location[sizeof(region->storage_location) - 1] = '\0';
+    region->offset                                                 = offset;
+    strncpy(region->cache_location, pdc_cache_file_path_g, sizeof(region->cache_location) - 1);
+    region->cache_location[sizeof(region->cache_location) - 1] = '\0';
+    region->cache_offset                                       = offset;
 
     // Update storage meta
     ret_value = PDC_Server_update_region_storagelocation_offset(region, PDC_UPDATE_CACHE);
@@ -2309,9 +2317,9 @@ PDC_Server_get_storage_location_of_region_mpi(region_list_t *regions_head)
     // Now server_id has all the data in all_requests, find all storage regions that overlaps with it
     // equivalent to storage metadadata searching
     if (server_id == (uint32_t)pdc_server_rank_g) {
-        send_buf = (update_region_storage_meta_bulk_t *)PDC_calloc(sizeof(update_region_storage_meta_bulk_t),
-                                                                   pdc_server_size_g * nrequest_per_server *
-                                                                       PDC_MAX_OVERLAP_REGION_NUM);
+        send_buf = (update_region_storage_meta_bulk_t *)PDC_calloc(
+            sizeof(update_region_storage_meta_bulk_t),
+            (size_t)pdc_server_size_g * nrequest_per_server * PDC_MAX_OVERLAP_REGION_NUM);
 
         // All participants are querying the same object, so obj_ids are the same
         // Search one by one
@@ -2505,7 +2513,7 @@ PDC_Server_data_write_from_shm(region_list_t *region_list_head)
             region_elt->data_size = PDC_get_region_size(region_elt);
 
         // Open shared memory and map to data buf
-        region_elt->shm_fd = shm_open(region_elt->shm_addr, O_RDONLY, 0666);
+        region_elt->shm_fd = shm_open(region_elt->shm_addr, O_RDONLY, 0644);
         if (region_elt->shm_fd == -1) {
             PGOTO_ERROR(FAIL, "Shared memory open failed [%s]", region_elt->shm_addr);
         }
@@ -3839,7 +3847,15 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
 
                 // Open current file as binary and append only, it is guarenteed that only current
                 // server process access this file, so no lock is needed.
-                fp_write = fopen(region_elt->storage_location, "ab");
+                if (strpbrk(region_elt->storage_location, ";&|`$<>") != NULL)
+                    PGOTO_ERROR(FAIL, "Invalid characters in storage location");
+                int fd = open(region_elt->storage_location, O_WRONLY | O_CREAT | O_APPEND, 0600);
+                if (fd < 0)
+                    PGOTO_ERROR(FAIL, "open failed [%s]", region_elt->storage_location);
+                if (fp_write == NULL) {
+                    close(fd);
+                    PGOTO_ERROR(FAIL, "fdopen failed [%s]", region_elt->storage_location);
+                }
                 n_fopen_g++;
 
 #ifdef ENABLE_TIMING
@@ -3952,13 +3968,7 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
     // Generate a location for data storage for data server to write
     char *data_path                = NULL;
     char *user_specified_data_path = getenv("PDC_DATA_LOC");
-    if (user_specified_data_path != NULL)
-        data_path = user_specified_data_path;
-    else {
-        data_path = getenv("SCRATCH");
-        if (data_path == NULL)
-            data_path = ".";
-    }
+    data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
 
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
     snprintf(io_region->storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin",
@@ -4070,12 +4080,12 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 
     uint64_t write_size = 0;
     if (region_info->ndim >= 1)
-        write_size = unit * region_info->size[0];
+        write_size = (uint64_t)unit * (uint64_t)region_info->size[0];
     if (region_info->ndim >= 2)
-        write_size *= region_info->size[1];
+        write_size = (uint64_t)write_size * (uint64_t)region_info->size[1];
 
     if (region_info->ndim >= 3)
-        write_size *= region_info->size[2];
+        write_size = (uint64_t)write_size * (uint64_t)region_info->size[2];
     region = PDC_Server_get_obj_region(obj_id);
     PDC_Server_register_obj_region_by_pointer(&region, obj_id, 0);
 
@@ -4086,7 +4096,9 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     }
     request_region->ndim      = region_info->ndim;
     request_region->unit_size = unit;
-    strcpy(request_region->storage_location, region->storage_location);
+    strncpy(request_region->storage_location, region->storage_location,
+            sizeof(request_region->storage_location) - 1);
+    request_region->storage_location[sizeof(request_region->storage_location) - 1] = '\0';
 #ifdef ENABLE_TIMING
     struct timeval pdc_timer_start, pdc_timer_end;
     double         write_total_sec;
@@ -5175,7 +5187,7 @@ PDC_Server_add_client_shm_to_cache(int cnt, void *buf_cp)
         new_region->data_size = storage_metas[i].size;
 
         // Open shared memory and map to data buf
-        new_region->shm_fd = shm_open(new_region->shm_addr, O_RDONLY, 0666);
+        new_region->shm_fd = shm_open(new_region->shm_addr, O_RDONLY, 0644);
         if (new_region->shm_fd == -1)
             PGOTO_ERROR(FAIL, "Shared memory open failed [%s]", new_region->shm_addr);
 
@@ -7613,13 +7625,14 @@ add_storage_region_to_buf(void **in_buf, uint64_t *buf_alloc, uint64_t *buf_off,
     FUNC_ENTER(NULL);
 
     perr_t   ret_value = SUCCEED;
-    void *   buf       = *in_buf;
     uint64_t my_size, tmp_size;
 
     if (in_buf == NULL || *in_buf == NULL || region == NULL || buf_alloc == NULL || buf_off == NULL ||
         region->storage_location[0] == '\0') {
         PGOTO_ERROR(FAIL, "Error with input paramters");
     }
+
+    void *buf = *in_buf;
 
     my_size = 4 + strlen(region->storage_location) + 1 + sizeof(region_info_transfer_t) + 20;
     if (region->region_hist != NULL) {

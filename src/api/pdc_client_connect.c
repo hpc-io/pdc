@@ -365,6 +365,8 @@ PDC_Client_wait_pthread_progress()
     FUNC_LEAVE_VOID();
 }
 
+static perr_t PDC_Client_load_obj_id_home_map_from_tmpdir(void);
+
 perr_t
 PDC_Client_read_server_addr_from_file()
 {
@@ -379,10 +381,13 @@ PDC_Client_read_server_addr_from_file()
     char   n_server_string[PATH_MAX];
 
     if (pdc_client_mpi_rank_g == 0) {
-        sprintf(config_fname, "%s/%s", pdc_client_tmp_dir_g, pdc_server_cfg_name_g);
+        if (strpbrk(pdc_client_tmp_dir_g, ";&|`$<>") != NULL)
+            PGOTO_ERROR(FAIL, "Invalid characters in PDC client tmp dir");
+        snprintf(config_fname, PATH_MAX, "%s/%s", pdc_client_tmp_dir_g, pdc_server_cfg_name_g);
 
         for (i = 0; i < max_tries; i++) {
-            if (access(config_fname, F_OK) != -1) {
+            na_config = fopen(config_fname, "r");
+            if (na_config != NULL) {
                 is_server_ready = 1;
                 break;
             }
@@ -392,12 +397,8 @@ PDC_Client_read_server_addr_from_file()
             sleep(sleeptime);
             sleeptime *= 2;
         }
-        if (is_server_ready != 1)
+        if (is_server_ready != 1 || na_config == NULL)
             PGOTO_ERROR(FAIL, "Server is not ready");
-
-        na_config = fopen(config_fname, "r");
-        if (!na_config)
-            PGOTO_ERROR(FAIL, "Could not open config file from default location: %s", config_fname);
 
         // Get the first line as $pdc_server_num_g
         if (fgets(n_server_string, PATH_MAX, na_config) == NULL) {
@@ -410,7 +411,7 @@ PDC_Client_read_server_addr_from_file()
     MPI_Bcast(&pdc_server_num_g, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
 #endif
 
-    if (pdc_server_num_g == 0) {
+    if (pdc_server_num_g <= 0 || pdc_server_num_g > 65536) {
         LOG_ERROR("Server number error %d\n", pdc_server_num_g);
         FUNC_LEAVE(-1);
     }
@@ -439,11 +440,127 @@ PDC_Client_read_server_addr_from_file()
 
     if (pdc_client_mpi_rank_g == 0) {
         fclose(na_config);
+        na_config = NULL;
     }
+
+    /* Optional elastic sidecar; missing file is normal for same-N / fresh servers. */
+    if (PDC_Client_load_obj_id_home_map_from_tmpdir() != SUCCEED)
+        LOG_WARNING("Failed to load %s; ID-based routing uses legacy formula\n", pdc_obj_id_home_map_name_g);
 
     ret_value = SUCCEED;
 
 done:
+    if (na_config != NULL)
+        fclose(na_config);
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Rank 0 reads obj_id_home_map.bin (if present); all ranks install a local HT.
+ * Missing file → clear map and succeed.
+ */
+static perr_t
+PDC_Client_load_obj_id_home_map_from_tmpdir(void)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                 ret_value = SUCCEED;
+    char                   map_fname[PATH_MAX];
+    FILE *                 fp = NULL;
+    pdc_obj_id_home_hdr_t  hdr;
+    pdc_obj_id_home_rec_t *recs      = NULL;
+    uint64_t               n_entries = 0;
+    int                    have_map  = 0;
+    size_t                 nbytes;
+
+    memset(&hdr, 0, sizeof(hdr));
+
+    if (pdc_client_mpi_rank_g == 0) {
+        if (strpbrk(pdc_client_tmp_dir_g, ";&|`$<>") != NULL)
+            PGOTO_ERROR(FAIL, "Invalid characters in PDC client tmp dir");
+
+        snprintf(map_fname, PATH_MAX, "%s/%s", pdc_client_tmp_dir_g, pdc_obj_id_home_map_name_g);
+        fp = fopen(map_fname, "rb");
+        if (fp == NULL) {
+            have_map = 0;
+        }
+        else {
+            if (fread(&hdr, sizeof(hdr), 1, fp) != 1) {
+                LOG_WARNING("Incomplete header in [%s]; ignoring map\n", map_fname);
+                have_map = 0;
+            }
+            else if (hdr.magic != PDC_OBJ_ID_HOME_MAP_MAGIC || hdr.version != PDC_OBJ_ID_HOME_MAP_VERSION) {
+                LOG_WARNING("Unsupported obj_id home map magic/version in [%s]; ignoring\n", map_fname);
+                have_map = 0;
+            }
+            else if (hdr.n_server != (uint32_t)pdc_server_num_g) {
+                LOG_WARNING("obj_id home map n_server=%u != client view %d; ignoring\n", hdr.n_server,
+                            pdc_server_num_g);
+                have_map = 0;
+            }
+            else if (hdr.n_entries > (uint64_t)100000000ULL) {
+                LOG_WARNING("obj_id home map n_entries too large (%" PRIu64 "); ignoring\n", hdr.n_entries);
+                have_map = 0;
+            }
+            else {
+                n_entries = hdr.n_entries;
+                if (n_entries > 0) {
+                    nbytes = (size_t)n_entries * sizeof(pdc_obj_id_home_rec_t);
+                    recs   = (pdc_obj_id_home_rec_t *)PDC_malloc(nbytes);
+                    if (recs == NULL)
+                        PGOTO_ERROR(FAIL, "Cannot allocate obj_id home map records");
+                    if (fread(recs, sizeof(pdc_obj_id_home_rec_t), (size_t)n_entries, fp) !=
+                        (size_t)n_entries) {
+                        LOG_WARNING("Incomplete records in [%s]; ignoring map\n", map_fname);
+                        recs      = (pdc_obj_id_home_rec_t *)PDC_free(recs);
+                        n_entries = 0;
+                        have_map  = 0;
+                    }
+                    else {
+                        have_map = 1;
+                    }
+                }
+                else {
+                    have_map = 1;
+                }
+            }
+            fclose(fp);
+            fp = NULL;
+        }
+    }
+
+#ifdef ENABLE_MPI
+    MPI_Bcast(&have_map, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Bcast(&n_entries, 1, MPI_UINT64_T, 0, PDC_CLIENT_COMM_WORLD_g);
+    if (have_map && n_entries > 0) {
+        if (pdc_client_mpi_rank_g != 0) {
+            nbytes = (size_t)n_entries * sizeof(pdc_obj_id_home_rec_t);
+            recs   = (pdc_obj_id_home_rec_t *)PDC_malloc(nbytes);
+            if (recs == NULL)
+                PGOTO_ERROR(FAIL, "Cannot allocate obj_id home map records on non-root");
+        }
+        MPI_Bcast(recs, (int)(n_entries * sizeof(pdc_obj_id_home_rec_t)), MPI_BYTE, 0,
+                  PDC_CLIENT_COMM_WORLD_g);
+    }
+#endif
+
+    if (!have_map) {
+        PDC_Client_clear_obj_id_home_map();
+        PGOTO_DONE(SUCCEED);
+    }
+
+    ret_value = PDC_Client_install_obj_id_home_map((uint32_t)pdc_server_num_g, n_entries, recs);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Failed to install client obj_id home map");
+
+    if (pdc_client_mpi_rank_g == 0 && n_entries > 0)
+        LOG_INFO("Loaded %s with %" PRIu64 " entries\n", pdc_obj_id_home_map_name_g, n_entries);
+
+done:
+    if (fp != NULL)
+        fclose(fp);
+    if (recs != NULL)
+        recs = (pdc_obj_id_home_rec_t *)PDC_free(recs);
     FUNC_LEAVE(ret_value);
 }
 
@@ -1272,7 +1389,7 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     else
         LOG_INFO("Environment variable HG_HOST was set\n");
 
-    sprintf(na_info_string, "%s://%s:%d", hg_transport, hostname, port);
+    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
@@ -1457,10 +1574,13 @@ PDC_Client_init()
 
     // Get up tmp dir env var
     tmp_dir = getenv("PDC_TMPDIR");
-    if (tmp_dir == NULL)
-        strcpy(pdc_client_tmp_dir_g, "./pdc_tmp");
-    else
-        strcpy(pdc_client_tmp_dir_g, tmp_dir);
+    if (tmp_dir == NULL) {
+        strncpy(pdc_client_tmp_dir_g, "./pdc_tmp", sizeof(pdc_client_tmp_dir_g));
+    }
+    else {
+        strncpy(pdc_client_tmp_dir_g, tmp_dir, sizeof(pdc_client_tmp_dir_g));
+    }
+    pdc_client_tmp_dir_g[sizeof(pdc_client_tmp_dir_g) - 1] = '\0';
 
     // Get debug environment var
     char *is_debug_env = getenv("PDC_DEBUG");
@@ -1606,6 +1726,8 @@ PDC_Client_finalize()
 
     if (pdc_server_info_g != NULL)
         pdc_server_info_g = (struct _pdc_server_info *)PDC_free(pdc_server_info_g);
+
+    PDC_Client_clear_obj_id_home_map();
 
     // Terminate thread
     if (hg_progress_flag_g == 0) {
@@ -2142,8 +2264,7 @@ PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
         PGOTO_ERROR(FAIL, "old or new was NULL");
 
     hash_name_value = PDC_get_hash_by_name(old->obj_name);
-    server_id       = (hash_name_value + old->time_step);
-    server_id %= pdc_server_num_g;
+    server_id       = PDC_metadata_home_rank(old->obj_name, old->time_step, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2281,8 +2402,7 @@ PDC_Client_delete_metadata(char *delete_name, pdcid_t obj_delete_prop)
     in.time_step = delete_prop->time_step;
 
     hash_name_value = PDC_get_hash_by_name(delete_name);
-    server_id       = (hash_name_value + in.time_step);
-    server_id %= pdc_server_num_g;
+    server_id       = PDC_metadata_home_rank(delete_name, in.time_step, pdc_server_num_g);
 
     in.hash_value = hash_name_value;
 
@@ -2393,8 +2513,7 @@ PDC_Client_query_metadata_name_timestep(const char *obj_name, int time_step, pdc
 
     // Compute server id
     hash_name_value = PDC_get_hash_by_name(obj_name);
-    server_id       = (hash_name_value + time_step);
-    server_id %= pdc_server_num_g;
+    server_id       = PDC_metadata_home_rank(obj_name, time_step, pdc_server_num_g);
 
     *metadata_server_id = server_id;
 
@@ -2502,9 +2621,8 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
     in.hash_value   = hash_name_value;
     in.cont_name    = cont_name;
 
-    // Calculate server id
-    server_id = hash_name_value;
-    server_id %= pdc_server_num_g;
+    // Calculate server id (containers have no timestep; home_rank with 0 matches hash % N)
+    server_id = PDC_metadata_home_rank(cont_name, 0, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2577,8 +2695,7 @@ PDC_Client_obj_reset_dims(const char *obj_name, int time_step, int ndim, uint64_
 
     // Compute server id
     hash_name_value = PDC_get_hash_by_name(obj_name);
-    server_id       = (hash_name_value + time_step);
-    server_id %= pdc_server_num_g;
+    server_id       = PDC_metadata_home_rank(obj_name, time_step, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -2696,8 +2813,7 @@ PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdcid_t obj
     in.hash_value   = hash_name_value;
 
     // Compute server id
-    server_id = (hash_name_value + in.data.time_step);
-    server_id %= pdc_server_num_g;
+    server_id = PDC_metadata_home_rank(obj_name, in.data.time_step, pdc_server_num_g);
 
     *metadata_server_id = server_id;
 
@@ -2764,8 +2880,8 @@ PDC_Client_close_all_server()
     }
 
     if (pdc_client_mpi_size_g >= pdc_server_num_g) {
-        if (pdc_client_mpi_rank_g < pdc_server_num_g) {
-            server_id = pdc_client_mpi_rank_g;
+        if (pdc_client_mpi_rank_g < pdc_server_num_g && pdc_server_num_g > 0) {
+            server_id = (uint32_t)pdc_client_mpi_rank_g;
             if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
                 PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
 
@@ -3327,9 +3443,9 @@ PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, u
 
     debug_server_id_count[data_server_id]++;
 
-    total_data_size = unit;
+    total_data_size = (hg_size_t)unit;
     for (i = 0; i < remote_ndim; ++i) {
-        total_data_size *= remote_size[i];
+        total_data_size *= (hg_size_t)remote_size[i];
     }
 
     pack_region_metadata(remote_ndim, remote_offset, remote_size, &(in.remote_region));
@@ -3941,7 +4057,7 @@ PDC_Client_get_data_from_server_shm_cb(const struct hg_cb_info *callback_info)
     }
 
     /* open the shared memory segment as if it was a file */
-    shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
+    shm_fd = shm_open(shm_addr, O_RDONLY, 0644);
     if (shm_fd == -1)
         PGOTO_ERROR(FAIL, "Shared memory open failed [%s]", shm_addr);
 
@@ -4050,7 +4166,7 @@ PDC_Client_data_server_read_check(int server_id, uint32_t client_id, pdc_metadat
         shm_addr = lookup_args.ret_string;
 
         /* open the shared memory segment as if it was a file */
-        shm_fd = shm_open(shm_addr, O_RDONLY, 0666);
+        shm_fd = shm_open(shm_addr, O_RDONLY, 0644);
         if (shm_fd == -1)
             PGOTO_ERROR(FAIL, "Shared memory open failed [%s]", shm_addr);
 
@@ -4386,7 +4502,7 @@ PDC_Client_data_server_write(struct pdc_request *request)
             rnd);
 
     /* create the shared memory segment as if it was a file */
-    request->shm_fd = shm_open(request->shm_addr, O_CREAT | O_RDWR, 0666);
+    request->shm_fd = shm_open(request->shm_addr, O_CREAT | O_RDWR, 0644);
     if (request->shm_fd == -1)
         PGOTO_ERROR(FAIL, "Shared memory creation with shm_open failed");
 
@@ -4977,9 +5093,9 @@ PDC_Client_query_container_name(const char *cont_name, uint64_t *cont_meta_id)
     struct _pdc_container_query_args lookup_args;
     hg_handle_t                      container_query_handle;
 
-    // Compute server id
+    // Compute server id (containers have no timestep; home_rank with 0 matches hash % N)
     hash_name_value = PDC_get_hash_by_name(cont_name);
-    server_id       = hash_name_value % pdc_server_num_g;
+    server_id       = PDC_metadata_home_rank(cont_name, 0, pdc_server_num_g);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -5228,7 +5344,7 @@ PDC_Client_complete_read_request(int nbuf, struct pdc_request *req)
 
     for (i = 0; i < nbuf; i++) {
         /* open the shared memory segment as if it was a file */
-        req->shm_fd_arr[i] = shm_open(req->shm_addr_arr[i], O_RDONLY, 0666);
+        req->shm_fd_arr[i] = shm_open(req->shm_addr_arr[i], O_RDONLY, 0644);
         if (req->shm_fd_arr[i] == -1) {
             LOG_ERROR("Shared memory open failed [%s]\n", req->shm_addr_arr[i]);
             continue;
@@ -5772,10 +5888,10 @@ PDC_Client_query_multi_storage_info(int nobj, char **obj_names, region_storage_m
     // One request to each metadata server
     requests = (struct pdc_request **)PDC_calloc(sizeof(struct pdc_request *), pdc_server_num_g);
 
-    obj_names_by_server             = (char ***)PDC_calloc(sizeof(char **), pdc_server_num_g);
-    n_obj_name_by_server            = (int *)PDC_calloc(sizeof(int), pdc_server_num_g);
-    obj_names_server_seq_mapping    = (int **)PDC_calloc(sizeof(int *), pdc_server_num_g);
-    obj_names_server_seq_mapping_1d = (int *)PDC_calloc(sizeof(int), nobj * pdc_server_num_g);
+    obj_names_by_server             = (char ***)PDC_calloc(sizeof(char **), (size_t)pdc_server_num_g);
+    n_obj_name_by_server            = (int *)PDC_calloc(sizeof(int), (size_t)pdc_server_num_g);
+    obj_names_server_seq_mapping    = (int **)PDC_calloc(sizeof(int *), (size_t)pdc_server_num_g);
+    obj_names_server_seq_mapping_1d = (int *)PDC_calloc(sizeof(int), (size_t)nobj * pdc_server_num_g);
     for (i = 0; i < pdc_server_num_g; i++) {
         obj_names_by_server[i]          = (char **)PDC_calloc(sizeof(char *), nobj);
         obj_names_server_seq_mapping[i] = obj_names_server_seq_mapping_1d + i * nobj;

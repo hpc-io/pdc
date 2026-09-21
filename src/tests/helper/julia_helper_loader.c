@@ -17,6 +17,11 @@ jl_load_module(const char *mod_name)
         LOG_ERROR("[PDC_JL_HELPER] Error: Not able to find Julia module directory\n");
         exit(-1);
     }
+    /* Validate the module directory path */
+    if (strpbrk(julia_module_dir, ";&|`$<>\"'") != NULL) {
+        LOG_ERROR("[PDC_JL_HELPER] Error: Invalid characters in Julia module directory\n");
+        exit(-1);
+    }
     LOG_INFO("[PDC_JL_HELPER] Julia module directory: %s\n", julia_module_dir);
 
     /* get julia helper path */

@@ -3,6 +3,8 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <time.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 void
 setLogFile(PDC_LogLevel level, const char *fileName)
@@ -22,7 +24,15 @@ setLogFile(PDC_LogLevel level, const char *fileName)
         else {
             strncpy(logFilenames[level], fileName, sizeof(logFilenames[level]) - 1);
             logFilenames[level][sizeof(logFilenames[level]) - 1] = '\0';
-            logFiles[level]                                      = fopen(fileName, "a");
+            int fd = open(fileName, O_WRONLY | O_CREAT | O_APPEND, 0600);
+            if (fd < 0) {
+                logFiles[level] = NULL;
+            }
+            else {
+                logFiles[level] = fdopen(fd, "a");
+                if (logFiles[level] == NULL)
+                    close(fd);
+            }
         }
     }
     else {
@@ -55,17 +65,29 @@ rotate_log_file(PDC_LogLevel level)
         logFiles[level] = NULL;
     }
 
-    char       newFilename[MAX_LOG_FILE_NAME_LENGTH];
-    char       timeStr[20];
-    time_t     rawtime  = time(NULL);
-    struct tm *timeinfo = localtime(&rawtime);
+    char      newFilename[MAX_LOG_FILE_NAME_LENGTH];
+    char      timeStr[20];
+    time_t    rawtime = time(NULL);
+    struct tm timeinfo;
 
-    strftime(timeStr, 20, "%Y%m%d%H:%M:%S", timeinfo);
-    newFilename[strlen(newFilename) - 1] = '\0'; // Remove trailing newline
+    // Use localtime_r for thread safety
+    localtime_r(&rawtime, &timeinfo);
+
+    strftime(timeStr, sizeof(timeStr), "%Y%m%d%H:%M:%S", &timeinfo);
 
     snprintf(newFilename, MAX_LOG_FILE_NAME_LENGTH, "%s_%s", logFilenames[level], timeStr);
-    rename(logFilenames[level], newFilename);
-    logFiles[level] = fopen(logFilenames[level], "a");
+    if (rename(logFilenames[level], newFilename) != 0) {
+        logFiles[level] = NULL;
+        FUNC_LEAVE_VOID();
+    }
+    int fd = open(logFilenames[level], O_WRONLY | O_CREAT | O_APPEND, 0600);
+    if (fd < 0) {
+        logFiles[level] = NULL;
+        FUNC_LEAVE_VOID();
+    }
+    logFiles[level] = fdopen(fd, "a");
+    if (logFiles[level] == NULL)
+        close(fd);
 
     FUNC_LEAVE_VOID();
 }
@@ -133,8 +155,12 @@ _log_message(bool is_server, PDC_LogLevel level, const char *file, const char *f
 
 #ifdef ENABLE_MPI
         static int my_rank = -1;
-        if (my_rank == -1)
-            my_rank = PDC_get_rank();
+        if (my_rank == -1) {
+            int mpi_initialized = 0;
+            MPI_Initialized(&mpi_initialized);
+            if (mpi_initialized)
+                my_rank = PDC_get_rank();
+        }
 #endif
 
         // Print differently based on log level

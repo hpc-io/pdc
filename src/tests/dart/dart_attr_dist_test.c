@@ -83,8 +83,17 @@ main(int argc, char *argv[])
 
     int64_t *attr_2_obj_array = NULL;
     size_t   arr_len          = 0;
-    size_t   total_num_obj    = atoi(argv[1]);
-    size_t   total_num_attr   = atoi(argv[2]);
+    if (argc < 3) {
+        LOG_ERROR("Usage: %s <num_obj> <num_attr>\n", argv[0]);
+        return 1;
+    }
+    size_t total_num_obj  = (size_t)atoi(argv[1]);
+    size_t total_num_attr = (size_t)atoi(argv[2]);
+    if (total_num_obj == 0 || total_num_obj > 100000000UL || total_num_attr == 0 ||
+        total_num_attr > 1000000UL) {
+        LOG_ERROR("Invalid num_obj or num_attr\n");
+        return 1;
+    }
     pdcid_t *obj_ids;
     int      i, j, k, pct, q_repeat_count = 100;
     double   stime, total_time = 0;
@@ -211,8 +220,8 @@ main(int argc, char *argv[])
         val                  = i + 23456;
         pct                  = 0;
         int num_obj_per_attr = attr_2_obj_array[i];
-        sprintf(key, "k%ld", i + 12345);
-        sprintf(value, "v%ld", val);
+        sprintf(key, "k%d", (int)(i + 12345));
+        sprintf(value, "v%d", val);
         LOG_INFO("Attaching attribute #%d [%s:%s] to %d objects\n", i, key, value, num_obj_per_attr);
         for (j = 0; j < num_obj_per_attr; j++) {
             // each attribute is attached to a specific number of objects, and this is how we make up
@@ -230,8 +239,8 @@ main(int argc, char *argv[])
             if (j % num_object_per_pct == 0)
                 pct += 1;
             if (rank == 0 && j % num_object_per_ton_thousand == 0) {
-                LOG_INFO("[Client_Side_Insert] %d\%: Insert '%s=%s' for  %llu objs within  %.4f ms\n", pct,
-                         key, value, j, duration_obj_ms);
+                LOG_INFO("[Client_Side_Insert] %d%%: Insert '%s=%s' for  %d objs within  %.4f ms\n", pct, key,
+                         value, j, duration_obj_ms);
             }
         }
     }
@@ -250,9 +259,9 @@ main(int argc, char *argv[])
     dart_hash_algo_t       hash_algo = DART_HASH;
 
     for (i = 0; i < arr_len; i++) {
-        sprintf(key, "k%ld", i + 12345);
+        sprintf(key, "k%d", i + 12345);
         val = i + 23456;
-        sprintf(value, "v%ld", val);
+        sprintf(value, "v%d", val);
         pct = 0;
         for (j = 0; j < attr_2_obj_array[i]; j++) {
             if (j % size == rank) {
@@ -268,7 +277,7 @@ main(int argc, char *argv[])
             if (j % num_object_per_pct == 0)
                 pct += 1;
             if (rank == 0 && j % num_object_per_ton_thousand == 0) {
-                LOG_INFO("[Client_Side_Insert] %d\%: Insert '%s=%s' for  %llu objs, index time "
+                LOG_INFO("[Client_Side_Insert] %d%%: Insert '%s=%s' for  %d objs, index time "
                          "%.4f ms\n",
                          pct, key, value, j, duration_dart_ms);
             }
@@ -294,7 +303,7 @@ main(int argc, char *argv[])
             int       rest_count1 = 0;
             timer_start(&timer_obj);
             for (k = 0; k < q_repeat_count; k++) {
-                sprintf(key, "k%ld", i + 12345);
+                sprintf(key, "k%d", i + 12345);
                 val = i + 23456;
 
                 kvtag.name  = key;
@@ -334,8 +343,8 @@ main(int argc, char *argv[])
             int       rest_count1 = 0;
             timer_start(&timer_dart);
             for (k = 0; k < q_repeat_count; k++) {
-                sprintf(key, "k%ld", i + 12345);
-                sprintf(value, "v%ld", i + 23456);
+                sprintf(key, "k%d", i + 12345);
+                sprintf(value, "v%d", i + 23456);
                 sprintf(exact_query, "%s=%s", key, value);
 
                 // DART query methods

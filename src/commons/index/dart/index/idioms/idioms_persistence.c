@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include <stdint.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "bulki_serde.h"
 
 /****************************/
@@ -216,7 +218,8 @@ dump_attr_root_tree(art_tree *art, char *dir_path, char *base_name, uint32_t ser
         // and this is why do we need to differentiate the file name by the server ID.
         sprintf(file_name, "%s/%s_%" PRIu32 "_%" PRIu64 ".bin", dir_path, base_name, serverID, *vid);
         LOG_INFO("Writing index to file_name: %s\n", file_name);
-        FILE *stream = fopen(file_name, "wb");
+        int   fd     = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+        FILE *stream = fdopen(fd, "wb");
         BULKI_serialize_to_file(bulki, stream);
     }
 
@@ -232,7 +235,8 @@ dump_dart_info(DART *dart, char *dir_path, uint32_t serverID)
         char file_name[1024];
         sprintf(file_name, "%s/%s.bin", dir_path, "dart_info");
         LOG_INFO("Writing DART info to file_name: %s\n", file_name);
-        FILE *        stream   = fopen(file_name, "wb");
+        int           fd       = open(file_name, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+        FILE *        stream   = fdopen(fd, "wb");
         BULKI_Entity *dart_ent = empty_Bent_Array_Entity();
         BULKI_ENTITY_append_BULKI_Entity(dart_ent,
                                          BULKI_ENTITY(&(dart->alphabet_size), 1, PDC_INT, PDC_CLS_ITEM));
@@ -395,10 +399,6 @@ read_attr_name_node(IDIOMS_t *idioms, char *dir_path, char *base_name, uint32_t 
     char file_name[1024];
     sprintf(file_name, "%s/%s_%" PRIu32 "_%" PRIu64 ".bin", dir_path, base_name, serverID, vnode_id);
 
-    // check file existence
-    if (access(file_name, F_OK) == -1) {
-        FUNC_LEAVE(FAIL);
-    }
     FILE *stream = fopen(file_name, "rb");
     if (stream == NULL) {
         FUNC_LEAVE(FAIL);
@@ -495,6 +495,8 @@ load_dart_info(DART *dart, char *dir_path, uint32_t serverID)
                 case 2:
                     if (entry->pdc_type == PDC_INT) {
                         dart->replication_factor = *(int *)entry->data;
+                        if (dart->replication_factor < 1 || dart->replication_factor > 1024)
+                            dart->replication_factor = 1;
                     }
                     break;
                 case 3:
@@ -513,6 +515,8 @@ load_dart_info(DART *dart, char *dir_path, uint32_t serverID)
 
                     if (entry->pdc_type == PDC_UINT64) {
                         dart->num_vnode = *(uint64_t *)entry->data;
+                        if (dart->num_vnode > (uint64_t)INT32_MAX)
+                            dart->num_vnode = (uint64_t)INT32_MAX;
                     }
                     break;
             }

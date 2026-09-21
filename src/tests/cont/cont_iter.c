@@ -59,10 +59,10 @@ main(int argc, char **argv)
             "Call to PDCcont_create failed for c3");
 
     // start container iteration
-    ch = PDCcont_iter_start(pdc);
+    ch = PDCcont_iter_start();
     while (!PDCcont_iter_null(ch)) {
         PDCcont_iter_get_info(ch);
-        LOG_INFO("Container property id is %d\n", ch);
+        LOG_INFO("Container property id is %p\n", (void *)ch);
         ch = PDCcont_iter_next(ch);
     }
 

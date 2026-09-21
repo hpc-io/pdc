@@ -54,14 +54,12 @@ insert_obj_ids_into_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         FUNC_LEAVE(FAIL);
     }
 
-    void *entry     = NULL;
-    int   idx_found = -1; // -1 not found, 0 found.
+    void *entry = NULL;
     if (is_trie) {
-        entry     = art_search((art_tree *)index, (unsigned char *)attr_val, value_len);
-        idx_found = (entry != NULL) ? 0 : -1;
+        entry = art_search((art_tree *)index, (unsigned char *)attr_val, value_len);
     }
     else {
-        idx_found = rbt_find((rbt_t *)index, attr_val, value_len, &entry);
+        rbt_find((rbt_t *)index, attr_val, value_len, &entry);
     }
 
     if (entry == NULL) { // not found
@@ -249,7 +247,7 @@ idioms_local_index_create(IDIOMS_t *idioms, IDIOMS_md_idx_record_t *idx_record)
             idioms->server_id_g, key, idx_record->value, timer_delta_us(&index_timer));
         char value_str[64];
         if (idx_record->type == PDC_STRING) {
-            snprintf(value_str, 64, "%s", idx_record->value);
+            snprintf(value_str, 64, "%s", (char *)(idx_record->value));
         }
         else if (is_PDC_UINT(idx_record->type)) {
             snprintf(value_str, 64, "%" PRIu64, *((uint64_t *)idx_record->value));
@@ -291,17 +289,15 @@ delete_obj_ids_from_value_leaf(void *index, void *attr_val, int is_trie, size_t 
         FUNC_LEAVE(ret);
     }
 
-    void *entry     = NULL;
-    int   idx_found = -1; // -1 not found, 0 found.
+    void *entry = NULL;
     if (is_trie) {
-        entry     = art_search((art_tree *)index, (unsigned char *)attr_val, value_len);
-        idx_found = (entry != NULL) ? 0 : -1;
+        entry = art_search((art_tree *)index, (unsigned char *)attr_val, value_len);
     }
     else {
-        idx_found = rbt_find((rbt_t *)index, attr_val, value_len, &entry);
+        rbt_find((rbt_t *)index, attr_val, value_len, &entry);
     }
 
-    if (idx_found != 0) { // not found
+    if (entry == NULL) { // not found
         FUNC_LEAVE(SUCCEED);
     }
 

@@ -577,13 +577,14 @@ PDC_get_time_str(char *cur_time)
     FUNC_ENTER(NULL);
 
     struct timespec ts;
+    struct tm       tm_info;
 
     assert(cur_time);
 
     clock_gettime(CLOCK_REALTIME, &ts);
-    sprintf(cur_time, "%04d-%02d-%02d %02d:%02d:%02d.%06ld", 1900 + localtime(&ts.tv_sec)->tm_year,
-            localtime(&ts.tv_sec)->tm_mon + 1, localtime(&ts.tv_sec)->tm_mday, localtime(&ts.tv_sec)->tm_hour,
-            localtime(&ts.tv_sec)->tm_min, localtime(&ts.tv_sec)->tm_sec, ts.tv_nsec / 1000);
+    localtime_r(&ts.tv_sec, &tm_info);
+    sprintf(cur_time, "%04d-%02d-%02d %02d:%02d:%02d.%06ld", 1900 + tm_info.tm_year, tm_info.tm_mon + 1,
+            tm_info.tm_mday, tm_info.tm_hour, tm_info.tm_min, tm_info.tm_sec, ts.tv_nsec / 1000);
 
     FUNC_LEAVE_VOID();
 }

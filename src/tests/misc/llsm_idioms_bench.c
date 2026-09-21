@@ -101,11 +101,11 @@ create_objects(pdcid_t **obj_ids, int my_csv_rows, int csv_expand_factor, pdcid_
     char    obj_name[128];
     int64_t timestamp = get_timestamp_us();
 
-    *obj_ids = (pdcid_t *)calloc(my_csv_rows * csv_expand_factor, sizeof(pdcid_t));
+    *obj_ids = (pdcid_t *)calloc((size_t)my_csv_rows * (size_t)csv_expand_factor, sizeof(pdcid_t));
     for (int i = 0; i < my_csv_rows; i++) {
         // create `csv_expansion_factor` data objects for each csv row.
         for (int obj_idx = 0; obj_idx < csv_expand_factor; obj_idx++) {
-            sprintf(obj_name, "obj%" PRId64 "%d", timestamp, obj_created);
+            sprintf(obj_name, "obj%" PRId64 "%zu", timestamp, obj_created);
 
             pdcid_t obj_id          = PDCobj_create(cont, obj_name, obj_prop);
             (*obj_ids)[obj_created] = obj_id;
@@ -243,7 +243,7 @@ csv_tags_on_objects(pdcid_t *obj_ids, char ***csv_data, char **csv_header, int n
             char new_iter_value[30];
             sprintf(new_iter_value, "Scan_Iter_%04d", j);
             char new_iter_tok[10];
-            sprintf(new_iter_tok, "%04dt.tif", j);
+            snprintf(new_iter_tok, sizeof(new_iter_tok), "%04dt.tif", j);
 
             char extra_attr_name[100];
             char extra_attr_value[200];
@@ -253,9 +253,9 @@ csv_tags_on_objects(pdcid_t *obj_ids, char ***csv_data, char **csv_header, int n
                 char *attr_value = strdup(row[col_idx]);
                 if (strstr(attr_value, "Scan_Iter_0000")) {
                     char *start = strstr(attr_value, "Scan_Iter_0000");
-                    strncpy(start, new_iter_value, strlen(new_iter_value));
+                    strncpy(start, new_iter_value, PDC_MIN(strlen(new_iter_value), strlen(start)));
                     char *zerot = strstr(attr_value, "0000t.tif");
-                    strncpy(zerot, new_iter_tok, strlen(new_iter_tok));
+                    strncpy(zerot, new_iter_tok, PDC_MIN(strlen(new_iter_tok), strlen(zerot)));
 
                     if (startsWith(attr_name, "Filepath")) {
                         sprintf(extra_attr_value, "%s", attr_value);

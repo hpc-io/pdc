@@ -60,7 +60,7 @@ main(int argc, char **argv)
     }
 
     // iterate through all values
-    SetIterator *it;
+    SetIterator *it = NULL;
     set_iterate(set, it);
     while (set_iter_has_more(it)) {
         uint64_t *value = set_iter_next(it);

@@ -76,8 +76,27 @@ extern struct timeval last_cache_activity_timeval_g;
 #endif /* __APPLE__ */
 #endif /* HOST_NAME_MAX */
 
-#define pdc_server_cfg_name_g "server.cfg"
-#define pdc_app_lock_name_g   "pdc_app.lck"
+#define pdc_server_cfg_name_g      "server.cfg"
+#define pdc_obj_id_home_map_name_g "obj_id_home_map.bin"
+#define pdc_app_lock_name_g        "pdc_app.lck"
+
+/* Compact sidecar next to server.cfg after elastic restart (T18). Native endian. */
+#define PDC_OBJ_ID_HOME_MAP_MAGIC   0x50444348u /* "PDCH" */
+#define PDC_OBJ_ID_HOME_MAP_VERSION 1u
+
+typedef struct {
+    uint32_t magic;
+    uint32_t version;
+    uint32_t n_server;
+    uint32_t reserved;
+    uint64_t n_entries;
+} pdc_obj_id_home_hdr_t;
+
+typedef struct {
+    uint64_t id;
+    uint32_t home;
+    uint32_t pad;
+} pdc_obj_id_home_rec_t;
 
 #define ADD_OBJ 1
 #define DEL_OBJ 2
@@ -4325,14 +4344,37 @@ perr_t PDC_Server_add_tag_metadata(metadata_add_tag_in_t *in, metadata_add_tag_o
 perr_t PDC_get_self_addr(hg_class_t *hg_class, char *self_addr_string);
 
 /**
- * Get the server ID
+ * Get the server ID that owns metadata for an object/container ID.
+ *
+ * Legacy formula uses creation rank encoded in the ID. After an elastic
+ * restart, a session map overrides this when the ID was migrated: servers
+ * use the in-memory map (T12); clients use the sidecar loaded at connect (T18).
+ * Map misses (e.g. IDs created after migrate) fall through to the legacy formula.
  *
  * \param obj_id [IN]           Object ID
- * \param n_server [OUT]        Total number of server
+ * \param n_server [IN]         Total number of servers
  *
  * \return Server ID
  */
 uint32_t PDC_get_server_by_obj_id(uint64_t obj_id, int n_server);
+
+#ifndef IS_PDC_SERVER
+/**
+ * Install or replace the client-side obj_id/cont_id → home map from packed records.
+ * Pass n_entries == 0 to clear. Used after reading obj_id_home_map.bin at connect.
+ */
+perr_t PDC_Client_install_obj_id_home_map(uint32_t n_server, uint64_t n_entries,
+                                          const pdc_obj_id_home_rec_t *recs);
+
+/** Clear any loaded client obj_id home map. */
+void PDC_Client_clear_obj_id_home_map(void);
+
+/**
+ * Look up post-elastic home rank on the client.
+ * Returns 1 and sets *home_out on hit; 0 if map inactive or ID absent.
+ */
+int PDC_Client_lookup_obj_id_home(uint64_t obj_id, uint32_t *home_out);
+#endif /* !IS_PDC_SERVER */
 
 /**
  * ************
@@ -4352,6 +4394,17 @@ uint32_t PDC_get_hash_by_name(const char *name);
  * \return Server ID
  */
 uint32_t PDC_get_server_by_name(char *name, int n_server);
+
+/**
+ * Canonical metadata home rank for create / name+timestep query / elastic migration.
+ *
+ * \param name [IN]             Object (or container) name
+ * \param time_step [IN]        Object time step (use 0 when not applicable)
+ * \param n_server [IN]         Total number of servers
+ *
+ * \return Server rank in [0, n_server), or 0 if name is NULL or n_server <= 0
+ */
+uint32_t PDC_metadata_home_rank(const char *name, int32_t time_step, int n_server);
 
 /**
  * Get the server ID

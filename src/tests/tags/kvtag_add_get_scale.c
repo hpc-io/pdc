@@ -143,7 +143,7 @@ main(int argc, char *argv[])
         if (obj_ids[i] <= 0)
             PGOTO_ERROR(FAIL, "Failed to create object");
 
-        if (i > 0 && i % obj_1percent == 0) {
+        if (i > 0 && obj_1percent > 0 && i % obj_1percent == 0) {
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
@@ -182,13 +182,13 @@ main(int argc, char *argv[])
         if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
             PGOTO_ERROR(FAIL, "Failed to add a kvtag to o%d", i + my_obj_s);
 
-        if (i % tag_1percent == 0) {
+        if (tag_1percent > 0 && i % tag_1percent == 0) {
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
                 int    current_percentage           = i / tag_1percent;
-                int    estimated_current_tag_number = n_obj / 100 * current_percentage;
+                int    estimated_current_tag_number = n_add_tag / 100 * current_percentage;
                 double tps                          = estimated_current_tag_number / percent_time;
                 LOG_INFO("[TAG PROGRESS %3d%% ] %11d tags, %7.2f seconds, TPS: %10.2f \n", current_percentage,
                          estimated_current_tag_number, percent_time, tps);
@@ -216,13 +216,13 @@ main(int argc, char *argv[])
                            (void *)&value_size) < 0)
             PGOTO_ERROR(FAIL, "Failed to get a kvtag from o%d\n", i + my_query_s);
 
-        if (i % query_1percent == 0) {
+        if (query_1percent > 0 && i % query_1percent == 0) {
 #ifdef ENABLE_MPI
             MPI_Barrier(MPI_COMM_WORLD);
             percent_time = MPI_Wtime() - stime;
             if (my_rank == 0) {
                 int    current_percentage             = i / query_1percent;
-                int    estimated_current_query_number = n_obj / 100 * current_percentage;
+                int    estimated_current_query_number = n_query / 100 * current_percentage;
                 double tps                            = estimated_current_query_number / percent_time;
                 LOG_INFO("[QRY PROGRESS %3d%% ] %11d queries, %7.2f seconds, TPS: %10.2f \n",
                          current_percentage, estimated_current_query_number, percent_time, tps);
