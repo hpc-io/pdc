@@ -1,4 +1,0 @@
-mode,step,n_ranks,nx,ny,nz_per_rank,compress,setup_s,write_s,confirm_read_s,total_s,bad,avg_close_s,total_with_close_s
-curl_eager,0,32,256,256,64,0,0.235465,1.710971,0.217993,2.164429,0,1.740027,3.90446
-curl_eager,1,32,256,256,64,0,0.235465,1.626569,0.217604,2.079638,0,1.740027,3.81967
-curl_eager,2,32,256,256,64,0,0.235465,1.627707,0.239879,2.103051,0,1.740027,3.84308
