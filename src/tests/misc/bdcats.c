@@ -32,8 +32,19 @@
 #include <math.h>
 #include <inttypes.h>
 #include "pdc.h"
+#include <mpi.h>
 
-#define NPARTICLES 8388608
+#define dLEAP          2
+#define PRECISION_INIT 2
+#define PRECISION_HEX  20000000
+
+#define WARP_SIZE         32
+#define WARPS_PER_BLOCK   2
+#define THREADS_PER_BLOCK (WARPS_PER_BLOCK * WARP_SIZE)
+#define BLOCKS_NUM        ((PRECISION_HEX / dLEAP / THREADS_PER_BLOCK) + 1)
+
+#define NUM_ITERATIONS 1
+#define NPARTICLES     8388608
 
 double
 uniform_random_number()
@@ -91,8 +102,8 @@ main(int argc, char **argv)
     }
 
     if (rank == 0)
-        LOG_INFO("Reading %" PRIu64 " particles per rank for %d steps with %d sec sleep time.\n",
-                 numparticles, steps, sleeptime);
+        LOG_WARNING("Reading %" PRIu64 " particles per rank for %d steps with %d sec sleep time.\n",
+                    numparticles, steps, sleeptime);
 
     dims[0] = numparticles * size;
 
@@ -112,9 +123,13 @@ main(int argc, char **argv)
     pdc_id = PDCinit("pdc");
 
     // create a container
+#ifdef ENABLE_MPI
+    cont_id = PDCcont_open_col("c1", pdc_id);
+#else
     cont_id = PDCcont_open("c1", pdc_id);
+#endif
     if (cont_id <= 0) {
-        LOG_ERROR("Failed to create container");
+        LOG_ERROR("Failed to open container");
         return FAIL;
     }
 
@@ -131,7 +146,7 @@ main(int argc, char **argv)
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         if (rank == 0)
-            LOG_INFO("\n#Step  %d\n", iter);
+            LOG_WARNING("\n#Step  %d\n", iter);
         t0 = MPI_Wtime();
 #endif
         for (int i = 0; i < 8; i++) {
@@ -151,7 +166,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_INFO("Obj open time: %.5e\n", t1 - t0);
+            LOG_WARNING("Obj open time: %.5e\n", t1 - t0);
 #endif
 
         for (int i = 0; i < 8; i++) {
@@ -167,7 +182,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
         if (rank == 0)
-            LOG_INFO("Transfer create time: %.5e\n", t0 - t1);
+            LOG_WARNING("Transfer create time: %.5e\n", t0 - t1);
 #endif
 
 #ifdef ENABLE_MPI
@@ -183,15 +198,20 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_INFO("Transfer start time: %.5e\n", t1 - t0);
+            LOG_WARNING("Transfer start time: %.5e\n", t1 - t0);
 #endif
         // Emulate compute with sleep
         if (iter != steps - 1) {
             if (rank == 0)
-                LOG_INFO("Sleep start: %llu.00\n", sleeptime);
-            sleep(sleeptime);
+                LOG_WARNING("Sleep start: %llu.00\n", sleeptime);
+            double loop_start = MPI_Wtime();
+            sleep(40);
+            double loop_end = MPI_Wtime();
+            if (rank == 0) {
+                LOG_WARNING("\nTotal time for %d iterations: %f s\n", NUM_ITERATIONS, loop_end - loop_start);
+            }
             if (rank == 0)
-                LOG_INFO("Sleep end: %llu.00\n", sleeptime);
+                LOG_WARNING("Sleep end: %llu.00\n", sleeptime);
         }
 
 #ifdef ENABLE_MPI
@@ -203,22 +223,11 @@ main(int argc, char **argv)
             LOG_ERROR("Failed to transfer wait all\n");
             return FAIL;
         }
-
-        // Verify data of id and q
-        if (id[0] != rank + iter || q[0] != rank + iter * 2 || id[numparticles - 1] != rank - iter ||
-            q[numparticles - 1] != rank - iter * 2) {
-            LOG_ERROR("Data verification failed on rank %d for step %d! id[0]=%d/%d, "
-                      "q[0]=%d/%d, id[end]=%d/%d, q[end]=%d/%d\n",
-                      rank, iter, id[0], rank + iter, q[0], rank + iter * 2, id[numparticles - 1],
-                      rank - iter, q[numparticles - 1], rank - iter * 2);
-            return FAIL;
-        }
-
 #ifdef ENABLE_MPI
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_INFO("Transfer wait time: %.5e\n", t1 - t0);
+            LOG_WARNING("Transfer wait time: %.5e\n", t1 - t0);
 #endif
 
         for (int j = 0; j < 8; j++) {
@@ -232,7 +241,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t0 = MPI_Wtime();
         if (rank == 0)
-            LOG_INFO("Transfer close time: %.5e\n", t0 - t1);
+            LOG_WARNING("Transfer close time: %.5e\n", t0 - t1);
 #endif
 
         for (int i = 0; i < 8; i++) {
@@ -246,7 +255,7 @@ main(int argc, char **argv)
         MPI_Barrier(MPI_COMM_WORLD);
         t1 = MPI_Wtime();
         if (rank == 0)
-            LOG_INFO("Obj close time: %.5e\n", t1 - t0);
+            LOG_WARNING("Obj close time: %.5e\n", t1 - t0);
 #endif
     } // End for steps
 

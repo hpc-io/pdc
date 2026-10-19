@@ -1,0 +1,68 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ rm -rf /pscratch/sd/n/nlewi26/pdc_vpicio_bench/0 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/1 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/10 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/11 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/12 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/13 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/14 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/15 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/2 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/3 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/4 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/5 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/6 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/7 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/8 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/9 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/pdc_data
++ popd
++ srun --overlap -N 4 -n 8 --ntasks-per-node=2 --error=server_vpicio_raw_4.err --output=server_vpicio_raw_4.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 128 --ntasks-per-node=32 --error=client_vpicio_raw_4.err --output=client_vpicio_raw_4.log ./vpicio 8388608 5 40 raw
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 128 --ntasks-per-node=32 --error=verify_vpicio_raw_4.err --output=verify_vpicio_raw_4.log ./vpicio_verify 8388608 5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 8 --ntasks-per-node=2 --error=close_server_vpicio_raw_4.err --output=close_server_vpicio_raw_4.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ rm -rf /pscratch/sd/n/nlewi26/pdc_vpicio_bench/0 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/1 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/2 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/3 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/4 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/5 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/6 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/7 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/pdc_data
++ popd
++ srun --overlap -N 4 -n 16 --ntasks-per-node=4 --error=server_vpicio_raw_4.err --output=server_vpicio_raw_4.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 128 --ntasks-per-node=32 --error=client_vpicio_raw_4.err --output=client_vpicio_raw_4.log ./vpicio 8388608 5 40 raw
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 128 --ntasks-per-node=32 --error=verify_vpicio_raw_4.err --output=verify_vpicio_raw_4.log ./vpicio_verify 8388608 5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 16 --ntasks-per-node=4 --error=close_server_vpicio_raw_4.err --output=close_server_vpicio_raw_4.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ rm -rf /pscratch/sd/n/nlewi26/pdc_vpicio_bench/0 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/1 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/10 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/11 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/12 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/13 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/14 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/15 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/2 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/3 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/4 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/5 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/6 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/7 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/8 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/9 /pscratch/sd/n/nlewi26/pdc_vpicio_bench/pdc_data
++ popd
++ srun --overlap -N 4 -n 32 --ntasks-per-node=8 --error=server_vpicio_raw_4.err --output=server_vpicio_raw_4.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 128 --ntasks-per-node=32 --error=client_vpicio_raw_4.err --output=client_vpicio_raw_4.log ./vpicio 8388608 5 40 raw
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 128 --ntasks-per-node=32 --error=verify_vpicio_raw_4.err --output=verify_vpicio_raw_4.log ./vpicio_verify 8388608 5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
++ srun --overlap -N 4 -n 32 --ntasks-per-node=8 --error=close_server_vpicio_raw_4.err --output=close_server_vpicio_raw_4.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/09_28_2026-59024519/results_vpicio_raw_59024519.csv
+Verification logs (not part of workload timing): /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/io/pdc_vpicio/09_28_2026-59024519/*servers_verify_vpicio_raw_4.log

@@ -1,0 +1,133 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{algorithm}
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage{tikz}
+\usetikzlibrary{arrows,calc}
+\tikzset{>=open triangle 45}
+\usepackage{listings}
+\usepackage{float}
+\usepackage{pifont}
+\usepackage[most]{tcolorbox}
+\usepackage{pgfplots}
+
+\pgfplotsset{compat=1.18}
+
+\newcommand{\blcirc}[2][\scriptsize]{%
+  \rlap{\scalebox{1.2}{\textcolor{black}{\ding{108}}}}%
+  \hbox to 1em{\hss\raisebox{0.15em}{\kern-0.10em\textcolor{white}{\fontsize{6.5}{5}\selectfont\sffamily#2}}\hss}%
+}
+
+\newtcolorbox{insightbox}{
+  colback=gray!5,
+  colframe=black,
+  fonttitle=\bfseries,
+  title=Insight,
+  boxrule=0.5pt,
+  arc=2pt,
+  left=6pt,
+  right=6pt,
+  top=4pt,
+  bottom=4pt
+}
+
+\newcommand\done[1]{\textcolor{blue}{#1}}
+\newcommand\note[1]{\textcolor{violet}{}}
+
+\newcommand{\C}[1]{\textbf{C#1}}
+
+\colorlet{punct}{black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+\lstdefinelanguage{json}{
+    basicstyle=\ttfamily\footnotesize,
+    numbers=none,
+    numberstyle=\scriptsize\ttfamily,
+    captionpos=b,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    frame=lines,
+    backgroundcolor=\color{background},
+    literate=
+     *{0}{{{\color{numb}0}}}{1}
+      {1}{{{\color{numb}1}}}{1}
+      {2}{{{\color{numb}2}}}{1}
+      {3}{{{\color{numb}3}}}{1}
+      {4}{{{\color{numb}4}}}{1}
+      {5}{{{\color{numb}5}}}{1}
+      {6}{{{\color{numb}6}}}{1}
+      {7}{{{\color{numb}7}}}{1}
+      {8}{{{\color{numb}8}}}{1}
+      {9}{{{\color{numb}9}}}{1}
+      {:}{{{\color{punct}{:}}}}{1}
+      {,}{{{\color{punct}{,}}}}{1}
+      {\{}{{{\color{delim}{\{}}}}{1}
+      {\}}{{{\color{delim}{\}}}}}{1}
+      {[}{{{\color{delim}{[}}}}{1}
+      {]}{{{\color{delim}{]}}}}{1},
+}
+\lstdefinestyle{CAPI}{
+    language=C,
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{teal},
+    numbersep=5pt,
+    frame=single,
+    breaklines=true,
+    showstringspaces=false,
+    tabsize=4,
+}
+
+\begin{document}
+
+\title{Data Flyway: In-flight Processing for Object-centric HPC Data Management}
+
+\author{\IEEEauthorblockN{Anonymous Author(s)}
+\IEEEauthorblockA{\textit{Affiliations withheld for double-anonymous review}}}
+
+\maketitle
+
+\begin{abstract}
+\input{sections/0_abstract-raqib}
+\end{abstract}
+
+\begin{IEEEkeywords}
+High-performance computing (HPC), Scalable I/O, Object Data Management, In-transit Computation, Heterogeneous Resources
+\end{IEEEkeywords}
+
+\section{Introduction}
+\label{sec:introduction}
+\input{sections/1_introduction-raqib}
+
+\section{Background and Related Work}
+\label{sec:background_related_motivation}
+\input{sections/2_background_related_motivation-raqib}
+
+\section{Data Flyway Design And Implementation}
+\label{sec:design}
+\input{sections/4_design}
+
+\section{Evaluation}
+\label{sec:evaluation}
+\input{sections/5_evaluation}
+
+\section{Conclusion And Future Work}
+\label{sec:conclusion_futurework}
+\input{sections/6_conclusion_futurework}
+
+\bibliographystyle{IEEEtran}
+\bibliography{main}
+
+\end{document}

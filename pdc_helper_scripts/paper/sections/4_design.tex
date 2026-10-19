@@ -1,0 +1,117 @@
+This section presents \emph{Data Flyway}, an in-flight processing system that introduces a declarative and data-centric model for representing in-flight processing pipelines and treats them as first-class, attachable entities in the data management layer. We begin with a high-level overview of the main components of Data Flyway. We then describe how clients can construct in-flight processing pipelines using the default transformations and analysis operations provided by the Data Flyway implementation or by providing their own custom computations. Finally, we present the dynamic scheduling algorithm that enables Data Flyway to select computing resources at runtime based on resource utilization and data movement.
+\note{Outline the structure of the design section: high-level overview, pipeline construction, and the dynamic scheduling algorithm.}
+
+\subsection{High-level Design Overview}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth, keepaspectratio]{figures_source/images/in_paper/pdc-architecture.pdf}
+    \caption{PDC high-level in-flight processing architecture. \blcirc{D} indicates data movement optimizations, \blcirc{P} and \blcirc{C} show computing resources used by clients and PDC respectively, and \blcirc{T} represents the alternative path for objects or object regions with attached transformations or analysis operations.}
+    \label{fig:transformation-arch}
+\end{figure}
+
+Figure~\ref{fig:transformation-arch} provides a high-level overview of the components found in PDC that are relevant to Data Flyway. Our extension to PDC, Data Flyway, is the in-flight processing management layer with a light blue background. PDC and Data Flyway aim to optimize the data movement, indicated with \blcirc{D} in the figure, between PDC client(s) and server(s), between the in-flight processing management and computing devices, and finally between PDC server(s) and long-term persistent storage (e.g., PFS or Cloud storage). In recent years, HPC memory and storage tiers have become too numerous and complex for clients to exploit. This heterogeneity is also found across computing devices (CPUs, GPUs, DPUs), where the optimal choice of where and when to run computation depends on a large number of dynamic factors, including but not limited to data movement costs and the current utilization of the available computing devices. A major focus of our work is to hide this complexity from clients while taking full advantage of the available hardware. To this end, the in-flight processing management layer consists of three key components: a graph optimizer, an in-flight processing scheduler, and a graph executor. Together, these components are responsible for determining the optimal path through the in-flight processing graph, selecting the appropriate computing device for each transformation or analysis operation, and executing the requested computation transparently on behalf of the client.
+\note{Describe the high-level architecture of Data Flyway as an extension to PDC, identify the three key components of the transformation management layer (graph optimizer, scheduler, executor), and motivate the need to hide hardware heterogeneity from clients.}
+
+\subsection{Creating an In-flight Processing Pipeline}
+\label{sec:pipeline}
+
+In order to transparently run in-flight processing operations (e.g. compression, encryption, or deriving a new object such as curl from a velocity field) on behalf of the user, Data Flyway must know the different states of the data, or the objects available to an analysis operation, and how to transform the data from one state to another, or which objects a given analysis operation requires and produces. The graph optimizer operates over a directed graph in which the nodes represent data states, or, for analysis operations, the objects consumed and produced, and the edges represent transformations or analysis operations between these data states or objects. This representation enables users to express arbitrarily complex in-flight processing pipelines.
+\note{Introduce the directed graph model used by the graph optimizer: nodes as data states and edges as transformations, enabling arbitrarily complex but practically focused pipelines.}
+
+\begin{lstlisting}[language=json, firstnumber=1,
+  caption={JSON schema for the transformation graph. The ellipsis \texttt{...} indicates that one or more entries may be present. Fields marked ? are optional.},
+  label={fig:transformation-schema},
+  float=htbp
+]
+{
+  "lib_path":? "string",
+  "name": "string",
+  "states": [
+    {
+      "name": "string"
+    },
+    ...
+  ],
+  "transformations": [
+    {
+      "device": "CPU | GPU",
+      "input_state": "states[i].name",
+      "output_state": "states[j].name",
+      "location": "builtin | external",
+      "params": "string",
+      "name": "string"
+    },
+    ...
+  ]
+}
+\end{lstlisting}
+
+A pipeline may contain multiple pathways between the same pair of data states, for example, CPU and GPU implementations of the same transformation, which can make building an API around this model cumbersome. To make it easier for application developers to create in-flight processing pipelines, Data Flyway uses JavaScript Object Notation (JSON) files to describe the directed graph. JSON was chosen for its human readability, wide language support, and natural representation of graph structures as arrays of objects, which does not require a custom parser and easily integrates with existing HPC workflow tooling.
+\note{Motivate the choice of JSON as the pipeline description format by showing that multiple transformation paths make a raw API cumbersome, and highlight JSON's practical advantages for HPC tooling.}
+
+The schema used is shown in Listing~\ref{fig:transformation-schema}; the analysis schema follows the same conventions, with \texttt{input\_objects} and \texttt{output\_objects} arrays in place of single state names. When a JSON file path is provided to PDC via an API call from the client application, Data Flyway will perform schema validation to ensure the file is well-formed and semantically correct. The optional \texttt{lib\_path} field specifies the path to a shared library containing user-defined transformation or analysis implementations. The \texttt{name} field identifies the in-flight processing pipeline. The \texttt{states} array defines the intermediate data states that may exist during the transformation process, where each state is identified by a unique name. The \texttt{transformations} array defines the set of operations that convert data between these states. Each transformation specifies the execution device (\texttt{CPU} or \texttt{GPU}), the input and output states, and whether the transformation is implemented as a built-in operation or provided externally through a shared library. Additional configuration parameters may be passed through the \texttt{params} field, while the \texttt{name} field identifies the specific transformation function to execute. Listing~\ref{fig:analysis-schema} describes analysis operations analogously, but operates over the \texttt{objects} array rather than \texttt{states}: the \texttt{objects} array defines the named objects an analysis operation may consume or produce, and the \texttt{analyses} array defines the operations that derive objects from other objects. Because a single analysis operation may consume multiple inputs and produce multiple outputs, each entry's \texttt{input\_objects} and \texttt{output\_objects} fields are arrays rather than single names, allowing a pipeline to express fan-in and fan-out directly in the schema. Whether an analysis operation is evaluated eagerly or lazily is resolved entirely by its \texttt{trigger} and \texttt{persist} fields rather than by any special-cased execution path. \texttt{trigger: eager} causes the graph executor to compute the operation as soon as its last required input is written, while \texttt{trigger: lazy} defers computation until a client reads an output object, recomputing it from the current input states on every such read. Independently, \texttt{persist} controls whether the computed result is stored as an ordinary object once produced. \texttt{trigger: eager} with \texttt{persist: true} (the default) is eager evaluation; \texttt{trigger: lazy} with \texttt{persist: false} is lazy evaluation; and \texttt{trigger: eager} with \texttt{persist: false} produces the transient intermediate objects used to chain analysis stages, such as \texttt{curl\_x}, \texttt{curl\_y}, and \texttt{curl\_z} in Section~\ref{sec:curl-vorticity-eval}, which are consumed by downstream stages without ever being written to storage. Because these fields are set per operation rather than per graph, eager, lazy, and transient stages can coexist within the same pipeline. Once a valid JSON file representing the desired directed graph has been created, clients can attach the directed graph to PDC entities.
+\note{Walk through the JSON schema field by field, explaining the role of each field in describing the directed graph, its states, and its transformations.}
+
+Once a directed graph has been attached to a PDC entity, all subsequent data transfers will be handled appropriately by the server-side in-flight processing management system. In addition, the PDC object metadata is used to persist which PDC entities have attached directed graphs. The metadata also contains information about the current state of the entity, or the set of objects already derived from it, and metrics related to the performance of the data transformations or analysis operations used to reach the current state. This information is used by the graph optimizer and in-flight processing scheduler to make intelligent decisions about how best to transform between data states, derive new objects, as well as when and where to move data and execute each transformation or analysis operation. After a directed graph has been attached to a PDC resource, subsequent calls to open and perform data transfers do not have to be aware of the directed graph. Instead, Data Flyway can determine, based on the metadata, whether a PDC resource needs to be transformed into a different state, or whether a derived object needs to be produced, and the graph executor will ensure the data or derived object is in the expected state transparently to the client.
+\note{Explain how attaching a graph to a PDC entity makes all subsequent transfers transparent: metadata persists the current data state and drives automatic transformation decisions without any client awareness.}
+
+We envision that the typical client workflow will be as follows.
+
+\begin{enumerate}
+    \item Create a JSON file describing a transformation or analysis pipeline.
+    \item At process initialization time, register the JSON file with the data management system.
+    \item Attach in-flight processing pipelines to the relevant data object(s) or region(s).
+    \item Perform core computation and region transfers.
+    \item Free in-flight processing pipeline resources.
+\end{enumerate}
+\note{Summarize the end-to-end client workflow as a five-step sequence from JSON creation through resource cleanup.}
+
+After attaching in-flight processing pipelines to PDC entities, application developers can focus on their core computation and simply invoke PDC region transfers without directly managing the transformations or analysis operations. The in-flight processing API also provides debugging utilities, including the ability to verify that a valid path exists between any two data states, or that all required inputs for an analysis operation are reachable, in the directed graph. The directed graph abstraction supports arbitrarily complex multi-stage pipelines with branching paths, including analysis operations with multiple inputs and outputs.
+
+\subsection{Predictive Model for GPU Kernel Latency}
+\label{sec:model}
+
+We predict total GPU kernel latency ($\texttt{total\_ms}$) using polynomial regression over NVML hardware counters and \emph{lag features} capturing autocorrelation across successive iterations: the host-to-device, device-to-host, and total latency of the immediately preceding invocation ($\texttt{prev\_h2d\_ms}$, $\texttt{prev\_d2h\_ms}$). This extends~\cite{ravi2023runway}, which achieves $R^2 = 0.50$ on A100s using only payload size and GPU utilization;, the same baseline yields $R^2 = 0.38$ on our platform, also using A100s, with predictions collapsing to a narrow band that fails to capture the full latency range. Forward-backward BIC stepwise regression selects 6 base predictors ($\texttt{data\_size\_mb}$, $\texttt{prev\_h2d\_ms}$, $\texttt{prev\_d2h\_ms}$, $\texttt{nvml\_gpu\_util}$, $\texttt{nvml\_pcie\_tx\_kbps}$, $\texttt{nvml\_pcie\_rx\_kbps}$), which are expanded to a degree-2 polynomial; iterative term-level pruning at $p < 10^{-4}$ reduces the expansion to 15 retained monomials. We split the $n = 2{,}320$ observations 80/20, using the 80\% training set for both predictor selection and fitting and holding out the remaining 20\% for evaluation. As shown in Figure~\ref{fig:bestr2}, the resulting model achieves $R^2 = 0.97$ on the held-out set, with predictions tightly distributed around the diagonal across the full 0--160\,ms latency range.
+
+\subsection{Dynamic Scheduling Algorithm}
+\label{sec:sched}
+
+When the client application performs data transfers, Data Flyway must decide, at runtime, which device to execute each transformation or analysis operation on. This decision is challenging because device utilization fluctuates, transformation or analysis costs vary by data size and type, and moving data between devices carries its own overhead. A static assignment fails to account for contention when computing devices are saturated or when the data transfer cost outweighs the computational benefit. The dynamic scheduling algorithm described here is the core of the in-flight processing scheduler, which works in conjunction with the graph optimizer and graph executor to select both the optimal path and the optimal device assignment and execute the desired transformation or analysis operation.
+\note{Motivate the need for dynamic scheduling by identifying the three sources of variability it must handle: fluctuating device utilization, varying transformation costs, and data movement overhead.}
+
+\begin{algorithm}[t]
+\caption{Dynamic scheduling algorithm.}
+\label{fig:scheduling_algorithm}
+\begin{algorithmic}[1]
+\STATE $edge \gets \text{get\_next\_best\_edge}($
+\STATE \hspace{2em} $dg,\ cur\_state,\ desired\_state)$
+\WHILE{$edge \neq \text{null}$}
+    \STATE $data\_size \gets \text{bytes}(input\_region)$
+    \STATE $move_{CPU} \gets \text{movement}(device,\ \text{CPU})$
+    \STATE $move_{GPU} \gets \text{movement}(device,\ \text{GPU})$
+    \STATE $h2d \gets (move_{GPU} > 0)\ ?\ prev\_h2d : 0$
+    \STATE $d2h \gets (move_{CPU} > 0)\ ?\ prev\_d2h : 0$
+    \STATE $cost_{CPU} \gets \hat{f}_{CPU}(data\_size,\ CPU_{util})$
+    \STATE $cost_{GPU} \gets \hat{f}_{GPU}(data\_size,\ GPU_{util},\ h2d,\ d2h,$
+    \STATE \hspace{2em} $nvml\_pcie\_tx\_kbps,\ nvml\_pcie\_rx\_kbps)$
+    \IF{$cost_{CPU} \leq cost_{GPU}$}
+        \STATE $device \gets \text{CPU}$
+    \ELSE
+        \STATE $device \gets \text{GPU}$
+    \ENDIF
+    \STATE $total\_time \gets \text{run}(edge,\ device)$
+    \IF{$device = \text{GPU}$}
+        \STATE $\text{update\_lag\_features}_{GPU}(h2d,\ d2h)$
+    \ENDIF
+    \STATE $edge \gets \text{get\_next\_best\_edge}($
+    \STATE \hspace{2em} $dg,\ cur\_state,\ desired\_state)$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm~\ref{fig:scheduling_algorithm} dynamically schedules transformations and analysis operations along the optimal path between the current region state and the desired final region state. The algorithm begins by calling \texttt{get\_next\_best\_edge}, which computes the shortest path through the in-flight processing graph and returns the first edge to execute. Each edge is weighted by its predicted cost, the lower of the CPU and GPU runtimes estimated by the polynomial models below, including the cost of moving data to that device, so path selection accounts for both computation and data placement across all remaining steps. If \texttt{get\_next\_best\_edge} returns null, the current state equals the desired state and traversal is complete.
+
+For each edge, the scheduler first computes the data movement cost for each device, i.e., the cost of transferring data to the CPU or GPU if it is not already resident there. If the data is already on the target device, the movement cost is zero and the corresponding transfer lag features ($prev\_h2d$ or $prev\_d2h$) are set to zero, since no transfer will occur. The scheduler then predicts runtime using device-specific polynomial models: $\hat{f}_{CPU}$ takes as input the data size and current CPU utilization, while $\hat{f}_{GPU}$ additionally incorporates the transfer lag features $h2d$ and $d2h$ from the previous execution on that GPU to account for memory transfer overhead. The transformation or analysis operation is then dispatched to whichever device has the lower total cost.
+
+After execution, only the GPU lag features $h2d$ and $d2h$ are updated, since only the GPU polynomial relies on transfer lag to make its predictions. Finally, \texttt{get\_next\_best\_edge} is called again to recompute the best next step given the updated graph state, allowing the scheduler to adapt to changing execution conditions between transformations and analysis operations.

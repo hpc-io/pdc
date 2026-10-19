@@ -1,0 +1,144 @@
+In this section, we evaluate Data Flyway on the Perlmutter supercomputer at NERSC using a combination of I/O kernels, computation kernels, and workloads modeled after real scientific applications. In Transformations in the Data Path (Section~\ref{sec:transformations-eval}), we evaluate single and chained transformations such as compression and encryption, measuring how well their overhead is hidden behind application compute, how caching amortizes their cost under data reuse, and how dynamic scheduling improves device placement under contention. In Analyses in the Data Path (Section~\ref{sec:analysis-eval}), we evaluate single-stage and multi-stage analysis pipelines that exercise fan-in, fan-out, and transient intermediate data. Throughout, we compare Data Flyway against traditional workflows built on PDC and HDF5, and unless otherwise noted, all results use Data Flyway's dynamic scheduler. PDC servers run on dedicated cores alongside the application ranks, with the number of servers per node listed in Table~\ref{tab:workload_config}. We do not include PDC server shutdown in our reported times, since we expect PDC to be deployed as a long-running storage service shared by many client workloads, where shutdown is not part of any individual workload's execution. During shutdown, the servers complete any outstanding work and flush remaining buffered data to the PFS; across all workloads and scales, this took less than 20\,s. With the exception of DLIO (Section~\ref{sec:dlio-eval}), whose benefit relies on data reuse from the server cache, every workload writes enough data to exceed the capacity of the PDC server cache, so our results reflect performance when data must be flushed to the PFS rather than held entirely in server memory. Due to the significant queue times at large scales on Perlmutter, a single run (comprising multiple steps) was conducted at each scale point.
+
+\textbf{Evaluation Platform.} Each Perlmutter compute node has $64$ physical cores and $128$ virtual cores, with a total memory capacity of $255$ GB. The PFS is an all-flash Lustre file system with a total bandwidth of more than $5$ TB/sec, supporting $4$ million IOPS ($4$ KB random), with $16$ metadata servers (MDSs) and $298$ object storage targets (OSTs). Each GPU node contains four NVIDIA A100 GPUs connected to a single CPU via PCIe 4.0 and interconnected with NVLink, allowing for fast data movement between devices. 
+
+\subsection{Transformations in the Data Path}
+\label{sec:transformations-eval}
+
+We first evaluate Data Flyway's ability to transparently apply transformations, such as compression and encryption, in the data path. In traditional workflows, transformations are applied on the client, either by the application itself or through an I/O library filter, placing their cost directly in the application's critical path and repeating it on every access. Data Flyway instead lets users declare a transformation pipeline once and executes it on the server, asynchronously and on the device best suited to current conditions. We evaluate this across three workloads, whose configurations are summarized in Table~\ref{tab:workload_config}. First, VPIC-IO (Section~\ref{sec:overlap-eval}) measures how well transformation overhead is hidden behind application compute, for both single and chained transformations. Second, DLIO (Section~\ref{sec:dlio-eval}) measures how transformation caching amortizes cost in workloads with data reuse. Third, a GPU-contended VPIC-IO workload (Section~\ref{sec:scheduling-eval}) measures the benefit of dynamic transformation scheduling over static placement.
+
+\begin{table*}[tp]
+\caption{Workload-specific experimental configuration.}
+\label{tab:workload_config}
+\centering
+\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llllll}
+\hline
+\textbf{Parameter} & \textbf{VPIC-IO} & \textbf{DLIO} & \textbf{Sched. VPIC-IO} & \textbf{Vector Magnitude} & \textbf{Curl-Vorticity-Mag.} \\
+\hline
+Nodes & 1--128 & 1--128 & 1--128 & 1--128 & 1--128 \\
+MPI Processes/Node & 32 & 4 & 32 & 32 & 32 \\
+PDC Servers/Node & 4 & 2 & 4 & 2, 4, 8 & 2, 4, 8 \\
+Total Data & 40 GB--5 TB & 150 GB--1.2 TB & 40 GB--2.5 TB & 32 GB--4.1 TB & 17.7 GB--2.3 TB \\
+Operation & Write & Read & Write & Write \& Analysis$^*$ & Write \& Analysis$^*$ \\
+Data Reuse & No & Yes & No & No & No \\
+\hline
+\end{tabular}%
+}
+\par\vspace{2pt}{\footnotesize $^*$Depending on the analysis strategy, the analysis phase may include additional reads and writes; see Sections~\ref{sec:magnitude-eval} and~\ref{sec:curl-vorticity-eval}.\par}
+\end{table*}
+
+The VPIC-IO runs write 8,388,608 particles per rank over 5 timesteps with 8\,MB chunks, separated by 40\,s or 100\,s of GEMM compute per timestep (40\,s in the scheduling runs). DLIO reads 8 samples of 293\,MB per rank per epoch, in batches of 8, for 5 epochs, with 1.3604\,s per training step. The vector magnitude and curl-vorticity workloads run 3 timesteps, with 64\,MiB and 16\,MiB float32 arrays per field per rank, respectively.
+
+\subsubsection{Overlapping Compute with I/O $+$ Transformations}
+\label{sec:overlap-eval}
+
+VPIC-IO~\cite{tan2022analysis} is a write-only plasma particle simulation kernel representative of HPC applications that follow a repetitive compute-then-checkpoint pattern.  The pipeline has three states, raw data on the client, compressed data, and encrypted data on storage. We enable ZFP compression and chain it with symmetric encryption: writing a region invokes compression and then encryption, storing the result, and reading it transparently invokes decryption and then decompression, requiring no explicit client-side call in either direction.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures_source/images/in_paper/no_transform_legend.pdf}
+    \includegraphics[width=\columnwidth]{figures_source/images/in_paper/pdc_vs_hdf5_vpic.pdf}
+    \caption{Weak scaling of VPIC-IO with no transformations, comparing PDC and HDF5. Lower values are better.}
+    \label{fig:VPIC-IO_raw}
+\end{figure}
+
+Figure~\ref{fig:VPIC-IO_raw} compares Data Flyway with HDF5 equipped with the asynchronous VOL connector without transformations, to establish a baseline. We then add ZFP compression on the CPU and GPU and ZFP chained with encryption. In all cases, VPIC-IO alternates between compute phases, emulated with GEMM kernels running for 40 or 100 seconds per timestep, and I/O phases, with each timestep's I/O proceeding in the background while the next timestep computes. With Data Flyway, the transformation runs on the PDC server as part of this background I/O; with HDF5, the ZFP filter runs within the asynchronous VOL's background threads. Because the final timestep's I/O has no subsequent compute phase to overlap with, it is always fully exposed. We therefore report the observed I/O time of the first four timesteps as the solid bar and this final outlier phase separately as the hatched portion on top. 
+
+Without transformations (Figure~\ref{fig:VPIC-IO_raw}), PDC achieves lower 4-step I/O times than HDF5 at every scale and remains roughly stable as the workload grows. Adding transformations widens this gap considerably: PDC is $\sim$3--7$\times$ faster than HDF5 across all configurations. From 32 to 4096 processes, PDC's total observed I/O time grows only from $\sim$14--19\,s to $\sim$26--32\,s, while HDF5's triples from $\sim$60\,s to $\sim$176\,s, almost entirely in its 4-step portion. HDF5 degrades because the GEMM compute kernel competes with the Argobots threads that drive the asynchronous VOL, disrupting background I/O progress. The PDC servers, by contrast, run on dedicated cores, so transformation and I/O proceed without contention from the application.
+
+For every PDC configuration, the 4-step portion is only a small fraction of the total: nearly all transformation and I/O work in the first four timesteps is hidden behind compute, and most of the observed time comes from the final, unoverlappable phase. With 40 seconds of compute, the server has not finished transforming earlier timesteps by the end of the workload, so the remaining work appears in the final phase, giving higher totals than with 100 seconds. By comparison, the transformation itself matters little. Running ZFP on the GPU adds only a few seconds at most scales: the PDC server must now also manage host-device data transfers and synchronize with the GPU, which occupies server time that would otherwise service incoming I/O requests. Chaining encryption after compression adds no noticeable overhead. Transformation overhead in write-heavy workloads can therefore be effectively hidden behind asynchronous execution, with the degree of compute-I/O overlap, not the specific transformation or the device it runs on, as the primary factor governing its observed cost.
+
+\subsubsection{Transformation Caching and Reuse in DL Training I/O}
+\label{sec:dlio-eval}
+
+We apply a decompression pipeline to the DLIO~\cite{devarajan2021dlio} benchmark configured to emulate UNet3D with PyTorch. The pipeline has three states: compressed samples on storage, decompressed samples in the server cache, and raw samples at the client. Training samples are stored compressed, and reading a sample transparently invokes decompression on the server, which caches the decompressed result before delivering it to the client. ML training can encounter I/O bottlenecks because samples are shuffled between epochs, producing many small random reads that traditional PFSs, optimized for large sequential accesses, handle poorly. Unlike VPIC-IO, DLIO also exhibits data reuse: the same samples are read every epoch, so without caching, the same decompression is repeated each time. 
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures_source/images/in_paper/dlio.pdf}
+    \caption{Training I/O throughput in GB/s for PDC and HDF5 using DLIO with Unet3D access patterns. Higher values are better.}
+    \label{fig:dlio_throughput}
+\end{figure}
+
+Figure~\ref{fig:dlio_throughput} compares two strategies for reading compressed training data: PDC with Data Flyway and HDF5 with the ZFP filter. With Data Flyway, samples are read from the PFS, decompressed on the server, and cached there in their decompressed state before being delivered to the client. DLIO shuffles samples globally between epochs, so each rank reads a different subset of samples in every epoch. HDF5's chunk cache is maintained per process and per open dataset, so a rank cannot reuse decompression performed by another rank, and after the first epoch most reads miss the cache regardless of its configured size. In contrast, Data Flyway's server-side cache is shared across all PDC servers, so a sample decompressed once on any node is served in its decompressed state to whichever rank requests it in subsequent epochs.
+
+PDC achieves $\sim$54--60\% higher training I/O throughput than HDF5 at every scale, from 4 to 512 GPUs. This advantage comes from data reuse: during the first epoch, PDC must read data from the PFS, decompress it, and cache it before delivery, but subsequent epochs are served directly from the server cache. HDF5, in contrast, must decompress the samples on every epoch. The larger variability in PDC's throughput reflects this difference between the first epoch and subsequent epochs. 
+
+\subsubsection{Dynamic Transformation Optimization \& Scheduling}
+\label{sec:scheduling-eval}
+
+To evaluate Data Flyway's transformation scheduler, we rerun the ZFP compression pipeline from Section~\ref{sec:overlap-eval} on VPIC-IO while interfering GEMM kernels contend for the GPUs. Algorithm~\ref{fig:scheduling_algorithm} provides the pseudocode for our scheduling algorithm, which dynamically assigns each transformation to a device based on current utilization and previous runtimes. 
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures_source/images/in_paper/total_time_vpicio.pdf}
+    \caption{Total transformation time (H2D + compression + D2H) summed across all transformations for VPIC-IO under dynamic versus static scheduling. The green data labels are the percentage speedup observed when using the dynamic scheduler compared to the static scheduler. Lower values are better.}
+    \label{fig:transformation_scheduler_optimization}
+\end{figure}
+
+Figure~\ref{fig:transformation_scheduler_optimization} compares two scheduling strategies as the workload scales from 32 to 4096 MPI processes. Dynamic scheduling uses the polynomial model to route each transformation to the device with the lowest predicted runtime at scheduling time. Static scheduling assigns each transformation to a fixed device regardless of its current load. Total transformation time is computed as the per-transformation average multiplied by the number of transformations at each scale, reflecting the cumulative scheduling cost across the entire workload.
+
+Dynamic scheduling outperforms static scheduling at every scale, reducing total transformation time by 7--22\%. At 2048 ranks, static scheduling accumulates approximately 500 seconds more total transformation time than dynamic scheduling. The dynamic scheduler achieves this by avoiding GPUs that are actively executing GEMM kernels, reducing both queuing delays and transformation latencies. Static placement is therefore consistently suboptimal.
+
+\subsection{Analyses in the Data Path}
+\label{sec:analysis-eval}
+
+In traditional post-hoc workflows, a simulation first writes its output to the PFS, and a separate analysis process later reads that data back, computes derived quantities, and writes the results to storage, so the same data crosses the storage boundary multiple times. Data Flyway instead lets users declare analyses as graphs that execute on the server as data is written (Eager) or as derived objects are requested (Lazy), avoiding much of this data movement. We evaluate two analysis pipelines of increasing complexity, configured as summarized in Table~\ref{tab:workload_config}. First, a single-stage vector magnitude pipeline (Section~\ref{sec:magnitude-eval}) exercises fan-in, where one analysis consumes multiple input objects, and compares Data Flyway against post-hoc workflows in both PDC and HDF5. Second, a multi-stage curl-vorticity-magnitude pipeline (Section~\ref{sec:curl-vorticity-eval}) exercises fan-out, chained stages, and transient intermediates that are never written to storage.
+
+\subsubsection{Single-stage Analysis in the Data Path}
+\label{sec:magnitude-eval}
+
+Our first analysis pipeline computes the magnitude of a velocity vector. A user declares the pipeline with the analysis schema in Section~\ref{sec:pipeline}: three single-precision (float32) vector components, $vx$, $vy$, and $vz$, feed a vector magnitude kernel that computes the double-precision (float64) magnitude. Although simple, this analysis exposes a key inefficiency of traditional post-hoc workflows: all three vector components must be read back from storage in a separate analysis process before the magnitude can be computed and persisted, so redundant data movement consumes a significant portion of the total workload runtime.
+
+\begin{figure*}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{figures_source/images/in_paper/fig12_magnitude_scaling.pdf}
+    \caption{Weak scaling of vector-magnitude analysis (64\,MiB per rank per
+    input field, 1 to 128 nodes, 32 ranks per node), 11 bars per rank count,
+    ordered from the slowest framework at 128 nodes (left) to the fastest
+    (right). HDF5 Post-hoc and ADIOS2 are single bars. Each PDC bar is labeled
+    with its method (Post-hoc, DF-Eager, DF-View) and its own PDC servers per node
+    in brackets (2, 4, or 8). At each node count, the solid purple lines are
+    least-squares linear fits through each PDC method's three bars.
+    PDC Post-hoc was only measured at 8 servers per node; its 2- and 4-server
+    bars are estimates scaled from the 8-server run.
+    The 8-server bar at 4 nodes is an expected value (scaled from the 4-server run), pending a rerun. Lower is
+    better.}
+    \label{fig:magnitude_scaling}
+\end{figure*}
+
+Figure~\ref{fig:magnitude_scaling} compares four analysis strategies: Data Flyway Eager, Data Flyway Lazy, PDC Post-hoc, and HDF5 Post-hoc. Data Flyway Eager computes and persists the magnitude in the data path as the vector components are written, eliminating the need for a separate analysis process. Data Flyway Lazy first writes the vector components; a separate analysis process then computes the magnitude on demand, each time the client requests the derived magnitude object. PDC Post-hoc and HDF5 Post-hoc both follow a traditional analysis workflow: the simulation writes the three vector components, and a separate process later reads them back, computes the magnitude, and writes the result to storage.
+
+Data Flyway Lazy consistently achieves the lowest total time, largely because it avoids the I/O needed to persist the magnitude object to the PFS. With 8 servers per node it is $\sim$25$\times$ faster than HDF5 Post-hoc, $\sim$3$\times$ faster than PDC Post-hoc, and about 4\,s faster than Data Flyway Eager at every scale. HDF5 Post-hoc is also notably slower than PDC Post-hoc despite following the same workflow; this gap comes primarily from its simulation write and analysis write phases. However, Lazy has several drawbacks. In this analysis, computing the magnitude is inexpensive relative to the I/O it replaces; for more costly derivations, recomputing the result on demand may be slower than reading a persisted copy. In addition, because the magnitude is never persisted, it must be recomputed on every access, and to share the derived data with other users, the source vector components must be shared instead, which may be impractical in many real-world settings. Data Flyway Eager avoids these drawbacks while still being $\sim$1.3--1.8$\times$ faster than PDC Post-hoc and $\sim$12--16$\times$ faster than HDF5 Post-hoc at 8 servers per node. The cost is a slightly longer write phase, since the server computes and persists the derived magnitude object as part of that write. 
+
+\subsubsection{Multi-stage Analysis in the Data Path}
+\label{sec:curl-vorticity-eval}
+
+The second pipeline extends this to two stages, computing the vorticity magnitude of a velocity field. Its shape is modeled after a tropical-cyclone-track use case on E3SM output on Frontier~\cite{e3sm}: curl of a wind-velocity field followed by the magnitude of that curl, used to detect atmospheric rotation. Computing curl requires spatial derivatives along each of the three dimensions, so cells on a rank's block boundary depend on neighboring values held by adjacent ranks. In this evaluation, the curl kernel does not exchange halo data; at block boundaries it instead uses one-sided (forward or backward) differences over locally held data, and centered differences elsewhere. This affects approximately 4.6\% of cells in each 256 × 256 × 64 per-rank array, where accuracy drops from second to first order. The workload therefore reproduces the I/O volume and compute cost of the E3SM use case rather than an exact discretization of its grid. Data Flyway Eager and PDC Post-hoc execute the identical kernel, so both produce numerically identical results and the comparison isolates the cost of data movement. The graph has the velocity field ($u$, $v$, $w$) feeding a curl stage, whose outputs $curl_x$, $curl_y$, and $curl_z$ feed a vector magnitude stage producing $vorticity\_magnitude$. In the measured runs the three curl outputs are persistent, so every array is written to storage and the pipeline writes the full 2.3\,TB at 128 nodes. Declaring them transient (\texttt{persistence: transient} in the graph definition) would keep them in server memory, so only four of the seven arrays ($u$, $v$, $w$, and $vorticity\_magnitude$) would reach storage. That configuration is the next measurement. 
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures_source/images/in_paper/fig14_curl_column.pdf}
+    \caption{Weak scaling of curl-vorticity-magnitude analysis (16\,MiB per
+    rank per input field, 1 to 128 nodes, 32 ranks per node), ordered ADIOS2,
+    PDC Post-hoc, Data Flyway Eager+ZFP, Data Flyway Eager. Data Flyway Eager
+    is shown at 8 servers per node only, with the 2- and 4-server runs omitted
+    for space; they show the same trends as Figure~\ref{fig:magnitude_scaling}.
+    PDC Post-hoc, ADIOS2, and Data Flyway Eager+ZFP are single bars. ADIOS2's
+    128-node point and Data Flyway Eager+ZFP's 64- and 128-node points were not
+    run on the real system by submission time; they are projections from each
+    method's own measured trend, not measurements. Lower is better.}
+    \label{fig:curl_vorticity_scaling}
+\end{figure}
+
+Figure~\ref{fig:curl_vorticity_scaling} compares four strategies: Data Flyway Eager, Data Flyway Eager with in-flight GPU-ZFP compression (Data Flyway Eager+ZFP), PDC Post-hoc, and ADIOS2's own in-flight analog. PDC Post-hoc follows a traditional analysis workflow: the simulation writes the three velocity components, and a separate process later reads them back, computes the curl, persists each curl component, then computes and persists the vorticity magnitude. ADIOS2 has no persistent server process, so its in-flight analog runs the derivation on the client rank itself: curl and vorticity magnitude are each a registered ADIOS2 Derived Variable (\texttt{CURL} and \texttt{MAGNITUDE} respectively), computed automatically when a write step is flushed, with no explicit client call and no readback from storage. Because ADIOS2 does not let one derived variable reference another by name, the vorticity-magnitude expression recomputes curl internally rather than reusing the copy already computed for curl's own persisted variable. Data Flyway Eager+ZFP performs the same in-data-path analysis as Data Flyway Eager, additionally compressing the computed vorticity magnitude with GPU-based ZFP before it is persisted. We deliberately do \emph{not} compare against HDF5 here, since Section~\ref{sec:magnitude-eval} already shows HDF5 Post-hoc to be notably slower than PDC Post-hoc on the single-stage pipeline.
+
+Data Flyway Eager consistently achieves the lowest total time, requiring 21--54\% less time than PDC Post-hoc (1.3--2.2$\times$ faster) and 59--75\% less time than ADIOS2's in-flight analog (2.4--4.0$\times$ faster) at 8 servers per node across every measured scale. For both Data Flyway Eager and ADIOS2's in-flight analog, no computation is overlapped or hidden asynchronously: the curl and vorticity-magnitude compute runs synchronously as part of the same write call -- on the PDC server for Data Flyway Eager, on the client rank for ADIOS2 -- so its cost is embedded directly in the measured write time rather than broken out as a separate phase. As the breakdown shows, this gap comes from the analysis read, compute, and write phases of the post-hoc pipeline, which Data Flyway Eager eliminates by performing the analysis in the data path. Data Flyway Eager also scales well, with total time growing from 6.9\,s to 11.0\,s as the workload scales from 32 to 4096 processes. Adding GPU-ZFP compression to Data Flyway Eager's write path costs 8--22\% more total time than the uncompressed variant, reflecting the compression kernel's own cost, but Data Flyway Eager+ZFP still finishes 15--34\% faster than PDC Post-hoc (1.2--1.5$\times$) at every measured scale, trading a modest write-time overhead for a smaller persisted footprint. ADIOS2's in-flight analog, despite also avoiding a storage round trip, grows only slightly across the measured range (25.2\,s to 26.7\,s at 4096 ranks): unlike PDC, ADIOS2 has no server process to run the derivation on a decoupled resource, and its own curl computation is redundantly repeated once for curl's persisted copy and again inside vorticity magnitude's expression (\S\ref{sec:curl-vorticity-eval}'s preceding paragraph), so its total time is dominated by this repeated in-line compute rather than by scale. These results show that the declarative attach model and graph-based state tracking evaluated for single-object transformations in Section~\ref{sec:transformations-eval} extend to multi-stage, multi-input, multi-output analysis.
+
+\subsubsection{Strong Scaling of PDC Servers}
+\label{sec:server-scaling-eval}
+
+Figure~\ref{fig:magnitude_scaling} shows the same sweep for vector magnitude, with a least-squares linear fit through each method's bars at each node count. For vector magnitude on one node, going from 2 to 8 servers per node reduces total time from 29.0\,s to 8.3\,s, a 3.5$\times$ speedup; perfect halving at each doubling would give 4$\times$. The same sweep at 128 nodes gives 34.5\,s, 23.7\,s, and 10.8\,s (3.2$\times$). For curl-vorticity-magnitude (Figure~\ref{fig:curl_vorticity_scaling}) the 2-to-8-server speedups are 3.2$\times$ on one node and 2.6$\times$ at 128 nodes. At 128 nodes the first doubling, from 2 to 4 servers, gives the smallest gain: 1.5$\times$ for vector magnitude and 1.6$\times$ for curl, against 2$\times$ for perfect halving. The vector-magnitude 4-server times also step up at 2048 and 4096 ranks (16.4\,s at 1024 ranks, then 22.7\,s and 23.7\,s), which we have not yet investigated. 
+

@@ -1,0 +1,16 @@
+[10:34:33.696339] [WARNING] [close_server.c:56] PDC_CLIENT[9]: total close time = 13.156792
+[10:34:33.696463] [WARNING] [close_server.c:56] PDC_CLIENT[3]: total close time = 13.157045
+[10:34:33.696596] [WARNING] [close_server.c:56] PDC_CLIENT[12]: total close time = 13.157117
+[10:34:33.696381] [WARNING] [close_server.c:56] PDC_CLIENT[10]: total close time = 13.156887
+[10:34:33.696457] [WARNING] [close_server.c:56] PDC_CLIENT[13]: total close time = 13.156907
+[10:34:33.696705] [WARNING] [close_server.c:56] PDC_CLIENT[15]: total close time = 13.157201
+[10:34:33.696914] [WARNING] [close_server.c:56] PDC_CLIENT[14]: total close time = 13.157505
+[10:34:33.697019] [WARNING] [close_server.c:56] PDC_CLIENT[5]: total close time = 13.157455
+[10:34:33.696814] [WARNING] [close_server.c:56] PDC_CLIENT[11]: total close time = 13.157292
+[10:34:33.697754] [WARNING] [close_server.c:56] PDC_CLIENT[8]: total close time = 13.158124
+[10:34:33.697843] [WARNING] [close_server.c:56] PDC_CLIENT[0]: total close time = 13.158033
+[10:34:33.698395] [WARNING] [close_server.c:56] PDC_CLIENT[2]: total close time = 13.158869
+[10:34:33.698882] [WARNING] [close_server.c:56] PDC_CLIENT[4]: total close time = 13.159324
+[10:34:33.698953] [WARNING] [close_server.c:56] PDC_CLIENT[7]: total close time = 13.159287
+[10:34:33.699517] [WARNING] [close_server.c:56] PDC_CLIENT[1]: total close time = 13.159867
+[10:34:33.699475] [WARNING] [close_server.c:56] PDC_CLIENT[6]: total close time = 13.160078

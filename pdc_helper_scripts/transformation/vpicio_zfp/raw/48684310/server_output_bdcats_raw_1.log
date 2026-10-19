@@ -1,0 +1,9 @@
+[10:04:53.668778] [WARNING] [pdc_server.c:1641] PDC_SERVER[0]: Restart from checkpoint start
+[10:04:53.669584] [WARNING] [pdc_server.c:1914] PDC_SERVER[0]: Reading checkpoint transformations start
+[10:04:53.669606] [WARNING] [pdc_server.c:2040] PDC_SERVER[0]: Reading checkpoint transformations done
+[10:04:53.669922] [WARNING] [pdc_server.c:2064] PDC_SERVER[0]: Restart from checkpoint done
+[10:04:54.153559] [ERROR] [pdc_server_metadata.c:2250] PDC_SERVER[0]: Container [c1] not found[10:04:54.153596] [ERROR] [pdc_server_metadata.c:2250] PDC_SERVER[0]: Container [c1] not found[10:04:54.153612] [ERROR] [pdc_server_metadata.c:2250] PDC_SERVER[0]: Container [c1] not found[10:04:54.746358] [WARNING] [pdc_server.c:1184] PDC_SERVER[0]: Checkpoint start
+[10:04:54.762532] [WARNING] [pdc_server.c:1376] PDC_SERVER[0]: Writing checkpoint transformations start
+[10:04:54.762548] [WARNING] [pdc_server.c:1558] PDC_SERVER[0]: Writing checkpoint transformations done
+[10:04:54.762709] [WARNING] [pdc_server.c:1595] PDC_SERVER[0]: Rank[ALL]: Total checkpoint time = 0.016340
+[10:04:54.763506] [WARNING] [pdc_server.c:1602] PDC_SERVER[0]: Checkpointing done

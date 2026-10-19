@@ -1,0 +1,1 @@
+servers_per_node,mode,step,n_ranks,nx,ny,nz_per_rank,compress,setup_s,write_s,confirm_read_s,total_s,bad

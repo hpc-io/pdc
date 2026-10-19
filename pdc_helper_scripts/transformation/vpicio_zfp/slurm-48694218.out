@@ -1,0 +1,24 @@
+NUM_NODES=32
+DATA_SERVERS_PER_NODE=1
+CLIENTS_PER_NODE=32
+SERVER_TOTAL_TASKS=32
+CLIENT_TOTAL_TASKS=1024
+removing old logs
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc_helper_scripts/vpicio_scripts
++ rm -rf /pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data
++ popd
++ srun -N 32 -n 32 --ntasks-per-node=1 --error=server_output_vpicio_zfp_gpu_32.err --output=server_output_vpicio_zfp_gpu_32.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc_helper_scripts/vpicio_scripts
+
+real	0m4.572s
+user	0m0.021s
+sys	0m1.553s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc_helper_scripts/vpicio_scripts
++ srun -N 32 -n 1024 --ntasks-per-node=32 --output=client_output_vpicio_zfp_gpu_32.log --error=client_output_vpicio_zfp_gpu_32.err ./vpicio_mts 8388608 5 40 zfp_gpu
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** JOB 48694218 ON nid002241 CANCELLED AT 2026-02-10T02:16:13 ***

@@ -1,0 +1,18 @@
+TODO FOR PAPER SUBMISSION:
+1. Ensure same font for all figures
+2. Create plots for dynamic scheduler
+3. Restructure evaluation in the following way:
+	- Results without transformations (HDF5 vs PDC)
+	- Results with transformation chain (ZFP GPU + Encyprtion)
+	- Introduce dynamic scheduling algorithm (IN DESIGN SECTION)
+		- Use GPU interference and ZFP compression/data movement plots to motivate
+		- Get the time for running just on the CPU (good to compare GPU with this)
+	- Results comparing static vs dynamic scheduling (ZFP GPU)
+	- Results with DLIO (HDF5 ZFP Filter vs PDC ZFP transformation)
+4. Make plot for DLIO throughput MB/s and put it alongside the samples/s plot.
+5. Switch Fig 7-10 to stacked clustered bar chart with each bar having Metadata Time + Data Time.
+6. Change Fig 5-6 tp make sure the VPIC and BDCATS steps don't look related (or that they are running at the same time).
+7. Fig 3. Fix overlapping text on the arrows.
+8. Add a limitations section.
+9. Add brief sentence mentioning we support independent transformations (HDF5 doesn't for certain filters e.g., ZFP writes)
+10. Remove NVIDIA GDS path from Fig 2.

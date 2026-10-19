@@ -1,0 +1,17 @@
+Lustre striping: count=128 size=67108864 bytes (64 MiB/rank), target=/pscratch/sd/n/nlewi26/hdf5_analysis_bench/magnitude_highfive_4.h5
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
++ srun -N 4 -n 128 --ntasks-per-node=32 --output=client_magnitude_highfive_4.log --error=client_magnitude_highfive_4.err ./magnitude_highfive 16777216 /pscratch/sd/n/nlewi26/hdf5_analysis_bench/magnitude_highfive_4.h5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
+++ grep '^magnitude_highfive,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive/client_magnitude_highfive_4.log
++ lines='magnitude_highfive,0,128,16777216,0.109210,17.778481,0.580054,0.051546,10.993011,0.447309,0.785018,30.744629,0
+magnitude_highfive,1,128,16777216,0.109210,16.917044,0.588821,0.050470,11.154425,0.479345,0.785018,30.084334,0
+magnitude_highfive,2,128,16777216,0.109210,16.814266,0.597406,0.051417,11.038893,0.456673,0.785018,29.852883,0'
++ '[' -z 'magnitude_highfive,0,128,16777216,0.109210,17.778481,0.580054,0.051546,10.993011,0.447309,0.785018,30.744629,0
+magnitude_highfive,1,128,16777216,0.109210,16.917044,0.588821,0.050470,11.154425,0.479345,0.785018,30.084334,0
+magnitude_highfive,2,128,16777216,0.109210,16.814266,0.597406,0.051417,11.038893,0.456673,0.785018,29.852883,0' ']'
++ echo 'magnitude_highfive,0,128,16777216,0.109210,17.778481,0.580054,0.051546,10.993011,0.447309,0.785018,30.744629,0
+magnitude_highfive,1,128,16777216,0.109210,16.917044,0.588821,0.050470,11.154425,0.479345,0.785018,30.084334,0
+magnitude_highfive,2,128,16777216,0.109210,16.814266,0.597406,0.051417,11.038893,0.456673,0.785018,29.852883,0'
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive/results_magnitude_highfive_59023575.csv

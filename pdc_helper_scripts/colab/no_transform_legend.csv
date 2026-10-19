@@ -1,0 +1,5 @@
+label,facecolor,edgecolor,hatch
+HDF5 outlier,#2196F3,black,/
+PDC outlier,#F44336,black,/
+HDF5 4-step,#2196F3,#2196F3,
+PDC 4-step,#F44336,#F44336,

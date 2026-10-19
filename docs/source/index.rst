@@ -1,22 +1,19 @@
 Proactive Data Containers (PDC)
 ===============================
-
 Welcome to the documentation for **Proactive Data Containers (PDC)** — 
 a high-performance data management framework designed to support flexible, scalable, 
 and efficient data movement and access across diverse memory and storage systems.
-
 Whether you're a new user, a developer integrating PDC into your application, or a 
 contributor to the project, this documentation provides the resources you need to get started and dive deeper.
-
-Here’s how to navigate:
-
+Here's how to navigate:
 - **Getting Started**  
   Learn the basics of PDC, including core concepts, architecture, and key services. Start here if you're new to PDC.
 - **Developer & API Guide**  
   Explore the client API, internal design considerations, and tools to help you develop and debug PDC-based applications.
+- **Transformation Framework**  
+  Learn how to attach compression, encryption, and custom transformation pipelines to PDC objects using directed graphs.
 - **Community and Contributions**  
   Find guidelines for contributing to PDC and additional reference material in the appendix.
-
 Use the table of contents below to explore the sections in more detail
 
 .. toctree::
@@ -33,6 +30,12 @@ Use the table of contents below to explore the sections in more detail
 
    client_api
    client_tools
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Data Flyway
+
+   pdc_tf_docs
 
 .. toctree::
    :maxdepth: 1

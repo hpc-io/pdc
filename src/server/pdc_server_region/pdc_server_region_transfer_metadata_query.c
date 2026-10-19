@@ -57,6 +57,123 @@ static uint64_t metadata_query_buf_create(pdc_obj_region_metadata *regions, int 
  * Entry function for this class. Should be only called once at the beginning of Server init.
  * If checkpoint is not NULL, then load previously checkpointed metadata to static variables.
  */
+/*perr_t
+transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint)
+{
+    FUNC_ENTER(NULL);
+
+    LOG_INFO("Entered transfer_request_metadata_query_init\n");
+
+    hg_return_t ret_value = HG_SUCCESS;
+    char       *ptr;
+    int         n_objs, reg_count;
+    int         i, j;
+
+    metadata_server_objs     = NULL;
+    metadata_server_objs_end = NULL;
+    metadata_query_buf_head  = NULL;
+    metadata_query_buf_end   = NULL;
+    pdc_server_size          = pdc_server_size_input;
+    LOG_INFO("pdc_server_size set to %d\n", pdc_server_size);
+
+    data_server_bytes = (uint64_t *)PDC_calloc(pdc_server_size, sizeof(uint64_t));
+    LOG_INFO("Allocated data_server_bytes\n");
+
+    query_id_g = 100000;
+    LOG_INFO("query_id_g initialized to %d\n", query_id_g);
+
+    ptr = checkpoint;
+    pthread_mutex_init(&metadata_query_mutex, NULL);
+    LOG_INFO("metadata_query_mutex initialized\n");
+
+    if (checkpoint) {
+        LOG_INFO("Checkpoint provided\n");
+
+        n_objs = *(int *)ptr;
+        ptr += sizeof(int);
+        LOG_INFO("Number of objects in checkpoint: %d\n", n_objs);
+
+        for (i = 0; i < n_objs; ++i) {
+            LOG_INFO("Processing object %d\n", i);
+
+            // Allocate first object node
+            if (metadata_server_objs) {
+                metadata_server_objs_end->next =
+                    (pdc_obj_metadata_pkg *)PDC_malloc(sizeof(pdc_obj_metadata_pkg));
+                metadata_server_objs_end = metadata_server_objs_end->next;
+                LOG_INFO("Allocated new metadata_server_objs node\n");
+            }
+            else {
+                metadata_server_objs     = (pdc_obj_metadata_pkg *)PDC_malloc(sizeof(pdc_obj_metadata_pkg));
+                metadata_server_objs_end = metadata_server_objs;
+                LOG_INFO("Allocated first metadata_server_objs node\n");
+            }
+
+            metadata_server_objs_end->next   = NULL;
+            metadata_server_objs_end->obj_id = *(uint64_t *)ptr;
+            ptr += sizeof(uint64_t);
+            LOG_INFO("Object ID: %lu\n", metadata_server_objs_end->obj_id);
+
+            metadata_server_objs_end->ndim = *(int *)ptr;
+            ptr += sizeof(int);
+            LOG_INFO("Object ndim: %d\n", metadata_server_objs_end->ndim);
+
+            reg_count = *(int *)ptr;
+            ptr += sizeof(int);
+            LOG_INFO("Region count: %d\n", reg_count);
+
+            // Allocate first region
+            metadata_server_objs_end->regions =
+                (pdc_region_metadata_pkg *)PDC_malloc(sizeof(pdc_region_metadata_pkg));
+            metadata_server_objs_end->regions_end       = metadata_server_objs_end->regions;
+            metadata_server_objs_end->regions_end->next = NULL;
+
+            // Copy first region data
+            metadata_server_objs_end->regions_end->reg_offset =
+                (uint64_t *)PDC_malloc(sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
+            metadata_server_objs_end->regions_end->reg_size =
+                metadata_server_objs_end->regions_end->reg_offset + metadata_server_objs_end->ndim;
+
+            metadata_server_objs_end->regions_end->data_server_id = *(uint32_t *)ptr;
+            ptr += sizeof(uint32_t);
+            memcpy(metadata_server_objs_end->regions_end->reg_offset, ptr,
+                   sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
+            ptr += sizeof(uint64_t) * metadata_server_objs_end->ndim * 2;
+
+            LOG_INFO("Region 0 data_server_id: %u\n", metadata_server_objs_end->regions_end->data_server_id);
+            LOG_INFO("Region 0 reg_offset copied\n");
+
+            // Allocate remaining regions
+            for (j = 1; j < reg_count; ++j) {
+                LOG_INFO("Processing region %d for object %d\n", j, i);
+
+                metadata_server_objs_end->regions_end->next =
+                    (pdc_region_metadata_pkg *)PDC_malloc(sizeof(pdc_region_metadata_pkg));
+                metadata_server_objs_end->regions_end       = metadata_server_objs_end->regions_end->next;
+                metadata_server_objs_end->regions_end->next = NULL;
+
+                metadata_server_objs_end->regions_end->reg_offset =
+                    (uint64_t *)PDC_malloc(sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
+                metadata_server_objs_end->regions_end->reg_size =
+                    metadata_server_objs_end->regions_end->reg_offset + metadata_server_objs_end->ndim;
+
+                metadata_server_objs_end->regions_end->data_server_id = *(uint32_t *)ptr;
+                ptr += sizeof(uint32_t);
+                memcpy(metadata_server_objs_end->regions_end->reg_offset, ptr,
+                       sizeof(uint64_t) * metadata_server_objs_end->ndim * 2);
+                ptr += sizeof(uint64_t) * metadata_server_objs_end->ndim * 2;
+
+                LOG_INFO("Region %d data_server_id: %u\n", j,
+                         metadata_server_objs_end->regions_end->data_server_id);
+                LOG_INFO("Region %d reg_offset copied\n", j);
+            }
+        }
+    }
+
+    LOG_INFO("Exiting transfer_request_metadata_query_init\n");
+    FUNC_LEAVE(ret_value);
+}*/
+
 perr_t
 transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint)
 {

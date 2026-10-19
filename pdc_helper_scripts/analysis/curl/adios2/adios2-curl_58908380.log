@@ -1,0 +1,32 @@
++ cd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test
++ export NUM_NODES=64
++ NUM_NODES=64
++ export CLIENTS_PER_NODE=32
++ CLIENTS_PER_NODE=32
++ export CLIENT_TOTAL_TASKS=2048
++ CLIENT_TOTAL_TASKS=2048
++ export BIN_DIR=/pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test
++ BIN_DIR=/pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test
++ export OUT_DIR=/pscratch/sd/n/nlewi26/adios2_analysis_bench
++ OUT_DIR=/pscratch/sd/n/nlewi26/adios2_analysis_bench
++ mkdir -p /pscratch/sd/n/nlewi26/adios2_analysis_bench
++ export NX=256
++ NX=256
++ export NY=256
++ NY=256
++ export NZ_PER_RANK=64
++ NZ_PER_RANK=64
++ export OUT_FILE=/pscratch/sd/n/nlewi26/adios2_analysis_bench/adios2_bench_curl_64.bp
++ OUT_FILE=/pscratch/sd/n/nlewi26/adios2_analysis_bench/adios2_bench_curl_64.bp
++ export RESULTS=/pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test/results_adios2_curl_58908380.csv
++ RESULTS=/pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test/results_adios2_curl_58908380.csv
++ STRIPE_COUNT=128
++ STRIPE_SIZE_BYTES=16777216
++ STRIPE_SIZE_BYTES=16777216
++ rm -rf /pscratch/sd/n/nlewi26/adios2_analysis_bench/adios2_bench_curl_64.bp
++ lfs setstripe -c 128 -S 16777216 /pscratch/sd/n/nlewi26/adios2_analysis_bench
++ echo mode,step,n_ranks,nx,ny,nz_per_rank,setup_s,write_s,readback_s,compute_s,writeback_s,confirm_read_s,step_total_s,bad
++ srun -N 64 -n 2048 --ntasks-per-node=32 --output=client_curl_64.log --error=client_curl_64.err /pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test/adios2_bench_curl 256 256 64 /pscratch/sd/n/nlewi26/adios2_analysis_bench/adios2_bench_curl_64.bp
++ grep '^adios2_posthoc_curl,' client_curl_64.log
++ echo 'Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test/results_adios2_curl_58908380.csv'
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/adios2_analysis_test/results_adios2_curl_58908380.csv

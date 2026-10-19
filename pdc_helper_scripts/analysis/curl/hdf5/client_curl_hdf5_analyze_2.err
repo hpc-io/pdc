@@ -1,0 +1,2304 @@
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 14:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 24:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 27:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 1:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 5:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 6:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 7:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 9:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 12:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 16:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 17:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 18:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 22:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 23:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 26:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 28:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 29:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 30:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 31:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 0:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 2:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 3:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 4:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 8:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 10:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 11:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 13:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 15:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 19:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 20:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 21:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 25:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 24] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 24 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 24
+
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 25] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 25 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 25
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 25
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 29] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 29 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 29
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 29
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 30] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 30 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 30
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 30
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 1] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 1 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 1
+MPICH ERROR [Rank 3] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 3 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 3
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 4] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 4 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 4
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 4
+MPICH ERROR [Rank 5] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 5 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 5
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 5
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 6] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 6 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 6
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 6
+MPICH ERROR [Rank 7] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 7 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 7
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 7
+MPICH ERROR [Rank 8] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 8 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 8
+MPICH ERROR [Rank 9] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 9 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 9
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 9
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 10] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 10 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 10
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 11] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 11 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 11
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 11
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 12] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 12 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 12
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 12
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 13] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 13 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 13
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 13
+MPICH ERROR [Rank 14] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 14 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 14
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 14
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 15] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 15 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 15
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 15
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 16] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 16 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 16
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 16
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 17] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 17 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 17
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 17
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 18] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 18 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 18
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 18
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 19] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 19 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 19
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 19
+MPICH ERROR [Rank 20] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 20 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 20
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 20
+MPICH ERROR [Rank 21] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 21 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 21
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 21
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 22] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 22 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 22
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 22
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 39:
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 23] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 23 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 23
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 23
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 44:
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 24
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 53:
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 26] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 26 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 26
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 26
+MPICH ERROR [Rank 27] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 27 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 27
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 27
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 33:
+MPICH ERROR [Rank 28] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 28 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 28
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 28
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 46:
+MPICH ERROR [Rank 31] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 31 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 31
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 31
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 47:
+MPICH ERROR [Rank 0] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 0 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 0
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 2] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004649] - Abort(1) (rank 2 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 2
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 50:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 62:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 32:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 36:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 51:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 55:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 56:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 63:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 34:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 38:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 42:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 49:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 57:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 58:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 59:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 35:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 37:
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 40:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 41:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 43:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 45:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 48:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 52:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 54:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 60:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+HDF5-DIAG: Error detected in HDF5 (2.2.0) MPI-process 61:
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #000: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 401 in H5Dopen2(): unable to synchronously open dataset
+    major: Dataset
+    minor: Can't open object
+  #001: /pscratch/sd/n/nlewi26/src/hdf5/src/H5D.c line 363 in H5D__open_api_common(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #002: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2090 in H5VL_dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #003: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLcallback.c line 2057 in H5VL__dataset_open(): dataset open failed
+    major: Virtual Object Layer
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #004: /pscratch/sd/n/nlewi26/src/hdf5/src/H5VLnative_dataset.c line 332 in H5VL__native_dataset_open(): unable to open dataset
+    major: Dataset
+    minor: Can't open object
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #005: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Dint.c line 1476 in H5D__open_name(): not found
+    major: Dataset
+    minor: Object not found
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+  #006: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 424 in H5G_loc_find(): can't find object
+    major: Symbol table
+    minor: Object not found
+  #007: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 846 in H5G_traverse(): internal path traversal failed
+    major: Symbol table
+    minor: Object not found
+  #008: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gtraverse.c line 618 in H5G__traverse_real(): traversal operator failed
+    major: Symbol table
+    minor: Callback failed
+  #009: /pscratch/sd/n/nlewi26/src/hdf5/src/H5Gloc.c line 381 in H5G__loc_find_cb(): object 'curl_x' doesn't exist
+    major: Symbol table
+    minor: Object not found
+H5Dopen2 failed
+MPICH ERROR [Rank 32] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 32 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 32
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 32
+MPICH ERROR [Rank 35] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 35 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 35
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 35
+MPICH ERROR [Rank 56] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 56 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 56
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 56
+MPICH ERROR [Rank 33] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 33 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 33
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 33
+MPICH ERROR [Rank 34] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 34 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 34
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 34
+MPICH ERROR [Rank 36] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 36 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 36
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 36
+MPICH ERROR [Rank 37] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 37 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 37
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 37
+MPICH ERROR [Rank 38] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 38 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 38
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 38
+MPICH ERROR [Rank 39] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 39 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 39
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 39
+MPICH ERROR [Rank 40] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 40 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 40
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 40
+MPICH ERROR [Rank 41] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 41 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 41
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 41
+MPICH ERROR [Rank 42] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 42 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 42
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 42
+MPICH ERROR [Rank 43] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 43 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 43
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 43
+MPICH ERROR [Rank 44] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 44 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 44
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 44
+MPICH ERROR [Rank 45] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 45 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 45
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 45
+MPICH ERROR [Rank 46] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 46 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 46
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 46
+MPICH ERROR [Rank 47] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 47 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 47
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 47
+MPICH ERROR [Rank 48] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 48 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 48
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 48
+MPICH ERROR [Rank 49] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 49 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 49
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 49
+MPICH ERROR [Rank 50] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 50 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 50
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 50
+MPICH ERROR [Rank 51] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 51 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 51
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 51
+MPICH ERROR [Rank 52] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 52 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 52
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 52
+MPICH ERROR [Rank 53] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 53 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 53
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 53
+MPICH ERROR [Rank 54] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 54 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 54
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 54
+MPICH ERROR [Rank 55] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 55 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 55
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 55
+MPICH ERROR [Rank 57] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 57 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 57
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 57
+MPICH ERROR [Rank 58] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 58 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 58
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 58
+MPICH ERROR [Rank 59] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 59 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 59
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 59
+MPICH ERROR [Rank 60] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 60 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 60
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 60
+MPICH ERROR [Rank 61] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 61 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 61
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 61
+MPICH ERROR [Rank 62] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 62 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 62
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 62
+MPICH ERROR [Rank 63] [job id 58702647.1] [Mon Sep 21 11:16:22 2026] [nid004677] - Abort(1) (rank 63 in comm 0): application called MPI_Abort(MPI_COMM_WORLD, 1) - process 63
+
+aborting job:
+application called MPI_Abort(MPI_COMM_WORLD, 1) - process 63

@@ -1,0 +1,4 @@
+servers_per_node,mode,step,n_ranks,n_elem,setup_s,write_s,confirm_read_s,close_s,step_total_s,bad
+0,adios2_derived,0,4096,16777216,0.404205,17.300063,0.099949,0.019815,17.824033,0
+0,adios2_derived,1,4096,16777216,0.404205,19.659204,0.098368,0.019815,20.181592,0
+0,adios2_derived,2,4096,16777216,0.404205,19.588148,0.094230,0.019815,20.106398,0

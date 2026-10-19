@@ -1,0 +1,11 @@
+% use this in related work
+% Recent work such as Runway~\cite{ravi2023runway} demonstrates that performing transformations (e.g., compression) during data movement and dynamically scheduling them across heterogeneous resources (CPU, GPU, DPU) can significantly improve performance. However, existing approaches primarily focus on scheduling individual transformations and require the application or runtime to explicitly manage transformation invocation and composition.
+
+% use this in limitaion
+% In this paper, we extend the notion of overlapping computation with data movement by enabling computation to overlap not only with the transfer itself but also with \emph{in-flight data transformations}. This introduces a critical trade-off: to benefit from this additional overlap, the application must have sufficient computation to hide both I/O latency and transformation cost. Otherwise, the additional runtime overhead introduced by asynchronous execution and transformation processing may increase the overall latency. Fortunately, many HPC scientific workloads are inherently compute-intensive, providing ample opportunity for such overlap. 
+
+% use this in limitaion
+% To gain the highest benefit from the proposed Data Flyway design, the client application must have sufficient computation to hide the I/O latency plus the additional in-flight data transformations. Otherwise, no latency reduction will be observed. In fact, the overall latency will certainly increase due to the runtime having additional overhead in the I/O path to enable asynchronous operations. Fortunately, HPC scientific workloads are typically compute intensive, often providing ample opportunity for asynchronicity. A representative example VPIC/EQSIM ...
+
+% use in future work
+% Although using JSON files simplifies directed graph creation, we plan to make the process even easier by providing a visual tool capable of generating these files as discussed in our future work in Section~\ref{sec:future_work}. 

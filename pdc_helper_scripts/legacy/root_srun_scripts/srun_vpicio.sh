@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -xue
+
+export NUM_NODES=2
+export DATA_SERVERS_PER_NODE=2
+export CLIENTS_PER_NODE=126
+
+echo "NUM_NODES=$NUM_NODES"
+echo "DATA_SERVERS_PER_NODE=$DATA_SERVERS_PER_NODE"
+echo "CLIENTS_PER_NODE=$CLIENTS_PER_NODE"
+
+export SERVER_TOTAL_TASKS=$((NUM_NODES * DATA_SERVERS_PER_NODE))
+export CLIENT_TOTAL_TASKS=$((NUM_NODES * CLIENTS_PER_NODE))
+
+echo "SERVER_TOTAL_TASKS=$SERVER_TOTAL_TASKS"
+echo "CLIENT_TOTAL_TASKS=$CLIENT_TOTAL_TASKS"
+
+echo "running server script"
+./srun_server.sh
+
+echo "running client script"
+./srun_client.sh

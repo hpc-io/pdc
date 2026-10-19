@@ -1,0 +1,12 @@
+Lustre striping: count=128 size=67108864 bytes (64 MiB/rank), target=/pscratch/sd/n/nlewi26/hdf5_analysis_bench/hdf5_bench_magnitude_16.h5
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../hdf5_analysis_test
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/hdf5_analysis_test /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 16 -n 512 --ntasks-per-node=32 --output=client_hdf5_16.log --error=client_hdf5_16.err ./hdf5_bench_magnitude 16777216 /pscratch/sd/n/nlewi26/hdf5_analysis_bench/hdf5_bench_magnitude_16.h5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^hdf5,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../hdf5_analysis_test/client_hdf5_16.log
+++ tail -1
++ line=hdf5,512,16777216,3.640211,13.741417,0.856287,0.133588,7.912228,26.283732,0
++ '[' -z hdf5,512,16777216,3.640211,13.741417,0.856287,0.133588,7.912228,26.283732,0 ']'
++ echo hdf5,512,16777216,3.640211,13.741417,0.856287,0.133588,7.912228,26.283732,0
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/results_hdf5_57778922.csv

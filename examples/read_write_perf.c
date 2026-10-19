@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#include "pdc_analysis.h"
 
 #define BUF_LEN       128
 #define MAX_DATA_SIZE 1000000

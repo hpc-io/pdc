@@ -1,0 +1,31 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/10 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/11 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/12 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/13 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/14 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/15 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/16 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/17 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/18 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/19 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/20 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/21 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/22 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/23 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/24 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/25 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/26 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/27 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/28 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/29 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/30 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/31 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/32 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/33 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/34 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/35 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/36 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/37 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/38 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/39 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/40 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/41 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/42 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/43 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/44 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/45 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/46 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/47 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/48 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/49 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/50 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/51 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/52 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/53 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/54 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/55 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/56 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/57 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/58 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/59 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/60 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/61 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/62 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/63 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/8 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/9 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/pdc_data
++ popd
++ srun --overlap -N 64 -n 128 --ntasks-per-node=2 --error=server_curl_eager_64.err --output=server_curl_eager_64.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun --overlap -N 64 -n 2048 --ntasks-per-node=32 --output=client_curl_eager_64.log --error=client_curl_eager_64.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_eager "$NX" "$NY" "$NZ_PER_RANK" "$COMPRESS"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
+++ grep '^curl_eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin/client_curl_eager_64.log
++ lines='curl_eager,0,2048,256,256,64,0,1.101514,8.054385,0.627557,9.783457,0
+curl_eager,1,2048,256,256,64,0,1.101514,7.501268,0.721489,9.324271,0
+curl_eager,2,2048,256,256,64,0,1.101514,8.318791,0.736006,10.156312,0'
++ '[' -z 'curl_eager,0,2048,256,256,64,0,1.101514,8.054385,0.627557,9.783457,0
+curl_eager,1,2048,256,256,64,0,1.101514,7.501268,0.721489,9.324271,0
+curl_eager,2,2048,256,256,64,0,1.101514,8.318791,0.736006,10.156312,0' ']'
++ echo 'curl_eager,0,2048,256,256,64,0,1.101514,8.054385,0.627557,9.783457,0
+curl_eager,1,2048,256,256,64,0,1.101514,7.501268,0.721489,9.324271,0
+curl_eager,2,2048,256,256,64,0,1.101514,8.318791,0.736006,10.156312,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun --overlap -N 64 -n 128 --ntasks-per-node=2 --error=close_server_curl_eager_64.err --output=close_server_curl_eager_64.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ sleep 2
+Data size check: expected=1133871366144 bytes, actual=1133882638336 bytes
+OK: actual/expected data size ratio 1.000 within tolerance
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/results_curl_eager_58917438.csv

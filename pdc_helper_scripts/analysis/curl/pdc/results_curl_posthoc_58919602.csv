@@ -1,0 +1,4 @@
+servers_per_node,mode,step,n_ranks,nx,ny,nz_per_rank,compress,write_setup_s,write_s,relaunch_s,analyze_setup_s,readback_s,curl_compute_s,curl_writeback_s,magnitude_compute_s,magnitude_writeback_s,total_s,bad,avg_close_s,total_with_close_s
+8,curl_posthoc,0,64,256,256,64,0,0.105155,0.206925,17.1215,0.100681,0.495314,0.060450,0.389923,0.020971,0.135593,18.6365,0,8.024981,26.6615
+8,curl_posthoc,1,64,256,256,64,0,0.105155,0.209051,17.1215,0.100681,0.488457,0.046770,0.402537,0.020374,0.146309,18.6408,0,8.024981,26.6658
+8,curl_posthoc,2,64,256,256,64,0,0.105155,0.210977,17.1215,0.100681,0.484940,0.047786,0.382538,0.021257,0.176996,18.6518,0,8.024981,26.6768

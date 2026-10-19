@@ -1,0 +1,87 @@
+diff --git a/source/adios2/toolkit/derived/Function.cpp b/source/adios2/toolkit/derived/Function.cpp
+index 2a506d9f5..79a5da18c 100644
+--- a/source/adios2/toolkit/derived/Function.cpp
++++ b/source/adios2/toolkit/derived/Function.cpp
+@@ -72,38 +72,52 @@ void ApplyCross3D(T *data, const T *Ax, const T *Ay, const T *Az, const T *Bx, c
+ template <class T>
+ void ApplyCurl(T *data, const T *input1, const T *input2, const T *input3, const size_t dims[3])
+ {
+-    size_t index = 0;
+-    for (int i = 0; i < (int)dims[0]; ++i)
+-    {
+-        size_t prev_i = std::max(0, i - 1), next_i = std::min((int)dims[0] - 1, i + 1);
+-        for (int j = 0; j < (int)dims[1]; ++j)
++    /* Direct port of src/tests/analysis/curl_math.h (the convention this
++     * project's PDC and ADIOS2-posthoc curl benchmarks already share and
++     * have verified correct): dims[0]=nx is fastest-varying (stride 1),
++     * dims[1]=ny next (stride nx), dims[2]=nz slowest (stride nx*ny).
++     * Central differences in the block interior, one-sided (forward at
++     * coord==0, backward at coord==extent-1) at each axis's own edges,
++     * unit grid spacing -- matching curl_math.h's curl_math_partial
++     * exactly, replacing this function's own prior (buggy) indexing.
++     * Output stays packed as data[3*index+{0,1,2}] = (curl_x,curl_y,curl_z),
++     * matching CurlDimsFunc's declared trailing dimension of 3; index
++     * uses the same i-fastest linearization as the inputs, so reading
++     * this packed buffer back with the same convention round-trips
++     * correctly, the same way u/v/w already do (ADIOS2 does not itself
++     * impose an axis-order interpretation on stored bytes; only the
++     * declared Count/selection bookkeeping cares about dimension order). */
++    size_t nx = dims[0], ny = dims[1], nz = dims[2];
++    size_t stride_x = 1, stride_y = nx, stride_z = nx * ny;
++
++    auto partial = [](const T *f, size_t idx, size_t stride, size_t extent, size_t coord) -> double {
++        if (extent < 2)
++            return 0.0;
++        if (coord == 0)
++            return (double)f[idx + stride] - (double)f[idx];
++        if (coord == extent - 1)
++            return (double)f[idx] - (double)f[idx - stride];
++        return ((double)f[idx + stride] - (double)f[idx - stride]) / 2.0;
++    };
++
++    for (size_t k = 0; k < nz; ++k)
++    {
++        for (size_t j = 0; j < ny; ++j)
+         {
+-            size_t prev_j = std::max(0, j - 1), next_j = std::min((int)dims[1] - 1, j + 1);
+-            for (int k = 0; k < (int)dims[2]; ++k)
++            for (size_t i = 0; i < nx; ++i)
+             {
+-                size_t prev_k = std::max(0, k - 1), next_k = std::min((int)dims[2] - 1, k + 1);
+-                // curl[0] = dv3 / dy - dv2 / dz
+-                data[3 * index] = (input3[returnIndex(i, next_j, k, dims)] -
+-                                   input3[returnIndex(i, prev_j, k, dims)]) /
+-                                  (next_j - prev_j);
+-                data[3 * index] += (input2[returnIndex(i, j, prev_k, dims)] -
+-                                    input2[returnIndex(i, j, next_k, dims)]) /
+-                                   (next_k - prev_k);
+-                // curl[1] = dv1 / dz - dv3 / dx
+-                data[3 * index + 1] = (input1[returnIndex(i, j, next_k, dims)] -
+-                                       input1[returnIndex(i, j, prev_k, dims)]) /
+-                                      (next_k - prev_k);
+-                data[3 * index + 1] += (input3[returnIndex(prev_i, j, k, dims)] -
+-                                        input3[returnIndex(next_i, j, k, dims)]) /
+-                                       (next_i - prev_i);
+-                // curl[2] = dv2 / dx - dv1 / dy
+-                data[3 * index + 2] = (input2[returnIndex(next_i, j, k, dims)] -
+-                                       input2[returnIndex(prev_i, j, k, dims)]) /
+-                                      (next_i - prev_i);
+-                data[3 * index + 2] += (input1[returnIndex(i, prev_j, k, dims)] -
+-                                        input1[returnIndex(i, next_j, k, dims)]) /
+-                                       (next_j - prev_j);
+-                index++;
++                size_t idx = (k * ny + j) * nx + i;
++
++                double dwdy = partial(input3, idx, stride_y, ny, j);
++                double dvdz = partial(input2, idx, stride_z, nz, k);
++                double dudz = partial(input1, idx, stride_z, nz, k);
++                double dwdx = partial(input3, idx, stride_x, nx, i);
++                double dvdx = partial(input2, idx, stride_x, nx, i);
++                double dudy = partial(input1, idx, stride_y, ny, j);
++
++                data[3 * idx + 0] = (T)(dwdy - dvdz);
++                data[3 * idx + 1] = (T)(dudz - dwdx);
++                data[3 * idx + 2] = (T)(dvdx - dudy);
+             }
+         }
+     }

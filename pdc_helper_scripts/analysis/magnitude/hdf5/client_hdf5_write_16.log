@@ -1,0 +1,4 @@
+hdf5_bench_write: nranks=512 n_elem=16777216 chunk=16777216 elements (64.000 MiB/rank as float32)
+posthoc_write,0,512,16777216,0.208651,16.992279
+posthoc_write,1,512,16777216,0.208651,15.913436
+posthoc_write,2,512,16777216,0.208651,15.977017

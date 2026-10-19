@@ -1,0 +1,11 @@
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[INFO] PDC_CLIENT[0]: Found 2 PDC Metadata servers, running with 2 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+cxi
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Connection string: ofi+cxi://cxi0:8
+[INFO] PDC_CLIENT[1]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Scoped Slingshot CXI auth for Mercury: svc=1 vni=1 device=cxi0
+[INFO] PDC_CLIENT[0]: Using [/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench] as tmp dir, 1 clients per server
+[13:05:26.376012] [WARNING] [close_server.c:56] PDC_CLIENT[1]: total close time = 1.695929
+[13:05:26.377802] [WARNING] [close_server.c:56] PDC_CLIENT[0]: total close time = 1.697718

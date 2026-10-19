@@ -1,0 +1,47 @@
+[10:13:20.251231] [WARNING] [vpicio_mts.c:92] PDC_CLIENT[0]: Writing 8388608 number of particles for 5 steps with 128 clients raw transformation.
+[10:13:21.229337] [WARNING] [vpicio_mts.c:159] PDC_CLIENT[0]: Sleep start: 40.00
+[10:14:01.229465] [WARNING] [vpicio_mts.c:162] PDC_CLIENT[0]: Sleep end: 40.00
+[10:14:01.258679] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  0
+[10:14:01.272049] [WARNING] [vpicio_mts.c:212] PDC_CLIENT[0]: Obj create time: 1.32573e-02
+[10:14:01.273217] [WARNING] [vpicio_mts.c:228] PDC_CLIENT[0]: Transfer create time: 1.16803e-03
+[10:14:02.145363] [WARNING] [vpicio_mts.c:244] PDC_CLIENT[0]: Transfer start time: 8.72141e-01
+[10:14:02.145557] [WARNING] [vpicio_mts.c:249] PDC_CLIENT[0]: Sleep start: 40.00
+[10:14:42.145701] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Sleep end: 40.00
+[10:14:42.188289] [WARNING] [vpicio_mts.c:272] PDC_CLIENT[0]: Transfer wait time: 4.22595e-02
+[10:14:42.273465] [WARNING] [vpicio_mts.c:286] PDC_CLIENT[0]: Transfer close time: 8.51777e-02
+[10:14:42.273506] [WARNING] [vpicio_mts.c:300] PDC_CLIENT[0]: Obj close time: 4.32140e-05
+[10:14:42.273523] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  1
+[10:14:42.289785] [WARNING] [vpicio_mts.c:212] PDC_CLIENT[0]: Obj create time: 1.62569e-02
+[10:14:42.289803] [WARNING] [vpicio_mts.c:228] PDC_CLIENT[0]: Transfer create time: 1.97490e-05
+[10:14:43.274960] [WARNING] [vpicio_mts.c:244] PDC_CLIENT[0]: Transfer start time: 9.85149e-01
+[10:14:43.275023] [WARNING] [vpicio_mts.c:249] PDC_CLIENT[0]: Sleep start: 40.00
+[10:15:23.275102] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Sleep end: 40.00
+[10:15:23.350950] [WARNING] [vpicio_mts.c:272] PDC_CLIENT[0]: Transfer wait time: 6.65849e-02
+[10:15:23.413317] [WARNING] [vpicio_mts.c:286] PDC_CLIENT[0]: Transfer close time: 6.23684e-02
+[10:15:23.413357] [WARNING] [vpicio_mts.c:300] PDC_CLIENT[0]: Obj close time: 4.18710e-05
+[10:15:23.413372] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  2
+[10:15:23.414234] [WARNING] [vpicio_mts.c:212] PDC_CLIENT[0]: Obj create time: 8.57016e-04
+[10:15:23.414254] [WARNING] [vpicio_mts.c:228] PDC_CLIENT[0]: Transfer create time: 2.03490e-05
+[10:15:24.380820] [WARNING] [vpicio_mts.c:244] PDC_CLIENT[0]: Transfer start time: 9.66559e-01
+[10:15:24.380937] [WARNING] [vpicio_mts.c:249] PDC_CLIENT[0]: Sleep start: 40.00
+[10:16:04.382771] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Sleep end: 40.00
+[10:16:04.526952] [WARNING] [vpicio_mts.c:272] PDC_CLIENT[0]: Transfer wait time: 1.11992e-01
+[10:16:04.560774] [WARNING] [vpicio_mts.c:286] PDC_CLIENT[0]: Transfer close time: 3.38246e-02
+[10:16:04.562236] [WARNING] [vpicio_mts.c:300] PDC_CLIENT[0]: Obj close time: 1.46343e-03
+[10:16:04.562256] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  3
+[10:16:04.567411] [WARNING] [vpicio_mts.c:212] PDC_CLIENT[0]: Obj create time: 5.15000e-03
+[10:16:04.568952] [WARNING] [vpicio_mts.c:228] PDC_CLIENT[0]: Transfer create time: 1.54124e-03
+[10:16:05.594788] [WARNING] [vpicio_mts.c:244] PDC_CLIENT[0]: Transfer start time: 1.02583e+00
+[10:16:05.594824] [WARNING] [vpicio_mts.c:249] PDC_CLIENT[0]: Sleep start: 40.00
+[10:16:45.595697] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Sleep end: 40.00
+[10:16:45.734949] [WARNING] [vpicio_mts.c:272] PDC_CLIENT[0]: Transfer wait time: 8.26218e-02
+[10:16:45.832031] [WARNING] [vpicio_mts.c:286] PDC_CLIENT[0]: Transfer close time: 9.70852e-02
+[10:16:45.833099] [WARNING] [vpicio_mts.c:300] PDC_CLIENT[0]: Obj close time: 1.06823e-03
+[10:16:45.833117] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  4
+[10:16:45.835173] [WARNING] [vpicio_mts.c:212] PDC_CLIENT[0]: Obj create time: 2.05066e-03
+[10:16:45.836693] [WARNING] [vpicio_mts.c:228] PDC_CLIENT[0]: Transfer create time: 1.52017e-03
+[10:16:46.938958] [WARNING] [vpicio_mts.c:244] PDC_CLIENT[0]: Transfer start time: 1.10226e+00
+[10:16:46.938991] [WARNING] [vpicio_mts.c:255] PDC_CLIENT[0]: Final step, no sleep
+[10:16:54.855548] [WARNING] [vpicio_mts.c:272] PDC_CLIENT[0]: Transfer wait time: 7.86860e+00
+[10:16:54.971910] [WARNING] [vpicio_mts.c:286] PDC_CLIENT[0]: Transfer close time: 1.16364e-01
+[10:16:54.971950] [WARNING] [vpicio_mts.c:300] PDC_CLIENT[0]: Obj close time: 4.25020e-05

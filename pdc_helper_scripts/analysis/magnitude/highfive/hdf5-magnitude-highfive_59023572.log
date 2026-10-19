@@ -1,0 +1,17 @@
+Lustre striping: count=128 size=67108864 bytes (64 MiB/rank), target=/pscratch/sd/n/nlewi26/hdf5_analysis_bench/magnitude_highfive_1.h5
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
++ srun -N 1 -n 32 --ntasks-per-node=32 --output=client_magnitude_highfive_1.log --error=client_magnitude_highfive_1.err ./magnitude_highfive 16777216 /pscratch/sd/n/nlewi26/hdf5_analysis_bench/magnitude_highfive_1.h5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
+++ grep '^magnitude_highfive,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive/client_magnitude_highfive_1.log
++ lines='magnitude_highfive,0,32,16777216,0.078727,18.357937,0.143091,0.049982,13.307273,0.157485,0.003472,32.097966,0
+magnitude_highfive,1,32,16777216,0.078727,19.967753,0.140787,0.050136,13.386780,0.155053,0.003472,33.782708,0
+magnitude_highfive,2,32,16777216,0.078727,20.044767,0.142337,0.050126,13.518268,0.155611,0.003472,33.993307,0'
++ '[' -z 'magnitude_highfive,0,32,16777216,0.078727,18.357937,0.143091,0.049982,13.307273,0.157485,0.003472,32.097966,0
+magnitude_highfive,1,32,16777216,0.078727,19.967753,0.140787,0.050136,13.386780,0.155053,0.003472,33.782708,0
+magnitude_highfive,2,32,16777216,0.078727,20.044767,0.142337,0.050126,13.518268,0.155611,0.003472,33.993307,0' ']'
++ echo 'magnitude_highfive,0,32,16777216,0.078727,18.357937,0.143091,0.049982,13.307273,0.157485,0.003472,32.097966,0
+magnitude_highfive,1,32,16777216,0.078727,19.967753,0.140787,0.050136,13.386780,0.155053,0.003472,33.782708,0
+magnitude_highfive,2,32,16777216,0.078727,20.044767,0.142337,0.050126,13.518268,0.155611,0.003472,33.993307,0'
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive/results_magnitude_highfive_59023572.csv

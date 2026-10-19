@@ -1,0 +1,66 @@
+NUM_NODES=2
+DATA_SERVERS_PER_NODE=1
+CLIENTS_PER_NODE=32
+SERVER_TOTAL_TASKS=2
+CLIENT_TOTAL_TASKS=64
+PDC_LUSTRE_STRIPE_SIZE=8
+removing old logs
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ rm -rf /pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data
++ popd
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=server_output_vpicio_zfp_2.err --output=server_output_vpicio_zfp_2.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m0.391s
+user	0m0.003s
+sys	0m0.129s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 64 --ntasks-per-node=32 --output=client_output_vpicio_zfp_2.log --error=client_output_vpicio_zfp_2.err ./vpicio_mts 8388608 5 40 zfp
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	3m41.545s
+user	0m0.059s
+sys	0m0.050s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=close_server_output_vpicio_zfp_2.err --output=close_server_output_vpicio_zfp_2.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	3m59.238s
+user	0m0.039s
+sys	0m0.048s
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=server_output_bdcats_zfp_2.err --output=server_output_bdcats_zfp_2.log ./pdc_server restart
+
+real	0m0.006s
+user	0m0.006s
+sys	0m0.000s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 64 --ntasks-per-node=32 --output=client_output_bdcats_zfp_2.log --error=client_output_bdcats_zfp_2.err ./bdcats_mts 8388608 5 40 zfp
+srun: error: Unable to create step for job 48733301: Error configuring interconnect
+
+real	0m0.084s
+user	0m0.038s
+sys	0m0.031s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=close_server_output_bdcats_zfp_2.err --output=close_server_output_bdcats_zfp_2.log ./close_server
+srun: error: Unable to create step for job 48733301: Error configuring interconnect
+
+real	0m0.074s
+user	0m0.053s
+sys	0m0.012s

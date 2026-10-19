@@ -78,7 +78,9 @@ set(PROGRAMS
   obj/obj_round_robin_io_all
   obj/delete_obj
   misc/vpicio
+  misc/vpicio_verify
   misc/bdcats
+  misc/vpic_bdcats
   tags/kvtag_add_get
   tags/kvtag_query
   region/region_transfer_query
@@ -102,33 +104,92 @@ set(PROGRAMS
   region/region_transfer_set_dims_3D
   query/query_data
   misc/producer_waitall
+  
+  transformation/compression_transform
+  transformation/compression_transform_2D
+  transformation/compression_transform_3D
+  transformation/compression_transform_gpu
+  transformation/attach_obj_compression_transform
+  transformation/multi_region_transform
+  transformation/compression_encryption_transform
+  transformation/compression_encryption_transform_2D
+  transformation/compression_encryption_transform_3D
+  transformation/all_compression_transform
+
+  analysis/vector_magnitude_test
+  analysis/vector_magnitude_2d_test
+  analysis/vector_magnitude_compressed_test
+  analysis/vector_magnitude_gpu_test
+  analysis/bench_magnitude
+  analysis/bench_write_components
+  analysis/bench_posthoc_analyze
+  analysis/bench_posthoc_analyze_eager
+  analysis/bench_curl_eager
+  analysis/bench_curl_write
+  analysis/bench_curl_analyze
 )
 
-# TODO: Check if import_vpic.c is needed. If yes, we have to add the following :
-# if (HDF5_FOUND) 
-#   set(TEST_EXT_LIB ${HDF5_LIBRARIES} ${TEST_EXT_LIB})
-#   set(TEST_EXT_INCLUDE_DIRS ${HDF5_INCLUDE_DIRS} ${TEST_EXT_INCLUDE_DIRS})
-# else ()
-#   message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
-# endif()
+# Use C compiler for C files
+set(CMAKE_C_COMPILER gcc)
+set(CMAKE_CXX_COMPILER g++)  # still needed for linking C++/CUDA
 
+# Path to your CUDA library
+if(DEFINED ENV{CUDA_ROOT_DIR} AND NOT "$ENV{CUDA_ROOT_DIR}" STREQUAL "")
+    set(CUDA_ROOT $ENV{CUDA_ROOT_DIR})
+endif()
+
+# Path to your existing CUDA library
+find_package(MPI REQUIRED)
+
+# Link CUDA runtime from your CUDA_ROOT
+set(CUDA_RUNTIME_LIB ${CUDA_ROOT}/lib64/libcudart.so)
+set(CMAKE_C_COMPILER mpicc)
+set(CMAKE_CXX_COMPILER mpicxx)
+
+# Iterate through your programs
 foreach(program ${PROGRAMS})
-  get_filename_component(program_name ${program} NAME)
-  get_filename_component(program_dir ${program} DIRECTORY)
+    get_filename_component(program_name ${program} NAME)
+    get_filename_component(program_dir ${program} DIRECTORY)
+    set(SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${program}.c")
 
-  set(SOURCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/${program}.c")
+    if(EXISTS ${SOURCE_FILE})
+        add_executable(${program_name} ${SOURCE_FILE})
+        
+        # Use C linker for pure C source files
+        set_target_properties(${program_name} PROPERTIES LINKER_LANGUAGE C)
+        
+        # Include directories
+        target_include_directories(${program_name} PRIVATE 
+            ${CMAKE_SOURCE_DIR}/include
+            ${CMAKE_SOURCE_DIR}/src/tests/include
+            ${PI_GPU_INCLUDE_PATH}
+            ${MPI_C_INCLUDE_PATH}
+        )
 
-  if(EXISTS ${SOURCE_FILE})
-    add_executable(${program_name} ${SOURCE_FILE})
-    target_include_directories(${program_name} PRIVATE 
-      ${CMAKE_SOURCE_DIR}/include 
-      ${CMAKE_SOURCE_DIR}/src/tests/include
-    )
-    target_link_libraries(${program_name} pdc pdc_commons ${TEST_EXT_LIB})
-  else()
-    message(WARNING "Source file ${SOURCE_FILE} not found, skipping ${program_name}.")
-  endif()
+        # Link libraries
+        target_link_libraries(${program_name}
+            pdc
+            pdc_commons
+            ${TEST_EXT_LIB}
+            ${MERCURY_LIBRARY}
+            ${PDC_COMMONS_LIBRARIES}
+            -lm -ldl
+            ${PDC_EXT_LIB_DEPENDENCIES}
+            ${ZFP_LIB} 
+            ${MPI_C_LIBRARIES}
+        )
+    else()
+        message(WARNING "Source file ${SOURCE_FILE} not found, skipping ${program_name}.")
+    endif()
 endforeach()
+
+if(CUDA_ENABLED)
+  # Standalone CUDA compilation/execution smoke test -- see the file's own
+  # header comment. Not part of PROGRAMS above since that loop assumes a
+  # plain .c source and a C-only linker.
+  add_executable(cuda_smoke_test ${CMAKE_CURRENT_SOURCE_DIR}/analysis/cuda_smoke_test.cu)
+  set_target_properties(cuda_smoke_test PROPERTIES CUDA_ARCHITECTURES "${CMAKE_CUDA_ARCHITECTURES}")
+endif()
 
 if(BUILD_MPI_TESTING)
   set(MPI_PROGRAMS
@@ -160,6 +221,13 @@ endif()
       target_include_directories(${program_name} PRIVATE 
         ${TEST_EXT_INCLUDE_DIRS}
         ${CMAKE_SOURCE_DIR}/src/tests/include)
+      target_link_libraries(${program_name}
+              ${MERCURY_LIBRARY}
+              ${PDC_COMMONS_LIBRARIES}
+              -lm -ldl
+              ${PDC_EXT_LIB_DEPENDENCIES}
+              ${ZFP_LIB}
+      )
     else()
       message(WARNING "Source file ${SOURCE_FILE} not found, skipping ${program_name}.")
     endif()
@@ -176,7 +244,6 @@ if(UUID_FOUND)
     dart/dart_func_test
     dart/dart_test
   )
-
   set(TEST_EXT_LIB ${TEST_EXT_LIB} ${UUID_LIBRARIES})
   set(TEST_EXT_INCLUDE_DIRS ${TEST_EXT_INCLUDE_DIRS} ${UUID_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/helper/include)
 
@@ -203,6 +270,13 @@ if(UUID_FOUND)
       add_executable(${program_name} ${SOURCE_FILE} ${EXTRA_SRC_FILE})
       target_link_libraries(${program_name} pdc pdc_commons ${TEST_EXT_LIB})
       target_include_directories(${program_name} PRIVATE ${TEST_EXT_INCLUDE_DIRS})
+      target_link_libraries(${program_name}
+              ${MERCURY_LIBRARY}
+              ${PDC_COMMONS_LIBRARIES}
+              -lm -ldl
+              ${PDC_EXT_LIB_DEPENDENCIES}
+              ${ZFP_LIB}
+      )
     else()
       message(WARNING "Source file ${SOURCE_FILE} not found, skipping ${program_name}.")
     endif()
@@ -224,27 +298,6 @@ foreach(script ${SCRIPTS})
     FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE WORLD_READ WORLD_EXECUTE
   )
 endforeach(script)
-
-
-# *******************************************
-# Create a transform library which contains:
-#  1. compression/depression functions
-#  2. datatype conversion
-# *******************************************
-OPTION(GEN_TRANSFORM_LIB "Create a transform library" OFF)
-if(GEN_TRANSFORM_LIB)
-  FIND_LIBRARY(BLOSC_LIBRARY blosc $ENV{HOME}/Sandbox/c-blosc/build/blosc)
-  set(PDC_TRANSFORMS_SRCS transforms/pdc_transforms_lib.c)
-  add_library(pdctransforms  ${PDC_TRANSFORMS_SRCS})
-  target_link_libraries(pdctransforms pdc ${BLOSC_LIBRARY})
-endif()
-
-# *******************************************
-# Create a transform library for testing
-# *******************************************
-set(PDC_ANALYSIS_SRCS analysis/pdc_analysis_lib.c)
-add_library(pdcanalysis ${PDC_ANALYSIS_SRCS})
-target_link_libraries(pdcanalysis pdc)
 
 add_test(NAME pdc_init          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pdc_init )
 add_test(NAME dup_prop          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./dup_prop )
@@ -282,6 +335,39 @@ add_test(NAME region_transfer_overlap_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPU
 add_test(NAME region_transfer_overlap_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_overlap_3D )
 add_test(NAME region_transfer_merge WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_merge )
 add_test(NAME region_transfer_write_read WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_write_read )
+
+# Transformations region transfer compression
+add_test(NAME compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform)
+add_test(NAME compression_transform_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_2D)
+add_test(NAME compression_transform_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_3D)
+# Transformations region transfer compression
+if(CUDA_ROOT)
+add_test(NAME compression_transform_gpu WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_gpu)
+endif()
+# Transformations attached to object region transfer compression
+add_test(NAME attach_obj_compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./attach_obj_compression_transform)
+# Transformations multi-region transfer
+add_test(NAME multi_region_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./multi_region_transform)
+# Transformations region transfer compression encryption
+add_test(NAME compression_encryption_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform)
+add_test(NAME compression_encryption_transform_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform_2D)
+add_test(NAME compression_encryption_transform_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform_3D)
+# Transformations region transfer compression all
+add_test(NAME all_compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./all_compression_transform 0 0)
+
+# Region analysis
+add_test(NAME vector_magnitude_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_test)
+add_test(NAME vector_magnitude_2d_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_2d_test)
+add_test(NAME vector_magnitude_compressed_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_compressed_test)
+if(CUDA_ENABLED)
+  # No PDC server involved -- a pure CUDA runtime check, so run directly
+  # rather than through run_test.sh.
+  add_test(NAME cuda_smoke_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ./cuda_smoke_test)
+  # Exercises the real (unforced) dynamic CPU/GPU scheduler in PDCan_exec_graph
+  # against a graph whose "vector_magnitude" transformation has two variants.
+  add_test(NAME vector_magnitude_gpu_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_gpu_test)
+endif()
+
 add_test(NAME region_transfer_all    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all )
 add_test(NAME region_transfer_all_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_2D )
 add_test(NAME region_transfer_all_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_3D )
@@ -389,6 +475,33 @@ set_tests_properties(read_obj_uint64   PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int16    PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int8     PROPERTIES LABELS serial)
 set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS serial)
+
+# Transformations region transfer compression
+set_tests_properties(compression_transform     PROPERTIES LABELS transform)
+set_tests_properties(compression_transform_2D     PROPERTIES LABELS transform)
+set_tests_properties(compression_transform_3D     PROPERTIES LABELS transform)
+# Transformations region transfer compression GPU
+if(CUDA_ROOT)
+set_tests_properties(compression_transform     PROPERTIES LABELS transform_gpu)
+endif()
+# Transformations attached to object region transfer compression
+set_tests_properties(attach_obj_compression_transform PROPERTIES LABELS transform)
+# Transformations region transfer multiregion
+set_tests_properties(multi_region_transform     PROPERTIES LABELS transform)
+# Transformations region transfer compression encryption
+set_tests_properties(compression_encryption_transform     PROPERTIES LABELS transform)
+set_tests_properties(compression_encryption_transform_2D     PROPERTIES LABELS transform)
+set_tests_properties(compression_encryption_transform_3D     PROPERTIES LABELS transform)
+# Transformations region transfer compression
+set_tests_properties(all_compression_transform     PROPERTIES LABELS transform)
+# Region analysis
+set_tests_properties(vector_magnitude_test     PROPERTIES LABELS analysis)
+set_tests_properties(vector_magnitude_2d_test  PROPERTIES LABELS analysis)
+set_tests_properties(vector_magnitude_compressed_test  PROPERTIES LABELS analysis)
+if(CUDA_ENABLED)
+  set_tests_properties(cuda_smoke_test PROPERTIES LABELS analysis)
+  set_tests_properties(vector_magnitude_gpu_test PROPERTIES LABELS analysis)
+endif()
 
 if(BUILD_MPI_TESTING)
     add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int)

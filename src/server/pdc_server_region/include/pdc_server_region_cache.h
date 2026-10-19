@@ -19,6 +19,7 @@
 #define PDC_MERGE_SUCCESS          5
 
 pthread_mutex_t pdc_obj_cache_list_mutex;
+extern int      close_time_g;
 
 int   PDC_region_server_cache_init();
 int   PDC_region_server_cache_finalize();

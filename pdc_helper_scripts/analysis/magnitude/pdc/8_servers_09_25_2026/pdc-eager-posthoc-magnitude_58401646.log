@@ -1,0 +1,56 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_analysis_bench/10 /pscratch/sd/n/nlewi26/pdc_analysis_bench/11 /pscratch/sd/n/nlewi26/pdc_analysis_bench/12 /pscratch/sd/n/nlewi26/pdc_analysis_bench/13 /pscratch/sd/n/nlewi26/pdc_analysis_bench/14 /pscratch/sd/n/nlewi26/pdc_analysis_bench/15 /pscratch/sd/n/nlewi26/pdc_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_analysis_bench/8 /pscratch/sd/n/nlewi26/pdc_analysis_bench/9 /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_data
++ popd
++ srun -N 4 -n 32 --ntasks-per-node=8 --error=server_eager_posthoc_4.err --output=server_eager_posthoc_4.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 4 -n 128 --ntasks-per-node=32 --output=client_eager_posthoc_write_4.log --error=client_eager_posthoc_write_4.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_write_components "$N_ELEM"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^posthoc_write,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin/client_eager_posthoc_write_4.log
++ lines='posthoc_write,0,128,16777216,0.160394,0.550456
+posthoc_write,1,128,16777216,0.160394,0.515824
+posthoc_write,2,128,16777216,0.160394,0.533317'
++ '[' -z 'posthoc_write,0,128,16777216,0.160394,0.550456
+posthoc_write,1,128,16777216,0.160394,0.515824
+posthoc_write,2,128,16777216,0.160394,0.533317' ']'
++ echo 'posthoc_write,0,128,16777216,0.160394,0.550456
+posthoc_write,1,128,16777216,0.160394,0.515824
+posthoc_write,2,128,16777216,0.160394,0.533317'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 4 -n 32 --ntasks-per-node=8 --error=close_server_eager_posthoc_4.err --output=close_server_eager_posthoc_4.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 2
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 10
++ srun -N 4 -n 32 --ntasks-per-node=8 --error=server_restart_eager_posthoc_4.err --output=server_restart_eager_posthoc_4.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server restart'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 4 -n 128 --ntasks-per-node=32 --output=client_eager_posthoc_analyze_4.log --error=client_eager_posthoc_analyze_4.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_posthoc_analyze_eager "$N_ELEM"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^posthoc_analyze,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin/client_eager_posthoc_analyze_4.log
++ lines='posthoc_analyze,0,128,16777216,0.113669,1.764456,0.000000,0.000000,1.764456,0
+posthoc_analyze,1,128,16777216,0.113669,1.751057,0.000000,0.000000,1.751057,0
+posthoc_analyze,2,128,16777216,0.113669,1.743243,0.000000,0.000000,1.743243,0'
++ '[' -z 'posthoc_analyze,0,128,16777216,0.113669,1.764456,0.000000,0.000000,1.764456,0
+posthoc_analyze,1,128,16777216,0.113669,1.751057,0.000000,0.000000,1.751057,0
+posthoc_analyze,2,128,16777216,0.113669,1.743243,0.000000,0.000000,1.743243,0' ']'
++ echo 'posthoc_analyze,0,128,16777216,0.113669,1.764456,0.000000,0.000000,1.764456,0
+posthoc_analyze,1,128,16777216,0.113669,1.751057,0.000000,0.000000,1.751057,0
+posthoc_analyze,2,128,16777216,0.113669,1.743243,0.000000,0.000000,1.743243,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 4 -n 32 --ntasks-per-node=8 --error=close_server_eager_posthoc_4.err --output=close_server_eager_posthoc_4.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 2
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/results_eager_posthoc_58401646.csv

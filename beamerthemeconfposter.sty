@@ -1,0 +1,189 @@
+\ProvidesPackage{beamerthemeconfposter}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows,backgrounds}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{lmodern}
+\usepackage{exscale}
+\RequirePackage{textcomp}
+\RequirePackage{amsmath,amssymb}
+\usefonttheme{professionalfonts}
+\newcommand{\makeruleinbox}{{\usebeamercolor[bg]{block alerted title}\centering\hspace*{-0.7cm}\rule{\inboxrule}{0.5cm}}}
+\usepackage{ragged2e}
+
+\makeatletter
+\def\@listi{\leftmargin\leftmarginii
+\topsep 1ex % Spacing before lists
+\parsep 0\p@ \@plus\p@
+\itemsep 6pt} % Spacing between items
+\makeatother
+
+\usecaptiontemplate{\normalsize \structure{\insertcaptionname~\insertcaptionnumber:}\ \insertcaption} % A fix for figure numbering
+
+%-----------------------------------------------------------
+% Define the color scheme of the template
+%-----------------------------------------------------------
+
+\definecolor{headerTitle}{RGB}{229, 114, 0}  %Header title color
+\definecolor{headerOuter}  {RGB}{35,45,75}   %Header outer box, bullet, and caption colors
+\definecolor{titleColor}    {RGB}{20,50,100} %Header inner box and title colors
+\definecolor{alertColor}    {RGB}{255,255,0} % Header inner box  colors
+
+% set the basic colors
+\setbeamercolor{palette primary}   {fg=black,bg=white}
+\setbeamercolor{palette secondary} {fg=black,bg=white}
+\setbeamercolor{palette tertiary}  {bg=titleColor,fg=white}
+\setbeamercolor{palette quaternary}{fg=black,bg=white}
+\setbeamercolor{structure}{fg=titleColor}
+\setbeamercolor{titlelike}         {bg=titleColor,fg=white}
+\setbeamercolor{frametitle}        {bg=titleColor!10,fg=titleColor}
+\setbeamercolor{cboxb}{fg=black,bg=titleColor}
+\setbeamercolor{cboxr}{fg=black,bg=red}
+
+% set colors for itemize/enumerate
+\setbeamercolor{item}{fg=headerOuter}
+\setbeamercolor{item projected}{fg=white,bg=headerOuter}
+
+% set colors for blocks
+\setbeamercolor{block title}{fg=headerOuter,bg=white}
+\setbeamercolor{block body}{fg=black,bg=white}
+
+% set colors for alerted blocks (blocks with frame)
+\setbeamercolor{block alerted title}{fg=white,bg=titleColor}
+\setbeamercolor{block alerted body}{fg=black,bg=titleColor!10}
+
+% set the fonts
+\setbeamerfont{section in head/foot}{series=\bfseries}
+\setbeamerfont{block title}{series=\bfseries}
+\setbeamerfont{block alerted title}{series=\bfseries}
+\setbeamerfont{frametitle}{series=\bfseries}
+\setbeamerfont{frametitle}{size=\Large}
+\setbeamerfont{block body}{series=\rmfamily}
+
+% set some beamer theme options
+\setbeamertemplate{title page}[default][colsep=-4bp,rounded=true]
+\setbeamertemplate{sections/subsections in toc}[square]
+\setbeamertemplate{items}[circle]
+\setbeamertemplate{blocks}[width=0.0]
+\beamertemplatenavigationsymbolsempty
+
+% set bibliography style
+\setbeamertemplate{bibliography item}[text]
+\setbeamercolor{bibliography item}{fg=black,bg=white}
+\setbeamercolor{bibliography entry author}{fg=black,bg=white}
+\setbeamercolor{bibliography item}{fg=black,bg=white}
+
+% define some length variables that are used by the template
+\newlength{\inboxwd}
+\newlength{\iinboxwd}
+\newlength{\inboxrule}
+\makeatletter
+\makeatother
+
+%==============================================================================
+% build the poster title
+%==============================================================================
+\setbeamertemplate{headline}{
+ \leavevmode
+
+  \begin{columns}
+
+   % First column: left logo
+   \begin{column}{0.10\linewidth} % Adjust width as needed
+    \centering
+    \IfFileExists{sagestLogo.png}{\includegraphics[width=\linewidth]{sagestLogo.png}}{}
+   \end{column}
+
+   % Second column: Title block
+   \begin{column}{0.80\linewidth}
+    \vskip1cm
+    \centering
+    \usebeamercolor{title in headline}{\color{titleColor}\huge{\textbf{\inserttitle}}\\[0.5ex]}
+    \usebeamercolor{author in headline}{\color{fg}\Large{\insertauthor}\\[1ex]}
+    \usebeamercolor{institute in headline}{\color{fg}\large{\insertinstitute}\\[1ex]}
+    \vskip1cm
+   \end{column}
+
+   % Third column: Right logo
+   \begin{column}{0.10\linewidth}
+   \centering
+   \IfFileExists{labLogo.png}{\includegraphics[width=\linewidth]{labLogo.png}}{}
+   \end{column}
+  \end{columns}
+ \vspace{0.5in}
+ \begin{beamercolorbox}[wd=\textwidth,colsep=0.15cm]{cboxb}\end{beamercolorbox}
+ \vspace{0.1in}
+}
+
+
+\setbeamertemplate{footline}{
+  \leavevmode
+  \vspace{0.3in}
+  \begin{beamercolorbox}[wd=\textwidth,ht=0.15in,dp=0ex]{cboxb}
+  \end{beamercolorbox}
+  \vspace{0.4in}
+}
+
+
+% Block definition
+\setbeamertemplate{block begin}
+{
+  \par\vskip\medskipamount
+  \begin{beamercolorbox}[colsep*=0ex,dp={2ex},center]{block title}
+    \vskip-0.25cm
+    \usebeamerfont{block title}\Large\insertblocktitle
+    \begin{flushleft}
+    \vskip-1cm
+    \begin{tikzpicture}
+      \shade [inner color=gray,outer color=white]
+      (0,0) rectangle (\linewidth,0.3cm);
+    \end{tikzpicture}
+    \end{flushleft}
+  \end{beamercolorbox}
+  {\parskip0pt\par}
+  \ifbeamercolorempty[bg]{block title}
+  {}
+  {\ifbeamercolorempty[bg]{block body}{}{\nointerlineskip\vskip-0.5pt}}
+  \usebeamerfont{block body}
+  \vskip-0.5cm
+  \begin{beamercolorbox}[colsep*=0ex,vmode]{block body}
+  \justifying
+}
+
+\setbeamertemplate{block end}
+{
+  \end{beamercolorbox}
+  \vskip\smallskipamount
+}
+
+% Alert block definition (with frame)
+\setbeamertemplate{block alerted begin}
+{
+  \par\vskip\medskipamount
+  \begin{beamercolorbox}[sep=1ex,rounded=true,center,dp={2ex}]{block alerted title}
+    \vskip0.01cm
+    \usebeamerfont{block title}\Large\insertblocktitle
+  \end{beamercolorbox}
+  {\parskip0pt\par}
+  \usebeamerfont{block body}
+  \vskip-0.8cm
+  \begin{beamercolorbox}[sep=0.15cm, rounded=true,center]{block alerted title}
+  \setlength{\inboxwd}{\linewidth}
+  \addtolength{\inboxwd}{-1cm}
+  \begin{beamercolorbox}[rounded=true,wd={\inboxwd},center]{block alerted body}
+  \setlength{\iinboxwd}{\inboxwd}
+  \setlength{\inboxrule}{\inboxwd}
+  \addtolength{\iinboxwd}{-0.5cm}
+  \addtolength{\inboxrule}{0.5cm}
+  \begin{center}
+  \begin{minipage}{\iinboxwd}
+  \justifying
+}
+
+\setbeamertemplate{block alerted end}
+{
+  \end{minipage}
+  \end{center}
+  \end{beamercolorbox}
+  \end{beamercolorbox}
+  \vskip\smallskipamount
+}

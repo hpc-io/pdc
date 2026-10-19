@@ -1,0 +1,4 @@
+mode,step,n_ranks,nx,ny,nz_per_rank,compress,write_setup_s,write_s,relaunch_s,analyze_setup_s,readback_s,curl_compute_s,curl_writeback_s,magnitude_compute_s,magnitude_writeback_s,total_s,bad,avg_close_s,total_with_close_s
+curl_posthoc,0,512,256,256,64,0,0.316285,0.256828,15.389,0.371189,0.422881,0.063832,0.325075,0.021724,0.188472,17.3553,0,4.973170,22.3285
+curl_posthoc,1,512,256,256,64,0,0.316285,0.266840,15.389,0.371189,0.410612,0.049563,0.424761,0.020380,0.191287,17.4399,0,4.973170,22.4131
+curl_posthoc,2,512,256,256,64,0,0.316285,0.259600,15.389,0.371189,0.409334,0.050199,0.373806,0.020839,0.187912,17.3782,0,4.973170,22.3514

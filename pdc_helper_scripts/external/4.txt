@@ -1,0 +1,269 @@
+#!/usr/bin/env python3
+"""
+fit_polynomial.py
+
+1. Reproduces Runway's model: data_size_mb + nvml_gpu_util -> comp_ms
+2. Exhaustively searches our candidate features for the best model
+   predicting total_ms, with lag features as our novelty.
+"""
+
+import sys, os, itertools, warnings
+import numpy as np
+import pandas as pd
+import matplotlib
+# matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score, mean_absolute_error
+from sklearn.pipeline import Pipeline
+from google.colab import drive
+drive.mount('/content/drive')
+
+warnings.filterwarnings('ignore')
+
+# ── File paths ────────────────────────────────────────────────────────────────
+csv_path = "/content/drive/MyDrive/data-flyway-eval-plots/data/polynomial/combined_all_data.csv"
+out_dir  = "/content/drive/MyDrive/data-flyway-eval-plots/exps/polynomial"
+os.makedirs(out_dir, exist_ok=True)
+
+# ── Runway's exact setup ──────────────────────────────────────────────────────
+RUNWAY_NVML   = ["nvml_gpu_util"]
+RUNWAY_TARGET = "comp_ms"
+
+# ── Our candidate features ────────────────────────────────────────────────────
+OUR_NVML = [
+    "nvml_gpu_util",
+    "nvml_power_mw",
+    "nvml_pcie_tx_kbps",
+    "nvml_pcie_rx_kbps",
+    "prev_h2d_ms",
+    "prev_d2h_ms",
+    "prev_total_ms",
+]
+OUR_TARGET      = "total_ms"
+ALWAYS_FEATURES = ["data_size_mb"]
+DEGREE          = 3
+
+
+def make_pipeline(degree):
+    return Pipeline([
+        ("poly", PolynomialFeatures(degree=degree, include_bias=True)),
+        ("lm",   LinearRegression()),
+    ])
+
+
+def adjusted_r2(r2, n, k):
+    if n - k - 1 <= 0:
+        return np.nan
+    return 1 - (1 - r2) * (n - 1) / (n - k - 1)
+
+
+def evaluate(df, feature_combo, target, degree=DEGREE, test_size=0.2):
+    cols = list(ALWAYS_FEATURES) + list(feature_combo)
+    sub  = df[cols + [target]].dropna()
+    if len(sub) < 20:
+        return None, None, None, None
+    X = sub[cols].values
+    y = sub[target].values
+    X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=test_size, random_state=42)
+    model  = make_pipeline(degree)
+    model.fit(X_tr, y_tr)
+    y_pred  = model.predict(X_te)
+    n_terms = model.named_steps["poly"].n_output_features_ - 1
+    r2  = r2_score(y_te, y_pred)
+    adj = adjusted_r2(r2, len(y_te), n_terms)
+    mae = mean_absolute_error(y_te, y_pred)
+    return r2, adj, mae, model
+
+
+def load_data(path):
+    df = pd.read_csv(path)
+    print(f"Loaded {len(df)} rows")
+    df = df[df["comp_ms"] > 0].copy()
+    if "gemm_n" in df.columns and "zfp_elems" in df.columns:
+        grp = df.groupby(["gemm_n", "zfp_elems"], sort=False)
+        df["prev_h2d_ms"]   = grp["h2d_ms"].shift(1)
+        df["prev_comp_ms"]  = grp["comp_ms"].shift(1)
+        df["prev_d2h_ms"]   = grp["d2h_ms"].shift(1)
+        df["prev_total_ms"] = grp["total_ms"].shift(1)
+        before = len(df)
+        df = df.dropna(subset=["prev_h2d_ms"]).copy()
+        print(f"  Added lag features; dropped {before - len(df)} first-iter rows -> {len(df)} rows")
+    return df
+
+
+def residual_plot(df, features, target, model, out_path, title):
+    cols  = ALWAYS_FEATURES + list(features)
+    sub   = df[cols + [target]].dropna()
+    y     = sub[target].values
+    y_hat = model.predict(sub[cols].values)
+    r2    = r2_score(y, y_hat)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(y, y_hat, s=50, alpha=0.5, color='steelblue')
+    lims = [min(y.min(), y_hat.min()), max(y.max(), y_hat.max())]
+
+    # Force equal aspect ratio so the diagonal is truly 45°
+    ax.set_aspect('equal')
+
+    # Generate shared ticks and apply to both axes
+    # Generate ticks divisible by 5 or 10
+    magnitude = (lims[1] - lims[0])
+    step = 50 if magnitude > 50 else 25   # use step of 10 for large ranges, 5 for small
+
+    tick_min = np.ceil(lims[0] / step) * step
+    tick_max = np.ceil(lims[1] / step) * step
+
+    ticks = np.arange(tick_min, tick_max + step, step)
+    ax.set_xticks(ticks)
+    ax.set_yticks(ticks)
+
+    ax.set_xlim(tick_min, tick_max)   # ← use tick bounds, not raw lims
+    ax.set_ylim(tick_min, tick_max)
+
+    ax.plot([tick_min, tick_max], [tick_min, tick_max], 'r--', linewidth=4, label='Perfect Prediction')
+
+    # Optional: format tick labels to avoid long decimals
+    ax.xaxis.set_major_formatter(plt.FormatStrFormatter('%.0f'))
+    ax.yaxis.set_major_formatter(plt.FormatStrFormatter('%.0f'))
+
+    ax.set_xlabel(f"Actual Time (ms)", fontsize=28)
+    ax.set_ylabel(f"Predicted Time (ms)", fontsize=28)
+    ax.tick_params(axis='both', labelsize=22)
+    ax.tick_params(axis='y', which='minor', left=False)
+    # ax.legend(fontsize=19, loc='upper center', bbox_to_anchor=(0.5, 1.12),
+    #           ncol=1, frameon=True, edgecolor='#aaaaaa')
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.grid(axis='y', which='major', linewidth=1.5, color='black', alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=150, bbox_inches='tight')
+    # plt.show()
+    plt.close(fig)
+    print(f"  Plot saved: {out_path}")
+
+
+def print_top(results, criterion, n=20):
+    print(f"\n{'='*80}")
+    print(f"Top {n} combinations ranked by {criterion} — target: {OUR_TARGET}")
+    print(f"{'='*80}")
+    print(f"{'Rank':<6} {'R2':>8} {'Adj-R2':>9} {'MAE(ms)':>10} {'Terms':>6}  Features")
+    print("-"*80)
+    key = "r2" if criterion == "R2" else "adj_r2"
+    sorted_results = sorted(results, key=lambda x: x[key], reverse=True)
+    for rank, r in enumerate(sorted_results[:n], 1):
+        feat_str = "data_size_mb + " + " + ".join(r["features"])
+        print(f"{rank:<6} {r['r2']:>8.4f} {r['adj_r2']:>9.4f} {r['mae_ms']:>10.3f} "
+              f"{r['n_terms']:>6}  {feat_str}")
+    return sorted_results[0]
+
+
+def save_legend(out_path):
+    fig_leg, ax_leg = plt.subplots(figsize=(4, 0.5))
+    ax_leg.axis('off')
+    handle = mpatches.Patch(color='none')  # dummy, replaced below
+    line = plt.Line2D([0], [0], color='r', linewidth=4,
+                      linestyle='--', label='Perfect Prediction')
+    ax_leg.legend(
+        handles=[line],
+        loc='center',
+        ncol=1,
+        fontsize=18,
+        frameon=True,
+        edgecolor='#aaaaaa'
+    )
+    plt.tight_layout()
+    fig_leg.savefig(out_path, dpi=150, bbox_inches='tight')
+    # plt.show()
+    plt.close(fig_leg)
+    print(f"  Legend saved: {out_path}")
+
+# ── Runway baseline ───────────────────────────────────────────────────────────
+print("\n" + "="*80)
+print("RUNWAY BASELINE: data_size_mb + nvml_gpu_util -> comp_ms")
+print("  (reproducing Runway's exact approach, degree-3 polynomial)")
+print("="*80)
+
+df_full = pd.read_csv(csv_path)
+df_full = df_full[df_full["comp_ms"] > 0].copy()
+r2_rwy, adj_r2_rwy, mae_rwy, model_rwy = evaluate(df_full, RUNWAY_NVML, RUNWAY_TARGET)
+print(f"  R2       = {r2_rwy:.4f}")
+print(f"  Adj-R2   = {adj_r2_rwy:.4f}")
+print(f"  MAE      = {mae_rwy:.3f} ms")
+print(f"  (Runway reported R2=0.50 on A100 in their paper)")
+residual_plot(df_full, RUNWAY_NVML, RUNWAY_TARGET, model_rwy,
+              os.path.join(out_dir, "runway_predicted_vs_actual.pdf"),
+              "Runway: data_size_mb + nvml_gpu_util -> comp_ms")
+save_legend(os.path.join(out_dir, "residual_legend.pdf"))
+
+# ── Exhaustive search ─────────────────────────────────────────────────────────
+print("\n" + "="*80)
+print("OUR MODEL: exhaustive search over candidate features -> total_ms")
+print(f"  Candidate features: {OUR_NVML}")
+print("="*80)
+
+df = load_data(csv_path)
+
+available = []
+for col in OUR_NVML:
+    if col not in df.columns:
+        continue
+    if df[col].std() < 1e-9:
+        print(f"  Dropping constant: {col}")
+        continue
+    available.append(col)
+print(f"  Available: {available}")
+
+total_combos = sum(
+    len(list(itertools.combinations(available, k)))
+    for k in range(1, len(available) + 1)
+)
+print(f"  Total combinations: {total_combos}\n")
+
+results = []
+done = 0
+for k in range(1, len(available) + 1):
+    for combo in itertools.combinations(available, k):
+        r2, adj, mae, model = evaluate(df, combo, OUR_TARGET)
+        done += 1
+        if r2 is not None:
+            n_terms = model.named_steps["poly"].n_output_features_ - 1
+            results.append({"features": combo, "r2": r2, "adj_r2": adj,
+                             "mae_ms": mae, "model": model,
+                             "n_feat": k, "n_terms": n_terms})
+        if done % 20 == 0:
+            print(f"  evaluated {done}/{total_combos} ...", end='\r', flush=True)
+
+# ── Rankings ──────────────────────────────────────────────────────────────────
+best_by_r2     = print_top(results, "R2")
+best_by_adj_r2 = print_top(results, "Adj-R2")
+
+# ── Summary ───────────────────────────────────────────────────────────────────
+print(f"\n{'='*80}")
+print("SUMMARY")
+print(f"{'='*80}")
+print(f"  Runway  (data_size + gpu_util -> comp_ms) : R2={r2_rwy:.4f}  Adj-R2={adj_r2_rwy:.4f}")
+print(f"\n  Best by R2:")
+print(f"    Features : data_size_mb + {' + '.join(best_by_r2['features'])}")
+print(f"    R2       : {best_by_r2['r2']:.4f}")
+print(f"    Adj-R2   : {best_by_r2['adj_r2']:.4f}")
+print(f"    MAE      : {best_by_r2['mae_ms']:.3f} ms")
+print(f"    Terms    : {best_by_r2['n_terms']}")
+print(f"\n  Best by Adj-R2:")
+print(f"    Features : data_size_mb + {' + '.join(best_by_adj_r2['features'])}")
+print(f"    R2       : {best_by_adj_r2['r2']:.4f}")
+print(f"    Adj-R2   : {best_by_adj_r2['adj_r2']:.4f}")
+print(f"    MAE      : {best_by_adj_r2['mae_ms']:.3f} ms")
+print(f"    Terms    : {best_by_adj_r2['n_terms']}")
+
+# ── Residual plots ────────────────────────────────────────────────────────────
+residual_plot(df, best_by_r2["features"], OUR_TARGET, best_by_r2["model"],
+              os.path.join(out_dir, "best_r2_predicted_vs_actual.pdf"),
+              f"Best R2: data_size_mb + {' + '.join(best_by_r2['features'])}")
+
+residual_plot(df, best_by_adj_r2["features"], OUR_TARGET, best_by_adj_r2["model"],
+              os.path.join(out_dir, "best_adj_r2_predicted_vs_actual.pdf"),
+              f"Best Adj-R2: data_size_mb + {' + '.join(best_by_adj_r2['features'])}")
+
+print(f"\nDone. Plots written to: {out_dir}/")

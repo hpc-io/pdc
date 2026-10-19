@@ -14,6 +14,11 @@ set(TOOLS_EXT_LIB "")
 # *************************************************
 # *  MERCURY
 # *************************************************
+if(NOT CMAKE_PREFIX_PATH)
+  set(CMAKE_PREFIX_PATH ${CMAKE_INSTALL_PREFIX})
+endif()
+# MERCURY
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} $ENV{MERCURY_DIR})
 find_package(MERCURY REQUIRED)
 if(MERCURY_FOUND)
   set(TOOLS_EXT_INCLUDE ${MERCURY_INCLUDE_DIRS}
@@ -21,6 +26,10 @@ if(MERCURY_FOUND)
     )
   set(TOOLS_EXT_LIB ${MERCURY_LIBRARIES} ${TOOLS_EXT_LIB})
 endif()
+include_directories(
+    /mnt/fast/nlewis/workspace/install/mercury/include
+    ${TOOLS_EXT_INCLUDE}   # your other includes
+)
 
 #HDF5
 find_package(HDF5 MODULE)
@@ -81,45 +90,64 @@ endif()
 #   endif()
 # endif()
 
+set(PDC_SOURCE_DIR /mnt/fast/nlewis/workspace/source/pdc)
+
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_INCLUDES_BUILD_TIME}
   ${PROJECT_BINARY_DIR}
   ${PDC_SOURCE_DIR}
-  ${PDC_SOURCE_DIR}/src/client_api/include
+  ${PDC_SOURCE_DIR}/src/api/include
+  ${PDC_SOURCE_DIR}/src/commons/include
+  ${PDC_SOURCE_DIR}/src/commons/generic/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
+  ${PDC_SOURCE_DIR}/src/commons/logging/include
+  ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/commons/utils/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_query/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_tf/include
+  ${PDC_SOURCE_DIR}/src/server/transform/include
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
+  ${PDC_SOURCE_DIR}/src/commons/collections/include
+  ${PDC_SOURCE_DIR}/src/commons/index/dart/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/commons/profiling/include
+  ${PDC_SOURCE_DIR}/src/commons/collections/libhl/include
+  ${PDC_SOURCE_DIR}/src/commons/file/include
+  ${PDC_SOURCE_DIR}/build
   $ENV{HOME}/Sandbox/c-blosc/blosc
   $ENV{HOME}/include
   ${TOOLS_EXT_INCLUDE}
 )
 
-
 set(PROGRAMS
-  pdc_import
-  pdc_export
+  #pdc_import
+  #pdc_export
   pdc_ls
-  pdc_import_eqsim
-  pdc_access_eqsim
-  pdc_query_eqsim
-  hdf5_access_eqsim
-  )
+  #pdc_import_eqsim
+  #pdc_access_eqsim
+  #pdc_query_eqsim
+  #hdf5_access_eqsim
+)
 
 add_library(cjson cjson/cJSON.c)
 
+link_directories(${PDC_SOURCE_DIR}/build/bin)
+
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
-  target_link_libraries(${program} pdc cjson ${TOOLS_EXT_LIB})
+  target_link_libraries(${program} pdc pdc_commons mercury m cjson ${TOOLS_EXT_LIB})
 endforeach(program)
 
-
-add_executable(metadata_json_loader 
-            metadata_json_loader.c 
-            meta_json/metadata_json_processor.h 
-            meta_json/metadata_json_printer.c 
-            meta_json/metadata_json_printer.h 
-            meta_json/metadata_json_importer.c 
-            meta_json/metadata_json_importer.h
-            fs/fs_ops.c
-            fs/fs_ops.h)
-target_link_libraries(metadata_json_loader ${PDC_EXT_LIB_DEPENDENCIES} pdc cjson ${TOOLS_EXT_LIB})
-target_include_directories(metadata_json_loader PUBLIC ${PDC_EXT_INCLUDE_DEPENDENCIES})
+#add_executable(metadata_json_loader 
+#            metadata_json_loader.c 
+#            meta_json/metadata_json_processor.h 
+#            meta_json/metadata_json_printer.c 
+#            meta_json/metadata_json_printer.h 
+#            meta_json/metadata_json_importer.c 
+#            meta_json/metadata_json_importer.h
+#            fs/fs_ops.c
+#            fs/fs_ops.h)
+#target_link_libraries(metadata_json_loader ${PDC_EXT_LIB_DEPENDENCIES} pdc cjson ${TOOLS_EXT_LIB})
+#target_include_directories(metadata_json_loader PUBLIC ${PDC_EXT_INCLUDE_DEPENDENCIES})

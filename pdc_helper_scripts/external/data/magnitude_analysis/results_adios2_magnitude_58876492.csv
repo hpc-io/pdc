@@ -1,0 +1,4 @@
+mode,step,n_ranks,n_elem,setup_s,write_s,confirm_read_s,step_total_s,bad
+adios2_derived,0,256,16777216,0.020390,17.183648,0.093076,17.297113,0
+adios2_derived,1,256,16777216,0.020390,19.467473,0.088742,19.576605,0
+adios2_derived,2,256,16777216,0.020390,19.519466,0.089588,19.629444,0

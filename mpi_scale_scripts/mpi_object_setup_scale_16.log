@@ -1,0 +1,5 @@
+phase,step,n_ranks,setup_s
+cont_create,-,512,0.000199
+object_create,0,512,0.000159
+object_create,1,512,0.000147
+object_create,2,512,0.000129

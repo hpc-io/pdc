@@ -1,0 +1,17 @@
+{
+  "name": "vector_magnitude_2d",
+  "states": [
+    { "name": "vx", "persistence": "persistent" },
+    { "name": "vy", "persistence": "persistent" },
+    { "name": "magnitude", "persistence": "persistent" }
+  ],
+  "transformations": [
+    {
+      "name": "vector_magnitude",
+      "device": "CPU",
+      "location": "builtin",
+      "inputs": [ "vx", "vy" ],
+      "outputs": [ "magnitude" ]
+    }
+  ]
+}

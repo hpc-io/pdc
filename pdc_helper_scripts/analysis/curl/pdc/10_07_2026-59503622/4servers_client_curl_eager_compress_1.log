@@ -1,0 +1,74 @@
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[INFO] PDC_CLIENT[0]: Found 4 PDC Metadata servers, running with 32 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+cxi
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Connection string: ofi+cxi://cxi0:8
+[INFO] PDC_CLIENT[29]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[26]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[30]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[2]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[3]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[9]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[11]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[15]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[19]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[21]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[22]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[23]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[1]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[4]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[5]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[6]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[7]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[8]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[10]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[12]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[13]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[14]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[16]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[17]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[18]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[20]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[24]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[25]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[27]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[28]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[31]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Scoped Slingshot CXI auth for Mercury: svc=1 vni=1 device=cxi0
+[INFO] PDC_CLIENT[0]: Using [/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench] as tmp dir, 8 clients per server
+curl_eager,0,32,256,256,64,1,3.800049,3.856071,0.458884,8.115004,0
+curl_eager,1,32,256,256,64,1,3.800049,3.161439,0.465459,7.426947,0
+[INFO] PDC_CLIENT[17]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[3]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[27]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[29]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[5]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[1]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[11]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[9]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[10]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[19]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[13]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[2]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[15]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[21]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[26]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[28]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[30]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[31]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[8]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[12]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[14]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[4]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[6]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[7]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[18]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[20]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[23]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[22]: PDCtf_dg_free called
+curl_eager,2,32,256,256,64,1,3.800049,3.028636,0.461358,7.290044,0
+[INFO] PDC_CLIENT[24]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[25]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[16]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[0]: PDCtf_dg_free called

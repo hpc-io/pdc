@@ -1,0 +1,1 @@
+servers_per_node,mode,step,n_ranks,n_elem,setup_s,write_s,readback_s,compute_s,writeback_s,confirm_read_s,step_total_s,bad,avg_close_s,total_with_close_s

@@ -1,0 +1,2 @@
+[12:58:48.208918] [WARNING] [close_server.c:56] PDC_CLIENT[0]: total close time = 26.191273
+[12:58:48.209114] [WARNING] [close_server.c:56] PDC_CLIENT[1]: total close time = 26.188352

@@ -1,0 +1,18 @@
++ cd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/mpi_scale_scripts
++ export NUM_NODES=16
++ NUM_NODES=16
++ export RANKS_PER_NODE=32
++ RANKS_PER_NODE=32
++ export TOTAL_TASKS=512
++ TOTAL_TASKS=512
++ export N_TIMESTEPS=3
++ N_TIMESTEPS=3
++ export FI_PROVIDER=cxi
++ FI_PROVIDER=cxi
++ export RESULTS=/pscratch/sd/n/nlewi26/src/work_space/source/pdc/mpi_scale_scripts/results_mpi_object_setup_scale_58536596.csv
++ RESULTS=/pscratch/sd/n/nlewi26/src/work_space/source/pdc/mpi_scale_scripts/results_mpi_object_setup_scale_58536596.csv
++ LOG=mpi_object_setup_scale_16.log
++ srun -N 16 -n 512 --ntasks-per-node=32 --output=mpi_object_setup_scale_16.log ./mpi_object_setup_scale 3
++ cp mpi_object_setup_scale_16.log /pscratch/sd/n/nlewi26/src/work_space/source/pdc/mpi_scale_scripts/results_mpi_object_setup_scale_58536596.csv
++ echo 'Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/mpi_scale_scripts/results_mpi_object_setup_scale_58536596.csv'
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/mpi_scale_scripts/results_mpi_object_setup_scale_58536596.csv

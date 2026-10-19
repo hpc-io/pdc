@@ -1,0 +1,94 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/10 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/100 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/101 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/102 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/103 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/104 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/105 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/106 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/107 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/108 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/109 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/11 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/110 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/111 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/112 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/113 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/114 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/115 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/116 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/117 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/118 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/119 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/12 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/120 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/121 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/122 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/123 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/124 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/125 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/126 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/127 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/128 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/129 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/13 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/130 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/131 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/132 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/133 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/134 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/135 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/136 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/137 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/138 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/139 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/14 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/140 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/141 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/142 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/143 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/144 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/145 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/146 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/147 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/148 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/149 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/15 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/150 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/151 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/152 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/153 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/154 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/155 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/156 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/157 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/158 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/159 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/16 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/160 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/161 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/162 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/163 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/164 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/165 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/166 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/167 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/168 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/169 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/17 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/170 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/171 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/172 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/173 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/174 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/175 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/176 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/177 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/178 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/179 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/18 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/180 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/181 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/182 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/183 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/184 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/185 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/186 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/187 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/188 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/189 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/19 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/190 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/191 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/192 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/193 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/194 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/195 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/196 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/197 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/198 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/199 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/20 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/200 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/201 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/202 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/203 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/204 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/205 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/206 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/207 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/208 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/209 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/21 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/210 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/211 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/212 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/213 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/214 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/215 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/216 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/217 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/218 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/219 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/22 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/220 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/221 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/222 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/223 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/224 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/225 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/226 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/227 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/228 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/229 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/23 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/230 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/231 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/232 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/233 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/234 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/235 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/236 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/237 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/238 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/239 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/24 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/240 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/241 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/242 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/243 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/244 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/245 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/246 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/247 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/248 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/249 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/25 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/250 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/251 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/252 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/253 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/254 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/255 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/26 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/27 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/28 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/29 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/30 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/31 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/32 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/33 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/34 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/35 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/36 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/37 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/38 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/39 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/40 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/41 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/42 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/43 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/44 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/45 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/46 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/47 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/48 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/49 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/50 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/51 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/52 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/53 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/54 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/55 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/56 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/57 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/58 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/59 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/60 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/61 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/62 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/63 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/64 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/65 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/66 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/67 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/68 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/69 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/70 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/71 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/72 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/73 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/74 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/75 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/76 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/77 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/78 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/79 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/8 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/80 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/81 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/82 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/83 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/84 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/85 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/86 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/87 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/88 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/89 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/9 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/90 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/91 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/92 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/93 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/94 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/95 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/96 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/97 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/98 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/99 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/pdc_data
++ popd
++ srun -N 64 -n 512 --ntasks-per-node=8 --error=server_curl_posthoc_write_64.err --output=server_curl_posthoc_write_64.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 64 -n 2048 --ntasks-per-node=32 --output=client_curl_posthoc_write_64.log --error=client_curl_posthoc_write_64.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_write "$NX" "$NY" "$NZ_PER_RANK"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
+++ grep '^curl_posthoc_write,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin/client_curl_posthoc_write_64.log
++ lines='curl_posthoc_write,0,2048,256,256,64,1.263819,0.291941
+curl_posthoc_write,1,2048,256,256,64,1.263819,0.319486
+curl_posthoc_write,2,2048,256,256,64,1.263819,0.278841'
++ '[' -z 'curl_posthoc_write,0,2048,256,256,64,1.263819,0.291941
+curl_posthoc_write,1,2048,256,256,64,1.263819,0.319486
+curl_posthoc_write,2,2048,256,256,64,1.263819,0.278841' ']'
++ echo 'curl_posthoc_write,0,2048,256,256,64,1.263819,0.291941
+curl_posthoc_write,1,2048,256,256,64,1.263819,0.319486
+curl_posthoc_write,2,2048,256,256,64,1.263819,0.278841'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 64 -n 512 --ntasks-per-node=8 --error=close_server_curl_posthoc_write_64.err --output=close_server_curl_posthoc_write_64.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
+srun: error: nid004300: task 0: Segmentation fault
+srun: Terminating StepId=58753294.0
+srun: error: nid004300: tasks 1-7: Terminated
+srun: error: nid004968: tasks 64-71: Terminated
+srun: error: nid004302: tasks 16-23: Terminated
+srun: error: nid005280: tasks 184-191: Terminated
+srun: error: nid005170: tasks 160-167: Terminated
+srun: error: nid005120: tasks 144-151: Terminated
+srun: error: nid004971: tasks 88-95: Terminated
+srun: error: nid004301: tasks 8-15: Terminated
+srun: error: nid004920: tasks 56-63: Terminated
+srun: error: nid005585: tasks 280-287: Terminated
+srun: error: nid005066: tasks 136-143: Terminated
+srun: error: nid005022: tasks 120-127: Terminated
+srun: error: nid005049: tasks 128-135: Terminated
+srun: error: nid004969: tasks 72-79: Terminated
+srun: error: nid004970: tasks 80-87: Terminated
+srun: error: nid005539: tasks 264-271: Terminated
+srun: error: nid004679: tasks 32-39: Terminated
+srun: error: nid005522: tasks 240-247: Terminated
+srun: error: nid004303: tasks 24-31: Terminated
+srun: error: nid005535: tasks 256-263: Terminated
+srun: error: nid005210: tasks 176-183: Terminated
+srun: error: nid004706: tasks 40-47: Terminated
+srun: error: nid005617: tasks 296-303: Terminated
+srun: error: nid005444: tasks 216-223: Terminated
+srun: error: nid004993: tasks 112-119: Terminated
+srun: error: nid005171: tasks 168-175: Terminated
+srun: error: nid005140: tasks 152-159: Terminated
+srun: error: nid005864: tasks 360-367: Terminated
+srun: error: nid006050: tasks 416-423: Terminated
+srun: error: nid005791: tasks 320-327: Terminated
+srun: error: nid006170: tasks 472-479: Terminated
+srun: error: nid006169: tasks 464-471: Terminated
+srun: error: nid005690: tasks 312-319: Terminated
+srun: error: nid005549: tasks 272-279: Terminated
+srun: error: nid005835: tasks 344-351: Terminated
+srun: error: nid004972: tasks 96-103: Terminated
+srun: error: nid005590: tasks 288-295: Terminated
+srun: error: nid004973: tasks 104-111: Terminated
+srun: error: nid005859: tasks 352-359: Terminated
+srun: error: nid006051: tasks 424-431: Terminated
+srun: error: nid004744: tasks 48-55: Terminated
+srun: error: nid005935: tasks 368-375: Terminated
+srun: error: nid005524: tasks 248-255: Terminated
+srun: error: nid006063: tasks 440-447: Terminated
+srun: error: nid005287: tasks 200-207: Terminated
+srun: error: nid006004: tasks 392-399: Terminated
+srun: error: nid005478: tasks 224-231: Terminated
+srun: error: nid005819: tasks 336-343: Terminated
+srun: error: nid006617: tasks 504-511: Terminated
+srun: error: nid006167: tasks 448-455: Terminated
+srun: error: nid005421: tasks 208-215: Terminated
+srun: error: nid005284: tasks 192-199: Terminated
+srun: error: nid006016: tasks 400-407: Terminated
+srun: error: nid006616: tasks 496-503: Terminated
+srun: error: nid006049: tasks 408-415: Terminated
+srun: error: nid005622: tasks 304-311: Terminated
+srun: error: nid006056: tasks 432-439: Terminated
+srun: error: nid005513: tasks 232-239: Terminated
+srun: error: nid006516: tasks 480-487: Terminated
+srun: error: nid006517: tasks 488-495: Terminated
+srun: error: nid006168: tasks 456-463: Terminated
+srun: error: nid005793: tasks 328-335: Terminated
+srun: error: nid005974: tasks 384-391: Terminated
+srun: error: nid005952: tasks 376-383: Terminated
+srun: Force Terminated StepId=58753294.0
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+[2026-09-22T18:03:07.625] error: *** JOB 58753294 ON nid004300 CANCELLED AT 2026-09-22T18:03:07 DUE to SIGNAL Terminated ***

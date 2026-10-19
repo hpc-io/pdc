@@ -1,0 +1,161 @@
+method,n_ranks,segment,value_s
+ADIOS2,32,write,25.200156
+ADIOS2,32,server close,0.007466
+ADIOS2,32,analysis read,0.0
+ADIOS2,32,analysis compute,0.0
+ADIOS2,32,analysis write,0.0
+ADIOS2,64,write,25.229164
+ADIOS2,64,server close,0.006315
+ADIOS2,64,analysis read,0.0
+ADIOS2,64,analysis compute,0.0
+ADIOS2,64,analysis write,0.0
+ADIOS2,128,write,25.568025
+ADIOS2,128,server close,0.005634
+ADIOS2,128,analysis read,0.0
+ADIOS2,128,analysis compute,0.0
+ADIOS2,128,analysis write,0.0
+ADIOS2,256,write,25.426007
+ADIOS2,256,server close,0.006322
+ADIOS2,256,analysis read,0.0
+ADIOS2,256,analysis compute,0.0
+ADIOS2,256,analysis write,0.0
+ADIOS2,512,write,25.45395
+ADIOS2,512,server close,0.005979
+ADIOS2,512,analysis read,0.0
+ADIOS2,512,analysis compute,0.0
+ADIOS2,512,analysis write,0.0
+ADIOS2,1024,write,25.926568
+ADIOS2,1024,server close,0.007354
+ADIOS2,1024,analysis read,0.0
+ADIOS2,1024,analysis compute,0.0
+ADIOS2,1024,analysis write,0.0
+ADIOS2,2048,write,26.309632
+ADIOS2,2048,server close,0.011095
+ADIOS2,2048,analysis read,0.0
+ADIOS2,2048,analysis compute,0.0
+ADIOS2,2048,analysis write,0.0
+ADIOS2,4096,write,26.698356
+ADIOS2,4096,server close,0.016739
+ADIOS2,4096,analysis read,0.0
+ADIOS2,4096,analysis compute,0.0
+ADIOS2,4096,analysis write,0.0
+PDC Post-hoc,32,write,0.93902
+PDC Post-hoc,32,server close,4.419939
+PDC Post-hoc,32,analysis read,1.466505
+PDC Post-hoc,32,analysis compute,0.460699
+PDC Post-hoc,32,analysis write,1.533888
+PDC Post-hoc,64,write,0.732108
+PDC Post-hoc,64,server close,8.024981
+PDC Post-hoc,64,analysis read,1.468711
+PDC Post-hoc,64,analysis compute,0.318289
+PDC Post-hoc,64,analysis write,1.633896
+PDC Post-hoc,128,write,0.884271
+PDC Post-hoc,128,server close,7.250308
+PDC Post-hoc,128,analysis read,1.465152
+PDC Post-hoc,128,analysis compute,0.363619
+PDC Post-hoc,128,analysis write,1.742835
+PDC Post-hoc,256,write,1.105307
+PDC Post-hoc,256,server close,7.91009
+PDC Post-hoc,256,analysis read,1.480369
+PDC Post-hoc,256,analysis compute,0.55487
+PDC Post-hoc,256,analysis write,1.818976
+PDC Post-hoc,512,write,1.334798
+PDC Post-hoc,512,server close,8.852212
+PDC Post-hoc,512,analysis read,1.484004
+PDC Post-hoc,512,analysis compute,0.546815
+PDC Post-hoc,512,analysis write,1.964962
+PDC Post-hoc,1024,write,1.377766
+PDC Post-hoc,1024,server close,7.959528
+PDC Post-hoc,1024,analysis read,1.491883
+PDC Post-hoc,1024,analysis compute,0.767183
+PDC Post-hoc,1024,analysis write,2.030668
+PDC Post-hoc,2048,write,1.899389
+PDC Post-hoc,2048,server close,8.271385
+PDC Post-hoc,2048,analysis read,1.491027
+PDC Post-hoc,2048,analysis compute,1.253265
+PDC Post-hoc,2048,analysis write,1.975113
+PDC Post-hoc,4096,write,2.893156
+PDC Post-hoc,4096,server close,6.993334
+PDC Post-hoc,4096,analysis read,1.505143
+PDC Post-hoc,4096,analysis compute,2.182305
+PDC Post-hoc,4096,analysis write,2.034191
+DF-Eager+ZFP,32,write,5.099798
+DF-Eager+ZFP,32,server close,2.391836
+DF-Eager+ZFP,32,analysis read,0.0
+DF-Eager+ZFP,32,analysis compute,0.0
+DF-Eager+ZFP,32,analysis write,0.0
+DF-Eager+ZFP,64,write,6.942358
+DF-Eager+ZFP,64,server close,1.245747
+DF-Eager+ZFP,64,analysis read,0.0
+DF-Eager+ZFP,64,analysis compute,0.0
+DF-Eager+ZFP,64,analysis write,0.0
+DF-Eager+ZFP,128,write,7.122731
+DF-Eager+ZFP,128,server close,0.73978
+DF-Eager+ZFP,128,analysis read,0.0
+DF-Eager+ZFP,128,analysis compute,0.0
+DF-Eager+ZFP,128,analysis write,0.0
+DF-Eager+ZFP,256,write,7.329585
+DF-Eager+ZFP,256,server close,1.166898
+DF-Eager+ZFP,256,analysis read,0.0
+DF-Eager+ZFP,256,analysis compute,0.0
+DF-Eager+ZFP,256,analysis write,0.0
+DF-Eager+ZFP,512,write,10.530955
+DF-Eager+ZFP,512,server close,2.839945
+DF-Eager+ZFP,512,analysis read,0.0
+DF-Eager+ZFP,512,analysis compute,0.0
+DF-Eager+ZFP,512,analysis write,0.0
+DF-Eager+ZFP,1024,write,8.098779
+DF-Eager+ZFP,1024,server close,1.444795
+DF-Eager+ZFP,1024,analysis read,0.0
+DF-Eager+ZFP,1024,analysis compute,0.0
+DF-Eager+ZFP,1024,analysis write,0.0
+DF-Eager+ZFP,2048,write,8.513137
+DF-Eager+ZFP,2048,server close,1.607655
+DF-Eager+ZFP,2048,analysis read,0.0
+DF-Eager+ZFP,2048,analysis compute,0.0
+DF-Eager+ZFP,2048,analysis write,0.0
+DF-Eager+ZFP,4096,write,8.948695
+DF-Eager+ZFP,4096,server close,3.788873
+DF-Eager+ZFP,4096,analysis read,0.0
+DF-Eager+ZFP,4096,analysis compute,0.0
+DF-Eager+ZFP,4096,analysis write,0.0
+DF-Eager,32,write,5.200712
+DF-Eager,32,server close,1.740027
+DF-Eager,32,analysis read,0.0
+DF-Eager,32,analysis compute,0.0
+DF-Eager,32,analysis write,0.0
+DF-Eager,64,write,5.256289
+DF-Eager,64,server close,1.77466
+DF-Eager,64,analysis read,0.0
+DF-Eager,64,analysis compute,0.0
+DF-Eager,64,analysis write,0.0
+DF-Eager,128,write,5.273252
+DF-Eager,128,server close,1.145317
+DF-Eager,128,analysis read,0.0
+DF-Eager,128,analysis compute,0.0
+DF-Eager,128,analysis write,0.0
+DF-Eager,256,write,5.544433
+DF-Eager,256,server close,1.556909
+DF-Eager,256,analysis read,0.0
+DF-Eager,256,analysis compute,0.0
+DF-Eager,256,analysis write,0.0
+DF-Eager,512,write,5.5103
+DF-Eager,512,server close,1.078785
+DF-Eager,512,analysis read,0.0
+DF-Eager,512,analysis compute,0.0
+DF-Eager,512,analysis write,0.0
+DF-Eager,1024,write,5.78215
+DF-Eager,1024,server close,2.890072
+DF-Eager,1024,analysis read,0.0
+DF-Eager,1024,analysis compute,0.0
+DF-Eager,1024,analysis write,0.0
+DF-Eager,2048,write,6.490098
+DF-Eager,2048,server close,2.485394
+DF-Eager,2048,analysis read,0.0
+DF-Eager,2048,analysis compute,0.0
+DF-Eager,2048,analysis write,0.0
+DF-Eager,4096,write,7.779883
+DF-Eager,4096,server close,3.236902
+DF-Eager,4096,analysis read,0.0
+DF-Eager,4096,analysis compute,0.0
+DF-Eager,4096,analysis write,0.0

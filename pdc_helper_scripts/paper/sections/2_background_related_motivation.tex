@@ -1,0 +1,93 @@
+In this section, we summarize closely related efforts on computation near data, motivate the need for a declarative, object-attached model for composing in-flight transformation pipelines, and provide a brief background to the data management substrate used in our implementation. These concepts establish the foundation for the design and evaluation of Data Flyway.
+
+\subsection{Motivations}
+
+Data Flyway targets in-flight processing, where transformations such as compression, filtering, format conversion, and feature extraction are applied as data moves across memory and storage tiers. Existing approaches typically expose transformations as explicit function calls, single-stage filters, or narrowly scoped runtime mechanisms~\cite{ravi2023runway}. While effective for isolated transformations, these approaches place a significant burden on application developers when composing multi-stage pipelines. Developers must explicitly orchestrate transformations, determine execution order, and decide where each transformation should execute across heterogeneous resources. This leads to increased programming complexity and often suboptimal utilization of system resources. These limitations directly motivate the four technical challenges introduced in Section~\ref{sec:introduction} and the design of Data Flyway.
+
+\subsection{Related Work and Limitations}
+
+Existing work on in-flight processing has explored several approaches to reduce data movement and improve performance.
+
+In ADIOS 2~\cite{godoy2020adios2}, Gainaru et al.~\cite{gainaru2024toderive} separate the APIs and management of precomputed (primary) data from data that is computed on-the-fly (derived). The authors explore three methods for handling derived data. The first computes the derived data when the primary data is written and stores the results alongside the primary data. The second computes the derived data on demand from the primary data. The third, novel approach computes the derived data when the primary data is written but only stores metadata about the derived data (e.g., which primary data blocks were needed for the computation), using this metadata to optimize data movement when the derived data is later read. While these approaches reduce unnecessary data transfers, they treat derived data as separate entities and do not address the composition of multi-stage transformation pipelines. In contrast, Data Flyway models transformations as composable state transitions attached directly to data objects, enabling dynamic path selection and transparent execution during I/O.
+
+Barcelo et al.~\cite{barcelo2022revisiting} implement near-storage processing using the \emph{dataClay}~\cite{marti2017dataclay} object store, which is deployed as an ephemeral storage system executed next to the computation. Object creation and function registration are done using Python, and the work exploits the now discontinued Intel Optane DC~\cite{inteloptane} to enable byte-level access to persistent storage with zero data copies. The authors show that moving computation near storage reduces data transfers and improves performance on workloads such as histogram, k-means, and matrix operations. This work demonstrates the performance benefits of moving computation closer to storage, which is a central principle in Data Flyway. However, dataClay focuses on Python-registered functions and single-stage ephemeral near-storage processing. Data Flyway generalizes this concept by supporting multi-stage transformation pipelines, integrating execution across CPUs and GPUs, and providing a declarative API for attaching complex transformation pipelines to objects or regions, with adaptive scheduling across heterogeneous memory and accelerator hierarchies.
+
+{\color{red}
+\definecolor{fullsupport}{RGB}{34,139,34}
+\definecolor{partialsupport}{RGB}{204,153,0}
+\newcommand{\Full}{\textcolor{fullsupport}{\checkmark}}
+\newcommand{\Partial}{\textcolor{partialsupport}{$\bigcirc$}}
+\newcommand{\None}{$\times$}
+\begin{table*}[t]
+\centering
+\footnotesize
+\begin{tabular}{p{5.2cm}ccccc}
+\hline
+\textbf{Feature} & \textbf{Runway} & \textbf{ADIOS2} & \textbf{HDF5 Filters} & \textbf{Data Flyway} \\
+\hline
+\multicolumn{5}{l}{\textit{Transformation}} \\
+\hline
+Automatic invocation\textsuperscript{1} & \None & \Full & \Full & \Full \\
+Declarative pipeline specification & \None & \Full & \None & \Full \\
+Runtime adaptivity\textsuperscript{5} & \Partial & \None & \None & \Full \\
+GPU-aware data movement\textsuperscript{6} & \None & \None & \None & \Full \\
+\hline
+\multicolumn{5}{l}{\textit{Analysis}} \\
+\hline
+Derived values & \Full & \Full & \None & \Full \\
+Fan-in consumption\textsuperscript{2} & \None & \Full & \None & \Full \\
+Fan-out production\textsuperscript{3} & \None & \None & \None & \Full \\
+Multi-stage pipelines\textsuperscript{4} & \None & \Full & \Partial & \Full \\
+Eager evaluation\textsuperscript{8} & \Full & \Full & \Full & \Full \\
+Lazy evaluation\textsuperscript{9} & \None & \Full & \None & \Full \\
+Transient derived state & \None & \Full & \None & \Full \\
+\hline
+\multicolumn{5}{l}{\textit{Transformation / Analysis Integration}} \\
+\hline
+Composable transforms\textsuperscript{7} & \None & \None & \None & \Full \\
+\hline
+\end{tabular}
+\vspace{2pt}
+
+\footnotesize \Full\ Full support \quad \Partial\ Partial support \quad \None\ Not supported
+
+\caption{Feature comparison between Runway, ADIOS2 derived variables, HDF5 filters, and Data Flyway.
+\textsuperscript{1}No explicit per-call orchestration.
+\textsuperscript{2}A single stage consumes multiple inputs.
+\textsuperscript{3}A single stage produces multiple outputs.
+\textsuperscript{4}Persistent, addressable intermediate state across stages.
+\textsuperscript{5}Parameter or algorithm selection.
+\textsuperscript{6}Considers future transformation placement.
+\textsuperscript{7}E.g., GPU compression attached to a derived value.
+\textsuperscript{8}Write-triggered.
+\textsuperscript{9}Read-triggered, not persisted.}
+\label{tab:runway-comparison}
+\end{table*}
+}
+
+Ravi et al. originally implemented in-transit processing within PDC, allowing computation to be performed in-flight on CPUs~\cite{warren2019analysis} and later on GPUs and DPUs~\cite{ravi2023runway}. Functions were linked to PDC server processes using \texttt{dlopen}, and transformations were enabled by making explicit PDC API calls before region transfers. Data Flyway extends this line of work by introducing a declarative interface for specifying transformation pipelines via JSON files, greatly simplifying the chaining of multiple transformations; providing a novel API that allows transformations to be attached directly to objects or regions so that subsequent transfers are managed transparently without explicit coordination; implementing a novel transformation scheduler that accounts for both transformation cost and hardware utilization; minimizing data movement between CPU and GPU memory by considering where data will be needed for future transformations; and extending support to GPU Direct Storage to reduce unnecessary data staging. Since this work aligns most closely with ours, we provide in Table~\ref{tab:runway-comparison} a feature-by-feature comparison between Runway and Data Flyway. However, as the Runway source code is not publicly available, we were unable to use it as a direct point of comparison in our evaluation.
+
+Collectively, prior work demonstrates the benefits of reducing data movement and enabling computation near data. However, existing approaches either focus on individual transformations, require explicit orchestration, or lack a composable abstraction for multi-stage pipelines. These limitations motivate the design of Data Flyway, which provides a unified, declarative, and object-centric framework for in-flight transformation pipelines that is system-agnostic and extensible beyond any single data management substrate.
+
+\subsection{Implementation Context and PDC Background}
+
+The design of Data Flyway is system-agnostic. However, to demonstrate its practicality, we implement it on top of a single data management system. When evaluating available systems, the most relevant candidates were HDF5~\cite{hdf5}, DAOS~\cite{breitenfeld2017daos}, and PDC~\cite{pdc}. Because this research focuses on object-based storage, HDF5 was not selected as it follows a file-centric data model not well suited to the data-centric API that Data Flyway exposes. Although DAOS provides an object-based interface, it was not accessible in our environment, requires administrative privileges to deploy, and makes intrusive changes to the system software stack. PDC, on the other hand, operates in user space, is widely accessible, and follows an object-centric design. For these reasons, we selected PDC as the data management system for our implementation. It should be noted that Data Flyway is designed to be generalizable and could be implemented on top of a wide range of object-based data management systems.
+
+Proactive Data Containers (PDC) is an object-centric data management system~\cite{pdc}. The PDC runtime performs data movement asynchronously and provides scalable operations for object metadata. We do not describe the metadata management services here as our contribution focuses on the movement of bulk data; more information can be found in the documentation~\cite{pdcdocs}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth, keepaspectratio]{figures_source/images/in_paper/pdc-containers-objects-regions.pdf}
+    \caption{Conceptual data model of PDC illustrating the hierarchical relationship between containers, objects, and regions.}
+    \label{fig:pdc-containers-objects-regions}
+\end{figure}
+
+PDC uses a client-server model in which data servers are deployed alongside the client application. The number of data servers is configurable and can be reduced if the client application needs more resources or increased if data management performance is poor. The PDC data model, shown in Figure~\ref{fig:pdc-containers-objects-regions}, consists of three core abstractions.
+
+\begin{itemize}
+    \item \textbf{Containers} Structures used to group related objects, similar to directories in a file system.
+    \item \textbf{Objects} Multidimensional data spaces. PDC currently supports objects with up to $3$ dimensions.
+    \item \textbf{Regions} Multidimensional subsets of objects that serve as the unit of bulk data transfer.
+\end{itemize}
+
+Region transfers are performed asynchronously, allowing client applications to achieve low observed I/O times by overlapping sufficient computation with data movement. 

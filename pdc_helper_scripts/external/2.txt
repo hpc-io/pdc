@@ -1,0 +1,85 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+
+# ── File paths ────────────────────────────────────────────────────────────────
+input_file  = "/content/drive/MyDrive/data-flyway-eval-plots/data/compute_zfp.csv"
+output_file = "/content/drive/MyDrive/data-flyway-eval-plots/exps/compute_zfp.pdf"
+
+# ── Read CSV ──────────────────────────────────────────────────────────────────
+df = pd.read_csv(input_file)
+
+x_col   = "Client Sleep Time"
+metrics = ["CPU-to-GPU", "Compute ZFP", "GPU-to-CPU"]
+
+x = df[x_col].values
+n = len(x)
+
+# ── Style: single blue + hatches ──────────────────────────────────────────────
+bar_color = "#FFB74D"
+hatches   = ["//", "", "\\\\"]   # diagonal / cross / dots
+bar_width = 0.55
+
+# ── Plot ──────────────────────────────────────────────────────────────────────
+fig, ax = plt.subplots(figsize=(6, 4))
+
+bottoms = np.zeros(n)
+for metric, hatch in zip(metrics, hatches):
+    values = df[metric].values
+    ax.bar(
+        np.arange(n),
+        values,
+        width=bar_width,
+        bottom=bottoms,
+        color=bar_color,
+        hatch=hatch,
+        edgecolor="black",
+        linewidth=2.0,
+    )
+    bottoms += values
+
+# ── Axes formatting ───────────────────────────────────────────────────────────
+ax.set_xticks(np.arange(n))
+x_mb = x / (2**20)  # convert to MB
+ax.set_xticklabels([rf"$2^{{{int(np.log2(v))}}}$" for v in x_mb.astype(int)], fontsize=11)
+
+ax.set_xlabel("Array Size (MB)", fontsize=18)
+ax.set_ylabel("Time (ms) LOG", fontsize=18)
+ax.tick_params(axis='both', labelsize=14)
+
+# ax.set_ylim(0, 3000)
+ax.set_yscale('log')
+ax.yaxis.grid(True, linestyle="--", alpha=0.7)
+ax.set_axisbelow(True)
+ax.spines[["top", "right"]].set_visible(False)
+
+# ── Legend: pattern swatches only (no fill colour) ───────────────────────────
+legend_handles = [
+    mpatches.Patch(
+        facecolor=bar_color,
+        edgecolor="black",
+        hatch=hatch,
+        linewidth=2.0,
+        label=metric,
+    )
+    for metric, hatch in zip(metrics, hatches)
+]
+
+ax.legend(
+    handles=legend_handles,
+    # title="Time Type",
+    title_fontsize=10,
+    fontsize=12,
+    framealpha=0.9,
+    edgecolor="black",
+    loc="upper center",
+    bbox_to_anchor=(0.45, 1.25),
+    ncol=3,
+)
+
+plt.tight_layout()
+plt.savefig(output_file, dpi=300, bbox_inches="tight")
+plt.show()
+print(f"Saved: {output_file}")
+plt.close()

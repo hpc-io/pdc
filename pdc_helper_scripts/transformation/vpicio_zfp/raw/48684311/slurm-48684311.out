@@ -1,0 +1,149 @@
+NUM_NODES=2
+DATA_SERVERS_PER_NODE=1
+CLIENTS_PER_NODE=32
+SERVER_TOTAL_TASKS=2
+CLIENT_TOTAL_TASKS=64
+PDC_LUSTRE_STRIPE_SIZE=8
+removing old logs
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ rm -rf /pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data
++ popd
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=server_output_vpicio_raw_2.err --output=server_output_vpicio_raw_2.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m0.009s
+user	0m0.000s
+sys	0m0.008s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 64 --ntasks-per-node=32 --output=client_output_vpicio_raw_2.log --error=client_output_vpicio_raw_2.err ./vpicio_mts 8388608 5 40 raw
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	3m35.680s
+user	0m0.049s
+sys	0m0.050s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=close_server_output_vpicio_raw_2.err --output=close_server_output_vpicio_raw_2.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m11.626s
+user	0m0.043s
+sys	0m0.032s
+logging data dir
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000014/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000014/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000016/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000016/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000013/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000013/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000020/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000020/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000003/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000003/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000000/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000000/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000004/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000004/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000011/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000011/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000013/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000013/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000006/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000006/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000002/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000002/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000022/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000022/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000004/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000004/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000017/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000017/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000019/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000019/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000010/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000010/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000005/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000005/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000010/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000010/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000001/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000001/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000003/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000003/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000014/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000014/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000006/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000006/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000008/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000008/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000021/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000021/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000007/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000007/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000018/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000018/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000017/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000017/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000005/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000005/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000015/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000015/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000009/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000009/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000008/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000008/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000002/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000002/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000015/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000015/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000009/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000009/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000012/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/2000000012/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000007/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000007/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000016/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000016/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000001/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000001/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000012/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000012/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000011/server0/s0000.bin	1073741824	16	16777216	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+/pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data/1000000011/server1/s0001.bin	1073741824	16	16777216	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=server_output_bdcats_raw_2.err --output=server_output_bdcats_raw_2.log ./pdc_server restart
+
+real	0m0.006s
+user	0m0.005s
+sys	0m0.000s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 64 --ntasks-per-node=32 --output=client_output_bdcats_raw_2.log --error=client_output_bdcats_raw_2.err ./bdcats_mts 8388608 5 40 raw
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	3m40.547s
+user	0m0.043s
+sys	0m0.057s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 2 -n 2 --ntasks-per-node=1 --error=close_server_output_bdcats_raw_2.err --output=close_server_output_bdcats_raw_2.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m0.989s
+user	0m0.055s
+sys	0m0.021s

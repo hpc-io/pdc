@@ -1,0 +1,21 @@
+# APPROXIMATED DATA -- NOT a real measurement.
+# The original "HDF5 Async + ZFP" series for vpic_combined.pdf has no
+# source data anywhere in https://github.com/TheAssembler1/data (checked
+# by filename and by grepping every file's contents for "hdf5"/"async").
+# These values were read directly off the existing in_paper/vpic_combined.pdf
+# via pixel-level analysis of its rendered bars (gridline-calibrated: the
+# 0/25/.../175s y-axis gridlines were located precisely, then each orange
+# bar's total height and solid/hatch boundary were measured against that
+# scale). Replace this file with real measured data if/when it's found.
+# Columns match the other no_transform/zfp_* joined files' derived
+# quantities directly (already *4-step totals*, not per-step averages):
+#   nodes, four_step_s, outlier_s
+nodes,four_step_s,outlier_s
+1,30.8,29.3
+2,27.5,26.2
+4,30.7,26.2
+8,49.4,25.9
+16,61.4,25.6
+32,86.8,27.6
+64,123.1,28.6
+128,147.6,29.1

@@ -1,0 +1,2 @@
+servers_per_node,mode,n_ranks,n_elem,setup_s,write_s,readback_s,compute_s,writeback_s,confirm_read_s,total_s,bad
+8,eager,64,16777216,0.119860,2.708783,0.000000,0.000000,0.000000,0.459312,3.168095,0

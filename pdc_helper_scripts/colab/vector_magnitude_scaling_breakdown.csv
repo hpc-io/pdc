@@ -1,0 +1,529 @@
+method,n_ranks,segment,value_s
+HDF5,32,write,59.470987
+HDF5,32,server compute mag,0.0
+HDF5,32,close,0.0
+HDF5,32,analysis read,0.424939
+HDF5,32,analysis compute,0.250023
+HDF5,32,analysis write,40.802927
+HDF5,64,write,54.819077
+HDF5,64,server compute mag,0.0
+HDF5,64,close,0.0
+HDF5,64,analysis read,1.639526
+HDF5,64,analysis compute,0.222586
+HDF5,64,analysis write,38.71265
+HDF5,128,write,51.889959
+HDF5,128,server compute mag,0.0
+HDF5,128,close,0.0
+HDF5,128,analysis read,1.998629
+HDF5,128,analysis compute,0.235226
+HDF5,128,analysis write,38.42789
+HDF5,256,write,49.396795
+HDF5,256,server compute mag,0.0
+HDF5,256,close,0.0
+HDF5,256,analysis read,2.768419
+HDF5,256,analysis compute,0.320929
+HDF5,256,analysis write,36.553703
+HDF5,512,write,49.091383
+HDF5,512,server compute mag,0.0
+HDF5,512,close,0.0
+HDF5,512,analysis read,3.785952
+HDF5,512,analysis compute,0.303523
+HDF5,512,analysis write,38.404714
+HDF5,1024,write,50.905117
+HDF5,1024,server compute mag,0.0
+HDF5,1024,close,0.0
+HDF5,1024,analysis read,6.984374
+HDF5,1024,analysis compute,0.478673
+HDF5,1024,analysis write,39.010641
+HDF5,2048,write,62.461482
+HDF5,2048,server compute mag,0.0
+HDF5,2048,close,0.0
+HDF5,2048,analysis read,20.811707
+HDF5,2048,analysis compute,0.728432
+HDF5,2048,analysis write,50.501781
+HDF5,4096,write,77.831758
+HDF5,4096,server compute mag,0.0
+HDF5,4096,close,0.0
+HDF5,4096,analysis read,28.120251
+HDF5,4096,analysis compute,1.606457
+HDF5,4096,analysis write,62.290972
+ADIOS2,32,write,55.716344
+ADIOS2,32,server compute mag,0.0
+ADIOS2,32,close,0.004829
+ADIOS2,32,analysis read,0.0
+ADIOS2,32,analysis compute,0.0
+ADIOS2,32,analysis write,0.0
+ADIOS2,64,write,56.074804
+ADIOS2,64,server compute mag,0.0
+ADIOS2,64,close,0.0
+ADIOS2,64,analysis read,0.0
+ADIOS2,64,analysis compute,0.0
+ADIOS2,64,analysis write,0.0
+ADIOS2,128,write,56.175254
+ADIOS2,128,server compute mag,0.0
+ADIOS2,128,close,0.0
+ADIOS2,128,analysis read,0.0
+ADIOS2,128,analysis compute,0.0
+ADIOS2,128,analysis write,0.0
+ADIOS2,256,write,56.190977
+ADIOS2,256,server compute mag,0.0
+ADIOS2,256,close,0.0
+ADIOS2,256,analysis read,0.0
+ADIOS2,256,analysis compute,0.0
+ADIOS2,256,analysis write,0.0
+ADIOS2,512,write,56.308556
+ADIOS2,512,server compute mag,0.0
+ADIOS2,512,close,0.007323
+ADIOS2,512,analysis read,0.0
+ADIOS2,512,analysis compute,0.0
+ADIOS2,512,analysis write,0.0
+ADIOS2,1024,write,56.332282
+ADIOS2,1024,server compute mag,0.0
+ADIOS2,1024,close,0.008292
+ADIOS2,1024,analysis read,0.0
+ADIOS2,1024,analysis compute,0.0
+ADIOS2,1024,analysis write,0.0
+ADIOS2,2048,write,56.879563
+ADIOS2,2048,server compute mag,0.0
+ADIOS2,2048,close,0.011488
+ADIOS2,2048,analysis read,0.0
+ADIOS2,2048,analysis compute,0.0
+ADIOS2,2048,analysis write,0.0
+ADIOS2,4096,write,56.95162
+ADIOS2,4096,server compute mag,0.0
+ADIOS2,4096,close,0.019815
+ADIOS2,4096,analysis read,0.0
+ADIOS2,4096,analysis compute,0.0
+ADIOS2,4096,analysis write,0.0
+PDC Post-hoc [2],32,write,29.197928
+PDC Post-hoc [2],32,server compute mag,0.0
+PDC Post-hoc [2],32,close,0.0
+PDC Post-hoc [2],32,analysis read,9.132276
+PDC Post-hoc [2],32,analysis compute,1.565356
+PDC Post-hoc [2],32,analysis write,4.914028
+PDC Post-hoc [2],64,write,29.019236
+PDC Post-hoc [2],64,server compute mag,0.0
+PDC Post-hoc [2],64,close,0.0
+PDC Post-hoc [2],64,analysis read,9.343104
+PDC Post-hoc [2],64,analysis compute,1.089604
+PDC Post-hoc [2],64,analysis write,5.104768
+PDC Post-hoc [2],128,write,30.507852
+PDC Post-hoc [2],128,server compute mag,0.0
+PDC Post-hoc [2],128,close,0.0
+PDC Post-hoc [2],128,analysis read,9.4075
+PDC Post-hoc [2],128,analysis compute,1.167568
+PDC Post-hoc [2],128,analysis write,4.907272
+PDC Post-hoc [2],256,write,29.900296
+PDC Post-hoc [2],256,server compute mag,0.0
+PDC Post-hoc [2],256,close,0.0
+PDC Post-hoc [2],256,analysis read,9.39888
+PDC Post-hoc [2],256,analysis compute,1.312292
+PDC Post-hoc [2],256,analysis write,5.090356
+PDC Post-hoc [2],512,write,30.71324
+PDC Post-hoc [2],512,server compute mag,0.0
+PDC Post-hoc [2],512,close,0.0
+PDC Post-hoc [2],512,analysis read,9.454412
+PDC Post-hoc [2],512,analysis compute,2.028904
+PDC Post-hoc [2],512,analysis write,5.194624
+PDC Post-hoc [2],1024,write,32.897912
+PDC Post-hoc [2],1024,server compute mag,0.0
+PDC Post-hoc [2],1024,close,0.0
+PDC Post-hoc [2],1024,analysis read,9.472916
+PDC Post-hoc [2],1024,analysis compute,3.044896
+PDC Post-hoc [2],1024,analysis write,5.191316
+PDC Post-hoc [2],2048,write,37.439932
+PDC Post-hoc [2],2048,server compute mag,0.0
+PDC Post-hoc [2],2048,close,0.0
+PDC Post-hoc [2],2048,analysis read,9.43614
+PDC Post-hoc [2],2048,analysis compute,5.380036
+PDC Post-hoc [2],2048,analysis write,5.300764
+PDC Post-hoc [2],4096,write,50.908812
+PDC Post-hoc [2],4096,server compute mag,0.0
+PDC Post-hoc [2],4096,close,0.0
+PDC Post-hoc [2],4096,analysis read,9.726776
+PDC Post-hoc [2],4096,analysis compute,9.971368
+PDC Post-hoc [2],4096,analysis write,5.317516
+PDC Post-hoc [4],32,write,14.598964
+PDC Post-hoc [4],32,server compute mag,0.0
+PDC Post-hoc [4],32,close,0.0
+PDC Post-hoc [4],32,analysis read,4.566138
+PDC Post-hoc [4],32,analysis compute,0.782678
+PDC Post-hoc [4],32,analysis write,2.457014
+PDC Post-hoc [4],64,write,14.509618
+PDC Post-hoc [4],64,server compute mag,0.0
+PDC Post-hoc [4],64,close,0.0
+PDC Post-hoc [4],64,analysis read,4.671552
+PDC Post-hoc [4],64,analysis compute,0.544802
+PDC Post-hoc [4],64,analysis write,2.552384
+PDC Post-hoc [4],128,write,15.253926
+PDC Post-hoc [4],128,server compute mag,0.0
+PDC Post-hoc [4],128,close,0.0
+PDC Post-hoc [4],128,analysis read,4.70375
+PDC Post-hoc [4],128,analysis compute,0.583784
+PDC Post-hoc [4],128,analysis write,2.453636
+PDC Post-hoc [4],256,write,14.950148
+PDC Post-hoc [4],256,server compute mag,0.0
+PDC Post-hoc [4],256,close,0.0
+PDC Post-hoc [4],256,analysis read,4.69944
+PDC Post-hoc [4],256,analysis compute,0.656146
+PDC Post-hoc [4],256,analysis write,2.545178
+PDC Post-hoc [4],512,write,15.35662
+PDC Post-hoc [4],512,server compute mag,0.0
+PDC Post-hoc [4],512,close,0.0
+PDC Post-hoc [4],512,analysis read,4.727206
+PDC Post-hoc [4],512,analysis compute,1.014452
+PDC Post-hoc [4],512,analysis write,2.597312
+PDC Post-hoc [4],1024,write,16.448956
+PDC Post-hoc [4],1024,server compute mag,0.0
+PDC Post-hoc [4],1024,close,0.0
+PDC Post-hoc [4],1024,analysis read,4.736458
+PDC Post-hoc [4],1024,analysis compute,1.522448
+PDC Post-hoc [4],1024,analysis write,2.595658
+PDC Post-hoc [4],2048,write,18.719966
+PDC Post-hoc [4],2048,server compute mag,0.0
+PDC Post-hoc [4],2048,close,0.0
+PDC Post-hoc [4],2048,analysis read,4.71807
+PDC Post-hoc [4],2048,analysis compute,2.690018
+PDC Post-hoc [4],2048,analysis write,2.650382
+PDC Post-hoc [4],4096,write,25.454406
+PDC Post-hoc [4],4096,server compute mag,0.0
+PDC Post-hoc [4],4096,close,0.0
+PDC Post-hoc [4],4096,analysis read,4.863388
+PDC Post-hoc [4],4096,analysis compute,4.985684
+PDC Post-hoc [4],4096,analysis write,2.658758
+PDC Post-hoc [8],32,write,7.299482
+PDC Post-hoc [8],32,server compute mag,0.0
+PDC Post-hoc [8],32,close,0.0
+PDC Post-hoc [8],32,analysis read,2.283069
+PDC Post-hoc [8],32,analysis compute,0.391339
+PDC Post-hoc [8],32,analysis write,1.228507
+PDC Post-hoc [8],64,write,7.254809
+PDC Post-hoc [8],64,server compute mag,0.0
+PDC Post-hoc [8],64,close,0.0
+PDC Post-hoc [8],64,analysis read,2.335776
+PDC Post-hoc [8],64,analysis compute,0.272401
+PDC Post-hoc [8],64,analysis write,1.276192
+PDC Post-hoc [8],128,write,7.626963
+PDC Post-hoc [8],128,server compute mag,0.0
+PDC Post-hoc [8],128,close,0.0
+PDC Post-hoc [8],128,analysis read,2.351875
+PDC Post-hoc [8],128,analysis compute,0.291892
+PDC Post-hoc [8],128,analysis write,1.226818
+PDC Post-hoc [8],256,write,7.475074
+PDC Post-hoc [8],256,server compute mag,0.0
+PDC Post-hoc [8],256,close,0.0
+PDC Post-hoc [8],256,analysis read,2.34972
+PDC Post-hoc [8],256,analysis compute,0.328073
+PDC Post-hoc [8],256,analysis write,1.272589
+PDC Post-hoc [8],512,write,7.67831
+PDC Post-hoc [8],512,server compute mag,0.0
+PDC Post-hoc [8],512,close,0.0
+PDC Post-hoc [8],512,analysis read,2.363603
+PDC Post-hoc [8],512,analysis compute,0.507226
+PDC Post-hoc [8],512,analysis write,1.298656
+PDC Post-hoc [8],1024,write,8.224478
+PDC Post-hoc [8],1024,server compute mag,0.0
+PDC Post-hoc [8],1024,close,0.0
+PDC Post-hoc [8],1024,analysis read,2.368229
+PDC Post-hoc [8],1024,analysis compute,0.761224
+PDC Post-hoc [8],1024,analysis write,1.297829
+PDC Post-hoc [8],2048,write,9.359983
+PDC Post-hoc [8],2048,server compute mag,0.0
+PDC Post-hoc [8],2048,close,0.0
+PDC Post-hoc [8],2048,analysis read,2.359035
+PDC Post-hoc [8],2048,analysis compute,1.345009
+PDC Post-hoc [8],2048,analysis write,1.325191
+PDC Post-hoc [8],4096,write,12.727203
+PDC Post-hoc [8],4096,server compute mag,0.0
+PDC Post-hoc [8],4096,close,0.0
+PDC Post-hoc [8],4096,analysis read,2.431694
+PDC Post-hoc [8],4096,analysis compute,2.492842
+PDC Post-hoc [8],4096,analysis write,1.329379
+DF-Eager [2],32,write,25.734807
+DF-Eager [2],32,server compute mag,3.292335
+DF-Eager [2],32,close,0.0
+DF-Eager [2],32,analysis read,0.0
+DF-Eager [2],32,analysis compute,0.0
+DF-Eager [2],32,analysis write,0.0
+DF-Eager [2],64,write,25.348687
+DF-Eager [2],64,server compute mag,3.242937
+DF-Eager [2],64,close,0.0
+DF-Eager [2],64,analysis read,0.0
+DF-Eager [2],64,analysis compute,0.0
+DF-Eager [2],64,analysis write,0.0
+DF-Eager [2],128,write,25.444128
+DF-Eager [2],128,server compute mag,3.255147
+DF-Eager [2],128,close,0.0
+DF-Eager [2],128,analysis read,0.0
+DF-Eager [2],128,analysis compute,0.0
+DF-Eager [2],128,analysis write,0.0
+DF-Eager [2],256,write,25.357762
+DF-Eager [2],256,server compute mag,3.244098
+DF-Eager [2],256,close,0.0
+DF-Eager [2],256,analysis read,0.0
+DF-Eager [2],256,analysis compute,0.0
+DF-Eager [2],256,analysis write,0.0
+DF-Eager [2],512,write,25.936936
+DF-Eager [2],512,server compute mag,3.318194
+DF-Eager [2],512,close,0.0
+DF-Eager [2],512,analysis read,0.0
+DF-Eager [2],512,analysis compute,0.0
+DF-Eager [2],512,analysis write,0.0
+DF-Eager [2],1024,write,25.864222
+DF-Eager [2],1024,server compute mag,3.308891
+DF-Eager [2],1024,close,0.0
+DF-Eager [2],1024,analysis read,0.0
+DF-Eager [2],1024,analysis compute,0.0
+DF-Eager [2],1024,analysis write,0.0
+DF-Eager [2],2048,write,26.320861
+DF-Eager [2],2048,server compute mag,3.36731
+DF-Eager [2],2048,close,0.0
+DF-Eager [2],2048,analysis read,0.0
+DF-Eager [2],2048,analysis compute,0.0
+DF-Eager [2],2048,analysis write,0.0
+DF-Eager [2],4096,write,30.558705
+DF-Eager [2],4096,server compute mag,3.909471
+DF-Eager [2],4096,close,0.0
+DF-Eager [2],4096,analysis read,0.0
+DF-Eager [2],4096,analysis compute,0.0
+DF-Eager [2],4096,analysis write,0.0
+DF-Eager [4],32,write,14.934634
+DF-Eager [4],32,server compute mag,1.910635
+DF-Eager [4],32,close,0.0
+DF-Eager [4],32,analysis read,0.0
+DF-Eager [4],32,analysis compute,0.0
+DF-Eager [4],32,analysis write,0.0
+DF-Eager [4],64,write,14.762046
+DF-Eager [4],64,server compute mag,1.888555
+DF-Eager [4],64,close,0.0
+DF-Eager [4],64,analysis read,0.0
+DF-Eager [4],64,analysis compute,0.0
+DF-Eager [4],64,analysis write,0.0
+DF-Eager [4],128,write,14.3701
+DF-Eager [4],128,server compute mag,1.838412
+DF-Eager [4],128,close,0.0
+DF-Eager [4],128,analysis read,0.0
+DF-Eager [4],128,analysis compute,0.0
+DF-Eager [4],128,analysis write,0.0
+DF-Eager [4],256,write,14.863947
+DF-Eager [4],256,server compute mag,1.901591
+DF-Eager [4],256,close,0.0
+DF-Eager [4],256,analysis read,0.0
+DF-Eager [4],256,analysis compute,0.0
+DF-Eager [4],256,analysis write,0.0
+DF-Eager [4],512,write,14.924949
+DF-Eager [4],512,server compute mag,1.909395
+DF-Eager [4],512,close,0.0
+DF-Eager [4],512,analysis read,0.0
+DF-Eager [4],512,analysis compute,0.0
+DF-Eager [4],512,analysis write,0.0
+DF-Eager [4],1024,write,14.581748
+DF-Eager [4],1024,server compute mag,1.865489
+DF-Eager [4],1024,close,0.0
+DF-Eager [4],1024,analysis read,0.0
+DF-Eager [4],1024,analysis compute,0.0
+DF-Eager [4],1024,analysis write,0.0
+DF-Eager [4],2048,write,20.078678
+DF-Eager [4],2048,server compute mag,2.568728
+DF-Eager [4],2048,close,0.0
+DF-Eager [4],2048,analysis read,0.0
+DF-Eager [4],2048,analysis compute,0.0
+DF-Eager [4],2048,analysis write,0.0
+DF-Eager [4],4096,write,21.027325
+DF-Eager [4],4096,server compute mag,2.690092
+DF-Eager [4],4096,close,0.0
+DF-Eager [4],4096,analysis read,0.0
+DF-Eager [4],4096,analysis compute,0.0
+DF-Eager [4],4096,analysis write,0.0
+DF-Eager [8],32,write,7.377147
+DF-Eager [8],32,server compute mag,0.943781
+DF-Eager [8],32,close,0.0
+DF-Eager [8],32,analysis read,0.0
+DF-Eager [8],32,analysis compute,0.0
+DF-Eager [8],32,analysis write,0.0
+DF-Eager [8],64,write,7.190352
+DF-Eager [8],64,server compute mag,0.919884
+DF-Eager [8],64,close,0.0
+DF-Eager [8],64,analysis read,0.0
+DF-Eager [8],64,analysis compute,0.0
+DF-Eager [8],64,analysis write,0.0
+DF-Eager [8],128,write,2.671646
+DF-Eager [8],128,server compute mag,0.341792
+DF-Eager [8],128,close,0.0
+DF-Eager [8],128,analysis read,0.0
+DF-Eager [8],128,analysis compute,0.0
+DF-Eager [8],128,analysis write,0.0
+DF-Eager [8],256,write,7.508372
+DF-Eager [8],256,server compute mag,0.96057
+DF-Eager [8],256,close,0.0
+DF-Eager [8],256,analysis read,0.0
+DF-Eager [8],256,analysis compute,0.0
+DF-Eager [8],256,analysis write,0.0
+DF-Eager [8],512,write,7.817213
+DF-Eager [8],512,server compute mag,1.000081
+DF-Eager [8],512,close,0.0
+DF-Eager [8],512,analysis read,0.0
+DF-Eager [8],512,analysis compute,0.0
+DF-Eager [8],512,analysis write,0.0
+DF-Eager [8],1024,write,7.943787
+DF-Eager [8],1024,server compute mag,1.016274
+DF-Eager [8],1024,close,0.0
+DF-Eager [8],1024,analysis read,0.0
+DF-Eager [8],1024,analysis compute,0.0
+DF-Eager [8],1024,analysis write,0.0
+DF-Eager [8],2048,write,8.494043
+DF-Eager [8],2048,server compute mag,1.08667
+DF-Eager [8],2048,close,0.0
+DF-Eager [8],2048,analysis read,0.0
+DF-Eager [8],2048,analysis compute,0.0
+DF-Eager [8],2048,analysis write,0.0
+DF-Eager [8],4096,write,9.606667
+DF-Eager [8],4096,server compute mag,1.229011
+DF-Eager [8],4096,close,0.0
+DF-Eager [8],4096,analysis read,0.0
+DF-Eager [8],4096,analysis compute,0.0
+DF-Eager [8],4096,analysis write,0.0
+DF-View [2],32,write,13.15219
+DF-View [2],32,server compute mag,1.682601
+DF-View [2],32,close,0.0
+DF-View [2],32,analysis read,0.0
+DF-View [2],32,analysis compute,0.0
+DF-View [2],32,analysis write,0.0
+DF-View [2],64,write,14.641009
+DF-View [2],64,server compute mag,1.87307
+DF-View [2],64,close,0.0
+DF-View [2],64,analysis read,0.0
+DF-View [2],64,analysis compute,0.0
+DF-View [2],64,analysis write,0.0
+DF-View [2],128,write,12.926927
+DF-View [2],128,server compute mag,1.653782
+DF-View [2],128,close,0.0
+DF-View [2],128,analysis read,0.0
+DF-View [2],128,analysis compute,0.0
+DF-View [2],128,analysis write,0.0
+DF-View [2],256,write,13.878842
+DF-View [2],256,server compute mag,1.775564
+DF-View [2],256,close,0.0
+DF-View [2],256,analysis read,0.0
+DF-View [2],256,analysis compute,0.0
+DF-View [2],256,analysis write,0.0
+DF-View [2],512,write,15.256976
+DF-View [2],512,server compute mag,1.951873
+DF-View [2],512,close,0.0
+DF-View [2],512,analysis read,0.0
+DF-View [2],512,analysis compute,0.0
+DF-View [2],512,analysis write,0.0
+DF-View [2],1024,write,17.011541
+DF-View [2],1024,server compute mag,2.17634
+DF-View [2],1024,close,0.0
+DF-View [2],1024,analysis read,0.0
+DF-View [2],1024,analysis compute,0.0
+DF-View [2],1024,analysis write,0.0
+DF-View [2],2048,write,21.223952
+DF-View [2],2048,server compute mag,2.715247
+DF-View [2],2048,close,0.0
+DF-View [2],2048,analysis read,0.0
+DF-View [2],2048,analysis compute,0.0
+DF-View [2],2048,analysis write,0.0
+DF-View [2],4096,write,23.30272
+DF-View [2],4096,server compute mag,2.98119
+DF-View [2],4096,close,0.0
+DF-View [2],4096,analysis read,0.0
+DF-View [2],4096,analysis compute,0.0
+DF-View [2],4096,analysis write,0.0
+DF-View [4],32,write,8.29444
+DF-View [4],32,server compute mag,1.061134
+DF-View [4],32,close,0.0
+DF-View [4],32,analysis read,0.0
+DF-View [4],32,analysis compute,0.0
+DF-View [4],32,analysis write,0.0
+DF-View [4],64,write,8.330158
+DF-View [4],64,server compute mag,1.065703
+DF-View [4],64,close,0.0
+DF-View [4],64,analysis read,0.0
+DF-View [4],64,analysis compute,0.0
+DF-View [4],64,analysis write,0.0
+DF-View [4],128,write,7.391308
+DF-View [4],128,server compute mag,0.945593
+DF-View [4],128,close,0.0
+DF-View [4],128,analysis read,0.0
+DF-View [4],128,analysis compute,0.0
+DF-View [4],128,analysis write,0.0
+DF-View [4],256,write,9.269433
+DF-View [4],256,server compute mag,1.185868
+DF-View [4],256,close,0.0
+DF-View [4],256,analysis read,0.0
+DF-View [4],256,analysis compute,0.0
+DF-View [4],256,analysis write,0.0
+DF-View [4],512,write,9.191383
+DF-View [4],512,server compute mag,1.175882
+DF-View [4],512,close,0.0
+DF-View [4],512,analysis read,0.0
+DF-View [4],512,analysis compute,0.0
+DF-View [4],512,analysis write,0.0
+DF-View [4],1024,write,11.4901
+DF-View [4],1024,server compute mag,1.469965
+DF-View [4],1024,close,0.0
+DF-View [4],1024,analysis read,0.0
+DF-View [4],1024,analysis compute,0.0
+DF-View [4],1024,analysis write,0.0
+DF-View [4],2048,write,14.788462
+DF-View [4],2048,server compute mag,1.891934
+DF-View [4],2048,close,0.0
+DF-View [4],2048,analysis read,0.0
+DF-View [4],2048,analysis compute,0.0
+DF-View [4],2048,analysis write,0.0
+DF-View [4],4096,write,14.986409
+DF-View [4],4096,server compute mag,1.917258
+DF-View [4],4096,close,0.0
+DF-View [4],4096,analysis read,0.0
+DF-View [4],4096,analysis compute,0.0
+DF-View [4],4096,analysis write,0.0
+DF-View [8],32,write,1.390664
+DF-View [8],32,server compute mag,0.177912
+DF-View [8],32,close,0.0
+DF-View [8],32,analysis read,1.912585
+DF-View [8],32,analysis compute,0.156109
+DF-View [8],32,analysis write,0.0
+DF-View [8],64,write,1.479089
+DF-View [8],64,server compute mag,0.189224
+DF-View [8],64,close,0.0
+DF-View [8],64,analysis read,1.805126
+DF-View [8],64,analysis compute,0.157951
+DF-View [8],64,analysis write,0.0
+DF-View [8],128,write,1.53341
+DF-View [8],128,server compute mag,0.196174
+DF-View [8],128,close,0.0
+DF-View [8],128,analysis read,1.858168
+DF-View [8],128,analysis compute,0.168487
+DF-View [8],128,analysis write,0.0
+DF-View [8],256,write,1.525324
+DF-View [8],256,server compute mag,0.19514
+DF-View [8],256,close,0.0
+DF-View [8],256,analysis read,1.901954
+DF-View [8],256,analysis compute,0.171998
+DF-View [8],256,analysis write,0.0
+DF-View [8],512,write,1.704834
+DF-View [8],512,server compute mag,0.218105
+DF-View [8],512,close,0.0
+DF-View [8],512,analysis read,1.918504
+DF-View [8],512,analysis compute,0.171261
+DF-View [8],512,analysis write,0.0
+DF-View [8],1024,write,2.032679
+DF-View [8],1024,server compute mag,0.260047
+DF-View [8],1024,close,0.0
+DF-View [8],1024,analysis read,1.924633
+DF-View [8],1024,analysis compute,0.1765
+DF-View [8],1024,analysis write,0.0
+DF-View [8],2048,write,2.574205
+DF-View [8],2048,server compute mag,0.329326
+DF-View [8],2048,close,0.0
+DF-View [8],2048,analysis read,1.975875
+DF-View [8],2048,analysis compute,0.168482
+DF-View [8],2048,analysis write,0.0
+DF-View [8],4096,write,3.770956
+DF-View [8],4096,server compute mag,0.48243
+DF-View [8],4096,close,0.0
+DF-View [8],4096,analysis read,2.21663
+DF-View [8],4096,analysis compute,0.171429
+DF-View [8],4096,analysis write,0.0

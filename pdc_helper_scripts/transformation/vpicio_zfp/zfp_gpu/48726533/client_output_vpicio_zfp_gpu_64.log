@@ -1,0 +1,78 @@
+[09:10:44.161315] [WARNING] [vpicio_mts.c:92] PDC_CLIENT[0]: Writing 8388608 number of particles for 5 steps with 2048 clients zfp_gpu transformation.
+[09:10:44.205515] [WARNING] [pdc_client_connect.c:388] PDC_CLIENT[0]: Config file from default location [./pdc_tmp/server.cfg] not available, waiting 5 seconds
+[09:10:50.726781] [WARNING] [vpicio_mts.c:159] PDC_CLIENT[0]: Sleep start: 40.00
+[09:11:30.727096] [WARNING] [vpicio_mts.c:162] PDC_CLIENT[0]: Sleep end: 40.00
+[09:11:30.985710] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  0
+[09:11:31.006328] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 0
+[09:11:31.028421] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 1
+[09:11:31.072335] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 2
+[09:11:31.072803] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 3
+[09:11:31.089048] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 4
+[09:11:31.106132] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 5
+[09:11:31.146903] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 1.61079e-01
+[09:11:31.147852] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 9.50452e-04
+[09:11:33.299256] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 2.15139e+00
+[09:11:33.299536] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[09:12:13.299690] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[09:12:13.499420] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 8.33937e-02
+[09:12:13.632984] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.33565e-01
+[09:12:13.633751] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 7.70156e-04
+[09:12:13.633916] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  1
+[09:12:13.647241] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 8
+[09:12:13.658532] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 9
+[09:12:13.672278] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 10
+[09:12:13.688149] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 11
+[09:12:13.702154] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 12
+[09:12:13.714990] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 13
+[09:12:13.715655] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 8.16681e-02
+[09:12:13.716210] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 5.55880e-04
+[09:12:16.212028] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 2.49581e+00
+[09:12:16.212360] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[09:12:56.212568] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[09:12:56.400801] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 1.20764e-01
+[09:12:56.530441] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.29642e-01
+[09:12:56.531423] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 9.83727e-04
+[09:12:56.531512] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  2
+[09:12:56.556466] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 16
+[09:12:56.580916] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 17
+[09:12:56.595754] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 18
+[09:12:56.614291] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 19
+[09:12:56.625088] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 20
+[09:12:56.644204] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 21
+[09:12:56.644882] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 1.13305e-01
+[09:12:56.645850] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 9.68868e-04
+[09:12:59.117488] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 2.47163e+00
+[09:12:59.117707] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[09:13:39.119141] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[09:13:45.700026] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 5.94062e+00
+[09:13:47.534295] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.83427e+00
+[09:13:48.701026] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 1.16673e+00
+[09:13:48.978458] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  3
+[09:13:49.002118] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 24
+[09:13:49.034912] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 25
+[09:13:49.047004] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 26
+[09:13:49.063986] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 27
+[09:13:49.079301] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 28
+[09:13:49.178723] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 29
+[09:13:51.806112] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 2.82756e+00
+[09:13:51.944088] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 1.37979e-01
+[09:13:58.798248] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 6.85416e+00
+[09:13:58.812018] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[09:14:38.816284] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[09:14:40.045833] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 1.01966e+00
+[09:14:40.162742] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.21033e-01
+[09:14:40.175965] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 1.23311e-02
+[09:14:40.177605] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  4
+[09:14:40.227658] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 32
+[09:14:40.380552] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 33
+[09:14:40.607290] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 34
+[09:14:40.650922] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 35
+[09:14:40.764403] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 36
+[09:14:40.976129] [WARNING] [vpicio_mts.c:202] PDC_CLIENT[0]: Attaching zfp gpu to index: 37
+[09:14:41.087880] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 9.06245e-01
+[09:14:41.096780] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 8.90045e-03
+[09:14:45.912783] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 4.79593e+00
+[09:14:45.912992] [WARNING] [vpicio_mts.c:264] PDC_CLIENT[0]: Final step, no sleep
+[09:15:00.531404] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 1.45332e+01
+[09:15:00.659015] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.27617e-01
+[09:15:00.663224] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 4.20881e-03

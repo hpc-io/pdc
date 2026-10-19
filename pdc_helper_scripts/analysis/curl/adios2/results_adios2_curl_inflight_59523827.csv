@@ -1,0 +1,4 @@
+servers_per_node,mode,step,n_ranks,nx,ny,nz_per_rank,setup_s,write_s,confirm_read_s,close_s,step_total_s,bad
+0,adios2_inflight_curl,0,128,256,256,64,0.023820,8.073421,0.037351,0.005634,8.140225,0
+0,adios2_inflight_curl,1,128,256,256,64,0.023820,8.745607,0.036088,0.005634,8.811148,0
+0,adios2_inflight_curl,2,128,256,256,64,0.023820,8.725177,0.035981,0.005634,8.790612,0

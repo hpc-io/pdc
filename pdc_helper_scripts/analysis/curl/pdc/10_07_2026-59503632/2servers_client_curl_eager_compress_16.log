@@ -1,0 +1,1034 @@
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[INFO] PDC_CLIENT[17]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[22]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Found 32 PDC Metadata servers, running with 512 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+cxi
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Connection string: ofi+cxi://cxi0:8
+[INFO] PDC_CLIENT[2]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[4]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[7]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[359]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[8]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[171]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[375]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[10]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[177]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[381]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[228]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[11]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[187]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[383]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[442]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[233]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[13]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[160]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[352]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[447]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[41]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[238]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[14]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[489]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[266]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[99]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[162]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[354]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[416]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[43]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[251]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[24]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[129]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[511]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[267]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[335]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[103]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[163]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[356]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[418]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[50]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[225]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[26]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[136]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[480]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[199]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[278]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[341]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[109]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[165]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[357]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[419]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[51]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[226]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[28]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[149]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[481]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[209]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[257]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[343]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[118]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[166]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[358]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[420]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[32]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[227]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[1]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[153]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[483]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[65]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[192]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[258]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[344]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[120]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[453]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[167]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[309]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[360]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[421]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[33]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[229]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[3]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[384]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[154]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[484]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[75]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[194]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[259]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[320]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[122]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[459]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[168]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[310]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[361]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[422]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[34]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[230]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[6]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[385]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[155]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[487]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[77]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[195]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[260]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[321]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[125]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[464]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[169]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[316]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[362]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[423]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[35]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[232]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[9]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[389]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[128]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[488]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[80]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[197]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[263]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[322]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[127]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[465]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[170]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[288]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[363]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[424]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[36]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[234]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[12]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[393]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[130]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[490]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[82]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[198]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[264]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[324]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[96]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[467]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[172]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[289]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[364]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[425]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[37]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[235]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[15]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[394]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[131]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[492]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[83]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[200]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[265]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[326]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[97]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[472]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[173]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[290]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[365]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[426]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[38]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[236]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[16]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[399]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[132]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[494]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[86]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[201]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[268]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[327]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[98]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[473]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[174]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[291]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[367]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[427]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[39]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[237]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[18]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[401]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[133]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[495]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[89]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[202]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[270]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[329]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[100]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[475]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[175]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[292]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[368]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[428]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[40]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[239]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[19]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[402]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[134]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[496]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[64]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[273]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[330]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[101]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[448]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[176]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[293]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[369]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[430]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[42]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[240]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[20]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[406]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[135]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[497]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[66]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[204]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[274]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[331]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[102]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[449]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[178]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[295]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[370]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[431]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[44]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[241]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[21]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[407]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[137]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[498]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[67]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[205]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[276]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[332]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[104]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[450]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[179]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[299]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[371]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[432]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[46]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[23]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[408]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[138]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[500]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[68]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[206]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[279]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[333]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[105]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[451]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[180]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[300]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[372]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[47]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[242]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[25]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[412]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[139]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[501]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[69]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[208]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[280]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[334]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[106]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[452]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[181]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[301]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[373]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[433]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[48]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[243]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[27]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[413]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[140]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[70]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[210]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[282]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[336]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[107]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[454]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[182]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[302]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[374]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[434]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[49]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[244]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[29]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[414]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[503]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[71]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[211]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[283]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[337]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[108]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[455]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[183]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[303]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[376]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[435]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[52]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[245]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[30]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[415]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[141]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[504]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[72]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[212]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[284]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[338]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[110]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[456]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[184]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[304]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[377]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[436]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[53]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[247]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[31]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[386]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[142]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[505]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[73]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[213]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[285]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[339]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[111]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[457]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[185]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[306]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[378]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[438]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[54]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[248]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[5]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[387]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[143]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[506]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[214]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[286]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[345]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[112]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[458]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[186]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[307]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[379]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[440]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[55]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[249]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[144]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[509]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[74]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[215]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[256]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[346]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[113]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[460]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[188]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[308]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[380]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[441]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[56]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[250]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[388]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[145]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[510]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[76]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[216]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[261]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[348]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[114]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[461]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[189]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[311]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[382]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[443]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[57]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[252]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[390]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[146]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[482]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[78]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[217]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[262]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[350]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[115]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[462]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[191]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[312]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[353]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[445]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[58]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[253]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[391]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[147]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[485]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[79]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[219]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[269]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[351]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[116]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[463]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[161]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[313]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[355]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[446]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[59]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[254]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[392]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[148]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[486]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[81]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[221]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[272]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[323]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[117]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[466]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[164]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[314]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[366]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[417]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[61]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[255]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[395]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[150]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[491]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[84]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[193]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[275]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[325]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[119]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[468]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[190]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[315]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[429]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[62]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[224]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[396]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[151]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[493]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[85]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[196]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[277]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[328]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[121]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[469]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[317]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[437]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[63]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[231]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[397]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[152]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[499]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[87]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[203]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[281]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[340]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[123]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[470]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[319]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[439]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[45]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[246]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[398]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[156]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[502]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[88]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[207]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[287]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[342]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[124]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[471]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[294]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[444]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[60]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[400]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[157]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[507]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[90]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[218]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[271]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[347]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[126]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[474]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[296]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[403]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[158]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[508]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[91]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[220]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[349]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[476]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[297]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[404]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[159]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[92]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[222]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[477]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[298]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[405]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[93]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[223]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[478]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[305]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[409]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[94]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[479]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[318]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[410]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[95]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[411]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Scoped Slingshot CXI auth for Mercury: svc=1 vni=1 device=cxi0
+[INFO] PDC_CLIENT[0]: Using [/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench] as tmp dir, 16 clients per server
+curl_eager,0,512,256,256,64,1,0.274384,6.696817,0.744055,7.715256,0
+curl_eager,1,512,256,256,64,1,0.274384,6.116145,0.796158,7.186687,0
+[INFO] PDC_CLIENT[233]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[239]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[199]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[253]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[409]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[221]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[197]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[165]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[169]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[173]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[175]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[443]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[405]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[445]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[399]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[393]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[117]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[143]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[447]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[149]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[133]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[69]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[5]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[29]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[450]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[267]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[435]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[277]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[451]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[285]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[486]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[83]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[261]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[487]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[205]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[209]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[291]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[305]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[309]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[71]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[493]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[311]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[111]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[319]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[107]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[337]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[35]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[93]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[342]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[290]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[47]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[349]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[51]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[355]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[53]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[350]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[34]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[147]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[351]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[42]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[329]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[371]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[43]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[343]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[55]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[375]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[39]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[45]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[275]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[61]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[271]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[33]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[266]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[270]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[98]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[191]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[383]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[278]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[99]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[379]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[279]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[373]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[282]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[283]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[330]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[106]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[385]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[331]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[401]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[139]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[333]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[37]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[481]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[382]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[2]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[503]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[281]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[473]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[354]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[3]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[501]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[201]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[257]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[357]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[22]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[510]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[265]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[369]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[23]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[157]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[511]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[211]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[397]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[153]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[193]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[439]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[411]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[210]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[179]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[250]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[484]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[118]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[185]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[57]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[251]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[485]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[119]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[41]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[225]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[398]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[490]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[116]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[391]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[491]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[505]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[9]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[489]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[449]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[49]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[17]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[370]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[1]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[11]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[21]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[238]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[314]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[315]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[338]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[125]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[339]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[126]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[502]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[127]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[421]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[500]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[124]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[431]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[163]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[301]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[109]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[478]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[174]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[310]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[122]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[190]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[418]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[123]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[479]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[162]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[419]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[340]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[181]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[6]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[74]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[341]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[7]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[82]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[318]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[4]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[75]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[215]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[298]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[423]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[299]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[433]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[441]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[457]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[442]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[10]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[12]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[497]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[65]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[15]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[289]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[8]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[293]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[13]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[89]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[103]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[453]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[297]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[14]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[404]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[477]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[306]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[407]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[461]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[307]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[413]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[463]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[308]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[389]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[462]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[295]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[406]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[79]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[294]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[321]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[365]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[353]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[364]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[66]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[455]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[367]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[81]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[366]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[67]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[362]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[70]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[363]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[358]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[97]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[359]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[102]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[356]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[274]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[113]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[378]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[273]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[292]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[380]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[262]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[460]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[303]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[381]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[420]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[195]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[263]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[300]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[422]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[154]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[213]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[260]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[302]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[446]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[155]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[509]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[474]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[296]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[145]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[499]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[475]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[417]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[158]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[86]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[458]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[152]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[459]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[52]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[156]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[456]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[376]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[142]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[469]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[372]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[159]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[87]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[465]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[377]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[360]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[368]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[84]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[313]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[352]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[85]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[361]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[468]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[374]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[235]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[471]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[241]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[470]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[237]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[105]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[288]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[54]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[242]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[312]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[40]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[255]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[114]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[317]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[438]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[243]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[115]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[304]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[44]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[121]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[188]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[316]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[46]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[120]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[189]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[108]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[110]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[50]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[112]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[104]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[58]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[452]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[59]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[454]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[96]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[472]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[187]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[90]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[100]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[476]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[172]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[91]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[101]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[217]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[170]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[171]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[249]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[177]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[231]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[18]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[482]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[168]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[247]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[19]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[488]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[212]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[229]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[494]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[214]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[483]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[492]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[508]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[68]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[495]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[73]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[498]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[77]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[507]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[88]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[25]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[480]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[92]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[26]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[504]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[94]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[27]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[506]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[95]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[496]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[80]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[323]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[246]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[72]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[36]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[20]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[76]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[38]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[78]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[206]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[64]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[207]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[60]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[348]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[62]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[326]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[63]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[30]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[327]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[32]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[31]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[347]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[48]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[16]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[56]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[24]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[466]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[28]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[325]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[448]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[426]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[324]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[464]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[346]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[467]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[334]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[335]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[332]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[328]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[322]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[284]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[286]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[287]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[427]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[429]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[258]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[336]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[259]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[345]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[440]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[276]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[344]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[444]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[280]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[320]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[425]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[272]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[437]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[436]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[204]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[430]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[424]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[264]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[428]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[268]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[434]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[269]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[196]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[183]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[198]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[161]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[164]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[416]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[166]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[432]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[167]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[186]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[184]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[182]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[180]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[160]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[176]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[178]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[248]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[252]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[254]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[234]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[226]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[227]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[245]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[240]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[244]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[140]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[141]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[138]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[228]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[230]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[136]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[137]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[224]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[236]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[232]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[194]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[202]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[223]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[203]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[200]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[222]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[220]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[218]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[219]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[216]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[192]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[208]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[396]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[415]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[410]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[146]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[129]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[135]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[134]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[132]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[151]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[144]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[148]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[150]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[130]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[131]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[128]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[403]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[408]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[412]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[414]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[390]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[392]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[394]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[387]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[395]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[386]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[400]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[402]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[256]: PDCtf_dg_free called
+curl_eager,2,512,256,256,64,1,0.274384,6.063422,0.751106,7.088912,0
+[INFO] PDC_CLIENT[388]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[0]: PDCtf_dg_free called
+[INFO] PDC_CLIENT[384]: PDCtf_dg_free called

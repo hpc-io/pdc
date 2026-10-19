@@ -1,0 +1,39 @@
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[INFO] PDC_CLIENT[9]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[8]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Found 16 PDC Metadata servers, running with 16 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+cxi
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Connection string: ofi+cxi://cxi0:8
+[INFO] PDC_CLIENT[1]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[4]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[7]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[14]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[10]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[12]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[6]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[15]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[2]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[13]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[11]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[3]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[5]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Scoped Slingshot CXI auth for Mercury: svc=1 vni=1 device=cxi0
+[INFO] PDC_CLIENT[0]: Using [/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench] as tmp dir, 1 clients per server
+[14:18:39.758962] [WARNING] [close_server.c:56] PDC_CLIENT[2]: total close time = 0.310259
+[14:18:39.759065] [WARNING] [close_server.c:56] PDC_CLIENT[10]: total close time = 0.310364
+[14:18:39.759430] [WARNING] [close_server.c:56] PDC_CLIENT[0]: total close time = 0.310699
+[14:18:39.759500] [WARNING] [close_server.c:56] PDC_CLIENT[6]: total close time = 0.310798
+[14:18:39.759584] [WARNING] [close_server.c:56] PDC_CLIENT[7]: total close time = 0.310880
+[14:18:39.759717] [WARNING] [close_server.c:56] PDC_CLIENT[1]: total close time = 0.310983
+[14:18:39.759760] [WARNING] [close_server.c:56] PDC_CLIENT[12]: total close time = 0.311008
+[14:18:39.759846] [WARNING] [close_server.c:56] PDC_CLIENT[13]: total close time = 0.311100
+[14:18:39.759966] [WARNING] [close_server.c:56] PDC_CLIENT[9]: total close time = 0.311298
+[14:18:39.760033] [WARNING] [close_server.c:56] PDC_CLIENT[8]: total close time = 0.311367
+[14:18:39.760173] [WARNING] [close_server.c:56] PDC_CLIENT[4]: total close time = 0.311489
+[14:18:39.760309] [WARNING] [close_server.c:56] PDC_CLIENT[11]: total close time = 0.311618
+[14:18:39.760324] [WARNING] [close_server.c:56] PDC_CLIENT[5]: total close time = 0.311635
+[14:18:39.760408] [WARNING] [close_server.c:56] PDC_CLIENT[14]: total close time = 0.311646
+[14:18:39.760562] [WARNING] [close_server.c:56] PDC_CLIENT[15]: total close time = 0.311803
+[14:18:39.760619] [WARNING] [close_server.c:56] PDC_CLIENT[3]: total close time = 0.311913

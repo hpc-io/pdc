@@ -1,0 +1,7 @@
+Lustre striping: count=128 size=67108864 bytes (64 MiB/rank), target=/pscratch/sd/n/nlewi26/hdf5_analysis_bench/magnitude_highfive_1.h5
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive
++ srun -N 1 -n 32 --ntasks-per-node=32 --output=client_magnitude_highfive_1.log --error=client_magnitude_highfive_1.err ./magnitude_highfive 16777216 /pscratch/sd/n/nlewi26/hdf5_analysis_bench/magnitude_highfive_1.h5
+srun: error: nid005209: tasks 0-31: Exited with exit code 127
+srun: Terminating StepId=59018590.0
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/magnitude/highfive/results_magnitude_highfive_59018590.csv

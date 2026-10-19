@@ -1,0 +1,257 @@
+method,n_ranks,segment,value_s
+ADIOS2,32,server write,25.200156
+ADIOS2,32,server compute curl,0.0
+ADIOS2,32,server compute mag,0.0
+ADIOS2,32,server compress,0.0
+ADIOS2,32,server close,0.007466
+ADIOS2,32,analysis read,0.0
+ADIOS2,32,analysis compute,0.0
+ADIOS2,32,analysis write,0.0
+ADIOS2,64,server write,25.229164
+ADIOS2,64,server compute curl,0.0
+ADIOS2,64,server compute mag,0.0
+ADIOS2,64,server compress,0.0
+ADIOS2,64,server close,0.006315
+ADIOS2,64,analysis read,0.0
+ADIOS2,64,analysis compute,0.0
+ADIOS2,64,analysis write,0.0
+ADIOS2,128,server write,25.568025
+ADIOS2,128,server compute curl,0.0
+ADIOS2,128,server compute mag,0.0
+ADIOS2,128,server compress,0.0
+ADIOS2,128,server close,0.005634
+ADIOS2,128,analysis read,0.0
+ADIOS2,128,analysis compute,0.0
+ADIOS2,128,analysis write,0.0
+ADIOS2,256,server write,25.426007
+ADIOS2,256,server compute curl,0.0
+ADIOS2,256,server compute mag,0.0
+ADIOS2,256,server compress,0.0
+ADIOS2,256,server close,0.006322
+ADIOS2,256,analysis read,0.0
+ADIOS2,256,analysis compute,0.0
+ADIOS2,256,analysis write,0.0
+ADIOS2,512,server write,25.45395
+ADIOS2,512,server compute curl,0.0
+ADIOS2,512,server compute mag,0.0
+ADIOS2,512,server compress,0.0
+ADIOS2,512,server close,0.005979
+ADIOS2,512,analysis read,0.0
+ADIOS2,512,analysis compute,0.0
+ADIOS2,512,analysis write,0.0
+ADIOS2,1024,server write,25.926568
+ADIOS2,1024,server compute curl,0.0
+ADIOS2,1024,server compute mag,0.0
+ADIOS2,1024,server compress,0.0
+ADIOS2,1024,server close,0.007354
+ADIOS2,1024,analysis read,0.0
+ADIOS2,1024,analysis compute,0.0
+ADIOS2,1024,analysis write,0.0
+ADIOS2,2048,server write,26.309632
+ADIOS2,2048,server compute curl,0.0
+ADIOS2,2048,server compute mag,0.0
+ADIOS2,2048,server compress,0.0
+ADIOS2,2048,server close,0.011095
+ADIOS2,2048,analysis read,0.0
+ADIOS2,2048,analysis compute,0.0
+ADIOS2,2048,analysis write,0.0
+ADIOS2,4096,server write,26.698356
+ADIOS2,4096,server compute curl,0.0
+ADIOS2,4096,server compute mag,0.0
+ADIOS2,4096,server compress,0.0
+ADIOS2,4096,server close,0.016739
+ADIOS2,4096,analysis read,0.0
+ADIOS2,4096,analysis compute,0.0
+ADIOS2,4096,analysis write,0.0
+PDC Post-hoc,32,server write,0.93902
+PDC Post-hoc,32,server compute curl,0.0
+PDC Post-hoc,32,server compute mag,0.0
+PDC Post-hoc,32,server compress,0.0
+PDC Post-hoc,32,server close,4.419939
+PDC Post-hoc,32,analysis read,1.466505
+PDC Post-hoc,32,analysis compute,0.460699
+PDC Post-hoc,32,analysis write,1.533888
+PDC Post-hoc,64,server write,0.732108
+PDC Post-hoc,64,server compute curl,0.0
+PDC Post-hoc,64,server compute mag,0.0
+PDC Post-hoc,64,server compress,0.0
+PDC Post-hoc,64,server close,8.024981
+PDC Post-hoc,64,analysis read,1.468711
+PDC Post-hoc,64,analysis compute,0.318289
+PDC Post-hoc,64,analysis write,1.633896
+PDC Post-hoc,128,server write,0.884271
+PDC Post-hoc,128,server compute curl,0.0
+PDC Post-hoc,128,server compute mag,0.0
+PDC Post-hoc,128,server compress,0.0
+PDC Post-hoc,128,server close,7.250308
+PDC Post-hoc,128,analysis read,1.465152
+PDC Post-hoc,128,analysis compute,0.363619
+PDC Post-hoc,128,analysis write,1.742835
+PDC Post-hoc,256,server write,1.105307
+PDC Post-hoc,256,server compute curl,0.0
+PDC Post-hoc,256,server compute mag,0.0
+PDC Post-hoc,256,server compress,0.0
+PDC Post-hoc,256,server close,7.91009
+PDC Post-hoc,256,analysis read,1.480369
+PDC Post-hoc,256,analysis compute,0.55487
+PDC Post-hoc,256,analysis write,1.818976
+PDC Post-hoc,512,server write,1.334798
+PDC Post-hoc,512,server compute curl,0.0
+PDC Post-hoc,512,server compute mag,0.0
+PDC Post-hoc,512,server compress,0.0
+PDC Post-hoc,512,server close,8.852212
+PDC Post-hoc,512,analysis read,1.484004
+PDC Post-hoc,512,analysis compute,0.546815
+PDC Post-hoc,512,analysis write,1.964962
+PDC Post-hoc,1024,server write,1.377766
+PDC Post-hoc,1024,server compute curl,0.0
+PDC Post-hoc,1024,server compute mag,0.0
+PDC Post-hoc,1024,server compress,0.0
+PDC Post-hoc,1024,server close,7.959528
+PDC Post-hoc,1024,analysis read,1.491883
+PDC Post-hoc,1024,analysis compute,0.767183
+PDC Post-hoc,1024,analysis write,2.030668
+PDC Post-hoc,2048,server write,1.899389
+PDC Post-hoc,2048,server compute curl,0.0
+PDC Post-hoc,2048,server compute mag,0.0
+PDC Post-hoc,2048,server compress,0.0
+PDC Post-hoc,2048,server close,8.271385
+PDC Post-hoc,2048,analysis read,1.491027
+PDC Post-hoc,2048,analysis compute,1.253265
+PDC Post-hoc,2048,analysis write,1.975113
+PDC Post-hoc,4096,server write,2.893156
+PDC Post-hoc,4096,server compute curl,0.0
+PDC Post-hoc,4096,server compute mag,0.0
+PDC Post-hoc,4096,server compress,0.0
+PDC Post-hoc,4096,server close,6.993334
+PDC Post-hoc,4096,analysis read,1.505143
+PDC Post-hoc,4096,analysis compute,2.182305
+PDC Post-hoc,4096,analysis write,2.034191
+DF-Eager+ZFP,32,server write,2.131096
+DF-Eager+ZFP,32,server compute curl,4.862715
+DF-Eager+ZFP,32,server compute mag,0.272638
+DF-Eager+ZFP,32,server compress,0.225185
+DF-Eager+ZFP,32,server close,0.0
+DF-Eager+ZFP,32,analysis read,0.0
+DF-Eager+ZFP,32,analysis compute,0.0
+DF-Eager+ZFP,32,analysis write,0.0
+DF-Eager+ZFP,64,server write,2.131096
+DF-Eager+ZFP,64,server compute curl,5.559186
+DF-Eager+ZFP,64,server compute mag,0.272638
+DF-Eager+ZFP,64,server compress,0.225185
+DF-Eager+ZFP,64,server close,0.0
+DF-Eager+ZFP,64,analysis read,0.0
+DF-Eager+ZFP,64,analysis compute,0.0
+DF-Eager+ZFP,64,analysis write,0.0
+DF-Eager+ZFP,128,server write,2.131096
+DF-Eager+ZFP,128,server compute curl,5.233592
+DF-Eager+ZFP,128,server compute mag,0.272638
+DF-Eager+ZFP,128,server compress,0.225185
+DF-Eager+ZFP,128,server close,0.0
+DF-Eager+ZFP,128,analysis read,0.0
+DF-Eager+ZFP,128,analysis compute,0.0
+DF-Eager+ZFP,128,analysis write,0.0
+DF-Eager+ZFP,256,server write,2.131096
+DF-Eager+ZFP,256,server compute curl,5.867564
+DF-Eager+ZFP,256,server compute mag,0.272638
+DF-Eager+ZFP,256,server compress,0.225185
+DF-Eager+ZFP,256,server close,0.0
+DF-Eager+ZFP,256,analysis read,0.0
+DF-Eager+ZFP,256,analysis compute,0.0
+DF-Eager+ZFP,256,analysis write,0.0
+DF-Eager+ZFP,512,server write,2.131096
+DF-Eager+ZFP,512,server compute curl,10.741981
+DF-Eager+ZFP,512,server compute mag,0.272638
+DF-Eager+ZFP,512,server compress,0.225185
+DF-Eager+ZFP,512,server close,0.0
+DF-Eager+ZFP,512,analysis read,0.0
+DF-Eager+ZFP,512,analysis compute,0.0
+DF-Eager+ZFP,512,analysis write,0.0
+DF-Eager+ZFP,1024,server write,2.131096
+DF-Eager+ZFP,1024,server compute curl,6.914655
+DF-Eager+ZFP,1024,server compute mag,0.272638
+DF-Eager+ZFP,1024,server compress,0.225185
+DF-Eager+ZFP,1024,server close,0.0
+DF-Eager+ZFP,1024,analysis read,0.0
+DF-Eager+ZFP,1024,analysis compute,0.0
+DF-Eager+ZFP,1024,analysis write,0.0
+DF-Eager+ZFP,2048,server write,2.131096
+DF-Eager+ZFP,2048,server compute curl,7.491873
+DF-Eager+ZFP,2048,server compute mag,0.272638
+DF-Eager+ZFP,2048,server compress,0.225185
+DF-Eager+ZFP,2048,server close,0.0
+DF-Eager+ZFP,2048,analysis read,0.0
+DF-Eager+ZFP,2048,analysis compute,0.0
+DF-Eager+ZFP,2048,analysis write,0.0
+DF-Eager+ZFP,4096,server write,2.131096
+DF-Eager+ZFP,4096,server compute curl,10.108649
+DF-Eager+ZFP,4096,server compute mag,0.272638
+DF-Eager+ZFP,4096,server compress,0.225185
+DF-Eager+ZFP,4096,server close,0.0
+DF-Eager+ZFP,4096,analysis read,0.0
+DF-Eager+ZFP,4096,analysis compute,0.0
+DF-Eager+ZFP,4096,analysis write,0.0
+DF-Eager,32,server write,2.131096
+DF-Eager,32,server compute curl,4.537005
+DF-Eager,32,server compute mag,0.272638
+DF-Eager,32,server compress,0.0
+DF-Eager,32,server close,0.0
+DF-Eager,32,analysis read,0.0
+DF-Eager,32,analysis compute,0.0
+DF-Eager,32,analysis write,0.0
+DF-Eager,64,server write,2.131096
+DF-Eager,64,server compute curl,4.627215
+DF-Eager,64,server compute mag,0.272638
+DF-Eager,64,server compress,0.0
+DF-Eager,64,server close,0.0
+DF-Eager,64,analysis read,0.0
+DF-Eager,64,analysis compute,0.0
+DF-Eager,64,analysis write,0.0
+DF-Eager,128,server write,2.131096
+DF-Eager,128,server compute curl,4.014835
+DF-Eager,128,server compute mag,0.272638
+DF-Eager,128,server compress,0.0
+DF-Eager,128,server close,0.0
+DF-Eager,128,analysis read,0.0
+DF-Eager,128,analysis compute,0.0
+DF-Eager,128,analysis write,0.0
+DF-Eager,256,server write,2.131096
+DF-Eager,256,server compute curl,4.697608
+DF-Eager,256,server compute mag,0.272638
+DF-Eager,256,server compress,0.0
+DF-Eager,256,server close,0.0
+DF-Eager,256,analysis read,0.0
+DF-Eager,256,analysis compute,0.0
+DF-Eager,256,analysis write,0.0
+DF-Eager,512,server write,2.131096
+DF-Eager,512,server compute curl,4.185351
+DF-Eager,512,server compute mag,0.272638
+DF-Eager,512,server compress,0.0
+DF-Eager,512,server close,0.0
+DF-Eager,512,analysis read,0.0
+DF-Eager,512,analysis compute,0.0
+DF-Eager,512,analysis write,0.0
+DF-Eager,1024,server write,2.131096
+DF-Eager,1024,server compute curl,6.268488
+DF-Eager,1024,server compute mag,0.272638
+DF-Eager,1024,server compress,0.0
+DF-Eager,1024,server close,0.0
+DF-Eager,1024,analysis read,0.0
+DF-Eager,1024,analysis compute,0.0
+DF-Eager,1024,analysis write,0.0
+DF-Eager,2048,server write,2.131096
+DF-Eager,2048,server compute curl,6.571758
+DF-Eager,2048,server compute mag,0.272638
+DF-Eager,2048,server compress,0.0
+DF-Eager,2048,server close,0.0
+DF-Eager,2048,analysis read,0.0
+DF-Eager,2048,analysis compute,0.0
+DF-Eager,2048,analysis write,0.0
+DF-Eager,4096,server write,2.131096
+DF-Eager,4096,server compute curl,8.613051
+DF-Eager,4096,server compute mag,0.272638
+DF-Eager,4096,server compress,0.0
+DF-Eager,4096,server close,0.0
+DF-Eager,4096,analysis read,0.0
+DF-Eager,4096,analysis compute,0.0
+DF-Eager,4096,analysis write,0.0

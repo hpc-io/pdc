@@ -2,6 +2,8 @@
 #define PDC_SERVER_REGION_REQUEST_HANDLER_H
 
 #include "pdc_timing.h"
+#include "pdc_tf_server.h"
+#include "pdc_an_server.h"
 
 hg_return_t
 transfer_request_all_bulk_transfer_read_cb2(const struct hg_cb_info *info)
@@ -61,7 +63,6 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     handle_info         = HG_Get_info(local_bulk_args->handle);
     request_data.n_objs = local_bulk_args->in.n_objs;
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_READ);
-    // print_bulk_data(&request_data);
 
     remote_reg_info = (struct pdc_region_info *)PDC_malloc(sizeof(struct pdc_region_info));
     total_mem_size  = 0;
@@ -92,8 +93,10 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
         remote_reg_info->size   = request_data.remote_length[i];
 
         mem_size = request_data.unit[i];
+        LOG_DEBUG("Unit %d\n", request_data.unit[i]);
         for (j = 0; j < request_data.remote_ndim[i]; ++j) {
             mem_size *= request_data.remote_length[i][j];
+            LOG_DEBUG("Remote length %d\n", remote_reg_info->offset[i]);
         }
 
 #ifdef PDC_SERVER_CACHE
@@ -105,19 +108,11 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
                                        request_data.obj_dims[i], remote_reg_info, (void *)ptr,
                                        request_data.unit[i], 0);
 #endif
-#if 0
-        LOG_ERROR("server read array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]); uint64_t k; 
-        for ( k = 0; k < remote_reg_info->size[0]; ++k ) {
-            LOG_ERROR("%d,", *(int*)(ptr + sizeof(int) * k));
-        }
-        LOG_ERROR("\n");
-#endif
         ptr += mem_size;
     }
 #ifndef PDC_SERVER_CACHE
-    for (i = 0; i < request_data.n_objs; ++i) {
+    for (i = 0; i < request_data.n_objs; ++i)
         PDC_Server_unregister_obj_region_by_pointer(temp_ptrs[i], 1);
-    }
     temp_ptrs = (data_server_region_t **)PDC_free(temp_ptrs);
 #endif
 
@@ -138,7 +133,7 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
     ret = HG_Bulk_create(handle_info->hg_class, 1, &(local_bulk_args2->data_buf), &total_mem_size,
                          HG_BULK_READWRITE, &(local_bulk_args2->bulk_handle));
     if (ret != HG_SUCCESS) {
-        LOG_ERROR("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)\n");
+        LOG_ERROR("Error with HG_Bulk_create\n");
     }
 
     // This is the actual data transfer. When transfer is finished, we are heading our way to the function
@@ -147,9 +142,8 @@ transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)
         HG_Bulk_transfer(handle_info->context, transfer_request_all_bulk_transfer_read_cb2, local_bulk_args2,
                          HG_BULK_PUSH, handle_info->addr, local_bulk_args->in.local_bulk_handle, 0,
                          local_bulk_args2->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
-    if (ret != HG_SUCCESS) {
-        LOG_ERROR("Error at transfer_request_all_bulk_transfer_read_cb(const struct hg_cb_info *info)");
-    }
+    if (ret != HG_SUCCESS)
+        LOG_ERROR("Error with HG_Bulk_transfer: %d\n", ret);
     // pointers in request_data are freed in the next call back function
     local_bulk_args->data_buf = (void *)PDC_free(local_bulk_args->data_buf);
     remote_reg_info           = (struct pdc_region_info *)PDC_free(remote_reg_info);
@@ -188,7 +182,6 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     remote_reg_info     = (struct pdc_region_info *)PDC_malloc(sizeof(struct pdc_region_info));
     request_data.n_objs = local_bulk_args->in.n_objs;
     parse_bulk_data(local_bulk_args->data_buf, &request_data, PDC_WRITE);
-    // print_bulk_data(&request_data);
 
 #ifndef PDC_SERVER_CACHE
     data_server_region_t **temp_ptrs =
@@ -211,15 +204,6 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
         PDC_Server_transfer_request_io(request_data.obj_id[i], request_data.obj_ndim[i],
                                        request_data.obj_dims[i], remote_reg_info,
                                        (void *)request_data.data_buf[i], request_data.unit[i], 1);
-#endif
-
-#if 0
-        uint64_t j;
-        LOG_ERROR("server write array, offset = %lu, size = %lu:", request_data.remote_offset[i][0], request_data.remote_length[i][0]);
-        for ( j = 0; j < remote_reg_info->size[0]; ++j ) {
-            LOG_ERROR("%d,", *(int*)(request_data.data_buf[i] + sizeof(int) * j));
-        }
-        LOG_ERROR("\n");
 #endif
         pthread_mutex_lock(&transfer_request_status_mutex);
         PDC_finish_request(local_bulk_args->transfer_request_id[i]);
@@ -250,7 +234,6 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
     pdc_server_timings->PDCreg_transfer_request_inner_write_all_bulk_rpc += end - start;
     pdc_timestamp_register(pdc_transfer_request_inner_write_all_bulk_timestamps, start, end);
 #endif
-
     FUNC_LEAVE(ret);
 }
 
@@ -319,7 +302,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     FUNC_ENTER(NULL);
 
     struct transfer_request_local_bulk_args *local_bulk_args = info->arg;
-    hg_return_t                              ret             = HG_SUCCESS;
+    hg_return_t                              ret_value       = HG_SUCCESS;
     struct pdc_region_info *                 remote_reg_info;
     uint64_t                                 obj_dims[3];
 
@@ -345,24 +328,26 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
                          remote_reg_info->ndim, remote_reg_info->ndim);
     PDC_copy_region_desc((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
                          remote_reg_info->ndim);
-/*
-    printf("Server transfer request at write branch, index 1 value = %d\n",
-           *((int *)(local_bulk_args->data_buf + sizeof(int))));
-*/
+
 #ifdef PDC_SERVER_CACHE
-    PDC_transfer_request_data_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
-                                        remote_reg_info, (void *)local_bulk_args->data_buf,
-                                        local_bulk_args->in.remote_unit);
+    if (PDC_transfer_request_data_write_out(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim,
+                                            obj_dims, remote_reg_info, (void *)local_bulk_args->data_buf,
+                                            local_bulk_args->in.remote_unit) != SUCCEED) {
+        PGOTO_ERROR(HG_OTHER_ERROR, "Error with PDC_transfer_request_data_write_out");
+    }
 #else
-    PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
-                                   remote_reg_info, (void *)local_bulk_args->data_buf,
-                                   local_bulk_args->in.remote_unit, 1);
+    if (PDC_Server_transfer_request_io(local_bulk_args->in.obj_id, local_bulk_args->in.obj_ndim, obj_dims,
+                                       remote_reg_info, (void *)local_bulk_args->data_buf,
+                                       local_bulk_args->in.remote_unit, 1) != SUCCEED) {
+        PGOTO_ERROR(HG_OTHER_ERROR, "Error with PDC_Server_transfer_request_io");
+    }
 #endif
+
+done:
     pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_finish_request(local_bulk_args->transfer_request_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    local_bulk_args->data_buf = (void *)PDC_free(local_bulk_args->data_buf);
-    remote_reg_info           = (struct pdc_region_info *)PDC_free(remote_reg_info);
+    remote_reg_info = (struct pdc_region_info *)PDC_free(remote_reg_info);
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
 
@@ -371,8 +356,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
     pdc_server_timings->PDCreg_transfer_request_inner_write_bulk_rpc += end - start;
     pdc_timestamp_register(pdc_transfer_request_inner_write_bulk_timestamps, start, end);
 #endif
-
-    FUNC_LEAVE(ret);
+    FUNC_LEAVE(ret_value);
 }
 
 hg_return_t
@@ -610,7 +594,6 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
         pdc_timestamp_register(pdc_transfer_request_start_all_write_timestamps, start, end);
     }
 #endif
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -732,9 +715,6 @@ HG_TEST_RPC_CB(transfer_request_metadata_query2, handle)
     FUNC_LEAVE(ret_value);
 }
 
-/* static hg_return_t */
-
-// transfer_request_cb(hg_handle_t handle)
 HG_TEST_RPC_CB(transfer_request, handle)
 {
     FUNC_ENTER(NULL);
@@ -757,13 +737,10 @@ HG_TEST_RPC_CB(transfer_request, handle)
     HG_Get_input(handle, &in);
 
     info = HG_Get_info(handle);
-
     total_mem_size =
         PDC_get_region_desc_size_bytes(in.remote_region.count, in.remote_unit, in.remote_region.ndim);
 
-    /* pthread_mutex_lock(&transfer_request_id_mutex); */
     out.metadata_id = PDC_transfer_request_id_register();
-    /* pthread_mutex_unlock(&transfer_request_id_mutex); */
     pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_commit_request(out.metadata_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);
@@ -781,22 +758,69 @@ HG_TEST_RPC_CB(transfer_request, handle)
     out.ret   = 1;
     ret_value = HG_Respond(handle, NULL, NULL, &out);
     if (in.access_type == PDC_WRITE) {
+        if (in.pdc_tf_pkg.json_filepath != NULL && strlen(in.pdc_tf_pkg.json_filepath) > 0) {
+            LOG_DEBUG("RPC recieved region transfer with attached graph\n");
+
+            LOG_DEBUG("Region transfer json filepath: %s\n", in.pdc_tf_pkg.json_filepath);
+            LOG_DEBUG("Region transfer current state: %s\n", in.pdc_tf_pkg.cur_state);
+            LOG_DEBUG("Region transfer client state: %s\n", in.pdc_tf_pkg.client_state);
+            LOG_DEBUG("Region transfer stored state: %s\n", in.pdc_tf_pkg.store_state);
+
+            if (PDCtf_store_json_mapping(in.obj_id, in.pdc_tf_pkg.json_filepath, in.pdc_tf_pkg.cur_state,
+                                         in.pdc_tf_pkg.client_state, in.pdc_tf_pkg.store_state,
+                                         in.remote_region.start, in.remote_region.count,
+                                         in.remote_region.ndim, in.pdc_tf_pkg.pdc_var_type) != SUCCEED) {
+                PGOTO_ERROR(HG_OTHER_ERROR, "Failed to PDCtf_store_json_mapping\n");
+            }
+        }
+        else {
+            in.pdc_tf_pkg.json_filepath = NULL;
+            in.pdc_tf_pkg.cur_state     = NULL;
+            in.pdc_tf_pkg.store_state   = NULL;
+        }
+
+        if (in.an_pkg.json_filepath != NULL && strlen(in.an_pkg.json_filepath) > 0) {
+            LOG_DEBUG("RPC received region transfer with attached analysis graph (%u states)\n",
+                      in.an_pkg.num_entries);
+
+            for (uint32_t an_i = 0; an_i < in.an_pkg.num_entries; an_i++) {
+                pdc_an_pkg_entry_t *an_e = &in.an_pkg.entries[an_i];
+                if (an_e->state_name == NULL || strlen(an_e->state_name) == 0)
+                    continue;
+
+                if (PDCan_store_attach_mapping(in.an_pkg.json_filepath, an_e->state_name,
+                                               (pdcid_t)an_e->obj_id, an_e->offset, an_e->size, an_e->ndim,
+                                               an_e->obj_ndim, an_e->obj_dims,
+                                               (pdc_var_type_t)an_e->pdc_var_type) != SUCCEED) {
+                    PGOTO_ERROR(HG_OTHER_ERROR, "Failed to PDCan_store_attach_mapping\n");
+                }
+                if (an_e->tf_json_filepath != NULL && strlen(an_e->tf_json_filepath) > 0) {
+                    if (PDCtf_store_json_mapping(an_e->obj_id, an_e->tf_json_filepath, an_e->tf_client_state,
+                                                 an_e->tf_client_state, an_e->tf_store_state, an_e->offset,
+                                                 an_e->size, an_e->ndim, an_e->pdc_var_type) != SUCCEED) {
+                        PGOTO_ERROR(HG_OTHER_ERROR,
+                                    "Failed to PDCtf_store_json_mapping (analysis composition)\n");
+                    }
+                }
+            }
+        }
+
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    (const hg_size_t *)&(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
-        if (ret_value != HG_SUCCESS) {
-            LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
-        }
+        if (ret_value != HG_SUCCESS)
+            PGOTO_ERROR(ret_value, "Error with HG_Bulk_create");
 
         // This is the actual data transfer. When transfer is finished, we are heading our way to the function
         // transfer_request_bulk_transfer_cb.
         ret_value = HG_Bulk_transfer(info->context, transfer_request_bulk_transfer_write_cb, local_bulk_args,
                                      HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
                                      local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
+        if (ret_value != HG_SUCCESS)
+            PGOTO_ERROR(ret_value, "Error with HG_Bulk_transfer");
     }
     else {
-        remote_reg_info = (struct pdc_region_info *)PDC_malloc(sizeof(struct pdc_region_info));
-
+        remote_reg_info         = (struct pdc_region_info *)PDC_malloc(sizeof(struct pdc_region_info));
         remote_reg_info->ndim   = (in.remote_region).ndim;
         remote_reg_info->offset = (uint64_t *)PDC_malloc(remote_reg_info->ndim * sizeof(uint64_t));
         remote_reg_info->size   = (uint64_t *)PDC_malloc(remote_reg_info->ndim * sizeof(uint64_t));
@@ -808,31 +832,83 @@ HG_TEST_RPC_CB(transfer_request, handle)
         PDC_copy_region_desc((local_bulk_args->in).obj_dims, obj_dims, remote_reg_info->ndim,
                              remote_reg_info->ndim);
 
+        if (in.an_pkg.json_filepath != NULL && strlen(in.an_pkg.json_filepath) > 0) {
+            LOG_DEBUG("RPC received region read with attached analysis graph (%u states)\n",
+                      in.an_pkg.num_entries);
+
+            /* Must register before the read below: this is how an output
+             * state's binding reaches the server at all (an output is
+             * never client-written, only ever read -- see
+             * docs/design/region_analysis.md), and PDC_Server_transfer_request_io's
+             * read-triggered hook (PDC_Server_data_io_region_analysis)
+             * only recognizes this region as a bound analysis output once
+             * the binding below exists. */
+            for (uint32_t an_i = 0; an_i < in.an_pkg.num_entries; an_i++) {
+                pdc_an_pkg_entry_t *an_e = &in.an_pkg.entries[an_i];
+                if (an_e->state_name == NULL || strlen(an_e->state_name) == 0)
+                    continue;
+
+                if (PDCan_store_attach_mapping(in.an_pkg.json_filepath, an_e->state_name,
+                                               (pdcid_t)an_e->obj_id, an_e->offset, an_e->size, an_e->ndim,
+                                               an_e->obj_ndim, an_e->obj_dims,
+                                               (pdc_var_type_t)an_e->pdc_var_type) != SUCCEED) {
+                    PGOTO_ERROR(HG_OTHER_ERROR, "Failed to PDCan_store_attach_mapping\n");
+                }
+                if (an_e->tf_json_filepath != NULL && strlen(an_e->tf_json_filepath) > 0) {
+                    /* This branch handles READ RPCs (see the enclosing
+                     * if (in.access_type == PDC_WRITE) at the top of this
+                     * function) -- cur_state must be tf_store_state here,
+                     * matching PDC_Client_transfer_request's own
+                     * access_type == PDC_READ branch
+                     * (pdc_client_connect.c), not tf_client_state (that's
+                     * the WRITE branch's convention, a few lines up in
+                     * this same function). Passing tf_client_state here
+                     * made cur_state ("decompressed") equal
+                     * desired_state/client_state ("decompressed") in
+                     * PDC_Server_data_io_region_per_file_transformations,
+                     * so it looked like no transform was needed and
+                     * PDCtf_exec_graph (the decompression) never ran --
+                     * even though PDCan_exec_graph's write had genuinely
+                     * left the data compressed on disk. */
+                    if (PDCtf_store_json_mapping(an_e->obj_id, an_e->tf_json_filepath, an_e->tf_store_state,
+                                                 an_e->tf_client_state, an_e->tf_store_state, an_e->offset,
+                                                 an_e->size, an_e->ndim, an_e->pdc_var_type) != SUCCEED) {
+                        PGOTO_ERROR(HG_OTHER_ERROR,
+                                    "Failed to PDCtf_store_json_mapping (analysis composition)\n");
+                    }
+                }
+            }
+        }
+
 #ifdef PDC_SERVER_CACHE
-        PDC_transfer_request_data_read_from(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
-                                            (void *)local_bulk_args->data_buf, in.remote_unit);
+        if (PDC_transfer_request_data_read_from(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
+                                                (void *)local_bulk_args->data_buf,
+                                                in.remote_unit) != SUCCEED) {
+            PGOTO_ERROR(HG_OTHER_ERROR, "Error with PDC_transfer_request_data_read_from");
+        }
 #else
-        PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
-                                       (void *)local_bulk_args->data_buf, in.remote_unit, 0);
+        if (PDC_Server_transfer_request_io(in.obj_id, in.obj_ndim, obj_dims, remote_reg_info,
+                                           (void *)local_bulk_args->data_buf, in.remote_unit, 0) != SUCCEED) {
+            PGOTO_ERROR(HG_OTHER_ERROR, "Error with PDC_Server_transfer_request_io");
+        }
 #endif
         ret_value = HG_Bulk_create(info->hg_class, 1, &(local_bulk_args->data_buf),
                                    (const hg_size_t *)&(local_bulk_args->total_mem_size), HG_BULK_READWRITE,
                                    &(local_bulk_args->bulk_handle));
-        if (ret_value != HG_SUCCESS) {
-            LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
-        }
+        if (ret_value != HG_SUCCESS)
+            PGOTO_ERROR(ret_value, "Error with HG_Bulk_create");
 
-        // This is the actual data transfer. When transfer is finished, we are heading our way to the function
-        // transfer_request_bulk_transfer_cb.
+        // This is the actual data transfer
         ret_value = HG_Bulk_transfer(info->context, transfer_request_bulk_transfer_read_cb, local_bulk_args,
                                      HG_BULK_PUSH, info->addr, in.local_bulk_handle, 0,
                                      local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
+        if (ret_value != HG_SUCCESS)
+            PGOTO_ERROR(ret_value, "Error with HG_Bulk_transfer");
+
         remote_reg_info = (struct pdc_region_info *)PDC_free(remote_reg_info);
     }
-    if (ret_value != HG_SUCCESS) {
-        LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");
-    }
 
+done:
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -847,7 +923,6 @@ HG_TEST_RPC_CB(transfer_request, handle)
         pdc_timestamp_register(pdc_transfer_request_start_write_timestamps, start, end);
     }
 #endif
-
     FUNC_LEAVE(ret_value);
 }
 

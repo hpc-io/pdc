@@ -1,0 +1,88 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ rm -rf /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/pdc_data
++ popd
++ srun --overlap -N 2 -n 4 --ntasks-per-node=2 --error=server_curl_eager_compress_2.err --output=server_curl_eager_compress_2.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ srun --overlap -N 2 -n 64 --ntasks-per-node=32 --output=client_curl_eager_compress_2.log --error=client_curl_eager_compress_2.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_eager "$NX" "$NY" "$NZ_PER_RANK" "$COMPRESS"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
+++ grep '^curl_eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin/client_curl_eager_compress_2.log
++ lines='curl_eager,0,64,256,256,64,1,0.122868,6.614076,0.757403,7.494347,0
+curl_eager,1,64,256,256,64,1,0.122868,5.698401,0.688085,6.509354,0
+curl_eager,2,64,256,256,64,1,0.122868,5.738501,0.685867,6.547236,0'
++ '[' -z 'curl_eager,0,64,256,256,64,1,0.122868,6.614076,0.757403,7.494347,0
+curl_eager,1,64,256,256,64,1,0.122868,5.698401,0.688085,6.509354,0
+curl_eager,2,64,256,256,64,1,0.122868,5.738501,0.685867,6.547236,0' ']'
++ echo 'curl_eager,0,64,256,256,64,1,0.122868,6.614076,0.757403,7.494347,0
+curl_eager,1,64,256,256,64,1,0.122868,5.698401,0.688085,6.509354,0
+curl_eager,2,64,256,256,64,1,0.122868,5.738501,0.685867,6.547236,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ srun --overlap -N 2 -n 4 --ntasks-per-node=2 --error=close_server_curl_eager_compress_2.err --output=close_server_curl_eager_compress_2.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ sleep 2
+[servers_per_node=2] Data size check (COMPRESS=1, vorticity_magnitude compressed -- actual < expected uncompressed is correct): expected=35433480192 bytes, actual=35433914368 bytes
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ rm -rf /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/pdc_data
++ popd
++ srun --overlap -N 2 -n 8 --ntasks-per-node=4 --error=server_curl_eager_compress_2.err --output=server_curl_eager_compress_2.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ srun --overlap -N 2 -n 64 --ntasks-per-node=32 --output=client_curl_eager_compress_2.log --error=client_curl_eager_compress_2.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_eager "$NX" "$NY" "$NZ_PER_RANK" "$COMPRESS"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
+++ grep '^curl_eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin/client_curl_eager_compress_2.log
++ lines='curl_eager,0,64,256,256,64,1,0.136600,3.896730,0.462603,4.495933,0
+curl_eager,1,64,256,256,64,1,0.136600,3.294335,0.461797,3.892732,0
+curl_eager,2,64,256,256,64,1,0.136600,3.261346,0.439509,3.837456,0'
++ '[' -z 'curl_eager,0,64,256,256,64,1,0.136600,3.896730,0.462603,4.495933,0
+curl_eager,1,64,256,256,64,1,0.136600,3.294335,0.461797,3.892732,0
+curl_eager,2,64,256,256,64,1,0.136600,3.261346,0.439509,3.837456,0' ']'
++ echo 'curl_eager,0,64,256,256,64,1,0.136600,3.896730,0.462603,4.495933,0
+curl_eager,1,64,256,256,64,1,0.136600,3.294335,0.461797,3.892732,0
+curl_eager,2,64,256,256,64,1,0.136600,3.261346,0.439509,3.837456,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ srun --overlap -N 2 -n 8 --ntasks-per-node=4 --error=close_server_curl_eager_compress_2.err --output=close_server_curl_eager_compress_2.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ sleep 2
+[servers_per_node=4] Data size check (COMPRESS=1, vorticity_magnitude compressed -- actual < expected uncompressed is correct): expected=35433480192 bytes, actual=35434258432 bytes
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ rm -rf /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/pdc_data
++ popd
++ srun --overlap -N 2 -n 16 --ntasks-per-node=8 --error=server_curl_eager_compress_2.err --output=server_curl_eager_compress_2.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ srun --overlap -N 2 -n 64 --ntasks-per-node=32 --output=client_curl_eager_compress_2.log --error=client_curl_eager_compress_2.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_eager "$NX" "$NY" "$NZ_PER_RANK" "$COMPRESS"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
+++ grep '^curl_eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin/client_curl_eager_compress_2.log
++ lines='curl_eager,0,64,256,256,64,1,0.138285,3.294453,0.375972,3.808709,0
+curl_eager,1,64,256,256,64,1,0.138285,1.800980,0.364443,2.303708,0
+curl_eager,2,64,256,256,64,1,0.138285,1.708640,0.359104,2.206029,0'
++ '[' -z 'curl_eager,0,64,256,256,64,1,0.138285,3.294453,0.375972,3.808709,0
+curl_eager,1,64,256,256,64,1,0.138285,1.800980,0.364443,2.303708,0
+curl_eager,2,64,256,256,64,1,0.138285,1.708640,0.359104,2.206029,0' ']'
++ echo 'curl_eager,0,64,256,256,64,1,0.138285,3.294453,0.375972,3.808709,0
+curl_eager,1,64,256,256,64,1,0.138285,1.800980,0.364443,2.303708,0
+curl_eager,2,64,256,256,64,1,0.138285,1.708640,0.359104,2.206029,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/../../../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ srun --overlap -N 2 -n 16 --ntasks-per-node=8 --error=close_server_curl_eager_compress_2.err --output=close_server_curl_eager_compress_2.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc
++ sleep 2
+[servers_per_node=8] Data size check (COMPRESS=1, vorticity_magnitude compressed -- actual < expected uncompressed is correct): expected=35433480192 bytes, actual=35434946560 bytes
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis/curl/pdc/10_07_2026-59503624/results_curl_eager_compress_59503624.csv

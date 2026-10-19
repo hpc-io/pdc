@@ -1,0 +1,13 @@
+[19:06:53.412966] [WARNING] [pdc_server.c:1184] PDC_SERVER[0]: Checkpoint start
+[19:06:53.491386] [WARNING] [pdc_server.c:1376] PDC_SERVER[0]: Writing checkpoint transformations start
+[19:06:53.493013] [WARNING] [pdc_server.c:1558] PDC_SERVER[0]: Writing checkpoint transformations done
+[19:06:53.493254] [WARNING] [pdc_server.c:1595] PDC_SERVER[0]: Rank[ALL]: Total checkpoint time = 0.080160
+[19:06:53.494330] [WARNING] [pdc_server.c:1602] PDC_SERVER[0]: Checkpointing done
+[19:06:53.494385] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=0, name=open, avg=0.000656, total=0.839174, count=1280
+[19:06:53.494395] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=1, name=close, avg=0.000289, total=0.369536, count=1280
+[19:06:53.494400] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=3, name=write, avg=0.038098, total=48.765180, count=1280
+[19:06:53.494406] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=4, name=total_graph_exec, avg=0.047776, total=107.018931, count=2240
+[19:06:53.494403] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=0, name=open, avg=0.000833, total=1.066321, count=1280
+[19:06:53.494460] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=1, name=close, avg=0.000334, total=0.427829, count=1280
+[19:06:53.494466] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=3, name=write, avg=0.038062, total=48.719254, count=1280
+[19:06:53.494471] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=4, name=total_graph_exec, avg=0.046351, total=103.826282, count=2240

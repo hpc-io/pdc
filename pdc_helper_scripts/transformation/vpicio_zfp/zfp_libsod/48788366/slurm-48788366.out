@@ -1,0 +1,68 @@
+NUM_NODES=1
+DATA_SERVERS_PER_NODE=1
+CLIENTS_PER_NODE=32
+SERVER_TOTAL_TASKS=1
+CLIENT_TOTAL_TASKS=32
+removing old logs
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ rm -rf /pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data
++ popd
++ srun -N 1 -n 1 --ntasks-per-node=1 --error=server_output_vpicio_zfp_libsod_1.err --output=server_output_vpicio_zfp_libsod_1.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m0.010s
+user	0m0.000s
+sys	0m0.009s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 1 -n 32 --ntasks-per-node=32 --output=client_output_vpicio_zfp_libsod_1.log --error=client_output_vpicio_zfp_libsod_1.err ./vpicio_mts 8388608 5 40 zfp_libsod
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	3m56.698s
+user	0m0.049s
+sys	0m0.053s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 1 -n 1 --ntasks-per-node=1 --error=close_server_output_vpicio_zfp_libsod_1.err --output=close_server_output_vpicio_zfp_libsod_1.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m53.313s
+user	0m0.047s
+sys	0m0.047s
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 1 -n 1 --ntasks-per-node=1 --error=server_output_bdcats_zfp_libsod_1.err --output=server_output_bdcats_zfp_libsod_1.log ./pdc_server restart
+
+real	0m0.006s
+user	0m0.000s
+sys	0m0.006s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 1 -n 32 --ntasks-per-node=32 --output=client_output_bdcats_zfp_libsod_1.log --error=client_output_bdcats_zfp_libsod_1.err ./bdcats_mts 8388608 5 40 zfp_libsod
+srun: Step created for StepId=48788366.4
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	4m7.141s
+user	0m0.049s
+sys	0m0.041s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 1 -n 1 --ntasks-per-node=1 --error=close_server_output_bdcats_zfp_libsod_1.err --output=close_server_output_bdcats_zfp_libsod_1.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m3.458s
+user	0m0.053s
+sys	0m0.023s

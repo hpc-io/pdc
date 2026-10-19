@@ -39,18 +39,22 @@
 #include "pdc_cont.h"
 #include "pdc_region.h"
 #include "pdc_interface.h"
-#include "pdc_analysis_pkg.h"
-#include "pdc_transforms_common.h"
 #include "pdc_client_connect.h"
 #include "pdc_logger.h"
 #include "pdc_timing.h"
 #include "pdc_malloc.h"
+#include "pdc_mercury_auth.h"
 
 #include "mercury.h"
 #include "mercury_macros.h"
+#include "mercury_proc_string.h"
 
 #include "string_utils.h"
 #include "dart_core.h"
+#include "pdc_tf.h"
+#include "pdc_tf_common.h"
+#include "pdc_an.h"
+#include "pdc_an_common.h"
 #include "timer_utils.h"
 #include "query_utils.h"
 
@@ -114,6 +118,97 @@ static hg_class_t *  send_class_g       = NULL;
 static hg_context_t *send_context_g     = NULL;
 int                  query_id_g         = 0;
 
+static pbool_t
+PDC_is_cxi_mercury_transport(const char *hg_transport)
+{
+    return (hg_transport != NULL &&
+            (strcmp(hg_transport, "ofi+cxi") == 0 || strcmp(hg_transport, "cxi") == 0));
+}
+
+static pbool_t
+PDC_is_perlmutter_system(void)
+{
+    const char *nersc_host = getenv("NERSC_HOST");
+
+    return (nersc_host != NULL && strcmp(nersc_host, "perlmutter") == 0);
+}
+
+static int
+PDC_get_local_process_rank(int fallback_rank)
+{
+    const char *env_names[] = {"SLURM_LOCALID", "MPI_LOCALRANKID", "PMI_LOCAL_RANK",
+                               "OMPI_COMM_WORLD_LOCAL_RANK"};
+    size_t      i;
+
+    for (i = 0; i < sizeof(env_names) / sizeof(env_names[0]); i++) {
+        char *endptr     = NULL;
+        char *env_value  = getenv(env_names[i]);
+        long  local_rank = 0;
+
+        if (env_value == NULL || env_value[0] == '\0')
+            continue;
+
+        local_rank = strtol(env_value, &endptr, 10);
+        if (endptr != env_value && *endptr == '\0' && local_rank >= 0 && local_rank <= INT_MAX)
+            return (int)local_rank;
+    }
+
+    return fallback_rank;
+}
+
+static void
+PDC_get_default_cxi_endpoint(char *host_buf, size_t host_buf_len, int fallback_rank, int pid_base)
+{
+    const char *nic_name   = getenv("HG_CXI_NIC");
+    int         local_rank = PDC_get_local_process_rank(fallback_rank);
+    int         pid_offset = local_rank % 255;
+    int         pid        = pid_base + pid_offset;
+
+    if (nic_name == NULL || nic_name[0] == '\0')
+        nic_name = "cxi0";
+
+    snprintf(host_buf, host_buf_len, "%s:%d", nic_name, pid);
+}
+
+static const char *
+PDC_get_default_mercury_transport(void)
+{
+    return (PDC_is_perlmutter_system() == TRUE) ? "ofi+cxi" : "ofi+tcp";
+}
+
+static perr_t
+PDC_build_mercury_na_info_string(const char *hg_transport, int port, int cxi_pid_base, char *na_info_string,
+                                 size_t na_info_string_len, char *host_buf, size_t host_buf_len)
+{
+    perr_t      ret_value = SUCCEED;
+    const char *hostname  = getenv("HG_HOST");
+
+    if (hostname == NULL || hostname[0] == '\0') {
+        if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE) {
+            PDC_get_default_cxi_endpoint(host_buf, host_buf_len, pdc_client_mpi_rank_g, cxi_pid_base);
+            hostname = host_buf;
+            if (pdc_client_mpi_rank_g == 0)
+                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+        }
+        else {
+            memset(host_buf, 0, host_buf_len);
+            gethostname(host_buf, host_buf_len - 1);
+            hostname = host_buf;
+            if (pdc_client_mpi_rank_g == 0)
+                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+        }
+    }
+    else
+        LOG_INFO("Environment variable HG_HOST was set\n");
+
+    if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE)
+        snprintf(na_info_string, na_info_string_len, "%s://%s", hg_transport, hostname);
+    else
+        snprintf(na_info_string, na_info_string_len, "%s://%s:%d", hg_transport, hostname, port);
+
+    return ret_value;
+}
+
 // flags for RPC request and Bulk transfer.
 // When a work is put in the queue, increase todo_g by 1
 // When a work is done and popped from the queue, decrease (todo_g) by 1.
@@ -148,9 +243,7 @@ static hg_id_t metadata_del_kvtag_register_id_g;
 static hg_id_t metadata_get_kvtag_register_id_g;
 static hg_id_t region_lock_register_id_g;
 static hg_id_t region_release_register_id_g;
-static hg_id_t transform_region_release_register_id_g;
-static hg_id_t region_transform_release_register_id_g;
-static hg_id_t region_analysis_release_register_id_g;
+
 static hg_id_t data_server_read_register_id_g;
 static hg_id_t data_server_read_check_register_id_g;
 static hg_id_t data_server_write_check_register_id_g;
@@ -158,6 +251,7 @@ static hg_id_t data_server_write_register_id_g;
 static hg_id_t server_checkpoint_rpc_register_id_g;
 static hg_id_t send_shm_register_id_g;
 static hg_id_t send_rpc_register_id_g;
+static hg_id_t an_attach_region_rpc_register_id_g;
 
 // bulk
 static hg_id_t query_partial_register_id_g;
@@ -371,7 +465,7 @@ PDC_Client_read_server_addr_from_file()
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
-    int    max_tries = 9, sleeptime = 1;
+    int    max_tries = 9, sleeptime = 5;
     int    i = 0, is_server_ready = 0;
     char * p;
     FILE * na_config = NULL;
@@ -393,7 +487,6 @@ PDC_Client_read_server_addr_from_file()
                         "waiting %d seconds\n",
                         config_fname, sleeptime);
             sleep(sleeptime);
-            sleeptime *= 2;
         }
         if (is_server_ready != 1 || na_config == NULL)
             PGOTO_ERROR(FAIL, "Server is not ready");
@@ -1230,11 +1323,10 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 {
     FUNC_ENTER(NULL);
 
-    perr_t  ret_value = SUCCEED;
-    char    na_info_string[NA_STRING_INFO_LEN];
-    char *  hostname;
-    pbool_t free_hostname = false;
-    int     local_server_id;
+    perr_t ret_value = SUCCEED;
+    char   na_info_string[NA_STRING_INFO_LEN];
+    char   host_buf[HOSTNAME_LEN];
+    int    local_server_id;
 
     /* Set the default mercury transport
      * but enable overriding that to any of:
@@ -1242,9 +1334,17 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
      *   "ofi+tcp"
      *   "cci+tcp"
      */
-    struct hg_init_info init_info            = {0};
-    char *              default_hg_transport = "ofi+tcp";
-    char *              hg_transport;
+    struct hg_init_info    init_info            = {0};
+    const char *           default_hg_transport = PDC_get_default_mercury_transport();
+    char *                 hg_transport;
+    int                    cxi_pid_base = 256;
+    pdc_scoped_env_entry_t scoped_envs[PDC_PERLMUTTER_CXI_ENV_COUNT];
+    int                    scoped_env_count = 0;
+    unsigned int           scoped_svc_id    = 0;
+    unsigned int           scoped_vni       = 0;
+    char                   scoped_device[32];
+    char *                 hostname      = NULL;
+    bool                   free_hostname = false;
 #ifdef PDC_HAS_CRAY_DRC
     uint32_t          credential, cookie;
     drc_info_handle_t credential_info;
@@ -1254,11 +1354,11 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 #endif
 
     if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
-        hg_transport = default_hg_transport;
+        hg_transport = (char *)default_hg_transport;
         if (pdc_client_mpi_rank_g == 0)
             LOG_INFO("Environment variable HG_TRANSPORT was NOT set, default to %s\n", default_hg_transport);
     }
-    else
+    else if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Environment variable HG_TRANSPORT was set\n");
     if ((hostname = getenv("HG_HOST")) == NULL) {
         hostname = PDC_malloc(HOSTNAME_LEN);
@@ -1268,22 +1368,21 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
         if (pdc_client_mpi_rank_g == 0)
             LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
     }
-    else
+    else if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Environment variable HG_HOST was set\n");
 
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
-
+    ret_value = PDC_build_mercury_na_info_string(hg_transport, port, cxi_pid_base, na_info_string,
+                                                 sizeof(na_info_string), host_buf, sizeof(host_buf));
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error building Mercury connection string");
     if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
-    if (free_hostname)
-        hostname = (char *)PDC_free(hostname);
 
 // gni starts here
 #ifdef PDC_HAS_CRAY_DRC
     /* Acquire credential */
-    if (pdc_client_mpi_rank_g == 0) {
+    if (pdc_client_mpi_rank_g == 0)
         credential = atoi(getenv("PDC_DRC_KEY"));
-    }
     MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, PDC_CLIENT_COMM_WORLD_g);
 
     rc = drc_access(credential, 0, &credential_info);
@@ -1318,7 +1417,15 @@ drc_access_again:
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
+    if (PDC_scope_perlmutter_cxi_auth_env(hg_transport, scoped_envs, &scoped_env_count, &scoped_svc_id,
+                                          &scoped_vni, scoped_device, sizeof(scoped_device)) != SUCCEED &&
+        pdc_client_mpi_rank_g == 0)
+        LOG_WARNING("Unable to scope Slingshot CXI auth for Mercury, falling back to provider defaults");
+    else if (scoped_env_count > 0 && pdc_client_mpi_rank_g == 0)
+        LOG_INFO("Scoped Slingshot CXI auth for Mercury: svc=%u vni=%u device=%s\n", scoped_svc_id,
+                 scoped_vni, scoped_device);
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
+    PDC_restore_scoped_env(scoped_envs, scoped_env_count);
     if (*hg_class == NULL)
         PGOTO_ERROR(FAIL, "Error with HG_Init()");
 
@@ -1333,29 +1440,26 @@ drc_access_again:
     flush_obj_register_id_g           = PDC_flush_obj_register(*hg_class);
     flush_obj_all_register_id_g       = PDC_flush_obj_all_register(*hg_class);
     obj_reset_dims_register_id_g      = PDC_obj_reset_dims_register(*hg_class);
-    // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
-    metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
-    container_query_register_id_g          = PDC_container_query_register(*hg_class);
-    metadata_delete_register_id_g          = PDC_metadata_delete_register(*hg_class);
-    metadata_delete_by_id_register_id_g    = PDC_metadata_delete_by_id_register(*hg_class);
-    metadata_update_register_id_g          = PDC_metadata_update_register(*hg_class);
-    metadata_add_tag_register_id_g         = PDC_metadata_add_tag_register(*hg_class);
-    metadata_add_kvtag_register_id_g       = PDC_metadata_add_kvtag_register(*hg_class);
-    metadata_del_kvtag_register_id_g       = PDC_metadata_del_kvtag_register(*hg_class);
-    metadata_get_kvtag_register_id_g       = PDC_metadata_get_kvtag_register(*hg_class);
-    region_lock_register_id_g              = PDC_region_lock_register(*hg_class);
-    region_release_register_id_g           = PDC_region_release_register(*hg_class);
-    transform_region_release_register_id_g = PDC_transform_region_release_register(*hg_class);
-    region_transform_release_register_id_g = PDC_region_transform_release_register(*hg_class);
-    region_analysis_release_register_id_g  = PDC_region_analysis_release_register(*hg_class);
-    data_server_read_register_id_g         = PDC_data_server_read_register(*hg_class);
-    data_server_read_check_register_id_g   = PDC_data_server_read_check_register(*hg_class);
-    data_server_write_check_register_id_g  = PDC_data_server_write_check_register(*hg_class);
-    data_server_write_register_id_g        = PDC_data_server_write_register(*hg_class);
-    server_checkpoint_rpc_register_id_g    = PDC_server_checkpoint_rpc_register(*hg_class);
-    send_shm_register_id_g                 = PDC_send_shm_register(*hg_class);
-    send_rpc_register_id_g                 = PDC_send_rpc_register(*hg_class);
+    metadata_query_register_id_g          = PDC_metadata_query_register(*hg_class);
+    container_query_register_id_g         = PDC_container_query_register(*hg_class);
+    metadata_delete_register_id_g         = PDC_metadata_delete_register(*hg_class);
+    metadata_delete_by_id_register_id_g   = PDC_metadata_delete_by_id_register(*hg_class);
+    metadata_update_register_id_g         = PDC_metadata_update_register(*hg_class);
+    metadata_add_tag_register_id_g        = PDC_metadata_add_tag_register(*hg_class);
+    metadata_add_kvtag_register_id_g      = PDC_metadata_add_kvtag_register(*hg_class);
+    metadata_del_kvtag_register_id_g      = PDC_metadata_del_kvtag_register(*hg_class);
+    metadata_get_kvtag_register_id_g      = PDC_metadata_get_kvtag_register(*hg_class);
+    region_lock_register_id_g             = PDC_region_lock_register(*hg_class);
+    region_release_register_id_g          = PDC_region_release_register(*hg_class);
+    data_server_read_register_id_g        = PDC_data_server_read_register(*hg_class);
+    data_server_read_check_register_id_g  = PDC_data_server_read_check_register(*hg_class);
+    data_server_write_check_register_id_g = PDC_data_server_write_check_register(*hg_class);
+    data_server_write_register_id_g       = PDC_data_server_write_register(*hg_class);
+    server_checkpoint_rpc_register_id_g   = PDC_server_checkpoint_rpc_register(*hg_class);
+    an_attach_region_rpc_register_id_g    = PDC_an_attach_region_rpc_register(*hg_class);
+    send_shm_register_id_g                = PDC_send_shm_register(*hg_class);
+    send_rpc_register_id_g                = PDC_send_rpc_register(*hg_class);
 
     // bulk
     query_partial_register_id_g = PDC_query_partial_register(*hg_class);
@@ -1377,11 +1481,6 @@ drc_access_again:
     transfer_request_wait_register_id_g            = PDC_transfer_request_wait_register(*hg_class);
     buf_map_register_id_g                          = PDC_buf_map_register(*hg_class);
     buf_unmap_register_id_g                        = PDC_buf_unmap_register(*hg_class);
-
-    // Analysis and Transforms
-    analysis_ftn_register_id_g         = PDC_analysis_ftn_register(*hg_class);
-    transform_ftn_register_id_g        = PDC_transform_ftn_register(*hg_class);
-    object_data_iterator_register_id_g = PDC_obj_data_iterator_register(*hg_class);
 
     PDC_server_lookup_client_register(*hg_class);
     PDC_notify_io_complete_register(*hg_class);
@@ -1515,8 +1614,6 @@ PDC_Client_init()
 
     if (pdc_nclient_per_server_g <= 0)
         pdc_nclient_per_server_g = 1;
-
-    PDC_set_execution_locus(CLIENT_MEMORY);
 
     if (pdc_client_mpi_rank_g == 0) {
         LOG_INFO("Found %d PDC Metadata servers, running with %d PDC clients\n", pdc_server_num_g,
@@ -2186,18 +2283,6 @@ PDC_Client_update_metadata(pdc_metadata_t *old, pdc_metadata_t *new)
     in.new_metadata.dims1     = new->dims[1];
     in.new_metadata.dims2     = new->dims[2];
     in.new_metadata.dims3     = new->dims[3];
-
-    // New fields to support transform state changes
-    // and possibly provenance info.
-    in.new_metadata.current_state   = new->transform_state;
-    in.new_metadata.t_storage_order = new->current_state.storage_order;
-    in.new_metadata.t_dtype         = new->current_state.dtype;
-    in.new_metadata.t_ndim          = new->current_state.ndim;
-    in.new_metadata.t_dims0         = new->current_state.dims[0];
-    in.new_metadata.t_dims1         = new->current_state.dims[1];
-    in.new_metadata.t_dims2         = new->current_state.dims[2];
-    in.new_metadata.t_dims3         = new->current_state.dims[3];
-    in.new_metadata.t_meta_index    = new->current_state.meta_index;
 
     hg_ret = HG_Forward(metadata_update_handle, metadata_update_rpc_cb, &lookup_args, &in);
     if (hg_ret != HG_SUCCESS)
@@ -3239,7 +3324,6 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     in.total_buf_size = sizeof(pdcid_t) * n_objs;
 
     // Compute metadata server id
-
     debug_server_id_count[data_server_id]++;
 
     hg_class = HG_Context_get_class(send_context_g);
@@ -3257,7 +3341,6 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
-
     hg_ret = HG_Forward(client_send_transfer_request_wait_all_handle,
                         client_send_transfer_request_wait_all_rpc_cb, &transfer_args, &in);
 
@@ -3269,7 +3352,6 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
         PGOTO_ERROR(FAIL, "Could not start HG_Forward");
     hg_atomic_set32(&atomic_work_todo_g, 1);
     PDC_Client_check_response(&send_context_g);
-
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer request wait all failed");
 
@@ -3289,7 +3371,7 @@ perr_t
 PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, uint32_t data_server_id,
                             int obj_ndim, uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
                             uint64_t *remote_size, size_t unit, pdc_access_t access_type,
-                            pdcid_t *metadata_id)
+                            pdcid_t *metadata_id, struct _pdc_obj_info *obj_pointer)
 {
     FUNC_ENTER(NULL);
 
@@ -3303,6 +3385,8 @@ PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, u
     hg_handle_t                       client_send_transfer_request_handle;
     struct _pdc_transfer_request_args transfer_args;
     char                              cur_time[64];
+    pdc_tf_region_mapping_t *         region_mapping    = NULL;
+    pdc_an_region_mapping_t *         an_region_mapping = NULL;
 
     FUNC_ENTER(NULL);
 #ifdef PDC_TIMING
@@ -3313,13 +3397,13 @@ PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, u
         PGOTO_ERROR(FAIL, "Invalid PDC type");
 
     LOG_DEBUG("rank = %d, data_server_id = %u\n", pdc_client_mpi_rank_g, data_server_id);
-    in.access_type = access_type;
-    in.remote_unit = unit;
-    in.obj_id      = obj_id;
+    in.access_type             = access_type;
+    in.remote_unit             = unit;
+    in.obj_id                  = obj_id;
+    in.pdc_tf_pkg.pdc_var_type = PDC_UNKNOWN;
 
     in.obj_ndim = obj_ndim;
     PDC_copy_region_desc(obj_dims, in.obj_dims, in.obj_ndim, in.obj_ndim);
-
     // Compute metadata server id
     meta_server_id = PDC_get_server_by_obj_id(obj_id, pdc_server_num_g);
 
@@ -3338,6 +3422,96 @@ PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, u
 
     if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+
+    // Checked for transformations associated with region
+    if (access_type == PDC_WRITE && obj_pointer != NULL && obj_pointer->pdc_tf_obj != NULL &&
+        PDCtf_region_has_attached_graph(obj_pointer->pdc_tf_obj, remote_ndim, unit, remote_offset,
+                                        remote_size, &region_mapping)) {
+
+        LOG_DEBUG("Region transfer as an attached graph\n");
+        pdcid_t   dg_id = region_mapping->region_state.dg_id;
+        pdc_dg_t *dg    = PDCtf_get_dg(dg_id);
+
+        if (dg == NULL)
+            PGOTO_ERROR(FAIL, "dg was NULL");
+
+        char *json_filepath = (char *)dg->data;
+
+        LOG_DEBUG("Region transfer json filepath: %s\n", json_filepath);
+        LOG_DEBUG("Region transfer current state: %s\n", region_mapping->region_state.cur_state);
+        LOG_DEBUG("Region transfer store state: %s\n", region_mapping->region_state.store_state);
+        LOG_DEBUG("Region transfer client state: %s\n", region_mapping->region_state.client_state);
+
+        in.pdc_tf_pkg.pdc_var_type  = obj_pointer->obj_pt->obj_prop_pub->type;
+        in.pdc_tf_pkg.json_filepath = json_filepath;
+        in.pdc_tf_pkg.store_state   = (hg_string_t)region_mapping->region_state.store_state;
+        in.pdc_tf_pkg.client_state  = (hg_string_t)region_mapping->region_state.client_state;
+
+        if (access_type == PDC_WRITE)
+            in.pdc_tf_pkg.cur_state = (hg_string_t)region_mapping->region_state.client_state;
+        else if (access_type == PDC_READ)
+            in.pdc_tf_pkg.cur_state = (hg_string_t)region_mapping->region_state.store_state;
+        else
+            PGOTO_ERROR(FAIL, "Invalid access type for transformation");
+    }
+    else {
+        LOG_DEBUG("Region transfer does NOT have an attached graph\n");
+
+        in.pdc_tf_pkg.json_filepath = (hg_string_t)NULL;
+        in.pdc_tf_pkg.store_state   = (hg_string_t)NULL;
+        in.pdc_tf_pkg.cur_state     = (hg_string_t)NULL;
+        in.pdc_tf_pkg.client_state  = (hg_string_t)NULL;
+    }
+
+    /* Checked for a region-analysis (DataFlyway) graph attached to this
+     * region -- unlike PDC TF's piggyback (write-only, since a TF
+     * transform always runs forward on write / inverse on read against
+     * the same object), region analysis needs both directions checked
+     * here: an input state's binding is registered by piggybacking on a
+     * WRITE (see PDCan_notify_input_written), an output state's binding by
+     * piggybacking on a READ (see PDC_Server_data_io_region_analysis) --
+     * that's the RPC that transparently triggers computation the first
+     * time an unmaterialized output is read. This RPC is already routed
+     * to data_server_id, the server that actually owns this object's
+     * data, so the piggybacked registration always lands in the right
+     * place. */
+    memset(&in.an_pkg, 0, sizeof(in.an_pkg));
+    if (obj_pointer != NULL && obj_pointer->pdc_an_obj != NULL &&
+        PDCan_region_has_attached_graph(obj_pointer->pdc_an_obj, (uint8_t)remote_ndim, remote_offset,
+                                        remote_size, &an_region_mapping)) {
+
+        pdcid_t     an_dg_id = an_region_mapping->region_state.dg_id;
+        pdc_dg_t *  an_dg    = PDCan_get_dg(an_dg_id);
+        PDC_VECTOR *an_maps  = PDCan_get_client_dg_mappings(an_dg_id);
+
+        if (an_dg == NULL)
+            PGOTO_ERROR(FAIL, "analysis dg was NULL");
+
+        in.an_pkg.json_filepath = (hg_string_t)an_dg->data;
+
+        uint32_t             n       = 0;
+        PDC_VECTOR_ITERATOR *an_iter = an_maps != NULL ? pdc_vector_iterator_new(an_maps) : NULL;
+        while (an_iter != NULL && pdc_vector_iterator_has_next(an_iter) && n < PDC_AN_PKG_MAX_STATES) {
+            pdc_an_region_mapping_t *m = (pdc_an_region_mapping_t *)pdc_vector_iterator_next(an_iter);
+            pdc_an_pkg_entry_t *     e = &in.an_pkg.entries[n];
+
+            e->pdc_var_type = (uint32_t)m->pdc_var_type;
+            e->state_name   = (hg_string_t)m->region_state.state_name;
+            e->ndim         = m->ndim;
+            memcpy(e->offset, m->offset, sizeof(uint64_t) * m->ndim);
+            memcpy(e->size, m->size, sizeof(uint64_t) * m->ndim);
+            e->obj_id   = m->obj_id;
+            e->obj_ndim = m->obj_ndim;
+            memcpy(e->obj_dims, m->obj_dims, sizeof(uint64_t) * (size_t)m->obj_ndim);
+            e->tf_json_filepath = (hg_string_t)m->region_state.tf_json_filepath;
+            e->tf_client_state  = (hg_string_t)m->region_state.tf_client_state;
+            e->tf_store_state   = (hg_string_t)m->region_state.tf_store_state;
+            n++;
+        }
+        if (an_iter != NULL)
+            pdc_vector_iterator_destroy(an_iter);
+        in.an_pkg.num_entries = n;
+    }
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr, transfer_request_register_id_g,
                        &client_send_transfer_request_handle);
@@ -3445,13 +3619,6 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     hg_handle_t                            client_send_transfer_request_wait_handle;
     struct _pdc_transfer_request_wait_args transfer_args;
     char                                   cur_time[64];
-
-    // Join the thread of trasfer start
-    /* if (hg_progress_flag_g == 0) { */
-    /*     hg_progress_flag_g = 1; */
-    /*     pthread_join(hg_progress_tid_g, NULL); */
-    /*     hg_progress_flag_g = -1; */
-    /* } */
 
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
@@ -4142,7 +4309,6 @@ PDC_Client_data_server_read(struct pdc_request *request)
     if (meta == NULL || region == NULL)
         PGOTO_ERROR(FAIL, "Invalid metadata or region");
 
-    // TODO TEMPWORK
     char *tmp_env = getenv("PDC_CACHE_PERCENTAGE");
     int   cache_percentage;
     if (tmp_env != NULL)
@@ -5351,6 +5517,74 @@ PDC_Client_server_checkpoint(uint32_t server_id)
 done:
     HG_Destroy(rpc_handle);
 
+    FUNC_LEAVE(ret_value);
+}
+
+// Attach a region-analysis graph state (input or output) to this rank's
+// local (obj_id, region) on its own data server. See PDCan_attach_to_region
+// in src/api/pdc_an/pdc_an.c for the public entry point.
+perr_t
+PDC_Client_an_attach_region(char *json_filepath, char *state_name, pdcid_t obj_id, uint8_t ndim,
+                            uint64_t *offset, uint64_t *size, int32_t obj_ndim, uint64_t *obj_dims,
+                            pdc_var_type_t pdc_var_type, char *tf_json_filepath, char *tf_client_state,
+                            char *tf_store_state, uint32_t data_server_id)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                         ret_value = SUCCEED;
+    hg_return_t                    hg_ret;
+    an_attach_region_in_t          in;
+    struct _pdc_client_lookup_args lookup_args;
+    hg_handle_t                    rpc_handle;
+    uint32_t                       server_id;
+
+    /* Route to whichever server actually owns the target object's data
+     * (its data_server_id, exactly like PDCregion_transfer_create routes),
+     * not the calling rank's own server -- the two only coincide when the
+     * calling rank is also the object's creator. A graph attached by
+     * multiple ranks against a shared object (each rank owning a distinct
+     * region of it) must have every rank's attach land on the one server
+     * that actually stores that object, or the binding is registered
+     * somewhere the write/read path never looks. */
+    server_id = data_server_id;
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, an_attach_region_rpc_register_id_g,
+                       &rpc_handle);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not create handle");
+
+    in.json_filepath = json_filepath;
+    in.state_name    = state_name;
+    in.obj_id        = (uint64_t)obj_id;
+    in.obj_ndim      = obj_ndim;
+    memset(in.obj_dims, 0, sizeof(in.obj_dims));
+    memcpy(in.obj_dims, obj_dims, (size_t)obj_ndim * sizeof(uint64_t));
+    in.ndim = ndim;
+    memset(in.offset, 0, sizeof(in.offset));
+    memset(in.size, 0, sizeof(in.size));
+    memcpy(in.offset, offset, (size_t)ndim * sizeof(uint64_t));
+    memcpy(in.size, size, (size_t)ndim * sizeof(uint64_t));
+    in.pdc_var_type     = (uint32_t)pdc_var_type;
+    in.tf_json_filepath = tf_json_filepath;
+    in.tf_client_state  = tf_client_state;
+    in.tf_store_state   = tf_store_state;
+
+    hg_ret = HG_Forward(rpc_handle, pdc_client_check_int_ret_cb, &lookup_args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not start forward to server");
+
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    PDC_Client_check_response(&send_context_g);
+
+    if (lookup_args.ret != 1)
+        PGOTO_ERROR(FAIL, "Server failed to attach region to analysis state \"%s\"", state_name);
+
+done:
+    HG_Destroy(rpc_handle);
     FUNC_LEAVE(ret_value);
 }
 

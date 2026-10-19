@@ -1,0 +1,23 @@
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[INFO] PDC_CLIENT[0]: Found 8 PDC Metadata servers, running with 8 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+cxi
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Connection string: ofi+cxi://cxi0:8
+[INFO] PDC_CLIENT[4]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[1]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[6]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[5]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[7]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[2]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[3]: Environment variable HG_HOST was set
+[INFO] PDC_CLIENT[0]: Scoped Slingshot CXI auth for Mercury: svc=1 vni=1 device=cxi0
+[INFO] PDC_CLIENT[0]: Using [/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench] as tmp dir, 1 clients per server
+[13:54:33.728081] [WARNING] [close_server.c:56] PDC_CLIENT[6]: total close time = 2.712436
+[13:54:33.728042] [WARNING] [close_server.c:56] PDC_CLIENT[4]: total close time = 2.712398
+[13:54:33.728122] [WARNING] [close_server.c:56] PDC_CLIENT[7]: total close time = 2.712475
+[13:54:33.728291] [WARNING] [close_server.c:56] PDC_CLIENT[2]: total close time = 2.712637
+[13:54:33.728301] [WARNING] [close_server.c:56] PDC_CLIENT[5]: total close time = 2.712648
+[13:54:33.728387] [WARNING] [close_server.c:56] PDC_CLIENT[3]: total close time = 2.712731
+[13:54:33.728847] [WARNING] [close_server.c:56] PDC_CLIENT[0]: total close time = 2.713219
+[13:54:33.728859] [WARNING] [close_server.c:56] PDC_CLIENT[1]: total close time = 2.713236

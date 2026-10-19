@@ -1,0 +1,4 @@
+servers_per_node,mode,step,n_ranks,nx,ny,nz_per_rank,compress,setup_s,write_s,confirm_read_s,total_s,bad,avg_close_s,total_with_close_s
+2,curl_eager,0,512,256,256,64,0,0.326151,8.276451,0.606104,9.208706,0,1.228710,10.4374
+2,curl_eager,1,512,256,256,64,0,0.326151,7.336276,0.591653,8.254079,0,1.228710,9.48279
+2,curl_eager,2,512,256,256,64,0,0.326151,7.283067,0.584978,8.194196,0,1.228710,9.42291

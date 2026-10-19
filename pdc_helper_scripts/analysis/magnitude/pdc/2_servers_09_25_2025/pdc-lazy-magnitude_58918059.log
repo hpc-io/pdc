@@ -1,0 +1,29 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_analysis_bench/10 /pscratch/sd/n/nlewi26/pdc_analysis_bench/11 /pscratch/sd/n/nlewi26/pdc_analysis_bench/12 /pscratch/sd/n/nlewi26/pdc_analysis_bench/13 /pscratch/sd/n/nlewi26/pdc_analysis_bench/14 /pscratch/sd/n/nlewi26/pdc_analysis_bench/15 /pscratch/sd/n/nlewi26/pdc_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_analysis_bench/8 /pscratch/sd/n/nlewi26/pdc_analysis_bench/9 /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_data
++ popd
++ srun -N 16 -n 32 --ntasks-per-node=2 --error=server_lazy_16.err --output=server_lazy_16.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 16 -n 512 --ntasks-per-node=32 --output=client_lazy_16.log --error=client_lazy_16.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_magnitude lazy "$N_ELEM"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^lazy,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin/client_lazy_16.log
++ lines='lazy,0,512,16777216,0.209166,6.168772,0.000000,0.000000,0.000000,6.013696,12.182469,0
+lazy,1,512,16777216,0.209166,5.294047,0.000000,0.000000,0.000000,6.734809,12.028856,0
+lazy,2,512,16777216,0.209166,4.329208,0.000000,0.000000,0.000000,6.883482,11.212689,0'
++ '[' -z 'lazy,0,512,16777216,0.209166,6.168772,0.000000,0.000000,0.000000,6.013696,12.182469,0
+lazy,1,512,16777216,0.209166,5.294047,0.000000,0.000000,0.000000,6.734809,12.028856,0
+lazy,2,512,16777216,0.209166,4.329208,0.000000,0.000000,0.000000,6.883482,11.212689,0' ']'
++ echo 'lazy,0,512,16777216,0.209166,6.168772,0.000000,0.000000,0.000000,6.013696,12.182469,0
+lazy,1,512,16777216,0.209166,5.294047,0.000000,0.000000,0.000000,6.734809,12.028856,0
+lazy,2,512,16777216,0.209166,4.329208,0.000000,0.000000,0.000000,6.883482,11.212689,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 16 -n 32 --ntasks-per-node=2 --error=close_server_lazy_16.err --output=close_server_lazy_16.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 2
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/results_lazy_58918059.csv

@@ -1,0 +1,1736 @@
+[INFO] PDC_SERVER[0]: Starting server with no previous data
+[INFO] PDC_SERVER[0]: Using [/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/] as tmp dir, 1 OSTs, 1 OSTs per data file, 0% to BB
+[INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+cxi
+[INFO] PDC_SERVER[0]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[0]: Connection string: ofi+cxi://cxi0:0:7000
+[INFO] PDC_SERVER[2]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[3]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[5]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[7]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[1]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[4]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[6]: Environment variable HG_HOST was set
+[INFO] PDC_SERVER[0]: Scoped Slingshot CXI auth for Mercury: svc=1 vni=1 device=cxi0
+[INFO] PDC_SERVER[0]: Without multi-thread
+[INFO] PDC_SERVER[0]: Read cache enabled
+[INFO] PDC_SERVER[0]: Max cache size: 68719476736
+[INFO] PDC_SERVER[0]: Max transformation cache size: 68719476736
+[INFO] PDC_SERVER[0]: Successfully established connection to 7 other PDC servers
+[INFO] PDC_SERVER[0]: Succesfully wrote address to config in dir /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/
+[INFO] PDC_SERVER[0]: Server ready!
+
+
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 2000000000, ndim=3
+[13:06:28.937528] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:28.937541] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 2000000000
+[13:06:28.960232] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.022684 s
+[13:06:28.960265] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:28.960258] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.022943 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 2000000000, ndim=3
+[13:06:28.964954] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:28.964963] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 2000000000
+[13:06:28.987374] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.022405 s
+[13:06:28.987398] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:28.987396] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.022453 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 2000000000, ndim=3
+[13:06:28.989430] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:28.989435] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 2000000000
+[13:06:29.011058] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.021610 s
+[13:06:29.011084] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:29.011080] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.021664 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 2000000000, ndim=3
+[13:06:29.023159] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:29.023164] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 2000000000
+[13:06:29.047858] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.024687 s
+[13:06:29.047883] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:29.047880] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.024731 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000000, ndim=3
+[13:06:29.054015] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:29.054024] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000000
+[13:06:29.075171] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.021119 s
+[13:06:29.075213] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:29.075209] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.021215 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000000, ndim=3
+[13:06:29.079771] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:29.079780] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000000
+[13:06:29.103699] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.023901 s
+[13:06:29.103725] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:29.103721] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.023964 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000000, ndim=3
+[13:06:29.114099] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:29.114108] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000000
+[13:06:29.140608] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.026481 s
+[13:06:29.140681] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:29.140669] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.026612 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000000, ndim=3
+[13:06:29.153380] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:29.153389] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000000
+[13:06:29.173670] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.020272 s
+[13:06:29.173697] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:29.173694] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.020326 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000000, ndim=3
+[13:06:29.178114] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:29.178120] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000000
+[13:06:29.435952] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:29.443197] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:29.454277] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:29.469276] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:29.475681] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:29.480534] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:29.488112] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:29.521459] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:30.863541] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:30.947467] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.006217] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.007602] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.012194] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.013298] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:31.014229] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.015252] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:31.016786] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.025224] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.061451] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:31.082620] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:31.082683] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:31.092767] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:31.094000] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:31.094668] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:31.103047] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 1.924921 s
+[13:06:31.103068] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:31.103066] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 1.924963 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000000, ndim=3
+[13:06:31.110474] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:31.110481] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000000
+[13:06:31.365308] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.365391] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.367136] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.367178] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.377592] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:31.379538] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:31.416427] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.416454] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.427020] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.427052] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.427271] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:31.436332] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.436376] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.437644] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:31.439628] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.439711] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.441637] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.441695] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:31.445608] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.445626] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.451967] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:31.452218] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:31.455509] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:31.457971] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:31.503730] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.393231 s
+[13:06:31.503752] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:31.503748] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.393288 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000000, ndim=3
+[13:06:31.506327] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:31.506332] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000000
+[13:06:31.710109] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.710149] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.711972] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.712003] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.722546] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:31.723326] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:31.756151] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.756230] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.769047] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:31.776481] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.776509] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.783659] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.783698] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.785030] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:31.785199] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.785260] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.798249] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:31.799359] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:31.811348] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.811378] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.822627] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:31.835828] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:31.835866] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:31.851770] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:31.863730] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.357370 s
+[13:06:31.863753] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:31.863749] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.357438 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000000, ndim=3
+[13:06:31.865683] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:31.865693] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000000
+[13:06:32.028284] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.028374] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:32.037414] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:32.061245] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.061297] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:32.072390] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:32.085077] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.085107] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:32.097889] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:32.116542] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.116570] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:32.120394] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.120425] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:32.125691] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:32.130352] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:32.130875] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.130924] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:32.135204] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.135271] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:32.141613] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:32.144197] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:32.172379] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:32.172429] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:32.180530] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.314826 s
+[13:06:32.180548] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.180544] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.314875 s
+[13:06:32.181645] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=7000000000
+[13:06:32.243710] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.243735] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:32.243924] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.243938] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.244701] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.244751] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.244815] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.244831] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.245412] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.245444] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.245752] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.245770] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.253634] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.253644] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.253670] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.253657] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.260886] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:32.261712] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:32.263310] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=7000000000
+[13:06:32.265839] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:32.265978] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:32.267009] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=7000000000
+[13:06:32.274447] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=7000000000
+[13:06:32.276476] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:32.281726] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.281741] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.282940] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.282973] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.285528] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.285547] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.285870] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.285905] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=7000000000
+[13:06:32.289183] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.289206] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.293834] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.293860] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.293993] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.294015] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.298350] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:32.299713] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:32.301621] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:32.303454] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:32.303949] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.303971] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.304080] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=7000000000
+[13:06:32.321901] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.321915] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:32.323760] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.323775] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.324611] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.324632] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.327182] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.327199] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.327693] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.327715] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.330194] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:32.332304] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:32.334431] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=7000000000
+[13:06:32.354653] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.354674] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.355981] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.355996] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.363717] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:32.363814] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:32.364514] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:32.365288] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:32.366086] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:32.366133] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.366149] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=7000000000
+[13:06:32.382366] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:32.385885] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:32.388069] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.388081] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.388331] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.388350] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=7000000000
+[13:06:32.389543] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.389570] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.389568] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.389587] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.389595] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:32.389787] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.389802] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=7000000000
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=7000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Object 7000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=7000000000
+[13:06:32.405080] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.405100] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.406975] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.406990] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.418440] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:32.419580] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:32.419854] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:32.419875] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:32.420886] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:32.420980] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:32.421196] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:32.423670] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:32.426726] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:32.456657] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000002, ndim=3
+[13:06:32.667891] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.667900] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000002
+[13:06:32.689865] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.021951 s
+[13:06:32.689988] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.689982] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.022109 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000002, ndim=3
+[13:06:32.691639] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.691645] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000002
+[13:06:32.712994] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.021341 s
+[13:06:32.713022] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.713019] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.021391 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000002, ndim=3
+[13:06:32.715326] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.715334] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000002
+[13:06:32.738173] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.022825 s
+[13:06:32.738195] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.738190] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.022879 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000002, ndim=3
+[13:06:32.740203] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.740210] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 3000000002
+[13:06:32.770945] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.030719 s
+[13:06:32.770967] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.770962] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.030775 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000002, ndim=3
+[13:06:32.781492] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:32.781500] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000002
+[13:06:32.805726] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.024207 s
+[13:06:32.805754] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.805750] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.024272 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000002, ndim=3
+[13:06:32.808082] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.808089] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000002
+[13:06:32.831710] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.023607 s
+[13:06:32.831730] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.831726] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.023658 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000002, ndim=3
+[13:06:32.842638] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.842650] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000002
+[13:06:32.868199] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.025541 s
+[13:06:32.868235] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.868233] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.025611 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000002, ndim=3
+[13:06:32.873692] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.873697] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000002
+[13:06:32.892579] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.018879 s
+[13:06:32.892590] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:32.892588] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.018904 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000000, ndim=3
+[13:06:32.895937] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:32.895942] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000000
+[13:06:33.136372] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.136401] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.145337] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:33.156491] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.156522] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.167922] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:33.173919] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.173959] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.176857] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.176912] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.198335] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:33.199437] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.199470] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.202467] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:33.203165] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.203240] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.218326] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:33.221521] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.221631] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.223351] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:33.248533] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:33.254751] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.254821] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.278443] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:33.324681] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.428720 s
+[13:06:33.324705] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:33.324700] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.428790 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000000, ndim=3
+[13:06:33.331816] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:33.331823] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000000
+[13:06:33.498741] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.498800] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.508221] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.508243] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.511099] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:33.519718] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:33.534243] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.534274] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.539003] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.539037] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.544016] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:33.549669] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:33.556569] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.556598] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.569995] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:33.572529] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.572636] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.581725] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:33.611107] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.611140] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:33.627502] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.627482] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:33.627517] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.648398] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:33.687159] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.355322 s
+[13:06:33.687181] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:33.687178] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.355374 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000000, ndim=3
+[13:06:33.689033] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:33.689041] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000000
+[13:06:33.827566] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.827601] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.836689] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:33.842597] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.842646] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.854280] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:33.878744] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.878771] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.889315] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:33.904863] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.904894] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.916445] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:33.928633] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.928676] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.928707] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.928785] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.939150] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:33.944636] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:33.987268] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.987370] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:33.992247] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:33.992263] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:33.999123] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:34.003415] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:34.046541] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.357486 s
+[13:06:34.046570] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.046567] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.357545 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000000, ndim=3
+[13:06:34.048307] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:34.048312] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000000
+[13:06:34.142352] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.142380] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:34.161203] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:34.182585] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.182670] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:34.192183] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:34.207252] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.207282] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:34.216396] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:34.259504] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.259576] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:34.270409] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.270475] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:34.272492] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:34.281302] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:34.317924] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.317981] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:34.332575] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:34.337278] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.337307] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:34.345718] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:34.345734] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:34.346210] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:34.355409] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:34.390716] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.342395 s
+[13:06:34.390730] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.390726] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.342432 s
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=8000000000
+[13:06:34.417921] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.417947] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.418039] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.418060] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.418372] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.418391] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.418587] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.418620] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.420816] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.420900] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:34.423965] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.423981] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.424493] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.424514] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.427739] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.427763] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.434041] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:34.434899] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:34.435206] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:34.437116] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:34.438385] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=8000000000
+[13:06:34.442323] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=8000000000
+[13:06:34.444882] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=8000000000
+[13:06:34.454841] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=8000000000
+[13:06:34.458761] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.458788] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.459130] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.459147] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.460582] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.460607] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.460754] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.460771] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:34.463301] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.463313] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.467876] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.467899] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.473692] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:34.474816] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:34.476926] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:34.477647] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:34.477648] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:34.478426] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.478453] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=8000000000
+[13:06:34.485090] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=8000000000
+[13:06:34.486107] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.486144] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=8000000000
+[13:06:34.496728] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:34.499699] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.499711] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.500445] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.500473] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.501103] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.501118] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=8000000000
+[13:06:34.504514] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.504537] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.506233] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:34.510774] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.510796] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.514432] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.514462] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=8000000000
+[13:06:34.520001] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:34.522095] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.522128] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=8000000000
+[13:06:34.528035] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=8000000000
+[13:06:34.537481] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.537510] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.539141] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:34.539192] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:34.540830] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:34.540957] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:34.544012] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.544023] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.546309] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=8000000000
+[13:06:34.549746] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.549767] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=8000000000
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=8000000000
+[13:06:34.562993] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:34.563088] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:34.567140] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.567166] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.568579] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.568606] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=8000000000
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Object 8000000000 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=8000000000
+[13:06:34.571347] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.571368] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.571438] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.571454] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.574479] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.574507] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.576109] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:34.597343] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:34.597374] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:34.612083] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:34.612107] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:34.612166] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:34.612202] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:34.612335] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:34.631430] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000004, ndim=3
+[13:06:34.826434] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:34.826444] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000004
+[13:06:34.846163] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.019706 s
+[13:06:34.846178] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.846175] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.019751 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000004, ndim=3
+[13:06:34.847606] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:34.847611] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000004
+[13:06:34.866438] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.018821 s
+[13:06:34.866456] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.866453] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.018859 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000004, ndim=3
+[13:06:34.867776] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:34.867784] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000004
+[13:06:34.887075] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.019275 s
+[13:06:34.887098] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.887093] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.019332 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000004, ndim=3
+[13:06:34.888599] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:34.888609] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 4000000004
+[13:06:34.909820] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.021196 s
+[13:06:34.909844] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.909839] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.021255 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000002, ndim=3
+[13:06:34.930439] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000002 s
+[13:06:34.930450] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000002
+[13:06:34.957853] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.027381 s
+[13:06:34.957883] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.957878] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.027457 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000002, ndim=3
+[13:06:34.959648] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:34.959655] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000002
+[13:06:34.982516] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.022847 s
+[13:06:34.982541] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:34.982536] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.022904 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000002, ndim=3
+[13:06:34.986912] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:34.986918] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000002
+[13:06:35.008510] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.021581 s
+[13:06:35.008550] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:35.008547] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.021650 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000002, ndim=3
+[13:06:35.011661] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:35.011669] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 5000000002
+[13:06:35.034845] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.023160 s
+[13:06:35.034866] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:35.034862] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.023215 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 6000000000, ndim=3
+[13:06:35.047347] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:35.047358] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 6000000000
+[13:06:35.290688] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.290717] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.302964] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:35.320409] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.320451] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.328513] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:35.330497] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.330527] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.332613] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.332645] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.340755] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:35.342078] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:35.352968] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.353025] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.353755] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.353806] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.356623] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.356682] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:35.364654] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.364670] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.364674] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:35.369937] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:35.371918] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:35.383469] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:35.425511] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.378137 s
+[13:06:35.425533] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:35.425529] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.378193 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 6000000000, ndim=3
+[13:06:35.428374] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:35.428379] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 6000000000
+[13:06:35.617462] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.617500] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.627663] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:35.654231] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.654272] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.659001] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.659091] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.664128] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:35.670766] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:35.678519] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.678548] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.687377] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:35.691147] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.691215] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.696797] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.696910] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.700768] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.700829] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.703088] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.703136] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.704891] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:35.711204] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:35.713410] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:35.717136] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:35.744320] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.315930 s
+[13:06:35.744336] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:35.744333] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.315969 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 6000000000, ndim=3
+[13:06:35.746203] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000001 s
+[13:06:35.746208] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 6000000000
+[13:06:35.931595] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.931650] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.942263] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:35.980079] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.980112] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.990459] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:35.990498] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:35.991326] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:36.000809] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.000839] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.001802] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:36.008717] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.008766] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.011700] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:36.019809] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:36.027255] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.027289] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.034108] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.034165] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.037196] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.037215] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.039438] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:36.047244] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:36.052077] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:36.059644] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.313423 s
+[13:06:36.059663] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:36.059659] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.313468 s
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 6000000000, ndim=3
+[13:06:36.061112] [WARNING] [pdc_server_region_cache.c:823] PDC_SERVER[0]: Region mapping lookup took 0.000000 s
+[13:06:36.061116] [WARNING] [pdc_server_region_cache.c:828] PDC_SERVER[0]: No region mapping found for obj_id 6000000000
+[13:06:36.242622] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.242689] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.256669] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:36.292892] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.292950] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.310338] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:36.322000] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.322045] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.325691] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.325748] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.327633] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.327661] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.338726] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.338757] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.350245] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:36.350290] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:36.350341] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:36.364058] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:36.368765] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.368775] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_compress
+[13:06:36.368804] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.368828] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_compress dev=GPU
+[13:06:36.383497] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:36.387543] [WARNING] [pdc_server_region_cache.c:834] PDC_SERVER[0]: Flushed region via POSIX I/O in 0.326417 s
+[13:06:36.387562] [WARNING] [pdc_server_region_cache.c:850] PDC_SERVER[0]: [2026-10-07 13:06:36.387558] Flushed 16.00 / 16.00 MB to storage
+[INFO] PDC_SERVER[0]: Region flush iteration took 0.326464 s
+[13:06:36.389058] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000004
+[INFO] PDC_SERVER[3]: Checking against Object 5000000002
+[INFO] PDC_SERVER[3]: Checking against Object 6000000000
+[INFO] PDC_SERVER[3]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000004
+[INFO] PDC_SERVER[2]: Checking against Object 5000000002
+[INFO] PDC_SERVER[2]: Checking against Object 6000000000
+[INFO] PDC_SERVER[2]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000004
+[INFO] PDC_SERVER[4]: Checking against Object 5000000002
+[INFO] PDC_SERVER[4]: Checking against Object 6000000000
+[INFO] PDC_SERVER[4]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000004
+[INFO] PDC_SERVER[5]: Checking against Object 5000000002
+[INFO] PDC_SERVER[5]: Checking against Object 6000000000
+[INFO] PDC_SERVER[5]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000004
+[INFO] PDC_SERVER[7]: Checking against Object 5000000002
+[INFO] PDC_SERVER[7]: Checking against Object 6000000000
+[INFO] PDC_SERVER[7]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000004
+[INFO] PDC_SERVER[0]: Checking against Object 5000000002
+[INFO] PDC_SERVER[0]: Checking against Object 6000000000
+[INFO] PDC_SERVER[0]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000004
+[INFO] PDC_SERVER[6]: Checking against Object 5000000002
+[INFO] PDC_SERVER[6]: Checking against Object 6000000000
+[INFO] PDC_SERVER[6]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000004
+[INFO] PDC_SERVER[1]: Checking against Object 5000000002
+[INFO] PDC_SERVER[1]: Checking against Object 6000000000
+[INFO] PDC_SERVER[1]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=1000000001
+[13:06:36.452017] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.452041] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.452797] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.452831] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.452992] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.453011] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.455235] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.455265] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.455292] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.455342] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.455842] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.455867] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:36.456083] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.456096] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.456518] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.456550] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.463729] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000004
+[INFO] PDC_SERVER[5]: Checking against Object 5000000002
+[INFO] PDC_SERVER[5]: Checking against Object 6000000000
+[INFO] PDC_SERVER[5]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=1000000001
+[13:06:36.469708] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:36.470271] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:36.477794] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000004
+[INFO] PDC_SERVER[7]: Checking against Object 5000000002
+[INFO] PDC_SERVER[7]: Checking against Object 6000000000
+[INFO] PDC_SERVER[7]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000004
+[INFO] PDC_SERVER[6]: Checking against Object 5000000002
+[INFO] PDC_SERVER[6]: Checking against Object 6000000000
+[INFO] PDC_SERVER[6]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=1000000001
+[13:06:36.478704] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:36.479823] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:36.479878] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:36.480229] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000004
+[INFO] PDC_SERVER[4]: Checking against Object 5000000002
+[INFO] PDC_SERVER[4]: Checking against Object 6000000000
+[INFO] PDC_SERVER[4]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000004
+[INFO] PDC_SERVER[0]: Checking against Object 5000000002
+[INFO] PDC_SERVER[0]: Checking against Object 6000000000
+[INFO] PDC_SERVER[0]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000004
+[INFO] PDC_SERVER[2]: Checking against Object 5000000002
+[INFO] PDC_SERVER[2]: Checking against Object 6000000000
+[INFO] PDC_SERVER[2]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=1000000001
+[13:06:36.485733] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.485746] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000004
+[INFO] PDC_SERVER[3]: Checking against Object 5000000002
+[INFO] PDC_SERVER[3]: Checking against Object 6000000000
+[INFO] PDC_SERVER[3]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000004
+[INFO] PDC_SERVER[1]: Checking against Object 5000000002
+[INFO] PDC_SERVER[1]: Checking against Object 6000000000
+[INFO] PDC_SERVER[1]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=1000000001
+[13:06:36.496967] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.497019] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.498173] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.498187] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.498239] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:36.500887] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.500898] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.502030] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.502054] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000004
+[INFO] PDC_SERVER[5]: Checking against Object 5000000002
+[INFO] PDC_SERVER[5]: Checking against Object 6000000000
+[INFO] PDC_SERVER[5]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=1000000001
+[13:06:36.504231] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.504252] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.505098] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.505116] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.506947] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.506970] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.512661] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:36.513669] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:36.515860] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:36.518923] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000004
+[INFO] PDC_SERVER[7]: Checking against Object 5000000002
+[INFO] PDC_SERVER[7]: Checking against Object 6000000000
+[INFO] PDC_SERVER[7]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000004
+[INFO] PDC_SERVER[6]: Checking against Object 5000000002
+[INFO] PDC_SERVER[6]: Checking against Object 6000000000
+[INFO] PDC_SERVER[6]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=1000000001
+[13:06:36.520836] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.520862] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000004
+[INFO] PDC_SERVER[0]: Checking against Object 5000000002
+[INFO] PDC_SERVER[0]: Checking against Object 6000000000
+[INFO] PDC_SERVER[0]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=1000000001
+[13:06:36.522986] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000004
+[INFO] PDC_SERVER[4]: Checking against Object 5000000002
+[INFO] PDC_SERVER[4]: Checking against Object 6000000000
+[INFO] PDC_SERVER[4]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000004
+[INFO] PDC_SERVER[2]: Checking against Object 5000000002
+[INFO] PDC_SERVER[2]: Checking against Object 6000000000
+[INFO] PDC_SERVER[2]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=1000000001
+[13:06:36.531632] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:36.532611] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:36.534959] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[13:06:36.537591] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.537611] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000004
+[INFO] PDC_SERVER[1]: Checking against Object 5000000002
+[INFO] PDC_SERVER[1]: Checking against Object 6000000000
+[INFO] PDC_SERVER[1]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:36.538567] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.538584] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.539193] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.539213] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000004
+[INFO] PDC_SERVER[3]: Checking against Object 5000000002
+[INFO] PDC_SERVER[3]: Checking against Object 6000000000
+[INFO] PDC_SERVER[3]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[5]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[5]: Checking against Object 2000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000000
+[INFO] PDC_SERVER[5]: Checking against Object 3000000002
+[INFO] PDC_SERVER[5]: Checking against Object 4000000002
+[INFO] PDC_SERVER[5]: Checking against Object 5000000000
+[INFO] PDC_SERVER[5]: Checking against Object 4000000004
+[INFO] PDC_SERVER[5]: Checking against Object 5000000002
+[INFO] PDC_SERVER[5]: Checking against Object 6000000000
+[INFO] PDC_SERVER[5]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[5]: Fetching region from server for obj_id=1000000001
+[13:06:36.543553] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.543586] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.545404] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.545431] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.553324] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:36.553458] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:36.554190] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:36.555823] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.555845] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.556137] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:36.557724] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.557739] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.558192] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[0]: Checking against Object 2000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000000
+[INFO] PDC_SERVER[0]: Checking against Object 3000000002
+[INFO] PDC_SERVER[0]: Checking against Object 4000000002
+[INFO] PDC_SERVER[0]: Checking against Object 5000000000
+[INFO] PDC_SERVER[0]: Checking against Object 4000000004
+[INFO] PDC_SERVER[0]: Checking against Object 5000000002
+[INFO] PDC_SERVER[0]: Checking against Object 6000000000
+[INFO] PDC_SERVER[0]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[0]: Fetching region from server for obj_id=1000000001
+[13:06:36.559511] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[5]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.559543] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[5]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[6]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[6]: Checking against Object 2000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000000
+[INFO] PDC_SERVER[6]: Checking against Object 3000000002
+[INFO] PDC_SERVER[6]: Checking against Object 4000000002
+[INFO] PDC_SERVER[6]: Checking against Object 5000000000
+[INFO] PDC_SERVER[6]: Checking against Object 4000000004
+[INFO] PDC_SERVER[6]: Checking against Object 5000000002
+[INFO] PDC_SERVER[6]: Checking against Object 6000000000
+[INFO] PDC_SERVER[6]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[6]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[7]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[7]: Checking against Object 2000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000000
+[INFO] PDC_SERVER[7]: Checking against Object 3000000002
+[INFO] PDC_SERVER[7]: Checking against Object 4000000002
+[INFO] PDC_SERVER[7]: Checking against Object 5000000000
+[INFO] PDC_SERVER[7]: Checking against Object 4000000004
+[INFO] PDC_SERVER[7]: Checking against Object 5000000002
+[INFO] PDC_SERVER[7]: Checking against Object 6000000000
+[INFO] PDC_SERVER[7]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[7]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[4]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[4]: Checking against Object 2000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000000
+[INFO] PDC_SERVER[4]: Checking against Object 3000000002
+[INFO] PDC_SERVER[4]: Checking against Object 4000000002
+[INFO] PDC_SERVER[4]: Checking against Object 5000000000
+[INFO] PDC_SERVER[4]: Checking against Object 4000000004
+[INFO] PDC_SERVER[4]: Checking against Object 5000000002
+[INFO] PDC_SERVER[4]: Checking against Object 6000000000
+[INFO] PDC_SERVER[4]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[4]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[2]: Checking against Object 2000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000000
+[INFO] PDC_SERVER[2]: Checking against Object 3000000002
+[INFO] PDC_SERVER[2]: Checking against Object 4000000002
+[INFO] PDC_SERVER[2]: Checking against Object 5000000000
+[INFO] PDC_SERVER[2]: Checking against Object 4000000004
+[INFO] PDC_SERVER[2]: Checking against Object 5000000002
+[INFO] PDC_SERVER[2]: Checking against Object 6000000000
+[INFO] PDC_SERVER[2]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[2]: Fetching region from server for obj_id=1000000001
+[13:06:36.572420] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:36.573191] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[13:06:36.573861] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[5]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Executing graph with json filepath /pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/graphs/zfp_gpu.json
+[13:06:36.575533] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[0]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.575545] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[0]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.578465] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[6]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.578492] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[6]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[INFO] PDC_SERVER[1]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[1]: Checking against Object 2000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000000
+[INFO] PDC_SERVER[1]: Checking against Object 3000000002
+[INFO] PDC_SERVER[1]: Checking against Object 4000000002
+[INFO] PDC_SERVER[1]: Checking against Object 5000000000
+[INFO] PDC_SERVER[1]: Checking against Object 4000000004
+[INFO] PDC_SERVER[1]: Checking against Object 5000000002
+[INFO] PDC_SERVER[1]: Checking against Object 6000000000
+[INFO] PDC_SERVER[1]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[1]: Fetching region from server for obj_id=1000000001
+[INFO] PDC_SERVER[3]: Fetching region for obj_id=1000000001
+[INFO] PDC_SERVER[3]: Checking against Object 2000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000000
+[INFO] PDC_SERVER[3]: Checking against Object 3000000002
+[INFO] PDC_SERVER[3]: Checking against Object 4000000002
+[INFO] PDC_SERVER[3]: Checking against Object 5000000000
+[INFO] PDC_SERVER[3]: Checking against Object 4000000004
+[INFO] PDC_SERVER[3]: Checking against Object 5000000002
+[INFO] PDC_SERVER[3]: Checking against Object 6000000000
+[INFO] PDC_SERVER[3]: Object 1000000001 NOT found in cache
+[INFO] PDC_SERVER[3]: Fetching region from server for obj_id=1000000001
+[13:06:36.578922] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[4]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.578989] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[4]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.579380] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[7]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.579404] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[7]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.581161] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[2]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.581191] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[2]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.595510] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[0]: SCHED: done running transformations
+[13:06:36.596334] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[1]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.596373] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[1]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.596991] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[4]: SCHED: done running transformations
+[13:06:36.598327] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[6]: SCHED: done running transformations
+[13:06:36.599067] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[2]: SCHED: done running transformations
+[13:06:36.602282] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[7]: SCHED: done running transformations
+[13:06:36.604822] [WARNING] [pdc_tf_server.c:393] PDC_SERVER[3]: SCHED: setting CUDA device to 0 for edge 0 func=zfp_decompress
+[13:06:36.604851] [WARNING] [pdc_tf_server.c:401] PDC_SERVER[3]: SCHED: executing edge 0 func=zfp_decompress dev=GPU
+[13:06:36.625620] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[1]: SCHED: done running transformations
+[13:06:36.631927] [WARNING] [pdc_tf_server.c:475] PDC_SERVER[3]: SCHED: done running transformations
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 2000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000002, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000002, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000004, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000002, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 6000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 2000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 3000000002, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000002, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000000, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 4000000004, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 5000000002, ndim=3
+[INFO] PDC_SERVER[0]: Starting flush for obj_id 6000000000, ndim=3
+[13:06:41.581532] [WARNING] [pdc_server.c:1323] PDC_SERVER[0]: Checkpoint start
+[INFO] PDC_SERVER[0]: Checkpoint file [/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench//0/metadata_checkpoint.0]
+[13:06:41.584264] [WARNING] [pdc_server.c:1536] PDC_SERVER[0]: Writing checkpoint transformations start
+[13:06:41.584324] [WARNING] [pdc_server.c:1718] PDC_SERVER[0]: Writing checkpoint transformations done
+[13:06:41.584328] [WARNING] [pdc_server.c:1721] PDC_SERVER[0]: Writing checkpoint region-analysis state start
+[13:06:41.584345] [WARNING] [pdc_server.c:1724] PDC_SERVER[0]: Writing checkpoint region-analysis state done
+[13:06:41.619658] [WARNING] [pdc_server.c:1761] PDC_SERVER[0]: Rank[ALL]: Total checkpoint time = 0.038122
+[13:06:41.619668] [WARNING] [pdc_server.c:1770] PDC_SERVER[0]: Checkpointing done
+[13:06:41.619681] [WARNING] [pdc_client_server_common.c:119] PDC_SERVER[0]: metric,rank0_avg_s/n,rank1_avg_s/n,rank2_avg_s/n,rank3_avg_s/n,rank4_avg_s/n,rank5_avg_s/n,rank6_avg_s/n,rank7_avg_s/n
+[13:06:41.619710] [WARNING] [pdc_client_server_common.c:144] PDC_SERVER[0]: compress,0.018063/12,0.017463/12,0.022902/12,0.018690/12,0.017888/12,0.016946/12,0.018550/12,0.022264/12
+[13:06:41.619716] [WARNING] [pdc_client_server_common.c:144] PDC_SERVER[0]: decompress,0.020787/12,0.025038/12,0.022997/12,0.025331/12,0.024596/12,0.019817/12,0.022520/12,0.024488/12
+[13:06:41.619721] [WARNING] [pdc_client_server_common.c:144] PDC_SERVER[0]: magnitude,0.025335/12,0.021889/12,0.020986/12,0.022286/12,0.023828/12,0.023427/12,0.022621/12,0.023526/12
+[13:06:41.619726] [WARNING] [pdc_client_server_common.c:144] PDC_SERVER[0]: posix_open,0.000152/144,0.000151/144,0.000172/144,0.000142/144,0.000147/144,0.000144/144,0.000150/144,0.000173/144
+[13:06:41.619732] [WARNING] [pdc_client_server_common.c:144] PDC_SERVER[0]: posix_close,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0
+[13:06:41.619737] [WARNING] [pdc_client_server_common.c:144] PDC_SERVER[0]: posix_write,0.030574/72,0.029885/72,0.029799/72,0.029427/72,0.028884/72,0.029376/72,0.030548/72,0.029423/72
+[13:06:41.619742] [WARNING] [pdc_client_server_common.c:144] PDC_SERVER[0]: posix_read,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0,0.000000/0

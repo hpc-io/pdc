@@ -71,18 +71,6 @@ struct _pdc_client_lookup_args {
     hg_request_t *request;
 };
 
-struct _pdc_client_transform_args {
-    size_t                                 size;
-    void *                                 data;
-    void *                                 transform_result;
-    struct _pdc_region_transform_ftn_info *this_transform;
-    struct pdc_region_info *               region_info;
-    int                                    type_extent;
-    int                                    transform_state;
-    int                                    ret;
-    hg_bulk_t                              local_bulk_handle;
-};
-
 struct _pdc_metadata_query_args {
     pdc_metadata_t *data;
 };
@@ -227,7 +215,7 @@ perr_t PDC_Client_send_name_recv_id(const char *obj_name, uint64_t cont_id, pdci
 perr_t PDC_Client_transfer_request(hg_bulk_t *bulk_handle, void *buf, pdcid_t obj_id, uint32_t data_server_id,
                                    int obj_ndim, uint64_t *obj_dims, int remote_ndim, uint64_t *remote_offset,
                                    uint64_t *remote_size, size_t unit, pdc_access_t access_type,
-                                   pdcid_t *metadata_id);
+                                   pdcid_t *metadata_id, struct _pdc_obj_info *obj_pointer);
 
 int PDC_Client_get_var_type_size(pdc_var_type_t dtype);
 
@@ -848,6 +836,11 @@ perr_t PDC_Client_write_id(pdcid_t local_obj_id, struct pdc_region_info *region,
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDC_Client_all_server_checkpoint();
+
+perr_t PDC_Client_an_attach_region(char *json_filepath, char *state_name, pdcid_t obj_id, uint8_t ndim,
+                                   uint64_t *offset, uint64_t *size, int32_t obj_ndim, uint64_t *obj_dims,
+                                   pdc_var_type_t pdc_var_type, char *tf_json_filepath, char *tf_client_state,
+                                   char *tf_store_state, uint32_t data_server_id);
 
 /**
  * Request of PDC client to delete metadata by object name

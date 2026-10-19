@@ -1,0 +1,31 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/pdc_data
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun --overlap -N 2 -n 8 --ntasks-per-node=4 --error=server_curl_eager_2.err --output=server_curl_eager_2.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun --overlap -N 2 -n 64 --ntasks-per-node=32 --output=client_curl_eager_2.log --error=client_curl_eager_2.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_eager "$NX" "$NY" "$NZ_PER_RANK" "$COMPRESS"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
+++ grep '^curl_eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin/client_curl_eager_2.log
++ lines='curl_eager,0,64,256,256,64,0,0.129973,3.962649,0.428576,4.521198,0
+curl_eager,1,64,256,256,64,0,0.129973,3.893091,0.429573,4.452638,0
+curl_eager,2,64,256,256,64,0,0.129973,3.971807,0.430960,4.532739,0'
++ '[' -z 'curl_eager,0,64,256,256,64,0,0.129973,3.962649,0.428576,4.521198,0
+curl_eager,1,64,256,256,64,0,0.129973,3.893091,0.429573,4.452638,0
+curl_eager,2,64,256,256,64,0,0.129973,3.971807,0.430960,4.532739,0' ']'
++ echo 'curl_eager,0,64,256,256,64,0,0.129973,3.962649,0.428576,4.521198,0
+curl_eager,1,64,256,256,64,0,0.129973,3.893091,0.429573,4.452638,0
+curl_eager,2,64,256,256,64,0,0.129973,3.971807,0.430960,4.532739,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun --overlap -N 2 -n 8 --ntasks-per-node=4 --error=close_server_curl_eager_2.err --output=close_server_curl_eager_2.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ sleep 2
+Data size check: expected=35433480192 bytes, actual=35434258432 bytes
+OK: actual/expected data size ratio 1.000 within tolerance
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/results_curl_eager_58916607.csv

@@ -1,0 +1,287 @@
+\emph{Data Flyway}, illustrated in Figure~\ref{fig:transformation-arch}, addresses the five challenges of~\S\ref{sec:introduction} through a single design decision, which is where a pipeline lives. In the prior systems described in~\S\ref{sec:background_related_motivation} it lives in application code, as calls issued at each transfer, so the application holds the ordering of operations and carries intermediate results between them. In Data Flyway it lives in the data management layer, as a directed graph attached to the object or region it applies to. Because the runtime rather than the caller holds that graph, it can record which state each object occupies (\C{2}), see every edge at once rather than one call at a time and so determine when an operation's inputs are complete (\C{3}), choose between alternative routes that a call
+site cannot express since a call names one implementation (\C{4}), and traverse the graph when a transfer arrives rather than when a call is written, which places execution in the server and off the application's critical path (\C{1}, \C{5}).
+
+The remainder of this section develops that design. We begin with the architecture and the division of work among its three components (\S\ref{sec:arch}), then the graph representation itself (\S\ref{sec:graph}) and how a client declares a pipeline and attaches it (\S\ref{sec:pipeline}). We then describe how execution overlaps with data movement (\S\ref{sec:overlap}), the cost model that predicts operation latency (\S\ref{sec:model}), and the scheduling algorithm that uses it to choose a device at runtime (\S\ref{sec:sched}).
+
+\subsection{Overview}
+\label{sec:arch}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth, keepaspectratio]{figures_source/images/in_paper/screenshot_2026-09-22.png}
+    \caption{Data Flyway architecture within PDC. \blcirc{D} indicates data movement optimizations, \blcirc{P} and \blcirc{C} show computing resources used by clients and PDC respectively, and \blcirc{T} represents the alternative path taken by objects or regions with an attached pipeline.}
+    \label{fig:transformation-arch}
+\end{figure}
+
+Figure~\ref{fig:transformation-arch} shows Data Flyway as a management layer inside the PDC server, drawn with a light blue background. A client issues region transfers exactly as it would without Data Flyway. Objects carrying an attached pipeline take the alternative path marked \blcirc{T}, along which the layer performs whatever work the transfer requires before data reaches its destination.
+
+Placing the layer in the server rather than in the client library is what allows operations to proceed alongside application computation rather than extending the application's critical path (\C{5}). It also gives the layer access to the full set of devices attached to a node, which is the precondition for choosing among them (\C{4}).
+
+Three components divide the work.
+
+\begin{itemize}
+    \item The \textbf{graph optimizer} holds the pipeline attached to each entity and the state that entity currently occupies, and determines which operations an arriving transfer requires and in what order (\C{2}, \C{3}).
+    \item The \textbf{scheduler} assigns each operation to a device using predicted cost, accounting for current utilization and for the cost of moving data to that device (\C{4}).
+    \item The \textbf{graph executor} runs the operation, records the resulting state, and routes each result to its destination (\C{3}).
+\end{itemize}
+
+None of the three is visible to the application, which issues transfers and nothing else (\C{1}).
+
+% Figure~\ref{fig:transformation-arch} shows the PDC components relevant to Data Flyway, which is the in-flight processing management layer shown with a light blue background. Data movement, marked \blcirc{D}, occurs between PDC clients and servers, between the management layer and the computing devices, and between PDC servers and persistent storage such as a parallel file system or cloud storage. HPC memory and storage tiers have grown too numerous for a client to exploit directly, and the same heterogeneity holds across computing devices, where the best place to run a computation depends on dynamic factors including data movement cost and current device utilization. Data Flyway hides this complexity from the client while still using the available hardware. The management layer has three components. The graph optimizer determines a path through the pipeline graph, the scheduler selects a device for each operation on that path, and the graph executor performs the computation on the client's behalf.
+
+\subsection{Creating a Pipeline}
+\label{sec:pipeline}
+
+To run operations on a client's behalf, Data Flyway needs a description of
+what can be done to the data and under what conditions. For a
+transformation this means the states data may occupy and the operations
+that move it between them. For an analysis it means the objects an
+operation consumes and the objects it produces. Both are captured in one
+structure. The graph optimizer operates over a directed graph whose nodes
+are data states and named objects, and whose edges are the operations
+between them, which lets a client express pipelines of arbitrary shape.
+
+\begin{lstlisting}[language=json, firstnumber=1,
+  caption={JSON schema for the transformation graph. The ellipsis \texttt{...} indicates that one or more entries may be present. Fields marked ? are optional.},
+  label={fig:transformation-schema},
+  float=htbp
+]
+{
+  "lib_path":? "string",
+  "name": "string",
+  "states": [
+    {
+      "name": "string"
+    },
+    ...
+  ],
+  "transformations": [
+    {
+      "device": "CPU | GPU",
+      "input_state": "states[i].name",
+      "output_state": "states[j].name",
+      "location": "builtin | external",
+      "params": "string",
+      "name": "string"
+    },
+    ...
+  ]
+}
+\end{lstlisting}
+
+\begin{lstlisting}[language=json, firstnumber=1,
+  caption={JSON schema for the analysis graph. Fields follow the same conventions as Listing~\ref{fig:transformation-schema}. The \texttt{input\_objects} and \texttt{output\_objects} fields are arrays rather than single names, which is what expresses fan-in and fan-out.},
+  label={fig:analysis-schema},
+  float=htbp
+]
+{
+  "lib_path":? "string",
+  "name": "string",
+  "objects": [
+    {
+      "name": "string"
+    },
+    ...
+  ],
+  "analyses": [
+    {
+      "device": "CPU | GPU",
+      "input_objects": ["objects[i].name", ...],
+      "output_objects": ["objects[j].name", ...],
+      "location": "builtin | external",
+      "trigger": "eager | lazy",
+      "persist": "true | false",
+      "params": "string",
+      "name": "string"
+    },
+    ...
+  ]
+}
+\end{lstlisting}
+
+A pipeline may contain several paths between the same pair of states, for
+example CPU and GPU implementations of one transformation, which makes an
+imperative API awkward to build around. Data Flyway therefore describes the
+graph in a JavaScript Object Notation (JSON) file. JSON is human readable,
+widely supported, and represents graph structures naturally as arrays of
+objects, so it needs no custom parser and fits existing HPC workflow
+tooling.
+
+Listings~\ref{fig:transformation-schema} and~\ref{fig:analysis-schema} give
+the two schemas. When a client passes a file path to PDC, Data Flyway
+validates the file for well-formedness and semantic correctness. The
+optional \texttt{lib\_path} field names a shared library holding
+user-defined implementations, and \texttt{name} identifies the pipeline. In
+the transformation schema, the \texttt{states} array declares the
+intermediate states data may occupy, each with a unique name, and the
+\texttt{transformations} array declares the operations that convert between
+them. Each entry gives its execution device, its input and output states,
+and whether it is built in or supplied through a shared library.
+Configuration parameters pass through \texttt{params}, and \texttt{name}
+identifies the function to run.
+
+The analysis schema is analogous but operates over \texttt{objects} rather
+than \texttt{states}. The \texttt{objects} array declares the named objects
+an operation may consume or produce, and the \texttt{analyses} array
+declares the operations that derive objects from other objects. Because one
+operation may take several inputs and produce several outputs, its
+\texttt{input\_objects} and \texttt{output\_objects} fields are arrays,
+which is how a pipeline expresses fan-in and fan-out directly in the
+description.
+
+Evaluation timing follows from two independent fields rather than from any
+special-cased execution path. Setting \texttt{trigger} to \texttt{eager}
+makes the executor compute an operation as soon as its last required input
+is written. Setting it to \texttt{lazy} defers computation until a client
+reads an output object, recomputing from the current inputs on every such
+read. The \texttt{persist} field independently controls whether a computed
+result is stored as an ordinary object. Eager with \texttt{persist: true},
+the default, gives eager evaluation. Lazy with \texttt{persist: false}
+gives lazy evaluation. Eager with \texttt{persist: false} gives the
+transient intermediates that chain analysis stages, such as
+\texttt{curl\_x}, \texttt{curl\_y} and \texttt{curl\_z}
+in~\S\ref{sec:curl-vorticity-eval}, which downstream stages consume without
+their ever reaching storage. Because both fields are set per operation,
+eager, lazy and transient stages coexist in one pipeline.
+
+Once a graph is attached to a PDC entity, the server-side management layer
+handles every subsequent transfer. PDC object metadata records which
+entities carry an attached graph, what state each currently holds or which
+objects have already been derived from it, and timing from the operations
+that produced that state. The graph optimizer and the scheduler read this
+metadata to decide how to reach a requested state, what to derive, and
+where and when to move data and execute each operation. Subsequent calls to
+open an entity and transfer data need no knowledge of the graph. Data
+Flyway determines from the metadata whether a transformation or a
+derivation is required, and the executor delivers the data in the expected
+state without client involvement.
+
+A client's workflow is therefore as follows.
+
+\begin{enumerate}
+    \item Create a JSON file describing a pipeline.
+    \item Register the file with the data management system at process initialization.
+    \item Attach pipelines to the relevant objects or regions.
+    \item Perform core computation and region transfers.
+    \item Free pipeline resources.
+\end{enumerate}
+
+Only steps 4 belongs to the application's steady state. After attachment, a
+developer issues ordinary region transfers and nothing else. The API also
+provides debugging utilities, including a check that a valid path exists
+between two states, or that every input an analysis operation requires is
+reachable in the graph.
+
+\subsection{Predictive Model for GPU Kernel Latency}
+\label{sec:model}
+
+We predict total GPU kernel latency ($\texttt{total\_ms}$) using polynomial
+regression over NVML hardware counters together with \emph{lag features},
+which capture autocorrelation across successive invocations. The lag
+features are the host-to-device and device-to-host latency of the
+immediately preceding invocation ($\texttt{prev\_h2d\_ms}$,
+$\texttt{prev\_d2h\_ms}$). This extends the model
+of~\cite{ravi2023runway}, which achieves $R^2 = 0.50$ on A100s from payload
+size and GPU utilization alone. As Figure~\ref{fig:runway} shows, that
+baseline yields $R^2 = 0.38$ on our platform, also using A100s, with
+predictions collapsing into a narrow band that fails to span the observed
+latency range. Forward-backward BIC stepwise regression selects six base
+predictors ($\texttt{data\_size\_mb}$, $\texttt{prev\_h2d\_ms}$,
+$\texttt{prev\_d2h\_ms}$, $\texttt{nvml\_gpu\_util}$,
+$\texttt{nvml\_pcie\_tx\_kbps}$, $\texttt{nvml\_pcie\_rx\_kbps}$), which are
+expanded to a degree-2 polynomial, and iterative term-level pruning at $p 
+10^{-4}$ reduces that expansion to 15 retained monomials. We split the $n =
+2{,}320$ observations 80/20, using the training portion for both predictor
+selection and fitting and holding out the remainder for evaluation. As
+Figure~\ref{fig:bestr2} shows, the resulting model achieves $R^2 = 0.97$ on
+the held-out set, with predictions distributed tightly around the diagonal
+across the full 0--160\,ms range.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.4\columnwidth]{figures_source/images/in_paper/residual_legend.pdf}
+
+  \begin{subfigure}[b]{0.48\columnwidth}
+    \includegraphics[width=\linewidth]{figures_source/images/in_paper/runway_predicted_vs_actual.pdf}
+    \caption{Baseline ($R^2=0.38$).}
+    \label{fig:runway}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}[b]{0.48\columnwidth}
+    \includegraphics[width=\linewidth]{figures_source/images/in_paper/best_r2_predicted_vs_actual.pdf}
+    \caption{Our model ($R^2=0.97$).}
+    \label{fig:bestr2}
+  \end{subfigure}
+  \caption{Predicted against actual total kernel latency. The baseline, which uses only payload size and GPU utilization, fails to capture latency variance across workloads. Our 15-term degree-2 polynomial augmented with lag features tracks the diagonal across the full 0--160\,ms range. Both panels report $R^2$ on the held-out set.}
+  \label{fig:models}
+\end{figure}
+
+\subsection{Dynamic Scheduling Algorithm}
+\label{sec:sched}
+
+When a client transfers data, Data Flyway must decide at runtime which
+device executes each operation. The decision is difficult because device
+utilization fluctuates, operation cost varies with data size and type, and
+moving data between devices carries its own overhead. A static assignment
+cannot account for contention when devices are saturated, nor for cases
+where transfer cost outweighs the benefit of the faster device. The
+algorithm described here is the core of the scheduler, which works with the
+graph optimizer and the executor to select both a path and a device
+assignment and then run the operation.
+
+\begin{algorithm}[t]
+\caption{Dynamic scheduling algorithm.}
+\label{fig:scheduling_algorithm}
+\begin{algorithmic}[1]
+\STATE $edge \gets \text{get\_next\_best\_edge}($
+\STATE \hspace{2em} $dg,\ cur\_state,\ desired\_state)$
+\WHILE{$edge \neq \text{null}$}
+    \STATE $data\_size \gets \text{bytes}(input\_region)$
+    \STATE $move_{CPU} \gets \text{movement}(device,\ \text{CPU})$
+    \STATE $move_{GPU} \gets \text{movement}(device,\ \text{GPU})$
+    \STATE $h2d \gets (move_{GPU} > 0)\ ?\ prev\_h2d : 0$
+    \STATE $d2h \gets (move_{CPU} > 0)\ ?\ prev\_d2h : 0$
+    \STATE $cost_{CPU} \gets \hat{f}_{CPU}(data\_size,\ CPU_{util})$
+    \STATE $cost_{GPU} \gets \hat{f}_{GPU}(data\_size,\ GPU_{util},\ h2d,\ d2h,$
+    \STATE \hspace{2em} $nvml\_pcie\_tx\_kbps,\ nvml\_pcie\_rx\_kbps)$
+    \IF{$cost_{CPU} \leq cost_{GPU}$}
+        \STATE $device \gets \text{CPU}$
+    \ELSE
+        \STATE $device \gets \text{GPU}$
+    \ENDIF
+    \STATE $total\_time \gets \text{run}(edge,\ device)$
+    \IF{$device = \text{GPU}$}
+        \STATE $\text{update\_lag\_features}_{GPU}(h2d,\ d2h)$
+    \ENDIF
+    \STATE $edge \gets \text{get\_next\_best\_edge}($
+    \STATE \hspace{2em} $dg,\ cur\_state,\ desired\_state)$
+\ENDWHILE
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm~\ref{fig:scheduling_algorithm} schedules operations along the
+lowest-predicted-cost path between a region's current state and its desired
+state. It begins by calling \texttt{get\_next\_best\_edge}, which computes
+the shortest path through the graph and returns the first edge to execute.
+Each edge carries as its weight the lower of the CPU and GPU runtimes
+predicted by the models below, including the cost of moving data to that
+device, so path selection accounts for both computation and data placement
+across all remaining steps. A null return means the current state already
+equals the desired state and traversal is complete.
+
+For each edge the scheduler first computes the movement cost for each
+device, which is the cost of transferring data to the CPU or GPU if it is
+not already resident there. Data already on the target device costs
+nothing to move, and the corresponding lag feature is set to zero since no
+transfer will occur. The scheduler then predicts runtime with
+device-specific polynomial models. The CPU model $\hat{f}_{CPU}$ takes data
+size and current CPU utilization, while the GPU model $\hat{f}_{GPU}$ also
+incorporates the lag features from the previous execution on that GPU to
+account for transfer overhead. The operation is dispatched to whichever
+device carries the lower total cost.
+
+After execution only the GPU lag features are updated, since only the GPU
+model depends on them. The scheduler then calls
+\texttt{get\_next\_best\_edge} again, recomputing the best next step from
+the updated graph state, which lets it adapt to conditions that change
+between operations.

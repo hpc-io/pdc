@@ -1,0 +1,29 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_analysis_bench/10 /pscratch/sd/n/nlewi26/pdc_analysis_bench/11 /pscratch/sd/n/nlewi26/pdc_analysis_bench/12 /pscratch/sd/n/nlewi26/pdc_analysis_bench/13 /pscratch/sd/n/nlewi26/pdc_analysis_bench/14 /pscratch/sd/n/nlewi26/pdc_analysis_bench/15 /pscratch/sd/n/nlewi26/pdc_analysis_bench/16 /pscratch/sd/n/nlewi26/pdc_analysis_bench/17 /pscratch/sd/n/nlewi26/pdc_analysis_bench/18 /pscratch/sd/n/nlewi26/pdc_analysis_bench/19 /pscratch/sd/n/nlewi26/pdc_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_analysis_bench/20 /pscratch/sd/n/nlewi26/pdc_analysis_bench/21 /pscratch/sd/n/nlewi26/pdc_analysis_bench/22 /pscratch/sd/n/nlewi26/pdc_analysis_bench/23 /pscratch/sd/n/nlewi26/pdc_analysis_bench/24 /pscratch/sd/n/nlewi26/pdc_analysis_bench/25 /pscratch/sd/n/nlewi26/pdc_analysis_bench/26 /pscratch/sd/n/nlewi26/pdc_analysis_bench/27 /pscratch/sd/n/nlewi26/pdc_analysis_bench/28 /pscratch/sd/n/nlewi26/pdc_analysis_bench/29 /pscratch/sd/n/nlewi26/pdc_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_analysis_bench/30 /pscratch/sd/n/nlewi26/pdc_analysis_bench/31 /pscratch/sd/n/nlewi26/pdc_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_analysis_bench/8 /pscratch/sd/n/nlewi26/pdc_analysis_bench/9 /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_data
++ popd
++ srun -N 32 -n 64 --ntasks-per-node=2 --error=server_eager_32.err --output=server_eager_32.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 32 -n 1024 --ntasks-per-node=32 --output=client_eager_32.log --error=client_eager_32.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_magnitude eager "$N_ELEM"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin/client_eager_32.log
++ lines='eager,0,1024,16777216,0.477819,9.312050,0.000000,0.000000,0.000000,1.196287,10.508337,0
+eager,1,1024,16777216,0.477819,9.237742,0.000000,0.000000,0.000000,1.184947,10.422688,0
+eager,2,1024,16777216,0.477819,9.222418,0.000000,0.000000,0.000000,1.199563,10.421982,0'
++ '[' -z 'eager,0,1024,16777216,0.477819,9.312050,0.000000,0.000000,0.000000,1.196287,10.508337,0
+eager,1,1024,16777216,0.477819,9.237742,0.000000,0.000000,0.000000,1.184947,10.422688,0
+eager,2,1024,16777216,0.477819,9.222418,0.000000,0.000000,0.000000,1.199563,10.421982,0' ']'
++ echo 'eager,0,1024,16777216,0.477819,9.312050,0.000000,0.000000,0.000000,1.196287,10.508337,0
+eager,1,1024,16777216,0.477819,9.237742,0.000000,0.000000,0.000000,1.184947,10.422688,0
+eager,2,1024,16777216,0.477819,9.222418,0.000000,0.000000,0.000000,1.199563,10.421982,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 32 -n 64 --ntasks-per-node=2 --error=close_server_eager_32.err --output=close_server_eager_32.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 2
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/results_eager_58898915.csv

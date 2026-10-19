@@ -1,0 +1,5 @@
+[10:04:53.296780] [WARNING] [pdc_server.c:1184] PDC_SERVER[0]: Checkpoint start
+[10:04:53.325977] [WARNING] [pdc_server.c:1376] PDC_SERVER[0]: Writing checkpoint transformations start
+[10:04:53.325990] [WARNING] [pdc_server.c:1558] PDC_SERVER[0]: Writing checkpoint transformations done
+[10:04:53.326289] [WARNING] [pdc_server.c:1595] PDC_SERVER[0]: Rank[ALL]: Total checkpoint time = 0.029460
+[10:04:53.327516] [WARNING] [pdc_server.c:1602] PDC_SERVER[0]: Checkpointing done

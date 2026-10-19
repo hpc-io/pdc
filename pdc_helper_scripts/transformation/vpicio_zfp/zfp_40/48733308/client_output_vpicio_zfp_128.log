@@ -1,0 +1,77 @@
+[15:22:36.761438] [WARNING] [vpicio_mts.c:92] PDC_CLIENT[0]: Writing 8388608 number of particles for 5 steps with 4096 clients zfp transformation.
+[15:22:37.798473] [WARNING] [vpicio_mts.c:159] PDC_CLIENT[0]: Sleep start: 40.00
+[15:23:17.798763] [WARNING] [vpicio_mts.c:162] PDC_CLIENT[0]: Sleep end: 40.00
+[15:23:18.318140] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  0
+[15:23:18.338762] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 0
+[15:23:18.367015] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 1
+[15:23:18.439806] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 2
+[15:23:18.458175] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 3
+[15:23:18.477573] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 4
+[15:23:18.498460] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 5
+[15:23:18.530125] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 2.11842e-01
+[15:23:18.532219] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 2.09636e-03
+[15:23:19.676627] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 1.14440e+00
+[15:23:19.676861] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[15:23:59.677005] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[15:23:59.896622] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 1.23654e-01
+[15:24:00.018033] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.21412e-01
+[15:24:00.018350] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 3.20202e-04
+[15:24:00.018578] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  1
+[15:24:00.030567] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 8
+[15:24:00.047909] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 9
+[15:24:00.061941] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 10
+[15:24:00.077720] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 11
+[15:24:00.096897] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 12
+[15:24:00.108699] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 13
+[15:24:00.144067] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 1.25289e-01
+[15:24:00.144318] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 2.52851e-04
+[15:24:01.472624] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 1.32830e+00
+[15:24:01.474069] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[15:24:41.474799] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[15:24:41.645529] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 1.24565e-01
+[15:24:41.780546] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.35020e-01
+[15:24:41.780812] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 2.67179e-04
+[15:24:41.781039] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  2
+[15:24:41.798755] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 16
+[15:24:41.817026] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 17
+[15:24:41.832156] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 18
+[15:24:41.850050] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 19
+[15:24:41.869620] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 20
+[15:24:41.889632] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 21
+[15:24:41.909573] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 1.28332e-01
+[15:24:41.909821] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 2.48503e-04
+[15:24:43.173703] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 1.26388e+00
+[15:24:43.174258] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[15:25:23.174578] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[15:25:23.836623] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 5.78870e-01
+[15:25:23.957489] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.20867e-01
+[15:25:23.959539] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 2.05323e-03
+[15:25:23.959747] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  3
+[15:25:23.978336] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 24
+[15:25:23.999567] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 25
+[15:25:24.015291] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 26
+[15:25:24.029710] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 27
+[15:25:24.044051] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 28
+[15:25:24.069233] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 29
+[15:25:24.089749] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 1.29823e-01
+[15:25:24.091536] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 1.79032e-03
+[15:25:25.364652] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 1.27311e+00
+[15:25:25.365889] [WARNING] [vpicio_mts.c:257] PDC_CLIENT[0]: Sleep start: 40.00
+[15:26:05.367083] [WARNING] [vpicio_mts.c:260] PDC_CLIENT[0]: Sleep end: 40.00
+[15:26:05.673385] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 1.75884e-01
+[15:26:05.785847] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.12465e-01
+[15:26:05.790976] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 5.12987e-03
+[15:26:05.791214] [WARNING] [vpicio_mts.c:174] PDC_CLIENT[0]: #Step  4
+[15:26:05.812765] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 32
+[15:26:05.828381] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 33
+[15:26:05.847636] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 34
+[15:26:05.869824] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 35
+[15:26:05.892267] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 36
+[15:26:05.921245] [WARNING] [vpicio_mts.c:195] PDC_CLIENT[0]: Attaching zfp to index: 37
+[15:26:05.944092] [WARNING] [vpicio_mts.c:220] PDC_CLIENT[0]: Obj create time: 1.52690e-01
+[15:26:05.951202] [WARNING] [vpicio_mts.c:236] PDC_CLIENT[0]: Transfer create time: 7.11273e-03
+[15:26:07.616650] [WARNING] [vpicio_mts.c:252] PDC_CLIENT[0]: Transfer start time: 1.66544e+00
+[15:26:07.616852] [WARNING] [vpicio_mts.c:264] PDC_CLIENT[0]: Final step, no sleep
+[15:26:24.732671] [WARNING] [vpicio_mts.c:281] PDC_CLIENT[0]: Transfer wait time: 1.70400e+01
+[15:26:24.863377] [WARNING] [vpicio_mts.c:295] PDC_CLIENT[0]: Transfer close time: 1.30713e-01
+[15:26:24.870123] [WARNING] [vpicio_mts.c:309] PDC_CLIENT[0]: Obj close time: 6.74547e-03

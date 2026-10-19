@@ -1,0 +1,68 @@
+NUM_NODES=64
+DATA_SERVERS_PER_NODE=1
+CLIENTS_PER_NODE=32
+SERVER_TOTAL_TASKS=64
+CLIENT_TOTAL_TASKS=2048
+removing old logs
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ rm -rf /pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data
++ popd
++ srun -N 64 -n 64 --ntasks-per-node=1 --error=server_output_vpicio_zfp_gpu_64.err --output=server_output_vpicio_zfp_gpu_64.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m19.385s
+user	0m0.075s
+sys	0m6.465s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 64 -n 2048 --ntasks-per-node=32 --output=client_output_vpicio_zfp_gpu_64.log --error=client_output_vpicio_zfp_gpu_64.err ./vpicio_mts 8388608 5 40 zfp_gpu
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	4m24.487s
+user	0m0.070s
+sys	0m0.128s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 64 -n 64 --ntasks-per-node=1 --error=close_server_output_vpicio_zfp_gpu_64.err --output=close_server_output_vpicio_zfp_gpu_64.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m55.292s
+user	0m0.062s
+sys	0m0.065s
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 64 -n 64 --ntasks-per-node=1 --error=server_output_bdcats_zfp_gpu_64.err --output=server_output_bdcats_zfp_gpu_64.log ./pdc_server restart
+
+real	0m0.006s
+user	0m0.003s
+sys	0m0.003s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 64 -n 2048 --ntasks-per-node=32 --output=client_output_bdcats_zfp_gpu_64.log --error=client_output_bdcats_zfp_gpu_64.err ./bdcats_mts 8388608 5 40 zfp_gpu
+srun: Step created for StepId=48726533.4
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	4m13.515s
+user	0m0.148s
+sys	0m0.766s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 64 -n 64 --ntasks-per-node=1 --error=close_server_output_bdcats_zfp_gpu_64.err --output=close_server_output_bdcats_zfp_gpu_64.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m3.788s
+user	0m0.067s
+sys	0m0.037s

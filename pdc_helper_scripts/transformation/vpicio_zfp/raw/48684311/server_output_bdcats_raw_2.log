@@ -1,0 +1,11 @@
+[10:09:17.210421] [WARNING] [pdc_server.c:1641] PDC_SERVER[0]: Restart from checkpoint start
+[10:09:17.214541] [WARNING] [pdc_server.c:1914] PDC_SERVER[0]: Reading checkpoint transformations start
+[10:09:17.214550] [WARNING] [pdc_server.c:2040] PDC_SERVER[0]: Reading checkpoint transformations done
+[10:09:17.214831] [WARNING] [pdc_server.c:2064] PDC_SERVER[0]: Restart from checkpoint done
+[10:09:19.135963] [WARNING] [pdc_server_data.c:122] PDC_SERVER[0]: Total Lustre OSTs, PDC Servers: 256, 2
+[10:09:19.135982] [WARNING] [pdc_server_data.c:123] PDC_SERVER[0]: Setting Lustre stripe count to 128 and size to 16 MB
+[10:12:57.681832] [WARNING] [pdc_server.c:1184] PDC_SERVER[0]: Checkpoint start
+[10:12:57.713595] [WARNING] [pdc_server.c:1376] PDC_SERVER[0]: Writing checkpoint transformations start
+[10:12:57.713615] [WARNING] [pdc_server.c:1558] PDC_SERVER[0]: Writing checkpoint transformations done
+[10:12:57.737222] [WARNING] [pdc_server.c:1595] PDC_SERVER[0]: Rank[ALL]: Total checkpoint time = 0.054996
+[10:12:57.738621] [WARNING] [pdc_server.c:1602] PDC_SERVER[0]: Checkpointing done

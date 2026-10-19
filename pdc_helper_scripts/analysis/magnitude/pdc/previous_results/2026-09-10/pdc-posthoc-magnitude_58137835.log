@@ -1,0 +1,24 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_data /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_tmp
++ popd
++ srun -N 8 -n 64 --ntasks-per-node=8 --error=server_posthoc_8.err --output=server_posthoc_8.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 8 -n 256 --ntasks-per-node=32 --output=client_posthoc_8.log --error=client_posthoc_8.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_magnitude posthoc "$N_ELEM"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^posthoc,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin/client_posthoc_8.log
+++ tail -1
++ line=posthoc,256,16777216,0.189538,0.630661,0.630542,0.065139,0.431903,0.000000,1.758244,0
++ '[' -z posthoc,256,16777216,0.189538,0.630661,0.630542,0.065139,0.431903,0.000000,1.758244,0 ']'
++ echo posthoc,256,16777216,0.189538,0.630661,0.630542,0.065139,0.431903,0.000000,1.758244,0
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 8 -n 64 --ntasks-per-node=8 --error=close_server_posthoc_8.err --output=close_server_posthoc_8.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 2
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/results_posthoc_58137835.csv

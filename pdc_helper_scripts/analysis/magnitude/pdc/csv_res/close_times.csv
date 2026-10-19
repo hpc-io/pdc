@@ -1,0 +1,8 @@
+mode,num_nodes,avg_close_s,n_samples
+eager,1,1.485900,8
+eager,2,0.924823,16
+eager,8,0.806406,64
+eager,16,0.761326,128
+eager,32,0.864223,256
+eager,64,0.986604,512
+eager,128,2.576363,1024

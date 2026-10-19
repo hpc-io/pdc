@@ -1,0 +1,58 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ rm -rf '/pscratch/sd/n/nlewi26/pdc_curl_analysis_bench/*'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 2 -n 16 --ntasks-per-node=8 --error=server_curl_posthoc_write_2.err --output=server_curl_posthoc_write_2.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 2 -n 64 --ntasks-per-node=32 --output=client_curl_posthoc_write_2.log --error=client_curl_posthoc_write_2.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_write "$NX" "$NY" "$NZ_PER_RANK"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
+++ grep '^curl_posthoc_write,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin/client_curl_posthoc_write_2.log
++ lines='curl_posthoc_write,0,64,256,256,64,0.118228,0.260567
+curl_posthoc_write,1,64,256,256,64,0.118228,0.259759
+curl_posthoc_write,2,64,256,256,64,0.118228,0.228914'
++ '[' -z 'curl_posthoc_write,0,64,256,256,64,0.118228,0.260567
+curl_posthoc_write,1,64,256,256,64,0.118228,0.259759
+curl_posthoc_write,2,64,256,256,64,0.118228,0.228914' ']'
++ echo 'curl_posthoc_write,0,64,256,256,64,0.118228,0.260567
+curl_posthoc_write,1,64,256,256,64,0.118228,0.259759
+curl_posthoc_write,2,64,256,256,64,0.118228,0.228914'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 2 -n 16 --ntasks-per-node=8 --error=close_server_curl_posthoc_write_2.err --output=close_server_curl_posthoc_write_2.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ sleep 2
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 2 -n 16 --ntasks-per-node=8 --error=server_restart_curl_posthoc_write_2.err --output=server_restart_curl_posthoc_write_2.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server restart'
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 2 -n 64 --ntasks-per-node=32 --output=client_curl_posthoc_analyze_2.log --error=client_curl_posthoc_analyze_2.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_curl_analyze "$NX" "$NY" "$NZ_PER_RANK" "$COMPRESS"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
+++ grep '^curl_posthoc_analyze,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin/client_curl_posthoc_analyze_2.log
++ lines='curl_posthoc_analyze,0,64,256,256,64,0,0.097369,0.416355,0.063809,0.277344,0.020750,0.162096,1.037724,0
+curl_posthoc_analyze,1,64,256,256,64,0,0.097369,0.398399,0.048154,0.371922,0.020051,0.190729,1.126623,0
+curl_posthoc_analyze,2,64,256,256,64,0,0.097369,0.406189,0.051508,0.338056,0.019789,0.172249,1.085161,0'
++ '[' -z 'curl_posthoc_analyze,0,64,256,256,64,0,0.097369,0.416355,0.063809,0.277344,0.020750,0.162096,1.037724,0
+curl_posthoc_analyze,1,64,256,256,64,0,0.097369,0.398399,0.048154,0.371922,0.020051,0.190729,1.126623,0
+curl_posthoc_analyze,2,64,256,256,64,0,0.097369,0.406189,0.051508,0.338056,0.019789,0.172249,1.085161,0' ']'
++ echo 'curl_posthoc_analyze,0,64,256,256,64,0,0.097369,0.416355,0.063809,0.277344,0.020750,0.162096,1.037724,0
+curl_posthoc_analyze,1,64,256,256,64,0,0.097369,0.398399,0.048154,0.371922,0.020051,0.190729,1.126623,0
+curl_posthoc_analyze,2,64,256,256,64,0,0.097369,0.406189,0.051508,0.338056,0.019789,0.172249,1.085161,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ srun -N 2 -n 16 --ntasks-per-node=8 --error=close_server_curl_posthoc_analyze_2.err --output=close_server_curl_posthoc_analyze_2.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts
++ sleep 2
+Data size check: expected=35433480192 bytes, actual=35434946560 bytes
+OK: actual/expected data size ratio 1.000 within tolerance
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/curl_analysis_scripts/results_curl_posthoc_58753286.csv

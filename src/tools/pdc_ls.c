@@ -5,11 +5,13 @@
 #include <regex.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <assert.h>
 #include <sys/types.h>
 
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "../src/server/include/pdc_server_metadata.h"
+#include "/mnt/fast/nlewis/workspace/source/pdc/src/server/transform/include/pdc_tf_server.h"
 #include "cjson/cJSON.h"
 
 const char *avail_args[] = {"-n", "-i", "-json", "-ln", "-li", "-s"};
@@ -59,6 +61,12 @@ typedef struct FileNameNode {
     char *               file_name;
     struct FileNameNode *next;
 } FileNameNode;
+
+typedef struct pdc_tf_obj_id_to_dg_t {
+    pdcid_t             obj_id;
+    struct pdc_tf_obj_t pdc_tf_obj;
+    pdc_dg_t *          dg;
+} pdc_tf_obj_id_to_dg_t;
 
 typedef struct ArrayList {
     int    length;
@@ -128,9 +136,8 @@ int
 main(int argc, char *argv[])
 {
     if (argc == 1) {
-        LOG_JUST_PRINT(
-            "Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] "
-            "[-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
+        printf("Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] "
+               "[-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
         return 0;
     }
     else {
@@ -363,6 +370,18 @@ do_transfer_request_metadata(int pdc_server_size_input, char *checkpoint)
     }
     return metadata_server_objs;
 }
+
+static size_t read_checkpoint_str_len;
+
+#define READ_CHECKPOINT_STR(file, str_ptr)                                                                   \
+    do {                                                                                                     \
+        fread(&read_checkpoint_str_len, sizeof(size_t), 1, (file));                                          \
+        printf("read_checkpoint_str_len: %d\n", read_checkpoint_str_len);                                    \
+        if (read_checkpoint_str_len > 0) {                                                                   \
+            (str_ptr) = PDC_calloc(1, read_checkpoint_str_len);                                              \
+            fread((str_ptr), read_checkpoint_str_len, 1, (file));                                            \
+        }                                                                                                    \
+    } while (0)
 
 void
 pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
@@ -689,6 +708,139 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 cur_metadata_node = cur_metadata_node->next;
             }
             cur_pkg = cur_pkg->next;
+        }
+
+        // Start checkpoint region transformations
+        PDCtf_init_builtin_funcs();
+        printf("Reading checkpoint transformations\n");
+        size_t num_objs;
+        fread(&num_objs, sizeof(size_t), 1, file);
+        printf("num_objs: %lu\n", num_objs);
+        PDC_VECTOR *tf_obj_id_to_dg_vector_g = pdc_vector_create(PDC_MAX(num_objs, 8), 2.0);
+        for (int _o = 0; _o < num_objs; _o++) {
+            pdc_tf_obj_id_to_dg_t *cur_obj_id_to_dg = PDC_calloc(1, sizeof(pdc_tf_obj_id_to_dg_t));
+            pdc_vector_add(tf_obj_id_to_dg_vector_g, cur_obj_id_to_dg);
+
+            fread(&cur_obj_id_to_dg->obj_id, sizeof(pdcid_t), 1, file);
+            printf("obj_id: %d\n", cur_obj_id_to_dg->obj_id);
+
+            char *json_filepath;
+            READ_CHECKPOINT_STR(file, json_filepath);
+            printf("\tobj[%d] json_filepath_str: %s\n", cur_obj_id_to_dg->obj_id, json_filepath);
+
+            // Read checkpoint region mapping
+            size_t num_region_mappings;
+            fread(&num_region_mappings, sizeof(size_t), 1, file);
+            printf("\tnum_region_mappings: %lu\n", num_region_mappings);
+            cur_obj_id_to_dg->pdc_tf_obj.region_mappings_vector =
+                pdc_vector_create(PDC_MAX(num_region_mappings, 8), 2.0);
+            for (int _r = 0; _r < num_region_mappings; _r++) {
+                pdc_tf_region_mapping_t *cur_region_mapping = PDC_calloc(1, sizeof(pdc_tf_region_mapping_t));
+                pdc_vector_add(cur_obj_id_to_dg->pdc_tf_obj.region_mappings_vector, cur_region_mapping);
+
+                pdcid_t dg_id;
+                fread(&dg_id, sizeof(pdcid_t), 1, file);
+                cur_region_mapping->region_state.dg_id = dg_id;
+                printf("\t\tdg_id: %d\n", cur_region_mapping->region_state.dg_id);
+
+                READ_CHECKPOINT_STR(file, cur_region_mapping->region_state.cur_state);
+                READ_CHECKPOINT_STR(file, cur_region_mapping->region_state.client_state);
+                READ_CHECKPOINT_STR(file, cur_region_mapping->region_state.store_state);
+
+                printf("\t\tcur_state_str: %s\n", cur_region_mapping->region_state.cur_state);
+                printf("\t\tclient_state_str: %s\n", cur_region_mapping->region_state.client_state);
+                printf("\t\tstore_state_str: %s\n", cur_region_mapping->region_state.store_state);
+
+                fread(&(cur_region_mapping->conceptual_region.ndim), sizeof(size_t), 1, file);
+                fread(&(cur_region_mapping->conceptual_region.pdc_var_type), sizeof(pdc_var_type_t), 1, file);
+                fread(cur_region_mapping->conceptual_region.size, sizeof(uint64_t),
+                      cur_region_mapping->conceptual_region.ndim, file);
+                fread(cur_region_mapping->conceptual_offset, sizeof(uint64_t),
+                      cur_region_mapping->conceptual_region.ndim, file);
+
+                printf("\t\tconceptual_region_ndim: %d\n", cur_region_mapping->conceptual_region.ndim);
+                printf("\t\tpdc_var_type: %d, size: %d\n", cur_region_mapping->conceptual_region.pdc_var_type,
+                       PDC_get_var_type_size(cur_region_mapping->conceptual_region.pdc_var_type));
+                printf("\t\tconceptual_region_offset:\n");
+                for (i = 0; i < cur_region_mapping->conceptual_region.ndim; i++) {
+                    printf("\t\t\toffset[%d]=%lu\n", i, cur_region_mapping->conceptual_offset[i]);
+                }
+                printf("\t\tconceptual_region_size:\n");
+                for (i = 0; i < cur_region_mapping->conceptual_region.ndim; i++) {
+                    printf("\t\t\tsize[%d]=%lu\n", i, cur_region_mapping->conceptual_region.size[i]);
+                }
+
+                fread(&(cur_region_mapping->actual_region.ndim), sizeof(size_t), 1, file);
+                fread(&(cur_region_mapping->actual_region.pdc_var_type), sizeof(pdc_var_type_t), 1, file);
+                fread(cur_region_mapping->actual_region.size, sizeof(uint64_t),
+                      cur_region_mapping->actual_region.ndim, file);
+
+                printf("\t\tactual_region_ndim: %d\n", cur_region_mapping->actual_region.ndim);
+                printf("\t\tpdc_var_type %d, size: %d\n", cur_region_mapping->actual_region.pdc_var_type,
+                       PDC_get_var_type_size(cur_region_mapping->actual_region.pdc_var_type));
+                printf("\t\tactual_region_size:\n");
+                for (i = 0; i < cur_region_mapping->actual_region.ndim; i++) {
+                    printf("\t\t\tsize[%d]=%lu\n", i, cur_region_mapping->actual_region.size[i]);
+                }
+            }
+
+            cur_obj_id_to_dg->dg = PDCtf_dg_json_create_common(json_filepath);
+
+            if (cur_obj_id_to_dg == NULL) {
+                assert("");
+            }
+            else if (cur_obj_id_to_dg->dg == NULL) {
+                assert("");
+            }
+
+            // Checkpoint state and func params for dg
+            for (int e_index = 0; e_index < cur_obj_id_to_dg->dg->edge_count; e_index++) {
+                pdc_tf_func_t *f = cur_obj_id_to_dg->dg->edges[e_index]->data;
+                size_t         num_params;
+                fread(&num_params, sizeof(size_t), 1, file);
+                printf("\t\tfunc_name: %s\n", f->name);
+                printf("\t\t\tparams_str: %s\n",
+                       (f->params_str && strlen(f->params_str) > 0) ? f->params_str : "none");
+                printf("\t\t\tnum_params: %d\n", num_params);
+                f->pdc_tf_dg_params_vector = pdc_vector_create(PDC_MAX(num_params, 2), 2.0);
+                for (int _n = 0; _n < num_params; _n++) {
+                    pdc_tf_dg_params_t *cur_param = PDC_calloc(1, sizeof(pdc_tf_dg_params_t));
+                    pdc_vector_add(f->pdc_tf_dg_params_vector, cur_param);
+
+                    // Read conceptual_flat_offset and params_size
+                    fread(&(cur_param->flat_conceptual_offset), sizeof(uint64_t), 1, file);
+                    fread(&(cur_param->params_size), sizeof(uint64_t), 1, file);
+                    // Read param data
+                    cur_param->params = PDC_calloc(1, cur_param->params_size);
+                    fread(cur_param->params, cur_param->params_size, 1, file);
+
+                    printf("\t\t\tconceptual_flat_offset: %lu\n", cur_param->flat_conceptual_offset);
+                    printf("\t\t\tparams_size: %d\n", cur_param->params_size);
+                }
+            }
+
+            for (int v_index = 0; v_index < cur_obj_id_to_dg->dg->vertex_count; v_index++) {
+                pdc_tf_state_t *s = cur_obj_id_to_dg->dg->vertices[v_index]->data;
+                size_t          num_params;
+                fread(&num_params, sizeof(size_t), 1, file);
+                printf("\t\tstate_name: %s\n", s->name);
+                printf("\t\t\tnum_params: %d\n", num_params);
+                s->pdc_tf_dg_params_vector = pdc_vector_create(PDC_MAX(num_params, 2), 2.0);
+                for (int _n = 0; _n < num_params; _n++) {
+                    pdc_tf_dg_params_t *cur_param = PDC_calloc(1, sizeof(pdc_tf_dg_params_t));
+                    pdc_vector_add(s->pdc_tf_dg_params_vector, cur_param);
+
+                    // Read conceptual_flat_offset and params_size
+                    fread(&(cur_param->flat_conceptual_offset), sizeof(uint64_t), 1, file);
+                    fread(&(cur_param->params_size), sizeof(uint64_t), 1, file);
+                    // Read param data
+                    cur_param->params = PDC_calloc(1, cur_param->params_size);
+                    fread(cur_param->params, cur_param->params_size, 1, file);
+
+                    printf("\t\t\tconceptual_flat_offset: %lu\n", cur_param->flat_conceptual_offset);
+                    printf("\t\t\tparams_size: %d\n", cur_param->params_size);
+                }
+            }
         }
 
         fclose(file);

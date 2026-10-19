@@ -1,0 +1,15 @@
+[16:52:35.870036] [WARNING] [pdc_server_data.c:122] PDC_SERVER[0]: Total Lustre OSTs, PDC Servers: 256, 2
+[16:52:35.870225] [WARNING] [pdc_server_data.c:123] PDC_SERVER[0]: Setting Lustre stripe count to 128 and size to 16 MB
+[16:59:33.514932] [WARNING] [pdc_server.c:1184] PDC_SERVER[0]: Checkpoint start
+[16:59:33.543141] [WARNING] [pdc_server.c:1376] PDC_SERVER[0]: Writing checkpoint transformations start
+[16:59:33.544344] [WARNING] [pdc_server.c:1558] PDC_SERVER[0]: Writing checkpoint transformations done
+[16:59:33.544694] [WARNING] [pdc_server.c:1595] PDC_SERVER[0]: Rank[ALL]: Total checkpoint time = 0.029492
+[16:59:33.546073] [WARNING] [pdc_server.c:1602] PDC_SERVER[0]: Checkpointing done
+[16:59:33.546539] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=0, name=open, avg=0.000633, total=0.608046, count=960
+[16:59:33.546552] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=1, name=close, avg=0.000248, total=0.238336, count=960
+[16:59:33.546557] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=3, name=write, avg=0.038327, total=36.793913, count=960
+[16:59:33.546562] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=4, name=total_graph_exec, avg=0.431210, total=413.961626, count=960
+[16:59:33.547341] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=0, name=open, avg=0.000722, total=0.693593, count=960
+[16:59:33.547472] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=1, name=close, avg=0.000281, total=0.269519, count=960
+[16:59:33.547494] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=3, name=write, avg=0.039019, total=37.458149, count=960
+[16:59:33.547510] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=4, name=total_graph_exec, avg=0.431294, total=414.042381, count=960

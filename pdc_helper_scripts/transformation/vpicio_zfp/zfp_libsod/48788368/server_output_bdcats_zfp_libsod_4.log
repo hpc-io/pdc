@@ -1,0 +1,25 @@
+[19:46:53.861557] [WARNING] [pdc_server.c:1641] PDC_SERVER[0]: Restart from checkpoint start
+[19:46:53.862323] [WARNING] [pdc_server.c:1914] PDC_SERVER[0]: Reading checkpoint transformations start
+[19:46:53.868050] [WARNING] [pdc_server.c:2040] PDC_SERVER[0]: Reading checkpoint transformations done
+[19:46:53.868244] [WARNING] [pdc_server.c:2064] PDC_SERVER[0]: Restart from checkpoint done
+[19:50:58.766622] [WARNING] [pdc_server.c:1184] PDC_SERVER[0]: Checkpoint start
+[19:50:58.789464] [WARNING] [pdc_server.c:1376] PDC_SERVER[0]: Writing checkpoint transformations start
+[19:50:58.790747] [WARNING] [pdc_server.c:1558] PDC_SERVER[0]: Writing checkpoint transformations done
+[19:50:58.790979] [WARNING] [pdc_server.c:1595] PDC_SERVER[0]: Rank[ALL]: Total checkpoint time = 0.024330
+[19:50:58.791799] [WARNING] [pdc_server.c:1602] PDC_SERVER[0]: Checkpointing done
+[19:50:58.791857] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=0, name=open, avg=0.000401, total=0.512793, count=1280
+[19:50:58.791879] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=1, name=close, avg=0.000184, total=0.235181, count=1280
+[19:50:58.791885] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=2, name=read, avg=0.042566, total=54.485052, count=1280
+[19:50:58.791890] [WARNING] [pdc_server.c:696] PDC_SERVER[0]: [TIMER] id=4, name=total_graph_exec, avg=0.038356, total=85.917025, count=2240
+[19:50:58.791841] [WARNING] [pdc_server.c:696] PDC_SERVER[2]: [TIMER] id=0, name=open, avg=0.000363, total=0.464389, count=1280
+[19:50:58.791913] [WARNING] [pdc_server.c:696] PDC_SERVER[2]: [TIMER] id=1, name=close, avg=0.000232, total=0.297417, count=1280
+[19:50:58.791919] [WARNING] [pdc_server.c:696] PDC_SERVER[2]: [TIMER] id=2, name=read, avg=0.035383, total=45.290872, count=1280
+[19:50:58.791924] [WARNING] [pdc_server.c:696] PDC_SERVER[2]: [TIMER] id=4, name=total_graph_exec, avg=0.038954, total=87.258029, count=2240
+[19:50:58.791856] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=0, name=open, avg=0.000380, total=0.486887, count=1280
+[19:50:58.791920] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=1, name=close, avg=0.000188, total=0.240706, count=1280
+[19:50:58.791932] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=2, name=read, avg=0.035366, total=45.269058, count=1280
+[19:50:58.791938] [WARNING] [pdc_server.c:696] PDC_SERVER[1]: [TIMER] id=4, name=total_graph_exec, avg=0.038793, total=86.896503, count=2240
+[19:50:58.791826] [WARNING] [pdc_server.c:696] PDC_SERVER[3]: [TIMER] id=0, name=open, avg=0.000371, total=0.475042, count=1280
+[19:50:58.791901] [WARNING] [pdc_server.c:696] PDC_SERVER[3]: [TIMER] id=1, name=close, avg=0.000181, total=0.231894, count=1280
+[19:50:58.791909] [WARNING] [pdc_server.c:696] PDC_SERVER[3]: [TIMER] id=2, name=read, avg=0.034276, total=43.873046, count=1280
+[19:50:58.791917] [WARNING] [pdc_server.c:696] PDC_SERVER[3]: [TIMER] id=4, name=total_graph_exec, avg=0.038623, total=86.515253, count=2240

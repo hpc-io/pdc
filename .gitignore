@@ -1,15 +1,16 @@
 # ignore swp files
 *.swp
+.cache
 
 # exes
 *.exe
-
 *.pdf
-
 src/install
 
 # ignore vscode files
 .vscode
+# ignore jetbrains
+.idea
 
 # ignore intellij files
 .idea
@@ -28,3 +29,28 @@ docs/build
 
 # ignore .zed
 .zed
+
+# pdc_helper_scripts/adios2_build/build_adios2.sh (formerly
+# adios2_analysis_test/build_adios2.sh, before the analysis/
+# transformation/io reorg) clones+builds ADIOS2 locally into these --
+# never commit a third-party source/build tree. Same for the ZFP build
+# transformation/adios2_compression/build_zfp.sh does, and HighFive's
+# header-only clone analysis/magnitude/highfive/'s Makefile fetches --
+# matched anywhere in the tree since these dirname patterns are unique
+# enough not to false-positive on anything else.
+.adios2_src/
+.adios2_build/
+.zfp_src/
+.zfp_build/
+.highfive_src/
+# compiled ADIOS2 benchmark binaries, not source -- unlike the HDF5-side
+# binaries (hdf5_bench_*, magnitude_highfive), which this repo does track.
+pdc_helper_scripts/analysis/magnitude/adios2/adios2_bench_magnitude
+pdc_helper_scripts/analysis/magnitude/adios2/adios2_verify_magnitude
+pdc_helper_scripts/analysis/curl/adios2/adios2_bench_curl
+pdc_helper_scripts/transformation/adios2_compression/adios2_bench_compression
+pdc_helper_scripts/transformation/adios2_compression/adios2_bench_compression_encryption
+pdc_helper_scripts/io/adios2_vpicio/adios2_vpicio
+pdc_helper_scripts/io/adios2_vpicio/adios2_bdcats
+pdc_helper_scripts/**/*.bp
+pdc_helper_scripts/**/*.bp.key

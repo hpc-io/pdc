@@ -1,0 +1,29 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_analysis_bench/0 /pscratch/sd/n/nlewi26/pdc_analysis_bench/1 /pscratch/sd/n/nlewi26/pdc_analysis_bench/10 /pscratch/sd/n/nlewi26/pdc_analysis_bench/11 /pscratch/sd/n/nlewi26/pdc_analysis_bench/12 /pscratch/sd/n/nlewi26/pdc_analysis_bench/13 /pscratch/sd/n/nlewi26/pdc_analysis_bench/14 /pscratch/sd/n/nlewi26/pdc_analysis_bench/15 /pscratch/sd/n/nlewi26/pdc_analysis_bench/2 /pscratch/sd/n/nlewi26/pdc_analysis_bench/3 /pscratch/sd/n/nlewi26/pdc_analysis_bench/4 /pscratch/sd/n/nlewi26/pdc_analysis_bench/5 /pscratch/sd/n/nlewi26/pdc_analysis_bench/6 /pscratch/sd/n/nlewi26/pdc_analysis_bench/7 /pscratch/sd/n/nlewi26/pdc_analysis_bench/8 /pscratch/sd/n/nlewi26/pdc_analysis_bench/9 /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_data
++ popd
++ srun -N 16 -n 32 --ntasks-per-node=2 --error=server_eager_16.err --output=server_eager_16.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 16 -n 512 --ntasks-per-node=32 --output=client_eager_16.log --error=client_eager_16.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_magnitude eager "$N_ELEM"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin/client_eager_16.log
++ lines='eager,0,512,16777216,0.257666,9.314702,0.000000,0.000000,0.000000,1.190547,10.505249,0
+eager,1,512,16777216,0.257666,9.191618,0.000000,0.000000,0.000000,1.199703,10.391320,0
+eager,2,512,16777216,0.257666,9.257956,0.000000,0.000000,0.000000,1.190089,10.448045,0'
++ '[' -z 'eager,0,512,16777216,0.257666,9.314702,0.000000,0.000000,0.000000,1.190547,10.505249,0
+eager,1,512,16777216,0.257666,9.191618,0.000000,0.000000,0.000000,1.199703,10.391320,0
+eager,2,512,16777216,0.257666,9.257956,0.000000,0.000000,0.000000,1.190089,10.448045,0' ']'
++ echo 'eager,0,512,16777216,0.257666,9.314702,0.000000,0.000000,0.000000,1.190547,10.505249,0
+eager,1,512,16777216,0.257666,9.191618,0.000000,0.000000,0.000000,1.199703,10.391320,0
+eager,2,512,16777216,0.257666,9.257956,0.000000,0.000000,0.000000,1.190089,10.448045,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 16 -n 32 --ntasks-per-node=2 --error=close_server_eager_16.err --output=close_server_eager_16.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 2
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/results_eager_58898914.csv

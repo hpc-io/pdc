@@ -1,0 +1,135 @@
+"""
+VPIC-IO transformation plot: HDF5 Async + ZFP vs. Data Flyway (PDC ZFP).
+One stacked bar per strategy at each rank count -- observed 4-step I/O time
+(solid) + final outlier phase (hatched on top). Legend sits in the top-left
+corner inside the axes.
+
+Strategies (left to right within each group):
+    HDF5 Async + ZFP        hard-coded below (from the original 40_vs_100 script)
+    Data Flyway (PDC ZFP)   zfp_cpu/40_vs_100/vpic_zfp.csv (avg_40s, std_40s, outlier_40s)
+
+Outputs (written to OUT_DIR):
+    vpic_combined.pdf          full-width figure
+    vpic_combined_narrow.pdf   single-column figure
+
+Runs in Google Colab: mounts Google Drive and reads/writes under DRIVE_ROOT.
+"""
+import os
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+
+from google.colab import drive
+
+drive.mount("/content/drive")
+
+# ── Drive locations ───────────────────────────────────────────────────────────
+DRIVE_ROOT = "/content/drive/MyDrive/data-flyway-eval-plots"
+CPU_CSV = f"{DRIVE_ROOT}/data/zfp_cpu/40_vs_100/vpic_zfp.csv"
+OUT_DIR = f"{DRIVE_ROOT}/exps"
+
+RANK_ORDER = [1, 2, 4, 8, 16, 32, 64, 128]  # nodes, as stored in the data files
+XTICK_LABELS = ["32", "64", "128", "256", "512", "1024", "2048", "4096"]  # MPI processes
+
+
+# ── Loaders: each returns DataFrame(ranks, base, outlier) ────────────────────
+def load_hdf5():
+    df = pd.DataFrame({
+        "ranks":        [1, 2, 4, 8, 16, 32, 64, 128],
+        "avg_data":     [0.000, 0.000, 0.000, 5.606, 11.862, 18.5, 27.674, 34.0],
+        "avg_metadata": [7.837, 6.995, 7.781, 6.854, 3.593, 3.3, 3.171, 3.0],
+        "outlier":      [28.601, 25.590, 25.564, 25.295, 25.005, 27.0, 28.048, 28.5],
+    })
+    df["base"] = (df["avg_data"] + df["avg_metadata"]) * 4
+    return df[["ranks", "base", "outlier"]]
+
+
+def load_cpu(compute_s):
+    df = pd.read_csv(CPU_CSV)
+    # Same formula as the original 40_vs_100 script: (avg + std) * 4.
+    return pd.DataFrame({
+        "ranks": df["ranks"],
+        "base": (df[f"avg_{compute_s}s"] + df[f"std_{compute_s}s"]) * 4,
+        "outlier": df[f"outlier_{compute_s}s"],
+    })
+
+
+# (label, color, loader)
+SERIES = [
+    ("HDF5 Async + ZFP", "#FF8F00", load_hdf5),
+    ("Data Flyway", "#5C9BD6", lambda: load_cpu(40)),
+]
+
+LAYOUTS = {
+    "wide": dict(suffix="", figsize=(16, 8), axis_fs=32, tick_fs=24, legend_fs=22,
+                 group_width=0.7, outline_lw=1.5),
+    "narrow": dict(suffix="_narrow", figsize=(6.0, 5.2), axis_fs=19, tick_fs=14, legend_fs=13,
+                   group_width=0.75, outline_lw=0.8),
+}
+LEGEND_KW = dict(handlelength=2.0, handleheight=1.2, handletextpad=0.5)
+Y_HEADROOM = 1.25  # extra space above the tallest bar so the legend never covers data
+
+
+def build(data, L):
+    fig, ax = plt.subplots(figsize=L["figsize"], constrained_layout=True)
+    n = len(data)
+    slot = L["group_width"] / n
+    bar_w = slot * 0.85
+    x_of = {r: i for i, r in enumerate(RANK_ORDER)}
+    ymax = 0.0
+
+    for si, (label, color, df) in enumerate(data):
+        offset = (si - (n - 1) / 2) * slot
+        df = df[df["ranks"].isin(x_of)]
+        x = np.array([x_of[r] for r in df["ranks"]]) + offset
+        base = df["base"].to_numpy(dtype=float)
+        out = df["outlier"].to_numpy(dtype=float)
+        ymax = max(ymax, float(np.nanmax(base + out)))
+        ax.bar(x, base, bar_w, color=color, linewidth=0, zorder=3)
+        ax.bar(x, out, bar_w, bottom=base, facecolor=color, edgecolor="black",
+               linewidth=0, hatch="///", zorder=3)
+        ax.bar(x, base + out, bar_w, color="none", edgecolor="black",
+               linewidth=L["outline_lw"], zorder=4)
+        # Divider line between the solid 4-step part and the hatched outlier part.
+        ax.bar(x, out, bar_w, bottom=base, color="none", edgecolor="black",
+               linewidth=L["outline_lw"], zorder=4)
+
+    ax.set_xlabel("Number of Processes", fontsize=L["axis_fs"])
+    ax.set_ylabel("Observed I/O Time (s)", fontsize=L["axis_fs"])
+    ax.set_xticks(range(len(RANK_ORDER)))
+    ax.set_xticklabels(XTICK_LABELS, fontsize=L["tick_fs"])
+    ax.tick_params(axis="y", labelsize=L["tick_fs"])
+    ax.set_xlim(-0.6, len(RANK_ORDER) - 0.4)
+    ax.set_ylim(0, ymax * Y_HEADROOM)
+    ax.grid(axis="y", linewidth=1.0, color="black", alpha=0.25)
+    ax.set_axisbelow(True)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    # One swatch per strategy, plus a single swatch explaining the hatch.
+    handles = [mpatches.Patch(facecolor=c, edgecolor="black", linewidth=0.8) for _, c, _ in data]
+    labels = [lbl for lbl, _, _ in data]
+    handles.append(mpatches.Patch(facecolor="white", edgecolor="black", hatch="///", linewidth=0.8))
+    labels.append("Outlier phase (hatched)")
+    leg = ax.legend(handles, labels, loc="upper left", ncol=1, fontsize=L["legend_fs"],
+                    frameon=True, framealpha=1.0, edgecolor="black", **LEGEND_KW)
+    leg.set_zorder(10)
+
+    out_path = os.path.join(OUT_DIR, f"vpic_combined{L['suffix']}.pdf")
+    fig.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0.1)
+    print(f"Saved to {out_path}")
+    plt.show()
+    plt.close(fig)
+
+
+def main():
+    os.makedirs(OUT_DIR, exist_ok=True)
+    data = [(label, color, loader()) for label, color, loader in SERIES]
+    for L in LAYOUTS.values():
+        build(data, L)
+
+
+if __name__ == "__main__":
+    main()

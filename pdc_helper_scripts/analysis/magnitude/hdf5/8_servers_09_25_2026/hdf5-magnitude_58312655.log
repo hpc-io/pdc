@@ -1,0 +1,32 @@
+Lustre striping: count=128 size=67108864 bytes (64 MiB/rank), target=/pscratch/sd/n/nlewi26/hdf5_analysis_bench/hdf5_bench_magnitude_128.h5
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../hdf5_analysis_test
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/hdf5_analysis_test /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 128 -n 4096 --ntasks-per-node=32 --output=client_hdf5_write_128.log --error=client_hdf5_write_128.err ./hdf5_bench_write 16777216 /pscratch/sd/n/nlewi26/hdf5_analysis_bench/hdf5_bench_magnitude_128.h5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^posthoc_write,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../hdf5_analysis_test/client_hdf5_write_128.log
++ lines='posthoc_write,0,4096,16777216,1.487597,26.300162
+posthoc_write,1,4096,16777216,1.487597,24.967242
+posthoc_write,2,4096,16777216,1.487597,25.076757'
++ '[' -z 'posthoc_write,0,4096,16777216,1.487597,26.300162
+posthoc_write,1,4096,16777216,1.487597,24.967242
+posthoc_write,2,4096,16777216,1.487597,25.076757' ']'
++ echo 'posthoc_write,0,4096,16777216,1.487597,26.300162
+posthoc_write,1,4096,16777216,1.487597,24.967242
+posthoc_write,2,4096,16777216,1.487597,25.076757'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../hdf5_analysis_test
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/hdf5_analysis_test /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 128 -n 4096 --ntasks-per-node=32 --output=client_hdf5_analyze_128.log --error=client_hdf5_analyze_128.err ./hdf5_bench_posthoc_analyze 16777216 /pscratch/sd/n/nlewi26/hdf5_analysis_bench/hdf5_bench_magnitude_128.h5
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^posthoc_analyze,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../hdf5_analysis_test/client_hdf5_analyze_128.log
++ lines='posthoc_analyze,0,4096,16777216,1.429648,13.103436,0.071311,21.710875,34.885622,0
+posthoc_analyze,1,4096,16777216,1.429648,7.619901,0.052755,20.366787,28.039443,0
+posthoc_analyze,2,4096,16777216,1.429648,7.396914,0.052743,20.213310,27.662968,0'
++ '[' -z 'posthoc_analyze,0,4096,16777216,1.429648,13.103436,0.071311,21.710875,34.885622,0
+posthoc_analyze,1,4096,16777216,1.429648,7.619901,0.052755,20.366787,28.039443,0
+posthoc_analyze,2,4096,16777216,1.429648,7.396914,0.052743,20.213310,27.662968,0' ']'
++ echo 'posthoc_analyze,0,4096,16777216,1.429648,13.103436,0.071311,21.710875,34.885622,0
+posthoc_analyze,1,4096,16777216,1.429648,7.619901,0.052755,20.366787,28.039443,0
+posthoc_analyze,2,4096,16777216,1.429648,7.396914,0.052743,20.213310,27.662968,0'
+Done. Results in /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/results_hdf5_58312655.csv

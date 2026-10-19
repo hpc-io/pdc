@@ -1,0 +1,68 @@
+NUM_NODES=8
+DATA_SERVERS_PER_NODE=1
+CLIENTS_PER_NODE=32
+SERVER_TOTAL_TASKS=8
+CLIENT_TOTAL_TASKS=256
+PDC_LUSTRE_STRIPE_SIZE=8
+removing old logs
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ rm -rf /pscratch/sd/n/nlewi26/src/work_space/install/pdc/pdc_data
++ popd
++ srun -N 8 -n 8 --ntasks-per-node=1 --error=server_output_vpicio_zfp_8.err --output=server_output_vpicio_zfp_8.log ./pdc_server
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m1.200s
+user	0m0.000s
+sys	0m0.448s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 8 -n 256 --ntasks-per-node=32 --output=client_output_vpicio_zfp_8.log --error=client_output_vpicio_zfp_8.err ./vpicio_mts 8388608 5 100 zfp
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	8m47.360s
+user	0m0.055s
+sys	0m0.053s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 8 -n 8 --ntasks-per-node=1 --error=close_server_output_vpicio_zfp_8.err --output=close_server_output_vpicio_zfp_8.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	1m48.840s
+user	0m0.056s
+sys	0m0.029s
+running server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 8 -n 8 --ntasks-per-node=1 --error=server_output_bdcats_zfp_8.err --output=server_output_bdcats_zfp_8.log ./pdc_server restart
+
+real	0m0.007s
+user	0m0.003s
+sys	0m0.003s
+running client script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 8 -n 256 --ntasks-per-node=32 --output=client_output_bdcats_zfp_8.log --error=client_output_bdcats_zfp_8.err ./bdcats_mts 8388608 5 100 zfp
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	10m0.352s
+user	0m0.067s
+sys	0m0.107s
+closing server script
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
++ srun -N 8 -n 8 --ntasks-per-node=1 --error=close_server_output_bdcats_zfp_8.err --output=close_server_output_bdcats_zfp_8.log ./close_server
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/vpicio_scripts
+
+real	0m0.949s
+user	0m0.051s
+sys	0m0.030s

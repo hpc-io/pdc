@@ -1,0 +1,155 @@
+"""
+Stacked grouped bar chart — PDC vs HDF5, split into VPIC and BDCats.
+base = (avg_data + avg_metadata) * 4, outlier on top.
+"""
+
+import pandas as pd
+import matplotlib
+# matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+from google.colab import drive
+drive.mount('/content/drive')
+
+# ── File paths ────────────────────────────────────────────────────────────────
+BASE        = "/content/drive/MyDrive/data-flyway-eval-plots/data/no_transform"
+OUTPUT_VPIC = "/content/drive/MyDrive/data-flyway-eval-plots/exps/pdc_vs_hdf5_vpic.pdf"
+OUTPUT_BD   = "/content/drive/MyDrive/data-flyway-eval-plots/exps/pdc_vs_hdf5_bdcats.pdf"
+OUTPUT_LEGEND = "/content/drive/MyDrive/data-flyway-eval-plots/exps/no_transform_legend.pdf"
+
+cols = ['ranks','avg_data','stdev_data','avg_metadata','stdev_metadata','ranks2','outlier']
+
+def load(path):
+    df = pd.read_csv(path, sep=r'\s+', names=cols)
+    df = df.dropna(subset=['ranks'])
+    df['ranks'] = df['ranks'].astype(int)
+    df['base']  = (df['avg_data'] + df['avg_metadata']) * 4
+    return df
+
+vpic_pdc      = load(f"{BASE}/vpic_joined.dat")
+vpic_hdf5     = load(f"{BASE}/vpic_hdf5_joined.dat")
+bdcats_pdc    = load(f"{BASE}/bdcats_joined.dat")
+bdcats_hdf5   = load(f"{BASE}/bdcats_hdf5_joined.dat")
+
+# ── Shared config ─────────────────────────────────────────────────────────────
+rank_order   = [1, 2, 4, 8, 16, 32, 64, 128]
+rank_to_x    = {r: i+1 for i, r in enumerate(rank_order)}
+xtick_labels = ["32", "64", "128", "256", "512", "1024", "2048", "4096"]
+BAR = 0.35
+
+def xi(df, offset=0):
+    return np.array([rank_to_x[r] + offset for r in df['ranks']])
+
+def draw_bar(ax, x, base_vals, out_vals, color, label_base, label_out):
+    ax.bar(x, base_vals, width=BAR, color=color, edgecolor=color,
+           linewidth=0.5, label=label_base, zorder=3)
+    ax.bar(x, out_vals, bottom=base_vals, width=BAR,
+           facecolor=color, edgecolor='black', linewidth=0.5,
+           hatch="/", label=label_out, zorder=3)
+    ax.bar(x, base_vals + out_vals, width=BAR, color='none',
+           edgecolor='black', linewidth=2.0, zorder=4)
+
+def style_axes(ax):
+    ax.set_xlabel("Number of Processes", fontsize=32)
+    ax.set_ylabel("Observed I/O Time (s)", fontsize=32)
+    ax.set_xticks(range(1, len(rank_order) + 1))
+    ax.set_xticklabels(xtick_labels, fontsize=24)
+    ax.tick_params(axis='y', labelsize=24)
+    ax.tick_params(axis='y', which='minor', left=False)
+    ax.set_xlim(0.3, len(rank_order) + 0.7)
+    ax.set_ylim(bottom=0)
+    ax.grid(axis='y', which='major', linewidth=1.5, color='black', alpha=0.25)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+def save_legend(handles, output_path):
+    fig_leg, ax_leg = plt.subplots(figsize=(8, 1))
+    ax_leg.axis('off')
+    ax_leg.legend(
+        handles=handles,
+        loc='center',
+        ncol=4,
+        fontsize=18,
+        frameon=True,
+        edgecolor='#aaaaaa',
+        columnspacing=1.0
+    )
+    plt.tight_layout()
+    fig_leg.savefig(output_path, dpi=150, bbox_inches='tight')
+    # plt.show()
+    plt.close(fig_leg)
+
+# ── Colors ────────────────────────────────────────────────────────────────────
+C_PDC  = "#F44336"   # red  — PDC
+C_HDF5 = "#2196F3"   # blue — HDF5
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Plot 1 — VPIC
+# ══════════════════════════════════════════════════════════════════════════════
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# HDF5 left, PDC right
+draw_bar(ax, xi(vpic_hdf5, -BAR/2),
+         vpic_hdf5['base'].values, vpic_hdf5['outlier'].values,
+         C_HDF5, "HDF5 Async 4-step", "HDF5 Async outlier")
+
+draw_bar(ax, xi(vpic_pdc, +BAR/2),
+         vpic_pdc['base'].values, vpic_pdc['outlier'].values,
+         C_PDC, "PDC 4-step", "PDC outlier")
+
+style_axes(ax)
+
+legend_handles = [
+    mpatches.Patch(facecolor=C_HDF5, edgecolor='black', hatch="/", label="HDF5 outlier"),
+    mpatches.Patch(facecolor=C_PDC,  edgecolor='black', hatch="/", label="PDC outlier"),
+    mpatches.Patch(facecolor=C_HDF5, edgecolor=C_HDF5,               label="HDF5 4-step"),
+    mpatches.Patch(facecolor=C_PDC,  edgecolor=C_PDC,                label="PDC 4-step"),
+]
+# ax.legend(handles=legend_handles,
+#           loc='upper center', bbox_to_anchor=(0.5, 1.12),
+#           ncol=4, fontsize=19, frameon=True,
+#           edgecolor='#aaaaaa', columnspacing=1.0)
+
+plt.tight_layout()
+plt.savefig(OUTPUT_VPIC, dpi=150, bbox_inches='tight')
+print(f"Saved to {OUTPUT_VPIC}")
+# plt.show()
+plt.close()
+
+save_legend(legend_handles, OUTPUT_LEGEND)
+print(f"Legend saved to {OUTPUT_LEGEND}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Plot 2 — BDCats
+# ══════════════════════════════════════════════════════════════════════════════
+fig, ax = plt.subplots(figsize=(10, 6))
+
+draw_bar(ax, xi(bdcats_hdf5, -BAR/2),
+         bdcats_hdf5['base'].values, bdcats_hdf5['outlier'].values,
+         C_HDF5, "HDF5 4-step", "HDF5 outlier")
+
+draw_bar(ax, xi(bdcats_pdc, +BAR/2),
+         bdcats_pdc['base'].values, bdcats_pdc['outlier'].values,
+         C_PDC, "PDC 4-step", "PDC outlier")
+
+style_axes(ax)
+
+# legend_handles = [
+#     mpatches.Patch(facecolor=C_HDF5, edgecolor='black', hatch="/", label="HDF5 outlier"),
+#     mpatches.Patch(facecolor=C_PDC,  edgecolor='black', hatch="/", label="PDC outlier"),
+#     mpatches.Patch(facecolor=C_HDF5, edgecolor=C_HDF5,               label="HDF5 4-step"),
+#     mpatches.Patch(facecolor=C_PDC,  edgecolor=C_PDC,                label="PDC 4-step"),
+# ]
+# ax.legend(handles=legend_handles,
+#           loc='upper center', bbox_to_anchor=(0.5, 1.12),
+#           ncol=4, fontsize=19, frameon=True,
+#           edgecolor='#aaaaaa', columnspacing=1.0)
+
+plt.tight_layout()
+plt.savefig(OUTPUT_BD, dpi=150, bbox_inches='tight')
+print(f"Saved to {OUTPUT_BD}")
+# plt.show()
+plt.close()

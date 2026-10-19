@@ -1,0 +1,2 @@
+hdf5_bench_curl_write: nranks=128 nx=256 ny=256 nz_per_rank=64 (16.000 MiB/rank/variable as float32)
+curl_posthoc_write,128,256,256,64,1.659422,8.293983

@@ -1,0 +1,2 @@
+servers_per_node,mode,n_ranks,n_elem,setup_s,write_s,readback_s,compute_s,writeback_s,total_s,bad
+8,hdf5,1024,16777216,2.166588,9.613282,1.130784,0.070780,5.519020,18.500454,0

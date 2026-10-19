@@ -1,0 +1,28 @@
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ rm -rf /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_data /pscratch/sd/n/nlewi26/pdc_analysis_bench/pdc_tmp
++ popd
++ srun -N 4 -n 32 --ntasks-per-node=8 --error=server_eager_4.err --output=server_eager_4.log bash -c 'export HG_HOST=cxi0:$SLURM_LOCALID; exec ./pdc_server'
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ sleep 10
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 4 -n 128 --ntasks-per-node=32 --output=client_eager_4.log --error=client_eager_4.err bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./bench_magnitude eager "$N_ELEM"'
++ popd
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
+++ grep '^eager,' /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin/client_eager_4.log
++ lines='eager,0,128,16777216,0.150117,0.968730,0.000000,0.000000,0.000000,0.368247,1.336977,0
+eager,1,128,16777216,0.150117,0.947195,0.000000,0.000000,0.000000,0.367713,1.314907,0
+eager,2,128,16777216,0.150117,0.947396,0.000000,0.000000,0.000000,0.366511,1.313907,0'
++ '[' -z 'eager,0,128,16777216,0.150117,0.968730,0.000000,0.000000,0.000000,0.368247,1.336977,0
+eager,1,128,16777216,0.150117,0.947195,0.000000,0.000000,0.000000,0.367713,1.314907,0
+eager,2,128,16777216,0.150117,0.947396,0.000000,0.000000,0.000000,0.366511,1.313907,0' ']'
++ echo 'eager,0,128,16777216,0.150117,0.968730,0.000000,0.000000,0.000000,0.368247,1.336977,0
+eager,1,128,16777216,0.150117,0.947195,0.000000,0.000000,0.000000,0.367713,1.314907,0
+eager,2,128,16777216,0.150117,0.947396,0.000000,0.000000,0.000000,0.366511,1.313907,0'
++ pushd /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts/../../build/bin
+/pscratch/sd/n/nlewi26/src/work_space/source/pdc/build/bin /pscratch/sd/n/nlewi26/src/work_space/source/pdc/pdc_helper_scripts/analysis_scripts
++ srun -N 4 -n 32 --ntasks-per-node=8 --error=close_server_eager_4.err --output=close_server_eager_4.log bash -c 'export HG_HOST=cxi0:$((SLURM_LOCALID + 8)); exec ./close_server'
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+[2026-09-15T18:44:32.190] error: *** JOB 58373748 ON nid004496 CANCELLED AT 2026-09-15T18:44:32 DUE to SIGNAL Terminated ***

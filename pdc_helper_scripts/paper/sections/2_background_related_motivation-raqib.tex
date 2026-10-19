@@ -1,0 +1,88 @@
+This section reviews prior approaches to computing along the data path, identifies what each leaves to the application developer, and introduces the data management substrate on which Data Flyway is built.
+
+We distinguish two kinds of operations along this path. A \textbf{transformation} mutates an object's state in place: the object keeps one name and identity throughout, and only its stored representation changes, e.g., between the compressed and uncompressed forms of the same object. In contrast, an \textbf{analysis} derives new values from old ones: it consumes one or more existing objects and produces one or more independently named objects with their own identity. For example, computing the curl of a velocity field yields a curl object (i.e., the tendency of a vector field to spin or rotate around a specific point), not another representation of the velocity data~\cite{prabhat2012teca}. We use \emph{operation} for either kind and \emph{pipeline} for a composition of them.
+
+\subsection{Computation Near Data}
+
+Moving computation toward data rather than data toward computation is a long-standing idea. Active Disks and Active Storage proposed executing application code on storage nodes to avoid shipping bytes to a host~\cite{acharya1998activedisks, riedel1998activestorage}, and the staging systems that followed applied the same principle to HPC output. PreDatA~\cite{zheng2010predata} and DataStager~\cite{abbasi2009datastager} route simulation output through dedicated staging nodes for reduction and reorganization before it reaches storage. DataSpaces~\cite{docan2012dataspaces} generalizes staging into a shared space through which coupled codes exchange data, and ActiveSpaces~\cite{docan2015activespaces} extends it by shipping user code into that staging area rather than shipping data out of it. Flexpath~\cite{flexpath} and Barcelo et al.~\cite{barcelo2022revisiting} pursue the same principle through a typed publish and subscribe channel and inside an object store, respectively, the latter registering functions one at a time so that an application needing several in sequence still orders them itself. These systems established that computation can be relocated onto the data path and that doing so reduces movement. What they provide is a place to execute and a means of getting code there. What runs, in what order, and under what conditions remains an application-level decision, expressed through the calls the application makes rather than through a description the system holds. Data Flyway instead holds that description, as a graph attached to the data itself.
+
+\subsection{Transformation and Derived Data Interfaces}
+
+A second line of work places computation in the I/O library rather than on a separate node, so that it is declared once rather than invoked per transfer. HDF5 attaches filters to a dataset creation property list~\cite{hdf5}, after which every chunk written or read passes through them automatically. The chain is fixed at dataset creation, every stage consumes and produces an opaque byte stream, and no stage can produce a new dataset, so the mechanism expresses representation changes but not derivation. Wrapper libraries such as HighFive~\cite{highfive} improve the ergonomics of this interface, mapping C++ containers onto datasets and reducing filter configuration to a few lines, but they wrap the same property-list mechanism and inherit its limits. ADIOS~2 likewise attaches operators to individual variables~\cite{boyuka2014transparent, godoy2020adios2}, but permits only one per variable and fixes it before the first write, so a variable cannot be compressed and then encrypted. Gainaru et al.~\cite{gainaru2024toderive} add derived variables to ADIOS~2, recording only which primary blocks a derivation consumed so that a derived quantity need not be materialized, which makes derivation a property of the data rather than a step the application runs. Derived variables and operators remain separate interfaces, however, and the handle returned for a derived variable exposes no way to attach an operator. Data Flyway places both kinds of operation in one graph, so a pipeline may chain operations freely and a derived object is an ordinary object that any transformation may be attached to.
+
+\subsection{In-flight Processing in PDC}
+\label{sec:runway}
+
+The work closest to ours also builds on PDC. Warren et al.~\cite{warren2019analysis} introduced analysis in the data path, registering user-defined functions that run automatically as data moves between levels of the storage hierarchy, executing on CPUs. Runway~\cite{ravi2023runway} extends this to heterogeneous devices, compressing data in transit on CPUs, GPUs and BlueField DPUs and choosing among them with a cost model over payload size and device utilization.
+
+Runway binds a operator function to a region by an explicit call issued before the transfer that region participates in. An application therefore names each operation at each transfer, and two operations applied to the same region are two independent bindings with nothing relating them, so the application decides their order and carries any intermediate result between them. Data Flyway instead attaches a graph to the object or region once. The graph names the operations and the order among them, and ordinary reads and writes traverse it, so the application issues transfers and nothing else.
+
+The two systems also differ in how a device is chosen for executing an operation. Runway predicts execution cost from payload size and current device utilization. Data Flyway adds lag features drawn from the preceding invocation, capturing transfer behavior that the current utilization alone does not reveal. We compare these two models directly in~\S\ref{sec:model}. Runway's source code is not publicly available, so we could not use it as an experimental baseline. We reimplemented its published cost model instead. Table~\ref{tab:runway-comparison} summarizes these differences alongside the two library-level mechanisms discussed above.
+
+\definecolor{fullsupport}{RGB}{34,139,34}
+\definecolor{partialsupport}{RGB}{204,153,0}
+\newcommand{\Full}{\textcolor{fullsupport}{\checkmark}}
+\newcommand{\Partial}{\textcolor{partialsupport}{$\bigcirc$}}
+\newcommand{\None}{$\times$}
+\newcommand{\rot}[1]{\rotatebox[origin=l]{90}{#1}}
+\newcommand{\fr}[1]{\hspace{1em}#1}
+
+\begin{table}[t]
+\caption{Feature comparison of Data Flyway against its closest prior systems, namely Runway, ADIOS~2, and HDF5 filters.}
+\label{tab:runway-comparison}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}p{4.7cm}cccc@{}}
+\textbf{Feature} & \rot{\textbf{Runway}~\cite{ravi2023runway}} & \rot{\textbf{ADIOS~2}~\cite{godoy2020adios2}} & \rot{\textbf{HDF5 filters}~\cite{hdf5}} & \rot{\textbf{Data Flyway}} \\
+\hline
+\multicolumn{5}{@{}l}{\textit{Transformation}} \\
+\hline
+\fr{Automatic invocation\textsuperscript{1}} & \None & \Full & \Full & \Full \\
+\fr{Declarative pipeline specification} & \None & \Full & \None & \Full \\
+\fr{Runtime adaptivity\textsuperscript{4}} & \Partial & \None & \None & \Full \\
+\fr{GPU-aware data movement\textsuperscript{5}} & \None & \None & \None & \Full \\
+\hline
+\multicolumn{5}{@{}l}{\textit{Analysis}} \\
+\hline
+\fr{Fan-in consumption\textsuperscript{2}} & \None & \Full & \None & \Full \\
+\fr{Fan-out production\textsuperscript{3}} & \None & \None & \None & \Full \\
+\fr{Lazy evaluation\textsuperscript{7}} & \None & \Full & \None & \Full \\
+\fr{Transient derived state} & \None & \Full & \None & \Full \\
+\hline
+\multicolumn{5}{@{}l}{\textit{Transformation / Analysis Integration}} \\
+\hline
+\fr{Composable transforms\textsuperscript{6}} & \None & \None & \None & \Full \\
+\hline
+\end{tabular}
+\vspace{2pt}
+
+\scriptsize \Full\ Full support \quad \Partial\ Partial support \quad \None\ Not supported
+
+\par\vspace{2pt}
+{\scriptsize\raggedright
+\textsuperscript{1}No explicit per-call orchestration.
+\textsuperscript{2}A single stage consumes multiple inputs.
+\textsuperscript{3}A single stage produces multiple outputs.
+\textsuperscript{4}Parameter or algorithm selection.
+\textsuperscript{5}Considers future transformation placement.
+\textsuperscript{6}E.g., GPU compression attached to a derived object.
+\textsuperscript{7}Read-triggered, not persisted.\par}
+\end{table}
+
+\subsection{Implementation Substrate}
+
+Data Flyway places four requirements on the system it runs in. Data must be addressable as objects with named subsets, so that a pipeline has something to attach to. Servers must sit on the data path with compute available, so that operations have somewhere to run other than the application. Transfers must complete asynchronously, so that operations can overlap with application progress rather than block it. And per-object metadata must persist across operations, so that the runtime can record what state an object holds and what has already been derived from it. Any system meeting these four could host Data Flyway.
+
+HDF5~\cite{hdf5} meets none of the first two. It is a library rather than a runtime, with no server process on the path, and its file-centric model has no object identity for a pipeline to attach to. ADIOS~2~\cite{godoy2020adios2} comes closer, since its staging engines place processes on the path and its variables carry metadata, but a variable is written and closed per step rather than persisting as an addressable object that accumulates state across a workflow, which is what an attached pipeline requires. DAOS~\cite{breitenfeld2017daos} meets all four, but was not deployable in our environment without administrative privileges and changes to the system software stack. Proactive Data Containers (PDC)~\cite{tang2018toward} meets all four and runs entirely in user space, so we implement Data Flyway in PDC, which is also the substrate of the closest prior system~\cite{ravi2023runway}.
+
+PDC organizes data in three levels.
+
+\begin{itemize}
+    \item \textbf{Containers} group related objects, much as directories group files.
+    \item \textbf{Objects} are multidimensional data spaces, currently up to three dimensions.
+    \item \textbf{Regions} are multidimensional subsets of objects and are the unit of bulk transfer.
+\end{itemize}
+
+A pipeline attaches at the object or the region level, and because the region is the unit of transfer, it is also the granularity at which Data Flyway decides what work a transfer requires. PDC runs data servers alongside the client application, in a configurable number, and those servers are where Data Flyway executes operations and where it buffers results between tiers of the memory and storage hierarchy. Region transfers complete asynchronously, which is what allows an operation to overlap with application computation rather than extend the critical path. PDC also maintains scalable per-object metadata, which Data Flyway uses to record which objects carry an attached pipeline, what state each currently holds, and timing from prior executions. The metadata services themselves are described in the PDC documentation~\cite{pdcdocs}; we describe only the fields Data Flyway adds, in~\S\ref{sec:pipeline}.
+
