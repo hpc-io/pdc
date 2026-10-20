@@ -55,8 +55,8 @@
 #include "pdc_timing.h"
 #include "pdc_server_region_cache.h"
 
-int                      pdc_server_size_g = 1;
-hg_id_t                  metadata_create_bucket_register_id_g;
+int     pdc_server_size_g = 1;
+hg_id_t metadata_create_bucket_register_id_g;
 
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;

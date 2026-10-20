@@ -525,10 +525,10 @@ typedef struct {
 } metadata_check_prefix_in_t;
 
 typedef struct {
-    int32_t  ret;
+    int32_t   ret;
     hg_bool_t found;
     hg_bool_t leaf;
-    uint32_t server_id;
+    uint32_t  server_id;
 } metadata_check_prefix_out_t;
 
 typedef struct {
