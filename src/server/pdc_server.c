@@ -364,7 +364,8 @@ PDC_Server_write_addr_to_file(char **addr_strings, int n)
     for (i = 0; i < n; i++) {
         fprintf(na_config, "%s\n", addr_strings[i]);
     }
-    if (fclose(na_config) != 0)
+    int write_failed = ferror(na_config);
+    if (fclose(na_config) != 0 || write_failed)
         PGOTO_ERROR(FAIL, "Could not write config file: %s", tmp_fname);
     na_config = NULL;
 
