@@ -659,6 +659,9 @@ typedef struct {
     hg_bulk_t bulk_handle;
 } metadata_query_transfer_out_t;
 
+/* Same wire format, with query results copied into Mercury-owned response storage. */
+typedef metadata_query_transfer_out_t kvtag_query_out_t;
+
 /* Define gen_obj_id_in_t */
 typedef struct {
     pdc_metadata_transfer_t data;
@@ -1588,6 +1591,31 @@ hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
     }
 
     FUNC_LEAVE(ret);
+}
+
+static HG_INLINE hg_return_t
+hg_proc_kvtag_query_out_t(hg_proc_t proc, void *data)
+{
+    kvtag_query_out_t *out   = data;
+    uint8_t            flags = hg_proc_get_flags(proc);
+    hg_return_t        ret;
+
+    if (hg_proc_get_op(proc) == HG_ENCODE && out->bulk_handle != HG_BULK_NULL) {
+        hg_size_t size = HG_Bulk_get_serialize_size(out->bulk_handle, 0) +
+                         HG_Bulk_get_size(out->bulk_handle) + sizeof(int32_t) + 2 * sizeof(int64_t) +
+                         sizeof(uint64_t);
+        if (hg_proc_get_size_left(proc) < size) {
+            ret = hg_proc_set_size(proc, hg_proc_get_size(proc) + size);
+            if (ret != HG_SUCCESS)
+                return ret;
+        }
+        // Copy the data as well as the descriptor so no client pull depends on PDC's buffer.
+        // Eager data needs no remote SM descriptor; use the regular serialized size above.
+        hg_proc_set_flags(proc, (flags & ~HG_PROC_SM) | HG_PROC_BULK_EAGER);
+    }
+    ret = hg_proc_metadata_query_transfer_out_t(proc, data);
+    hg_proc_set_flags(proc, flags);
+    return ret;
 }
 
 /* Define hg_proc_pdc_metadata_transfer_t */

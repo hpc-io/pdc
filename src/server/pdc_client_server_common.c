@@ -4371,14 +4371,14 @@ HG_TEST_RPC_CB(query_kvtag, handle)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t                   ret_value;
-    hg_return_t                   hg_ret;
-    hg_bulk_t                     bulk_handle = HG_BULK_NULL;
-    uint64_t *                    buf_ptr;
-    size_t                        buf_size[1];
-    uint32_t                      nmeta;
-    pdc_kvtag_t                   in;
-    metadata_query_transfer_out_t out;
+    hg_return_t       ret_value;
+    hg_return_t       hg_ret;
+    hg_bulk_t         bulk_handle = HG_BULK_NULL;
+    uint64_t *        buf_ptr     = NULL;
+    size_t            buf_size[1];
+    uint32_t          nmeta;
+    pdc_kvtag_t       in;
+    kvtag_query_out_t out;
 
     // Decode input
     HG_Get_input(handle, &in);
@@ -4414,6 +4414,9 @@ HG_TEST_RPC_CB(query_kvtag, handle)
     ret_value = HG_Respond(handle, NULL, NULL, &out);
 
 done:
+    if (bulk_handle != HG_BULK_NULL)
+        HG_Bulk_free(bulk_handle);
+    PDC_free(buf_ptr);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -6319,7 +6322,7 @@ PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_transform_release, region_transform_and_
 
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_analysis_release, region_analysis_and_lock_in_t, region_lock_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_partial, metadata_query_transfer_in_t, metadata_query_transfer_out_t)
-PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_kvtag, pdc_kvtag_t, metadata_query_transfer_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_kvtag, pdc_kvtag_t, kvtag_query_out_t)
 PDC_FUNC_DECLARE_REGISTER(bulk_rpc)
 PDC_FUNC_DECLARE_REGISTER(data_server_read)
 PDC_FUNC_DECLARE_REGISTER(data_server_write)

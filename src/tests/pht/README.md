@@ -26,7 +26,18 @@ the client RPC paths through the usual test runner. AddressSanitizer and Undefin
 can be enabled through the compiler and linker flags for memory validation.
 
 The always-built `someta_metadata` regression checks container tags, binary
-object-tag payloads, exact query result IDs across the DHT, and tag replacement.
+object-tag payloads, exact query result IDs across the DHT, empty queries, and tag replacement.
 It runs with PHT disabled or enabled. For distributed runs, pass the number of
 PDC servers to `someta_metadata` and launch one or more MPI clients after the
 servers have written their connection file.
+
+An optional second argument selects an even object count per client (default 8).
+For example, `someta_metadata 1 8192` validates 4096 returned IDs (32 KiB)
+before replacement, exercising responses larger than the usual eager message
+buffer. The server should close without Mercury bulk-handle warnings after both
+small and large queries. Query results are copied into Mercury-owned response
+storage, while retaining the existing serialized bulk-handle format.
+
+`someta_serialization` checks empty, small, and oversized responses with the
+legacy decoder after the original result storage has been destroyed. It also
+checks serialization with shared-memory processor flags.

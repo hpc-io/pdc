@@ -9,8 +9,6 @@
 #include <mpi.h>
 #endif
 
-#define OBJECTS_PER_RANK 8
-
 static int rank;
 
 static void
@@ -46,6 +44,7 @@ check_query(uint64_t *expected, int count)
     qsort(expected, count, sizeof(*expected), compare_ids);
     require(memcmp(actual, expected, count * sizeof(*expected)) == 0,
             "query returned incorrect or duplicate object IDs");
+    printf("SOMETA rank %d: verified %d query IDs (%zu bytes)\n", rank, found, found * sizeof(*actual));
     free(actual);
 }
 
@@ -60,6 +59,9 @@ main(int argc, char **argv)
 #endif
     int servers = argc > 1 ? atoi(argv[1]) : 1;
     require(servers > 0, "invalid expected server count");
+    int objects_per_rank = argc > 2 ? atoi(argv[2]) : 8;
+    require(objects_per_rank >= 2 && objects_per_rank <= 65536 && objects_per_rank % 2 == 0,
+            "object count must be even and between 2 and 65536");
     pdcid_t pdc = PDCinit("pdc");
     require(pdc != 0, "PDCinit failed");
     pdcid_t cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
@@ -83,10 +85,10 @@ main(int argc, char **argv)
             "container tag payload changed");
     free(value);
 
-    pdcid_t  objects[OBJECTS_PER_RANK];
-    uint64_t local_ids[OBJECTS_PER_RANK], *all_ids = malloc(size * sizeof(local_ids));
+    pdcid_t  objects[objects_per_rank];
+    uint64_t local_ids[objects_per_rank], *all_ids = malloc(size * sizeof(local_ids));
     require(all_ids != NULL, "ID allocation failed");
-    for (int i = 0; i < OBJECTS_PER_RANK; i++) {
+    for (int i = 0; i < objects_per_rank; i++) {
         snprintf(name, sizeof(name), "someta_object_%d_%d", rank, i);
         objects[i] = PDCobj_create(cont, name, obj_prop);
         require(objects[i] != 0, "object creation failed");
@@ -107,16 +109,16 @@ main(int argc, char **argv)
         free(value);
     }
 #ifdef ENABLE_MPI
-    MPI_Allgather(local_ids, OBJECTS_PER_RANK, MPI_UINT64_T, all_ids, OBJECTS_PER_RANK, MPI_UINT64_T,
+    MPI_Allgather(local_ids, objects_per_rank, MPI_UINT64_T, all_ids, objects_per_rank, MPI_UINT64_T,
                   MPI_COMM_WORLD);
 #else
     memcpy(all_ids, local_ids, sizeof(local_ids));
 #endif
     int *     owners   = calloc(servers, sizeof(*owners));
-    uint64_t *expected = malloc(size * OBJECTS_PER_RANK * sizeof(*expected));
+    uint64_t *expected = malloc(size * objects_per_rank * sizeof(*expected));
     require(owners && expected, "query expectation allocation failed");
     int count = 0;
-    for (int i = 0; i < size * OBJECTS_PER_RANK; i++) {
+    for (int i = 0; i < size * objects_per_rank; i++) {
         uint32_t owner = PDC_get_server_by_obj_id(all_ids[i], servers);
         require(owner < (uint32_t)servers, "invalid metadata server mapping");
         owners[owner]++;
@@ -153,11 +155,11 @@ main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
     count = 0;
-    for (int i = 0; i < size * OBJECTS_PER_RANK; i++)
-        if (i % 2 == 0 && i % OBJECTS_PER_RANK != 0)
+    for (int i = 0; i < size * objects_per_rank; i++)
+        if (i % 2 == 0 && i % objects_per_rank != 0)
             expected[count++] = all_ids[i];
     check_query(expected, count);
-    for (int i = 0; i < OBJECTS_PER_RANK; i++)
+    for (int i = 0; i < objects_per_rank; i++)
         require(PDCobj_close(objects[i]) >= 0, "object close failed");
     require(PDCcont_close(cont) >= 0, "container close failed");
     require(PDCprop_close(obj_prop) >= 0 && PDCprop_close(cont_prop) >= 0, "property close failed");

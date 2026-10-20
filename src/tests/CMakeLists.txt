@@ -81,6 +81,7 @@ set(PROGRAMS
   misc/bdcats
   tags/kvtag_add_get
   tags/someta_metadata
+  tags/someta_serialization
   tags/kvtag_query
   region/region_transfer_query
   region/region_transfer
@@ -270,6 +271,7 @@ add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME kvtag_query       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
 add_test(NAME someta_metadata WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./someta_metadata)
 set_tests_properties(someta_metadata PROPERTIES ENVIRONMENT "PDC_USE_ROCKSDB=0;PDC_USE_SQLITE3=0")
+add_test(NAME someta_serialization COMMAND someta_serialization)
 if(PDC_ENABLE_PHT)
 add_test(NAME pht_create_bucket WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_create_bucket)
 add_test(NAME pht_add_key       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_add_key)
