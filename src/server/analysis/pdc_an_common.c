@@ -9,9 +9,7 @@
 #include "pdc_an_builtin_common.h"
 #include "pdc_client_server_common.h"
 #include "pdc_timing.h"
-#ifdef JSONC_ENABLED
-#include "json-c/json.h"
-#endif
+#include "cJSON.h"
 
 PDC_VECTOR *pdc_an_builtin_funcs_vector_g = NULL;
 
@@ -163,47 +161,41 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-#ifdef JSONC_ENABLED
-static struct array_list *
-get_json_array(struct json_object *json_obj, char *arr_name)
+static cJSON *
+get_json_array(cJSON *json_obj, char *arr_name)
 {
     FUNC_ENTER(NULL);
 
-    struct json_object *ret_value = NULL;
+    cJSON *ret_value = cJSON_GetObjectItemCaseSensitive(json_obj, arr_name);
 
-    if (json_object_object_get_ex(json_obj, arr_name, &ret_value) == 0)
+    if (ret_value == NULL)
         PGOTO_ERROR(NULL, "%s was not found", arr_name);
-    if (json_object_get_type(ret_value) != json_type_array)
+    if (!cJSON_IsArray(ret_value))
         PGOTO_ERROR(NULL, "%s was not an array", arr_name);
 
 done:
-    if (ret_value == NULL)
-        FUNC_LEAVE(NULL);
-    FUNC_LEAVE(json_object_get_array(ret_value));
+    FUNC_LEAVE(ret_value);
 }
 
 static const char *
-get_json_string(struct json_object *json_obj, char *str_name, bool expect_string)
+get_json_string(cJSON *json_obj, char *str_name, bool expect_string)
 {
-    struct json_object *str_json_obj = NULL;
-    const char *        ret_value    = NULL;
+    const char *ret_value    = NULL;
+    cJSON *     str_json_obj = cJSON_GetObjectItemCaseSensitive(json_obj, str_name);
 
-    if (!json_object_object_get_ex(json_obj, str_name, &str_json_obj)) {
+    if (str_json_obj == NULL) {
         if (expect_string)
             PGOTO_ERROR(NULL, "%s was not found", str_name);
         else
             PGOTO_DONE(NULL);
     }
-    if (json_object_get_type(str_json_obj) != json_type_string)
+    if (!cJSON_IsString(str_json_obj))
         PGOTO_ERROR(NULL, "%s was not a string\n", str_name);
-    ret_value = json_object_get_string(str_json_obj);
+    ret_value = str_json_obj->valuestring;
 
 done:
-    if (ret_value == NULL)
-        FUNC_LEAVE(ret_value);
-    FUNC_LEAVE(json_object_get_string(str_json_obj));
+    FUNC_LEAVE(ret_value);
 }
-#endif /* JSONC_ENABLED */
 
 static bool
 an_vertices_are_equal(void *v1, void *v2)
@@ -411,31 +403,16 @@ PDCan_dg_get_state(pdc_dg_t *dg, const char *name)
     return &node->u.state;
 }
 
-#ifndef JSONC_ENABLED
-/* JSON-C wasn't found at configure time (see root CMakeLists.txt) -- the
- * only thing that's actually unavailable is attaching a graph; every
- * other PDC operation (object/region create, read, write, ...) works
- * unaffected. Callers already treat a NULL return the same as any other
- * graph-load failure (see PDCan_dg_json_create, src/api/pdc_an/pdc_an.c). */
-pdc_dg_t *
-PDCan_dg_json_create_common(char *filepath)
-{
-    LOG_ERROR("PDCan_dg_json_create_common: JSON-C support was not compiled in (JSONC_ROOT_DIR was not "
-              "set at build time) -- cannot parse analysis graph \"%s\"\n",
-              filepath);
-    return NULL;
-}
-#else
 pdc_dg_t *
 PDCan_dg_json_create_common(char *filepath)
 {
     FUNC_ENTER(NULL);
 
-    pdc_dg_t *          ret_value = NULL;
-    pdc_dg_t *          dg_cpy    = NULL;
-    FILE *              fp        = NULL;
-    struct json_object *json_obj  = NULL;
-    io_buffer_t         io_buffer;
+    pdc_dg_t *  ret_value = NULL;
+    pdc_dg_t *  dg_cpy    = NULL;
+    FILE *      fp        = NULL;
+    cJSON *     json_obj  = NULL;
+    io_buffer_t io_buffer;
     memset(&io_buffer, 0, sizeof(io_buffer_t));
 
     if ((fp = open_file(filepath, IO_MODE_READ)) == NULL)
@@ -443,7 +420,7 @@ PDCan_dg_json_create_common(char *filepath)
     if (read_file(fp, &io_buffer) != 0)
         PGOTO_ERROR(NULL, "Failed to read_file");
 
-    if ((json_obj = json_tokener_parse(io_buffer.buffer)) == NULL)
+    if ((json_obj = cJSON_Parse(io_buffer.buffer)) == NULL)
         PGOTO_ERROR(NULL, "Failed to parse JSON");
 
     const char *dg_name = get_json_string(json_obj, "name", true);
@@ -460,8 +437,8 @@ PDCan_dg_json_create_common(char *filepath)
     dg_cpy          = ret_value;
     ret_value->data = strdup(filepath);
 
-    struct array_list *states          = get_json_array(json_obj, "states");
-    struct array_list *transformations = get_json_array(json_obj, "transformations");
+    cJSON *states          = get_json_array(json_obj, "states");
+    cJSON *transformations = get_json_array(json_obj, "transformations");
     if (states == NULL || transformations == NULL)
         PGOTO_DONE(NULL);
 
@@ -471,9 +448,9 @@ PDCan_dg_json_create_common(char *filepath)
      * given when a name isn't found yet; declaring states first (and
      * validating below) means every lookup key we hand it for a state
      * always resolves to this real, heap-allocated vertex. */
-    int states_length = array_list_length(states);
+    int states_length = cJSON_GetArraySize(states);
     for (int i = 0; i < states_length; i++) {
-        struct json_object *s = array_list_get_idx(states, i);
+        cJSON *s = cJSON_GetArrayItem(states, i);
 
         const char *s_name_str = get_json_string(s, "name", true);
         if (s_name_str == NULL)
@@ -532,9 +509,9 @@ PDCan_dg_json_create_common(char *filepath)
      * PDC_AN_FUNC_NODE_PREFIX so it can never collide with a state name),
      * with an edge from every declared input state and an edge to every
      * declared output state. */
-    int transformations_length = array_list_length(transformations);
+    int transformations_length = cJSON_GetArraySize(transformations);
     for (int i = 0; i < transformations_length; i++) {
-        struct json_object *t = array_list_get_idx(transformations, i);
+        cJSON *t = cJSON_GetArrayItem(transformations, i);
 
         const char *t_name_str = get_json_string(t, "name", true);
         if (t_name_str == NULL)
@@ -552,14 +529,14 @@ PDCan_dg_json_create_common(char *filepath)
 
         const char *t_params_str = get_json_string(t, "params", false);
 
-        struct array_list *t_inputs  = get_json_array(t, "inputs");
-        struct array_list *t_outputs = get_json_array(t, "outputs");
+        cJSON *t_inputs  = get_json_array(t, "inputs");
+        cJSON *t_outputs = get_json_array(t, "outputs");
         if (t_inputs == NULL || t_outputs == NULL)
             PGOTO_ERROR(NULL, "Transformation \"%s\" must specify \"inputs\" and \"outputs\" arrays\n",
                         t_name);
 
-        int t_num_inputs  = array_list_length(t_inputs);
-        int t_num_outputs = array_list_length(t_outputs);
+        int t_num_inputs  = cJSON_GetArraySize(t_inputs);
+        int t_num_outputs = cJSON_GetArraySize(t_outputs);
         if (t_num_inputs == 0 || t_num_outputs == 0)
             PGOTO_ERROR(NULL, "Transformation \"%s\" must have at least one input and one output\n", t_name);
 
@@ -630,16 +607,16 @@ PDCan_dg_json_create_common(char *filepath)
         func_data.output_names = PDC_calloc(t_num_outputs, sizeof(char *));
 
         for (int j = 0; j < t_num_inputs; j++) {
-            struct json_object *s_obj = array_list_get_idx(t_inputs, j);
-            if (json_object_get_type(s_obj) != json_type_string)
+            cJSON *s_obj = cJSON_GetArrayItem(t_inputs, j);
+            if (!cJSON_IsString(s_obj))
                 PGOTO_ERROR(NULL, "Input %d of transformation \"%s\" was not a string\n", j, t_name);
-            func_data.input_names[j] = strdup(json_object_get_string(s_obj));
+            func_data.input_names[j] = strdup(s_obj->valuestring);
         }
         for (int j = 0; j < t_num_outputs; j++) {
-            struct json_object *s_obj = array_list_get_idx(t_outputs, j);
-            if (json_object_get_type(s_obj) != json_type_string)
+            cJSON *s_obj = cJSON_GetArrayItem(t_outputs, j);
+            if (!cJSON_IsString(s_obj))
                 PGOTO_ERROR(NULL, "Output %d of transformation \"%s\" was not a string\n", j, t_name);
-            func_data.output_names[j] = strdup(json_object_get_string(s_obj));
+            func_data.output_names[j] = strdup(s_obj->valuestring);
         }
 
         char *fn_node_name = PDC_malloc(strlen(PDC_AN_FUNC_NODE_PREFIX) + strlen(t_name) + 1);
@@ -715,7 +692,7 @@ done:
     if (io_buffer.buffer != NULL)
         PDC_free(io_buffer.buffer);
     if (json_obj != NULL)
-        json_object_put(json_obj);
+        cJSON_Delete(json_obj);
     if (ret_value == NULL && dg_cpy != NULL) {
         LOG_ERROR("Failed load JSON freeing graph\n");
         PDCdg_destroy(dg_cpy);
@@ -723,4 +700,3 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-#endif /* JSONC_ENABLED */

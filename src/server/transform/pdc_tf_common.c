@@ -13,9 +13,7 @@
 #include "pdc_timing.h"
 #include "pdc_interface.h"
 #include "pdc_tf_poly_sched.h"
-#ifdef JSONC_ENABLED
-#include "json-c/json.h"
-#endif
+#include "cJSON.h"
 
 PDC_VECTOR *pdc_tf_builtin_funcs_vector_g = NULL;
 
@@ -282,47 +280,41 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-#ifdef JSONC_ENABLED
-static struct array_list *
-get_json_array(struct json_object *json_obj, char *arr_name)
+static cJSON *
+get_json_array(cJSON *json_obj, char *arr_name)
 {
     FUNC_ENTER(NULL);
 
-    struct json_object *ret_value = NULL;
+    cJSON *ret_value = cJSON_GetObjectItemCaseSensitive(json_obj, arr_name);
 
-    if (json_object_object_get_ex(json_obj, arr_name, &ret_value) == 0)
+    if (ret_value == NULL)
         PGOTO_ERROR(NULL, "%s was not found", arr_name);
-    if (json_object_get_type(ret_value) != json_type_array)
+    if (!cJSON_IsArray(ret_value))
         PGOTO_ERROR(NULL, "%s was not an array", arr_name);
 
 done:
-    if (ret_value == NULL)
-        FUNC_LEAVE(NULL);
-    FUNC_LEAVE(json_object_get_array(ret_value));
+    FUNC_LEAVE(ret_value);
 }
 
 static const char *
-get_json_string(struct json_object *json_obj, char *str_name, bool expect_string)
+get_json_string(cJSON *json_obj, char *str_name, bool expect_string)
 {
-    struct json_object *str_json_obj = NULL;
-    const char *        ret_value    = NULL;
+    const char *ret_value    = NULL;
+    cJSON *     str_json_obj = cJSON_GetObjectItemCaseSensitive(json_obj, str_name);
 
-    if (!json_object_object_get_ex(json_obj, str_name, &str_json_obj)) {
+    if (str_json_obj == NULL) {
         if (expect_string)
             PGOTO_ERROR(NULL, "%s was not found", str_name);
         else
             PGOTO_DONE(NULL);
     }
-    if (json_object_get_type(str_json_obj) != json_type_string)
-        PGOTO_ERROR(NULL, "%s was not a string\n", str_json_obj);
-    ret_value = json_object_get_string(str_json_obj);
+    if (!cJSON_IsString(str_json_obj))
+        PGOTO_ERROR(NULL, "%s was not a string\n", str_name);
+    ret_value = str_json_obj->valuestring;
 
 done:
-    if (ret_value == NULL)
-        FUNC_LEAVE(ret_value);
-    FUNC_LEAVE(json_object_get_string(str_json_obj));
+    FUNC_LEAVE(ret_value);
 }
-#endif /* JSONC_ENABLED */
 
 char *pdc_tf_dev_strs[]      = {"CPU", "GPU"};
 char *pdc_tf_location_strs[] = {"builtin", "external"};
@@ -388,31 +380,16 @@ vertex_free(void *data)
     FUNC_LEAVE_VOID();
 }
 
-#ifndef JSONC_ENABLED
-/* JSON-C wasn't found at configure time (see root CMakeLists.txt) -- the
- * only thing that's actually unavailable is attaching a graph; every
- * other PDC operation (object/region create, read, write, ...) works
- * unaffected. Callers already treat a NULL return the same as any other
- * graph-load failure (see PDCtf_dg_json_create, src/api/pdc_tf/pdc_tf.c). */
-pdc_dg_t *
-PDCtf_dg_json_create_common(char *filepath)
-{
-    LOG_ERROR("PDCtf_dg_json_create_common: JSON-C support was not compiled in (JSONC_ROOT_DIR was not "
-              "set at build time) -- cannot parse transformation graph \"%s\"\n",
-              filepath);
-    return NULL;
-}
-#else
 pdc_dg_t *
 PDCtf_dg_json_create_common(char *filepath)
 {
     FUNC_ENTER(NULL);
 
-    pdc_dg_t *          ret_value = NULL;
-    pdc_dg_t *          dg_cpy    = NULL;
-    FILE *              fp        = NULL;
-    struct json_object *json_obj  = NULL;
-    io_buffer_t         io_buffer;
+    pdc_dg_t *  ret_value = NULL;
+    pdc_dg_t *  dg_cpy    = NULL;
+    FILE *      fp        = NULL;
+    cJSON *     json_obj  = NULL;
+    io_buffer_t io_buffer;
     memset(&io_buffer, 0, sizeof(io_buffer_t));
 
     if ((fp = open_file(filepath, IO_MODE_READ)) == NULL)
@@ -420,7 +397,7 @@ PDCtf_dg_json_create_common(char *filepath)
     if (read_file(fp, &io_buffer) != 0)
         PGOTO_ERROR(NULL, "Failed to read_file");
 
-    if ((json_obj = json_tokener_parse(io_buffer.buffer)) == NULL)
+    if ((json_obj = cJSON_Parse(io_buffer.buffer)) == NULL)
         PGOTO_ERROR(NULL, "Failed to parse JSON");
 
     const char *dg_name = get_json_string(json_obj, "name", true);
@@ -434,15 +411,15 @@ PDCtf_dg_json_create_common(char *filepath)
     dg_cpy            = ret_value;
     (ret_value)->data = strdup(filepath);
 
-    struct array_list *states    = get_json_array(json_obj, "states");
-    struct array_list *functions = get_json_array(json_obj, "functions");
+    cJSON *states    = get_json_array(json_obj, "states");
+    cJSON *functions = get_json_array(json_obj, "functions");
     if (states == NULL || functions == NULL)
         PGOTO_DONE(NULL);
 
-    int states_length = array_list_length(states);
+    int states_length = cJSON_GetArraySize(states);
     for (int i = 0; i < states_length; i++) {
-        struct json_object *s      = array_list_get_idx(states, i);
-        char *              s_name = strdup(get_json_string(s, "name", true));
+        cJSON *s      = cJSON_GetArrayItem(states, i);
+        char * s_name = strdup(get_json_string(s, "name", true));
 
         if (s_name == NULL)
             PGOTO_DONE(NULL);
@@ -454,9 +431,9 @@ PDCtf_dg_json_create_common(char *filepath)
             PGOTO_ERROR(NULL, "Failed to add vertex to directed graph");
     }
 
-    int functions_length = array_list_length(functions);
+    int functions_length = cJSON_GetArraySize(functions);
     for (int i = 0; i < functions_length; i++) {
-        struct json_object *f = array_list_get_idx(functions, i);
+        cJSON *f = cJSON_GetArrayItem(functions, i);
 
         char *f_name         = strdup(get_json_string(f, "name", true));
         char *f_input_state  = strdup(get_json_string(f, "input_state", true));
@@ -536,7 +513,7 @@ done:
     if (io_buffer.buffer != NULL)
         PDC_free(io_buffer.buffer);
     if (json_obj != NULL)
-        json_object_put(json_obj);
+        cJSON_Delete(json_obj);
     if (ret_value == NULL && dg_cpy != NULL) {
         LOG_ERROR("Failed load JSON freeing graph\n");
         PDCdg_destroy(dg_cpy);
@@ -544,7 +521,6 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
-#endif /* JSONC_ENABLED */
 
 size_t
 PDCtf_get_pdc_region_t_elements(pdc_tf_region_t reg)

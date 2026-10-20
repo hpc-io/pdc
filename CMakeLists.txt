@@ -24,17 +24,12 @@ endforeach()
 
 # Dependencies directories
 #
-# Every dependency below is optional, JSON-C included: unset the
-# corresponding *_ROOT_DIR env var (or *_DIR for SZ3/TurboPFor/CUSZ) and
-# that piece compiles out instead of cmake hard-failing. Without JSON-C
-# specifically, PDCtf_dg_json_create/PDCan_dg_json_create (attaching a
-# transformation/analysis graph) return a clear "not compiled in" error at
-# runtime (see pdc_tf_common.c / pdc_an_common.c's own #ifdef JSONC_ENABLED)
-# -- every other PDC operation (object/region create, read, write, ...) is
-# unaffected, since graph attachment is the only thing that needs it.
-if(DEFINED ENV{JSONC_ROOT_DIR} AND NOT "$ENV{JSONC_ROOT_DIR}" STREQUAL "")
-  set(JSONC_ROOT $ENV{JSONC_ROOT_DIR})
-endif()
+# Every dependency below is optional: unset the corresponding *_ROOT_DIR env
+# var (or *_DIR for SZ3/TurboPFor/CUSZ) and that piece compiles out instead
+# of cmake hard-failing. JSON graph parsing for PDCtf_dg_json_create /
+# PDCan_dg_json_create is not one of these -- it uses the cJSON copy vendored
+# in src/commons/cjson, which is always built, so graph attachment always
+# works with no extra env var required.
 if(DEFINED ENV{ZFP_ROOT_DIR} AND NOT "$ENV{ZFP_ROOT_DIR}" STREQUAL "")
   set(ZFP_ROOT $ENV{ZFP_ROOT_DIR})
 endif()
@@ -63,24 +58,6 @@ else()
   message(STATUS "ZFP_ROOT_DIR not set -- zfp_compress/zfp_decompress transformation disabled")
 endif()
 
-# JSONC -- pdc_tf_common.c / pdc_an_common.c graph JSON parsing only
-if(JSONC_ROOT)
-  find_path(JSONC_INCLUDE_DIR NAMES json-c/json.h PATHS "${JSONC_ROOT}/include")
-  find_library(JSONC_LIBRARY NAMES json-c PATHS "${JSONC_ROOT}/lib64" "${JSONC_ROOT}/lib")
-  if(NOT JSONC_INCLUDE_DIR)
-    message(FATAL_ERROR "JSONC_ROOT_DIR is set but could not find JSON-C headers in ${JSONC_ROOT}/include")
-  endif()
-  if(NOT JSONC_LIBRARY)
-    message(FATAL_ERROR "JSONC_ROOT_DIR is set but could not find JSON-C library in ${JSONC_ROOT}/lib64 or ${JSONC_ROOT}/lib")
-  endif()
-  include_directories(${JSONC_INCLUDE_DIR})
-  link_libraries(${JSONC_LIBRARY})
-  set(JSONC_ENABLED 1)
-  add_compile_definitions(JSONC_ENABLED=1)
-else()
-  message(STATUS "JSONC_ROOT_DIR not set -- transformation/analysis graph attachment disabled (PDCtf_dg_json_create / PDCan_dg_json_create will return an error at runtime); everything else still works")
-endif()
-
 # LIBSODIUM -- pdc_tf_builtin_encrypt_cpu.c only
 if(LIBSODIUM_ROOT)
   find_path(LIBSODIUM_INCLUDE_DIR NAMES sodium.h PATHS "${LIBSODIUM_ROOT}/include")
@@ -105,14 +82,25 @@ if(CUDA_ROOT)
   find_path(CUDA_INCLUDE_DIR NAMES cuda_runtime.h PATHS "${CUDA_ROOT}/include")
   # Find runtime library
   find_library(CUDA_RUNTIME_LIBRARY NAMES cudart PATHS "${CUDA_ROOT}/lib64" "${CUDA_ROOT}/lib")
+  # NVML -- pdc_tf_profiler.c's GPU utilization/power sampling is unconditional
+  # whenever CUDA_ENABLED, not optional, so this has to be found whenever CUDA
+  # is. nvml.h ships inside the CUDA toolkit's own include dir (no separate
+  # *_ROOT needed); libnvidia-ml.so itself comes from the GPU driver package,
+  # with a toolkit-provided stub .so for linking on machines without the
+  # driver installed, so check both locations.
+  find_library(NVML_LIBRARY NAMES nvidia-ml
+    PATHS "${CUDA_ROOT}/lib64/stubs" "${CUDA_ROOT}/targets/x86_64-linux/lib/stubs")
   if(NOT CUDA_INCLUDE_DIR)
       message(FATAL_ERROR "Could not find CUDA headers in ${CUDA_ROOT}/include")
   endif()
   if(NOT CUDA_RUNTIME_LIBRARY)
       message(FATAL_ERROR "Could not find CUDA runtime library in ${CUDA_ROOT}/lib64 or ${CUDA_ROOT}/lib")
   endif()
+  if(NOT NVML_LIBRARY)
+      message(FATAL_ERROR "Could not find NVML (libnvidia-ml), required by pdc_tf_profiler.c when CUDA is enabled")
+  endif()
   include_directories(${CUDA_INCLUDE_DIR})
-  link_libraries(${CUDA_RUNTIME_LIBRARY})
+  link_libraries(${CUDA_RUNTIME_LIBRARY} ${NVML_LIBRARY})
   set(CUDA_ENABLED 1 CACHE BOOL "Enable CUDA globally")
   if(CUDA_ENABLED)
     add_compile_definitions(CUDA_ENABLED=1)
