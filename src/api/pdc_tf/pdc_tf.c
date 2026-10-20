@@ -140,9 +140,9 @@ PDCtf_attach_to_region(pdcid_t dg_id, pdcid_t obj_id, pdcid_t remote_reg, char *
     // "replace" semantics: silently adding a second mapping for the same region would leak the old
     // region_mapping and leave two conflicting conceptual/actual regions for the same bytes.
     pdc_tf_region_mapping_t *existing_mapping = NULL;
-    if (PDCtf_region_has_attached_graph(
-            pdc_tf_obj, region_info->ndim, PDC_get_var_type_size(pdc_obj_info->obj_pt->obj_prop_pub->type),
-            region_info->offset, region_info->size, &existing_mapping))
+    if (PDCtf_region_has_attached_graph(pdc_tf_obj, region_info->ndim,
+                                        PDC_get_var_type_size(pdc_obj_info->obj_pt->obj_prop_pub->type),
+                                        region_info->offset, region_info->size, &existing_mapping))
         PGOTO_ERROR(FAIL, "A graph is already attached to this region");
 
     // Create region mapping vector if needed
