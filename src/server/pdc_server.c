@@ -343,27 +343,33 @@ PDC_Server_write_addr_to_file(char **addr_strings, int n)
 
     perr_t ret_value = SUCCEED;
     char   config_fname[ADDR_MAX];
+    char   tmp_fname[ADDR_MAX + 4];
     int    i;
 
-    // write to file
+    // write to a temporary file and rename it, so clients never see a partial config file
     if (strpbrk(pdc_server_tmp_dir_g, ";&|`$<>") != NULL)
         PGOTO_ERROR(FAIL, "Invalid characters in server tmp dir path");
     snprintf(config_fname, ADDR_MAX, "%s%s", pdc_server_tmp_dir_g, pdc_server_cfg_name_g);
-    int _na_fd = open(config_fname, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    snprintf(tmp_fname, sizeof(tmp_fname), "%s.tmp", config_fname);
+    int _na_fd = open(tmp_fname, O_WRONLY | O_CREAT | O_TRUNC, 0600);
     if (_na_fd < 0)
-        PGOTO_ERROR(FAIL, "Could not open config file from: %s", config_fname);
+        PGOTO_ERROR(FAIL, "Could not open config file from: %s", tmp_fname);
     FILE *na_config = fdopen(_na_fd, "w");
     if (na_config == NULL) {
         close(_na_fd);
-        PGOTO_ERROR(FAIL, "Could not fdopen config file from: %s", config_fname);
+        PGOTO_ERROR(FAIL, "Could not fdopen config file from: %s", tmp_fname);
     }
 
     fprintf(na_config, "%d\n", n);
     for (i = 0; i < n; i++) {
         fprintf(na_config, "%s\n", addr_strings[i]);
     }
-    fclose(na_config);
+    if (fclose(na_config) != 0)
+        PGOTO_ERROR(FAIL, "Could not write config file: %s", tmp_fname);
     na_config = NULL;
+
+    if (rename(tmp_fname, config_fname) != 0)
+        PGOTO_ERROR(FAIL, "Could not rename %s to %s", tmp_fname, config_fname);
 
 done:
     FUNC_LEAVE(ret_value);
