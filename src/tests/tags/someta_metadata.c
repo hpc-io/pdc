@@ -126,6 +126,14 @@ main(int argc, char **argv)
     for (int i = 0; i < servers; i++)
         require(owners[i] > 0, "test objects did not cover every DHT server");
     check_query(expected, count);
+    char        missing_value[] = "\"missing\"";
+    pdc_kvtag_t missing_query   = {
+        .name = "someta_missing", .value = missing_value, .type = PDC_STRING, .size = sizeof(missing_value)};
+    uint64_t *missing_ids   = NULL;
+    int       missing_count = -1;
+    require(PDC_Client_query_kvtag(&missing_query, &missing_count, &missing_ids) >= 0 && missing_count == 0,
+            "empty query failed");
+    free(missing_ids);
 #ifdef ENABLE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif

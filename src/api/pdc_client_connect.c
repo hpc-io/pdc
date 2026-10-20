@@ -1281,7 +1281,12 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     else
         LOG_INFO("Environment variable HG_HOST was set\n");
 
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+    // CXI selects a NIC and endpoint ID instead of a hostname and TCP port.
+    if (strcmp(hg_transport, "ofi+cxi") == 0)
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s", hg_transport,
+                 getenv("HG_HOST") ? hostname : "");
+    else
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
@@ -6680,11 +6685,8 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
     hg_return_t         ret_value = HG_SUCCESS;
     struct bulk_args_t *bulk_args;
-    hg_bulk_t           origin_bulk_handle = hg_cb_info->info.bulk.origin_handle;
-    hg_bulk_t           local_bulk_handle  = hg_cb_info->info.bulk.local_handle;
+    hg_bulk_t           local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     uint32_t            n_meta, actual_cnt;
-    void *              buf = NULL;
-    uint64_t            buf_sizes[1];
     uint32_t            bulk_sgnum;
     uint64_t *          ids_buf_sizes;
     void **             ids_buf;
@@ -6707,16 +6709,14 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
             bulk_args->obj_ids[i] = *u64_arr_ptr;
             u64_arr_ptr++;
         }
+        PDC_free(ids_buf);
+        PDC_free(ids_buf_sizes);
     }
     else
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error with bulk handle");
 
-    // Free local bulk handle
+    // HG_Free_output releases the decoded origin handle; only free our local handle.
     ret_value = HG_Bulk_free(local_bulk_handle);
-    if (ret_value != HG_SUCCESS)
-        PGOTO_ERROR(ret_value, "Could not free HG bulk handle");
-
-    ret_value = HG_Bulk_free(origin_bulk_handle);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not free HG bulk handle");
 
@@ -6737,6 +6737,7 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
     struct bulk_args_t *          bulk_arg;
     hg_handle_t                   handle;
     metadata_query_transfer_out_t output;
+    hg_bool_t                     destroy_handle = HG_FALSE;
     uint32_t                      n_meta;
     hg_op_id_t                    hg_bulk_op_id;
     hg_bulk_t                     local_bulk_handle  = HG_BULK_NULL;
@@ -6758,8 +6759,7 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
         hg_atomic_decr32(&bulk_todo_g);
         bulk_arg->n_meta  = 0;
         bulk_arg->obj_ids = NULL;
-        HG_Free_output(handle, &output);
-        HG_Destroy(handle);
+        destroy_handle    = HG_TRUE;
         PGOTO_DONE(ret_value);
     }
 
@@ -6788,6 +6788,8 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
 done:
     hg_atomic_decr32(&atomic_work_todo_g);
     HG_Free_output(handle, &output);
+    if (destroy_handle)
+        HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
 }

@@ -809,7 +809,12 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     }
     else
         LOG_INFO("Environment variable HG_HOST was set\n");
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+    // CXI selects a NIC and endpoint ID instead of a hostname and TCP port.
+    if (strcmp(hg_transport, "ofi+cxi") == 0)
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s", hg_transport,
+                 getenv("HG_HOST") ? hostname : "");
+    else
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_server_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
