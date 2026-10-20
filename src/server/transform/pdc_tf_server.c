@@ -377,7 +377,7 @@ PDCtf_exec_graph(pdc_dg_t *dg, uint64_t flat_conceptual_offset, char *cur_state,
                 bool force_selected = false;
                 best_edge_idx       = select_best_edge(
                     edges_out, j, cur_edges_between_vertices, avg_cpu_utilization, min_avg_gpu_utilization,
-                    &min_gpu_utilization_device_index, &force_selected, false, predicted_total_ms / 1000.0);
+                    &min_gpu_utilization_device_index, false, &force_selected, predicted_total_ms / 1000.0);
             }
 
             /* ── execute transformation ───────────────────────────────── */
@@ -590,9 +590,10 @@ PDCtf_exec_graph_backup(pdc_dg_t *dg, uint64_t flat_conceptual_offset, char *cur
             }
 
             /* ── edge selection ───────────────────────────────────────── */
-            uint32_t best_edge_idx = select_best_edge(
+            bool     force_selected = false;
+            uint32_t best_edge_idx  = select_best_edge(
                 edges_out, j, cur_edges_between_vertices, avg_cpu_utilization, min_avg_gpu_utilization,
-                &min_gpu_utilization_device_index, always_use_gpu, false, predicted_total_ms / 1000.0);
+                &min_gpu_utilization_device_index, always_use_gpu, &force_selected, predicted_total_ms / 1000.0);
 
             /* ── execute transformation ───────────────────────────────── */
             pdc_dg_edge_t  e = edges_out[best_edge_idx];
