@@ -267,6 +267,8 @@ add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME kvtag_query       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
 add_test(NAME pht_create_bucket WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_create_bucket)
 add_test(NAME pht_add_key       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_add_key)
+add_test(NAME pht_regression COMMAND pht_regression)
+add_test(NAME pht_serialization COMMAND pht_serialization)
 if(PDC_ENABLE_IDIOMS)
 add_test(NAME idioms_ci_test    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
 endif()

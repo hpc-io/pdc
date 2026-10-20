@@ -526,8 +526,8 @@ typedef struct {
 
 typedef struct {
     int32_t  ret;
-    bool     found;
-    bool     leaf;
+    hg_bool_t found;
+    hg_bool_t leaf;
     uint32_t server_id;
 } metadata_check_prefix_out_t;
 
@@ -1813,7 +1813,6 @@ hg_proc_metadata_create_bucket_in_t(hg_proc_t proc, void *data)
     hg_return_t                  ret;
     metadata_create_bucket_in_t *struct_data = (metadata_create_bucket_in_t *)data;
 
-    printf("In hg_proc_metadata_create_bucket_in_t %s\n", struct_data->prefix);
     ret = hg_proc_hg_string_t(proc, &struct_data->prefix);
     if (ret != HG_SUCCESS) {
         FUNC_LEAVE(ret);
@@ -1904,31 +1903,42 @@ hg_proc_metadata_get_kvtag_out_t(hg_proc_t proc, void *data)
 static HG_INLINE hg_return_t
 hg_proc_metadata_key_add_in_t(hg_proc_t proc, void *data)
 {
-    FUNC_ENTER(NULL);
-    hg_return_t            ret;
-    metadata_key_add_in_t *struct_data = (metadata_key_add_in_t *)data;
-
-    ret = hg_proc_hg_string_t(proc, &struct_data->key);
+    metadata_key_add_in_t *in  = data;
+    hg_return_t            ret = hg_proc_hg_string_t(proc, &in->key);
     if (ret != HG_SUCCESS)
-        FUNC_LEAVE(ret);
-    printf("In hg_proc_metadata_key_add_in_t Key:%s\n", struct_data->key);
-
-    ret = hg_proc_hg_string_t(proc, &struct_data->prefix);
+        return ret;
+    ret = hg_proc_hg_string_t(proc, &in->prefix);
     if (ret != HG_SUCCESS)
-        FUNC_LEAVE(ret);
-    printf("In hg_proc_metadata_key_add_in_t Prefix:%s\n", struct_data->prefix);
-
-    ret = hg_proc_raw(proc, struct_data->value, struct_data->size);
+        return ret;
+    ret = hg_proc_uint32_t(proc, &in->size);
     if (ret != HG_SUCCESS)
-        FUNC_LEAVE(ret);
-    printf("In hg_proc_metadata_key_add_in_t Value:%p\n", struct_data->value);
-
-    ret = hg_proc_uint32_t(proc, &struct_data->size);
-    if (ret != HG_SUCCESS)
-        FUNC_LEAVE(ret);
-    printf("In hg_proc_metadata_key_add_in_t Size:%d\n", struct_data->size);
-
-    FUNC_LEAVE(ret);
+        return ret;
+    switch (hg_proc_get_op(proc)) {
+        case HG_DECODE:
+            in->value = NULL;
+            if (in->size) {
+                in->value = malloc(in->size);
+                if (!in->value)
+                    return HG_NOMEM_ERROR;
+                ret = hg_proc_raw(proc, in->value, in->size);
+                if (ret != HG_SUCCESS) {
+                    free(in->value);
+                    in->value = NULL;
+                }
+            }
+            break;
+        case HG_ENCODE:
+            if (in->size && !in->value)
+                return HG_PROTOCOL_ERROR;
+            if (in->size)
+                ret = hg_proc_raw(proc, in->value, in->size);
+            break;
+        case HG_FREE:
+            free(in->value);
+            in->value = NULL;
+            break;
+    }
+    return ret;
 }
 
 static HG_INLINE hg_return_t
@@ -4994,6 +5004,6 @@ perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint6
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
                                       int is_write);
 
-uint32_t PDC_get_server_using_pht(uint64_t key_hash);
+uint32_t PDC_get_server_using_pht(uint64_t key_hash, uint32_t n_server);
 perr_t   PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_out_t *out);
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

@@ -182,7 +182,8 @@ int set_remove(Set *set, SetValue data);
 int set_query(Set *set, SetValue data);
 
 /**
- * Copy the contents of one set to another.
+ * Copy borrowed values from source into target. The target remains valid
+ * on allocation failure and can contain values copied before the failure.
  *
  * @param target        The set to copy values into.
  * @param source        The set to copy values from.

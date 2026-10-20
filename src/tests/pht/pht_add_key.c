@@ -82,6 +82,13 @@ main()
     TASSERT(PDC_metadata_key_add(obj1, &kvtag1, false) >= 0,
             "Call to PDC_metadata_key_add succeeded for obj1",
             "Call to PDC_metadata_key_add failed for obj1");
+    TASSERT(PDC_metadata_key_add(obj1, &kvtag2, false) >= 0, "Integer metadata inserted",
+            "Integer metadata insertion failed");
+    TASSERT(PDC_metadata_key_add(obj1, &kvtag3, false) >= 0, "Double metadata inserted",
+            "Double metadata insertion failed");
+    TASSERT(PDC_metadata_key_add(obj1, &kvtag2, false) >= 0, "Duplicate binary metadata inserted",
+            "Duplicate insertion failed");
+    TASSERT(PDC_metadata_key_add(obj1, NULL, false) < 0, "Invalid input rejected", "Invalid input accepted");
     // close pdc
     TASSERT(PDCclose(pdc) >= 0, "Call to PDCclose succeeded", "Call to PDCclose failed");
 

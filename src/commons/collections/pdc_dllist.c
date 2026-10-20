@@ -1,87 +1,86 @@
 #include "pdc_dllist.h"
 #include <stdlib.h>
 
-// Now define the actual structures
-struct DoublyLinkedListItem {
-    void *                       key;
-    void *                       value;
-    struct DoublyLinkedListItem *prev; // Use 'struct' keyword
-    struct DoublyLinkedListItem *next; // Use 'struct' keyword
-};
-
-struct DoublyLinkedList {
-    DoublyLinkedListItem *    head;
-    DoublyLinkedListHashFunc  hash_func;
-    DoublyLinkedListEqualFunc equal_func;
-    unsigned int              count;
-};
 DoublyLinkedList *
 dllist_init(DoublyLinkedListHashFunc hash_func, DoublyLinkedListEqualFunc equal_func)
 {
-    DoublyLinkedList *list = malloc(sizeof(DoublyLinkedList));
-    if (!list) {
-        return NULL; // Memory allocation failed
+    DoublyLinkedList *list = calloc(1, sizeof(*list));
+    if (list) {
+        list->hash_func  = hash_func;
+        list->equal_func = equal_func;
     }
-    list->hash_func  = hash_func;
-    list->equal_func = equal_func;
-    list->head       = NULL;
-    list->count      = 0;
     return list;
 }
 
 int
-dllist_insert(DoublyLinkedList *list, void *key, void *value)
+dllist_insert(DoublyLinkedList *list, void *key, Set *value)
 {
-    DoublyLinkedListItem *item = malloc(sizeof(DoublyLinkedListItem));
-    item->key                  = key;
-    item->value                = value;
+    if (!list || !key || !value)
+        return -1;
+    DoublyLinkedListItem *item = malloc(sizeof(*item));
+    if (!item)
+        return -1;
+    item->key   = key;
+    item->value = value;
     DL_APPEND(list->head, item);
     list->count++;
     return 0;
 }
 
-int *
+Set *
 dllist_search_key(DoublyLinkedList *list, void *key)
 {
-    DoublyLinkedListItem *    elt          = NULL;
-    DoublyLinkedListEqualFunc key_cmp_func = list->equal_func;
+    DoublyLinkedListItem *elt;
+    if (!list || !key || !list->equal_func)
+        return NULL;
     DL_FOREACH(list->head, elt)
     {
-        if (key_cmp_func(elt->key, key) == 0)
-            break;
+        if (list->equal_func(elt->key, key) == 0)
+            return elt->value;
     }
-    return elt != NULL && key_cmp_func(elt->key, key) == 0 ? elt->value : NULL;
+    return NULL;
 }
 
-int *
+Set *
 dllist_search_range(DoublyLinkedList *list, void *start_key, bool include_start, void *end_key,
                     bool include_end)
 {
-    DoublyLinkedListItem *    elt          = NULL;
-    Set *                     value_set    = set_new(NULL, NULL);
-    DoublyLinkedListEqualFunc key_cmp_func = list->equal_func;
+    DoublyLinkedListItem *elt;
+    Set *                 result = NULL;
+    if (!list || !start_key || !end_key || !list->equal_func)
+        return NULL;
     DL_FOREACH(list->head, elt)
     {
-        int start_dist = key_cmp_func(elt->key, start_key);
-        int end_dist   = key_cmp_func(elt->key, end_key);
-        if (start_dist >= 0 && end_dist <= 0) {
-            set_copy(value_set, elt->value);
+        int start = list->equal_func(elt->key, start_key);
+        int end   = list->equal_func(elt->key, end_key);
+        if ((start > 0 || (include_start && start == 0)) && (end < 0 || (include_end && end == 0))) {
+            if (!result)
+                result = set_union(elt->value, elt->value);
+            else if (set_copy(result, elt->value) != 0) {
+                set_free(result);
+                return NULL;
+            }
+            if (!result)
+                return NULL;
         }
     }
-    return value_set;
+    return result ? result : set_new(list->hash_func, list->equal_func);
 }
 
 int
 dllist_destroy(void *ptr)
 {
-    DoublyLinkedList *    list = (DoublyLinkedList *)ptr;
-    DoublyLinkedListItem *elt  = NULL;
-    DoublyLinkedListItem *tmp  = NULL;
+    DoublyLinkedList *    list = ptr;
+    DoublyLinkedListItem *elt, *tmp;
+    if (!list)
+        return 0;
     DL_FOREACH_SAFE(list->head, elt, tmp)
     {
         DL_DELETE(list->head, elt);
-        free(elt->value);
+        set_free(elt->value);
         free(elt->key);
         free(elt);
     }
+    free(list);
+    return 0;
 }

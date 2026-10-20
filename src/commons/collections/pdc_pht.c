@@ -24,7 +24,7 @@ prefix_table_init(unsigned int bucket_size, HashTableHashFunc hash_cb, HashTable
 }
 
 PrefixTableBucket *
-prefix_table_bucket_init(PrefixTableHashFunc hash_cb, PrefixTableEqualFunc equal_cb)
+prefix_table_bucket_init(PrefixTableHashFunc hash_cb, DoublyLinkedListEqualFunc compare_cb)
 {
     PrefixTableBucket *bucket = (PrefixTableBucket *)malloc(sizeof(PrefixTableBucket));
     if (!bucket) {
@@ -35,7 +35,11 @@ prefix_table_bucket_init(PrefixTableHashFunc hash_cb, PrefixTableEqualFunc equal
     bucket->left   = NULL;
     bucket->right  = NULL;
     bucket->prefix = NULL;
-    bucket->store  = dllist_init(hash_cb, equal_cb);
+    bucket->store  = dllist_init(hash_cb, compare_cb);
+    if (!bucket->store) {
+        free(bucket);
+        return NULL;
+    }
     return bucket;
 }
 int
@@ -44,27 +48,39 @@ prefix_table_insert(PrefixTable *pht, void *key, void *value)
     if (!pht || !key || !value) {
         return -1; // Invalid parameters
     }
-    hash_table_insert(pht->map, key, value);
-    pht->key_count++;
+    if (!hash_table_insert(pht->map, key, value))
+        return -1;
+    pht->key_count = hash_table_num_entries(pht->map);
     return 0;
 }
 
 void
 prefix_table_destroy(PrefixTable *pht)
 {
+    if (!pht)
+        return;
     hash_table_free(pht->map);
     free(pht);
 }
 
-void
-pht_add_to_store(PrefixTable *pht, void *key, void *value)
-{
-    hash_table_insert(pht->map, key, value);
-}
 bool
 prefix_table_bucket_is_leaf(PrefixTableBucket *bucket)
 {
-    return bucket->isLeaf;
+    return bucket && bucket->isLeaf;
+}
+
+void
+prefix_table_bucket_destroy(void *ptr)
+{
+    PrefixTableBucket *bucket = ptr;
+    if (!bucket)
+        return;
+    dllist_destroy(bucket->store);
+    free(bucket->prefix);
+    free(bucket->parent);
+    free(bucket->left);
+    free(bucket->right);
+    free(bucket);
 }
 
 #ifdef __cplusplus

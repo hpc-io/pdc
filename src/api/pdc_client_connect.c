@@ -1557,9 +1557,8 @@ PDC_Client_init()
     }
 
     if (pdc_client_mpi_rank_g == 0) {
-        LOG_INFO("Using [%s] as tmp dir112, %d clients per server\n", pdc_client_tmp_dir_g,
+        LOG_INFO("Using [%s] as tmp dir, %d clients per server\n", pdc_client_tmp_dir_g,
                  pdc_nclient_per_server_g);
-        PDC_Client_create_bucket(ROOT_BUCKET);
     }
 
     if (mercury_has_init_g) {
@@ -2055,65 +2054,41 @@ done:
 }
 
 static hg_return_t
-metadata_check_prefix_rpc_cb(const struct hg_cb_info *callback_info)
+metadata_check_prefix_rpc_cb(const struct hg_cb_info *info)
 {
-    FUNC_ENTER(NULL);
-
-    hg_return_t                  ret_value;
-    metadata_check_prefix_out_t  output;
-    metadata_check_prefix_out_t *args   = (metadata_check_prefix_out_t *)callback_info->arg;
-    hg_handle_t                  handle = callback_info->info.forward.handle;
-
-    printf("metadata_check_prefix_rpc_cb: callback_info->arg = %p\n", callback_info->arg);
-    /* Get output from server*/
-    ret_value = HG_Get_output(handle, &output);
-    printf("metadata_check_prefix_rpc_cb: after HG_Get_output\n");
-    if (ret_value != HG_SUCCESS) {
-        ret_value = -1;
-        PGOTO_ERROR(HG_OTHER_ERROR, "Error with HG_Get_output");
+    metadata_check_prefix_out_t *result = info->arg;
+    metadata_check_prefix_out_t  output = {0};
+    hg_handle_t                  handle = info->info.forward.handle;
+    hg_return_t                  ret    = info->ret;
+    result->ret                         = -1;
+    if (ret == HG_SUCCESS) {
+        ret = HG_Get_output(handle, &output);
+        if (ret == HG_SUCCESS) {
+            *result = output;
+            HG_Free_output(handle, &output);
+        }
     }
-    args->found     = output.found;
-    args->server_id = output.server_id;
-    args->ret       = output.ret;
-    args->leaf      = output.leaf;
-    printf("metadata_check_prefix_rpc_cb: output.found = %d\n", args->found);
-    printf("metadata_check_prefix_rpc_cb: output.leaf = %d\n", args->leaf);
-    printf("metadata_check_prefix_rpc_cb: output.ret = %d\n", args->ret);
-    printf("metadata_check_prefix_rpc_cb: output.server_id = %d\n", args->server_id);
-
-done:
     hg_atomic_decr32(&atomic_work_todo_g);
-    HG_Free_output(handle, &output);
-
-    FUNC_LEAVE(ret_value);
+    return ret;
 }
 
 static hg_return_t
-metadata_key_add_rpc_cb(const struct hg_cb_info *callback_info)
+metadata_key_add_rpc_cb(const struct hg_cb_info *info)
 {
-    FUNC_ENTER(NULL);
-
-    hg_return_t             ret_value;
-    metadata_key_add_out_t  output;
-    metadata_key_add_out_t *args   = (metadata_key_add_out_t *)callback_info->arg;
-    hg_handle_t             handle = callback_info->info.forward.handle;
-
-    printf("metadata_key_add_rpc_cb: callback_info->arg = %p\n", callback_info->arg);
-    /* Get output from server*/
-    ret_value = HG_Get_output(handle, &output);
-    printf("metadata_key_add_rpc_cb: after HG_Get_output\n");
-    if (ret_value != HG_SUCCESS) {
-        ret_value = -1;
-        PGOTO_ERROR(HG_OTHER_ERROR, "Error with HG_Get_output");
+    metadata_key_add_out_t *result = info->arg;
+    metadata_key_add_out_t  output = {0};
+    hg_handle_t             handle = info->info.forward.handle;
+    hg_return_t             ret    = info->ret;
+    result->ret                    = -1;
+    if (ret == HG_SUCCESS) {
+        ret = HG_Get_output(handle, &output);
+        if (ret == HG_SUCCESS) {
+            *result = output;
+            HG_Free_output(handle, &output);
+        }
     }
-    args->ret = output.ret;
-    printf("metadata_check_prefix_rpc_cb: output.ret = %d\n", args->ret);
-
-done:
     hg_atomic_decr32(&atomic_work_todo_g);
-    HG_Free_output(handle, &output);
-
-    FUNC_LEAVE(ret_value);
+    return ret;
 }
 
 perr_t
@@ -6482,160 +6457,112 @@ done:
 static perr_t
 PDC_check_prefix(uint32_t server, char *prefix, metadata_check_prefix_out_t *out)
 {
-    FUNC_ENTER(NULL);
-    perr_t                         ret_value = SUCCEED;
-    hg_return_t                    hg_ret    = 0;
-    hg_handle_t                    metadata_check_prefix_handle;
-    struct _pdc_client_lookup_args lookup_args;
-    metadata_check_prefix_in_t     in;
-
-    if (PDC_Client_try_lookup_server(server, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
-
-    HG_Create(send_context_g, pdc_server_info_g[server].addr, metadata_check_prefix_register_id_g,
-              &metadata_check_prefix_handle);
-
-    // Fill input structure
-    in.prefix = prefix;
-    printf("Checking prefix client %s on server %d\n", prefix, server);
-    hg_ret = HG_Forward(metadata_check_prefix_handle, metadata_check_prefix_rpc_cb, out, &in);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "Could not start HG_Forward");
-
-    // Wait for response from server
+    perr_t                     ret    = FAIL;
+    hg_handle_t                handle = HG_HANDLE_NULL;
+    metadata_check_prefix_in_t in     = {.prefix = prefix};
+    *out                              = (metadata_check_prefix_out_t){.ret = -1};
+    if (server >= (uint32_t)pdc_server_num_g || PDC_Client_try_lookup_server(server, 0) != SUCCEED)
+        goto done;
+    if (HG_Create(send_context_g, pdc_server_info_g[server].addr, metadata_check_prefix_register_id_g,
+                  &handle) != HG_SUCCESS)
+        goto done;
     hg_atomic_set32(&atomic_work_todo_g, 1);
+    if (HG_Forward(handle, metadata_check_prefix_rpc_cb, out, &in) != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        goto done;
+    }
     PDC_Client_check_response(&send_context_g);
-
-    if (out->ret != 1)
-        LOG_ERROR("Check prefix NOT successful, ret_value = %d\n", out->ret);
-
+    if (out->ret == 1)
+        ret = SUCCEED;
 done:
-    HG_Destroy(metadata_check_prefix_handle);
-
-    FUNC_LEAVE(ret_value);
+    if (handle != HG_HANDLE_NULL)
+        HG_Destroy(handle);
+    return ret;
 }
 
 uint32_t
 PDC_prefix_binary_search(char *prefix, char **target_prefix)
 {
-    metadata_check_prefix_out_t resp;
-    uint64_t                    temp_server_id = -1;
-    int                         max            = strlen(prefix) - 1;
-    int                         mid            = 1;
-    char *                      slice;
-
-    printf("Searching prefix %s\n", prefix);
-    while (mid <= max) {
-        slice = malloc((mid + 1) * sizeof(char));
-        strncpy(slice, prefix, mid);
-        slice[mid]          = '\0';
-        uint64_t hash_value = prefix_hash(prefix);
-        temp_server_id      = PDC_get_server_using_pht(hash_value);
-        printf("Server %d is responsible for prefix %s till length %d\n", temp_server_id, slice, mid);
-        perr_t ret = PDC_check_prefix(temp_server_id, slice, &resp);
-
-        printf("Checking prefix %s on server %d: found=%d, leaf=%d\n", slice, temp_server_id, resp.found,
-               resp.leaf);
-        // TODO: check if redirect to another server
-
-        /*** If the prefix exists and a leaf node, return the target server */
-        if (resp.found == 1 && resp.leaf == 1) {
-            *target_prefix = malloc((mid + 1) * sizeof(char));
-            strncpy(*target_prefix, slice, mid);
-            (*target_prefix)[mid] = '\0';
-            free(slice);
-            return temp_server_id;
+    if (!target_prefix)
+        return UINT32_MAX;
+    *target_prefix = NULL;
+    if (!prefix || !*prefix || pdc_server_num_g <= 0)
+        return UINT32_MAX;
+    char *slice = strdup(prefix);
+    if (!slice)
+        return UINT32_MAX;
+    size_t length = strlen(prefix);
+    for (size_t i = 1; i <= length; i++) {
+        metadata_check_prefix_out_t out;
+        memcpy(slice, prefix, i);
+        slice[i]        = '\0';
+        uint32_t server = PDC_get_server_using_pht(prefix_hash(slice), pdc_server_num_g);
+        if (PDC_check_prefix(server, slice, &out) != SUCCEED || !out.found)
+            break;
+        if (out.leaf) {
+            *target_prefix = slice;
+            return server;
         }
-        else if (resp.found == 1 &&
-                 resp.leaf == 0) { /** If the prefix exists but not a leaf node, search longer prefix */
-            mid++;
-        }
-        else { /** If the prefix does not exist, search shorter prefix */
-            max = mid - 1;
-            mid = mid / 2;
-        }
-
-        free(slice);
-        return temp_server_id;
     }
-    return -1; // No valid prefix found
+    free(slice);
+    return UINT32_MAX;
 }
 
 perr_t
 PDC_metadata_key_add(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
 {
-    FUNC_ENTER(NULL);
-    char *                         key_name;
-    char *                         target_prefix;
-    perr_t                         ret_value = SUCCEED;
-    hg_return_t                    hg_ret    = 0;
-    hg_handle_t                    metadata_key_add_handle;
-    metadata_key_add_in_t          in;
-    struct _pdc_client_lookup_args lookup_args;
-
-    printf("PDC_metadata_key_add: Adding key %s to metadata\n", kvtag->name);
-    key_name      = kvtag->name;
-    char *key_bin = string_to_binary(key_name);
-    char *prefix  = malloc(strlen(key_bin) + 2);
-    strncpy(prefix, ROOT_BUCKET, 1);
-    strncpy(prefix + 1, key_bin, strlen(key_bin));
-    prefix[strlen(key_bin) + 1] = '\0';
-    free(key_bin);
-
-    uint32_t server_id = PDC_prefix_binary_search(prefix, &target_prefix);
-    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
-
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_key_add_register_id_g,
-              &metadata_key_add_handle);
-
-    in.key    = strdup(kvtag->name);
-    in.value  = kvtag->value;
-    in.prefix = strdup(target_prefix);
-    in.size   = kvtag->size;
-
-    printf("PDC_metadata_key_add: Inserting key %s with prefix %s and value %s to server %d\n", in.key,
-           in.prefix, in.value, server_id);
-
-    hg_ret = HG_Forward(metadata_key_add_handle, metadata_key_add_rpc_cb, &lookup_args, &in);
-    printf("HG_Forward returned %d\n", hg_ret);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "Could not start HG_Forward");
-
-    // Wait for response from server
+    perr_t                 ret    = FAIL;
+    hg_handle_t            handle = HG_HANDLE_NULL;
+    char *                 binary = NULL, *prefix = NULL, *target_prefix = NULL;
+    metadata_key_add_out_t out = {.ret = -1};
+    (void)obj_id;
+    (void)is_cont;
+    if (!kvtag || !kvtag->name || !kvtag->value || !kvtag->size || pdc_server_num_g <= 0)
+        goto done;
+    /* Creation is idempotent; each client can insert immediately after init. */
+    if (PDC_Client_create_bucket(ROOT_BUCKET) != SUCCEED)
+        goto done;
+    binary = string_to_binary(kvtag->name);
+    if (!binary)
+        goto done;
+    prefix = malloc(strlen(binary) + 2);
+    if (!prefix)
+        goto done;
+    prefix[0] = '#';
+    strcpy(prefix + 1, binary);
+    uint32_t server = PDC_prefix_binary_search(prefix, &target_prefix);
+    if (server >= (uint32_t)pdc_server_num_g || PDC_Client_try_lookup_server(server, 0) != SUCCEED)
+        goto done;
+    if (HG_Create(send_context_g, pdc_server_info_g[server].addr, metadata_key_add_register_id_g, &handle) !=
+        HG_SUCCESS)
+        goto done;
+    metadata_key_add_in_t in = {
+        .prefix = target_prefix, .key = kvtag->name, .value = kvtag->value, .size = kvtag->size};
     hg_atomic_set32(&atomic_work_todo_g, 1);
+    if (HG_Forward(handle, metadata_key_add_rpc_cb, &out, &in) != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        goto done;
+    }
     PDC_Client_check_response(&send_context_g);
-
-    free(target_prefix);
-    free(prefix);
+    if (out.ret == 1)
+        ret = SUCCEED;
 done:
-    HG_Destroy(metadata_key_add_handle);
-
-    FUNC_LEAVE(ret_value);
+    if (handle != HG_HANDLE_NULL)
+        HG_Destroy(handle);
+    free(binary);
+    free(prefix);
+    free(target_prefix);
+    return ret;
 }
 
 perr_t
 PDC_metadata_key_delete(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
 {
-    FUNC_ENTER(NULL);
-    char * key_name;
-    char * target_prefix;
-    perr_t ret_value = SUCCEED;
-
-    printf("PDC_metadata_key_delete: Adding key %s to metadata\n", kvtag->name);
-    key_name      = kvtag->name;
-    char *key_bin = string_to_binary(key_name);
-    char *prefix  = malloc(strlen(key_bin) + 2);
-    strncpy(prefix, ROOT_BUCKET, 1);
-    strncpy(prefix + 1, key_bin, strlen(key_bin));
-    prefix[strlen(key_bin) + 1] = '\0';
-    free(key_bin);
-    uint32_t server_id = PDC_prefix_binary_search(prefix, &target_prefix);
-    printf("PDC_metadata_key_delete: Inserting key %s with prefix %s to server %d\n", key_name, target_prefix,
-           server_id);
-    free(target_prefix);
-    free(prefix);
-    FUNC_LEAVE(ret_value);
+    (void)obj_id;
+    (void)kvtag;
+    (void)is_cont;
+    /* No deletion protocol has been implemented yet. */
+    return FAIL;
 }
 
 static hg_return_t
@@ -8689,71 +8616,54 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     FUNC_LEAVE(ret_value);
 }
 
-perr_t
-PDC_Client_create_bucket(char *prefix)
-{
-    FUNC_ENTER(NULL);
-
-    perr_t                         ret_value = SUCCEED;
-    hg_return_t                    hg_ret    = 0;
-    hg_handle_t                    metadata_create_bucket_handle;
-    metadata_create_bucket_in_t    in;
-    struct _pdc_client_lookup_args lookup_args;
-
-    uint64_t hash_value = prefix_hash(prefix);
-    uint32_t server_id  = PDC_get_server_using_pht(hash_value);
-
-    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
-
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, metadata_create_bucket_register_id_g,
-              &metadata_create_bucket_handle);
-
-    // Fill input structure
-    in.prefix = prefix;
-
-    hg_ret =
-        HG_Forward(metadata_create_bucket_handle, metadata_create_bucket_client_rpc_cb, &lookup_args, &in);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "Could not start HG_Forward");
-    // Wait for response from server
-    hg_atomic_set32(&atomic_work_todo_g, 1);
-    PDC_Client_check_response(&send_context_g); // BLOCKING CALL
-
-    if (lookup_args.ret != 1)
-        LOG_ERROR("Add create_bucket NOT successful, ret_value = %d\n", lookup_args.ret);
-done:
-    HG_Destroy(metadata_create_bucket_handle);
-
-    FUNC_LEAVE(ret_value);
-}
-
-hg_return_t
-metadata_create_bucket_client_rpc_cb(const struct hg_cb_info *callback_info)
-{
-
-    FUNC_ENTER(NULL);
-    hg_return_t                     ret_value;
-    hg_handle_t                     handle             = callback_info->info.forward.handle;
-    struct _pdc_client_lookup_args *client_lookup_args = (struct _pdc_client_lookup_args *)callback_info->arg;
-    /* Get output from server*/
-
-    metadata_create_bucket_out_t output;
-    ret_value = HG_Get_output(handle, &output);
-
-    if (ret_value != HG_SUCCESS) {
-        client_lookup_args->ret = -1;
-        PGOTO_ERROR(HG_OTHER_ERROR, "Error with HG_Get_output");
-    }
-    printf("metadata_create_bucket_rpc_cb: output.ret = %d\n", output.ret);
-    client_lookup_args->ret = output.ret;
-done:
-
-    hg_atomic_decr32(&atomic_work_todo_g);
-    HG_Free_output(handle, &output);
-    FUNC_LEAVE(ret_value);
-}
-
 #endif
 
 /******************** Collective Object Selection Query Ends *******************************/
+
+perr_t
+PDC_Client_create_bucket(char *prefix)
+{
+    perr_t                       ret    = FAIL;
+    hg_handle_t                  handle = HG_HANDLE_NULL;
+    metadata_create_bucket_out_t out    = {.ret = -1};
+    metadata_create_bucket_in_t  in     = {.prefix = prefix};
+    if (!prefix || !*prefix || pdc_server_num_g <= 0)
+        goto done;
+    uint32_t server = PDC_get_server_using_pht(prefix_hash(prefix), pdc_server_num_g);
+    if (PDC_Client_try_lookup_server(server, 0) != SUCCEED)
+        goto done;
+    if (HG_Create(send_context_g, pdc_server_info_g[server].addr, metadata_create_bucket_register_id_g,
+                  &handle) != HG_SUCCESS)
+        goto done;
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    if (HG_Forward(handle, metadata_create_bucket_client_rpc_cb, &out, &in) != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        goto done;
+    }
+    PDC_Client_check_response(&send_context_g);
+    if (out.ret == 1)
+        ret = SUCCEED;
+done:
+    if (handle != HG_HANDLE_NULL)
+        HG_Destroy(handle);
+    return ret;
+}
+
+hg_return_t
+metadata_create_bucket_client_rpc_cb(const struct hg_cb_info *info)
+{
+    metadata_create_bucket_out_t *result = info->arg;
+    metadata_create_bucket_out_t  output = {0};
+    hg_handle_t                   handle = info->info.forward.handle;
+    hg_return_t                   ret    = info->ret;
+    result->ret                          = -1;
+    if (ret == HG_SUCCESS) {
+        ret = HG_Get_output(handle, &output);
+        if (ret == HG_SUCCESS) {
+            *result = output;
+            HG_Free_output(handle, &output);
+        }
+    }
+    hg_atomic_decr32(&atomic_work_todo_g);
+    return ret;
+}

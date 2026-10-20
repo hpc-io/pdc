@@ -1831,10 +1831,6 @@ PDC_Server_query_kvtag_someta(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_
     FUNC_LEAVE(ret_value);
 }
 
-static perr_t
-PDC_Server_query_kvtag_pht(pdc_kvtag_t *in, uint32_t *n_meta, uint64_t **obj_ids, uint64_t alloc_size)
-{
-}
 perr_t
 PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in /*FIXME: query input should be string-based*/,
                                   uint32_t *n_meta, uint64_t **obj_ids)
@@ -2759,18 +2755,6 @@ PDC_Server_add_kvtag_someta(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
     FUNC_LEAVE(ret_value);
 }
 
-/***
- * This function will build prefix hash table for this particular server
- * TODO: Need to register using Mercury RPC
- * \param  in[IN]       Input structure received from client
- * \param  out[OUT]     Output structure to be sent back to the client
- */
-
-perr_t
-PDC_Server_add_metadata_key(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
-{
-    return SUCCEED;
-}
 perr_t
 PDC_Server_add_kvtag(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t *out)
 {
@@ -3016,11 +3000,6 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
 
     FUNC_LEAVE(ret_value);
 }
-static perr_t
-PDC_Server_get_kvtag_pht(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
-{
-}
-
 perr_t
 PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 {

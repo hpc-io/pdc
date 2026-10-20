@@ -56,9 +56,7 @@
 #include "pdc_server_region_cache.h"
 
 int                      pdc_server_size_g = 1;
-static hg_context_t *    send_context_g    = NULL;
 hg_id_t                  metadata_create_bucket_register_id_g;
-static hg_atomic_int32_t atomic_work_todo_g;
 
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
@@ -233,47 +231,33 @@ uint64_t
 prefix_hash(const char *key)
 {
     uint64_t hash = 0;
-    uint64_t len  = strlen(key);
-    int      i    = 1;
-    while (i < len) {
-        if (*key == '\0')
-            break;
-        if (*key == '#') {
-            *key++;
-            continue;
-        };
-        if (*key == '0') {
-            hash = (hash * 193) + (i * 90);
-        }
-        else {
-            hash = (hash * 193) + (i * 270);
-        }
-        *key++;
-        i++;
-    }
+    uint64_t i    = 1;
+    if (!key)
+        return hash;
+    if (*key == '#')
+        key++;
+    for (; *key; key++, i++)
+        hash = hash * 193 + i * (*key == '0' ? 90 : 270);
     return hash;
 }
 
 char *
 string_to_binary(void *ptr)
 {
-    char * str    = (char *)ptr;
-    size_t len    = strlen(str);
-    char * binStr = malloc(len * 8 + 1);
-    for (int i = 0; i < len; i++) {
-        char c = str[i];
-        for (int j = 7; j >= 0; j--) {
-            binStr[(i * 8) + 7 - j] = (c & (1 << j)) ? '1' : '0';
-        }
-    }
-    binStr[len * 8] = '\0';
-    return binStr;
-}
-
-uint32_t
-PDC_get_server_by_obj_id_pht(uint64_t obj_id, int n_server)
-{
-    return SUCCEED;
+    const unsigned char *str = ptr;
+    if (!str)
+        return NULL;
+    size_t len = strlen((const char *)str);
+    if (len > (SIZE_MAX - 1) / 8)
+        return NULL;
+    char *binary = malloc(len * 8 + 1);
+    if (!binary)
+        return NULL;
+    for (size_t i = 0; i < len; i++)
+        for (int j = 7; j >= 0; j--)
+            binary[i * 8 + 7 - j] = (str[i] & (1u << j)) ? '1' : '0';
+    binary[len * 8] = '\0';
+    return binary;
 }
 
 int
@@ -1919,79 +1903,53 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
 
 HG_TEST_RPC_CB(metadata_check_prefix, handle)
 {
-    FUNC_ENTER(NULL);
-
-    hg_return_t                 ret_value = HG_SUCCESS;
-    metadata_check_prefix_in_t  in;
-    metadata_check_prefix_out_t out;
-
-    HG_Get_input(handle, &in);
-    if (strcmp(in.prefix, "PDC_NOOP") != 0) {
-        PDC_Server_check_prefix(&in, &out);
+    metadata_check_prefix_in_t  in  = {0};
+    metadata_check_prefix_out_t out = {.ret = -1};
+    hg_return_t                 ret = HG_Get_input(handle, &in);
+    if (ret == HG_SUCCESS) {
+        if (in.prefix && strcmp(in.prefix, "PDC_NOOP") == 0)
+            out.ret = 1;
+        else
+            PDC_Server_check_prefix(&in, &out);
+        ret = HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
     }
-    else {
-        LOG_INFO("Received NOOP\n");
-        out.ret = 1;
-    }
-
-    ret_value = HG_Respond(handle, NULL, NULL, &out);
-
-    HG_Free_input(handle, &in);
     HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
+    return ret;
 }
 
 HG_TEST_RPC_CB(metadata_key_add, handle)
 {
-    FUNC_ENTER(NULL);
-
-    hg_return_t            ret_value = HG_SUCCESS;
-    metadata_key_add_in_t  in;
-    metadata_key_add_out_t out;
-
-    printf("metadata_key_add %s\n", &in.prefix);
-    HG_Get_input(handle, &in);
-    if (strcmp(in.prefix, "PDC_NOOP") != 0) {
-        printf("PDC_Server_metadata_key_add\n");
-        PDC_Server_metadata_key_add(&in, &out);
+    metadata_key_add_in_t  in  = {0};
+    metadata_key_add_out_t out = {.ret = -1};
+    hg_return_t            ret = HG_Get_input(handle, &in);
+    if (ret == HG_SUCCESS) {
+        if (in.prefix && strcmp(in.prefix, "PDC_NOOP") == 0)
+            out.ret = 1;
+        else
+            PDC_Server_metadata_key_add(&in, &out);
+        ret = HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
     }
-    else {
-        LOG_INFO("Received NOOP\n");
-        out.ret = 1;
-    }
-
-    ret_value = HG_Respond(handle, NULL, NULL, &out);
-
-    HG_Free_input(handle, &in);
     HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
+    return ret;
 }
 
 HG_TEST_RPC_CB(metadata_create_bucket, handle)
 {
-    FUNC_ENTER(NULL);
-
-    hg_return_t                  ret_value = HG_SUCCESS;
-    metadata_create_bucket_in_t  in;
-    metadata_create_bucket_out_t out;
-
-    HG_Get_input(handle, &in);
-    if (strcmp(in.prefix, "PDC_NOOP") != 0) {
-        PDC_Server_create_bucket(&in, &out);
+    metadata_create_bucket_in_t  in  = {0};
+    metadata_create_bucket_out_t out = {.ret = -1};
+    hg_return_t                  ret = HG_Get_input(handle, &in);
+    if (ret == HG_SUCCESS) {
+        if (in.prefix && strcmp(in.prefix, "PDC_NOOP") == 0)
+            out.ret = 1;
+        else
+            PDC_Server_create_bucket(&in, &out);
+        ret = HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
     }
-    else {
-        LOG_INFO("Received NOOP\n");
-        out.ret = 1;
-    }
-
-    ret_value = HG_Respond(handle, NULL, NULL, &out);
-
-    HG_Free_input(handle, &in);
     HG_Destroy(handle);
-
-    FUNC_LEAVE(ret_value);
+    return ret;
 }
 
 /* static hg_return_t */
@@ -7081,19 +7039,9 @@ PDCselection_print_all(pdc_selection_t *sel)
 }
 
 uint32_t
-PDC_get_server_using_pht(uint64_t key_hash)
+PDC_get_server_using_pht(uint64_t key_hash, uint32_t n_server)
 {
-    int      ring_size   = pdc_server_size_g * RING_ARC_SIZE;
-    uint64_t mapped_hash = key_hash % ring_size;
-
-    for (int i = 0; i < pdc_server_size_g; i++) {
-        int node_pos = (i + 1) * ceil(ring_size / (float)pdc_server_size_g);
-
-        if (mapped_hash <= node_pos) {
-            return i;
-        }
-    }
-
-    // Wrap around
-    return 0;
+    if (!n_server)
+        return UINT32_MAX;
+    return (key_hash % ((uint64_t)n_server * RING_ARC_SIZE)) / RING_ARC_SIZE;
 }

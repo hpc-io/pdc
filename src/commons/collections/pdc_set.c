@@ -423,7 +423,6 @@ set_copy(Set *target, Set *source)
         if (set_query(target, value) == 0) {
             if (!set_insert(target, value)) {
                 /* Failed to insert */
-                set_free(target);
                 return -1;
             }
         }

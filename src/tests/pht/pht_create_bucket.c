@@ -47,6 +47,9 @@ main()
     TASSERT(PDC_Client_create_bucket("#") == 0, "Call to PDC_create_bucket succeeded",
             "Call to PDC_create_bucket failed");
 
+    TASSERT(PDC_Client_create_bucket("#") == 0, "Duplicate bucket accepted", "Duplicate bucket failed");
+    TASSERT(PDC_Client_create_bucket(NULL) < 0, "NULL prefix rejected", "NULL prefix accepted");
+    TASSERT(PDC_Client_create_bucket("") < 0, "Empty prefix rejected", "Empty prefix accepted");
     // close pdc
     TASSERT(PDCclose(pdc) >= 0, "Call to PDCclose succeeded", "Call to PDCclose failed");
 

@@ -118,3 +118,10 @@ install(
   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
 )
 endif()
+
+if(BUILD_TESTING)
+  add_executable(pht_regression ${PDC_SOURCE_DIR}/src/tests/pht/pht_regression.c)
+  target_link_libraries(pht_regression pdc_server_lib)
+  add_executable(pht_serialization ${PDC_SOURCE_DIR}/src/tests/pht/pht_serialization.c)
+  target_link_libraries(pht_serialization pdc_commons ${MERCURY_LIBRARIES})
+endif()
