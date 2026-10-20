@@ -15,8 +15,9 @@ int
 main(void)
 {
     unsigned char  wire[8192], bytes[4096];
-    const uint32_t sizes[]  = {0, 1, 5, 8, sizeof(bytes)};
-    hg_class_t *   hg_class = HG_Init("sm", HG_FALSE);
+    const uint32_t sizes[]   = {0, 1, 5, 8, sizeof(bytes)};
+    const char *   transport = getenv("HG_TRANSPORT");
+    hg_class_t *   hg_class  = HG_Init(transport ? transport : "ofi+tcp", HG_FALSE);
     hg_proc_t      proc;
     CHECK(hg_class);
     for (size_t i = 0; i < sizeof(bytes); i++)

@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <time.h>
 #include "pdc.h"
+#include "pdc_client_connect.h"
 #include "test_helper.h"
 
 int

@@ -33,6 +33,9 @@
 #include "pdc_hist_pkg.h"
 #include "pdc_utlist.h"
 #include "pdc_server.h"
+#if defined(PDC_ENABLE_PHT) && defined(IS_PDC_SERVER)
+#include "pdc_server_metadata_pht.h"
+#endif
 #include "pdc_server_data.h"
 #include "pdc_region.h"
 #include "pdc_logger.h"
@@ -55,8 +58,9 @@
 #include "pdc_timing.h"
 #include "pdc_server_region_cache.h"
 
-int     pdc_server_size_g = 1;
+#ifdef PDC_ENABLE_PHT
 hg_id_t metadata_create_bucket_register_id_g;
+#endif /* PDC_ENABLE_PHT */
 
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
@@ -227,6 +231,7 @@ PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef PDC_ENABLE_PHT
 uint64_t
 prefix_hash(const char *key)
 {
@@ -259,6 +264,8 @@ string_to_binary(void *ptr)
     binary[len * 8] = '\0';
     return binary;
 }
+
+#endif /* PDC_ENABLE_PHT */
 
 int
 PDC_get_var_type_size(pdc_var_type_t dtype)
@@ -1002,6 +1009,7 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in   ATTRIBUTE(unused),
     FUNC_LEAVE(SUCCEED);
 }
 
+#ifdef PDC_ENABLE_PHT
 perr_t
 PDC_Server_check_prefix(metadata_check_prefix_in_t *in   ATTRIBUTE(unused),
                         metadata_check_prefix_out_t *out ATTRIBUTE(unused))
@@ -1022,6 +1030,8 @@ PDC_Server_metadata_key_add(metadata_key_add_in_t *in   ATTRIBUTE(unused),
 {
     return SUCCEED;
 }
+#endif /* PDC_ENABLE_PHT */
+
 perr_t
 PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in ATTRIBUTE(unused), hg_handle_t *handle ATTRIBUTE(unused))
 {
@@ -1901,6 +1911,7 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef PDC_ENABLE_PHT
 HG_TEST_RPC_CB(metadata_check_prefix, handle)
 {
     metadata_check_prefix_in_t  in  = {0};
@@ -1951,6 +1962,8 @@ HG_TEST_RPC_CB(metadata_create_bucket, handle)
     HG_Destroy(handle);
     return ret;
 }
+
+#endif /* PDC_ENABLE_PHT */
 
 /* static hg_return_t */
 // notify_io_complete_cb(hg_handle_t handle)
@@ -6270,11 +6283,14 @@ PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
 PDC_FUNC_DECLARE_REGISTER(send_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
+#ifdef PDC_ENABLE_PHT
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_check_prefix, metadata_check_prefix_in_t,
                                  metadata_check_prefix_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_key_add, metadata_key_add_in_t, metadata_key_add_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_create_bucket, metadata_create_bucket_in_t,
                                  metadata_create_bucket_out_t)
+#endif /* PDC_ENABLE_PHT */
+
 PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
 PDC_FUNC_DECLARE_REGISTER(metadata_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
@@ -7038,6 +7054,7 @@ PDCselection_print_all(pdc_selection_t *sel)
     FUNC_LEAVE_VOID();
 }
 
+#ifdef PDC_ENABLE_PHT
 uint32_t
 PDC_get_server_using_pht(uint64_t key_hash, uint32_t n_server)
 {
@@ -7045,3 +7062,5 @@ PDC_get_server_using_pht(uint64_t key_hash, uint32_t n_server)
         return UINT32_MAX;
     return (key_hash % ((uint64_t)n_server * RING_ARC_SIZE)) / RING_ARC_SIZE;
 }
+
+#endif /* PDC_ENABLE_PHT */

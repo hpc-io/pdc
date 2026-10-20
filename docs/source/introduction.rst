@@ -342,6 +342,10 @@ The following table lists all available compile-time options for PDC, along with
      - OFF
      - Enable multithreading.
      - 🟡
+   * - PDC_ENABLE_PHT
+     - OFF
+     - Enable experimental PHT metadata operations. Standard tags and queries continue to use SOMETA.
+     - 🟡
    * - PDC_ENABLE_PROFILING
      - OFF
      - Enable profiling.

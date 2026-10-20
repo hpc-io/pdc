@@ -80,9 +80,8 @@ set(PROGRAMS
   misc/vpicio
   misc/bdcats
   tags/kvtag_add_get
+  tags/someta_metadata
   tags/kvtag_query
-  pht/pht_create_bucket
-  pht/pht_add_key
   region/region_transfer_query
   region/region_transfer
   region/region_transfer_status
@@ -113,6 +112,10 @@ set(PROGRAMS
 # else ()
 #   message(FATAL_ERROR "Could not find HDF5, please make sure that HDF5 has been compiled with shared libraries enabled.")
 # endif()
+
+if(PDC_ENABLE_PHT)
+  list(APPEND PROGRAMS pht/pht_create_bucket pht/pht_add_key)
+endif()
 
 foreach(program ${PROGRAMS})
   get_filename_component(program_name ${program} NAME)
@@ -265,10 +268,14 @@ add_test(NAME obj_buf           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME obj_tags          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_tags )
 add_test(NAME kvtag_add_get     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_add_get)
 add_test(NAME kvtag_query       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./kvtag_query 100 1 10 0)
+add_test(NAME someta_metadata WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./someta_metadata)
+set_tests_properties(someta_metadata PROPERTIES ENVIRONMENT "PDC_USE_ROCKSDB=0;PDC_USE_SQLITE3=0")
+if(PDC_ENABLE_PHT)
 add_test(NAME pht_create_bucket WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_create_bucket)
 add_test(NAME pht_add_key       WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./pht_add_key)
 add_test(NAME pht_regression COMMAND pht_regression)
 add_test(NAME pht_serialization COMMAND pht_serialization)
+endif()
 if(PDC_ENABLE_IDIOMS)
 add_test(NAME idioms_ci_test    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./idioms_ci_test)
 endif()

@@ -41,7 +41,6 @@
 #include "mpi.h"
 #endif
 
-#include "pdc_pht.h"
 #include "pdc_utlist.h"
 #include "pdc_hash_table.h"
 #include "pdc_dablooms.h"

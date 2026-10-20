@@ -65,7 +65,9 @@ extern struct timeval last_cache_activity_timeval_g;
 #define PDC_SEQ_ID_INIT_VALUE        1000
 #define PDC_UPDATE_CACHE             111
 #define PDC_UPDATE_STORAGE           101
-#define RING_ARC_SIZE                64
+#ifdef PDC_ENABLE_PHT
+#define RING_ARC_SIZE 64
+#endif /* PDC_ENABLE_PHT */
 
 #ifndef HOST_NAME_MAX
 #if defined(__APPLE__)
@@ -90,8 +92,9 @@ extern uint64_t          pdc_id_seq_g;
 extern int               pdc_server_rank_g;
 extern hg_atomic_int32_t close_server_g;
 hg_handle_t              close_all_server_handle_g;
-extern int               pdc_server_size_g;
-extern hg_id_t           metadata_create_bucket_register_id_g;
+#ifdef PDC_ENABLE_PHT
+extern hg_id_t metadata_create_bucket_register_id_g;
+#endif /* PDC_ENABLE_PHT */
 
 #define PDC_LOCK_OP_OBTAIN  0
 #define PDC_LOCK_OP_RELEASE 1
@@ -520,6 +523,7 @@ typedef struct {
     int32_t ret;
 } metadata_delete_by_id_out_t;
 
+#ifdef PDC_ENABLE_PHT
 typedef struct {
     char *prefix;
 } metadata_check_prefix_in_t;
@@ -549,6 +553,8 @@ typedef struct {
 typedef struct {
     int32_t ret;
 } metadata_key_add_out_t;
+
+#endif /* PDC_ENABLE_PHT */
 
 /* Define region_lock_out_t */
 typedef struct {
@@ -1761,6 +1767,7 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+#ifdef PDC_ENABLE_PHT
 static HG_INLINE hg_return_t
 hg_proc_metadata_check_prefix_in_t(hg_proc_t proc, void *data)
 {
@@ -1837,6 +1844,8 @@ hg_proc_metadata_create_bucket_out_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+#endif /* PDC_ENABLE_PHT */
+
 /* Define hg_proc_metadata_get_kvtag_in_t */
 static HG_INLINE hg_return_t
 hg_proc_metadata_get_kvtag_in_t(hg_proc_t proc, void *data)
@@ -1900,6 +1909,7 @@ hg_proc_metadata_get_kvtag_out_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+#ifdef PDC_ENABLE_PHT
 static HG_INLINE hg_return_t
 hg_proc_metadata_key_add_in_t(hg_proc_t proc, void *data)
 {
@@ -1955,6 +1965,8 @@ hg_proc_metadata_key_add_out_t(hg_proc_t proc, void *data)
 
     FUNC_LEAVE(ret);
 }
+#endif /* PDC_ENABLE_PHT */
+
 static HG_INLINE hg_return_t
 hg_proc_metadata_add_kvtag_in_t(hg_proc_t proc, void *data)
 {
@@ -4368,9 +4380,11 @@ hg_id_t PDC_metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_update_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
+#ifdef PDC_ENABLE_PHT
 hg_id_t PDC_metadata_check_prefix_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_create_bucket_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_key_add_register(hg_class_t *hg_class);
+#endif /* PDC_ENABLE_PHT */
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_send_rpc_register(hg_class_t *hg_class);
@@ -4920,6 +4934,7 @@ perr_t PDC_create_shm_segment(region_list_t *region);
  */
 perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf);
 
+#ifdef PDC_ENABLE_PHT
 /**
  * Convert a string to binary
  *
@@ -4937,6 +4952,8 @@ char *string_to_binary(void *ptr);
  * \return Hash value of the string
  */
 uint64_t prefix_hash(const char *key);
+
+#endif /* PDC_ENABLE_PHT */
 
 /**
  * Duplicate a kvtag
@@ -5004,6 +5021,9 @@ perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint6
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
                                       int is_write);
 
+#ifdef PDC_ENABLE_PHT
 uint32_t PDC_get_server_using_pht(uint64_t key_hash, uint32_t n_server);
 perr_t   PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_out_t *out);
+#endif /* PDC_ENABLE_PHT */
+
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

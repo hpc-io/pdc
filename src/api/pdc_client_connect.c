@@ -70,7 +70,9 @@
 #include "errno.h"
 
 /* #define TANG_DEBUG 1 */
+#ifdef PDC_ENABLE_PHT
 #define ROOT_BUCKET "#"
+#endif /* PDC_ENABLE_PHT */
 
 int                    is_client_debug_g      = 0;
 pdc_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -148,8 +150,10 @@ static hg_id_t metadata_delete_by_id_register_id_g;
 static hg_id_t metadata_update_register_id_g;
 static hg_id_t metadata_add_tag_register_id_g;
 static hg_id_t metadata_add_kvtag_register_id_g;
+#ifdef PDC_ENABLE_PHT
 static hg_id_t metadata_check_prefix_register_id_g;
 static hg_id_t metadata_key_add_register_id_g;
+#endif /* PDC_ENABLE_PHT */
 static hg_id_t metadata_del_kvtag_register_id_g;
 static hg_id_t metadata_get_kvtag_register_id_g;
 static hg_id_t region_lock_register_id_g;
@@ -1341,16 +1345,18 @@ drc_access_again:
     obj_reset_dims_register_id_g      = PDC_obj_reset_dims_register(*hg_class);
     // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
-    metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
-    container_query_register_id_g          = PDC_container_query_register(*hg_class);
-    metadata_delete_register_id_g          = PDC_metadata_delete_register(*hg_class);
-    metadata_delete_by_id_register_id_g    = PDC_metadata_delete_by_id_register(*hg_class);
-    metadata_update_register_id_g          = PDC_metadata_update_register(*hg_class);
-    metadata_add_tag_register_id_g         = PDC_metadata_add_tag_register(*hg_class);
-    metadata_add_kvtag_register_id_g       = PDC_metadata_add_kvtag_register(*hg_class);
-    metadata_check_prefix_register_id_g    = PDC_metadata_check_prefix_register(*hg_class);
-    metadata_create_bucket_register_id_g   = PDC_metadata_create_bucket_register(*hg_class);
-    metadata_key_add_register_id_g         = PDC_metadata_key_add_register(*hg_class);
+    metadata_query_register_id_g        = PDC_metadata_query_register(*hg_class);
+    container_query_register_id_g       = PDC_container_query_register(*hg_class);
+    metadata_delete_register_id_g       = PDC_metadata_delete_register(*hg_class);
+    metadata_delete_by_id_register_id_g = PDC_metadata_delete_by_id_register(*hg_class);
+    metadata_update_register_id_g       = PDC_metadata_update_register(*hg_class);
+    metadata_add_tag_register_id_g      = PDC_metadata_add_tag_register(*hg_class);
+    metadata_add_kvtag_register_id_g    = PDC_metadata_add_kvtag_register(*hg_class);
+#ifdef PDC_ENABLE_PHT
+    metadata_check_prefix_register_id_g  = PDC_metadata_check_prefix_register(*hg_class);
+    metadata_create_bucket_register_id_g = PDC_metadata_create_bucket_register(*hg_class);
+    metadata_key_add_register_id_g       = PDC_metadata_key_add_register(*hg_class);
+#endif /* PDC_ENABLE_PHT */
     metadata_del_kvtag_register_id_g       = PDC_metadata_del_kvtag_register(*hg_class);
     metadata_get_kvtag_register_id_g       = PDC_metadata_get_kvtag_register(*hg_class);
     region_lock_register_id_g              = PDC_region_lock_register(*hg_class);
@@ -2053,6 +2059,7 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+#ifdef PDC_ENABLE_PHT
 static hg_return_t
 metadata_check_prefix_rpc_cb(const struct hg_cb_info *info)
 {
@@ -2090,6 +2097,8 @@ metadata_key_add_rpc_cb(const struct hg_cb_info *info)
     hg_atomic_decr32(&atomic_work_todo_g);
     return ret;
 }
+
+#endif /* PDC_ENABLE_PHT */
 
 perr_t
 PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
@@ -6446,6 +6455,7 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+#ifdef PDC_ENABLE_PHT
 /***
  * Check if the prefix exists in the PHT
  * @param server: The server to check against
@@ -6564,6 +6574,8 @@ PDC_metadata_key_delete(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
     /* No deletion protocol has been implemented yet. */
     return FAIL;
 }
+
+#endif /* PDC_ENABLE_PHT */
 
 static hg_return_t
 metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
@@ -8620,6 +8632,7 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
 
 /******************** Collective Object Selection Query Ends *******************************/
 
+#ifdef PDC_ENABLE_PHT
 perr_t
 PDC_Client_create_bucket(char *prefix)
 {
@@ -8667,3 +8680,5 @@ metadata_create_bucket_client_rpc_cb(const struct hg_cb_info *info)
     hg_atomic_decr32(&atomic_work_todo_g);
     return ret;
 }
+
+#endif /* PDC_ENABLE_PHT */

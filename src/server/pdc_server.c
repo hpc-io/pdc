@@ -52,7 +52,9 @@
 #include "pdc_client_server_common.h"
 #include "pdc_transforms_common.h"
 #include "pdc_server.h"
+#ifdef PDC_ENABLE_PHT
 #include "pdc_server_metadata_pht.h"
+#endif /* PDC_ENABLE_PHT */
 #include "pdc_server_metadata.h"
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
@@ -129,6 +131,7 @@ hg_atomic_int32_t close_server_g;
 char              pdc_server_tmp_dir_g[TMP_DIR_STRING_LEN];
 int               is_restart_g                 = 0;
 int               pdc_server_rank_g            = 0;
+int               pdc_server_size_g            = 1;
 int               write_to_bb_percentage_g     = 0;
 int               pdc_nost_per_file_g          = 0;
 int               nclient_per_node             = 0;
@@ -941,8 +944,10 @@ drc_access_again:
         LOG_INFO("Read cache enabled\n");
 #endif
 
+#ifdef PDC_ENABLE_PHT
     // Initialize PHT for metadata
     PDC_Server_metadata_pht_init(pdc_server_size_g, pdc_server_rank_g);
+#endif /* PDC_ENABLE_PHT */
 #ifdef PDC_ENABLE_IDIOMS
     // Initialize IDIOMS
     if (pdc_server_rank_g == 0)
@@ -1039,7 +1044,9 @@ PDC_Server_finalize()
 {
     FUNC_ENTER(NULL);
 
+#ifdef PDC_ENABLE_PHT
     PDC_Server_metadata_pht_finalize();
+#endif /* PDC_ENABLE_PHT */
 
     pdc_data_server_io_list_t *io_elt     = NULL;
     region_list_t *            region_elt = NULL, *region_tmp = NULL;
@@ -1981,9 +1988,11 @@ PDC_Server_mercury_register()
     PDC_region_release_register(hg_class_g);
     PDC_gen_cont_id_register(hg_class_g);
     PDC_metadata_add_kvtag_register(hg_class_g);
+#ifdef PDC_ENABLE_PHT
     PDC_metadata_check_prefix_register(hg_class_g);
     metadata_create_bucket_register_id_g = PDC_metadata_create_bucket_register(hg_class_g);
     PDC_metadata_key_add_register(hg_class_g);
+#endif /* PDC_ENABLE_PHT */
     PDC_metadata_get_kvtag_register(hg_class_g);
     PDC_metadata_del_kvtag_register(hg_class_g);
     PDC_send_rpc_register(hg_class_g);

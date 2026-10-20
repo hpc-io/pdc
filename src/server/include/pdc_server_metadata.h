@@ -37,7 +37,6 @@
 #include "pdc_server_common.h"
 #include "pdc_client_server_common.h"
 #include "pdc_server_metadata_index.h"
-#include "pdc_server_metadata_pht.h"
 
 #include "pdc_malloc.h"
 

@@ -28,6 +28,7 @@
 #include <getopt.h>
 #include <time.h>
 #include "pdc.h"
+#include "pdc_client_connect.h"
 #include "test_helper.h"
 
 int
@@ -50,7 +51,7 @@ main()
     TASSERT((cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc)) != 0, "Call to PDCprop_create succeeded",
             "Call to PDCprop_create failed");
     // create a container
-    TASSERT((cont = PDCcont_create("c1", cont_prop)) != 0, "Call to PDCcont_create succeeded",
+    TASSERT((cont = PDCcont_create("pht_add_container", cont_prop)) != 0, "Call to PDCcont_create succeeded",
             "Call to PDCcont_create failed");
     // create object properties
     TASSERT((obj_prop1 = PDCprop_create(PDC_OBJ_CREATE, pdc)) != 0, "Call to PDCprop_create succeeded",
@@ -58,11 +59,11 @@ main()
     TASSERT((obj_prop2 = PDCprop_create(PDC_OBJ_CREATE, pdc)) != 0, "Call to PDCprop_create succeeded",
             "Call to PDCprop_create failed");
     // create first object
-    TASSERT((obj1 = PDCobj_create(cont, "o1", obj_prop1)) != 0, "Call to PDCobj_create succeeded for obj1",
-            "Call to PDCobj_create failed for obj1");
+    TASSERT((obj1 = PDCobj_create(cont, "pht_add_object_1", obj_prop1)) != 0,
+            "Call to PDCobj_create succeeded for obj1", "Call to PDCobj_create failed for obj1");
     // create second object
-    TASSERT((obj2 = PDCobj_create(cont, "o2", obj_prop2)) != 0, "Call to PDCobj_create succeeded for obj2",
-            "Call to PDCobj_create failed for obj2");
+    TASSERT((obj2 = PDCobj_create(cont, "pht_add_object_2", obj_prop2)) != 0,
+            "Call to PDCobj_create succeeded for obj2", "Call to PDCobj_create failed for obj2");
 
     kvtag1.name  = "key1string";
     kvtag1.value = (void *)v1;
