@@ -12,7 +12,7 @@
 #include "pdc_client_server_common.h"
 #include "../src/server/include/pdc_server_metadata.h"
 #include "/mnt/fast/nlewis/workspace/source/pdc/src/server/transform/include/pdc_tf_server.h"
-#include "cjson/cJSON.h"
+#include "cJSON.h"
 
 const char *avail_args[] = {"-n", "-i", "-json", "-ln", "-li", "-s"};
 const int   num_args     = 6;

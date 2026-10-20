@@ -131,23 +131,21 @@ set(PROGRAMS
   #hdf5_access_eqsim
 )
 
-add_library(cjson cjson/cJSON.c)
-
 link_directories(${PDC_SOURCE_DIR}/build/bin)
 
 foreach(program ${PROGRAMS})
   add_executable(${program} ${program}.c)
-  target_link_libraries(${program} pdc pdc_commons mercury m cjson ${TOOLS_EXT_LIB})
+  target_link_libraries(${program} pdc pdc_commons mercury m ${TOOLS_EXT_LIB})
 endforeach(program)
 
-#add_executable(metadata_json_loader 
-#            metadata_json_loader.c 
-#            meta_json/metadata_json_processor.h 
-#            meta_json/metadata_json_printer.c 
-#            meta_json/metadata_json_printer.h 
-#            meta_json/metadata_json_importer.c 
+#add_executable(metadata_json_loader
+#            metadata_json_loader.c
+#            meta_json/metadata_json_processor.h
+#            meta_json/metadata_json_printer.c
+#            meta_json/metadata_json_printer.h
+#            meta_json/metadata_json_importer.c
 #            meta_json/metadata_json_importer.h
 #            fs/fs_ops.c
 #            fs/fs_ops.h)
-#target_link_libraries(metadata_json_loader ${PDC_EXT_LIB_DEPENDENCIES} pdc cjson ${TOOLS_EXT_LIB})
+#target_link_libraries(metadata_json_loader ${PDC_EXT_LIB_DEPENDENCIES} pdc ${TOOLS_EXT_LIB})
 #target_include_directories(metadata_json_loader PUBLIC ${PDC_EXT_INCLUDE_DEPENDENCIES})
