@@ -107,7 +107,11 @@ main(int argc, char **argv)
         return FAIL;
     }
     // create a container
-    cont_id = PDCcont_create_col("c1", cont_prop);
+#ifdef ENABLE_MPI
+    cont_id = PDCcont_create_coll("c1", cont_prop, MPI_COMM_WORLD);
+#else
+    cont_id = PDCcont_create("c1", cont_prop);
+#endif
     if (cont_id <= 0) {
         LOG_ERROR("Failed to create container");
         return FAIL;
@@ -160,7 +164,7 @@ main(int argc, char **argv)
             sprintf(obj_name, "%s-%d", obj_names[i], iter);
             pdcid_t obj_prop = (i < 7) ? obj_prop_float : obj_prop_int;
 #ifdef ENABLE_MPI
-            obj_ids[i] = PDCobj_create_mpi(cont_id, obj_name, obj_prop, 0, MPI_COMM_WORLD);
+            obj_ids[i] = PDCobj_create_coll(cont_id, obj_name, obj_prop, 0, MPI_COMM_WORLD);
 #else
             obj_ids[i] = PDCobj_create(cont_id, obj_name, obj_prop);
 #endif
@@ -194,7 +198,7 @@ main(int argc, char **argv)
 #endif
 
 #ifdef ENABLE_MPI
-        if (PDCregion_transfer_start_all_mpi(transfer_requests, 8, MPI_COMM_WORLD) != SUCCEED) {
+        if (PDCregion_transfer_start_all_coll(transfer_requests, 8, MPI_COMM_WORLD) != SUCCEED) {
 #else
         if (PDCregion_transfer_start_all(transfer_requests, 8) != SUCCEED) {
 #endif
