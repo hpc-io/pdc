@@ -3652,16 +3652,27 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
     gettimeofday(&pdc_timer_start1, 0);
 #endif
 
+    // PDC_Server_get_storage_location_of_region_mpi() already aggregates every READ
+    // region in the list it is given into a single collective MPI round (that's the
+    // "aggregate at the beginning" above). Calling it once per region_elt here --
+    // passing a mid-list node as if it were the head -- made it re-run that same
+    // collective round once per node, each time over a different-sized suffix of the
+    // list. On servers handling more than one local client for an object, this
+    // desynchronized which MPI_Gather/Scatterv round a given request's result came
+    // from, which is how one client ended up with another client's region. Call it
+    // once, with the true head, covering every pending READ region in one round.
+    int has_pending_read = 0;
     DL_FOREACH(region_list_head, region_elt)
     {
-        if (region_elt->access_type == PDC_READ) {
-
-            if (region_elt->is_io_done == 1)
-                continue;
-            ret_value = PDC_Server_get_storage_location_of_region_mpi(region_elt);
-            if (ret_value != SUCCEED) {
-                PGOTO_ERROR(FAIL, "Error with PDC_Server_get_storage_location_of_region");
-            }
+        if (region_elt->access_type == PDC_READ && region_elt->is_io_done != 1) {
+            has_pending_read = 1;
+            break;
+        }
+    }
+    if (has_pending_read == 1) {
+        ret_value = PDC_Server_get_storage_location_of_region_mpi(region_list_head);
+        if (ret_value != SUCCEED) {
+            PGOTO_ERROR(FAIL, "Error with PDC_Server_get_storage_location_of_region");
         }
     }
 
@@ -3852,6 +3863,7 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
                 int fd = open(region_elt->storage_location, O_WRONLY | O_CREAT | O_APPEND, 0600);
                 if (fd < 0)
                     PGOTO_ERROR(FAIL, "open failed [%s]", region_elt->storage_location);
+                fp_write = fdopen(fd, "ab");
                 if (fp_write == NULL) {
                     close(fd);
                     PGOTO_ERROR(FAIL, "fdopen failed [%s]", region_elt->storage_location);
@@ -3866,6 +3878,20 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
                 if (NULL == fp_write) {
                     PGOTO_ERROR(FAIL, "fopen failed [%s]", region_elt->storage_location);
                 }
+
+                // fdopen() on an fd opened with O_APPEND does NOT seek the new stream to
+                // the file's current end the way fopen(path, "a") would -- the stream's
+                // own position indicator starts at 0 regardless of existing file content,
+                // even though O_APPEND still makes the kernel land each actual write at
+                // the true end of file. So ftell() right after fdopen() always reads back
+                // as 0, no matter how much data a *different*, already-closed stream
+                // previously appended to this same file. Recording that stale 0 as this
+                // region's offset is what let two clients' regions in the same file both
+                // believe they started at offset 0, so whichever was written first was
+                // the one every reader of that file got back. Force the stream to sync to
+                // the real current end-of-file before trusting ftell() for the offset.
+                if (fseek(fp_write, 0, SEEK_END) != 0)
+                    PGOTO_ERROR(FAIL, "fseek to end failed [%s]", region_elt->storage_location);
             } // End open file
 
             // Get the current write offset

@@ -4671,6 +4671,7 @@ PDC_Client_read(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf)
     perr_t             ret_value = SUCCEED;
     struct pdc_request request;
 
+    memset(&request, 0, sizeof(request));
     request.n_update = 1;
     ret_value        = PDC_Client_iread(meta, region, &request, buf);
     if (ret_value != SUCCEED)
@@ -4692,7 +4693,7 @@ PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *regio
     FUNC_ENTER(NULL);
 
     perr_t              ret_value = SUCCEED;
-    struct pdc_request *request   = (struct pdc_request *)PDC_malloc(sizeof(struct pdc_request));
+    struct pdc_request *request   = (struct pdc_request *)PDC_calloc(1, sizeof(struct pdc_request));
 
     ret_value = PDC_Client_iwrite(meta, region, request, buf);
     if (ret_value != SUCCEED)
@@ -4716,7 +4717,7 @@ PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region
     FUNC_ENTER(NULL);
 
     perr_t              ret_value = SUCCEED;
-    struct pdc_request *request   = (struct pdc_request *)PDC_malloc(sizeof(struct pdc_request));
+    struct pdc_request *request   = (struct pdc_request *)PDC_calloc(1, sizeof(struct pdc_request));
 
     ret_value = PDC_Client_iread(meta, region, request, buf);
     if (ret_value != SUCCEED)
