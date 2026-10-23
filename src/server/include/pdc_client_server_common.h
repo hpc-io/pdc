@@ -65,6 +65,9 @@ extern struct timeval last_cache_activity_timeval_g;
 #define PDC_SEQ_ID_INIT_VALUE        1000
 #define PDC_UPDATE_CACHE             111
 #define PDC_UPDATE_STORAGE           101
+#ifdef PDC_ENABLE_PHT
+#define RING_ARC_SIZE 64
+#endif /* PDC_ENABLE_PHT */
 
 #ifndef HOST_NAME_MAX
 #if defined(__APPLE__)
@@ -89,6 +92,9 @@ extern uint64_t          pdc_id_seq_g;
 extern int               pdc_server_rank_g;
 extern hg_atomic_int32_t close_server_g;
 hg_handle_t              close_all_server_handle_g;
+#ifdef PDC_ENABLE_PHT
+extern hg_id_t metadata_create_bucket_register_id_g;
+#endif /* PDC_ENABLE_PHT */
 
 #define PDC_LOCK_OP_OBTAIN  0
 #define PDC_LOCK_OP_RELEASE 1
@@ -517,6 +523,39 @@ typedef struct {
     int32_t ret;
 } metadata_delete_by_id_out_t;
 
+#ifdef PDC_ENABLE_PHT
+typedef struct {
+    char *prefix;
+} metadata_check_prefix_in_t;
+
+typedef struct {
+    int32_t   ret;
+    hg_bool_t found;
+    hg_bool_t leaf;
+    uint32_t  server_id;
+} metadata_check_prefix_out_t;
+
+typedef struct {
+    char *prefix;
+} metadata_create_bucket_in_t;
+
+typedef struct {
+    int32_t ret;
+} metadata_create_bucket_out_t;
+
+typedef struct {
+    char *   prefix;
+    char *   key;
+    void *   value;
+    uint32_t size;
+} metadata_key_add_in_t;
+
+typedef struct {
+    int32_t ret;
+} metadata_key_add_out_t;
+
+#endif /* PDC_ENABLE_PHT */
+
 /* Define region_lock_out_t */
 typedef struct {
     int32_t ret;
@@ -619,6 +658,9 @@ typedef struct {
     int64_t   server_memory_consumption;
     hg_bulk_t bulk_handle;
 } metadata_query_transfer_out_t;
+
+/* Same wire format, with query results copied into Mercury-owned response storage. */
+typedef metadata_query_transfer_out_t kvtag_query_out_t;
 
 /* Define gen_obj_id_in_t */
 typedef struct {
@@ -1551,6 +1593,31 @@ hg_proc_metadata_query_transfer_out_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+static HG_INLINE hg_return_t
+hg_proc_kvtag_query_out_t(hg_proc_t proc, void *data)
+{
+    kvtag_query_out_t *out   = data;
+    uint8_t            flags = hg_proc_get_flags(proc);
+    hg_return_t        ret;
+
+    if (hg_proc_get_op(proc) == HG_ENCODE && out->bulk_handle != HG_BULK_NULL) {
+        hg_size_t size = HG_Bulk_get_serialize_size(out->bulk_handle, 0) +
+                         HG_Bulk_get_size(out->bulk_handle) + sizeof(int32_t) + 2 * sizeof(int64_t) +
+                         sizeof(uint64_t);
+        if (hg_proc_get_size_left(proc) < size) {
+            ret = hg_proc_set_size(proc, hg_proc_get_size(proc) + size);
+            if (ret != HG_SUCCESS)
+                return ret;
+        }
+        // Copy the data as well as the descriptor so no client pull depends on PDC's buffer.
+        // Eager data needs no remote SM descriptor; use the regular serialized size above.
+        hg_proc_set_flags(proc, (flags & ~HG_PROC_SM) | HG_PROC_BULK_EAGER);
+    }
+    ret = hg_proc_metadata_query_transfer_out_t(proc, data);
+    hg_proc_set_flags(proc, flags);
+    return ret;
+}
+
 /* Define hg_proc_pdc_metadata_transfer_t */
 static hg_return_t
 hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
@@ -1728,6 +1795,85 @@ hg_proc_metadata_add_tag_in_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+#ifdef PDC_ENABLE_PHT
+static HG_INLINE hg_return_t
+hg_proc_metadata_check_prefix_in_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                 ret;
+    metadata_check_prefix_in_t *struct_data = (metadata_check_prefix_in_t *)data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->prefix);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    FUNC_LEAVE(ret);
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_check_prefix_out_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                  ret;
+    metadata_check_prefix_out_t *struct_data = (metadata_check_prefix_out_t *)data;
+
+    ret = hg_proc_hg_bool_t(proc, &struct_data->found);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_bool_t(proc, &struct_data->leaf);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    ret = hg_proc_uint32_t(proc, &struct_data->server_id);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    FUNC_LEAVE(ret);
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_create_bucket_in_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                  ret;
+    metadata_create_bucket_in_t *struct_data = (metadata_create_bucket_in_t *)data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->prefix);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    FUNC_LEAVE(ret);
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_create_bucket_out_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                   ret;
+    metadata_create_bucket_out_t *struct_data = (metadata_create_bucket_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    FUNC_LEAVE(ret);
+}
+
+#endif /* PDC_ENABLE_PHT */
+
 /* Define hg_proc_metadata_get_kvtag_in_t */
 static HG_INLINE hg_return_t
 hg_proc_metadata_get_kvtag_in_t(hg_proc_t proc, void *data)
@@ -1790,6 +1936,64 @@ hg_proc_metadata_get_kvtag_out_t(hg_proc_t proc, void *data)
 
     FUNC_LEAVE(ret);
 }
+
+#ifdef PDC_ENABLE_PHT
+static HG_INLINE hg_return_t
+hg_proc_metadata_key_add_in_t(hg_proc_t proc, void *data)
+{
+    metadata_key_add_in_t *in  = data;
+    hg_return_t            ret = hg_proc_hg_string_t(proc, &in->key);
+    if (ret != HG_SUCCESS)
+        return ret;
+    ret = hg_proc_hg_string_t(proc, &in->prefix);
+    if (ret != HG_SUCCESS)
+        return ret;
+    ret = hg_proc_uint32_t(proc, &in->size);
+    if (ret != HG_SUCCESS)
+        return ret;
+    switch (hg_proc_get_op(proc)) {
+        case HG_DECODE:
+            in->value = NULL;
+            if (in->size) {
+                in->value = malloc(in->size);
+                if (!in->value)
+                    return HG_NOMEM_ERROR;
+                ret = hg_proc_raw(proc, in->value, in->size);
+                if (ret != HG_SUCCESS) {
+                    free(in->value);
+                    in->value = NULL;
+                }
+            }
+            break;
+        case HG_ENCODE:
+            if (in->size && !in->value)
+                return HG_PROTOCOL_ERROR;
+            if (in->size)
+                ret = hg_proc_raw(proc, in->value, in->size);
+            break;
+        case HG_FREE:
+            free(in->value);
+            in->value = NULL;
+            break;
+    }
+    return ret;
+}
+
+static HG_INLINE hg_return_t
+hg_proc_metadata_key_add_out_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t             ret;
+    metadata_key_add_out_t *struct_data = (metadata_key_add_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS)
+        FUNC_LEAVE(ret);
+
+    FUNC_LEAVE(ret);
+}
+#endif /* PDC_ENABLE_PHT */
 
 static HG_INLINE hg_return_t
 hg_proc_metadata_add_kvtag_in_t(hg_proc_t proc, void *data)
@@ -4204,6 +4408,11 @@ hg_id_t PDC_metadata_delete_by_id_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_update_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_tag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_add_kvtag_register(hg_class_t *hg_class);
+#ifdef PDC_ENABLE_PHT
+hg_id_t PDC_metadata_check_prefix_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_create_bucket_register(hg_class_t *hg_class);
+hg_id_t PDC_metadata_key_add_register(hg_class_t *hg_class);
+#endif /* PDC_ENABLE_PHT */
 hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_send_rpc_register(hg_class_t *hg_class);
@@ -4753,6 +4962,27 @@ perr_t PDC_create_shm_segment(region_list_t *region);
  */
 perr_t PDC_create_shm_segment_ind(uint64_t size, char *shm_addr, void **buf);
 
+#ifdef PDC_ENABLE_PHT
+/**
+ * Convert a string to binary
+ *
+ * \param ptr[IN]               Pointer to the string
+ *
+ * \return Binary representation of the string
+ */
+char *string_to_binary(void *ptr);
+
+/**
+ * Calculate the hash value of a string
+ *
+ * \param key[IN]               String to be hashed
+ *
+ * \return Hash value of the string
+ */
+uint64_t prefix_hash(const char *key);
+
+#endif /* PDC_ENABLE_PHT */
+
 /**
  * Duplicate a kvtag
  *
@@ -4818,5 +5048,10 @@ hg_return_t PDC_Client_recv_nhits(const struct hg_cb_info *callback_info);
 perr_t PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *obj_dims,
                                       struct pdc_region_info *region_info, void *buf, size_t unit,
                                       int is_write);
+
+#ifdef PDC_ENABLE_PHT
+uint32_t PDC_get_server_using_pht(uint64_t key_hash, uint32_t n_server);
+perr_t   PDC_Server_check_prefix(metadata_check_prefix_in_t *in, metadata_check_prefix_out_t *out);
+#endif /* PDC_ENABLE_PHT */
 
 #endif /* PDC_CLIENT_SERVER_COMMON_H */

@@ -33,6 +33,9 @@
 #include "pdc_hist_pkg.h"
 #include "pdc_utlist.h"
 #include "pdc_server.h"
+#if defined(PDC_ENABLE_PHT) && defined(IS_PDC_SERVER)
+#include "pdc_server_metadata_pht.h"
+#endif
 #include "pdc_server_data.h"
 #include "pdc_region.h"
 #include "pdc_logger.h"
@@ -54,6 +57,10 @@
 #include <sys/mman.h>
 #include "pdc_timing.h"
 #include "pdc_server_region_cache.h"
+
+#ifdef PDC_ENABLE_PHT
+hg_id_t metadata_create_bucket_register_id_g;
+#endif /* PDC_ENABLE_PHT */
 
 #ifdef ENABLE_MULTITHREAD
 hg_thread_mutex_t insert_metadata_mutex_g = HG_THREAD_MUTEX_INITIALIZER;
@@ -223,6 +230,42 @@ PDC_get_server_by_obj_id(uint64_t obj_id, int n_server)
 
     FUNC_LEAVE(ret_value);
 }
+
+#ifdef PDC_ENABLE_PHT
+uint64_t
+prefix_hash(const char *key)
+{
+    uint64_t hash = 0;
+    uint64_t i    = 1;
+    if (!key)
+        return hash;
+    if (*key == '#')
+        key++;
+    for (; *key; key++, i++)
+        hash = hash * 193 + i * (*key == '0' ? 90 : 270);
+    return hash;
+}
+
+char *
+string_to_binary(void *ptr)
+{
+    const unsigned char *str = ptr;
+    if (!str)
+        return NULL;
+    size_t len = strlen((const char *)str);
+    if (len > (SIZE_MAX - 1) / 8)
+        return NULL;
+    char *binary = malloc(len * 8 + 1);
+    if (!binary)
+        return NULL;
+    for (size_t i = 0; i < len; i++)
+        for (int j = 7; j >= 0; j--)
+            binary[i * 8 + 7 - j] = (str[i] & (1u << j)) ? '1' : '0';
+    binary[len * 8] = '\0';
+    return binary;
+}
+
+#endif /* PDC_ENABLE_PHT */
 
 int
 PDC_get_var_type_size(pdc_var_type_t dtype)
@@ -965,6 +1008,30 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in   ATTRIBUTE(unused),
     FUNC_ENTER(NULL);
     FUNC_LEAVE(SUCCEED);
 }
+
+#ifdef PDC_ENABLE_PHT
+perr_t
+PDC_Server_check_prefix(metadata_check_prefix_in_t *in   ATTRIBUTE(unused),
+                        metadata_check_prefix_out_t *out ATTRIBUTE(unused))
+{
+    return SUCCEED;
+}
+
+perr_t
+PDC_Server_create_bucket(metadata_create_bucket_in_t *in   ATTRIBUTE(unused),
+                         metadata_create_bucket_out_t *out ATTRIBUTE(unused))
+{
+    return SUCCEED;
+}
+
+perr_t
+PDC_Server_metadata_key_add(metadata_key_add_in_t *in   ATTRIBUTE(unused),
+                            metadata_key_add_out_t *out ATTRIBUTE(unused))
+{
+    return SUCCEED;
+}
+#endif /* PDC_ENABLE_PHT */
+
 perr_t
 PDC_Meta_Server_buf_unmap(buf_unmap_in_t *in ATTRIBUTE(unused), hg_handle_t *handle ATTRIBUTE(unused))
 {
@@ -1843,6 +1910,60 @@ HG_TEST_RPC_CB(metadata_add_kvtag, handle)
 
     FUNC_LEAVE(ret_value);
 }
+
+#ifdef PDC_ENABLE_PHT
+HG_TEST_RPC_CB(metadata_check_prefix, handle)
+{
+    metadata_check_prefix_in_t  in  = {0};
+    metadata_check_prefix_out_t out = {.ret = -1};
+    hg_return_t                 ret = HG_Get_input(handle, &in);
+    if (ret == HG_SUCCESS) {
+        if (in.prefix && strcmp(in.prefix, "PDC_NOOP") == 0)
+            out.ret = 1;
+        else
+            PDC_Server_check_prefix(&in, &out);
+        ret = HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
+    }
+    HG_Destroy(handle);
+    return ret;
+}
+
+HG_TEST_RPC_CB(metadata_key_add, handle)
+{
+    metadata_key_add_in_t  in  = {0};
+    metadata_key_add_out_t out = {.ret = -1};
+    hg_return_t            ret = HG_Get_input(handle, &in);
+    if (ret == HG_SUCCESS) {
+        if (in.prefix && strcmp(in.prefix, "PDC_NOOP") == 0)
+            out.ret = 1;
+        else
+            PDC_Server_metadata_key_add(&in, &out);
+        ret = HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
+    }
+    HG_Destroy(handle);
+    return ret;
+}
+
+HG_TEST_RPC_CB(metadata_create_bucket, handle)
+{
+    metadata_create_bucket_in_t  in  = {0};
+    metadata_create_bucket_out_t out = {.ret = -1};
+    hg_return_t                  ret = HG_Get_input(handle, &in);
+    if (ret == HG_SUCCESS) {
+        if (in.prefix && strcmp(in.prefix, "PDC_NOOP") == 0)
+            out.ret = 1;
+        else
+            PDC_Server_create_bucket(&in, &out);
+        ret = HG_Respond(handle, NULL, NULL, &out);
+        HG_Free_input(handle, &in);
+    }
+    HG_Destroy(handle);
+    return ret;
+}
+
+#endif /* PDC_ENABLE_PHT */
 
 /* static hg_return_t */
 // notify_io_complete_cb(hg_handle_t handle)
@@ -4250,14 +4371,14 @@ HG_TEST_RPC_CB(query_kvtag, handle)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t                   ret_value;
-    hg_return_t                   hg_ret;
-    hg_bulk_t                     bulk_handle = HG_BULK_NULL;
-    uint64_t *                    buf_ptr;
-    size_t                        buf_size[1];
-    uint32_t                      nmeta;
-    pdc_kvtag_t                   in;
-    metadata_query_transfer_out_t out;
+    hg_return_t       ret_value;
+    hg_return_t       hg_ret;
+    hg_bulk_t         bulk_handle = HG_BULK_NULL;
+    uint64_t *        buf_ptr     = NULL;
+    size_t            buf_size[1];
+    uint32_t          nmeta;
+    pdc_kvtag_t       in;
+    kvtag_query_out_t out;
 
     // Decode input
     HG_Get_input(handle, &in);
@@ -4293,6 +4414,9 @@ HG_TEST_RPC_CB(query_kvtag, handle)
     ret_value = HG_Respond(handle, NULL, NULL, &out);
 
 done:
+    if (bulk_handle != HG_BULK_NULL)
+        HG_Bulk_free(bulk_handle);
+    PDC_free(buf_ptr);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
@@ -6162,6 +6286,14 @@ PDC_FUNC_DECLARE_REGISTER(metadata_add_tag)
 PDC_FUNC_DECLARE_REGISTER(send_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_del_kvtag, metadata_get_kvtag_in_t, metadata_add_tag_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_add_kvtag, metadata_add_kvtag_in_t, metadata_add_tag_out_t)
+#ifdef PDC_ENABLE_PHT
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_check_prefix, metadata_check_prefix_in_t,
+                                 metadata_check_prefix_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_key_add, metadata_key_add_in_t, metadata_key_add_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(metadata_create_bucket, metadata_create_bucket_in_t,
+                                 metadata_create_bucket_out_t)
+#endif /* PDC_ENABLE_PHT */
+
 PDC_FUNC_DECLARE_REGISTER(metadata_get_kvtag)
 PDC_FUNC_DECLARE_REGISTER(metadata_update)
 PDC_FUNC_DECLARE_REGISTER(metadata_delete_by_id)
@@ -6190,7 +6322,7 @@ PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_transform_release, region_transform_and_
 
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(region_analysis_release, region_analysis_and_lock_in_t, region_lock_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_partial, metadata_query_transfer_in_t, metadata_query_transfer_out_t)
-PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_kvtag, pdc_kvtag_t, metadata_query_transfer_out_t)
+PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_kvtag, pdc_kvtag_t, kvtag_query_out_t)
 PDC_FUNC_DECLARE_REGISTER(bulk_rpc)
 PDC_FUNC_DECLARE_REGISTER(data_server_read)
 PDC_FUNC_DECLARE_REGISTER(data_server_write)
@@ -6924,3 +7056,14 @@ PDCselection_print_all(pdc_selection_t *sel)
 
     FUNC_LEAVE_VOID();
 }
+
+#ifdef PDC_ENABLE_PHT
+uint32_t
+PDC_get_server_using_pht(uint64_t key_hash, uint32_t n_server)
+{
+    if (!n_server)
+        return UINT32_MAX;
+    return (key_hash % ((uint64_t)n_server * RING_ARC_SIZE)) / RING_ARC_SIZE;
+}
+
+#endif /* PDC_ENABLE_PHT */
