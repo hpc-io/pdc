@@ -19,6 +19,7 @@ typedef struct {
     pdc_c_var_class_t pdc_class; /**< Class of the value */
     pdc_c_var_type_t  pdc_type;  /**< Data type of the value */
     uint64_t          count;     /**< Number of elements in the array */
+    uint64_t          capacity;  /**< Allocated slots (array types only; not serialized) */
     uint64_t          size;      // size in byte of the data.
     void *            data;      /**< Pointer to the value data */
 } BULKI_Entity;
@@ -89,10 +90,32 @@ BULKI_Entity *BULKI_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pdc_type
 BULKI_Entity *empty_Bent_Array_Entity();
 
 /**
+ * @brief create an empty array of BULKI_Entity with pre-allocated capacity
+ *
+ * Pre-allocates `initial_capacity` slots so `_incremental` appends avoid repeated
+ * realloc. Pair with `BULKI_ENTITY_append_BULKI_Entity_incremental`.
+ *
+ * @param initial_capacity Number of BULKI_Entity slots to pre-allocate; use 0 for no pre-allocation
+ * @return Pointer to the created BULKI_Entity structure
+ */
+BULKI_Entity *empty_Bent_Array_Entity_with_capacity(int initial_capacity);
+
+/**
  * @brief create an empty BULKI structure, usually used as a wrapper for a BULKI
  * @return Pointer to the created BULKI_Entity structure
  */
 BULKI_Entity *empty_BULKI_Array_Entity();
+
+/**
+ * @brief create an empty array of BULKI with pre-allocated capacity (similar to BULKI_init)
+ *
+ * Pre-allocates `initial_capacity` slots so `_incremental` appends avoid repeated
+ * realloc. Pair with `BULKI_ENTITY_append_BULKI_incremental`.
+ *
+ * @param initial_capacity Number of BULKI slots to pre-allocate; use 0 for no pre-allocation
+ * @return Pointer to the created BULKI_Entity structure
+ */
+BULKI_Entity *empty_BULKI_Array_Entity_with_capacity(int initial_capacity);
 
 /**
  * @brief Create a BULKI_Entity structure with data of base type, which is a wrapper of BULKI_ENTITY((void
@@ -117,6 +140,11 @@ BULKI_Entity *BULKI_array_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pd
 
 /**
  * @brief Append a BULKI_Entity structure to the BULKI_Entity structure
+ *
+ * Recomputes the full serialized size of `dest` via `get_BULKI_Entity_size()` after
+ * each append. For bulk construction, prefer `BULKI_ENTITY_append_BULKI_Entity_incremental`
+ * with `empty_Bent_Array_Entity_with_capacity`.
+ *
  * You need to make sure the content the src structure is the final version before calling this function.
  * Any change to the content of src after calling this function will not be reflected in the serialized data
  * structure.
@@ -131,8 +159,27 @@ BULKI_Entity *BULKI_array_ENTITY(void *data, uint64_t count, pdc_c_var_type_t pd
 BULKI_Entity *BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity *src);
 
 /**
+ * @brief Append a BULKI_Entity to an array without recomputing the full subtree size.
+ *
+ * Updates `dest->size` and `dest->count` in O(1) using the cached wire size of `src`.
+ * Uses pre-allocated capacity when available (see `empty_Bent_Array_Entity_with_capacity`).
+ * Same ownership and content-finalization rules as `BULKI_ENTITY_append_BULKI_Entity`.
+ *
+ * @param dest Destination array of BULKI_Entity (PDC_CLS_ARRAY, PDC_BULKI_ENT)
+ * @param src  Source entity to append; its content must be final before this call
+ * @return Pointer to `dest`, or NULL on error
+ */
+BULKI_Entity *BULKI_ENTITY_append_BULKI_Entity_incremental(BULKI_Entity *dest, BULKI_Entity *src);
+
+/**
  * @brief Append a BULKI structure to the BULKI_Entity structure that are returned by
- * `empty_BULKI_Array_Entity` call. You need to make sure the content the src structure is the final version
+ * `empty_BULKI_Array_Entity` call.
+ *
+ * Recomputes the full serialized size of `dest` via `get_BULKI_Entity_size()` after
+ * each append. For bulk construction, prefer `BULKI_ENTITY_append_BULKI_incremental`
+ * with `empty_BULKI_Array_Entity_with_capacity`.
+ *
+ * You need to make sure the content the src structure is the final version
  * before calling this function. Any change to the content of src after calling this function will not be
  * reflected in the serialized data structure. If you need to change the content of src after calling this
  * function, you need to iterate through all the BULKI structure in the dest structure and update them. We do
@@ -143,6 +190,21 @@ BULKI_Entity *BULKI_ENTITY_append_BULKI_Entity(BULKI_Entity *dest, BULKI_Entity 
  * @return Pointer to the BULKI_Entity structure
  */
 BULKI_Entity *BULKI_ENTITY_append_BULKI(BULKI_Entity *dest, BULKI *src);
+
+/**
+ * @brief Append a BULKI map to an array without recomputing the full subtree size.
+ *
+ * Updates `dest->size` and `dest->count` in O(1) using the cached wire size of `src`
+ * (`src->totalSize`). Uses pre-allocated capacity when available (see
+ * `empty_BULKI_Array_Entity_with_capacity`). Prefer building `src` with
+ * `BULKI_put_incremental` so `totalSize` stays current. Same ownership and
+ * content-finalization rules as `BULKI_ENTITY_append_BULKI`.
+ *
+ * @param dest Destination array of BULKI (PDC_CLS_ARRAY, PDC_BULKI)
+ * @param src  Source BULKI map to append; its content must be final before this call
+ * @return Pointer to `dest`, or NULL on error
+ */
+BULKI_Entity *BULKI_ENTITY_append_BULKI_incremental(BULKI_Entity *dest, BULKI *src);
 
 /* ================--------- BULKI_Entity Data Retrieval APIs -----------================ */
 
@@ -255,6 +317,10 @@ BULKI *BULKI_init(int initial_field_count);
 
 /**
  * @brief Put a key-value pair to the serialized data structure. If the key already exists, update the value.
+ *
+ * Recomputes `totalSize` via `get_BULKI_size()` after each put. For bulk tree
+ * construction, prefer `BULKI_put_incremental`.
+ *
  * You need to make sure the content in both key and value are the final version before calling this function.
  * Any change to the key or value after calling this function will not be reflected in the serialized data
  * structure.
@@ -267,6 +333,21 @@ BULKI *BULKI_init(int initial_field_count);
 void BULKI_put(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value);
 
 /**
+ * @brief Put a key-value pair and refresh `totalSize` incrementally in O(1).
+ *
+ * Maintains `headerSize`, `dataSize`, and `totalSize` from cached entity sizes
+ * instead of calling `get_BULKI_size()`. Use this when building large BULKI trees
+ * (e.g. checkpoints). Do not mix with `BULKI_put` on the same structure unless
+ * you accept a full recompute on the next `BULKI_put` call. Same key/value
+ * finalization rules as `BULKI_put`.
+ *
+ * @param bulki Pointer to the BULKI structure
+ * @param key   Pointer to the key entity
+ * @param value Pointer to the value entity
+ */
+void BULKI_put_incremental(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value);
+
+/**
  * @brief Delete a key-value pair from the serialized data structure
  *
  * @param data Pointer to the BULKI structure
@@ -274,6 +355,19 @@ void BULKI_put(BULKI *bulki, BULKI_Entity *key, BULKI_Entity *value);
  * @return the deleted BULKI_Entity value. If the key is not found, return NULL.
  */
 BULKI_Entity *BULKI_delete(BULKI *bulki, BULKI_Entity *key);
+
+/**
+ * @brief Delete a key-value pair and refresh `totalSize` incrementally in O(1).
+ *
+ * Same behavior as `BULKI_delete`, but updates `totalSize` via cached header/data
+ * sizes instead of calling `get_BULKI_size()`. Pair with `BULKI_put_incremental`
+ * when maintaining structures built on the incremental path.
+ *
+ * @param bulki Pointer to the BULKI structure
+ * @param key   Pointer to the key entity to remove
+ * @return Pointer to the removed value entity, or NULL if the key was not found
+ */
+BULKI_Entity *BULKI_delete_incremental(BULKI *bulki, BULKI_Entity *key);
 
 /* ================--------- BULKI Data Retrieval APIs -----------================ */
 
