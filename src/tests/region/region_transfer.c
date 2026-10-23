@@ -93,6 +93,9 @@ main(int argc, char **argv)
             "Call to PDCprop_set_obj_user_id succeeded", "Call to PDCprop_set_obj_user_id failed");
     TASSERT(PDCprop_set_obj_tags(obj_prop, "tag0=1") >= 0, "Call to PDCprop_set_obj_tags succeeded",
             "Call to PDCprop_set_obj_tags failed");
+    TASSERT(PDCprop_set_obj_transfer_region_type(obj_prop, PDC_REGION_LOCAL) >= 0,
+            "Call to PDCprop_set_obj_transfer_region_type succeeded",
+            "Call to PDCprop_set_obj_transfer_region_type failed");
 
     // create first object
     sprintf(obj_name1, "o1_%d", rank);

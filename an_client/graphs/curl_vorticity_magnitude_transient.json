@@ -1,0 +1,64 @@
+{
+  "name": "curl_vorticity_magnitude",
+  "states": [
+    {
+      "name": "u",
+      "persistence": "persistent"
+    },
+    {
+      "name": "v",
+      "persistence": "persistent"
+    },
+    {
+      "name": "w",
+      "persistence": "persistent"
+    },
+    {
+      "name": "curl_x",
+      "persistence": "transient"
+    },
+    {
+      "name": "curl_y",
+      "persistence": "transient"
+    },
+    {
+      "name": "curl_z",
+      "persistence": "transient"
+    },
+    {
+      "name": "vorticity_magnitude",
+      "persistence": "persistent",
+      "trigger": "eager"
+    }
+  ],
+  "transformations": [
+    {
+      "name": "curl",
+      "device": "CPU",
+      "location": "builtin",
+      "inputs": [
+        "u",
+        "v",
+        "w"
+      ],
+      "outputs": [
+        "curl_x",
+        "curl_y",
+        "curl_z"
+      ]
+    },
+    {
+      "name": "vector_magnitude",
+      "device": "CPU",
+      "location": "builtin",
+      "inputs": [
+        "curl_x",
+        "curl_y",
+        "curl_z"
+      ],
+      "outputs": [
+        "vorticity_magnitude"
+      ]
+    }
+  ]
+}

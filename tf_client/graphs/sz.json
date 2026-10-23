@@ -1,0 +1,27 @@
+{
+  "states": [
+    {
+      "name": "decompressed"
+    },
+    {
+      "name": "compressed"
+    }
+  ],
+  "functions": [
+    {
+      "device": "CPU",
+      "input_state": "decompressed",
+      "output_state": "compressed",
+      "location": "builtin",
+      "name": "sz_compress"
+    },
+    {
+      "device": "CPU",
+      "input_state": "compressed",
+      "output_state": "decompressed",
+      "location": "builtin",
+      "name": "sz_decompress"
+    }
+  ],
+  "name": "sz"
+}

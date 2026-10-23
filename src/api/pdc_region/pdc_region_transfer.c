@@ -39,10 +39,10 @@
 #include "pdc_region_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_interface.h"
-#include "pdc_transforms_pkg.h"
 #include "pdc_client_connect.h"
-#include "pdc_analysis_pkg.h"
 #include "pdc_logger.h"
+#include "pdc_tf.h"
+#include "pdc_tf_common.h"
 #include <mpi.h>
 
 #define PDC_MERGE_TRANSFER_MIN_COUNT 50
@@ -134,8 +134,7 @@ typedef struct pdc_transfer_request_start_all_pkg {
     // Every time a start_all pkg is created, this index is set to be the index such that the data_server_id
     // appears in the transfer_request->obj_servers.
     int index;
-    // Data buffer. This data buffer is contiguous according to the remote region. We assume this is after
-    // transformation of local regions
+    // Data buffer. This data buffer is contiguous according to the remote region.
     char *                                     buf;
     struct pdc_transfer_request_start_all_pkg *next;
 } pdc_transfer_request_start_all_pkg;
@@ -286,8 +285,8 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     FUNC_ENTER(NULL);
 
     pdcid_t                 ret_value = SUCCEED;
-    struct _pdc_id_info *   objinfo2;
-    struct _pdc_obj_info *  obj2;
+    struct _pdc_id_info *   obj_info;
+    struct _pdc_obj_info *  obj;
     pdc_transfer_request *  p;
     struct _pdc_id_info *   reginfo1, *reginfo2;
     struct pdc_region_info *reg1, *reg2;
@@ -303,38 +302,52 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     if ((reginfo2 = PDC_find_id(remote_reg)) == NULL)
         PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", remote_reg);
     reg2 = (struct pdc_region_info *)(reginfo2->obj_ptr);
-    if ((objinfo2 = PDC_find_id(obj_id)) == NULL)
+    if ((obj_info = PDC_find_id(obj_id)) == NULL)
         PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", obj_id);
+    obj = (struct _pdc_obj_info *)(obj_info->obj_ptr);
 
-    obj2 = (struct _pdc_obj_info *)(objinfo2->obj_ptr);
-
-    p                   = (pdc_transfer_request *)PDC_malloc(sizeof(pdc_transfer_request));
-    p->obj_pointer      = obj2;
-    p->mem_type         = obj2->obj_pt->obj_prop_pub->type;
-    p->local_obj_id     = obj_id;
-    p->obj_id           = obj2->obj_info_pub->meta_id;
-    p->access_type      = access_type;
-    p->buf              = buf;
-    p->metadata_id      = NULL;
-    p->read_bulk_buf    = NULL;
-    p->new_buf          = NULL;
-    p->bulk_buf         = NULL;
-    p->bulk_buf_ref     = NULL;
-    p->output_buf       = NULL;
-    p->region_partition = ((pdc_metadata_t *)obj2->metadata)->region_partition;
-    // p->region_partition   = PDC_REGION_LOCAL;
-    p->data_server_id     = ((pdc_metadata_t *)obj2->metadata)->data_server_id;
-    p->metadata_server_id = obj2->obj_info_pub->metadata_server_id;
+    p                     = (pdc_transfer_request *)PDC_malloc(sizeof(pdc_transfer_request));
+    p->obj_pointer        = obj;
+    p->mem_type           = obj->obj_pt->obj_prop_pub->type;
+    p->local_obj_id       = obj_id;
+    p->obj_id             = obj->obj_info_pub->meta_id;
+    p->access_type        = access_type;
+    p->buf                = buf;
+    p->metadata_id        = NULL;
+    p->read_bulk_buf      = NULL;
+    p->new_buf            = NULL;
+    p->bulk_buf           = NULL;
+    p->bulk_buf_ref       = NULL;
+    p->output_buf         = NULL;
+    p->region_partition   = ((pdc_metadata_t *)obj->metadata)->region_partition;
+    p->data_server_id     = ((pdc_metadata_t *)obj->metadata)->data_server_id;
+    p->metadata_server_id = obj->obj_info_pub->metadata_server_id;
     p->unit               = PDC_get_var_type_size(p->mem_type);
-    p->consistency        = obj2->obj_pt->obj_prop_pub->consistency;
+    p->consistency        = obj->obj_pt->obj_prop_pub->consistency;
     p->merged_request_id  = 0;
     p->is_done            = 0;
-    PDCregion_transfer_init_bulk_handles(p);
+
+    // Check if graph is attached to object
+    if (access_type == PDC_WRITE && obj->pdc_tf_obj != NULL && obj->pdc_tf_obj->attach_to_all_regions) {
+        pdcid_t dg_id        = obj->pdc_tf_obj->all_regions_state.dg_id;
+        char *  client_state = obj->pdc_tf_obj->all_regions_state.client_state;
+        char *  store_state  = obj->pdc_tf_obj->all_regions_state.store_state;
+
+        assert(client_state != NULL);
+        assert(store_state != NULL);
+
+        if (PDCtf_attach_to_region(dg_id, obj_id, remote_reg, client_state, store_state) != SUCCEED)
+            PGOTO_ERROR(0, "Failed to attach graph to region");
+    }
+
+    if (PDCregion_transfer_init_bulk_handles(p) != SUCCEED)
+        PGOTO_ERROR(0, "Error with PDCregion_transfer_init_bulk_handles");
+
     unit = p->unit;
 
     p->local_region_ndim   = reg1->ndim;
     p->local_region_offset = (uint64_t *)PDC_malloc(
-        sizeof(uint64_t) * (reg1->ndim * 2 + reg2->ndim * 2 + obj2->obj_pt->obj_prop_pub->ndim));
+        sizeof(uint64_t) * (reg1->ndim * 2 + reg2->ndim * 2 + obj->obj_pt->obj_prop_pub->ndim));
     ptr = p->local_region_offset;
     memcpy(p->local_region_offset, reg1->offset, sizeof(uint64_t) * reg1->ndim);
     ptr += reg1->ndim;
@@ -351,9 +364,9 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     memcpy(p->remote_region_size, reg2->size, sizeof(uint64_t) * reg2->ndim);
     ptr += reg2->ndim;
 
-    p->obj_ndim = obj2->obj_pt->obj_prop_pub->ndim;
+    p->obj_ndim = obj->obj_pt->obj_prop_pub->ndim;
     p->obj_dims = ptr;
-    memcpy(p->obj_dims, obj2->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
+    memcpy(p->obj_dims, obj->obj_pt->obj_prop_pub->dims, sizeof(uint64_t) * p->obj_ndim);
 
     p->total_data_size = unit;
     for (j = 0; j < (int)reg2->ndim; ++j) {
@@ -477,7 +490,7 @@ remove_local_transfer_request(struct _pdc_obj_info *p, pdcid_t transfer_request_
 }
 
 /*
- * Input: Ojbect dimensions + a region
+ * Input: Object dimensions + a region
  * Output: Data servers that the region will access with a static region partition. As well as overlapping
  * regions.
  */
@@ -582,8 +595,13 @@ static_region_partition(char *buf, int ndim, uint64_t unit, pdc_access_t access_
             }
             // subregion is computed using the output region by aligning the offsets to its begining.
             if (set_output_buf) {
-                // Copy subregion from input region to the new overlapping region.
-                output_buf[0][n_data_servers[0]] = (char *)PDC_calloc(region_size * unit, sizeof(char));
+                // Copy subregion from input region to the new overlapping region. region_size already
+                // has unit folded in (it's seeded with region_size = unit above and multiplied by each
+                // dimension's element count), so multiplying by unit again here inflated the allocation
+                // by another factor of unit -- harmless at small sizes, but it silently returns NULL once
+                // that inflated size crosses PDC_calloc's internal cap, and nothing here checked for NULL
+                // before memcpy_subregion wrote into it.
+                output_buf[0][n_data_servers[0]] = (char *)PDC_calloc(region_size, sizeof(char));
                 if (access_type == PDC_WRITE) {
                     memcpy_subregion(ndim, unit, PDC_WRITE, buf, size, output_buf[0][n_data_servers[0]],
                                      sub_offsets[0][n_data_servers[0]], output_sizes[0][*n_data_servers]);
@@ -684,6 +702,8 @@ pack_region_metadata_query(pdc_transfer_request_start_all_pkg **transfer_request
 {
     FUNC_ENTER(NULL);
 
+    LOG_DEBUG("pack_region_metadata_query was called!\n");
+
     perr_t   ret_value = SUCCEED;
     int      i;
     char *   ptr;
@@ -731,6 +751,8 @@ unpack_region_metadata_query(char *buf, pdc_transfer_request_start_all_pkg **tra
                              pdc_transfer_request_start_all_pkg **transfer_request_end_ptr, int *size_ptr)
 {
     FUNC_ENTER(NULL);
+
+    LOG_DEBUG("unpack_region_metadata_query was called!\n");
 
     perr_t                              ret_value = SUCCEED;
     pdc_transfer_request_start_all_pkg *transfer_request_head, *transfer_request_end;
@@ -906,6 +928,7 @@ register_metadata(pdc_transfer_request_start_all_pkg **transfer_request_input, i
             PDCregion_transfer_add_bulk_handle(transfer_requests[index]->transfer_request, bulk_handle);
             unpack_region_metadata_query(output_buf, transfer_requests + index, &transfer_request_head,
                                          &transfer_request_end, &output_size);
+            LOG_INFO("AFTER UNPACK %d\n", transfer_requests[index]->remote_offset[0]);
             output_buf = (char *)PDC_free(output_buf);
 
             if (transfer_request_front_head)
@@ -1175,6 +1198,38 @@ finish_start_all_requests(pdc_transfer_request_start_all_pkg **write_transfer_re
     FUNC_LEAVE(0);
 }
 
+// Helper function to compute the extra size needed for attached graph strings
+static size_t
+PDCcompute_region_transformation_metadata_size(struct _pdc_obj_info *obj_pointer, int remote_ndim,
+                                               size_t unit, uint64_t *remote_offset, uint64_t *remote_size,
+                                               pdc_access_t access_type)
+{
+    FUNC_ENTER(NULL);
+
+    // at least terminators for cur_state, client_state, store_state, json filepath
+    size_t                   ret_value      = 4;
+    pdc_tf_region_mapping_t *region_mapping = NULL;
+
+    if (access_type == PDC_READ || !obj_pointer || !obj_pointer->pdc_tf_obj ||
+        !PDCtf_region_has_attached_graph(obj_pointer->pdc_tf_obj, remote_ndim, unit, remote_offset,
+                                         remote_size, &region_mapping)) {
+        PGOTO_DONE(ret_value);
+    }
+
+    pdc_dg_t *dg = PDCtf_get_dg(region_mapping->region_state.dg_id);
+    if (dg == NULL)
+        PGOTO_ERROR(ret_value, "Failed to PDCtf_get_dg in PDCcompute_region_transformation_metadata_size\n");
+    // json filepath
+    ret_value += strlen((char *)dg->data); // add the length (we already counted +1 above)
+    // current, client, store state
+    ret_value += strlen(region_mapping->region_state.cur_state);
+    ret_value += strlen(region_mapping->region_state.client_state);
+    ret_value += strlen(region_mapping->region_state.store_state);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
 static perr_t
 PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **transfer_requests,
                              pdc_access_t access_type, char **bulk_buf_ptr, size_t *total_buf_size_ptr,
@@ -1197,8 +1252,23 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
      *     obj_ndim: sizeof(int)
      *     remote remote_ndim: sizeof(int)
      *     unit: sizeof(size_t)
+     *     var_type: sizeof(pdc_var_type_t)
+     *     transformation strings lengths
      */
-    metadata_size = n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t));
+    metadata_size = n_objs * (sizeof(pdcid_t) + sizeof(int) * 2 + sizeof(size_t) + sizeof(pdc_var_type_t));
+    for (i = 0; i < n_objs; ++i) {
+        struct _pdc_obj_info *obj_pointer = transfer_requests[i]->transfer_request->obj_pointer;
+        int                   remote_ndim = transfer_requests[i]->transfer_request->remote_region_ndim;
+        unit                              = transfer_requests[i]->transfer_request->unit;
+        uint64_t *offset                  = transfer_requests[i]->transfer_request->remote_region_offset;
+        uint64_t *size                    = transfer_requests[i]->transfer_request->remote_region_size;
+
+        assert(obj_pointer != NULL);
+
+        metadata_size += PDCcompute_region_transformation_metadata_size(obj_pointer, remote_ndim, unit,
+                                                                        offset, size, access_type);
+    }
+
     // Data size, including region offsets/length pairs and actual data for I/O.
     /*
      * For each of objects
@@ -1238,18 +1308,72 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
     *bulk_buf_ptr = bulk_buf;
     ptr           = bulk_buf;
     ptr2          = bulk_buf;
+
     // Pack metadata
 #define MEMCPY_INC(a, b)                                                                                     \
     {                                                                                                        \
         memcpy(ptr, a, b);                                                                                   \
         ptr += b;                                                                                            \
     }
+
     for (i = 0; i < n_objs; ++i) {
         unit = transfer_requests[i]->transfer_request->unit;
         MEMCPY_INC(&(transfer_requests[i]->transfer_request->obj_id), sizeof(pdcid_t));
         MEMCPY_INC(&(transfer_requests[i]->transfer_request->obj_ndim), sizeof(int));
         MEMCPY_INC(&(transfer_requests[i]->transfer_request->remote_region_ndim), sizeof(int));
         MEMCPY_INC(&unit, sizeof(size_t));
+        pdc_var_type_t var_type =
+            transfer_requests[i]->transfer_request->obj_pointer->obj_pt->obj_prop_pub->type;
+        MEMCPY_INC(&var_type, sizeof(pdc_var_type_t));
+
+        LOG_DEBUG("obj_id: %d, ndim: %d, remote_region_ndim: %d, unit: %zu, var_type: %d\n",
+                  transfer_requests[i]->transfer_request->obj_id,
+                  transfer_requests[i]->transfer_request->obj_ndim,
+                  transfer_requests[i]->transfer_request->remote_region_ndim, unit,
+                  transfer_requests[i]->transfer_request->obj_pointer->obj_pt->obj_prop_pub->type);
+
+        // Checked for transformations associated with region
+        pdc_tf_region_mapping_t *region_mapping = NULL;
+        struct _pdc_obj_info *   obj_pointer    = transfer_requests[i]->transfer_request->obj_pointer;
+        int                      remote_ndim    = transfer_requests[i]->transfer_request->remote_region_ndim;
+        uint64_t *               remote_offset = transfer_requests[i]->transfer_request->remote_region_offset;
+        uint64_t *               remote_size   = transfer_requests[i]->transfer_request->remote_region_size;
+
+        const char *json_filepath    = "";
+        const char *cur_state_str    = "";
+        const char *client_state_str = "";
+        const char *store_state_str  = "";
+
+        if (access_type == PDC_WRITE && obj_pointer != NULL && obj_pointer->pdc_tf_obj != NULL &&
+            PDCtf_region_has_attached_graph(obj_pointer->pdc_tf_obj, remote_ndim, unit, remote_offset,
+                                            remote_size, &region_mapping)) {
+            pdcid_t   dg_id = region_mapping->region_state.dg_id;
+            pdc_dg_t *dg    = PDCtf_get_dg(dg_id);
+
+            assert(dg != NULL);
+
+            json_filepath = (char *)dg->data;
+
+            LOG_DEBUG("Region transfer json filepath: %s\n", json_filepath);
+            LOG_DEBUG("Region transfer current state: %s\n", region_mapping->region_state.cur_state);
+            LOG_DEBUG("Region transfer store state: %s\n", region_mapping->region_state.store_state);
+            LOG_DEBUG("Region transfer client state: %s\n", region_mapping->region_state.client_state);
+
+            cur_state_str    = strdup(region_mapping->region_state.client_state);
+            client_state_str = region_mapping->region_state.client_state;
+            store_state_str  = region_mapping->region_state.store_state;
+        }
+        else if (access_type == PDC_WRITE)
+            LOG_DEBUG("Region transfer does NOT have an attached graph\n");
+
+        if (access_type == PDC_WRITE) {
+            MEMCPY_INC(json_filepath ? json_filepath : "", strlen(json_filepath ? json_filepath : "") + 1);
+            MEMCPY_INC(cur_state_str ? cur_state_str : "", strlen(cur_state_str ? cur_state_str : "") + 1);
+            MEMCPY_INC(client_state_str ? client_state_str : "",
+                       strlen(client_state_str ? client_state_str : "") + 1);
+            MEMCPY_INC(store_state_str ? store_state_str : "",
+                       strlen(store_state_str ? store_state_str : "") + 1);
+        }
     }
 
     for (i = 0; i < n_objs; ++i) {
@@ -1271,6 +1395,7 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
                    sizeof(uint64_t) * transfer_requests[i]->transfer_request->remote_region_ndim);
         MEMCPY_INC(transfer_requests[i]->transfer_request->obj_dims,
                    sizeof(uint64_t) * transfer_requests[i]->transfer_request->obj_ndim);
+
         // Note buf is undefined for PDC_READ
         if (access_type == PDC_WRITE) {
             MEMCPY_INC(transfer_requests[i]->buf, obj_data_size);
@@ -1544,32 +1669,31 @@ PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Com
 }
 #endif
 
-perr_t
-PDCregion_transfer_start_common(pdcid_t transfer_request_id,
+static perr_t
+region_transfer_start_common_helper(pdcid_t transfer_request_id,
 #ifdef ENABLE_MPI
-                                MPI_Comm comm)
+                                    MPI_Comm comm)
 #else
-                                int comm)
+                                    int comm)
 #endif
 {
     FUNC_ENTER(NULL);
 
     perr_t                ret_value = SUCCEED;
-    struct _pdc_id_info * transferinfo;
+    struct _pdc_id_info * transfer_info;
     pdc_transfer_request *transfer_request;
     size_t                unit;
     int                   i;
     hg_bulk_t             bulk_handle;
 
-    if ((transferinfo = PDC_find_id(transfer_request_id)) == NULL)
-        PGOTO_DONE(ret_value);
-
-    transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    if ((transfer_info = PDC_find_id(transfer_request_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find id: %d", transfer_request_id);
+    transfer_request = (pdc_transfer_request *)(transfer_info->obj_ptr);
 
     if (transfer_request->metadata_id != NULL)
         PGOTO_ERROR(FAIL, "PDC_Client attempted to start existing transfer request");
 
-    // Dynamic case is implemented within the the aggregated version. The main reason is that the target data
+    // Dynamic case is implemented within the aggregated version. The main reason is that the target data
     // server may not be unique, so we may end up sending multiple requests to the same data server.
     // Aggregated method will take care of this type of operation.
     if (transfer_request->region_partition == PDC_REGION_DYNAMIC ||
@@ -1624,7 +1748,7 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
                 transfer_request->obj_servers[i], transfer_request->obj_ndim, transfer_request->obj_dims,
                 transfer_request->remote_region_ndim, transfer_request->output_offsets[i],
                 transfer_request->output_sizes[i], unit, transfer_request->access_type,
-                transfer_request->metadata_id + i);
+                transfer_request->metadata_id + i, transfer_request->obj_pointer);
             PDCregion_transfer_add_bulk_handle(transfer_request, bulk_handle);
         }
     }
@@ -1645,17 +1769,28 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
             transfer_request->data_server_id, transfer_request->obj_ndim, transfer_request->obj_dims,
             transfer_request->remote_region_ndim, transfer_request->remote_region_offset,
             transfer_request->remote_region_size, unit, transfer_request->access_type,
-            transfer_request->metadata_id);
+            transfer_request->metadata_id, transfer_request->obj_pointer);
         PDCregion_transfer_add_bulk_handle(transfer_request, bulk_handle);
     }
 
     // For POSIX consistency, we block here until the data is received by the server
-    if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
+    if (transfer_request->consistency == PDC_CONSISTENCY_POSIX)
         PDCregion_transfer_wait(transfer_request_id);
-    }
 
 done:
     FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDCregion_transfer_start_common(pdcid_t transfer_request_id,
+#ifdef ENABLE_MPI
+                                MPI_Comm comm)
+#else
+                                int comm)
+#endif
+{
+    FUNC_ENTER(NULL);
+    FUNC_LEAVE(region_transfer_start_common_helper(transfer_request_id, comm));
 }
 
 perr_t
@@ -1741,7 +1876,6 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
         *completed = PDC_TRANSFER_STATUS_COMPLETE;
         PGOTO_DONE(ret_value);
     }
-
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
     if (transfer_request->metadata_id != NULL) {
         unit = transfer_request->unit;
@@ -1771,6 +1905,7 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
                 transfer_request->output_offsets[i] =
                     (uint64_t *)PDC_free(transfer_request->output_offsets[i]);
             }
+
             // Copy read data from a contiguous buffer back to the user buffer using local data information.
             release_region_buffer(
                 transfer_request->buf, transfer_request->obj_dims, transfer_request->local_region_ndim,
@@ -2084,7 +2219,6 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
         unit = transfer_request->unit;
 
         if (transfer_request->region_partition == PDC_REGION_STATIC) {
-
             for (i = 0; i < transfer_request->n_obj_servers; ++i) {
                 ret_value = PDC_Client_transfer_request_wait(transfer_request->metadata_id[i],
                                                              transfer_request->obj_servers[i],

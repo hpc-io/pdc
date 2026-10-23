@@ -60,6 +60,11 @@ PDC_malloc(size_t size)
     if (ret_value)
         PDC_mem_usage_g += size;
 
+    if (ret_value == NULL) {
+        LOG_ERROR("PDC_malloc failed to allocate %zu bytes\n", size);
+        abort();
+    }
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -85,13 +90,24 @@ PDC_calloc(size_t count, size_t size)
     assert(count);
     assert(size);
 
-    if (count == 0 || size == 0 || count > (size_t)1 << 32 || size > (size_t)1 << 40)
+    /* 1TB sanity cap on each argument, matching PDC_malloc's cap -- count
+     * used to cap at 1<<32 (4GB), which calls like
+     * PDC_calloc(region_size_in_bytes, sizeof(char)) legitimately exceed
+     * for any single-region write/read at or above 4GB (e.g. an 8GB
+     * region landing on a single data server), silently returning NULL
+     * for a perfectly valid request. */
+    if (count == 0 || size == 0 || count > (size_t)1 << 40 || size > (size_t)1 << 40)
         FUNC_LEAVE(NULL);
 
     ret_value = calloc(count, size);
 
     if (ret_value)
         PDC_mem_usage_g += size;
+
+    if (ret_value == NULL) {
+        LOG_ERROR("PDC_calloc failed to allocate %zu bytes\n", count * size);
+        abort();
+    }
 
     FUNC_LEAVE(ret_value);
 }
@@ -141,7 +157,14 @@ PDC_realloc(void *ptr, size_t size)
 #ifdef HAVE_MALLOC_USABLE_SIZE
     _old_size = malloc_usable_size(ptr);
 #endif
-    FUNC_LEAVE(PDC_realloc_knowing_oldsize(ptr, size, _old_size));
+
+    void *ret = PDC_realloc_knowing_oldsize(ptr, size, _old_size);
+    if (ret == NULL) {
+        LOG_ERROR("PDC_realloc failed to allocate %zu bytes\n", size);
+        abort();
+    }
+
+    FUNC_LEAVE(ret);
 }
 
 void *

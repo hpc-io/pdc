@@ -1,0 +1,27 @@
+{
+    "states": [
+	{
+	    "name": "decrypted"
+	},
+    {
+        "name": "encrypted"
+    }
+    ],
+    "functions": [
+        {
+            "device": "CPU",
+            "input_state": "decrypted",
+            "output_state": "encrypted",
+            "location": "builtin",
+            "name": "secret_box_encrypt"
+        },
+        {
+            "device": "CPU",
+            "input_state": "encrypted",
+            "output_state": "decrypted",
+            "location": "builtin",
+            "name": "secret_box_decrypt"
+        }
+    ],
+    "name": "zfp_libsod"
+}

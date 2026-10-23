@@ -96,7 +96,7 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         q->obj_prop_pub->ndim = 1;
         q->obj_prop_pub->dims = (uint64_t *)PDC_calloc(1, q->obj_prop_pub->ndim * sizeof(uint64_t));
         q->obj_prop_pub->type = PDC_UNKNOWN;
-        q->obj_prop_pub->region_partition = PDC_REGION_STATIC;
+        q->obj_prop_pub->region_partition = PDC_OBJ_STATIC;
         q->obj_prop_pub->consistency      = PDC_CONSISTENCY_EVENTUAL;
         q->data_loc                       = NULL;
         q->app_name                       = NULL;
@@ -114,10 +114,6 @@ PDCprop_create(pdc_prop_type_t type, pdcid_t pdcid)
         if (pdc_class->name)
             q->pdc->name = strdup(pdc_class->name);
         q->pdc->local_id = pdc_class->local_id;
-        q->type_extent   = 0;
-        q->data_state    = 0;
-        q->locus         = CLIENT_MEMORY;
-        memset(&q->transform_prop, 0, sizeof(struct _pdc_transform_state));
 
         ret_value = new_id_o;
     }

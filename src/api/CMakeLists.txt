@@ -8,18 +8,21 @@ set(LOCAL_INCLUDE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}
   ${PDC_SOURCE_DIR}/src/server/include
+  ${PDC_SOURCE_DIR}/src/server/transform/include
+  ${PDC_SOURCE_DIR}/src/server/analysis/include
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
-  ${PDC_SOURCE_DIR}/src/server/pdc_server_analysis/include
   ${PDC_SOURCE_DIR}/src/server/dablooms
   ${PDC_SOURCE_DIR}/src/api/include
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include
   ${PDC_SOURCE_DIR}/src/api/pdc_query/include
-  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include
-  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_hist/include
   ${PDC_SOURCE_DIR}/src/api/profiling/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_tf/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_an/include
   ${PDC_SOURCE_DIR}/src/utils/include
+  ${PDC_SOURCE_DIR}/src/tests/analysis
 )
 
 include_directories(
@@ -72,26 +75,38 @@ set(PDC_SRCS
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_prop.c
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_cont.c
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_obj.c
-  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis_and_transforms_connect.c
-  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis_common.c
-  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis.c
-  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_hist/pdc_hist_pkg.c
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/pdc_mpi.c
   ${PDC_SOURCE_DIR}/src/api/pdc_query/pdc_query.c
   ${PDC_SOURCE_DIR}/src/api/pdc_region/pdc_region.c
   ${PDC_SOURCE_DIR}/src/api/pdc_region/pdc_region_transfer.c
-  ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transform.c
-  ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transforms_common.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_tf/pdc_tf.c
+  ${PDC_SOURCE_DIR}/src/api/pdc_an/pdc_an.c
   ${PDC_SOURCE_DIR}/src/server/pdc_client_server_common.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_server.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_common.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_poly_sched.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_user.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_builtin_zfp_cpu.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_builtin_zfp_gpu.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_builtin_sz_cpu.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_builtin_sz_gpu.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_builtin_encrypt_cpu.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_builtin_turbo_cpu.c
+  ${PDC_SOURCE_DIR}/src/server/transform/pdc_tf_profiler.c
+  ${PDC_SOURCE_DIR}/src/server/analysis/pdc_an_common.c
+  ${PDC_SOURCE_DIR}/src/server/analysis/pdc_an_server.c
+  ${PDC_SOURCE_DIR}/src/server/analysis/pdc_an_builtin_magnitude_cpu.c
+  ${PDC_SOURCE_DIR}/src/server/analysis/pdc_an_builtin_curl_cpu.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_cache.c
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer_metadata_query.c
   ${PDC_SOURCE_DIR}/src/utils/pdc_interface.c
   ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
-  )
+  ${PDC_SOURCE_DIR}/src/commons/utils/pdc_malloc.c
+)
 
-  set(PDC_COMMON_INCLUDE_DIRS ${PDC_COMMON_INCLUDE_DIRS})
-  # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/profiling)
+set(PDC_COMMON_INCLUDE_DIRS ${PDC_COMMON_INCLUDE_DIRS})
 
 #------------------------------------------------------------------------------
 # Libraries
@@ -105,6 +120,17 @@ set(PDC_BUILD_INCLUDE_DEPENDENCIES
 message(STATUS "PDC_BUILD_INCLUDE_DEPENDENCIES: ${PDC_BUILD_INCLUDE_DEPENDENCIES}")
 
 add_library(pdc ${PDC_SRCS})
+
+if(CUDA_ENABLED)
+  # pdc_an_common.c (in PDC_SRCS above) calls pdc_an_builtin_vector_magnitude_gpu
+  # from PDCan_init_builtin_funcs under #ifdef CUDA_ENABLED, so this symbol
+  # must resolve wherever that file is compiled -- including here, even
+  # though nothing in the client actually reaches that call path at
+  # runtime. Needs target_sources (not an unconditional PDC_SRCS entry like
+  # the sibling *_gpu.c builtins) because a .cu source can't be compiled at
+  # all unless enable_language(CUDA) has run, unlike a plain .c file.
+  target_sources(pdc PRIVATE ${PDC_SOURCE_DIR}/src/server/analysis/pdc_an_builtin_magnitude_gpu.cu)
+endif()
 
 target_include_directories(pdc
   PUBLIC  "$<BUILD_INTERFACE:${PDC_BUILD_INCLUDE_DEPENDENCIES}>"
@@ -142,7 +168,6 @@ install(
 #-----------------------------------------------------------------------------
 set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/api/include/pdc.h
-  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include/pdc_analysis.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_cont.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_mpi.h
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_obj.h
@@ -153,7 +178,35 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include/pdc_prop_pkg.h
   ${PDC_SOURCE_DIR}/src/api/pdc_query/include/pdc_query.h
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include/pdc_region.h
-  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include/pdc_transform.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_tf/include/pdc_tf.h
+  ${PDC_SOURCE_DIR}/src/api/pdc_an/include/pdc_an.h
+  ${PDC_SOURCE_DIR}/src/api/include/pdc_client_connect.h
+  ${PDC_SOURCE_DIR}/src/server/include/pdc_client_server_common.h
+  ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_private.h
+  ${PDC_SOURCE_DIR}/src/server/transform/include/pdc_tf_builtin_common.h
+  ${PDC_SOURCE_DIR}/src/server/transform/include/pdc_tf_common.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_dg.h
+  ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_timing.h
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include/pdc_server_region_transfer_metadata_query.h
+  ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include/pdc_server_region_transfer.h
+  ${PDC_SOURCE_DIR}/src/commons/index/dart/include/dart_core.h
+  ${PDC_SOURCE_DIR}/src/commons/index/dart/include/dart_algo.h
+  ${PDC_SOURCE_DIR}/src/commons/index/dart/include/dart_math.h
+  ${PDC_SOURCE_DIR}/src/commons/index/dart/include/dart_utils.h
+  ${PDC_SOURCE_DIR}/src/commons/utils/include/thpool.h
+  ${PDC_SOURCE_DIR}/src/commons/utils/include/string_utils.h
+  ${PDC_SOURCE_DIR}/src/commons/utils/include/query_utils.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/libhl/include/comparators.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/libhl/include/linklist.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/libhl/include/rbtree.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/libhl/include/atomic_defs.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_set.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_vector.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_compare.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_hash.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_deque.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/art.h
+  ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_hash_table.h
   ${PROJECT_BINARY_DIR}/pdc_config_sys.h
   ${PROJECT_BINARY_DIR}/pdc_config.h
   )

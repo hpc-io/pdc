@@ -1,0 +1,44 @@
+{
+    "states": [
+        {
+            "name": "client"
+        },
+        {
+            "name": "compressed"
+        },
+        {
+            "name": "encrypted"
+        }
+    ],
+    "functions": [
+        {
+            "device": "CPU",
+            "input_state": "client",
+            "output_state": "compressed",
+            "location": "builtin",
+            "name": "zfp_compress"
+        },
+        {
+            "device": "CPU",
+            "input_state": "compressed",
+            "output_state": "client",
+            "location": "builtin",
+            "name": "zfp_decompress"
+        },
+        {
+            "device": "CPU",
+            "input_state": "client",
+            "output_state": "encrypted",
+            "location": "builtin",
+            "name": "secret_box_encrypt"
+        },
+        {
+            "device": "CPU",
+            "input_state": "encrypted",
+            "output_state": "client",
+            "location": "builtin",
+            "name": "secret_box_decrypt"
+        }
+    ],
+    "name": "zfp_or_libsod"
+}

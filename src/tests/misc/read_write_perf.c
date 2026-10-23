@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "pdc.h"
-#include "pdc_analysis.h"
 
 #include "pdc_timing.h"
 

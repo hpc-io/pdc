@@ -36,9 +36,7 @@
 #include "pdc_region_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_interface.h"
-#include "pdc_transforms_pkg.h"
 #include "pdc_client_connect.h"
-#include "pdc_analysis_pkg.h"
 #include <mpi.h>
 
 static perr_t pdc_region_close(struct pdc_region_info *op);
@@ -216,12 +214,6 @@ PDCbuf_obj_map(void *buf, pdc_var_type_t local_type, pdcid_t local_reg, pdcid_t 
                                    local_type, buf, remote_type, reg1, reg2, obj2);
 
     if (ret_value == SUCCEED) {
-        /*
-         * For analysis and/or transforms, we only identify the target region as being mapped.
-         * The lock/unlock protocol for writing will protect the target from being written by
-         * more than one source.
-         */
-        PDC_check_transform(PDC_DATA_MAP, reg2);
         PDC_inc_ref(remote_obj);
         PDC_inc_ref(remote_reg);
     }

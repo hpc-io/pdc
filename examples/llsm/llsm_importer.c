@@ -75,7 +75,7 @@ import_to_pdc(image_info_t *image_info, csv_cell_t *fileName_cell)
 
     // psize_t ndims = 1;
     // uint64_t offsets[1] = {0};
-    // // FIXME: we should support uint64_t.
+    // FIXME: we should support uint64_t.
     // uint64_t dims[1] = {image_info->x * image_info->y * image_info->z};
 
     // FIXME: we should change the ndims parameter to psize_t type.

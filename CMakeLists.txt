@@ -22,6 +22,171 @@ foreach(p
   endif()
 endforeach()
 
+# Dependencies directories
+#
+# Every dependency below is optional: unset the corresponding *_ROOT_DIR env
+# var (or *_DIR for SZ3/TurboPFor/CUSZ) and that piece compiles out instead
+# of cmake hard-failing. JSON graph parsing for PDCtf_dg_json_create /
+# PDCan_dg_json_create is not one of these -- it uses the cJSON copy vendored
+# in src/commons/cjson, which is always built, so graph attachment always
+# works with no extra env var required.
+if(DEFINED ENV{ZFP_ROOT_DIR} AND NOT "$ENV{ZFP_ROOT_DIR}" STREQUAL "")
+  set(ZFP_ROOT $ENV{ZFP_ROOT_DIR})
+endif()
+if(DEFINED ENV{LIBSODIUM_ROOT_DIR} AND NOT "$ENV{LIBSODIUM_ROOT_DIR}" STREQUAL "")
+  set(LIBSODIUM_ROOT $ENV{LIBSODIUM_ROOT_DIR})
+endif()
+if(DEFINED ENV{CUDA_ROOT_DIR} AND NOT "$ENV{CUDA_ROOT_DIR}" STREQUAL "")
+  set(CUDA_ROOT $ENV{CUDA_ROOT_DIR})
+endif()
+
+# ZFP -- pdc_tf_builtin_zfp_cpu.c / pdc_tf_builtin_zfp_gpu.c
+if(ZFP_ROOT)
+  find_path(ZFP_INCLUDE_DIR NAMES zfp.h PATHS "${ZFP_ROOT}/include")
+  find_library(ZFP_LIBRARY NAMES zfp PATHS "${ZFP_ROOT}/lib64" "${ZFP_ROOT}/lib")
+  if(NOT ZFP_INCLUDE_DIR)
+    message(FATAL_ERROR "ZFP_ROOT_DIR is set but could not find ZFP headers in ${ZFP_ROOT}/include")
+  endif()
+  if(NOT ZFP_LIBRARY)
+    message(FATAL_ERROR "ZFP_ROOT_DIR is set but could not find ZFP library in ${ZFP_ROOT}/lib64 or ${ZFP_ROOT}/lib")
+  endif()
+  include_directories(${ZFP_INCLUDE_DIR})
+  link_libraries(${ZFP_LIBRARY})
+  set(ZFP_ENABLED 1)
+  add_compile_definitions(ZFP_ENABLED=1)
+else()
+  message(STATUS "ZFP_ROOT_DIR not set -- zfp_compress/zfp_decompress transformation disabled")
+endif()
+
+# LIBSODIUM -- pdc_tf_builtin_encrypt_cpu.c only
+if(LIBSODIUM_ROOT)
+  find_path(LIBSODIUM_INCLUDE_DIR NAMES sodium.h PATHS "${LIBSODIUM_ROOT}/include")
+  find_library(LIBSODIUM_LIBRARY NAMES sodium PATHS "${LIBSODIUM_ROOT}/lib")
+  if(NOT LIBSODIUM_INCLUDE_DIR)
+    message(FATAL_ERROR "LIBSODIUM_ROOT_DIR is set but could not find libsodium headers in ${LIBSODIUM_ROOT}/include")
+  endif()
+  if(NOT LIBSODIUM_LIBRARY)
+    message(FATAL_ERROR "LIBSODIUM_ROOT_DIR is set but could not find libsodium library in ${LIBSODIUM_ROOT}/lib")
+  endif()
+  include_directories(${LIBSODIUM_INCLUDE_DIR})
+  link_libraries(${LIBSODIUM_LIBRARY})
+  set(LIBSODIUM_ENABLED 1)
+  add_compile_definitions(LIBSODIUM_ENABLED=1)
+else()
+  message(STATUS "LIBSODIUM_ROOT_DIR not set -- secret_box_encrypt/decrypt transformation disabled")
+endif()
+
+# CUDA 
+if(CUDA_ROOT)
+  # Find include directory
+  find_path(CUDA_INCLUDE_DIR NAMES cuda_runtime.h PATHS "${CUDA_ROOT}/include")
+  # Find runtime library
+  find_library(CUDA_RUNTIME_LIBRARY NAMES cudart PATHS "${CUDA_ROOT}/lib64" "${CUDA_ROOT}/lib")
+  # NVML -- pdc_tf_profiler.c's GPU utilization/power sampling is unconditional
+  # whenever CUDA_ENABLED, not optional, so this has to be found whenever CUDA
+  # is. nvml.h ships inside the CUDA toolkit's own include dir (no separate
+  # *_ROOT needed); libnvidia-ml.so itself comes from the GPU driver package,
+  # with a toolkit-provided stub .so for linking on machines without the
+  # driver installed, so check both locations.
+  find_library(NVML_LIBRARY NAMES nvidia-ml
+    PATHS "${CUDA_ROOT}/lib64/stubs" "${CUDA_ROOT}/targets/x86_64-linux/lib/stubs")
+  if(NOT CUDA_INCLUDE_DIR)
+      message(FATAL_ERROR "Could not find CUDA headers in ${CUDA_ROOT}/include")
+  endif()
+  if(NOT CUDA_RUNTIME_LIBRARY)
+      message(FATAL_ERROR "Could not find CUDA runtime library in ${CUDA_ROOT}/lib64 or ${CUDA_ROOT}/lib")
+  endif()
+  if(NOT NVML_LIBRARY)
+      message(FATAL_ERROR "Could not find NVML (libnvidia-ml), required by pdc_tf_profiler.c when CUDA is enabled")
+  endif()
+  include_directories(${CUDA_INCLUDE_DIR})
+  link_libraries(${CUDA_RUNTIME_LIBRARY} ${NVML_LIBRARY})
+  set(CUDA_ENABLED 1 CACHE BOOL "Enable CUDA globally")
+  if(CUDA_ENABLED)
+    add_compile_definitions(CUDA_ENABLED=1)
+    add_definitions(-DUSE_CUDA)
+  endif()
+endif()
+
+if(NOT DEFINED SZ_CPU_DIR)
+  set(SZ_CPU_DIR $ENV{SZ_CPU_DIR})
+endif()
+message(STATUS "SZ_CPU_DIR = ${SZ_CPU_DIR}")
+# SZ3 -- pdc_tf_builtin_sz_cpu.c only. Optional: unset/empty SZ_CPU_DIR
+# disables the sz_compress/sz_decompress transformation instead of cmake
+# hard-failing.
+if(SZ_CPU_DIR)
+  find_path(SZ3_INCLUDE_DIR NAMES sz3c.h PATHS "${SZ_CPU_DIR}/include/SZ3c")
+  find_library(SZ3_LIBRARY NAMES SZ3c PATHS "${SZ_CPU_DIR}/lib64" "${SZ_CPU_DIR}/lib")
+  if(NOT SZ3_INCLUDE_DIR)
+    message(FATAL_ERROR "SZ_CPU_DIR is set but could not find SZ3 headers in ${SZ_CPU_DIR}/include")
+  endif()
+  if(NOT SZ3_LIBRARY)
+    message(FATAL_ERROR "SZ_CPU_DIR is set but could not find SZ3 library in ${SZ_CPU_DIR}/lib64 or ${SZ_CPU_DIR}/lib")
+  endif()
+  include_directories(${SZ3_INCLUDE_DIR})
+  link_libraries(${SZ3_LIBRARY})
+  set(SZ3_ENABLED 1)
+  add_compile_definitions(SZ3_ENABLED=1)
+else()
+  message(STATUS "SZ_CPU_DIR not set -- sz_compress/sz_decompress transformation disabled")
+endif()
+# GPU CUSZ -- only pdc_tf_builtin_sz_gpu.c needs this (gated on
+# CUDA_ENABLED via ENABLE_TF_SZ_GPU_COMPRESSSION, pdc_tf_builtin_common.h),
+# so the library itself is only required when CUDA_ENABLED. Previously
+# unconditional, which meant `cmake` itself hard-failed with FATAL_ERROR
+# on any system without a cuSZ GPU install, even one with CUDA_ROOT_DIR
+# unset entirely (e.g. an AMD system with no CUDA toolkit at all).
+if(CUDA_ENABLED)
+  if(NOT DEFINED CUSZ_GPU_DIR)
+    set(CUSZ_GPU_DIR $ENV{CUSZ_GPU_DIR})
+  endif()
+  message(STATUS "CUSZ_GPU_DIR = ${CUSZ_GPU_DIR}")
+  # Find CUSZ headers (not SZ3)
+  find_path(CUSZ_INCLUDE_DIR
+    NAMES cusz.h context.h api_v2.h header.h
+    PATHS "${CUSZ_GPU_DIR}/include/cusz"
+  )
+  if(NOT CUSZ_INCLUDE_DIR)
+    message(FATAL_ERROR "Could not find CUSZ headers in ${CUSZ_GPU_DIR}/include/cusz")
+  endif()
+  include_directories(${CUSZ_INCLUDE_DIR})
+  find_library(CUSZ_LIBRARY
+    NAMES cusz
+    PATHS
+      "${CUSZ_GPU_DIR}/lib"
+      "${CUSZ_GPU_DIR}/lib64"
+  )
+  if(NOT CUSZ_LIBRARY)
+    message(FATAL_ERROR "Could not find CUSZ library in ${CUSZ_GPU_DIR}/lib or lib64")
+  endif()
+  message(STATUS "CUSZ_LIBRARY = ${CUSZ_LIBRARY}")
+  link_libraries(${CUSZ_LIBRARY})
+endif()
+
+# TurboPFor -- pdc_tf_builtin_turbo_cpu.c only. Optional: unset/empty
+# TURBO_DIR disables the turbo_compress/turbo_decompress transformation
+# instead of cmake hard-failing.
+if(NOT DEFINED TURBO_DIR)
+  set(TURBO_DIR $ENV{TURBO_DIR})
+endif()
+if(TURBO_DIR)
+  find_path(TURBO_DIR_INCLUDE NAMES ic.h PATHS "${TURBO_DIR}/include")
+  find_library(TURBO_DIR_LIB NAMES ic PATHS "${TURBO_DIR}")
+  if(NOT TURBO_DIR_INCLUDE)
+    message(FATAL_ERROR "TURBO_DIR is set but could not find its headers in ${TURBO_DIR}/include")
+  endif()
+  if(NOT TURBO_DIR_LIB)
+    message(FATAL_ERROR "TURBO_DIR is set but could not find its library in ${TURBO_DIR}")
+  endif()
+  include_directories(${TURBO_DIR_INCLUDE})
+  link_libraries(${TURBO_DIR_LIB})
+  set(TURBO_ENABLED 1)
+  add_compile_definitions(TURBO_ENABLED=1)
+else()
+  message(STATUS "TURBO_DIR not set -- turbo_compress/turbo_decompress transformation disabled")
+endif()
+
 # Set a consistent MACOSX_RPATH default across all CMake versions.
 # checks if the variable CMAKE_MACOSX_RPATH is not defined and sets it to 0 if it is not defined.
 # The CMAKE_MACOSX_RPATH variable is used to control the behavior of the macOS-specific RPATH feature in CMake. 
@@ -37,6 +202,27 @@ endif()
 
 # Project Name : PDC, Programming Language : C
 project(PDC C)
+
+# Existing GPU builtins (pdc_tf_builtin_zfp_gpu.c etc.) are plain .c files
+# that only call the CUDA runtime API plus a third-party library's own
+# precompiled CUDA implementation, so they never needed the CUDA language
+# enabled. A hand-written __global__ kernel (the AN magnitude GPU builtin)
+# does, hence this addition -- see src/tests/analysis/cuda_smoke_test.cu for
+# a minimal target that isolates "does CUDA compilation work in this CMake
+# project" before any real kernel logic depends on it.
+if(CUDA_ENABLED)
+  if(DEFINED ENV{CUDA_ROOT_DIR} AND NOT "$ENV{CUDA_ROOT_DIR}" STREQUAL "")
+    set(CMAKE_CUDA_COMPILER "$ENV{CUDA_ROOT_DIR}/bin/nvcc")
+  endif()
+  if(NOT DEFINED CMAKE_CUDA_ARCHITECTURES OR "${CMAKE_CUDA_ARCHITECTURES}" STREQUAL "")
+    # 75/80/86 covers common dev workstation GPUs plus Perlmutter's A100 (80).
+    # Older architectures (e.g. 70/Volta) are dropped here because newer CUDA
+    # toolkits (13.x) no longer ship device code generation support for them
+    # -- confirmed via `nvcc --list-gpu-arch` in this build's own toolkit.
+    set(CMAKE_CUDA_ARCHITECTURES 75 80 86)
+  endif()
+  enable_language(CUDA)
+endif()
 
 # include CheckSymbolExists module
 include(CheckSymbolExists)
@@ -394,10 +580,14 @@ endif()
 option(PDC_SERVER_CACHE "Enable Server Caching." ON)
 if(PDC_SERVER_CACHE)
   set(PDC_SERVER_CACHE 1)
-  set(PDC_SERVER_CACHE_MAX_GB "32" CACHE STRING "Max GB for server cache")
-  set(PDC_SERVER_IDLE_CACHE_FLUSH_TIME "3" CACHE STRING "Idle time to initiate flush from server cache")
+  set(PDC_SERVER_CACHE_MAX_GB "64" CACHE STRING "Max GB for server cache")
+  set(PDC_SERVER_TRANSFORMATION_CACHE_MAX_GB "32" CACHE STRING "Max GB for server transformation cache")
+  set(PDC_SERVER_IDLE_CACHE_FLUSH_TIME "2" CACHE STRING "Idle time to initiate flush from server cache")
 
-  add_compile_definitions(PDC_SERVER_CACHE_MAX_GB=${PDC_SERVER_CACHE_MAX_GB} PDC_SERVER_IDLE_CACHE_FLUSH_TIME=${PDC_SERVER_IDLE_CACHE_FLUSH_TIME})
+  add_compile_definitions(
+    PDC_SERVER_TRANSFORMATION_CACHE_MAX_GB=${PDC_SERVER_TRANSFORMATION_CACHE_MAX_GB} 
+    PDC_SERVER_CACHE_MAX_GB=${PDC_SERVER_CACHE_MAX_GB} 
+    PDC_SERVER_IDLE_CACHE_FLUSH_TIME=${PDC_SERVER_IDLE_CACHE_FLUSH_TIME})
 endif()
 
 
@@ -419,7 +609,22 @@ if(PDC_ENABLE_APP_CLOSE_SERVER)
 endif()
 
 #-----------------------------------------------------------------------------
-# 
+# Path to graphs for tests
+#-----------------------------------------------------------------------------
+set(TF_GRAPHS_DIR "${CMAKE_SOURCE_DIR}/tf_client/graphs/")
+if(NOT EXISTS "${TF_GRAPHS_DIR}")
+    message(FATAL_ERROR "Directory ${TF_GRAPHS_DIR} does not exist!")
+endif()
+add_compile_definitions(TF_GRAPHS_DIR="${TF_GRAPHS_DIR}")
+
+set(AN_GRAPHS_DIR "${CMAKE_SOURCE_DIR}/an_client/graphs/")
+if(NOT EXISTS "${AN_GRAPHS_DIR}")
+    message(FATAL_ERROR "Directory ${AN_GRAPHS_DIR} does not exist!")
+endif()
+add_compile_definitions(AN_GRAPHS_DIR="${AN_GRAPHS_DIR}")
+
+#-----------------------------------------------------------------------------
+# Wait for data fanalized in FS when object unmap is called
 #-----------------------------------------------------------------------------
 option(PDC_ENABLE_WAIT_DATA 
     "Wait for data fanalized in FS when object unmap is called." OFF)

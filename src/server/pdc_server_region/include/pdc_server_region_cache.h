@@ -9,6 +9,11 @@
 #include "pdc_client_server_common.h"
 #include "pdc_timing.h"
 
+/* close_time_g is defined unconditionally in pdc_server_region_cache.c and
+ * read unconditionally by pdc_tf_server.c's scheduler, so its declaration
+ * must stay visible even when PDC_SERVER_CACHE is off. */
+extern int close_time_g;
+
 #ifdef PDC_SERVER_CACHE
 
 #define PDC_REGION_CONTAINED       0

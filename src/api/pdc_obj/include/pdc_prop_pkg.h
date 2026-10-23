@@ -35,16 +35,6 @@ struct _pdc_cont_prop {
     pdc_lifetime_t     cont_life;
 };
 
-typedef enum { ROW_major, COL_major } _pdc_major_type_t;
-
-struct _pdc_transform_state {
-    _pdc_major_type_t storage_order;
-    pdc_var_type_t    dtype;
-    size_t            ndim;
-    uint64_t          dims[4];
-    int               meta_index; /* transform to this state */
-};
-
 struct _pdc_obj_prop {
     struct pdc_obj_prop *obj_prop_pub;
     struct _pdc_class *  pdc;
@@ -55,12 +45,6 @@ struct _pdc_obj_prop {
     char *               tags;
     void *               buf;
     pdc_kvtag_t *        kvtag;
-
-    /* The following have been added to support of PDC analysis and transforms */
-    size_t                      type_extent;
-    uint64_t                    locus;
-    uint32_t                    data_state;
-    struct _pdc_transform_state transform_prop;
 };
 
 /***************************************/

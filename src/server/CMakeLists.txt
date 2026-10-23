@@ -37,16 +37,18 @@ include_directories(
   ${PDC_SOURCE_DIR}/src/server/include
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include
-  ${PDC_SOURCE_DIR}/src/server/pdc_server_analysis/include
   ${PDC_SOURCE_DIR}/src/server/dablooms
+  ${PDC_SOURCE_DIR}/src/server/transform/include
+  ${PDC_SOURCE_DIR}/src/server/analysis/include
   ${PDC_SOURCE_DIR}/src/api/include
   ${PDC_SOURCE_DIR}/src/api/pdc_obj/include
   ${PDC_SOURCE_DIR}/src/api/pdc_region/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_tf/include
   ${PDC_SOURCE_DIR}/src/api/pdc_query/include
-  ${PDC_SOURCE_DIR}/src/api/pdc_transform/include
-  ${PDC_SOURCE_DIR}/src/api/pdc_analysis/include
   ${PDC_SOURCE_DIR}/src/api/profiling/include
+  ${PDC_SOURCE_DIR}/src/api/pdc_hist/include
   ${PDC_SOURCE_DIR}/src/utils/include
+  ${PDC_SOURCE_DIR}/src/tests/analysis
   ${MERCURY_INCLUDE_DIR}
   ${FASTBIT_INCLUDE_DIR}
   ${ROCKSDB_INCLUDE_DIR}
@@ -65,19 +67,41 @@ add_library(pdc_server_lib
                pdc_server_metadata_index.c
                pdc_server_metadata.c
                pdc_client_server_common.c
+               transform/pdc_tf_user.c
+               transform/pdc_tf_server.c
+               transform/pdc_tf_common.c
+               transform/pdc_tf_poly_sched.c
+               transform/pdc_tf_builtin_zfp_cpu.c
+               transform/pdc_tf_builtin_zfp_gpu.c
+               transform/pdc_tf_builtin_sz_cpu.c
+               transform/pdc_tf_builtin_sz_gpu.c
+               transform/pdc_tf_builtin_encrypt_cpu.c
+               transform/pdc_tf_builtin_turbo_cpu.c
+               transform/pdc_tf_profiler.c
+               analysis/pdc_an_common.c
+               analysis/pdc_an_server.c
+               analysis/pdc_an_builtin_magnitude_cpu.c
+               analysis/pdc_an_builtin_curl_cpu.c
                dablooms/pdc_dablooms.c
                dablooms/pdc_murmur.c
-            #    pdc_hash-table.c
-               ${PDC_SOURCE_DIR}/src/server/pdc_server_analysis/pdc_server_analysis.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_data.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_cache.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer.c
                ${PDC_SOURCE_DIR}/src/server/pdc_server_region/pdc_server_region_transfer_metadata_query.c
                ${PDC_SOURCE_DIR}/src/utils/pdc_region_utils.c
-               ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_analysis_common.c
-               ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transforms_common.c
-               ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
+               ${PDC_SOURCE_DIR}/src/api/pdc_hist/pdc_hist_pkg.c
 )
+if(CUDA_ENABLED)
+  # A hand-written __global__ kernel (unlike the sibling *_gpu.c builtins
+  # above, which only call a third-party library's own precompiled CUDA
+  # implementation) -- needs the CUDA language actually enabled to compile
+  # at all, so this can't be listed unconditionally in add_library() like
+  # they are. Also compiled into the client `pdc` library (see
+  # src/api/CMakeLists.txt) -- not because the client ever calls it, but
+  # because pdc_an_common.c's PDCan_init_builtin_funcs references it and
+  # that file is itself compiled into both targets.
+  target_sources(pdc_server_lib PRIVATE analysis/pdc_an_builtin_magnitude_gpu.cu)
+endif()
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
     target_link_libraries(pdc_server_lib ${MERCURY_LIBRARY} ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
