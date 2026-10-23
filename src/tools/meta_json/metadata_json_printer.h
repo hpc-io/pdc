@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "cjson/cJSON.h"
+#include "cJSON.h"
 #include "metadata_json_processor.h"
 
 /**
