@@ -1,0 +1,65 @@
+name: Spack Installation
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - stable
+  push:
+    branches:
+      - develop
+      - stable
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  spack-install-and-test:
+    name: Spack Install + Test (Ubuntu)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout PDC
+        uses: actions/checkout@v4
+
+      - name: Set up Spack
+        uses: spack/setup-spack@v3
+        with:
+          buildcache: true
+
+      - name: Install PDC dependencies via Spack
+        run: |
+          spack install --only dependencies pdc \
+            ^libfabric fabrics=sockets,tcp,udp,rxm
+
+      - name: Capture Spack environment
+        run: |
+          spack load --sh openmpi libfabric mercury boost \
+            > $GITHUB_WORKSPACE/spack-env.sh
+          echo "export CPATH=$(spack location -i boost)/include:\$CPATH" \
+            >> $GITHUB_WORKSPACE/spack-env.sh
+          echo "=== spack-env.sh ==="
+          cat $GITHUB_WORKSPACE/spack-env.sh
+
+      - name: Build PDC with tests
+        run: |
+          source $GITHUB_WORKSPACE/spack-env.sh
+          mkdir build && cd build
+          cmake ../ \
+            -DBUILD_MPI_TESTING=ON \
+            -DBUILD_SHARED_LIBS=ON \
+            -DPDC_SERVER_CACHE=ON \
+            -DBUILD_TESTING=ON \
+            -DPDC_ENABLE_MPI=ON \
+            -DCMAKE_C_COMPILER=mpicc \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          make -j$(nproc)
+
+      - name: Run serial tests
+        working-directory: build
+        run: |
+          source $GITHUB_WORKSPACE/spack-env.sh
+          ctest -L serial --output-on-failure
