@@ -223,8 +223,6 @@ if len(obj_create_time_node) > 0:
 
     print(dataset)
 
-    dataset.applymap(lambda x: x.strip() if isinstance(x, str) else x)
-
     df_values = dataset.values.tolist()
 
     if False:
@@ -278,8 +276,6 @@ if len(obj_create_time_node) > 0:
     dataset = pd.DataFrame.from_dict(lines)
 
     print(dataset)
-
-    dataset.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
     df_values = dataset.values.tolist()
 
