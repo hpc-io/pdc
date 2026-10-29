@@ -26,6 +26,9 @@
 #define PDC_OBJ_H
 
 #include "pdc_public.h"
+#ifdef ENABLE_MPI
+#include <mpi.h>
+#endif
 
 /*******************/
 /* Public Typedefs */
@@ -127,7 +130,13 @@ pdcid_t PDCobj_open(const char *obj_name, pdcid_t pdc_id);
  *
  * \return Object id on success/Zero on failure
  */
-pdcid_t PDCobj_open_col(const char *obj_name, pdcid_t pdc_id);
+pdcid_t PDCobj_open_coll(const char *obj_name, pdcid_t pdc_id,
+#ifdef ENABLE_MPI
+                         MPI_Comm
+#else
+                         int
+#endif
+                             comm);
 
 /**
 

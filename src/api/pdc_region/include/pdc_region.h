@@ -152,7 +152,7 @@ perr_t PDCregion_transfer_start_all(pdcid_t *transfer_request_id, int size);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm);
+perr_t PDCregion_transfer_start_coll(pdcid_t transfer_request_id, MPI_Comm comm);
 
 /**
  * Start several region transfer requests (asynchronously), MPI collective version for better performance at
@@ -164,7 +164,7 @@ perr_t PDCregion_transfer_start_mpi(pdcid_t transfer_request_id, MPI_Comm comm);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCregion_transfer_start_all_mpi(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
+perr_t PDCregion_transfer_start_all_coll(pdcid_t *transfer_request_id, int size, MPI_Comm comm);
 #endif
 
 /**

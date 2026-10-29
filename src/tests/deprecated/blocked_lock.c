@@ -89,7 +89,11 @@ main(int argc, char **argv)
     PDCprop_set_obj_app_name(obj_prop2, "VPICIO");
     PDCprop_set_obj_tags(obj_prop2, "tag0=1");
 
-    obj2 = PDCobj_create_mpi(cont_id, "obj-var-xx", obj_prop2, 0);
+#ifdef ENABLE_MPI
+    obj2 = PDCobj_create_coll(cont_id, "obj-var-xx", obj_prop2, 0, MPI_COMM_WORLD);
+#else
+    obj2 = PDCobj_create(cont_id, "obj-var-xx", obj_prop2);
+#endif
     if (obj2 == 0) {
         LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);

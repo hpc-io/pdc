@@ -180,7 +180,7 @@ main(int argc, char **argv)
         // create first object
         sprintf(obj_name1, "o1_%d", i);
 #ifdef ENABLE_MPI
-        obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
+        obj1 = PDCobj_create_coll(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD);
 #else
         obj1 = PDCobj_create(cont, obj_name1, obj_prop);
 #endif

@@ -155,7 +155,7 @@ main(int argc, char **argv)
         LOG_ERROR("Failed to create container property");
     }
     // create a container
-    cont_id = PDCcont_create_col("c1", cont_prop);
+    cont_id = PDCcont_create_coll("c1", cont_prop, MPI_COMM_WORLD);
     if (cont_id <= 0) {
         LOG_ERROR("Failed to create container");
     }

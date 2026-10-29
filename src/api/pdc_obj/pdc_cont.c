@@ -22,6 +22,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+#include "pdc_config.h"
 #include "pdc_cont.h"
 #include "pdc_cont_pkg.h"
 #include "pdc_malloc.h"
@@ -99,7 +100,12 @@ done:
 }
 
 pdcid_t
-PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
+PDCcont_create_coll(const char *cont_name, pdcid_t cont_prop_id,
+#ifdef ENABLE_MPI
+                    MPI_Comm comm)
+#else
+                    int comm)
+#endif
 {
     FUNC_ENTER(NULL);
 
@@ -108,8 +114,6 @@ PDCcont_create_col(const char *cont_name, pdcid_t cont_prop_id)
     struct _pdc_cont_info *p         = NULL;
     struct _pdc_cont_prop *cont_prop = NULL;
     struct _pdc_id_info *  id_info   = NULL;
-
-    FUNC_ENTER(NULL);
 
     p = (struct _pdc_cont_info *)PDC_malloc(sizeof(struct _pdc_cont_info));
     if (!p)
@@ -284,7 +288,13 @@ done:
 }
 
 pdcid_t
-PDCcont_open_col(const char *cont_name, pdcid_t pdc)
+PDCcont_open_coll(const char *cont_name, pdcid_t pdc,
+#ifdef ENABLE_MPI
+                  MPI_Comm comm
+#else
+                  int   comm
+#endif
+)
 {
     FUNC_ENTER(NULL);
 
@@ -294,7 +304,7 @@ PDCcont_open_col(const char *cont_name, pdcid_t pdc)
     pdcid_t cont_meta_id;
 
     ret = PDC_Client_query_container_name_col(cont_name, &cont_meta_id);
-    if (ret == FAIL)
+    if (ret == FAIL || cont_meta_id == 0)
         PGOTO_ERROR(0, "Query container name failed");
     cont_id   = PDC_cont_create_local(pdc, cont_name, cont_meta_id);
     ret_value = cont_id;

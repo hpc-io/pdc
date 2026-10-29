@@ -535,12 +535,18 @@ PDCobj_open(const char *obj_name, pdcid_t pdc)
 }
 
 pdcid_t
-PDCobj_open_col(const char *obj_name, pdcid_t pdc)
+PDCobj_open_coll(const char *obj_name, pdcid_t pdc_id,
+#ifdef ENABLE_MPI
+                 MPI_Comm comm
+#else
+                 int comm
+#endif
+)
 {
     FUNC_ENTER(NULL);
 
     pdcid_t ret_value;
-    ret_value = PDCobj_open_common(obj_name, pdc, 1);
+    ret_value = PDCobj_open_common(obj_name, pdc_id, 1);
 
     FUNC_LEAVE(ret_value);
 }

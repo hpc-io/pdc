@@ -137,7 +137,7 @@ main(int argc, char **argv)
         for (int i = 0; i < 8; i++) {
             sprintf(obj_name, "%s-%d", obj_names[i], iter);
 #ifdef ENABLE_MPI
-            obj_ids[i] = PDCobj_open_col(obj_name, pdc_id);
+            obj_ids[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
             obj_ids[i] = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -171,7 +171,7 @@ main(int argc, char **argv)
 #endif
 
 #ifdef ENABLE_MPI
-        if (PDCregion_transfer_start_all_mpi(transfer_requests, 8, MPI_COMM_WORLD) != SUCCEED) {
+        if (PDCregion_transfer_start_all_coll(transfer_requests, 8, MPI_COMM_WORLD) != SUCCEED) {
 #else
         if (PDCregion_transfer_start_all(transfer_requests, 8) != SUCCEED) {
 #endif
