@@ -342,6 +342,10 @@ The following table lists all available compile-time options for PDC, along with
      - OFF
      - Enable multithreading.
      - 🟡
+   * - PDC_ENABLE_PHT
+     - OFF
+     - Enable experimental PHT metadata operations. Standard tags and queries continue to use SOMETA.
+     - 🟡
    * - PDC_ENABLE_PROFILING
      - OFF
      - Enable profiling.
@@ -408,6 +412,9 @@ Runtime Options
 - PDC_SERVER_CACHE_NO_FLUSH: Disable the flushing of the server side cache.
 - HG_TRANSPORT: Specifies the Mercury communication transport protocol.
 - HG_HOST: Defines the hostname or IP address used by the Mercury network layer.
+  With ``HG_TRANSPORT=ofi+cxi``, this selects a CXI NIC (for example, ``cxi0``);
+  leave it unset for automatic NIC and endpoint selection. CXI does not use the
+  TCP port numbers.
 
 .. note::
 

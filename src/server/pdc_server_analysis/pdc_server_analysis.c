@@ -41,9 +41,8 @@
 #include "mercury.h"
 #include "mercury_macros.h"
 
-// Mercury hash table and list
+// Mercury hash table
 #include "mercury_hash_table.h"
-#include "mercury_list.h"
 
 #include "pdc_config.h"
 

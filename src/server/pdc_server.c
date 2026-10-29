@@ -52,6 +52,9 @@
 #include "pdc_client_server_common.h"
 #include "pdc_transforms_common.h"
 #include "pdc_server.h"
+#ifdef PDC_ENABLE_PHT
+#include "pdc_server_metadata_pht.h"
+#endif /* PDC_ENABLE_PHT */
 #include "pdc_server_metadata.h"
 #include "pdc_server_data.h"
 #include "pdc_timing.h"
@@ -813,7 +816,12 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     }
     else
         LOG_INFO("Environment variable HG_HOST was set\n");
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+    // CXI selects a NIC and endpoint ID instead of a hostname and TCP port.
+    if (strcmp(hg_transport, "ofi+cxi") == 0)
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s", hg_transport,
+                 getenv("HG_HOST") ? hostname : "");
+    else
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_server_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
@@ -948,6 +956,10 @@ drc_access_again:
         LOG_INFO("Read cache enabled\n");
 #endif
 
+#ifdef PDC_ENABLE_PHT
+    // Initialize PHT for metadata
+    PDC_Server_metadata_pht_init(pdc_server_size_g, pdc_server_rank_g);
+#endif /* PDC_ENABLE_PHT */
 #ifdef PDC_ENABLE_IDIOMS
     // Initialize IDIOMS
     if (pdc_server_rank_g == 0)
@@ -1043,6 +1055,10 @@ perr_t
 PDC_Server_finalize()
 {
     FUNC_ENTER(NULL);
+
+#ifdef PDC_ENABLE_PHT
+    PDC_Server_metadata_pht_finalize();
+#endif /* PDC_ENABLE_PHT */
 
     pdc_data_server_io_list_t *io_elt     = NULL;
     region_list_t *            region_elt = NULL, *region_tmp = NULL;
@@ -1984,6 +2000,11 @@ PDC_Server_mercury_register()
     PDC_region_release_register(hg_class_g);
     PDC_gen_cont_id_register(hg_class_g);
     PDC_metadata_add_kvtag_register(hg_class_g);
+#ifdef PDC_ENABLE_PHT
+    PDC_metadata_check_prefix_register(hg_class_g);
+    metadata_create_bucket_register_id_g = PDC_metadata_create_bucket_register(hg_class_g);
+    PDC_metadata_key_add_register(hg_class_g);
+#endif /* PDC_ENABLE_PHT */
     PDC_metadata_get_kvtag_register(hg_class_g);
     PDC_metadata_del_kvtag_register(hg_class_g);
     PDC_send_rpc_register(hg_class_g);

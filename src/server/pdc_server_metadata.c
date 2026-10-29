@@ -449,7 +449,6 @@ PDC_Server_init_hash_table()
                                        PDC_Server_container_hash_value_free);
 
     is_hash_table_init_g = 1;
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -3000,7 +2999,6 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
 
     FUNC_LEAVE(ret_value);
 }
-
 perr_t
 PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
 {

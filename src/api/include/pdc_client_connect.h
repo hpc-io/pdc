@@ -1140,4 +1140,15 @@ void report_avg_server_profiling_rst();
 perr_t PDC_Client_transfer_pthread_create();
 perr_t PDC_Client_transfer_pthread_terminate();
 perr_t PDC_Client_transfer_pthread_cnt_add(int n);
+
+#ifdef PDC_ENABLE_PHT
+perr_t   PDC_Client_create_bucket(char *prefix);
+uint32_t PDC_prefix_binary_search(char *prefix, char **target_prefix);
+/* Copies size bytes from kvtag->value; returns FAIL if the bucket is full. */
+perr_t PDC_metadata_key_add(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont);
+/* Deletion is currently unsupported and returns FAIL. */
+perr_t      PDC_metadata_key_delete(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont);
+hg_return_t metadata_create_bucket_client_rpc_cb(const struct hg_cb_info *callback_info);
+#endif /* PDC_ENABLE_PHT */
+
 #endif /* PDC_CLIENT_CONNECT_H */
