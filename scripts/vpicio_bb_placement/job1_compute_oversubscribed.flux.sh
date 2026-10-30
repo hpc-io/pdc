@@ -29,6 +29,12 @@ set -euo pipefail
 # anyway). Adjust if running this on a different node type.
 N_USER_CORES=84
 
+# The build links against CCE runtime libs (libfi.so.1 etc.) that the
+# loaded cce module doesn't put on LD_LIBRARY_PATH itself (it only sets
+# PATH/MODULEPATH for the compiler, not its runtime libs) -- confirmed
+# via `ldd pdc_server` showing these "not found" until this is added.
+export LD_LIBRARY_PATH=/opt/cray/pe/cce/20.0.0/cce/x86_64/lib:${LD_LIBRARY_PATH:-}
+
 EXECPATH=/p/lustre5/lewis153/src/workspace/source/pdc/build/bin
 SERVER=$EXECPATH/pdc_server
 CLIENT=$EXECPATH/vpicio

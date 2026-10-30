@@ -42,6 +42,14 @@ set -euo pipefail
 
 N_USER_CORES=84 # see job1_compute_oversubscribed.flux.sh for where this comes from
 
+# See job1_compute_oversubscribed.flux.sh for why this is needed: the
+# build links against CCE runtime libs (libfi.so.1 etc.) that the loaded
+# cce module doesn't put on LD_LIBRARY_PATH itself. This has to be set
+# here too since the server launch below runs on a different host (the
+# rabbit) than this script itself -- it needs its own copy of this, not
+# just whatever's in this job's own environment.
+export LD_LIBRARY_PATH=/opt/cray/pe/cce/20.0.0/cce/x86_64/lib:${LD_LIBRARY_PATH:-}
+
 EXECPATH=/p/lustre5/lewis153/src/workspace/source/pdc/build/bin
 SERVER=$EXECPATH/pdc_server
 CLIENT=$EXECPATH/vpicio
