@@ -1,10 +1,10 @@
 #!/bin/bash
 #FLUX: -N 1
 #FLUX: -q pdebug
-#FLUX: -t 0:30:00
-#FLUX: -J pdc_vpicio_rabbit
-#FLUX: -o pdc_vpicio_rabbit.%J.out
-#FLUX: -e pdc_vpicio_rabbit.%J.out
+#FLUX: -t 30m
+#FLUX: --job-name=pdc_vpicio_rabbit
+#FLUX: --output=pdc_vpicio_rabbit.{{id}}.out
+#FLUX: --error=pdc_vpicio_rabbit.{{id}}.out
 #FLUX: -S dw="#DW jobdw type=xfs capacity=10GiB name=pdcbb"
 
 # Job 2 of 2 -- see README.md in this directory for the comparison this

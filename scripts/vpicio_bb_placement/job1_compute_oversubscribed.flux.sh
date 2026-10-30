@@ -1,10 +1,10 @@
 #!/bin/bash
 #FLUX: -N 1
 #FLUX: -q pdebug
-#FLUX: -t 0:30:00
-#FLUX: -J pdc_vpicio_oversub
-#FLUX: -o pdc_vpicio_oversub.%J.out
-#FLUX: -e pdc_vpicio_oversub.%J.out
+#FLUX: -t 30m
+#FLUX: --job-name=pdc_vpicio_oversub
+#FLUX: --output=pdc_vpicio_oversub.{{id}}.out
+#FLUX: --error=pdc_vpicio_oversub.{{id}}.out
 
 # Job 1 of 2 -- see README.md in this directory for the comparison this
 # pair of jobs is for.

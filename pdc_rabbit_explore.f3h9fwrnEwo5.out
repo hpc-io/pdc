@@ -1,0 +1,137 @@
+
+==================================================
+flux version
+==================================================
+commands:    		0.90.0
+libflux-core:		0.90.0
+libflux-security:	0.16.0
+broker:  		0.90.0
+FLUX_URI:		local:///var/tmp/lewis153/flux-7J47Lb/local-0
+build-options:		+ascii-only+systemd+hwloc.api==2.12.0+zmq==4.3.4
+
+==================================================
+flux alloc --help=coral2-rabbit-cores (authoritative flag semantics)
+==================================================
+
+Documentation for plugin providing option `--coral2-rabbit-cores`:
+
+Adds a flag `--coral2-chassis` to set the chassis count on CORAL2 systems.
+
+The flag takes a positive integer, representing the number of chassis desired;
+the number of nodes specified via ``-N, --nodes`` will then be split evenly
+across that number of chassis.
+
+Use of the ``--coral2-chassis`` flag requires that ``-N, --nodes`` be specified.
+Also, current limitations require that the number of chassis evenly divide the
+number of nodes. For example, five total nodes across three chassis *is not*
+supported, but fifteen total nodes across three chassis is supported.
+
+When not specified, the number of chassis chosen is up to the scheduler.
+
+Note that the plugin does not validate that the jobspec is satisfiable. It will
+allow you, for instance, to request 500 nodes on a single chassis, even if there
+are only five nodes per chassis. In such cases, the job will not be rejected until
+it has reached the SCHED state.
+
+On El Cap systems, there are sixteen nodes per chassis. For other systems,
+consult local documentation.
+
+Use of the ``--coral2-chassis`` flag also requires that the Fluxion scheduler
+be initialized with information about chassis layout. Otherwise an exception
+will be raised with a message about "chassis" not being a known resource type.
+
+This plugin also provides an EXPERIMENTAL ``--coral2-rabbit-cores`` flag, which
+takes a positive integer and allocates that many compute cores on each rabbit
+associated with the job, in addition to the compute nodes. Because rabbits are
+allocated per chassis, ``--coral2-rabbit-cores`` requires that
+``--coral2-chassis`` also be set; the requested cores are reserved on the rabbit
+in each allocated chassis.
+
+EXAMPLES
+--------
+
+Request 15 nodes, all on a single chassis:
+
+``flux alloc -N15 --coral2-chassis=1 -q myqueue /bin/true``
+
+Request 200 nodes split evenly across 20 chassis:
+
+``flux alloc -N200 --coral2-chassis=20 -q myqueue /bin/true``
+
+Request 32 nodes across 2 chassis, with 4 cores on each chassis's rabbit:
+
+``flux alloc -N32 --coral2-chassis=2 --coral2-rabbit-cores=4 -q myqueue /bin/true``
+
+==================================================
+This job's own jobid / queue info
+==================================================
+JOBID=f3h9fwrnEwo5
+flux-jobs: WARNING: Filtering options ignored with jobid list
+JobID f3h9fwrnEwo5 unknown
+
+==================================================
+flux resource list (what this allocation sees, before any rabbit-cores reservation)
+==================================================
+     STATE NNODES NCORES NGPUS NODELIST
+      free      1     96     4 tuolumne1018
+ allocated      0      0     0 
+      down      0      0     0 
+
+==================================================
+Reserving 1 rabbit core via --coral2-chassis=1 --coral2-rabbit-cores=1
+==================================================
+RABBIT_CORE_JOBID=fgyhdkK
+flux-jobs: WARNING: Filtering options ignored with jobid list
+       JOBID USER     NAME       ST NTASKS NNODES     TIME INFO
+     fgyhdkK lewis153 sleep       F      1      1        - 
+
+==================================================
+flux job info $RABBIT_CORE_JOBID jobspec (what we actually asked for)
+==================================================
+{"resources": [{"type": "chassis", "count": 1, "with": [{"type": "node", "count": 1, "with": [{"type": "slot", "count": 1, "with": [{"type": "core", "count": 1}], "label": "task"}]}, {"type": "storage_node", "count": 1, "with": [{"type": "core", "exclusive": true, "count": 1}]}]}], "tasks": [{"command": ["sleep", "600"], "slot": "task", "count": {"per_slot": 1}}], "attributes": {"system": {"duration": 0, "cwd": "/p/lustre5/lewis153/src/workspace/source/pdc", "shell": {"options": {"rlimit": {"cpu": -1, "fsize": -1, "data": -1, "stack": -1, "core": 16384, "nofile": 128000, "as": -1, "rss": -1, "nproc": 16384}}}, "allow_rabbits": true}}, "version": 1}
+
+==================================================
+flux job info $RABBIT_CORE_JOBID R (the resource SET Flux actually assigned -- look for a rabbit-labeled slot/node entry here)
+==================================================
+flux-job: R: key not found
+
+==================================================
+flux getrabbit -j $RABBIT_CORE_JOBID (confirmed, documented way to list rabbits attached to a job)
+==================================================
+No rabbits found for job fgyhdkK
+Parsed RABBIT_HOST=No rabbits found for job fgyhdkK
+
+==================================================
+flux resource list (after the rabbit-cores reservation -- diff against the 'before' section above)
+==================================================
+     STATE NNODES NCORES NGPUS NODELIST
+      free      1     96     4 tuolumne1018
+ allocated      0      0     0 
+      down      0      0     0 
+
+==================================================
+Hardware fingerprint: THIS job's own allocation (the compute node)
+==================================================
+host: tuolumne1018
+model name	: AMD Instinct MI300A Accelerator
+2
+
+==================================================
+Hardware fingerprint: targeted at RABBIT_HOST=No rabbits found for job fgyhdkK via --requires=host:
+==================================================
+flux-run: ERROR: host constraint contains invalid hosts: host 'No' not found
+
+If the host/CPU model above MATCHES the compute-node fingerprint from the previous
+section, --requires=host: did NOT actually land on separate rabbit hardware --
+job2_compute_plus_rabbit.flux.sh's targeting mechanism needs rethinking. If it
+DIFFERS (especially the CPU model line), that's the confirmation the rabbit-cores
+reservation + host targeting genuinely works as job2 assumes.
+
+==================================================
+Cleanup
+==================================================
+flux-cancel: ERROR: fgyhdkK: job is inactive
+
+==================================================
+Done
+==================================================
