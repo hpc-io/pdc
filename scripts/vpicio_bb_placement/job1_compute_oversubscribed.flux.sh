@@ -29,8 +29,7 @@ set -euo pipefail
 # anyway). Adjust if running this on a different node type.
 N_USER_CORES=84
 
-# EDIT ME: wherever this build's pdc_server/vpicio/close_server live.
-EXECPATH=/path/to/pdc/install/bin
+EXECPATH=/p/lustre5/lewis153/src/workspace/source/pdc/build/bin
 SERVER=$EXECPATH/pdc_server
 CLIENT=$EXECPATH/vpicio
 CLOSE=$EXECPATH/close_server

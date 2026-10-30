@@ -42,8 +42,7 @@ set -euo pipefail
 
 N_USER_CORES=84 # see job1_compute_oversubscribed.flux.sh for where this comes from
 
-# EDIT ME: wherever this build's pdc_server/vpicio/close_server live.
-EXECPATH=/path/to/pdc/install/bin
+EXECPATH=/p/lustre5/lewis153/src/workspace/source/pdc/build/bin
 SERVER=$EXECPATH/pdc_server
 CLIENT=$EXECPATH/vpicio
 CLOSE=$EXECPATH/close_server
