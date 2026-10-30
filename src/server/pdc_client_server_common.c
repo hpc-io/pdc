@@ -1947,7 +1947,7 @@ HG_TEST_RPC_CB(flush_obj_all, handle)
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Error with HG_Destroy");
 
-    // Respond after flushing so the client's flush waits for the data to reach storage
+        // Respond after flushing so the client's flush waits for the data to reach storage
 #ifdef PDC_SERVER_CACHE
     PDC_region_cache_flush_all();
 #endif
@@ -1979,7 +1979,7 @@ HG_TEST_RPC_CB(flush_obj, handle)
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Error with HG_Destroy");
 
-    // Respond after flushing so the client's flush waits for the data to reach storage
+        // Respond after flushing so the client's flush waits for the data to reach storage
 #ifdef PDC_SERVER_CACHE
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
     PDC_region_cache_flush(obj_id);

@@ -1965,7 +1965,7 @@ PDC_Server_move_region_bb_to_pfs(region_list_t *region)
 
     perr_t         ret_value = SUCCEED;
     int            src_fd = -1, dst_fd = -1;
-    char *         buf = NULL;
+    char *         buf       = NULL;
     char *         data_path = NULL, *user_specified_data_path = NULL;
     char           dst_path[ADDR_MAX];
     ssize_t        read_bytes, write_bytes;
@@ -2051,7 +2051,7 @@ PDC_Server_move_region_bb_to_pfs(region_list_t *region)
     // change to whichever server holds this object's authoritative metadata.
     strncpy(region->storage_location, dst_path, sizeof(region->storage_location) - 1);
     region->storage_location[sizeof(region->storage_location) - 1] = '\0';
-    region->offset = dst_offset;
+    region->offset                                                 = dst_offset;
 
     ret_value = PDC_Server_update_region_storagelocation_offset(region, PDC_UPDATE_STORAGE);
     if (ret_value != SUCCEED)
@@ -2061,7 +2061,8 @@ done:
     gettimeofday(&bb_to_pfs_timer_end, 0);
     if (pdc_server_rank_g == 0 && region != NULL)
         LOG_INFO("BB -> PFS move took %.4f s (%" PRIu64 " bytes)\n",
-                 PDC_get_elapsed_time_double(&bb_to_pfs_timer_start, &bb_to_pfs_timer_end), region->data_size);
+                 PDC_get_elapsed_time_double(&bb_to_pfs_timer_start, &bb_to_pfs_timer_end),
+                 region->data_size);
 
     FUNC_LEAVE(ret_value);
 }
@@ -2182,8 +2183,7 @@ PDC_Server_move_obj_file_bb_to_pfs(data_server_region_t *region)
     buf = (char *)PDC_free(buf);
 
     if (total_copied != (uint64_t)st.st_size)
-        PGOTO_ERROR(FAIL, "BB->PFS copy incomplete for obj %" PRIu64 ": copied %" PRIu64 "/%" PRIu64
-                          " bytes",
+        PGOTO_ERROR(FAIL, "BB->PFS copy incomplete for obj %" PRIu64 ": copied %" PRIu64 "/%" PRIu64 " bytes",
                     region->obj_id, total_copied, (uint64_t)st.st_size);
 
     strncpy(region->storage_location, dst_path, ADDR_MAX - 1);
@@ -3944,7 +3944,7 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
     uint32_t       i                = 0;
     region_list_t *region_elt = NULL, *previous_region = NULL;
     FILE *         fp_read = NULL, *fp_write = NULL;
-    char *         prev_path = NULL;
+    char *         prev_path           = NULL;
     char *         bb_loc_g_timing     = getenv("PDC_BB_LOC");
     size_t         bb_loc_g_timing_len = bb_loc_g_timing != NULL ? strlen(bb_loc_g_timing) : 0;
     struct timeval bb_write_timer_start, bb_write_timer_end;
@@ -4216,9 +4216,9 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
             // chose this per region, above; this is independent of whether the
             // separate read-cache-overflow path (PDC_Server_cache_region_to_BB)
             // is enabled, so time it here regardless of that.
-            bool is_bb_write = bb_loc_g_timing != NULL && bb_loc_g_timing_len > 0 &&
-                               strncmp(region_elt->storage_location, bb_loc_g_timing, bb_loc_g_timing_len) ==
-                                   0;
+            bool is_bb_write =
+                bb_loc_g_timing != NULL && bb_loc_g_timing_len > 0 &&
+                strncmp(region_elt->storage_location, bb_loc_g_timing, bb_loc_g_timing_len) == 0;
             if (is_bb_write)
                 gettimeofday(&bb_write_timer_start, 0);
 
