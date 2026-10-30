@@ -1333,8 +1333,7 @@ PDC_Server_checkpoint()
                 n_write_region = 0;
                 DL_FOREACH(elt->storage_region_list_head, region_elt)
                 {
-                    if (flush_bb_on_close &&
-                        strncmp(region_elt->storage_location, bb_loc, bb_loc_len) == 0) {
+                    if (flush_bb_on_close && strncmp(region_elt->storage_location, bb_loc, bb_loc_len) == 0) {
                         if (PDC_Server_move_region_bb_to_pfs(region_elt) != SUCCEED)
                             LOG_ERROR("Failed to move region of obj %" PRIu64 " from BB to PFS during "
                                       "checkpoint\n",
