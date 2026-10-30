@@ -5,6 +5,8 @@
 #FLUX: --job-name=pdc_vpicio_rabbit
 #FLUX: --output=pdc_vpicio_rabbit.{{id}}.out
 #FLUX: --error=pdc_vpicio_rabbit.{{id}}.out
+#FLUX: --coral2-chassis=1
+#FLUX: --coral2-rabbit-cores=1
 #FLUX: -S dw="#DW jobdw type=xfs capacity=10GiB name=pdcbb"
 
 # Job 2 of 2 -- see README.md in this directory for the comparison this
@@ -13,23 +15,26 @@
 # Same VPICIO workload as job 1, but this time the PDC server runs on a
 # Rabbit's own CPU instead of sharing a core with a client. One compute
 # node for all the client ranks (one per user core, same as job 1, and
-# NOT oversubscribed this time), plus one Rabbit attached to that node's
-# chassis, with the server placed on the Rabbit's processor specifically.
+# NOT oversubscribed this time), plus one Rabbit core reserved on that
+# node's chassis, with the server placed there specifically.
 #
-# IMPORTANT CAVEAT: scheduling a user process onto a Rabbit's own CPU
-# (as opposed to just using the Rabbit for storage, which is the well
-# documented, everyday use of #DW jobdw) relies on --coral2-rabbit-cores
-# / --coral2-chassis, which flux-coral2's own docs mark EXPERIMENTAL and
-# which doesn't appear anywhere in LLNL's Aug 2025 CORAL2 roadshow slide
-# deck -- i.e. it isn't part of the mainstream, confirmed-stable user
-# workflow the way #DW jobdw storage requests are. Before relying on
-# this for anything that matters, run `flux alloc --help=coral2-rabbit-
-# cores` on the actual target system and compare against what's below;
-# the flag names are confirmed to exist, but the exact placement/
-# targeting mechanism here (reserve cores on the rabbit, then target a
-# flux run at that rabbit's hostname) is this script's own best-effort
-# chaining of two independently-documented pieces, not a worked example
-# taken from LLNL's own docs.
+# CONFIRMED on a real run on Tuolumne (job f3h9rpjGmLEK, 2026-10-30), via
+# scripts/vpicio_bb_placement/explore_rabbit_cores.flux.sh's fingerprint
+# check: a process submitted with --coral2-chassis=1 --coral2-rabbit-cores=1
+# bundled with a #DW directive genuinely lands on a different host with a
+# different CPU model (the rabbit's AMD EPYC 7713, vs. the compute node's
+# AMD Instinct MI300A) -- this is real, not just resource accounting. Two
+# things that submission had to work around, both reflected below:
+#   - --coral2-rabbit-cores alone is REJECTED ([Errno 19] Unsatisfiable
+#     request); it's only accepted bundled with a #DW directive in the
+#     SAME request, hence --coral2-chassis/--coral2-rabbit-cores living
+#     in this job's own #FLUX: header right next to -S dw=, rather than
+#     as a separate reservation submitted from inside the script body.
+#   - Querying which rabbit a job landed on (flux getrabbit) has to go
+#     through `flux --parent`, since this batch job is itself a Flux
+#     sub-instance relative to the system instance -- true of every
+#     flux batch job, not something specific to nesting inside another
+#     one.
 #
 # Submit with: flux batch job2_compute_plus_rabbit.flux.sh
 
@@ -53,26 +58,16 @@ date
 
 JOBID=$(flux getattr jobid)
 
-# Reserve 1 compute core on the Rabbit attached to this job's chassis.
-# This is the experimental part flagged above -- if it errors out on
-# your system, that's the signal the flag names/semantics have moved on
-# from what's documented here.
-RABBIT_CORE_JOBID=$(flux submit --coral2-chassis=1 --coral2-rabbit-cores=1 -N1 -n1 sleep inf)
-sleep 2
-
-# flux getrabbit is the confirmed, documented way to list which rabbit(s)
-# are attached to a job (`flux getrabbit -j $JOBID`); we use it here to
-# learn the rabbit's hostname so the server launch below can be targeted
-# at it specifically via --requires=host:<name>, the same host-targeting
-# mechanism LLNL's own docs show for steering jobs onto/away from named
-# compute nodes.
-RABBIT_HOST=$(flux getrabbit -j "$JOBID" | tr -d '[]' | cut -d',' -f1)
-if [ -z "$RABBIT_HOST" ]; then
-    echo "ERROR: could not determine a rabbit hostname from 'flux getrabbit -j $JOBID' -- see the" >&2
-    echo "caveat at the top of this script; the rabbit-cores reservation above may not have landed." >&2
-    flux cancel "$RABBIT_CORE_JOBID" 2>/dev/null || true
+# The --coral2-chassis/--coral2-rabbit-cores/#DW in the header above already
+# got us both a compute node AND a rabbit core in this one job -- find out
+# which rabbit host that reserved core is actually on.
+GETRABBIT_OUT=$(flux --parent getrabbit -j "$JOBID" 2>&1)
+if echo "$GETRABBIT_OUT" | grep -qi -e "no rabbits" -e "error" -e "usage"; then
+    echo "ERROR: 'flux --parent getrabbit -j $JOBID' didn't return a rabbit host:" >&2
+    echo "$GETRABBIT_OUT" >&2
     exit 1
 fi
+RABBIT_HOST=$(echo "$GETRABBIT_OUT" | tr -d '[] ' | cut -d',' -f1)
 echo "--- targeting PDC server at rabbit host: $RABBIT_HOST ---"
 
 echo "--- starting PDC server on the rabbit ---"
@@ -92,6 +87,5 @@ echo "--- closing PDC server ---"
 flux run --requires=host:"$RABBIT_HOST" -n1 "$CLOSE"
 
 wait "$SERVER_PID" 2>/dev/null || true
-flux cancel "$RABBIT_CORE_JOBID" 2>/dev/null || true
 date
 echo "=== Job 2 done ==="
