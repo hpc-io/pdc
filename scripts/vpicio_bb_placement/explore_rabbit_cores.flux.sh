@@ -94,4 +94,24 @@ echo "(ask whether --coral2-rabbit-cores is enabled on Tuolumne)."
 section "Hardware fingerprint: this job's compute node"
 flux run -N1 -n1 bash -c 'echo "host: $(hostname)"; grep -m1 "model name" /proc/cpuinfo; nproc'
 
+section "Hardware fingerprint: an ACCEPTED chassis+rabbit-cores+DW job (this is the decisive check)"
+# The feasibility loop above only submitted-then-cancelled, so it never actually proved
+# WHERE a process lands -- just that the scheduler accepts the request. Run (not submit)
+# the same accepted combo and let hostname/cpuinfo actually execute this time: a result
+# matching the compute-node fingerprint above means the request is just accounted
+# against the rabbit's resource pool while still running compute-node hardware; a
+# DIFFERENT host/CPU model (the rabbit's storage-processor CPU, a separate AMD EPYC
+# part, is not the compute node's AMD Instinct MI300A) confirms it genuinely executes
+# on the rabbit.
+FP_OUT=$(flux --parent run -t 1m -q pdebug -N1 --coral2-chassis=1 --coral2-rabbit-cores=1 \
+    --setattr=dw="#DW jobdw type=xfs capacity=10GiB name=pdcfp" \
+    bash -c 'echo "host: $(hostname)"; grep -m1 "model name" /proc/cpuinfo; nproc' 2>&1)
+echo "$FP_OUT"
+echo
+echo "Compare the host/CPU model line above against the compute-node fingerprint section"
+echo "a few lines up. Match = rabbit-cores doesn't actually place work on the rabbit."
+echo "Differ = job 2's design is sound; the remaining work is just getting the hostname"
+echo "flux --parent run itself landed on (shown above) into job 2's own --requires=host:"
+echo "targeting, which will need the same --parent framing this whole script had to adopt."
+
 section "Done"

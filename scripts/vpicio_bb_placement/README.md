@@ -21,33 +21,42 @@ flux batch job1_compute_oversubscribed.flux.sh
 flux batch job2_compute_plus_rabbit.flux.sh
 ```
 
-## What's confirmed vs. best-effort here
+## What's confirmed vs. still open (updated from a real run on Tuolumne)
 
-Everything in job 1, and most of job 2, is built on mechanisms directly
-confirmed from LLNL's own Aug 2025 CORAL2 roadshow slides and the
-flux-coral2 docs: node layout (96 cores/node, 84 for user processes),
-Flux's Slurm-equivalent commands, `#DW jobdw` for Rabbit storage, and
-`--requires=host:<name>` for targeting a specific node.
+Confirmed from an actual `flux batch` run of `explore_rabbit_cores.flux.sh`
+on Tuolumne (job `f3h9kPZRAK7u`, 2026-10-30):
 
-The one piece that isn't: actually scheduling a *compute process* onto a
-Rabbit's own CPU (job 2's whole point). That depends on
-`--coral2-rabbit-cores`/`--coral2-chassis`, which the flux-coral2 docs
-themselves call experimental, and which is absent from LLNL's own
-mainstream user-facing slide deck -- i.e. it exists, but it isn't part
-of the documented, everyday workflow the way storage requests are.
-Job 2 chains that flag together with `flux getrabbit` + host-targeting
-as a best-effort way to get a rank physically onto the Rabbit; run
-`flux alloc --help=coral2-rabbit-cores` on the actual target system and
-sanity-check job 2's rabbit-targeting block against it before trusting
-the comparison it's set up to produce.
+- `#DW jobdw` Rabbit storage works exactly as documented: mounted at
+  `/mnt/nnf/...`, 1325 MiB/s for a 1GiB write+fsync, served by a rabbit
+  host (`tuolumne201`) genuinely separate from the compute node
+  (`tuolumne1009`).
+- A `flux batch` job runs in its own private Flux sub-instance that
+  does **not** see chassis/rabbit resources directly -- anything
+  chassis/rabbit-related has to go through `flux --parent ...` to reach
+  the system instance. (This bit us on the first run: the original
+  in-job `--coral2-rabbit-cores` submission failed immediately because
+  of this, not because the flag doesn't work.)
+- `--coral2-rabbit-cores` **alone is rejected** (`[Errno 19]
+  Unsatisfiable request`), in both `pdebug` and `pbatch`. It's only
+  accepted when bundled with a `#DW jobdw` directive in the *same*
+  submission -- reserving compute on a rabbit you're not also using for
+  storage isn't supported. **`job2_compute_plus_rabbit.flux.sh` as
+  currently written doesn't do this** (it requests rabbit-cores on its
+  own, separately from the `#FLUX: -S dw=...` in its header) and needs
+  fixing before it will work.
+- Flux directive syntax: `-t 30m` (not `0:30:00`), `--job-name=` /
+  `--output=` / `--error=` with a `{{id}}` placeholder (not `-J` / `-o
+  %J`).
 
-`explore_rabbit_cores.flux.sh` is the script to run first, before either
-job: it allocates rabbit cores the same way job 2 does, then dumps the
-flag's own help text, the actual resource set Flux assigned (`flux job
-info ... R`), and a hostname + CPU-model fingerprint of a process
-targeted at the rabbit vs. one on the compute node -- a differing CPU
-model between those two confirms the server would really land on
-separate hardware; a match means job 2's `--requires=host:` targeting
-isn't doing what it's assumed to do and needs rework. Submit it with
-`flux batch explore_rabbit_cores.flux.sh` and read its single output
-file for everything needed to correct job 2 if it's wrong.
+Still open, because the first run's feasibility checks only
+submitted-then-cancelled an accepted `chassis + rabbit-cores + DW`
+combo rather than letting it run: whether a process submitted that way
+actually *executes* on the rabbit's own CPU, or is just accounted
+against the rabbit's resource pool while still running on compute-node
+hardware. `explore_rabbit_cores.flux.sh` now includes a fingerprint
+check that runs (not cancels) that exact combo and compares its
+host/CPU model against the compute node's -- rerun it to close this
+gap before trusting job 2's design. Once that comes back, job 2 still
+needs the rabbit-cores reservation reworked to go through `flux
+--parent` with the `#DW` bundled in, the same way the explore script
+had to be reworked.
