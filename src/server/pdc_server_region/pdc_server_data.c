@@ -107,10 +107,37 @@ fill_storage_path(char *storage_location, pdcid_t obj_id)
 #endif
     // Generate a location for data storage for data server to write
     char *data_path                = NULL;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    char *user_specified_data_path = NULL;
+    char *bb_loc                   = NULL;
+    bool  use_bb                   = false;
 
-    data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
-    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
+    // This path (server_open_storage -> fill_storage_path) is the single
+    // place an object's file location is decided for the transfer-request
+    // API, and it's recomputed the same way on every call -- register for a
+    // write, then again on a later read of the same object -- with no
+    // separate metadata layer recording which tier an object landed on (the
+    // way the legacy PDC_Client_write/PDC_Client_read path's
+    // storage_region_list_head does). So the BB-vs-PFS choice here has to
+    // be a deterministic function of obj_id alone, not anything that could
+    // differ between a write call and a later read call for the same
+    // object (a counter, timing, which call happened to run first, etc.),
+    // or a read would compute a different path than the write used and find
+    // nothing there.
+    if (write_to_bb_percentage_g > 0) {
+        bb_loc = getenv("PDC_BB_LOC");
+        if (bb_loc != NULL && bb_loc[0] != 0 && strpbrk(bb_loc, ";&|`$<>") == NULL)
+            use_bb = (obj_id % 100) < (uint64_t)write_to_bb_percentage_g;
+    }
+
+    if (use_bb) {
+        data_path = bb_loc;
+    }
+    else {
+        user_specified_data_path = getenv("PDC_DATA_LOC");
+        data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
+    }
+    // Data path prefix will be $SCRATCH/pdc_data/$obj_id/ (or $PDC_BB_LOC/pdc_data/$obj_id/ for the
+    // ~write_to_bb_percentage_g% of objects deterministically chosen for the BB tier above)
     snprintf(storage_location, ADDR_MAX, "%s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path, obj_id,
              pdc_server_rank_g, pdc_server_rank_g);
     PDC_mkdir(storage_location);
@@ -1806,8 +1833,11 @@ PDC_Server_cache_region_to_BB(region_list_t *region)
 {
     FUNC_ENTER(NULL);
 
-    perr_t   ret_value = SUCCEED;
-    uint64_t write_bytes, offset;
+    perr_t         ret_value = SUCCEED;
+    uint64_t       write_bytes, offset;
+    struct timeval cache_to_bb_timer_start, cache_to_bb_timer_end;
+
+    gettimeofday(&cache_to_bb_timer_start, 0);
 
     // Write to BB
 
@@ -1888,6 +1918,283 @@ PDC_Server_cache_region_to_BB(region_list_t *region)
     region->is_io_done    = 0;
 
 done:
+    gettimeofday(&cache_to_bb_timer_end, 0);
+    if (pdc_server_rank_g == 0)
+        LOG_INFO("Cache -> BB move took %.4f s (%" PRIu64 " bytes)\n",
+                 PDC_get_elapsed_time_double(&cache_to_bb_timer_start, &cache_to_bb_timer_end),
+                 region->data_size);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Move a region's data from the write-time burst-buffer tier to its
+ * permanent PFS location. This is the opposite direction of
+ * PDC_Server_cache_region_to_BB() above, which is for the separate
+ * read-cache spillover tier (PDCcacheBB.<rank>), not the write-time
+ * BB-vs-PFS split done in PDC_Server_data_io_via_shm() /
+ * write_to_bb_percentage_g. Called from PDC_Server_checkpoint() when
+ * PDC_BB_FLUSH_ON_CLOSE is set, once per region still on the BB tier.
+ *
+ * Reads region->data_size bytes from region->storage_location (expected to
+ * currently be under the burst-buffer root) at region->offset, appends them
+ * to the object's permanent PFS storage file using the same file-naming
+ * scheme the normal (non-BB) write path uses
+ * (<data_root>/pdc_data/cont_<cont_id>/server<rank>/s<rank>.bin), then
+ * repoints region->storage_location/offset at the new location and
+ * propagates that change to whichever server holds this object's
+ * authoritative metadata.
+ *
+ * The region's old bytes are left in place in the BB file. Like the rest of
+ * this write path (see the "TODO: need to recycle file space" note in
+ * PDC_Server_posix_one_file_io), nothing here reclaims space from these
+ * append-only, multi-region, per-server blob files, and a single-region
+ * move is not the place to start, since the BB file this region came from
+ * is shared by other regions this call has no business touching.
+ *
+ * \param  region[IN/OUT]   Region to migrate; must have a valid
+ *                          storage_location, offset, data_size, and meta
+ *                          (for cont_id) already set from a prior write.
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t
+PDC_Server_move_region_bb_to_pfs(region_list_t *region)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t         ret_value = SUCCEED;
+    int            src_fd = -1, dst_fd = -1;
+    char *         buf = NULL;
+    char *         data_path = NULL, *user_specified_data_path = NULL;
+    char           dst_path[ADDR_MAX];
+    ssize_t        read_bytes, write_bytes;
+    off_t          seek_ret, end_off;
+    uint64_t       dst_offset;
+    struct timeval bb_to_pfs_timer_start, bb_to_pfs_timer_end;
+
+    gettimeofday(&bb_to_pfs_timer_start, 0);
+
+    if (region == NULL)
+        PGOTO_ERROR(FAIL, "region was NULL");
+    if (region->storage_location[0] == 0)
+        PGOTO_ERROR(FAIL, "region has no storage_location");
+    if (region->data_size == 0)
+        PGOTO_ERROR(FAIL, "region data_size is 0");
+    if (region->meta == NULL)
+        PGOTO_ERROR(FAIL, "region has no associated metadata");
+
+    // Read the region's current bytes out of the BB file.
+    src_fd = open(region->storage_location, O_RDONLY);
+    if (src_fd < 0)
+        PGOTO_ERROR(FAIL, "open for read failed [%s]", region->storage_location);
+
+    seek_ret = lseek(src_fd, (off_t)region->offset, SEEK_SET);
+    if (seek_ret == (off_t)-1) {
+        close(src_fd);
+        PGOTO_ERROR(FAIL, "lseek failed [%s] offset %" PRIu64, region->storage_location, region->offset);
+    }
+
+    buf = (char *)PDC_malloc(region->data_size);
+    if (buf == NULL) {
+        close(src_fd);
+        PGOTO_ERROR(FAIL, "Error allocating read buffer of size %" PRIu64, region->data_size);
+    }
+
+    read_bytes = read(src_fd, buf, region->data_size);
+    close(src_fd);
+    if (read_bytes < 0 || (uint64_t)read_bytes != region->data_size) {
+        buf = (char *)PDC_free(buf);
+        PGOTO_ERROR(FAIL, "read from BB [%s] FAILED, expected %" PRIu64 " bytes, got %zd",
+                    region->storage_location, region->data_size, read_bytes);
+    }
+
+    // Build the region's permanent PFS location -- same file/naming scheme
+    // the normal (non-BB) write path builds in PDC_Server_data_io_via_shm().
+    user_specified_data_path = getenv("PDC_DATA_LOC");
+    data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
+    snprintf(dst_path, ADDR_MAX, "%.200s/pdc_data/cont_%" PRIu64 "/server%d/s%04d.bin", data_path,
+             region->meta->cont_id, pdc_server_rank_g, pdc_server_rank_g);
+    if (strpbrk(dst_path, ";&|`$<>") != NULL) {
+        buf = (char *)PDC_free(buf);
+        PGOTO_ERROR(FAIL, "Invalid characters in PFS destination path");
+    }
+    PDC_mkdir(dst_path);
+
+    // Append to the PFS file via a plain fd + lseek(SEEK_END), not a
+    // buffered FILE* via fdopen(). ftell() right after a fresh fdopen() on
+    // an O_APPEND fd does not reflect the file's true size (the bug fixed
+    // elsewhere on this branch) -- lseek() on the raw fd reads the real
+    // end-of-file directly instead of trusting a stream's own position.
+    dst_fd = open(dst_path, O_WRONLY | O_CREAT | O_APPEND, 0600);
+    if (dst_fd < 0) {
+        buf = (char *)PDC_free(buf);
+        PGOTO_ERROR(FAIL, "open for write failed [%s]", dst_path);
+    }
+
+    end_off = lseek(dst_fd, 0, SEEK_END);
+    if (end_off == (off_t)-1) {
+        close(dst_fd);
+        buf = (char *)PDC_free(buf);
+        PGOTO_ERROR(FAIL, "lseek to end failed [%s]", dst_path);
+    }
+    dst_offset = (uint64_t)end_off;
+
+    write_bytes = write(dst_fd, buf, region->data_size);
+    close(dst_fd);
+    buf = (char *)PDC_free(buf);
+    if (write_bytes < 0 || (uint64_t)write_bytes != region->data_size)
+        PGOTO_ERROR(FAIL, "write to PFS [%s] FAILED, expected %" PRIu64 " bytes, got %zd", dst_path,
+                    region->data_size, write_bytes);
+
+    // Repoint this region at its new, permanent location and propagate the
+    // change to whichever server holds this object's authoritative metadata.
+    strncpy(region->storage_location, dst_path, sizeof(region->storage_location) - 1);
+    region->storage_location[sizeof(region->storage_location) - 1] = '\0';
+    region->offset = dst_offset;
+
+    ret_value = PDC_Server_update_region_storagelocation_offset(region, PDC_UPDATE_STORAGE);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(ret_value, "Failed to update region storage info after BB->PFS move");
+
+done:
+    gettimeofday(&bb_to_pfs_timer_end, 0);
+    if (pdc_server_rank_g == 0 && region != NULL)
+        LOG_INFO("BB -> PFS move took %.4f s (%" PRIu64 " bytes)\n",
+                 PDC_get_elapsed_time_double(&bb_to_pfs_timer_start, &bb_to_pfs_timer_end), region->data_size);
+
+    FUNC_LEAVE(ret_value);
+}
+
+/*
+ * Move an entire per-object storage file from the burst-buffer tier to its
+ * PFS location, for the transfer-request API's storage model (one file per
+ * object, at a path recomputed from obj_id on every access by
+ * fill_storage_path() -- see its BB-vs-PFS split -- not tracked per region
+ * in metadata the way the legacy PDC_Client_write/PDC_Client_read path's
+ * storage_region_list_head is). Called from PDC_Server_checkpoint() when
+ * PDC_BB_FLUSH_ON_CLOSE is set, once per data_server_region_t still on BB.
+ *
+ * fill_storage_path()'s BB-vs-PFS choice is a pure function of obj_id and
+ * PDC_BB_WRITE_PERCENT/PDC_BB_LOC, recomputed fresh on every server
+ * startup -- not looked up from any stored state. So this gets the bytes
+ * safely onto PFS before the BB allocation is torn down, but it does not
+ * by itself make a *future* pdc_server process (started with the same
+ * PDC_BB_WRITE_PERCENT) look at the new location instead of recomputing
+ * the same BB path for this object. That's fine for the motivating use
+ * case -- getting data off BB before the job's allocation disappears --
+ * but a later server run that still needs to find this object itself
+ * should be started with PDC_BB_WRITE_PERCENT lowered (e.g. to 0).
+ *
+ * \param region [IN/OUT]   Object region whose file to migrate. region->fd
+ *                          is not used (and need not be open) -- this
+ *                          opens region->storage_location itself.
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t
+PDC_Server_move_obj_file_bb_to_pfs(data_server_region_t *region)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t         ret_value = SUCCEED;
+    int            src_fd = -1, dst_fd = -1;
+    char           dst_path[ADDR_MAX];
+    char *         data_path = NULL, *user_specified_data_path = NULL, *bb_loc = NULL;
+    size_t         bb_loc_len;
+    char *         buf = NULL;
+    ssize_t        read_bytes, write_bytes;
+    uint64_t       total_copied = 0;
+    struct stat    st;
+    struct timeval timer_start, timer_end;
+    const size_t   chunk_size = 16 * 1024 * 1024;
+
+    gettimeofday(&timer_start, 0);
+
+    if (region == NULL || region->storage_location == NULL)
+        PGOTO_ERROR(FAIL, "region or region->storage_location was NULL");
+
+    bb_loc = getenv("PDC_BB_LOC");
+    if (bb_loc == NULL || bb_loc[0] == 0)
+        PGOTO_DONE(SUCCEED); // nothing configured to move off of
+    bb_loc_len = strlen(bb_loc);
+    if (strncmp(region->storage_location, bb_loc, bb_loc_len) != 0)
+        PGOTO_DONE(SUCCEED); // this object isn't on the BB tier, nothing to do
+
+    // region->fd (kept open across the object's lifetime for reuse while the
+    // object is in active use) is very likely already closed by the time a
+    // checkpoint runs -- clients normally close their objects/transfers well
+    // before server shutdown, which closes this fd server-side too. Open a
+    // fresh, independent fd on the same path for this one-shot copy instead
+    // of depending on that fd still being open.
+    src_fd = open(region->storage_location, O_RDONLY);
+    if (src_fd < 0)
+        PGOTO_ERROR(FAIL, "open for read failed [%s]", region->storage_location);
+
+    if (fstat(src_fd, &st) != 0) {
+        close(src_fd);
+        PGOTO_ERROR(FAIL, "fstat failed on [%s]", region->storage_location);
+    }
+
+    // Same suffix (pdc_data/<obj_id>/server<rank>/...) this object's BB path
+    // has, just rooted under PDC_DATA_LOC/SCRATCH instead -- same naming
+    // scheme fill_storage_path() itself builds for a non-BB object.
+    user_specified_data_path = getenv("PDC_DATA_LOC");
+    data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
+    snprintf(dst_path, ADDR_MAX, "%.200s%s", data_path, region->storage_location + bb_loc_len);
+    if (strpbrk(dst_path, ";&|`$<>") != NULL) {
+        close(src_fd);
+        PGOTO_ERROR(FAIL, "Invalid characters in PFS destination path");
+    }
+    PDC_mkdir(dst_path);
+
+    dst_fd = open(dst_path, O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    if (dst_fd < 0) {
+        close(src_fd);
+        PGOTO_ERROR(FAIL, "open for write failed [%s]", dst_path);
+    }
+
+    buf = (char *)PDC_malloc(chunk_size);
+    if (buf == NULL) {
+        close(src_fd);
+        close(dst_fd);
+        PGOTO_ERROR(FAIL, "Error allocating copy buffer");
+    }
+
+    while (total_copied < (uint64_t)st.st_size) {
+        size_t to_read = (uint64_t)st.st_size - total_copied < chunk_size
+                             ? (size_t)((uint64_t)st.st_size - total_copied)
+                             : chunk_size;
+        read_bytes = read(src_fd, buf, to_read);
+        if (read_bytes <= 0)
+            break;
+        write_bytes = write(dst_fd, buf, (size_t)read_bytes);
+        if (write_bytes != read_bytes) {
+            close(src_fd);
+            close(dst_fd);
+            buf = (char *)PDC_free(buf);
+            PGOTO_ERROR(FAIL, "write to PFS [%s] FAILED mid-copy", dst_path);
+        }
+        total_copied += (uint64_t)write_bytes;
+    }
+    close(src_fd);
+    close(dst_fd);
+    buf = (char *)PDC_free(buf);
+
+    if (total_copied != (uint64_t)st.st_size)
+        PGOTO_ERROR(FAIL, "BB->PFS copy incomplete for obj %" PRIu64 ": copied %" PRIu64 "/%" PRIu64
+                          " bytes",
+                    region->obj_id, total_copied, (uint64_t)st.st_size);
+
+    strncpy(region->storage_location, dst_path, ADDR_MAX - 1);
+    region->storage_location[ADDR_MAX - 1] = '\0';
+
+done:
+    gettimeofday(&timer_end, 0);
+    if (pdc_server_rank_g == 0 && total_copied > 0)
+        LOG_INFO("BB -> PFS move (obj file) took %.4f s (%" PRIu64 " bytes)\n",
+                 PDC_get_elapsed_time_double(&timer_start, &timer_end), total_copied);
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -3638,6 +3945,9 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
     region_list_t *region_elt = NULL, *previous_region = NULL;
     FILE *         fp_read = NULL, *fp_write = NULL;
     char *         prev_path = NULL;
+    char *         bb_loc_g_timing     = getenv("PDC_BB_LOC");
+    size_t         bb_loc_g_timing_len = bb_loc_g_timing != NULL ? strlen(bb_loc_g_timing) : 0;
+    struct timeval bb_write_timer_start, bb_write_timer_end;
 #ifdef ENABLE_LUSTRE
     int stripe_count, stripe_size;
 #endif
@@ -3902,6 +4212,16 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
             gettimeofday(&pdc_timer_start5, 0);
 #endif
 
+            // Is this region's destination the BB tier? (write_to_bb_percentage_g
+            // chose this per region, above; this is independent of whether the
+            // separate read-cache-overflow path (PDC_Server_cache_region_to_BB)
+            // is enabled, so time it here regardless of that.
+            bool is_bb_write = bb_loc_g_timing != NULL && bb_loc_g_timing_len > 0 &&
+                               strncmp(region_elt->storage_location, bb_loc_g_timing, bb_loc_g_timing_len) ==
+                                   0;
+            if (is_bb_write)
+                gettimeofday(&bb_write_timer_start, 0);
+
             // Actual write (append)
             write_bytes = fwrite(region_elt->buf, 1, region_elt->data_size, fp_write);
             if (write_bytes != region_elt->data_size) {
@@ -3912,6 +4232,14 @@ PDC_Server_posix_one_file_io(region_list_t *region_list_head)
             }
             n_fwrite_g++;
             fwrite_total_MB += write_bytes / 1048576.0;
+
+            if (is_bb_write) {
+                gettimeofday(&bb_write_timer_end, 0);
+                if (pdc_server_rank_g == 0)
+                    LOG_INFO("Write to BB took %.4f s (%zu bytes)\n",
+                             PDC_get_elapsed_time_double(&bb_write_timer_start, &bb_write_timer_end),
+                             write_bytes);
+            }
 
 #ifdef ENABLE_TIMING
             gettimeofday(&pdc_timer_end5, 0);
@@ -4095,6 +4423,7 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     uint64_t              i, j, pos;
     uint64_t *            overlap_offset, *overlap_size;
     char *                tmp_buf;
+    struct timeval        bb_write_obj_timer_start, bb_write_obj_timer_end;
 #if 0
     size_t                total_write_size = 0, local_write_size;
     int is_overlap;
@@ -4103,6 +4432,8 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
 #ifdef PDC_TIMING
     double start = MPI_Wtime(), start_posix;
 #endif
+
+    gettimeofday(&bb_write_obj_timer_start, 0);
 
     uint64_t write_size = 0;
     if (region_info->ndim >= 1)
@@ -4418,6 +4749,18 @@ PDC_Server_data_write_out(uint64_t obj_id, struct pdc_region_info *region_info, 
     pdc_server_timings->PDCdata_server_write_out += MPI_Wtime() - start;
 #endif
 done:
+    if (pdc_server_rank_g == 0 && region != NULL && region->storage_location != NULL) {
+        char *bb_loc_for_write_out_timing = getenv("PDC_BB_LOC");
+        if (bb_loc_for_write_out_timing != NULL && bb_loc_for_write_out_timing[0] != 0 &&
+            strncmp(region->storage_location, bb_loc_for_write_out_timing,
+                    strlen(bb_loc_for_write_out_timing)) == 0) {
+            gettimeofday(&bb_write_obj_timer_end, 0);
+            LOG_INFO("Write to BB took %.4f s (%" PRIu64 " bytes)\n",
+                     PDC_get_elapsed_time_double(&bb_write_obj_timer_start, &bb_write_obj_timer_end),
+                     write_size);
+        }
+    }
+
     FUNC_LEAVE(ret_value);
 } // End PDC_Server_data_write_out
 
