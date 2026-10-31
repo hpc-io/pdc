@@ -1,0 +1,156 @@
+=== module list ===
+
+Currently Loaded Modules:
+  1) craype-x86-trento     3) craype-network-ofi       5) craype/2.7.35       7) flux_wrappers/0.1   9) StdEnv     (S)  11) cray-libsci/25.09.0
+  2) libfabric/match_SHS   4) perftools-base/25.09.0   6) PrgEnv-cray/8.7.0   8) xpmem/2.6.5        10) cce/20.0.0      12) cray-mpich/9.0.1
+
+  Where:
+   S:  Module is Sticky, requires --force to unload or purge
+
+ 
+
+
+=== module avail libfabric ===
+
+----------------------------------------------------------------------- /usr/tce/modulefiles/Core -----------------------------------------------------------------------
+   libfabric/match_SHS (L,D)    libfabric/2.3.1
+
+------------------------------------------------------------------------- /opt/cray/modulefiles -------------------------------------------------------------------------
+   libfabric/1.7.2-llnl    libfabric/2.0    libfabric/2.1
+
+  Where:
+   D:  Default Module
+   L:  Module is loaded
+
+If the avail list is too long consider trying:
+
+"module --default avail" or "ml -d av" to just list the default modules.
+"module overview" or "ml ov" to display the number of modules for each name.
+
+Use "module spider" to find all possible modules and extensions.
+Use "module keyword key1 key2 ..." to search for all possible modules matching any of the "keys".
+
+
+
+=== module avail mercury ===
+No module(s) or extension(s) found!
+If the avail list is too long consider trying:
+
+"module --default avail" or "ml -d av" to just list the default modules.
+"module overview" or "ml ov" to display the number of modules for each name.
+
+Use "module spider" to find all possible modules and extensions.
+Use "module keyword key1 key2 ..." to search for all possible modules matching any of the "keys".
+
+
+
+=== module spider libfabric ===
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  libfabric:
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+     Versions:
+        libfabric/match_SHS
+        libfabric/1.7.2-llnl
+        libfabric/2.0
+        libfabric/2.1
+        libfabric/2.3.1
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  For detailed information about a specific "libfabric" package (including how to load the modules) use the module's full name.
+  Note that names that have a trailing (E) are extensions provided by other modules.
+  For example:
+
+     $ module spider libfabric/2.3.1
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+ 
+
+
+=== ldd pdc_server ===
+	linux-vdso.so.1 (0x0000155555551000)
+	libpdc_server_lib.so => /p/lustre5/lewis153/src/workspace/source/pdc/build/bin/libpdc_server_lib.so (0x00001555554d1000)
+	libpdc_commons.so => /p/lustre5/lewis153/src/workspace/source/pdc/build/bin/libpdc_commons.so (0x00001555554a3000)
+	libmercury.so.2 => /p/lustre5/lewis153/src/workspace/install/mercury/lib/libmercury.so.2 (0x0000155555482000)
+	libna.so.3 => /p/lustre5/lewis153/src/workspace/install/mercury/lib/libna.so.3 (0x0000155555464000)
+	libmercury_util.so.3 => /p/lustre5/lewis153/src/workspace/install/mercury/lib/libmercury_util.so.3 (0x0000155555454000)
+	libm.so.6 => /lib64/libm.so.6 (0x0000155554fa2000)
+	libdl.so.2 => /lib64/libdl.so.2 (0x0000155554d9e000)
+	libmpi_gnu_112.so.12 => /opt/cray/pe/lib64/libmpi_gnu_112.so.12 (0x0000155553ca0000)
+	libhugetlbfs.so => /lib64/libhugetlbfs.so (0x0000155553a84000)
+	libc.so.6 => /lib64/libc.so.6 (0x00001555536ae000)
+	librt.so.1 => /lib64/librt.so.1 (0x00001555534a6000)
+	libfabric.so.1 => /opt/cray/libfabric/2.0/lib64/libfabric.so.1 (0x00001555528c0000)
+	libxpmem.so.0 => /lib64/libxpmem.so.0 (0x00001555526bd000)
+	libstdc++.so.6 => /lib64/libstdc++.so.6 (0x0000155552328000)
+	libfi.so.1 => not found
+	libquadmath.so.0 => /lib64/libquadmath.so.0 (0x00001555520e7000)
+	libmodules.so.1 => not found
+	libcraymath.so.1 => not found
+	libf.so.1 => not found
+	libu.so.1 => not found
+	libcsup.so.1 => not found
+	libpthread.so.0 => /lib64/libpthread.so.0 (0x0000155551ec7000)
+	/lib64/ld-linux-x86-64.so.2 (0x0000155555324000)
+	libfi.so.1 => not found
+	libmodules.so.1 => not found
+	libcraymath.so.1 => not found
+	libf.so.1 => not found
+	libu.so.1 => not found
+	libcsup.so.1 => not found
+	libfi.so.1 => not found
+	libmodules.so.1 => not found
+	libcraymath.so.1 => not found
+	libf.so.1 => not found
+	libu.so.1 => not found
+	libcsup.so.1 => not found
+	libpmi.so.0 => /opt/cray/pe/lib64/libpmi.so.0 (0x0000155551ca5000)
+	libpmi2.so.0 => /opt/cray/pe/lib64/libpmi2.so.0 (0x0000155551a83000)
+	libcxi.so.1 => /lib64/libcxi.so.1 (0x0000155551862000)
+	librdmacm.so.1 => /lib64/librdmacm.so.1 (0x0000155551647000)
+	libefa.so.1 => /lib64/libefa.so.1 (0x000015555143c000)
+	libnl-3.so.200 => /lib64/libnl-3.so.200 (0x0000155551219000)
+	libnl-route-3.so.200 => /lib64/libnl-route-3.so.200 (0x0000155550f87000)
+	libpsm2.so.2 => /lib64/libpsm2.so.2 (0x0000155550d1b000)
+	libibverbs.so.1 => /lib64/libibverbs.so.1 (0x0000155550afb000)
+	libcurl.so.4 => /lib64/libcurl.so.4 (0x000015555086b000)
+	libjson-c.so.4 => /lib64/libjson-c.so.4 (0x000015555065b000)
+	libuuid.so.1 => /lib64/libuuid.so.1 (0x0000155550453000)
+	libnuma.so.1 => /lib64/libnuma.so.1 (0x0000155550247000)
+	libatomic.so.1 => /lib64/libatomic.so.1 (0x000015555003f000)
+	libgcc_s.so.1 => /lib64/libgcc_s.so.1 (0x000015554fe27000)
+	libpals.so.0 => /opt/cray/pe/lib64/libpals.so.0 (0x000015554fc1f000)
+	libnghttp2.so.14 => /lib64/libnghttp2.so.14 (0x000015554f9f8000)
+	libidn2.so.0 => /lib64/libidn2.so.0 (0x000015554f7da000)
+	libssh.so.4 => /lib64/libssh.so.4 (0x000015554f569000)
+	libpsl.so.5 => /lib64/libpsl.so.5 (0x000015554f358000)
+	libssl.so.1.1 => /lib64/libssl.so.1.1 (0x000015554f0c3000)
+	libcrypto.so.1.1 => /lib64/libcrypto.so.1.1 (0x000015554ebd8000)
+	libgssapi_krb5.so.2 => /lib64/libgssapi_krb5.so.2 (0x000015554e983000)
+	libkrb5.so.3 => /lib64/libkrb5.so.3 (0x000015554e698000)
+	libk5crypto.so.3 => /lib64/libk5crypto.so.3 (0x000015554e481000)
+	libcom_err.so.2 => /lib64/libcom_err.so.2 (0x000015554e27d000)
+	libldap-2.4.so.2 => /lib64/libldap-2.4.so.2 (0x000015554e02e000)
+	liblber-2.4.so.2 => /lib64/liblber-2.4.so.2 (0x000015554de1e000)
+	libbrotlidec.so.1 => /lib64/libbrotlidec.so.1 (0x000015554dc11000)
+	libz.so.1 => /lib64/libz.so.1 (0x000015554d9f9000)
+	libjansson.so.4 => /lib64/libjansson.so.4 (0x000015554d7eb000)
+	libunistring.so.2 => /lib64/libunistring.so.2 (0x000015554d46a000)
+	libkrb5support.so.0 => /lib64/libkrb5support.so.0 (0x000015554d259000)
+	libkeyutils.so.1 => /lib64/libkeyutils.so.1 (0x000015554d055000)
+	libresolv.so.2 => /lib64/libresolv.so.2 (0x000015554ce3e000)
+	libsasl2.so.3 => /lib64/libsasl2.so.3 (0x000015554cc20000)
+	libbrotlicommon.so.1 => /lib64/libbrotlicommon.so.1 (0x000015554c9ff000)
+	libselinux.so.1 => /lib64/libselinux.so.1 (0x000015554c7d4000)
+	libcrypt.so.1 => /lib64/libcrypt.so.1 (0x000015554c5ab000)
+	libpcre2-8.so.0 => /lib64/libpcre2-8.so.0 (0x000015554c327000)
+
+=== LD_LIBRARY_PATH ===
+/opt/cray/pe/lib64:/opt/cray/lib64:/opt/cray/pe/papi/7.2.0.2/lib64
+
+=== CMakeCache.txt fabric/mercury paths ===
+MERCURY_DIR:PATH=/p/lustre5/lewis153/src/workspace/install/mercury/share/cmake/mercury
+MERCURY_INCLUDE_DIR:PATH=/p/lustre5/lewis153/src/workspace/install/mercury/include
+MERCURY_LIBRARY:FILEPATH=/p/lustre5/lewis153/src/workspace/install/mercury/lib/libmercury.so
+MERCURY_NA_LIBRARY:FILEPATH=/p/lustre5/lewis153/src/workspace/install/mercury/lib/libna.so
+MERCURY_UTIL_LIBRARY:FILEPATH=/p/lustre5/lewis153/src/workspace/install/mercury/lib/libmercury_util.so

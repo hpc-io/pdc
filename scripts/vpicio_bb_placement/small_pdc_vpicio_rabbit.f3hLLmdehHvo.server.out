@@ -1,0 +1,32 @@
+0.101s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+libhugetlbfs: ERROR: Line too long when parsing mounts
+[INFO] PDC_SERVER[0]: Using [/g/g17/lewis153/pdc_tmp_job2_rabbit_small/] as tmp dir, 256 OSTs, 256 OSTs per data file, 0% to BB
+[INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set, default to tuolumne201
+[INFO] PDC_SERVER[0]: Connection string: ofi+tcp://tuolumne201:7000
+[INFO] PDC_SERVER[0]: Without multi-thread
+[INFO] PDC_SERVER[0]: Read cache enabled
+[INFO] PDC_SERVER[0]: Max cache size: 34359738368
+[INFO] PDC_SERVER[0]: Successfully established connection to 0 other PDC servers
+[INFO] PDC_SERVER[0]: Server ready!
+
+
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000001: offset=0, size=64.0 MB
+[08:53:16.677770] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 512.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000002: offset=0, size=64.0 MB
+[08:53:16.809460] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 448.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000003: offset=0, size=64.0 MB
+[08:53:16.942344] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 384.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000004: offset=0, size=64.0 MB
+[08:53:17.074860] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 320.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000005: offset=0, size=64.0 MB
+[08:53:17.207828] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 256.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000006: offset=0, size=64.0 MB
+[08:53:17.340389] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 192.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000007: offset=0, size=64.0 MB
+[08:53:17.472666] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 128.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000008: offset=0, size=64.0 MB
+[08:53:17.613639] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 64.0 MB to storage
+lfs setstripe: setstripe error for '/g/g17/lewis153/pdc_tmp_job2_rabbit_small//0': Inappropriate ioctl for device
+[INFO] PDC_SERVER[0]: Checkpoint file [/g/g17/lewis153/pdc_tmp_job2_rabbit_small//0/metadata_checkpoint.0]
+[INFO] PDC_SERVER[0]: Checkpointed          8 objects, with          0 regions 

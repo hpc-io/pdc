@@ -2952,35 +2952,40 @@ PDC_Client_flush_obj_all()
     perr_t             ret_value = SUCCEED;
     hg_return_t        hg_ret    = HG_SUCCESS;
     uint32_t           server_id = 0;
-    uint32_t           i;
+    uint32_t           i, nsent = 0;
     flush_obj_all_in_t in;
-    hg_handle_t        flush_obj_all_handle;
-    int                rpc_return;
+    hg_handle_t *      handles;
+    int *              rpc_return;
 
+    // Send to every server first, then wait for all: servers flush in parallel
+    handles    = (hg_handle_t *)PDC_calloc(pdc_server_num_g, sizeof(hg_handle_t));
+    rpc_return = (int *)PDC_calloc(pdc_server_num_g, sizeof(int));
+    in.tag     = 44;
+    hg_atomic_set32(&atomic_work_todo_g, 0);
     for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
         server_id = pdc_server_num_g - 1 - i;
         if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, flush_obj_all_register_id_g,
-                  &flush_obj_all_handle);
-
-        // Fill input structure
-        in.tag = 44;
-        hg_ret = HG_Forward(flush_obj_all_handle, client_send_flush_obj_all_rpc_cb, &rpc_return, &in);
-        if (hg_ret != HG_SUCCESS)
+                  &handles[i]);
+        hg_atomic_incr32(&atomic_work_todo_g);
+        hg_ret = HG_Forward(handles[i], client_send_flush_obj_all_rpc_cb, &rpc_return[i], &in);
+        if (hg_ret != HG_SUCCESS) {
+            hg_atomic_decr32(&atomic_work_todo_g);
             PGOTO_ERROR(FAIL, "Could not start HG_Forward");
-
-        // Wait for response from server
-
-        hg_atomic_set32(&atomic_work_todo_g, 1);
-        PDC_Client_check_response(&send_context_g);
-
-        hg_ret = HG_Destroy(flush_obj_all_handle);
-        if (hg_ret != HG_SUCCESS)
-            PGOTO_ERROR(FAIL, "PDC_Client_flush_obj_all(): Could not destroy handle");
+        }
+        nsent++;
     }
 done:
+    // Wait for response from every server reached
+    if (nsent)
+        PDC_Client_check_response(&send_context_g);
+    for (i = 0; i < (uint32_t)pdc_server_num_g; i++)
+        if (handles[i] != HG_HANDLE_NULL)
+            HG_Destroy(handles[i]);
+    PDC_free(handles);
+    PDC_free(rpc_return);
     FUNC_LEAVE(ret_value);
 }
 
@@ -4671,6 +4676,7 @@ PDC_Client_read(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf)
     perr_t             ret_value = SUCCEED;
     struct pdc_request request;
 
+    memset(&request, 0, sizeof(request));
     request.n_update = 1;
     ret_value        = PDC_Client_iread(meta, region, &request, buf);
     if (ret_value != SUCCEED)
@@ -4692,7 +4698,7 @@ PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *regio
     FUNC_ENTER(NULL);
 
     perr_t              ret_value = SUCCEED;
-    struct pdc_request *request   = (struct pdc_request *)PDC_malloc(sizeof(struct pdc_request));
+    struct pdc_request *request   = (struct pdc_request *)PDC_calloc(1, sizeof(struct pdc_request));
 
     ret_value = PDC_Client_iwrite(meta, region, request, buf);
     if (ret_value != SUCCEED)
@@ -4716,7 +4722,7 @@ PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region
     FUNC_ENTER(NULL);
 
     perr_t              ret_value = SUCCEED;
-    struct pdc_request *request   = (struct pdc_request *)PDC_malloc(sizeof(struct pdc_request));
+    struct pdc_request *request   = (struct pdc_request *)PDC_calloc(1, sizeof(struct pdc_request));
 
     ret_value = PDC_Client_iread(meta, region, request, buf);
     if (ret_value != SUCCEED)

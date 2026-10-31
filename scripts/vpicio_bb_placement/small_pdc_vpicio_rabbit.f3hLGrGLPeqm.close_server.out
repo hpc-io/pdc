@@ -1,0 +1,5 @@
+flux-job: kill: job is not running
+119.566s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+119.705s: flux-shell[0]: FATAL: input.kvs: flux_job_event_watch_get: Function not implemented
+119.708s: job.exception f48ziqUB type=exec severity=0 flux_job_event_watch_get: Function not implemented
+flux-job: task(s) exited with exit code 1

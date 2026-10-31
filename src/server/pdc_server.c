@@ -1223,6 +1223,9 @@ PDC_Server_checkpoint()
     bool              use_tmpfs = false;
     FILE *            file;
     int               fd;
+    bool              flush_bb_on_close = false;
+    char *            bb_loc            = NULL;
+    size_t            bb_loc_len        = 0;
 
 #ifdef PDC_TIMING
     // Timing
@@ -1236,6 +1239,21 @@ PDC_Server_checkpoint()
     env_char = getenv("PDC_CHECKPOINT_TMPFS");
     if (env_char && atoi(env_char) != 0)
         use_tmpfs = true;
+
+    // If set, migrate every region still on the burst-buffer tier to its
+    // permanent PFS location before writing it into the checkpoint below,
+    // so the checkpoint records the PFS location rather than a BB path
+    // that won't exist once this server exits.
+    env_char = getenv("PDC_BB_FLUSH_ON_CLOSE");
+    if (env_char && atoi(env_char) != 0) {
+        bb_loc = getenv("PDC_BB_LOC");
+        if (bb_loc != NULL && bb_loc[0] != 0) {
+            flush_bb_on_close = true;
+            bb_loc_len        = strlen(bb_loc);
+        }
+        else
+            LOG_ERROR("PDC_BB_FLUSH_ON_CLOSE set but PDC_BB_LOC is not -- skipping BB flush\n");
+    }
 
     {
         char _dir[4096];
@@ -1322,6 +1340,12 @@ PDC_Server_checkpoint()
                 n_write_region = 0;
                 DL_FOREACH(elt->storage_region_list_head, region_elt)
                 {
+                    if (flush_bb_on_close && strncmp(region_elt->storage_location, bb_loc, bb_loc_len) == 0) {
+                        if (PDC_Server_move_region_bb_to_pfs(region_elt) != SUCCEED)
+                            LOG_ERROR("Failed to move region of obj %" PRIu64 " from BB to PFS during "
+                                      "checkpoint\n",
+                                      elt->obj_id);
+                    }
                     fwrite(region_elt, sizeof(region_list_t), 1, file);
                     n_write_region++;
                     int has_hist = 0;
@@ -1353,6 +1377,11 @@ PDC_Server_checkpoint()
     fwrite(&n_objs, sizeof(int), 1, file);
     DL_FOREACH(dataserver_region_g, region)
     {
+        if (flush_bb_on_close) {
+            if (PDC_Server_move_obj_file_bb_to_pfs(region) != SUCCEED)
+                LOG_ERROR("Failed to move obj %" PRIu64 " file from BB to PFS during checkpoint\n",
+                          region->obj_id);
+        }
         fwrite(&region->obj_id, sizeof(uint64_t), 1, file);
         DL_COUNT(region->region_storage_head, region_elt, n_region);
         fwrite(&n_region, sizeof(int), 1, file);

@@ -1,0 +1,8 @@
+=== Job 1: server + 84 clients packed onto 1 node (oversubscribed) ===
+Sat Oct 31 08:58:25 PDT 2026
+--- starting PDC server (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job1_oversub/server.out) ---
+--- starting 84 VPICIO client ranks (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job1_oversub/vpicio.out) ---
+--- closing PDC server (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job1_oversub/close_server.out) ---
+--- copying per-binary logs into job dir as pdc_vpicio_oversub.f3hLPJ6B4Gib.{server,vpicio,close_server}.out ---
+Sat Oct 31 08:59:47 PDT 2026
+=== Job 1 done ===

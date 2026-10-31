@@ -831,6 +831,33 @@ void PDC_print_hist(pdc_histogram_t *hist);
 perr_t PDC_Server_update_region_storagelocation_offset(region_list_t *region, int type);
 
 /**
+ * Move a region's data from the write-time burst-buffer tier to its
+ * permanent PFS location, repointing its storage_location/offset metadata
+ * in place. See the function definition in pdc_server_data.c for details.
+ *
+ * \param region [IN/OUT]       Region to migrate; must have a valid
+ *                              storage_location, offset, data_size, and
+ *                              meta (for cont_id) already set.
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_move_region_bb_to_pfs(region_list_t *region);
+
+/**
+ * Move an entire per-object storage file from the burst-buffer tier to its
+ * PFS location (the transfer-request API's one-file-per-object storage
+ * model). See the function definition in pdc_server_data.c for details,
+ * including an important caveat about this not changing where a *future*
+ * server process looks for this object's data.
+ *
+ * \param region [IN/OUT]       Object region to migrate. region->fd is not
+ *                              used (and need not be open).
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_move_obj_file_bb_to_pfs(data_server_region_t *region);
+
+/**
  * ********
  *
  * \param callback_info [IN]    Mercury callback info

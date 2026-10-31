@@ -799,8 +799,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
     region_cache_iter = obj_cache->region_cache;
     while (region_cache_iter != NULL) {
         region_cache_info = region_cache_iter->region_cache_info;
-        PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims, region_cache_info,
-                                       region_cache_info->buf, region_cache_info->unit, 1);
+
         if (obj_cache->ndim >= 1)
             write_size = region_cache_info->unit * region_cache_info->size[0];
         if (obj_cache->ndim >= 2)
@@ -808,10 +807,24 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
         if (obj_cache->ndim >= 3)
             write_size *= region_cache_info->size[2];
 
+        // Logged (and flushed to disk) BEFORE the actual write, not after: if
+        // this specific write hangs or is simply very slow, this line is the
+        // one that survives and tells us which object/region was in flight,
+        // rather than finding out only that an earlier batch finished.
+        LOG_INFO("About to flush region %d for obj_id %" PRIu64 ": offset=%" PRIu64 ", size=%.1f MB\n",
+                 nflush, obj_id, region_cache_info->offset ? region_cache_info->offset[0] : 0,
+                 write_size / 1048576.0);
+
+        PDC_Server_transfer_request_io(obj_id, obj_cache->ndim, obj_cache->dims, region_cache_info,
+                                       region_cache_info->buf, region_cache_info->unit, 1);
+
         if (write_size > 0) {
             PDC_get_time_str(cur_time);
-            LOG_INFO("Server flushed %.1f / %.1f MB to storage\n", write_size / 1048576.0,
-                     total_cache_size / 1048576.0);
+            // Per-region progress; can fire thousands of times for one large
+            // flush, so keep it at DEBUG rather than INFO. The per-flush
+            // summary below ("Flushed %d regions...") covers the INFO case.
+            LOG_DEBUG("Server flushed %.1f / %.1f MB to storage\n", write_size / 1048576.0,
+                      total_cache_size / 1048576.0);
         }
 
         total_cache_size -= write_size;
