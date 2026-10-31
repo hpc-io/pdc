@@ -810,8 +810,11 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
 
         if (write_size > 0) {
             PDC_get_time_str(cur_time);
-            LOG_INFO("Server flushed %.1f / %.1f MB to storage\n", write_size / 1048576.0,
-                     total_cache_size / 1048576.0);
+            // Per-region progress; can fire thousands of times for one large
+            // flush, so keep it at DEBUG rather than INFO. The per-flush
+            // summary below ("Flushed %d regions...") covers the INFO case.
+            LOG_DEBUG("Server flushed %.1f / %.1f MB to storage\n", write_size / 1048576.0,
+                      total_cache_size / 1048576.0);
         }
 
         total_cache_size -= write_size;
