@@ -71,7 +71,9 @@ echo "--- starting $N_USER_CORES VPICIO client ranks on the compute node (stdout
 flux run -N1 -n "$N_USER_CORES" --exclusive --requires=-host:"$RABBIT_HOST" "$CLIENT" > "$PDC_TMPDIR/vpicio.out" 2>&1
 
 echo "--- closing PDC server (stdout/stderr -> $PDC_TMPDIR/close_server.out) ---"
-flux run --requires=host:"$RABBIT_HOST" -n1 "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
+# See job2_compute_plus_rabbit.flux.sh for why this runs on the compute
+# node rather than targeting the rabbit host.
+flux run -N1 -n1 --requires=-host:"$RABBIT_HOST" "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
 
 wait "$SERVER_PID" 2>/dev/null || true
 date

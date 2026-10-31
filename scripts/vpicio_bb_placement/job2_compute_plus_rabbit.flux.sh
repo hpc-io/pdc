@@ -91,7 +91,14 @@ echo "--- starting $N_USER_CORES VPICIO client ranks on the compute node (stdout
 flux run -N1 -n "$N_USER_CORES" --exclusive --requires=-host:"$RABBIT_HOST" "$CLIENT" > "$PDC_TMPDIR/vpicio.out" 2>&1
 
 echo "--- closing PDC server (stdout/stderr -> $PDC_TMPDIR/close_server.out) ---"
-flux run --requires=host:"$RABBIT_HOST" -n1 "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
+# close_server is just an RPC client -- it only needs network reachability
+# to the server's address (same as the VPICIO clients above), not to run on
+# the rabbit itself. Running it on the rabbit would mean competing with the
+# server for the one reserved rabbit core (--coral2-rabbit-cores=1), which
+# the server holds for its entire lifetime -- that leaves nowhere for this
+# task to be scheduled, so the close RPC never gets sent and the server
+# waits forever. Run it on the compute node instead, like the clients.
+flux run -N1 -n1 --requires=-host:"$RABBIT_HOST" "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
 
 wait "$SERVER_PID" 2>/dev/null || true
 date
