@@ -101,5 +101,14 @@ echo "--- closing PDC server (stdout/stderr -> $PDC_TMPDIR/close_server.out) ---
 flux run -N1 -n1 --requires=-host:"$RABBIT_HOST" "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
 
 wait "$SERVER_PID" 2>/dev/null || true
+
+# Copy the per-binary logs out of $PDC_TMPDIR (which gets rm -rf'd at the
+# start of the NEXT run) into this job's own output directory, tagged with
+# the job id so repeated runs don't clobber each other.
+echo "--- copying per-binary logs into job dir as pdc_vpicio_rabbit.$JOBID.{server,vpicio,close_server}.out ---"
+cp "$PDC_TMPDIR/server.out" "./pdc_vpicio_rabbit.$JOBID.server.out" || true
+cp "$PDC_TMPDIR/vpicio.out" "./pdc_vpicio_rabbit.$JOBID.vpicio.out" || true
+cp "$PDC_TMPDIR/close_server.out" "./pdc_vpicio_rabbit.$JOBID.close_server.out" || true
+
 date
 echo "=== Job 2 done ==="
