@@ -42,6 +42,11 @@ set -euo pipefail
 
 N_USER_CORES=84 # see job1_compute_oversubscribed.flux.sh for where this comes from
 
+# See job1_compute_oversubscribed.flux.sh for what these are for.
+NPARTICLES=8388608
+STEPS=10
+COMPUTE_TIME=5
+
 # See job1_compute_oversubscribed.flux.sh for why this is needed: the
 # build links against CCE runtime libs (libfi.so.1 etc.) that the loaded
 # cce module doesn't put on LD_LIBRARY_PATH itself. This has to be set
@@ -88,7 +93,8 @@ echo "--- starting $N_USER_CORES VPICIO client ranks on the compute node (stdout
 # the server isn't competing for any of these cores (it's over on the
 # rabbit), there's no need to deliberately avoid --exclusive the way
 # job 1 does.
-flux run -N1 -n "$N_USER_CORES" --exclusive --requires=-host:"$RABBIT_HOST" "$CLIENT" > "$PDC_TMPDIR/vpicio.out" 2>&1
+flux run -N1 -n "$N_USER_CORES" --exclusive --requires=-host:"$RABBIT_HOST" "$CLIENT" \
+    "$NPARTICLES" "$STEPS" "$COMPUTE_TIME" > "$PDC_TMPDIR/vpicio.out" 2>&1
 
 echo "--- closing PDC server (stdout/stderr -> $PDC_TMPDIR/close_server.out) ---"
 # close_server is just an RPC client -- it only needs network reachability

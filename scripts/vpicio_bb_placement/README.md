@@ -17,8 +17,17 @@ a Rabbit's own CPU:
   / ~512 MB instead of 672 regions / ~21 GB). For quickly iterating on
   the close-time flush hang seen on the full-size job 2 without waiting
   on an 84-rank run each time.
+- `job1_16node_oversubscribed.flux.sh` / `job2_16node_rabbit.flux.sh` --
+  16-node scale-out of job 1/job 2: one distributed PDC server (16
+  ranks total) either spread 1-per-node across the same 16 compute
+  nodes as the clients (oversubscribed, scaled-out job 1), or all 16
+  ranks consolidated onto a single Rabbit chassis (32 reserved cores, 2
+  cores/rank; scaled-out job 2). **Unverified** -- see the caveats at
+  the top of each script before running; in particular, the
+  NPARTICLES/STEPS defaults imply ~3.3 TB of total writes at this node
+  count, so test with much smaller NPARTICLES first.
 
-Both job1/job2 assume `pdc_server`, `vpicio`, and `close_server` are
+All of job1/job2 assume `pdc_server`, `vpicio`, and `close_server` are
 already built (edit `EXECPATH` near the top of each script) and submit
 with:
 
@@ -26,7 +35,16 @@ with:
 flux batch job1_compute_oversubscribed.flux.sh
 flux batch job2_compute_plus_rabbit.flux.sh
 flux batch small_job2_compute_plus_rabbit.flux.sh
+flux batch job1_16node_oversubscribed.flux.sh
+flux batch job2_16node_rabbit.flux.sh
 ```
+
+All of job1/job2 now also run VPICIO with 10 steps and 5s of real CPU
+work (not `sleep()`) between non-final steps, via `vpicio.c`'s
+`hard_compute()` -- see its usage comment for the `#particles #steps
+compute_time` CLI args. This is what actually lets job 1's oversubscribed
+core show contention: sleeping never contends for a core no matter how a
+rank is placed.
 
 ## What's confirmed (two real runs on Tuolumne)
 

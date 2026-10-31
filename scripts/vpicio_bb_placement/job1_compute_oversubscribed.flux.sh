@@ -29,6 +29,14 @@ set -euo pipefail
 # anyway). Adjust if running this on a different node type.
 N_USER_CORES=84
 
+# STEPS/COMPUTE_TIME: run 10 steps with 5s of real CPU work (not sleep)
+# between each non-final step, so a client sharing a core with the server
+# actually contends for it instead of idling -- see hard_compute() in
+# src/tests/misc/vpicio.c.
+NPARTICLES=8388608
+STEPS=10
+COMPUTE_TIME=5
+
 # The build links against CCE runtime libs (libfi.so.1 etc.) that the
 # loaded cce module doesn't put on LD_LIBRARY_PATH itself (it only sets
 # PATH/MODULEPATH for the compiler, not its runtime libs) -- confirmed
@@ -67,7 +75,8 @@ SERVER_PID=$!
 sleep 2
 
 echo "--- starting $N_USER_CORES VPICIO client ranks (stdout/stderr -> $PDC_TMPDIR/vpicio.out) ---"
-flux run -N1 -n "$N_USER_CORES" -o cpu-affinity=off "$CLIENT" > "$PDC_TMPDIR/vpicio.out" 2>&1
+flux run -N1 -n "$N_USER_CORES" -o cpu-affinity=off "$CLIENT" "$NPARTICLES" "$STEPS" "$COMPUTE_TIME" \
+    > "$PDC_TMPDIR/vpicio.out" 2>&1
 
 echo "--- closing PDC server (stdout/stderr -> $PDC_TMPDIR/close_server.out) ---"
 flux run -N1 -n1 -o cpu-affinity=off "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
