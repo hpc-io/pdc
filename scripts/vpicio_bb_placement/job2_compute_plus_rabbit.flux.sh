@@ -77,21 +77,21 @@ fi
 RABBIT_HOST=$(echo "$GETRABBIT_OUT" | tr -d '[] ' | cut -d',' -f1)
 echo "--- targeting PDC server at rabbit host: $RABBIT_HOST ---"
 
-echo "--- starting PDC server on the rabbit ---"
-flux run --requires=host:"$RABBIT_HOST" -n1 "$SERVER" &
+echo "--- starting PDC server on the rabbit (stdout/stderr -> $PDC_TMPDIR/server.out) ---"
+flux run --requires=host:"$RABBIT_HOST" -n1 "$SERVER" > "$PDC_TMPDIR/server.out" 2>&1 &
 SERVER_PID=$!
 sleep 2
 
-echo "--- starting $N_USER_CORES VPICIO client ranks on the compute node ---"
+echo "--- starting $N_USER_CORES VPICIO client ranks on the compute node (stdout/stderr -> $PDC_TMPDIR/vpicio.out) ---"
 # --exclusive here (unlike job 1): this is the normal, best-practice
 # flag for a real run -- each client rank gets its own core, and since
 # the server isn't competing for any of these cores (it's over on the
 # rabbit), there's no need to deliberately avoid --exclusive the way
 # job 1 does.
-flux run -N1 -n "$N_USER_CORES" --exclusive --requires=-host:"$RABBIT_HOST" "$CLIENT"
+flux run -N1 -n "$N_USER_CORES" --exclusive --requires=-host:"$RABBIT_HOST" "$CLIENT" > "$PDC_TMPDIR/vpicio.out" 2>&1
 
-echo "--- closing PDC server ---"
-flux run --requires=host:"$RABBIT_HOST" -n1 "$CLOSE"
+echo "--- closing PDC server (stdout/stderr -> $PDC_TMPDIR/close_server.out) ---"
+flux run --requires=host:"$RABBIT_HOST" -n1 "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
 
 wait "$SERVER_PID" 2>/dev/null || true
 date

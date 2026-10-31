@@ -59,16 +59,16 @@ date
 # -- the thing this job is testing for. Which specific core ends up
 # shared isn't pinned down deliberately; the point is that the node as a
 # whole is oversubscribed, matching what was asked for.
-echo "--- starting PDC server ---"
-flux run -N1 -n1 -o cpu-affinity=off "$SERVER" &
+echo "--- starting PDC server (stdout/stderr -> $PDC_TMPDIR/server.out) ---"
+flux run -N1 -n1 -o cpu-affinity=off "$SERVER" > "$PDC_TMPDIR/server.out" 2>&1 &
 SERVER_PID=$!
 sleep 2
 
-echo "--- starting $N_USER_CORES VPICIO client ranks ---"
-flux run -N1 -n "$N_USER_CORES" -o cpu-affinity=off "$CLIENT"
+echo "--- starting $N_USER_CORES VPICIO client ranks (stdout/stderr -> $PDC_TMPDIR/vpicio.out) ---"
+flux run -N1 -n "$N_USER_CORES" -o cpu-affinity=off "$CLIENT" > "$PDC_TMPDIR/vpicio.out" 2>&1
 
-echo "--- closing PDC server ---"
-flux run -N1 -n1 -o cpu-affinity=off "$CLOSE"
+echo "--- closing PDC server (stdout/stderr -> $PDC_TMPDIR/close_server.out) ---"
+flux run -N1 -n1 -o cpu-affinity=off "$CLOSE" > "$PDC_TMPDIR/close_server.out" 2>&1
 
 wait "$SERVER_PID" 2>/dev/null || true
 date

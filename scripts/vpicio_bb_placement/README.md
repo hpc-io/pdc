@@ -12,13 +12,20 @@ a Rabbit's own CPU:
   attached to its chassis. Same client layout, but the PDC server runs
   on the Rabbit's own CPU instead of the compute node, so it never
   contends with a client for a core.
+- `small_job2_compute_plus_rabbit.flux.sh` -- same placement as job 2,
+  but only 2 client ranks instead of 84 (still 8 objects, so 16 regions
+  / ~512 MB instead of 672 regions / ~21 GB). For quickly iterating on
+  the close-time flush hang seen on the full-size job 2 without waiting
+  on an 84-rank run each time.
 
-Both assume `pdc_server`, `vpicio`, and `close_server` are already built
-(edit `EXECPATH` near the top of each script) and submit with:
+Both job1/job2 assume `pdc_server`, `vpicio`, and `close_server` are
+already built (edit `EXECPATH` near the top of each script) and submit
+with:
 
 ```
 flux batch job1_compute_oversubscribed.flux.sh
 flux batch job2_compute_plus_rabbit.flux.sh
+flux batch small_job2_compute_plus_rabbit.flux.sh
 ```
 
 ## What's confirmed (two real runs on Tuolumne)
