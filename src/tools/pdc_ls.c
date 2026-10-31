@@ -544,7 +544,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     while (cur_file_node != NULL) {
         filename = cur_file_node->file_name;
         stat(filename, &attr);
-        LOG_INFO("[INFO] File [%s] last modified at: %s", filename, ctime(&attr.st_mtime));
+        LOG_JUST_PRINT("File [%s] last modified at: %s", filename, ctime(&attr.st_mtime));
         // Start server restart code
         perr_t ret_value = SUCCEED;
         int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
@@ -1070,15 +1070,18 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     }
 
     if (print_tree) {
+        // -tree is a focused view of the hierarchy only, not the full
+        // per-object JSON dump.
         print_all_container_trees(cont_head, metadata_head, fp);
     }
-
-    if (output_file_name) {
-        fclose(fp);
+    else {
+        if (output_file_name) {
+            fclose(fp);
+        }
+        char *json_string = cJSON_Print(output);
+        fprintf(fp, json_string);
+        fprintf(fp, "\n");
     }
-    char *json_string = cJSON_Print(output);
-    fprintf(fp, json_string);
-    fprintf(fp, "\n");
     if (output_file_name)
         fclose(fp);
 }
