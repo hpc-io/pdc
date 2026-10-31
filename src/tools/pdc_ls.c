@@ -366,16 +366,16 @@ print_container_tree(ContNode *all_conts, pdc_cont_hash_table_entry_t *cont, Met
             }
             for (d = 0; d < depth + 1; d++)
                 fprintf(fp, "  ");
-            fprintf(fp, "[container, unresolved] cont_id=%" PRIu64 "\n", cont->obj_ids[i]);
+            fprintf(fp, "unresolved (cont_id=%" PRIu64 ")\n", cont->obj_ids[i]);
         }
         else {
             pdc_metadata_t *m = pdc_ls_find_metadata_by_id(meta_head, cont->obj_ids[i]);
             for (d = 0; d < depth + 1; d++)
                 fprintf(fp, "  ");
             if (m != NULL)
-                fprintf(fp, "[object] %s (obj_id=%" PRIu64 ")\n", m->obj_name, cont->obj_ids[i]);
+                fprintf(fp, "%s (obj_id=%" PRIu64 ")\n", m->obj_name, cont->obj_ids[i]);
             else
-                fprintf(fp, "[object, unresolved] obj_id=%" PRIu64 "\n", cont->obj_ids[i]);
+                fprintf(fp, "unresolved (obj_id=%" PRIu64 ")\n", cont->obj_ids[i]);
         }
     }
 }
