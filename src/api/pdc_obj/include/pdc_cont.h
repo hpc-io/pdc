@@ -263,4 +263,54 @@ perr_t PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids);
  */
 perr_t PDCcont_del_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
 
+/**
+ * Add a number of entries (objects or containers) to a container, nesting
+ * containers when the corresponding type is PDC_ENTITY_CONT
+ *
+ * \param cont_id [IN]          Container ID
+ * \param n [IN]                Number of entries
+ * \param entry_ids [IN]        IDs of the entries to add, one per entry
+ * \param entry_types [IN]      Kind of each entry (PDC_ENTITY_OBJ or PDC_ENTITY_CONT),
+ *                              one per entry
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_put_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+
+/**
+ * Remove a number of entries (objects or containers) from a container
+ *
+ * \param cont_id [IN]          Container ID
+ * \param n [IN]                Number of entries
+ * \param entry_ids [IN]        IDs of the entries to remove, one per entry
+ * \param entry_types [IN]      Kind of each entry (PDC_ENTITY_OBJ or PDC_ENTITY_CONT),
+ *                              one per entry
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_del_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+
+/**
+ * Retrieve the entries (objects and/or nested containers) stored in a container
+ *
+ * \param cont_id [IN]          Container ID
+ * \param n [OUT]               Number of entries returned
+ * \param entries [OUT]         Newly allocated array of \a n entries, caller must free()
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_get_entries(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
+
+/**
+ * Create a container and nest it under an existing parent container in one call
+ *
+ * \param parent_cont_id [IN]   Container ID of the parent
+ * \param cont_name [IN]        Name of the new child container
+ * \param cont_create_prop [IN] ID of container property,
+ *                              returned by PDCprop_create(PDC_CONT_CREATE)
+ *
+ * \return Container id of the new child on success/Zero on failure
+ */
+pdcid_t PDCcont_create_at(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop);
+
 #endif /* PDC_CONT_H */

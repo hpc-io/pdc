@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <regex.h>
 #include <time.h>
+#include <inttypes.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -12,8 +13,8 @@
 #include "../src/server/include/pdc_server_metadata.h"
 #include "cjson/cJSON.h"
 
-const char *avail_args[] = {"-n", "-i", "-json", "-ln", "-li", "-s"};
-const int   num_args     = 6;
+const char *avail_args[] = {"-n", "-i", "-json", "-ln", "-li", "-s", "-tree"};
+const int   num_args     = 7;
 
 typedef struct pdc_region_metadata_pkg {
     uint64_t *                      reg_offset;
@@ -59,6 +60,14 @@ typedef struct FileNameNode {
     char *               file_name;
     struct FileNameNode *next;
 } FileNameNode;
+
+// Holds a fully-read container entry (including its obj_ids/entry_types
+// membership arrays), so the nested container hierarchy can be reconstructed
+// and printed after all checkpoint files have been read.
+typedef struct ContNode {
+    pdc_cont_hash_table_entry_t *cont_entry;
+    struct ContNode *            next;
+} ContNode;
 
 typedef struct ArrayList {
     int    length;
@@ -130,7 +139,8 @@ main(int argc, char *argv[])
     if (argc == 1) {
         LOG_JUST_PRINT(
             "Usage: ./pdc_ls pdc_checkpoint_directory/file [-n obj_name] [-i obj_id] [-json json_fname] "
-            "[-ln (list all names)] [-ls (list all ids)] [-s (summary)]\n");
+            "[-ln (list all names)] [-ls (list all ids)] [-s (summary)] "
+            "[-tree (print nested container hierarchy)]\n");
         return 0;
     }
     else {
@@ -292,6 +302,102 @@ get_data_loc_type(int data_loc_type)
     }
 }
 
+static pdc_metadata_t *
+pdc_ls_find_metadata_by_id(MetadataNode *head, uint64_t obj_id)
+{
+    while (head != NULL) {
+        if (head->metadata_ptr->obj_id == obj_id)
+            return head->metadata_ptr;
+        head = head->next;
+    }
+    return NULL;
+}
+
+static ContNode *
+find_cont_node_by_id(ContNode *head, uint64_t cont_id)
+{
+    while (head != NULL) {
+        if (head->cont_entry->cont_id == cont_id)
+            return head;
+        head = head->next;
+    }
+    return NULL;
+}
+
+// A container is "top-level" (a tree root to start printing from) unless
+// some other container lists it as a PDC_ENTITY_CONT entry.
+static int
+is_nested_under_another(ContNode *all_conts, uint64_t cont_id)
+{
+    ContNode *c = all_conts;
+    while (c != NULL) {
+        pdc_cont_hash_table_entry_t *e = c->cont_entry;
+        int                          i;
+        for (i = 0; i < e->n_obj; i++) {
+            if (e->obj_ids[i] == cont_id && e->entry_types[i] == PDC_ENTITY_CONT)
+                return 1;
+        }
+        c = c->next;
+    }
+    return 0;
+}
+
+static void
+print_container_tree(ContNode *all_conts, pdc_cont_hash_table_entry_t *cont, MetadataNode *meta_head,
+                     int depth, FILE *fp)
+{
+    int i, d;
+
+    for (d = 0; d < depth; d++)
+        fprintf(fp, "  ");
+    fprintf(fp, "%s (cont_id=%" PRIu64 ")\n", cont->cont_name, cont->cont_id);
+
+    for (i = 0; i < cont->n_obj; i++) {
+        if (cont->obj_ids[i] == 0) // deleted entry
+            continue;
+
+        if (cont->entry_types[i] == PDC_ENTITY_CONT) {
+            // The recursive call prints its own indented heading line, so
+            // don't print an indent for this entry ourselves.
+            ContNode *child = find_cont_node_by_id(all_conts, cont->obj_ids[i]);
+            if (child != NULL) {
+                print_container_tree(all_conts, child->cont_entry, meta_head, depth + 1, fp);
+                continue;
+            }
+            for (d = 0; d < depth + 1; d++)
+                fprintf(fp, "  ");
+            fprintf(fp, "unresolved (cont_id=%" PRIu64 ")\n", cont->obj_ids[i]);
+        }
+        else {
+            pdc_metadata_t *m = pdc_ls_find_metadata_by_id(meta_head, cont->obj_ids[i]);
+            for (d = 0; d < depth + 1; d++)
+                fprintf(fp, "  ");
+            if (m != NULL)
+                fprintf(fp, "%s (obj_id=%" PRIu64 ")\n", m->obj_name, cont->obj_ids[i]);
+            else
+                fprintf(fp, "unresolved (obj_id=%" PRIu64 ")\n", cont->obj_ids[i]);
+        }
+    }
+}
+
+static void
+print_all_container_trees(ContNode *all_conts, MetadataNode *meta_head, FILE *fp)
+{
+    ContNode *c = all_conts;
+
+    if (all_conts == NULL) {
+        fprintf(fp, "No containers found.\n");
+        return;
+    }
+
+    fprintf(fp, "Container hierarchy:\n");
+    while (c != NULL) {
+        if (!is_nested_under_another(all_conts, c->cont_entry->cont_id))
+            print_container_tree(all_conts, c->cont_entry, meta_head, 0, fp);
+        c = c->next;
+    }
+}
+
 pdc_obj_metadata_pkg *
 do_transfer_request_metadata(int pdc_server_size_input, char *checkpoint)
 {
@@ -373,6 +479,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     int   list_names       = 0;
     int   list_ids         = 0;
     int   summary          = 0;
+    int   print_tree       = 0;
     int   print_all        = 1;
 
     int arg_index = 2;
@@ -405,6 +512,10 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             summary   = 1;
             print_all = 0;
         }
+        else if (strcmp(argv[arg_index], "-tree") == 0) {
+            print_tree = 1;
+            print_all  = 0;
+        }
         arg_index++;
     }
     ArrayList *obj_names, *obj_ids;
@@ -419,6 +530,8 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     MetadataNode *metadata_head   = NULL;
     RegionNode *  cur_region_node = NULL;
     FileNameNode *cur_file_node   = file_name_node;
+    ContNode *    cont_head       = NULL;
+    ContNode *    cont_tail       = NULL;
 
     int all_cont_total     = 0;
     int all_nobj_total     = 0;
@@ -431,7 +544,7 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
     while (cur_file_node != NULL) {
         filename = cur_file_node->file_name;
         stat(filename, &attr);
-        LOG_INFO("[INFO] File [%s] last modified at: %s", filename, ctime(&attr.st_mtime));
+        LOG_JUST_PRINT("File [%s] last modified at: %s", filename, ctime(&attr.st_mtime));
         // Start server restart code
         perr_t ret_value = SUCCEED;
         int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
@@ -462,11 +575,56 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 return;
             }
 
-            // Reconstruct hash table
-            cont_entry = (pdc_cont_hash_table_entry_t *)malloc(sizeof(pdc_cont_hash_table_entry_t));
-            if (fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file) != 1) {
-                LOG_ERROR("Read failed for cont_entry\n");
+            // Reconstruct the container entry. Its fields are written
+            // individually (not as a raw struct dump), since obj_ids/
+            // entry_types/kvtag_list_head are heap pointers private to the
+            // server process that wrote the checkpoint.
+            cont_entry = (pdc_cont_hash_table_entry_t *)calloc(1, sizeof(pdc_cont_hash_table_entry_t));
+            if (fread(&cont_entry->cont_id, sizeof(uint64_t), 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry cont_id\n");
                 return;
+            }
+            if (fread(cont_entry->cont_name, sizeof(cont_entry->cont_name), 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry cont_name\n");
+                return;
+            }
+            if (fread(&cont_entry->n_obj, sizeof(int), 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry n_obj\n");
+                return;
+            }
+            if (fread(&cont_entry->n_deleted, sizeof(int), 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry n_deleted\n");
+                return;
+            }
+            if (fread(cont_entry->tags, sizeof(cont_entry->tags), 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry tags\n");
+                return;
+            }
+            if (cont_entry->n_obj > 0) {
+                cont_entry->obj_ids     = (uint64_t *)malloc(sizeof(uint64_t) * cont_entry->n_obj);
+                cont_entry->entry_types = (uint8_t *)malloc(sizeof(uint8_t) * cont_entry->n_obj);
+                if (fread(cont_entry->obj_ids, sizeof(uint64_t) * cont_entry->n_obj, 1, file) != 1) {
+                    LOG_ERROR("Read failed for cont_entry obj_ids\n");
+                    return;
+                }
+                if (fread(cont_entry->entry_types, sizeof(uint8_t) * cont_entry->n_obj, 1, file) != 1) {
+                    LOG_ERROR("Read failed for cont_entry entry_types\n");
+                    return;
+                }
+            }
+
+            {
+                ContNode *cont_node   = (ContNode *)malloc(sizeof(ContNode));
+                cont_node->cont_entry = cont_entry;
+                cont_node->next       = NULL;
+                if (cont_head == NULL) {
+                    cont_head = cont_node;
+                    cont_tail = cont_node;
+                }
+                else {
+                    cont_tail->next = cont_node;
+                    cont_tail       = cont_node;
+                }
             }
 
             n_cont--;
@@ -882,12 +1040,48 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
                 all_n_region_total);
         cJSON_AddStringToObject(output, "summary", buf);
     }
-    if (output_file_name) {
-        fclose(fp);
+
+    // Always include each container's raw entry list (objects and/or nested
+    // containers) in the JSON, regardless of -tree.
+    {
+        cJSON *   containers_json = cJSON_CreateArray();
+        ContNode *cn              = cont_head;
+        int       ci;
+        while (cn != NULL) {
+            pdc_cont_hash_table_entry_t *ce        = cn->cont_entry;
+            cJSON *                      cont_json = cJSON_CreateObject();
+            cJSON_AddNumberToObject(cont_json, "cont_id", (double)ce->cont_id);
+            cJSON_AddStringToObject(cont_json, "cont_name", ce->cont_name);
+            cJSON *entries_json = cJSON_CreateArray();
+            for (ci = 0; ci < ce->n_obj; ci++) {
+                if (ce->obj_ids[ci] == 0) // deleted entry
+                    continue;
+                cJSON *entry_json = cJSON_CreateObject();
+                cJSON_AddNumberToObject(entry_json, "id", (double)ce->obj_ids[ci]);
+                cJSON_AddStringToObject(entry_json, "type",
+                                        ce->entry_types[ci] == PDC_ENTITY_CONT ? "container" : "object");
+                cJSON_AddItemToArray(entries_json, entry_json);
+            }
+            cJSON_AddItemToObject(cont_json, "entries", entries_json);
+            cJSON_AddItemToArray(containers_json, cont_json);
+            cn = cn->next;
+        }
+        cJSON_AddItemToObject(output, "containers", containers_json);
     }
-    char *json_string = cJSON_Print(output);
-    fprintf(fp, json_string);
-    fprintf(fp, "\n");
+
+    if (print_tree) {
+        // -tree is a focused view of the hierarchy only, not the full
+        // per-object JSON dump.
+        print_all_container_trees(cont_head, metadata_head, fp);
+    }
+    else {
+        if (output_file_name) {
+            fclose(fp);
+        }
+        char *json_string = cJSON_Print(output);
+        fprintf(fp, json_string);
+        fprintf(fp, "\n");
+    }
     if (output_file_name)
         fclose(fp);
 }

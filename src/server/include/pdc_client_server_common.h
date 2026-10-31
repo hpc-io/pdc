@@ -1037,6 +1037,15 @@ typedef struct {
 } pdc_aggregated_io_to_server_t;
 
 // Container add/del objects
+// Wire-level element transferred in the cont_add_del_objs_rpc bulk payload:
+// one per container entry, carries the entry's type alongside its id so the
+// server no longer has to guess whether an id is an object or a nested
+// container.
+typedef struct {
+    uint64_t id;
+    uint64_t type; /* pdc_entity_type_t */
+} pdc_cont_wire_entry_t;
+
 /* Define cont_add_del_objs_rpc_in_t */
 typedef struct {
     hg_int32_t  op;
@@ -1051,6 +1060,21 @@ typedef struct {
     hg_uint32_t ret;
 
 } cont_add_del_objs_rpc_out_t;
+
+/* Define cont_get_entries_rpc_in_t */
+typedef struct {
+    hg_uint64_t cont_id;
+} cont_get_entries_rpc_in_t;
+
+/* Define cont_get_entries_rpc_out_t
+ * ids/types are variable-length arrays of size cnt, sent inline (not via
+ * bulk) since container membership lists are metadata, not bulk data. */
+typedef struct {
+    hg_int32_t ret;
+    hg_int32_t cnt;
+    uint64_t * ids;
+    uint8_t *  types;
+} cont_get_entries_rpc_out_t;
 
 /* Define cont_add_tags_rpc_in_t */
 typedef struct {
@@ -3510,6 +3534,65 @@ hg_proc_cont_add_del_objs_rpc_out_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+/* Define hg_proc_cont_get_entries_rpc_in_t */
+static HG_INLINE hg_return_t
+hg_proc_cont_get_entries_rpc_in_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                ret         = HG_SUCCESS;
+    cont_get_entries_rpc_in_t *struct_data = (cont_get_entries_rpc_in_t *)data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->cont_id);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    FUNC_LEAVE(ret);
+}
+
+/* Define hg_proc_cont_get_entries_rpc_out_t */
+static HG_INLINE hg_return_t
+hg_proc_cont_get_entries_rpc_out_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                 ret         = HG_SUCCESS;
+    cont_get_entries_rpc_out_t *struct_data = (cont_get_entries_rpc_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->cnt);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    if (struct_data->cnt > 0) {
+        switch (hg_proc_get_op(proc)) {
+            case HG_DECODE:
+                struct_data->ids   = (uint64_t *)PDC_malloc(sizeof(uint64_t) * struct_data->cnt);
+                struct_data->types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * struct_data->cnt);
+                /* FALLTHRU */
+            case HG_ENCODE:
+                ret = hg_proc_raw(proc, struct_data->ids, sizeof(uint64_t) * struct_data->cnt);
+                if (ret != HG_SUCCESS) {
+                    FUNC_LEAVE(ret);
+                }
+                ret = hg_proc_raw(proc, struct_data->types, sizeof(uint8_t) * struct_data->cnt);
+                break;
+            case HG_FREE:
+                struct_data->ids   = (uint64_t *)PDC_free(struct_data->ids);
+                struct_data->types = (uint8_t *)PDC_free(struct_data->types);
+                break;
+            default:
+                break;
+        }
+    }
+
+    FUNC_LEAVE(ret);
+}
+
 /* Define hg_proc_cont_add_tags_rpc_in_t */
 static HG_INLINE hg_return_t
 hg_proc_cont_add_tags_rpc_in_t(hg_proc_t proc, void *data)
@@ -4235,6 +4318,7 @@ hg_id_t PDC_get_storage_info_register(hg_class_t *hg_class);
 hg_id_t PDC_bulk_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_gen_cont_id_register(hg_class_t *hg_class);
 hg_id_t PDC_cont_add_del_objs_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_cont_get_entries_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_query_read_obj_name_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_server_checkpoint_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_send_shm_register(hg_class_t *hg_class);

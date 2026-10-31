@@ -19,8 +19,14 @@ PDC provides several core abstractions for modeling and managing data.
 Containers
 ~~~~~~~~~~
 
-- Logical groupings of related data objects, similar to folders or directories  
+- Logical groupings of related data objects, similar to folders or directories
 - Associated with metadata such as creation time and persistance
+- Can themselves contain other containers, not just objects, forming a
+  hierarchy (much like directories can contain subdirectories). Use
+  :code:`PDCcont_create_at` to create and nest a container in one call, and
+  :code:`PDCcont_put_entries`/:code:`PDCcont_get_entries` to manage and
+  inspect a container's mix of object and container entries directly. See
+  :ref:`client_api_containers` for details.
 
 Objects
 ~~~~~~~

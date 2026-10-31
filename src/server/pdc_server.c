@@ -1278,7 +1278,18 @@ PDC_Server_checkpoint()
 
         hash_key = PDC_get_hash_by_name(cont_head->cont_name);
         fwrite(&hash_key, sizeof(uint32_t), 1, file);
-        fwrite(cont_head, sizeof(pdc_cont_hash_table_entry_t), 1, file);
+        // Write the fixed-size fields individually rather than raw-dumping the
+        // struct: obj_ids/entry_types/kvtag_list_head are heap pointers private
+        // to this process and are meaningless (dangling) to a future restart.
+        fwrite(&cont_head->cont_id, sizeof(uint64_t), 1, file);
+        fwrite(cont_head->cont_name, sizeof(cont_head->cont_name), 1, file);
+        fwrite(&cont_head->n_obj, sizeof(int), 1, file);
+        fwrite(&cont_head->n_deleted, sizeof(int), 1, file);
+        fwrite(cont_head->tags, sizeof(cont_head->tags), 1, file);
+        if (cont_head->n_obj > 0) {
+            fwrite(cont_head->obj_ids, sizeof(uint64_t) * cont_head->n_obj, 1, file);
+            fwrite(cont_head->entry_types, sizeof(uint8_t) * cont_head->n_obj, 1, file);
+        }
     }
 
     // DHT
@@ -1475,11 +1486,40 @@ PDC_Server_restart(char *filename)
         }
         total_mem_usage_g += sizeof(uint32_t);
 
-        // Reconstruct hash table
-        cont_entry = (pdc_cont_hash_table_entry_t *)PDC_malloc(sizeof(pdc_cont_hash_table_entry_t));
+        // Reconstruct hash table. Read the fixed-size fields individually and
+        // reallocate obj_ids/entry_types fresh in this process; they were
+        // written out as their own variable-length arrays by the checkpoint
+        // (not raw struct bytes, since the pointers themselves are only valid
+        // in the process that wrote them).
+        cont_entry = (pdc_cont_hash_table_entry_t *)PDC_calloc(1, sizeof(pdc_cont_hash_table_entry_t));
         total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
-        if (fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file) != 1) {
-            LOG_ERROR("Read failed for cont_entry\n");
+        if (fread(&cont_entry->cont_id, sizeof(uint64_t), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry cont_id\n");
+        }
+        if (fread(cont_entry->cont_name, sizeof(cont_entry->cont_name), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry cont_name\n");
+        }
+        if (fread(&cont_entry->n_obj, sizeof(int), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry n_obj\n");
+        }
+        if (fread(&cont_entry->n_deleted, sizeof(int), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry n_deleted\n");
+        }
+        if (fread(cont_entry->tags, sizeof(cont_entry->tags), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry tags\n");
+        }
+        cont_entry->kvtag_list_head = NULL;
+        if (cont_entry->n_obj > 0) {
+            cont_entry->obj_ids     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * cont_entry->n_obj);
+            cont_entry->entry_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * cont_entry->n_obj);
+            if (fread(cont_entry->obj_ids, sizeof(uint64_t) * cont_entry->n_obj, 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry obj_ids\n");
+            }
+            if (fread(cont_entry->entry_types, sizeof(uint8_t) * cont_entry->n_obj, 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry entry_types\n");
+            }
+            cont_entry->n_allocated = cont_entry->n_obj;
+            total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_obj;
         }
 
 #ifdef ENABLE_MULTITHREAD
@@ -1992,6 +2032,7 @@ PDC_Server_mercury_register()
     PDC_query_partial_register(hg_class_g);
     PDC_query_kvtag_register(hg_class_g);
     PDC_cont_add_del_objs_rpc_register(hg_class_g);
+    PDC_cont_get_entries_rpc_register(hg_class_g);
     PDC_cont_add_tags_rpc_register(hg_class_g);
     PDC_query_read_obj_name_rpc_register(hg_class_g);
     PDC_query_read_obj_name_client_rpc_register(hg_class_g);

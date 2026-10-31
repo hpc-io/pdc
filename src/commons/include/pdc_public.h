@@ -107,6 +107,27 @@ typedef enum {
 
 typedef enum { PDC_SERVER_DEFAULT = 0, PDC_SERVER_PER_CLIENT = 1 } pdc_server_selection_t;
 
+/**
+ * @brief Kind of entity a container entry refers to.
+ *
+ * A container stores a flat list of child ids; this tags each id so that
+ * nested containers (a container inside another container) can be told
+ * apart from plain objects without a second round trip.
+ */
+typedef enum { PDC_ENTITY_OBJ = 0, PDC_ENTITY_CONT = 1 } pdc_entity_type_t;
+
+/**
+ * @brief One child entry of a container, as returned by PDCcont_get_entries().
+ *
+ * \a meta_id is the entry's global metadata id (the same id space used by
+ * PDC_Server_gen_obj_id() for both objects and containers), not a locally
+ * opened handle.
+ */
+typedef struct pdc_cont_entry_t {
+    uint64_t          meta_id;
+    pdc_entity_type_t type;
+} pdc_cont_entry_t;
+
 typedef struct pdc_histogram_t {
     pdc_var_type_t dtype;
     int            nbin;

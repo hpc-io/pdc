@@ -174,6 +174,7 @@ static hg_id_t buf_map_register_id_g;
 static hg_id_t buf_unmap_register_id_g;
 
 static hg_id_t cont_add_del_objs_rpc_register_id_g;
+static hg_id_t cont_get_entries_rpc_register_id_g;
 static hg_id_t cont_add_tags_rpc_register_id_g;
 static hg_id_t query_read_obj_name_register_id_g;
 static hg_id_t query_read_obj_name_client_register_id_g;
@@ -1362,6 +1363,7 @@ drc_access_again:
     query_kvtag_register_id_g   = PDC_query_kvtag_register(*hg_class);
 
     cont_add_del_objs_rpc_register_id_g      = PDC_cont_add_del_objs_rpc_register(*hg_class);
+    cont_get_entries_rpc_register_id_g       = PDC_cont_get_entries_rpc_register(*hg_class);
     cont_add_tags_rpc_register_id_g          = PDC_cont_add_tags_rpc_register(*hg_class);
     query_read_obj_name_register_id_g        = PDC_query_read_obj_name_rpc_register(*hg_class);
     query_read_obj_name_client_register_id_g = PDC_query_read_obj_name_client_rpc_register(*hg_class);
@@ -4731,21 +4733,31 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+// Dedicated to this RPC only (unlike the generic update_region_storage_meta_bulk_args_t,
+// this carries the server's ret code back out to the synchronous caller below).
+struct _pdc_cont_add_del_objs_cb_args {
+    hg_bulk_t   bulk_handle;
+    hg_handle_t rpc_handle;
+    int         ret;
+};
+
 static hg_return_t
 PDC_Client_add_del_objects_to_container_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t                             ret_value = HG_SUCCESS;
-    hg_handle_t                             handle    = callback_info->info.forward.handle;
-    pdc_int_ret_t                           bulk_rpc_ret;
-    update_region_storage_meta_bulk_args_t *cb_args;
+    hg_return_t                            ret_value = HG_SUCCESS;
+    hg_handle_t                            handle    = callback_info->info.forward.handle;
+    cont_add_del_objs_rpc_out_t            bulk_rpc_ret;
+    struct _pdc_cont_add_del_objs_cb_args *cb_args;
 
-    cb_args = (update_region_storage_meta_bulk_args_t *)callback_info->arg;
+    cb_args = (struct _pdc_cont_add_del_objs_cb_args *)callback_info->arg;
     // Sent the bulk handle with rpc and get a response
     ret_value = HG_Get_output(handle, &bulk_rpc_ret);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not get output");
+
+    cb_args->ret = (int)bulk_rpc_ret.ret;
 
     ret_value = HG_Free_output(handle, &bulk_rpc_ret);
     if (ret_value != HG_SUCCESS)
@@ -4764,21 +4776,23 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Add/delete a number of objects to one container
+// Add/delete a number of entries (objects or nested containers) to one container
 perr_t
-PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t cont_meta_id, int op)
+PDC_Client_add_del_objects_to_container(int nobj, pdc_cont_wire_entry_t *entries, uint64_t cont_meta_id,
+                                        int op)
 {
     FUNC_ENTER(NULL);
 
-    perr_t                     ret_value = SUCCEED;
-    hg_return_t                hg_ret    = HG_SUCCESS;
-    hg_handle_t                rpc_handle;
-    hg_bulk_t                  bulk_handle;
-    uint32_t                   server_id;
-    hg_size_t                  buf_sizes[3];
-    cont_add_del_objs_rpc_in_t bulk_rpc_in;
-    // Reuse the existing args structure
-    update_region_storage_meta_bulk_args_t cb_args;
+    perr_t                                ret_value = SUCCEED;
+    hg_return_t                           hg_ret    = HG_SUCCESS;
+    hg_handle_t                           rpc_handle;
+    hg_bulk_t                             bulk_handle;
+    uint32_t                              server_id;
+    hg_size_t                             buf_sizes[3];
+    cont_add_del_objs_rpc_in_t            bulk_rpc_in;
+    struct _pdc_cont_add_del_objs_cb_args cb_args;
+
+    cb_args.ret = 0;
 
     server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
 
@@ -4794,10 +4808,10 @@ PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t co
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create handle");
 
-    buf_sizes[0] = sizeof(uint64_t) * nobj;
+    buf_sizes[0] = sizeof(pdc_cont_wire_entry_t) * nobj;
 
     /* Register memory */
-    hg_ret = HG_Bulk_create(send_class_g, 1, (void **)&obj_ids, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    hg_ret = HG_Bulk_create(send_class_g, 1, (void **)&entries, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create bulk data handle");
 
@@ -4819,7 +4833,54 @@ PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t co
     hg_atomic_set32(&atomic_work_todo_g, 1);
     PDC_Client_check_response(&send_context_g);
 
+    if (cb_args.ret != 1)
+        PGOTO_ERROR(FAIL, "Server rejected container add/del entries operation");
+
 done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Resolve each local id's global meta_id according to its declared entry
+// type (object vs. nested container) and add/delete them from a container.
+//
+// struct _pdc_obj_info and struct _pdc_cont_info store their public "name"
+// and "meta_id" fields in different order, so resolving a container's local
+// id through the object struct (or vice versa) silently reads the wrong
+// 64-bit field instead of crashing. Branching on the caller-supplied type is
+// what makes mixing object and container ids in the same container safe.
+perr_t
+PDC_Client_add_del_entries_to_container(int n, pdcid_t *local_ids, pdc_entity_type_t *entry_types,
+                                        pdcid_t local_cont_id, int op)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                 ret_value = SUCCEED;
+    int                    i;
+    pdc_cont_wire_entry_t *entries;
+    uint64_t               cont_meta_id;
+    struct _pdc_id_info *  id_info = NULL;
+
+    entries = (pdc_cont_wire_entry_t *)PDC_malloc(sizeof(pdc_cont_wire_entry_t) * n);
+    for (i = 0; i < n; i++) {
+        if ((id_info = PDC_find_id(local_ids[i])) == NULL) {
+            LOG_ERROR("Failed to find PDC ID: %" PRIu64 "\n", local_ids[i]);
+            continue;
+        }
+        if (entry_types[i] == PDC_ENTITY_CONT)
+            entries[i].id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+        else
+            entries[i].id = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
+        entries[i].type = (uint64_t)entry_types[i];
+    }
+
+    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %" PRIu64, local_cont_id);
+    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+
+    ret_value = PDC_Client_add_del_objects_to_container(n, entries, cont_meta_id, op);
+
+done:
+    entries = (pdc_cont_wire_entry_t *)PDC_free(entries);
     FUNC_LEAVE(ret_value);
 }
 
@@ -4829,28 +4890,18 @@ PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
 {
     FUNC_ENTER(NULL);
 
-    perr_t               ret_value = SUCCEED;
-    int                  i;
-    uint64_t *           obj_ids;
-    uint64_t             cont_meta_id;
-    struct _pdc_id_info *id_info = NULL;
+    perr_t             ret_value = SUCCEED;
+    int                i;
+    pdc_entity_type_t *entry_types;
 
-    obj_ids = (uint64_t *)PDC_malloc(sizeof(uint64_t) * nobj);
-    for (i = 0; i < nobj; i++) {
-        if ((id_info = PDC_find_id(local_obj_ids[i])) == NULL) {
-            LOG_ERROR("Failed to find PDC ID: %d\n", local_obj_ids[i]);
-            continue;
-        }
-        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
-    }
+    entry_types = (pdc_entity_type_t *)PDC_malloc(sizeof(pdc_entity_type_t) * nobj);
+    for (i = 0; i < nobj; i++)
+        entry_types[i] = PDC_ENTITY_OBJ;
 
-    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
-        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_cont_id);
-    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+    ret_value =
+        PDC_Client_add_del_entries_to_container(nobj, local_obj_ids, entry_types, local_cont_id, ADD_OBJ);
+    entry_types = (pdc_entity_type_t *)PDC_free(entry_types);
 
-    ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, ADD_OBJ);
-
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -4860,28 +4911,127 @@ PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
 {
     FUNC_ENTER(NULL);
 
-    perr_t               ret_value = SUCCEED;
-    int                  i;
-    uint64_t *           obj_ids;
-    uint64_t             cont_meta_id;
-    struct _pdc_id_info *id_info = NULL;
+    perr_t             ret_value = SUCCEED;
+    int                i;
+    pdc_entity_type_t *entry_types;
 
-    obj_ids = (uint64_t *)PDC_malloc(sizeof(uint64_t) * nobj);
-    for (i = 0; i < nobj; i++) {
-        if ((id_info = PDC_find_id(local_obj_ids[i])) == NULL) {
-            LOG_ERROR("Failed to find PDC ID: %d\n", local_obj_ids[i]);
-            continue;
+    entry_types = (pdc_entity_type_t *)PDC_malloc(sizeof(pdc_entity_type_t) * nobj);
+    for (i = 0; i < nobj; i++)
+        entry_types[i] = PDC_ENTITY_OBJ;
+
+    ret_value =
+        PDC_Client_add_del_entries_to_container(nobj, local_obj_ids, entry_types, local_cont_id, DEL_OBJ);
+    entry_types = (pdc_entity_type_t *)PDC_free(entry_types);
+
+    FUNC_LEAVE(ret_value);
+}
+
+struct _pdc_cont_get_entries_args {
+    perr_t    ret;
+    int       cnt;
+    uint64_t *ids;
+    uint8_t * types;
+};
+
+static hg_return_t
+cont_get_entries_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                        ret_value;
+    struct _pdc_cont_get_entries_args *args;
+    hg_handle_t                        handle;
+    cont_get_entries_rpc_out_t         output;
+
+    args   = (struct _pdc_cont_get_entries_args *)callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS)
+        PGOTO_ERROR(ret_value, "Error with HG_Get_output");
+
+    if (output.ret <= 0) {
+        args->ret = FAIL;
+    }
+    else {
+        args->ret = SUCCEED;
+        args->cnt = output.cnt;
+        if (output.cnt > 0) {
+            args->ids   = (uint64_t *)PDC_malloc(sizeof(uint64_t) * output.cnt);
+            args->types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * output.cnt);
+            memcpy(args->ids, output.ids, sizeof(uint64_t) * output.cnt);
+            memcpy(args->types, output.types, sizeof(uint8_t) * output.cnt);
         }
-        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
     }
 
+done:
+    hg_atomic_decr32(&atomic_work_todo_g);
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+// Retrieve the entries (objects and/or nested containers) stored in a container
+perr_t
+PDC_Client_get_container_entries(pdcid_t local_cont_id, int *n, uint64_t **entry_ids,
+                                 pdc_entity_type_t **entry_types)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                            ret_value  = SUCCEED;
+    hg_return_t                       hg_ret     = HG_SUCCESS;
+    hg_handle_t                       rpc_handle = HG_HANDLE_NULL;
+    uint32_t                          server_id;
+    uint64_t                          cont_meta_id;
+    int                               i;
+    struct _pdc_id_info *             id_info = NULL;
+    cont_get_entries_rpc_in_t         in;
+    struct _pdc_cont_get_entries_args args;
+
+    *n           = 0;
+    *entry_ids   = NULL;
+    *entry_types = NULL;
+    memset(&args, 0, sizeof(args));
+
     if ((id_info = PDC_find_id(local_cont_id)) == NULL)
-        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_cont_id);
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %" PRIu64, local_cont_id);
     cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
 
-    ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, DEL_OBJ);
+    server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, cont_get_entries_rpc_register_id_g,
+                       &rpc_handle);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not create handle");
+
+    in.cont_id = cont_meta_id;
+
+    hg_ret = HG_Forward(rpc_handle, cont_get_entries_rpc_cb, &args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not forward call");
+
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    PDC_Client_check_response(&send_context_g);
+
+    if (args.ret != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Server_container_get_entries");
+
+    *n = args.cnt;
+    if (args.cnt > 0) {
+        *entry_ids   = args.ids;
+        *entry_types = (pdc_entity_type_t *)PDC_malloc(sizeof(pdc_entity_type_t) * args.cnt);
+        for (i = 0; i < args.cnt; i++)
+            (*entry_types)[i] = (pdc_entity_type_t)args.types[i];
+        args.types = (uint8_t *)PDC_free(args.types);
+    }
 
 done:
+    HG_Destroy(rpc_handle);
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -6880,13 +7030,123 @@ done:
 }
 
 perr_t
-PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused),
-                   pdcid_t **obj_ids ATTRIBUTE(unused))
+PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t            ret_value = SUCCEED;
+    int               i, n, n_obj_only;
+    pdc_cont_entry_t *entries = NULL;
+
+    ret_value = PDCcont_get_entries(cont_id, &n, &entries);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDCcont_get_entries");
+
+    n_obj_only = 0;
+    for (i = 0; i < n; i++)
+        if (entries[i].type == PDC_ENTITY_OBJ)
+            n_obj_only++;
+
+    *nobj    = n_obj_only;
+    *obj_ids = NULL;
+    if (n_obj_only > 0) {
+        *obj_ids   = (pdcid_t *)PDC_malloc(sizeof(pdcid_t) * n_obj_only);
+        n_obj_only = 0;
+        for (i = 0; i < n; i++) {
+            if (entries[i].type == PDC_ENTITY_OBJ)
+                (*obj_ids)[n_obj_only++] = (pdcid_t)entries[i].meta_id;
+        }
+    }
+
+done:
+    entries = (pdc_cont_entry_t *)PDC_free(entries);
+    FUNC_LEAVE(ret_value);
+}
+
+// Add a number of entries (objects or nested containers) to a container
+perr_t
+PDCcont_put_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
+    ret_value        = PDC_Client_add_del_entries_to_container(n, entry_ids, entry_types, cont_id, ADD_OBJ);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_add_del_entries_to_container");
 
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Remove a number of entries (objects or nested containers) from a container
+perr_t
+PDCcont_del_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+    ret_value        = PDC_Client_add_del_entries_to_container(n, entry_ids, entry_types, cont_id, DEL_OBJ);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_add_del_entries_to_container");
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Retrieve the entries (objects and/or nested containers) stored in a container
+perr_t
+PDCcont_get_entries(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t             ret_value = SUCCEED;
+    int                i;
+    uint64_t *         entry_ids   = NULL;
+    pdc_entity_type_t *entry_types = NULL;
+
+    *n       = 0;
+    *entries = NULL;
+
+    ret_value = PDC_Client_get_container_entries(cont_id, n, &entry_ids, &entry_types);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_get_container_entries");
+
+    if (*n > 0) {
+        *entries = (pdc_cont_entry_t *)PDC_malloc(sizeof(pdc_cont_entry_t) * (*n));
+        for (i = 0; i < *n; i++) {
+            (*entries)[i].meta_id = entry_ids[i];
+            (*entries)[i].type    = entry_types[i];
+        }
+    }
+
+done:
+    entry_ids   = (uint64_t *)PDC_free(entry_ids);
+    entry_types = (pdc_entity_type_t *)PDC_free(entry_types);
+    FUNC_LEAVE(ret_value);
+}
+
+// Create a container and nest it under an existing parent container in one call
+pdcid_t
+PDCcont_create_at(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop)
+{
+    FUNC_ENTER(NULL);
+
+    pdcid_t           ret_value = 0;
+    pdcid_t           cont_id;
+    pdc_entity_type_t type = PDC_ENTITY_CONT;
+
+    cont_id = PDCcont_create(cont_name, cont_create_prop);
+    if (cont_id == 0)
+        PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
+
+    if (PDCcont_put_entries(parent_cont_id, 1, &cont_id, &type) != SUCCEED) {
+        PDCcont_close(cont_id);
+        PGOTO_ERROR(0, "Error nesting container [%s] under parent %" PRIu64, cont_name, parent_cont_id);
+    }
+
+    ret_value = cont_id;
+
+done:
     FUNC_LEAVE(ret_value);
 }
 
