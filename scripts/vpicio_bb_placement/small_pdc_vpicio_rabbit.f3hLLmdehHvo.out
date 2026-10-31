@@ -1,0 +1,9 @@
+=== Small Job 2: server on a Rabbit's CPU, 2 clients on the compute node ===
+Sat Oct 31 08:53:09 PDT 2026
+--- targeting PDC server at rabbit host: tuolumne201 ---
+--- starting PDC server on the rabbit (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_rabbit_small/server.out) ---
+--- starting 2 VPICIO client ranks on the compute node (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_rabbit_small/vpicio.out) ---
+--- closing PDC server (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_rabbit_small/close_server.out) ---
+--- copying per-binary logs into job dir as small_pdc_vpicio_rabbit.f3hLLmdehHvo.{server,vpicio,close_server}.out ---
+Sat Oct 31 08:53:17 PDT 2026
+=== Small Job 2 done ===
