@@ -2335,45 +2335,60 @@ done:
 }
 
 perr_t
-PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
+PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types, uint64_t cont_id)
 {
     FUNC_ENTER(NULL);
 
     perr_t                       ret_value    = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry   = NULL;
     int                          realloc_size = 0;
+    int                          i;
 
     ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
 
     if (cont_entry != NULL) {
+        // A container directly containing itself can never be a valid
+        // hierarchy (it would make any recursive walk of its entries loop
+        // forever), so reject it up front rather than let it corrupt state.
+        for (i = 0; i < n_obj; i++) {
+            if (entry_types[i] == PDC_ENTITY_CONT && obj_ids[i] == cont_id)
+                PGOTO_ERROR(FAIL, "Container %" PRIu64 " cannot contain itself", cont_id);
+        }
+
         // Check if need to allocate space
         if (cont_entry->n_allocated == 0) {
             cont_entry->n_allocated = PDC_ALLOC_BASE_NUM;
             cont_entry->obj_ids     = (uint64_t *)PDC_calloc(sizeof(uint64_t), PDC_ALLOC_BASE_NUM);
-            total_mem_usage_g += sizeof(uint64_t) * cont_entry->n_allocated;
+            cont_entry->entry_types = (uint8_t *)PDC_calloc(sizeof(uint8_t), PDC_ALLOC_BASE_NUM);
+            total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_allocated;
         }
         else if (cont_entry->n_allocated < cont_entry->n_obj + n_obj) {
             // Extend the allocated space by twice its original size
             // or twice the n_obj size, whichever greater
             realloc_size = cont_entry->n_allocated > n_obj ? cont_entry->n_allocated : n_obj;
-            realloc_size *= (sizeof(uint64_t) * 2);
+            realloc_size *= 2;
 
             if (is_debug_g == 1) {
-                LOG_DEBUG("RRealloc from %d to %ld\n", cont_entry->n_allocated,
-                          realloc_size / sizeof(uint64_t));
+                LOG_DEBUG("RRealloc from %d to %d\n", cont_entry->n_allocated, realloc_size);
             }
 
-            cont_entry->obj_ids = (uint64_t *)PDC_realloc(cont_entry->obj_ids, realloc_size);
+            cont_entry->obj_ids =
+                (uint64_t *)PDC_realloc(cont_entry->obj_ids, realloc_size * sizeof(uint64_t));
             if (NULL == cont_entry->obj_ids)
                 PGOTO_ERROR(FAIL, "PDC_realloc failed");
-            total_mem_usage_g -= sizeof(uint64_t) * cont_entry->n_allocated;
+            cont_entry->entry_types =
+                (uint8_t *)PDC_realloc(cont_entry->entry_types, realloc_size * sizeof(uint8_t));
+            if (NULL == cont_entry->entry_types)
+                PGOTO_ERROR(FAIL, "PDC_realloc failed");
+            total_mem_usage_g -= (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_allocated;
 
-            cont_entry->n_allocated = realloc_size / sizeof(uint64_t);
-            total_mem_usage_g += sizeof(uint64_t) * cont_entry->n_allocated;
+            cont_entry->n_allocated = realloc_size;
+            total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_allocated;
         }
 
         // Append the new ids
         memcpy(cont_entry->obj_ids + cont_entry->n_obj, obj_ids, n_obj * sizeof(uint64_t));
+        memcpy(cont_entry->entry_types + cont_entry->n_obj, entry_types, n_obj * sizeof(uint8_t));
         cont_entry->n_obj += n_obj;
 
         // Debug prints
@@ -2390,7 +2405,8 @@ done:
 }
 
 perr_t
-PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
+PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types ATTRIBUTE(unused),
+                              uint64_t cont_id)
 {
     FUNC_ENTER(NULL);
 
@@ -2405,7 +2421,8 @@ PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
         for (i = 0; i < n_obj; i++) {
             for (j = 0; j < cont_entry->n_obj; j++) {
                 if (cont_entry->obj_ids[j] == obj_ids[i]) {
-                    cont_entry->obj_ids[j] = 0;
+                    cont_entry->obj_ids[j]     = 0;
+                    cont_entry->entry_types[j] = 0;
                     cont_entry->n_deleted++;
                     n_deletes++;
                     break;
@@ -2420,6 +2437,43 @@ PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id)
     }
     else
         PGOTO_ERROR(FAIL, "Container %" PRIu64 " not found", cont_id);
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Server_container_get_entries(uint64_t cont_id, int *n_obj, uint64_t **obj_ids, uint8_t **entry_types)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                       ret_value  = SUCCEED;
+    pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    int                          i, n_live = 0;
+
+    *n_obj       = 0;
+    *obj_ids     = NULL;
+    *entry_types = NULL;
+
+    ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
+    if (cont_entry == NULL)
+        PGOTO_ERROR(FAIL, "Container %" PRIu64 " not found", cont_id);
+
+    if (cont_entry->n_obj - cont_entry->n_deleted <= 0)
+        PGOTO_DONE(SUCCEED);
+
+    *obj_ids     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * (cont_entry->n_obj - cont_entry->n_deleted));
+    *entry_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * (cont_entry->n_obj - cont_entry->n_deleted));
+    for (i = 0; i < cont_entry->n_obj; i++) {
+        // obj_ids are never 0 in practice (ids are minted starting from
+        // PDC_SEQ_ID_INIT_VALUE), so a 0 here unambiguously marks a deleted slot
+        if (cont_entry->obj_ids[i] == 0)
+            continue;
+        (*obj_ids)[n_live]     = cont_entry->obj_ids[i];
+        (*entry_types)[n_live] = cont_entry->entry_types[i];
+        n_live++;
+    }
+    *n_obj = n_live;
 
 done:
     FUNC_LEAVE(ret_value);

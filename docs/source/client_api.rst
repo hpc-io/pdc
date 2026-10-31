@@ -92,6 +92,22 @@ quickly navigate to each subsection:
 **4.4.** Containers
 -------------------
 
+A container can hold objects, other containers, or a mix of both, so
+hierarchical structures (e.g. an HDF5-style tree of groups and datasets) can
+be represented directly. :code:`PDCcont_put_entries`,
+:code:`PDCcont_del_entries`, and :code:`PDCcont_get_entries` operate on
+typed entries (see :code:`pdc_entity_type_t` and :code:`pdc_cont_entry_t`
+below) and are the preferred way to manage a container's contents;
+:code:`PDCcont_put_objids`, :code:`PDCcont_del_objids`, and
+:code:`PDCcont_get_objids` remain as an object-only convenience layer on
+top of them.
+
+.. doxygenenum:: pdc_entity_type_t
+   :project: PDC
+
+.. doxygenstruct:: pdc_cont_entry_t
+   :project: PDC
+
 .. doxygenfunction:: PDCcont_create
    :project: PDC
 
@@ -108,6 +124,27 @@ quickly navigate to each subsection:
    :project: PDC
 
 .. doxygenfunction:: PDCcont_persist
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_create_at
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_put_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_del_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_put_objids
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_del_objids
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_objids
    :project: PDC
 
 .. _client_api_objects:

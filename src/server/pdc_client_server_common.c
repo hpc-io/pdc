@@ -1291,16 +1291,26 @@ PDC_Server_s2s_work_done_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unu
 
 perr_t
 PDC_Server_container_add_objs(int n_obj ATTRIBUTE(unused), uint64_t *obj_ids ATTRIBUTE(unused),
-                              uint64_t cont_id ATTRIBUTE(unused))
+                              uint8_t *entry_types ATTRIBUTE(unused), uint64_t cont_id ATTRIBUTE(unused))
 {
     FUNC_ENTER(NULL);
     FUNC_LEAVE(SUCCEED);
 }
 perr_t
 PDC_Server_container_del_objs(int n_obj ATTRIBUTE(unused), uint64_t *obj_ids ATTRIBUTE(unused),
-                              uint64_t cont_id ATTRIBUTE(unused))
+                              uint8_t *entry_types ATTRIBUTE(unused), uint64_t cont_id ATTRIBUTE(unused))
 {
     FUNC_ENTER(NULL);
+    FUNC_LEAVE(SUCCEED);
+}
+perr_t
+PDC_Server_container_get_entries(uint64_t cont_id ATTRIBUTE(unused), int *n_obj, uint64_t **obj_ids,
+                                 uint8_t **entry_types)
+{
+    FUNC_ENTER(NULL);
+    *n_obj       = 0;
+    *obj_ids     = NULL;
+    *entry_types = NULL;
     FUNC_LEAVE(SUCCEED);
 }
 hg_return_t
@@ -4777,9 +4787,11 @@ cont_add_del_objs_bulk_cb(const struct hg_cb_info *hg_cb_info)
     // Server executes after received request from client
     struct bulk_args_t *        bulk_args         = (struct bulk_args_t *)hg_cb_info->arg;
     hg_bulk_t                   local_bulk_handle = hg_cb_info->info.bulk.local_handle;
-    int                         cnt, op;
+    int                         cnt, op, i;
     cont_add_del_objs_rpc_out_t out_struct;
-    uint64_t *                  obj_ids, cont_id;
+    pdc_cont_wire_entry_t *     entries     = NULL;
+    uint64_t *                  obj_ids     = NULL, cont_id;
+    uint8_t *                   entry_types = NULL;
 
     out_struct.ret = 0;
 
@@ -4790,19 +4802,27 @@ cont_add_del_objs_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
         op      = bulk_args->op;
         cont_id = bulk_args->cont_id;
-        obj_ids = (uint64_t *)PDC_calloc(sizeof(uint64_t), cnt);
 
-        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, (void **)&obj_ids, NULL,
+        HG_Bulk_access(local_bulk_handle, 0, bulk_args->nbytes, HG_BULK_READWRITE, 1, (void **)&entries, NULL,
                        NULL);
 
+        // Split the wire (id, type) pairs into the parallel arrays the
+        // server-side container storage expects.
+        obj_ids     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * cnt);
+        entry_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * cnt);
+        for (i = 0; i < cnt; i++) {
+            obj_ids[i]     = entries[i].id;
+            entry_types[i] = (uint8_t)entries[i].type;
+        }
+
         if (op == ADD_OBJ) {
-            if (PDC_Server_container_add_objs(cnt, obj_ids, cont_id) == SUCCEED)
+            if (PDC_Server_container_add_objs(cnt, obj_ids, entry_types, cont_id) == SUCCEED)
                 out_struct.ret = 1;
             else
                 PGOTO_ERROR(HG_OTHER_ERROR, "Error updating objects to container");
         }
         else if (op == DEL_OBJ) {
-            if (PDC_Server_container_del_objs(cnt, obj_ids, cont_id) == SUCCEED)
+            if (PDC_Server_container_del_objs(cnt, obj_ids, entry_types, cont_id) == SUCCEED)
                 out_struct.ret = 1;
             else
                 PGOTO_ERROR(HG_OTHER_ERROR, "Error updating objects to container");
@@ -4814,6 +4834,8 @@ cont_add_del_objs_bulk_cb(const struct hg_cb_info *hg_cb_info)
     } // end of else
 
 done:
+    obj_ids     = (uint64_t *)PDC_free(obj_ids);
+    entry_types = (uint8_t *)PDC_free(entry_types);
     /* Free block handle */
     HG_Bulk_free(local_bulk_handle);
     HG_Respond(bulk_args->handle, NULL, NULL, &out_struct);
@@ -4873,6 +4895,40 @@ HG_TEST_RPC_CB(cont_add_del_objs_rpc, handle)
     HG_Free_input(handle, &in_struct);
 
 done:
+    FUNC_LEAVE(ret_value);
+}
+
+/* cont_get_entries_rpc_cb */
+HG_TEST_RPC_CB(cont_get_entries_rpc, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                ret_value = HG_SUCCESS;
+    cont_get_entries_rpc_in_t  in;
+    cont_get_entries_rpc_out_t out;
+    int                        n_obj       = 0;
+    uint64_t *                 obj_ids     = NULL;
+    uint8_t *                  entry_types = NULL;
+
+    memset(&out, 0, sizeof(cont_get_entries_rpc_out_t));
+    HG_Get_input(handle, &in);
+
+    if (PDC_Server_container_get_entries(in.cont_id, &n_obj, &obj_ids, &entry_types) == SUCCEED) {
+        out.ret   = 1;
+        out.cnt   = n_obj;
+        out.ids   = obj_ids;
+        out.types = entry_types;
+    }
+    else
+        out.ret = -1;
+
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
+    obj_ids     = (uint64_t *)PDC_free(obj_ids);
+    entry_types = (uint8_t *)PDC_free(entry_types);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -6082,6 +6138,7 @@ HG_TEST_THREAD_CB(server_lookup_client)
 HG_TEST_THREAD_CB(gen_obj_id)
 HG_TEST_THREAD_CB(gen_cont_id)
 HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
+HG_TEST_THREAD_CB(cont_get_entries_rpc)
 HG_TEST_THREAD_CB(cont_add_tags_rpc)
 HG_TEST_THREAD_CB(query_read_obj_name_rpc)
 HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
@@ -6200,6 +6257,7 @@ PDC_FUNC_DECLARE_REGISTER(data_server_write_check)
 PDC_FUNC_DECLARE_REGISTER(update_region_loc)
 PDC_FUNC_DECLARE_REGISTER(get_metadata_by_id)
 PDC_FUNC_DECLARE_REGISTER(cont_add_del_objs_rpc)
+PDC_FUNC_DECLARE_REGISTER(cont_get_entries_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_read_obj_name_rpc, query_read_obj_name_in_t, query_read_obj_name_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(storage_meta_name_query_rpc, storage_meta_name_query_in_t, pdc_int_ret_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(get_storage_meta_name_query_bulk_result_rpc, bulk_rpc_in_t, pdc_int_ret_t)
