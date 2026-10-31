@@ -1,0 +1,48 @@
+[INFO] PDC_SERVER[0]: Using [/g/g17/lewis153/pdc_tmp_job1_oversub/] as tmp dir, 256 OSTs, 256 OSTs per data file, 0% to BB
+[INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set, default to tuolumne1031
+[INFO] PDC_SERVER[0]: Connection string: ofi+tcp://tuolumne1031:7000
+[INFO] PDC_SERVER[0]: Without multi-thread
+[INFO] PDC_SERVER[0]: Read cache enabled
+[INFO] PDC_SERVER[0]: Max cache size: 34359738368
+[INFO] PDC_SERVER[0]: Successfully established connection to 0 other PDC servers
+[INFO] PDC_SERVER[0]: Server ready!
+
+
+[INFO] PDC_SERVER[0]: About to flush region 2 for obj_id 1000000001: offset=150994944, size=32.0 MB
+[08:58:53.408738] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 32.0 / 512.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 3 for obj_id 1000000001: offset=394264576, size=32.0 MB
+[08:58:53.449568] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 32.0 / 480.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 0.7055s
+[INFO] PDC_SERVER[0]: About to flush region 2 for obj_id 1000000002: offset=150994944, size=32.0 MB
+[08:58:54.353929] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 32.0 / 448.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 3 for obj_id 1000000002: offset=394264576, size=32.0 MB
+[08:58:54.385671] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 32.0 / 416.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 0.6351s
+[INFO] PDC_SERVER[0]: About to flush region 3 for obj_id 1000000001: offset=0, size=576.0 MB
+[08:59:10.703190] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 576.0 / 21376.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 4 for obj_id 1000000001: offset=159383552, size=896.0 MB
+[08:59:11.683635] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 896.0 / 20800.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 5 for obj_id 1000000001: offset=402653184, size=1152.0 MB
+[08:59:12.894981] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 1152.0 / 19904.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 3 for obj_id 1000000002: offset=0, size=576.0 MB
+[08:59:15.282790] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 576.0 / 18752.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 4 for obj_id 1000000002: offset=159383552, size=896.0 MB
+[08:59:16.213293] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 896.0 / 18176.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 5 for obj_id 1000000002: offset=402653184, size=1152.0 MB
+[08:59:17.354292] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 1152.0 / 17280.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000003: offset=0, size=2688.0 MB
+[08:59:22.353964] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 2688.0 / 16128.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000004: offset=0, size=2688.0 MB
+[08:59:27.365987] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 2688.0 / 13440.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000005: offset=0, size=2688.0 MB
+[08:59:32.349754] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 2688.0 / 10752.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000006: offset=0, size=2688.0 MB
+[08:59:37.326090] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 2688.0 / 8064.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000007: offset=0, size=2688.0 MB
+[08:59:42.280501] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 2688.0 / 5376.0 MB to storage
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000008: offset=0, size=2688.0 MB
+[08:59:47.224870] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 2688.0 / 2688.0 MB to storage
+lfs setstripe: setstripe error for '/g/g17/lewis153/pdc_tmp_job1_oversub//0': Inappropriate ioctl for device
+[INFO] PDC_SERVER[0]: Checkpoint file [/g/g17/lewis153/pdc_tmp_job1_oversub//0/metadata_checkpoint.0]
+[INFO] PDC_SERVER[0]: Checkpointed          8 objects, with          0 regions 
