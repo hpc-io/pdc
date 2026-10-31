@@ -1,0 +1,94 @@
+=== Job 2: server on a Rabbit's CPU, 84 clients on the compute node ===
+Fri Oct 30 10:50:45 PDT 2026
+--- targeting PDC server at rabbit host: tuolumne202 ---
+--- starting PDC server on the rabbit ---
+0.097s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/pdc_server: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+flux-job: task(s) exited with exit code 127
+--- starting 84 VPICIO client ranks on the compute node ---
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+/p/lustre5/lewis153/src/workspace/source/pdc/build/bin/vpicio: error while loading shared libraries: libfi.so.1: cannot open shared object file: No such file or directory
+flux-job: task(s) exited with exit code 127
+Oct 30 10:50:48.825837 PDT 2026 broker.err[0]: rc2.0: /var/tmp/lewis153/jobtmp-0-f3h9wACqFck7/script Exited (rc=127) 3.6s
