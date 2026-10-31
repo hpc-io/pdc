@@ -181,7 +181,7 @@ main(int argc, char **argv)
     for (i = 0; i < timestep; ++i) {
         sprintf(obj_name, "obj-var-xx %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_xx[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_xx[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_xx[i]   = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -191,7 +191,7 @@ main(int argc, char **argv)
         }
         sprintf(obj_name, "obj-var-yy %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_yy[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_yy[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_yy[i]   = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -201,7 +201,7 @@ main(int argc, char **argv)
         }
         sprintf(obj_name, "obj-var-zz %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_zz[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_zz[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_zz[i]   = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -211,7 +211,7 @@ main(int argc, char **argv)
         }
         sprintf(obj_name, "obj-var-pxx %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_pxx[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_pxx[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_pxx[i]  = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -221,7 +221,7 @@ main(int argc, char **argv)
         }
         sprintf(obj_name, "obj-var-pyy %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_pyy[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_pyy[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_pyy[i]  = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -231,7 +231,7 @@ main(int argc, char **argv)
         }
         sprintf(obj_name, "obj-var-pzz %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_pzz[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_pzz[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_pzz[i]  = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -241,7 +241,7 @@ main(int argc, char **argv)
         }
         sprintf(obj_name, "id11 %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_id11[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_id11[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_id11[i] = PDCobj_open(obj_name, pdc_id);
 #endif
@@ -251,7 +251,7 @@ main(int argc, char **argv)
         }
         sprintf(obj_name, "id22 %" PRIu64 "", i);
 #ifdef ENABLE_MPI
-        obj_id22[i] = PDCobj_open_col(obj_name, pdc_id);
+        obj_id22[i] = PDCobj_open_coll(obj_name, pdc_id, MPI_COMM_WORLD);
 #else
         obj_id22[i] = PDCobj_open(obj_name, pdc_id);
 #endif

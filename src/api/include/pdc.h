@@ -30,10 +30,7 @@
 #include "pdc_prop.h"
 #include "pdc_cont.h"
 #include "pdc_logger.h"
-
-#ifdef ENABLE_MPI
 #include "pdc_mpi.h"
-#endif
 
 #include "pdc_obj.h"
 #include "pdc_region.h"

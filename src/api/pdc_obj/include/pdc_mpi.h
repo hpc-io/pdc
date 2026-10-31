@@ -25,7 +25,9 @@
 #ifndef PDC_MPI_H
 #define PDC_MPI_H
 
+#ifdef ENABLE_MPI
 #include "mpi.h"
+#endif
 
 /*********************/
 /* Public Prototypes */
@@ -41,7 +43,12 @@
  *
  * \return Object ID on success/Zero on failure
  */
-pdcid_t PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id,
-                          MPI_Comm comm);
+#ifdef ENABLE_MPI
+pdcid_t PDCobj_create_coll(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id,
+                           MPI_Comm comm);
+#else
+pdcid_t PDCobj_create_coll(pdcid_t cont_id, const char *obj_name, pdcid_t obj_create_prop, int rank_id,
+                           int comm);
+#endif
 
 #endif /* PDC_MPI_H */
