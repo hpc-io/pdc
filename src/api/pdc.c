@@ -35,6 +35,7 @@
 #include "pdc_analysis_pkg.h"
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
+#include "pdc_client_cache.h"
 
 #include "pdc_timing.h"
 
@@ -108,6 +109,12 @@ PDCinit(const char *pdc_name)
     // PDC Client Server connection init
     if (PDC_Client_init() < 0)
         PGOTO_ERROR(0, "PDC client init error");
+
+#ifdef ENABLE_CLIENT_CACHE
+    // PDC Client Cache init
+    PDC_client_cache_init(pdcid);
+#endif
+
 #ifdef PDC_TIMING
     PDC_timing_init();
 #endif
@@ -169,6 +176,11 @@ PDCclose(pdcid_t pdcid)
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
+
+#ifdef ENABLE_CLIENT_CACHE
+    // PDC Client Cache finalize
+    PDC_client_cache_finalize();
+#endif
 
 #ifdef ENABLE_APP_CLOSE_SERVER
     PDC_Client_close_all_server();
