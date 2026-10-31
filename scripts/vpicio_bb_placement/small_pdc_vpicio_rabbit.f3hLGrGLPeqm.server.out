@@ -1,0 +1,38 @@
+0.098s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+libhugetlbfs: ERROR: Line too long when parsing mounts
+[INFO] PDC_SERVER[0]: Using [/g/g17/lewis153/pdc_tmp_job2_rabbit_small/] as tmp dir, 256 OSTs, 256 OSTs per data file, 0% to BB
+[INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set, default to tuolumne201
+[INFO] PDC_SERVER[0]: Connection string: ofi+tcp://tuolumne201:7000
+[INFO] PDC_SERVER[0]: Without multi-thread
+[INFO] PDC_SERVER[0]: Read cache enabled
+[INFO] PDC_SERVER[0]: Max cache size: 34359738368
+[INFO] PDC_SERVER[0]: Successfully established connection to 0 other PDC servers
+[INFO] PDC_SERVER[0]: Server ready!
+
+
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000001: offset=0, size=64.0 MB
+[08:44:43.368198] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 512.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.2131s
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000002: offset=0, size=64.0 MB
+[08:44:43.869384] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 448.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.2009s
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000003: offset=0, size=64.0 MB
+[08:44:44.381639] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 384.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.2120s
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000004: offset=0, size=64.0 MB
+[08:44:44.882520] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 320.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.2007s
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000005: offset=0, size=64.0 MB
+[08:44:45.382899] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 256.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.2002s
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000006: offset=0, size=64.0 MB
+[08:44:45.882376] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 192.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1995s
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000007: offset=0, size=64.0 MB
+[08:44:46.390929] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 128.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.2084s
+[INFO] PDC_SERVER[0]: About to flush region 1 for obj_id 1000000008: offset=0, size=64.0 MB
+[08:44:46.890024] [DEBUG] [pdc_server_region_cache.c:826] PDC_SERVER[0]: Server flushed 64.0 / 64.0 MB to storage
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1997s
+flux-job: task(s) Terminated
