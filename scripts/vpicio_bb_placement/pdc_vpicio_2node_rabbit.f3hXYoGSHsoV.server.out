@@ -1,0 +1,16 @@
+0.094s: flux-shell[2]: stderr: WARN: NUMA domains have intersecting CPUs
+libhugetlbfs: ERROR: Line too long when parsing mounts
+libhugetlbfs: ERROR: Line too long when parsing mounts
+[INFO] PDC_SERVER[0]: Using [/g/g17/lewis153/pdc_tmp_job2_2node_rabbit/] as tmp dir, 256 OSTs, 256 OSTs per data file, 0% to BB
+[INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set, default to tuolumne207
+[INFO] PDC_SERVER[0]: Connection string: ofi+tcp://tuolumne207:7000
+[INFO] PDC_SERVER[0]: Without multi-thread
+[INFO] PDC_SERVER[0]: Read cache enabled
+[INFO] PDC_SERVER[0]: Max cache size: 34359738368
+[INFO] PDC_SERVER[0]: Successfully established connection to 1 other PDC servers
+[INFO] PDC_SERVER[0]: Server ready!
+
+
+7.349s: job.exception f23xsU7R type=cancel severity=0 
+flux-job: task(s) Terminated
