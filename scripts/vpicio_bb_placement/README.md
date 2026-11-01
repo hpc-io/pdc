@@ -93,3 +93,41 @@ its own `#FLUX:` header next to `-S dw=...` (so the chassis+rabbit-cores
 request, no nested reservation needed), and it uses `flux --parent
 getrabbit` to learn which host that reserved core landed on before
 targeting the server there with `--requires=host:`.
+
+## Fabric transport (ofi+cxi) and per-rank NIC pinning
+
+`job2_2node_rabbit` run `f3hXYoGSHsoV` showed all 168 client ranks
+failing `NA_Initialize_opt()` immediately with the default `ofi+tcp`
+("`cxi`" printed as the available provider), so every multi-node
+script (`job1`/`job2` at 2/4/8/16 nodes) now forces `HG_TRANSPORT=ofi+cxi`.
+
+The next run (`f3hXbV6Hdegw`) then had both rabbit-side server ranks
+fail `HG_Init()` immediately under `ofi+cxi`. `probe_fabric.flux.sh`
+(see below) showed the rabbit and compute nodes actually have
+identical libfabric provider sets (`cxi`, `tcp`, etc. on both) with the
+rabbit chassis exposing 2 Cassini NICs -- so it isn't a missing
+provider. `pdc_server.c`/`pdc_client_connect.c` give every rank an
+independent port (`rank % 32 + 7000`) but build an identical
+`HG_HOST`/`HG_TRANSPORT` address string across ranks, with no
+NIC-selection logic at all -- so multiple server ranks sharing one
+rabbit host (`job2`'s `--cores-per-task`) can default to the same
+libfabric device.
+
+`pin_cxi_nic.sh` works around this: it's a wrapper each server rank
+execs through instead of running `pdc_server` directly, reading the
+launcher's pre-exec local-rank env var (`FLUX_TASK_LOCAL_ID`/
+`PMI_LOCAL_RANK`/etc. -- available before the real binary's own
+`MPI_Init` even runs) to set `FI_CXI_DEVICE_NAME=cxi<local_rank % 2>`
+per rank before exec'ing. Wired into the rabbit server launch in all
+four `job2_{2,4,8,16}node_rabbit.flux.sh` scripts (`job1` only ever
+runs 1 server rank per node, so there's no collision risk there).
+**Still unverified against a real run** -- the local-rank env var
+guess hasn't been confirmed to actually be set by this Flux version;
+check the `[pin_cxi_nic]` line each rank logs to `server.out` for
+which source variable it found (or `none`, meaning no pinning
+happened and every rank fell back to device `cxi0`).
+
+- `probe_fabric.flux.sh` -- one-off diagnostic (not part of the
+  job1/job2 comparison): runs `fi_info` and `lspci`/`lsmod`/`ip link`
+  on both a rabbit host and a compute node side by side. Submit with
+  `flux batch probe_fabric.flux.sh`.

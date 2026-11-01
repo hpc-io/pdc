@@ -63,6 +63,13 @@ SERVER=$EXECPATH/pdc_server
 CLIENT=$EXECPATH/vpicio
 CLOSE=$EXECPATH/close_server
 
+# Pin each server rank to its own CXI NIC (the rabbit chassis has 2
+# Cassini devices, confirmed via probe_fabric.flux.sh) so multiple
+# server ranks sharing this one host don't all default to the same
+# device. See pin_cxi_nic.sh for how it picks a local rank.
+PINSCRIPT=/p/lustre5/lewis153/src/workspace/source/pdc/scripts/vpicio_bb_placement/pin_cxi_nic.sh
+NUM_RABBIT_NICS=2
+
 export PDC_TMPDIR=${PDC_TMPDIR:-$HOME/pdc_tmp_job2_8node_rabbit}
 export PDC_NCLIENT_PER_SERVER=$N_USER_CORES_PER_NODE
 rm -rf "$PDC_TMPDIR"
@@ -87,7 +94,7 @@ echo "--- targeting PDC server ranks at rabbit host: $RABBIT_HOST ---"
 
 echo "--- starting $N_SERVER_RANKS-rank distributed PDC server on the rabbit, $CORES_PER_SERVER_RANK cores/rank (stdout/stderr -> $PDC_TMPDIR/server.out) ---"
 flux run --requires=host:"$RABBIT_HOST" -n"$N_SERVER_RANKS" --cores-per-task="$CORES_PER_SERVER_RANK" \
-    "$SERVER" > "$PDC_TMPDIR/server.out" 2>&1 &
+    "$PINSCRIPT" "$NUM_RABBIT_NICS" "$SERVER" > "$PDC_TMPDIR/server.out" 2>&1 &
 SERVER_PID=$!
 sleep 2
 
