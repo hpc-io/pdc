@@ -29,3 +29,7 @@ docs/build
 # ignore .zed
 .zed
 scripts/vpicio_bb_placement/pdc_data/
+
+# generated flux job output / per-binary diagnostic logs (job-id named,
+# regenerated on every run)
+scripts/vpicio_bb_placement/*.out
