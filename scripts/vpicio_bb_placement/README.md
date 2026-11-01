@@ -17,15 +17,20 @@ a Rabbit's own CPU:
   / ~512 MB instead of 672 regions / ~21 GB). For quickly iterating on
   the close-time flush hang seen on the full-size job 2 without waiting
   on an 84-rank run each time.
-- `job1_16node_oversubscribed.flux.sh` / `job2_16node_rabbit.flux.sh` --
-  16-node scale-out of job 1/job 2: one distributed PDC server (16
-  ranks total) either spread 1-per-node across the same 16 compute
-  nodes as the clients (oversubscribed, scaled-out job 1), or all 16
-  ranks consolidated onto a single Rabbit chassis (32 reserved cores, 2
-  cores/rank; scaled-out job 2). **Unverified** -- see the caveats at
-  the top of each script before running; in particular, the
-  NPARTICLES/STEPS defaults imply ~3.3 TB of total writes at this node
-  count, so test with much smaller NPARTICLES first.
+- `job1_2node_oversubscribed.flux.sh` / `job2_2node_rabbit.flux.sh`,
+  `job1_4node_oversubscribed.flux.sh` / `job2_4node_rabbit.flux.sh`,
+  `job1_8node_oversubscribed.flux.sh` / `job2_8node_rabbit.flux.sh`,
+  `job1_16node_oversubscribed.flux.sh` / `job2_16node_rabbit.flux.sh` --
+  N-node scale-outs of job 1/job 2 for N in {2, 4, 8, 16}: one
+  distributed PDC server (N ranks total) either spread 1-per-node
+  across the same N compute nodes as the clients (oversubscribed,
+  scaled-out job 1), or all N ranks consolidated onto a single Rabbit
+  chassis (2*N reserved cores, 2 cores/rank; scaled-out job 2).
+  **Unverified** -- see the caveats at the top of each script before
+  running; in particular, the NPARTICLES/STEPS defaults imply
+  proportionally large total writes at these node counts (~3.3 TB at
+  16 nodes, scaling down to ~0.4 TB at 2 nodes), so test with much
+  smaller NPARTICLES first.
 
 All of job1/job2 assume `pdc_server`, `vpicio`, and `close_server` are
 already built (edit `EXECPATH` near the top of each script) and submit
@@ -35,6 +40,12 @@ with:
 flux batch job1_compute_oversubscribed.flux.sh
 flux batch job2_compute_plus_rabbit.flux.sh
 flux batch small_job2_compute_plus_rabbit.flux.sh
+flux batch job1_2node_oversubscribed.flux.sh
+flux batch job2_2node_rabbit.flux.sh
+flux batch job1_4node_oversubscribed.flux.sh
+flux batch job2_4node_rabbit.flux.sh
+flux batch job1_8node_oversubscribed.flux.sh
+flux batch job2_8node_rabbit.flux.sh
 flux batch job1_16node_oversubscribed.flux.sh
 flux batch job2_16node_rabbit.flux.sh
 ```
