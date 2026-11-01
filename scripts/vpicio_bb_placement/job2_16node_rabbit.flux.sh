@@ -51,6 +51,12 @@ COMPUTE_TIME=5
 # rabbit) than this script itself.
 export LD_LIBRARY_PATH=/opt/cray/pe/cce/20.0.0/cce/x86_64/lib:${LD_LIBRARY_PATH:-}
 
+# See job2_2node_rabbit.flux.sh: multi-node client ranks fail
+# NA_Initialize_opt() with the default ofi+tcp since the compute nodes
+# only register the Slingshot "cxi" libfabric provider. Force cxi
+# explicitly for every rank (server on the rabbit included).
+export HG_TRANSPORT=ofi+cxi
+
 EXECPATH=/p/lustre5/lewis153/src/workspace/source/pdc/build/bin
 SERVER=$EXECPATH/pdc_server
 CLIENT=$EXECPATH/vpicio
