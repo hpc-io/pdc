@@ -7357,7 +7357,11 @@ PDCcont_create_at_col(pdcid_t parent_cont_id, const char *cont_name, pdcid_t con
     pdcid_t           cont_id;
     pdc_entity_type_t type = PDC_ENTITY_CONT;
 
-    cont_id = PDCcont_create_col(cont_name, cont_create_prop);
+#ifdef ENABLE_MPI
+    cont_id = PDCcont_create_coll(cont_name, cont_create_prop, PDC_CLIENT_COMM_WORLD_g);
+#else
+    cont_id = PDCcont_create_coll(cont_name, cont_create_prop, 0);
+#endif
     if (cont_id == 0)
         PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
 
