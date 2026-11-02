@@ -272,13 +272,13 @@ main(int argc, char **argv)
     // independent counterparts (exercised here at comm size 1, but the same
     // rank-0-queries-then-broadcasts code path runs regardless of size).
     {
-        pdcid_t                branch_c;
-        pdcid_t                obj_c1;
-        pdc_entity_type_t      obj_type      = PDC_ENTITY_OBJ;
-        char *                 resolved_name = NULL;
-        pdc_cont_entry_t *     col_entries   = NULL;
-        int                    n_col_entries = 0;
-        struct pdc_cont_info * branch_c_info;
+        pdcid_t               branch_c;
+        pdcid_t               obj_c1;
+        pdc_entity_type_t     obj_type      = PDC_ENTITY_OBJ;
+        char *                resolved_name = NULL;
+        pdc_cont_entry_t *    col_entries   = NULL;
+        int                   n_col_entries = 0;
+        struct pdc_cont_info *branch_c_info;
 
         TASSERT((branch_c = PDCcont_create_at_col(root, "nested_branch_c", cont_prop)) != 0,
                 "Created+nested branch_c under root via _col", "Failed to create+nest branch_c via _col");
@@ -304,9 +304,11 @@ main(int argc, char **argv)
         col_entries = NULL;
 
         TASSERT(PDCcont_get_col((pdcid_t)branch_c_info->meta_id, &resolved_name) == SUCCEED,
-                "Resolved branch_c's name by id via _col", "Failed to resolve branch_c's name by id via _col");
+                "Resolved branch_c's name by id via _col",
+                "Failed to resolve branch_c's name by id via _col");
         TASSERT(resolved_name != NULL && strcmp(resolved_name, "nested_branch_c") == 0,
-                "branch_c's name-by-id matches (via _col)", "branch_c's name-by-id does NOT match (via _col)");
+                "branch_c's name-by-id matches (via _col)",
+                "branch_c's name-by-id does NOT match (via _col)");
         free(resolved_name);
 
         TASSERT(PDCcont_del_entries_col(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,

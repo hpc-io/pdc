@@ -5079,12 +5079,12 @@ PDC_Client_get_container_name(uint64_t cont_meta_id, char **cont_name)
 {
     FUNC_ENTER(NULL);
 
-    perr_t                          ret_value  = SUCCEED;
-    hg_return_t                     hg_ret     = HG_SUCCESS;
-    hg_handle_t                     rpc_handle = HG_HANDLE_NULL;
-    uint32_t                        server_id;
-    cont_get_name_rpc_in_t          in;
-    struct _pdc_cont_get_name_args  args;
+    perr_t                         ret_value  = SUCCEED;
+    hg_return_t                    hg_ret     = HG_SUCCESS;
+    hg_handle_t                    rpc_handle = HG_HANDLE_NULL;
+    uint32_t                       server_id;
+    cont_get_name_rpc_in_t         in;
+    struct _pdc_cont_get_name_args args;
 
     *cont_name = NULL;
     memset(&args, 0, sizeof(args));

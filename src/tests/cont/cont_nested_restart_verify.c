@@ -162,10 +162,9 @@ main(int argc, char **argv)
         TASSERT(tag_value_ret != NULL && strcmp(tag_value_ret, "restart_tag_value") == 0,
                 "restart_root tag value survived restart", "restart_root tag value did NOT survive restart");
 
-        TASSERT(PDCcont_get_tag(branch_a, "restart_tag", (void **)&tag_value_ret, &value_type,
-                                &value_size) == SUCCEED,
-                "Got restart_branch_a tag after restart",
-                "Failed to get restart_branch_a tag after restart");
+        TASSERT(PDCcont_get_tag(branch_a, "restart_tag", (void **)&tag_value_ret, &value_type, &value_size) ==
+                    SUCCEED,
+                "Got restart_branch_a tag after restart", "Failed to get restart_branch_a tag after restart");
         TASSERT(tag_value_ret != NULL && strcmp(tag_value_ret, "restart_tag_value_branch_a") == 0,
                 "restart_branch_a tag value survived restart",
                 "restart_branch_a tag value did NOT survive restart");
