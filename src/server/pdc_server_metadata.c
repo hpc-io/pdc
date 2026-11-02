@@ -1226,9 +1226,14 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             found_identical = find_identical_metadata(lookup_value, metadata);
             if (found_identical != NULL) {
                 out->obj_id = 0;
-                metadata    = (pdc_metadata_t *)PDC_free(metadata);
-                PGOTO_ERROR(FAIL, "Found identical metadata with name %s", pdc_server_rank_g,
-                            metadata->obj_name);
+                // Log before freeing: the format string takes both the rank
+                // and the name, and metadata->obj_name would otherwise be a
+                // use-after-free once PDC_free() runs.
+                LOG_ERROR("Rank [%d]: Found identical metadata with name %s", pdc_server_rank_g,
+                          metadata->obj_name);
+                LOG_JUST_PRINT("\n");
+                metadata = (pdc_metadata_t *)PDC_free(metadata);
+                PGOTO_DONE(FAIL);
             }
             else {
                 PDC_Server_hash_table_list_insert(lookup_value, metadata);
@@ -2474,6 +2479,28 @@ PDC_Server_container_get_entries(uint64_t cont_id, int *n_obj, uint64_t **obj_id
         n_live++;
     }
     *n_obj = n_live;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Server_container_get_name(uint64_t cont_id, char **cont_name)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                       ret_value  = SUCCEED;
+    pdc_cont_hash_table_entry_t *cont_entry = NULL;
+
+    *cont_name = NULL;
+
+    ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
+    if (cont_entry == NULL)
+        PGOTO_ERROR(FAIL, "Container %" PRIu64 " not found", cont_id);
+
+    // Caller owns the returned copy; cont_entry->cont_name is live server
+    // state that can be reused/freed independently of this lookup.
+    *cont_name = strdup(cont_entry->cont_name);
 
 done:
     FUNC_LEAVE(ret_value);

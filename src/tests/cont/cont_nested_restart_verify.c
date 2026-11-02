@@ -148,6 +148,44 @@ main(int argc, char **argv)
     free(entries);
     entries = NULL;
 
+    // Container kv tags must survive the restart (previously dropped
+    // entirely by PDC_Server_checkpoint/_restart -- see
+    // cont_nested_restart_build.c for where these were set).
+    {
+        char *         tag_value_ret = NULL;
+        pdc_var_type_t value_type;
+        psize_t        value_size;
+
+        TASSERT(PDCcont_get_tag(root, "restart_tag", (void **)&tag_value_ret, &value_type, &value_size) ==
+                    SUCCEED,
+                "Got restart_root tag after restart", "Failed to get restart_root tag after restart");
+        TASSERT(tag_value_ret != NULL && strcmp(tag_value_ret, "restart_tag_value") == 0,
+                "restart_root tag value survived restart", "restart_root tag value did NOT survive restart");
+
+        TASSERT(PDCcont_get_tag(branch_a, "restart_tag", (void **)&tag_value_ret, &value_type,
+                                &value_size) == SUCCEED,
+                "Got restart_branch_a tag after restart",
+                "Failed to get restart_branch_a tag after restart");
+        TASSERT(tag_value_ret != NULL && strcmp(tag_value_ret, "restart_tag_value_branch_a") == 0,
+                "restart_branch_a tag value survived restart",
+                "restart_branch_a tag value did NOT survive restart");
+    }
+
+    // A nested child's name must still be resolvable by id after restart,
+    // the same way it would be for an entry discovered via
+    // PDCcont_get_entries() that was never directly opened by name.
+    {
+        char *resolved_name = NULL;
+
+        TASSERT(PDCcont_get((pdcid_t)branch_a_info->meta_id, &resolved_name) == SUCCEED,
+                "Resolved restart_branch_a's name by id after restart",
+                "Failed to resolve restart_branch_a's name by id after restart");
+        TASSERT(resolved_name != NULL && strcmp(resolved_name, "restart_branch_a") == 0,
+                "restart_branch_a's name-by-id matches after restart",
+                "restart_branch_a's name-by-id does NOT match after restart");
+        free(resolved_name);
+    }
+
     TASSERT(PDCcont_close(root) >= 0, "Closed root", "Failed to close root");
     TASSERT(PDCcont_close(branch_a) >= 0, "Closed branch_a", "Failed to close branch_a");
     TASSERT(PDCcont_close(branch_b) >= 0, "Closed branch_b", "Failed to close branch_b");

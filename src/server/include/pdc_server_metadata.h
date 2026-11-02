@@ -283,6 +283,16 @@ perr_t PDC_Server_container_get_entries(uint64_t cont_id, int *n_obj, uint64_t *
                                         uint8_t **entry_types);
 
 /**
+ * Look up a container's name from its id
+ *
+ * \param cont_id [IN]          Container ID
+ * \param cont_name [OUT]       Newly allocated copy of the container's name, caller must free()
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_container_get_name(uint64_t cont_id, char **cont_name);
+
+/**
  * Print all existing metadata in the hash table
  *
  * \return Non-negative on success/Negative on failure

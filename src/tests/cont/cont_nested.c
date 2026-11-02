@@ -88,6 +88,16 @@ main(int argc, char **argv)
     pdcid_t root, branch_a, branch_b, branch_a_sub;
     pdcid_t obj_root1, obj_a1, obj_a2, obj_sub1, obj_b1;
     int     ret_value = TSUCCEED;
+    int     rank      = 0;
+
+    // Both container and object names must be unique server-wide (a
+    // duplicate container name resolves to the SAME underlying container
+    // rather than a fresh independent one, same as a duplicate object name
+    // does), so under MPI each rank runs this independently with its own
+    // rank-suffixed names to avoid colliding with every other rank's
+    // otherwise-identical create calls.
+    char root_name[64], branch_a_name[64], branch_b_name[64], branch_a_sub_name[64];
+    char obj_root1_name[64], obj_a1_name[64], obj_a2_name[64], obj_sub1_name[64], obj_b1_name[64];
 
     uint64_t          root_expected_ids[3];
     pdc_entity_type_t root_expected_types[3];
@@ -104,7 +114,18 @@ main(int argc, char **argv)
 
 #ifdef ENABLE_MPI
     MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
+
+    snprintf(root_name, sizeof(root_name), "nested_root_r%d", rank);
+    snprintf(branch_a_name, sizeof(branch_a_name), "nested_branch_a_r%d", rank);
+    snprintf(branch_b_name, sizeof(branch_b_name), "nested_branch_b_r%d", rank);
+    snprintf(branch_a_sub_name, sizeof(branch_a_sub_name), "nested_branch_a_sub_r%d", rank);
+    snprintf(obj_root1_name, sizeof(obj_root1_name), "nested_obj_root1_r%d", rank);
+    snprintf(obj_a1_name, sizeof(obj_a1_name), "nested_obj_a1_r%d", rank);
+    snprintf(obj_a2_name, sizeof(obj_a2_name), "nested_obj_a2_r%d", rank);
+    snprintf(obj_sub1_name, sizeof(obj_sub1_name), "nested_obj_sub1_r%d", rank);
+    snprintf(obj_b1_name, sizeof(obj_b1_name), "nested_obj_b1_r%d", rank);
 
     TASSERT((pdc = PDCinit("pdc")) != 0, "Call to PDCinit succeeded", "Call to PDCinit failed");
     TASSERT((cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc)) != 0, "Call to PDCprop_create succeeded",
@@ -113,24 +134,24 @@ main(int argc, char **argv)
             "Call to PDCprop_create failed");
 
     // Build the hierarchy
-    TASSERT((root = PDCcont_create("nested_root", cont_prop)) != 0, "Created root container",
+    TASSERT((root = PDCcont_create(root_name, cont_prop)) != 0, "Created root container",
             "Failed to create root container");
-    TASSERT((branch_a = PDCcont_create_at(root, "nested_branch_a", cont_prop)) != 0,
+    TASSERT((branch_a = PDCcont_create_at(root, branch_a_name, cont_prop)) != 0,
             "Created+nested branch_a under root", "Failed to create+nest branch_a");
-    TASSERT((branch_b = PDCcont_create_at(root, "nested_branch_b", cont_prop)) != 0,
+    TASSERT((branch_b = PDCcont_create_at(root, branch_b_name, cont_prop)) != 0,
             "Created+nested branch_b under root", "Failed to create+nest branch_b");
-    TASSERT((branch_a_sub = PDCcont_create_at(branch_a, "nested_branch_a_sub", cont_prop)) != 0,
+    TASSERT((branch_a_sub = PDCcont_create_at(branch_a, branch_a_sub_name, cont_prop)) != 0,
             "Created+nested branch_a_sub under branch_a", "Failed to create+nest branch_a_sub");
 
-    TASSERT((obj_root1 = PDCobj_create(root, "nested_obj_root1", obj_prop)) != 0, "Created obj_root1",
+    TASSERT((obj_root1 = PDCobj_create(root, obj_root1_name, obj_prop)) != 0, "Created obj_root1",
             "Failed to create obj_root1");
-    TASSERT((obj_a1 = PDCobj_create(branch_a, "nested_obj_a1", obj_prop)) != 0, "Created obj_a1",
+    TASSERT((obj_a1 = PDCobj_create(branch_a, obj_a1_name, obj_prop)) != 0, "Created obj_a1",
             "Failed to create obj_a1");
-    TASSERT((obj_a2 = PDCobj_create(branch_a, "nested_obj_a2", obj_prop)) != 0, "Created obj_a2",
+    TASSERT((obj_a2 = PDCobj_create(branch_a, obj_a2_name, obj_prop)) != 0, "Created obj_a2",
             "Failed to create obj_a2");
-    TASSERT((obj_sub1 = PDCobj_create(branch_a_sub, "nested_obj_sub1", obj_prop)) != 0, "Created obj_sub1",
+    TASSERT((obj_sub1 = PDCobj_create(branch_a_sub, obj_sub1_name, obj_prop)) != 0, "Created obj_sub1",
             "Failed to create obj_sub1");
-    TASSERT((obj_b1 = PDCobj_create(branch_b, "nested_obj_b1", obj_prop)) != 0, "Created obj_b1",
+    TASSERT((obj_b1 = PDCobj_create(branch_b, obj_b1_name, obj_prop)) != 0, "Created obj_b1",
             "Failed to create obj_b1");
 
     // Link the plain objects into their parent containers
@@ -148,13 +169,12 @@ main(int argc, char **argv)
             "Failed to link obj_b1 under branch_b");
 
     // Resolve the global meta_ids we expect to see reflected back
-    TASSERT((root_info = PDCcont_get_info("nested_root")) != NULL, "Got root info",
-            "Failed to get root info");
-    TASSERT((branch_a_info = PDCcont_get_info("nested_branch_a")) != NULL, "Got branch_a info",
+    TASSERT((root_info = PDCcont_get_info(root_name)) != NULL, "Got root info", "Failed to get root info");
+    TASSERT((branch_a_info = PDCcont_get_info(branch_a_name)) != NULL, "Got branch_a info",
             "Failed to get branch_a info");
-    TASSERT((branch_b_info = PDCcont_get_info("nested_branch_b")) != NULL, "Got branch_b info",
+    TASSERT((branch_b_info = PDCcont_get_info(branch_b_name)) != NULL, "Got branch_b info",
             "Failed to get branch_b info");
-    TASSERT((branch_a_sub_info = PDCcont_get_info("nested_branch_a_sub")) != NULL, "Got branch_a_sub info",
+    TASSERT((branch_a_sub_info = PDCcont_get_info(branch_a_sub_name)) != NULL, "Got branch_a_sub info",
             "Failed to get branch_a_sub info");
     TASSERT((obj_root1_info = PDCobj_get_info(obj_root1)) != NULL, "Got obj_root1 info",
             "Failed to get obj_root1 info");
@@ -228,6 +248,78 @@ main(int argc, char **argv)
             "branch_b still reports entries after delete");
     free(entries);
     entries = NULL;
+
+    // A nested child's name can be resolved purely from the id reported by
+    // PDCcont_get_entries(), without ever having opened it by name.
+    {
+        char *resolved_name = NULL;
+
+        TASSERT(PDCcont_get((pdcid_t)branch_a_info->meta_id, &resolved_name) == SUCCEED,
+                "Resolved branch_a's name by id", "Failed to resolve branch_a's name by id");
+        TASSERT(resolved_name != NULL && strcmp(resolved_name, branch_a_name) == 0,
+                "branch_a's name-by-id matches", "branch_a's name-by-id does NOT match");
+        free(resolved_name);
+        resolved_name = NULL;
+
+        TASSERT(PDCcont_get((pdcid_t)branch_a_sub_info->meta_id, &resolved_name) == SUCCEED,
+                "Resolved branch_a_sub's name by id", "Failed to resolve branch_a_sub's name by id");
+        TASSERT(resolved_name != NULL && strcmp(resolved_name, branch_a_sub_name) == 0,
+                "branch_a_sub's name-by-id matches", "branch_a_sub's name-by-id does NOT match");
+        free(resolved_name);
+    }
+
+    // Collective (_col) variants should behave identically to their
+    // independent counterparts (exercised here at comm size 1, but the same
+    // rank-0-queries-then-broadcasts code path runs regardless of size).
+    {
+        pdcid_t                branch_c;
+        pdcid_t                obj_c1;
+        pdc_entity_type_t      obj_type      = PDC_ENTITY_OBJ;
+        char *                 resolved_name = NULL;
+        pdc_cont_entry_t *     col_entries   = NULL;
+        int                    n_col_entries = 0;
+        struct pdc_cont_info * branch_c_info;
+
+        TASSERT((branch_c = PDCcont_create_at_col(root, "nested_branch_c", cont_prop)) != 0,
+                "Created+nested branch_c under root via _col", "Failed to create+nest branch_c via _col");
+        TASSERT((branch_c_info = PDCcont_get_info("nested_branch_c")) != NULL, "Got branch_c info",
+                "Failed to get branch_c info");
+        // No PDCobj_create_col exists yet, and PDCcont_put_entries_col below
+        // only sends rank 0's entry_ids anyway, so only rank 0 needs to
+        // actually create obj_c1 -- every other rank creating it too would
+        // just collide on the same object name server-side.
+        if (rank == 0) {
+            TASSERT((obj_c1 = PDCobj_create(branch_c, "nested_obj_c1", obj_prop)) != 0, "Created obj_c1",
+                    "Failed to create obj_c1");
+        }
+        TASSERT(PDCcont_put_entries_col(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
+                "Linked obj_c1 under branch_c via _col", "Failed to link obj_c1 under branch_c via _col");
+
+        TASSERT(PDCcont_get_entries_col(branch_c, &n_col_entries, &col_entries) == SUCCEED,
+                "Got branch_c entries via _col", "Failed to get branch_c entries via _col");
+        TASSERT(n_col_entries == 1 && col_entries[0].type == PDC_ENTITY_OBJ,
+                "branch_c contains exactly obj_c1 (via _col)",
+                "branch_c does not match expected structure (via _col)");
+        free(col_entries);
+        col_entries = NULL;
+
+        TASSERT(PDCcont_get_col((pdcid_t)branch_c_info->meta_id, &resolved_name) == SUCCEED,
+                "Resolved branch_c's name by id via _col", "Failed to resolve branch_c's name by id via _col");
+        TASSERT(resolved_name != NULL && strcmp(resolved_name, "nested_branch_c") == 0,
+                "branch_c's name-by-id matches (via _col)", "branch_c's name-by-id does NOT match (via _col)");
+        free(resolved_name);
+
+        TASSERT(PDCcont_del_entries_col(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
+                "Unlinked obj_c1 from branch_c via _col", "Failed to unlink obj_c1 from branch_c via _col");
+        TASSERT(PDCcont_get_entries_col(branch_c, &n_col_entries, &col_entries) == SUCCEED,
+                "Got branch_c entries after _col delete", "Failed to get branch_c entries after _col delete");
+        TASSERT(n_col_entries == 0, "branch_c is empty after _col delete",
+                "branch_c still reports entries after _col delete");
+        free(col_entries);
+        col_entries = NULL;
+
+        TASSERT(PDCcont_close(branch_c) >= 0, "Closed branch_c", "Failed to close branch_c");
+    }
 
     TASSERT(PDCcont_close(root) >= 0, "Closed root", "Failed to close root");
     TASSERT(PDCcont_close(branch_a) >= 0, "Closed branch_a", "Failed to close branch_a");

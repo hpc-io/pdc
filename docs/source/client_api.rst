@@ -102,6 +102,17 @@ below) and are the preferred way to manage a container's contents;
 :code:`PDCcont_get_objids` remain as an object-only convenience layer on
 top of them.
 
+A nested sub-container's id, as returned by :code:`PDCcont_get_entries`, may
+never have been opened locally by name, so its name is not otherwise known
+to the calling process; :code:`PDCcont_get` resolves a container's name from
+that id alone. Every container function above that talks to the server also
+has an :code:`_col` collective counterpart (:code:`PDCcont_get_col`,
+:code:`PDCcont_put_entries_col`, :code:`PDCcont_del_entries_col`,
+:code:`PDCcont_get_entries_col`, :code:`PDCcont_create_at_col`): all ranks
+call these together, but only rank 0 talks to the server, with the result
+broadcast to every rank -- the same pattern as :code:`PDCcont_create_col`
+and :code:`PDCcont_open_col`.
+
 .. doxygenenum:: pdc_entity_type_t
    :project: PDC
 
@@ -129,13 +140,31 @@ top of them.
 .. doxygenfunction:: PDCcont_create_at
    :project: PDC
 
+.. doxygenfunction:: PDCcont_create_at_col
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_col
+   :project: PDC
+
 .. doxygenfunction:: PDCcont_put_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_put_entries_col
    :project: PDC
 
 .. doxygenfunction:: PDCcont_del_entries
    :project: PDC
 
+.. doxygenfunction:: PDCcont_del_entries_col
+   :project: PDC
+
 .. doxygenfunction:: PDCcont_get_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_entries_col
    :project: PDC
 
 .. doxygenfunction:: PDCcont_put_objids

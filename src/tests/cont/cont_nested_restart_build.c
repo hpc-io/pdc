@@ -85,6 +85,16 @@ main(int argc, char **argv)
     TASSERT(PDCcont_put_objids(branch_b, 1, &obj_b1) == SUCCEED, "Linked restart_obj_b1 under branch_b",
             "Failed to link restart_obj_b1 under branch_b");
 
+    // Container kv tags: PDC_Server_checkpoint/_restart previously dropped
+    // kvtag_list_head entirely on restart. Tag a couple of the nested
+    // containers so cont_nested_restart_verify.c can confirm they survive.
+    TASSERT(PDCcont_put_tag(root, "restart_tag", "restart_tag_value", PDC_STRING,
+                            strlen("restart_tag_value") + 1) == SUCCEED,
+            "Tagged restart_root", "Failed to tag restart_root");
+    TASSERT(PDCcont_put_tag(branch_a, "restart_tag", "restart_tag_value_branch_a", PDC_STRING,
+                            strlen("restart_tag_value_branch_a") + 1) == SUCCEED,
+            "Tagged restart_branch_a", "Failed to tag restart_branch_a");
+
     // Intentionally NOT closing containers/pdc here beyond what's required:
     // the test driver closes the server (which checkpoints it) right after
     // this process exits.

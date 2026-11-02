@@ -1313,6 +1313,13 @@ PDC_Server_container_get_entries(uint64_t cont_id ATTRIBUTE(unused), int *n_obj,
     *entry_types = NULL;
     FUNC_LEAVE(SUCCEED);
 }
+perr_t
+PDC_Server_container_get_name(uint64_t cont_id ATTRIBUTE(unused), char **cont_name)
+{
+    FUNC_ENTER(NULL);
+    *cont_name = NULL;
+    FUNC_LEAVE(SUCCEED);
+}
 hg_return_t
 PDC_Server_query_read_names_cb(const struct hg_cb_info *callback_info ATTRIBUTE(unused))
 {
@@ -4932,6 +4939,35 @@ HG_TEST_RPC_CB(cont_get_entries_rpc, handle)
     FUNC_LEAVE(ret_value);
 }
 
+/* cont_get_name_rpc_cb */
+HG_TEST_RPC_CB(cont_get_name_rpc, handle)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t             ret_value = HG_SUCCESS;
+    cont_get_name_rpc_in_t  in;
+    cont_get_name_rpc_out_t out;
+    char *                  cont_name = NULL;
+
+    memset(&out, 0, sizeof(cont_get_name_rpc_out_t));
+    HG_Get_input(handle, &in);
+
+    if (PDC_Server_container_get_name(in.cont_id, &cont_name) == SUCCEED) {
+        out.ret       = 1;
+        out.cont_name = cont_name;
+    }
+    else
+        out.ret = -1;
+
+    ret_value = HG_Respond(handle, NULL, NULL, &out);
+
+    cont_name = (char *)PDC_free(cont_name);
+    HG_Free_input(handle, &in);
+    HG_Destroy(handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
 /* cont_add_tags_rpc_cb*/
 HG_TEST_RPC_CB(cont_add_tags_rpc, handle)
 {
@@ -6139,6 +6175,7 @@ HG_TEST_THREAD_CB(gen_obj_id)
 HG_TEST_THREAD_CB(gen_cont_id)
 HG_TEST_THREAD_CB(cont_add_del_objs_rpc)
 HG_TEST_THREAD_CB(cont_get_entries_rpc)
+HG_TEST_THREAD_CB(cont_get_name_rpc)
 HG_TEST_THREAD_CB(cont_add_tags_rpc)
 HG_TEST_THREAD_CB(query_read_obj_name_rpc)
 HG_TEST_THREAD_CB(storage_meta_name_query_rpc)
@@ -6258,6 +6295,7 @@ PDC_FUNC_DECLARE_REGISTER(update_region_loc)
 PDC_FUNC_DECLARE_REGISTER(get_metadata_by_id)
 PDC_FUNC_DECLARE_REGISTER(cont_add_del_objs_rpc)
 PDC_FUNC_DECLARE_REGISTER(cont_get_entries_rpc)
+PDC_FUNC_DECLARE_REGISTER(cont_get_name_rpc)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(query_read_obj_name_rpc, query_read_obj_name_in_t, query_read_obj_name_out_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(storage_meta_name_query_rpc, storage_meta_name_query_in_t, pdc_int_ret_t)
 PDC_FUNC_DECLARE_REGISTER_IN_OUT(get_storage_meta_name_query_bulk_result_rpc, bulk_rpc_in_t, pdc_int_ret_t)

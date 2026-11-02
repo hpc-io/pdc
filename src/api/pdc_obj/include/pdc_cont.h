@@ -136,6 +136,31 @@ perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, pdc_lifetime_t cont_l
 pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id);
 
 /**
+ * Get a container's name from its meta id. Intended for ids returned by
+ * PDCcont_get_entries() (e.g. a nested sub-container's id), which may never
+ * have been locally opened and so have no name known to this process.
+ *
+ * \param cont_id [IN]          Container meta id
+ * \param cont_name [OUT]       Newly allocated copy of the container's name,
+ *                              caller must free()
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_get(pdcid_t cont_id, char **cont_name);
+
+/**
+ * Collective version of PDCcont_get(). Only rank 0 queries the server; the
+ * result is broadcast to all ranks.
+ *
+ * \param cont_id [IN]          Container meta id
+ * \param cont_name [OUT]       Newly allocated copy of the container's name,
+ *                              caller must free()
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_get_col(pdcid_t cont_id, char **cont_name);
+
+/**
  * Iterate over containers within a PDC
  *
  * \return Pointer to cont_handle struct/NULL on failure
@@ -262,6 +287,20 @@ perr_t PDCcont_del_objids(pdcid_t cont_id, int nobj, pdcid_t *obj_ids);
 perr_t PDCcont_put_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
 
 /**
+ * Collective version of PDCcont_put_entries(). Only rank 0 sends the
+ * request; all ranks get the same return value via broadcast.
+ *
+ * \param cont_id [IN]          Container ID
+ * \param n [IN]                Number of entries
+ * \param entry_ids [IN]        IDs of the entries to add, one per entry
+ * \param entry_types [IN]      Kind of each entry (PDC_ENTITY_OBJ or PDC_ENTITY_CONT),
+ *                              one per entry
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_put_entries_col(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+
+/**
  * Remove a number of entries (objects or containers) from a container
  *
  * \param cont_id [IN]          Container ID
@@ -275,6 +314,20 @@ perr_t PDCcont_put_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entit
 perr_t PDCcont_del_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
 
 /**
+ * Collective version of PDCcont_del_entries(). Only rank 0 sends the
+ * request; all ranks get the same return value via broadcast.
+ *
+ * \param cont_id [IN]          Container ID
+ * \param n [IN]                Number of entries
+ * \param entry_ids [IN]        IDs of the entries to remove, one per entry
+ * \param entry_types [IN]      Kind of each entry (PDC_ENTITY_OBJ or PDC_ENTITY_CONT),
+ *                              one per entry
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_del_entries_col(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+
+/**
  * Retrieve the entries (objects and/or nested containers) stored in a container
  *
  * \param cont_id [IN]          Container ID
@@ -284,6 +337,18 @@ perr_t PDCcont_del_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entit
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCcont_get_entries(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
+
+/**
+ * Collective version of PDCcont_get_entries(). Only rank 0 queries the
+ * server; the result (count and entries) is broadcast to all ranks.
+ *
+ * \param cont_id [IN]          Container ID
+ * \param n [OUT]               Number of entries returned
+ * \param entries [OUT]         Newly allocated array of \a n entries, caller must free()
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDCcont_get_entries_col(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
 
 /**
  * Create a container and nest it under an existing parent container in one call
@@ -296,5 +361,19 @@ perr_t PDCcont_get_entries(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
  * \return Container id of the new child on success/Zero on failure
  */
 pdcid_t PDCcont_create_at(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop);
+
+/**
+ * Collective version of PDCcont_create_at(). All ranks must call this
+ * together; only rank 0 talks to the server and the resulting container id
+ * is broadcast to all ranks.
+ *
+ * \param parent_cont_id [IN]   Container ID of the parent
+ * \param cont_name [IN]        Name of the new child container
+ * \param cont_create_prop [IN] ID of container property,
+ *                              returned by PDCprop_create(PDC_CONT_CREATE)
+ *
+ * \return Container id of the new child on success/Zero on failure
+ */
+pdcid_t PDCcont_create_at_col(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop);
 
 #endif /* PDC_CONT_H */

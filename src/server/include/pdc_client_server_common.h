@@ -1076,6 +1076,17 @@ typedef struct {
     uint8_t *  types;
 } cont_get_entries_rpc_out_t;
 
+/* Define cont_get_name_rpc_in_t */
+typedef struct {
+    hg_uint64_t cont_id;
+} cont_get_name_rpc_in_t;
+
+/* Define cont_get_name_rpc_out_t */
+typedef struct {
+    hg_int32_t  ret;
+    hg_string_t cont_name;
+} cont_get_name_rpc_out_t;
+
 /* Define cont_add_tags_rpc_in_t */
 typedef struct {
     hg_uint64_t cont_id;
@@ -3593,6 +3604,44 @@ hg_proc_cont_get_entries_rpc_out_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+/* Define hg_proc_cont_get_name_rpc_in_t */
+static HG_INLINE hg_return_t
+hg_proc_cont_get_name_rpc_in_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t             ret         = HG_SUCCESS;
+    cont_get_name_rpc_in_t *struct_data = (cont_get_name_rpc_in_t *)data;
+
+    ret = hg_proc_uint64_t(proc, &struct_data->cont_id);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    FUNC_LEAVE(ret);
+}
+
+/* Define hg_proc_cont_get_name_rpc_out_t */
+static HG_INLINE hg_return_t
+hg_proc_cont_get_name_rpc_out_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t              ret         = HG_SUCCESS;
+    cont_get_name_rpc_out_t *struct_data = (cont_get_name_rpc_out_t *)data;
+
+    ret = hg_proc_int32_t(proc, &struct_data->ret);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->cont_name);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    FUNC_LEAVE(ret);
+}
+
 /* Define hg_proc_cont_add_tags_rpc_in_t */
 static HG_INLINE hg_return_t
 hg_proc_cont_add_tags_rpc_in_t(hg_proc_t proc, void *data)
@@ -4319,6 +4368,7 @@ hg_id_t PDC_bulk_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_gen_cont_id_register(hg_class_t *hg_class);
 hg_id_t PDC_cont_add_del_objs_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_cont_get_entries_rpc_register(hg_class_t *hg_class);
+hg_id_t PDC_cont_get_name_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_query_read_obj_name_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_server_checkpoint_rpc_register(hg_class_t *hg_class);
 hg_id_t PDC_send_shm_register(hg_class_t *hg_class);
