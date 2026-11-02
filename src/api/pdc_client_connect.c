@@ -7078,7 +7078,7 @@ done:
 // Collective version of PDCcont_get(): only rank 0 queries the server, result
 // is broadcast to all ranks.
 perr_t
-PDCcont_get_col(pdcid_t cont_id, char **cont_name)
+PDCcont_get_coll(pdcid_t cont_id, char **cont_name)
 {
     FUNC_ENTER(NULL);
 
@@ -7204,7 +7204,7 @@ done:
 // Collective version of PDCcont_put_entries(): only rank 0 sends the
 // request, the resulting success/failure is broadcast to all ranks.
 perr_t
-PDCcont_put_entries_col(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
+PDCcont_put_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
 {
     FUNC_ENTER(NULL);
 
@@ -7240,7 +7240,7 @@ done:
 // Collective version of PDCcont_del_entries(): only rank 0 sends the
 // request, the resulting success/failure is broadcast to all ranks.
 perr_t
-PDCcont_del_entries_col(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
+PDCcont_del_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
 {
     FUNC_ENTER(NULL);
 
@@ -7293,7 +7293,7 @@ done:
 // Collective version of PDCcont_get_entries(): only rank 0 queries the
 // server, the count and entry array are broadcast to all ranks.
 perr_t
-PDCcont_get_entries_col(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries)
+PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries)
 {
     FUNC_ENTER(NULL);
 
@@ -7349,7 +7349,7 @@ done:
 // together. Only rank 0 talks to the server for both the create and the
 // nesting step; every rank ends up with the same locally-registered id.
 pdcid_t
-PDCcont_create_at_col(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop)
+PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop)
 {
     FUNC_ENTER(NULL);
 
@@ -7365,7 +7365,7 @@ PDCcont_create_at_col(pdcid_t parent_cont_id, const char *cont_name, pdcid_t con
     if (cont_id == 0)
         PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
 
-    if (PDCcont_put_entries_col(parent_cont_id, 1, &cont_id, &type) != SUCCEED) {
+    if (PDCcont_put_entries_coll(parent_cont_id, 1, &cont_id, &type) != SUCCEED) {
         PDCcont_close(cont_id);
         PGOTO_ERROR(0, "Error nesting container [%s] under parent %" PRIu64, cont_name, parent_cont_id);
     }

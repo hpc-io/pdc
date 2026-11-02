@@ -280,11 +280,11 @@ main(int argc, char **argv)
         int                   n_col_entries = 0;
         struct pdc_cont_info *branch_c_info;
 
-        TASSERT((branch_c = PDCcont_create_at_col(root, "nested_branch_c", cont_prop)) != 0,
+        TASSERT((branch_c = PDCcont_create_at_coll(root, "nested_branch_c", cont_prop)) != 0,
                 "Created+nested branch_c under root via _col", "Failed to create+nest branch_c via _col");
         TASSERT((branch_c_info = PDCcont_get_info("nested_branch_c")) != NULL, "Got branch_c info",
                 "Failed to get branch_c info");
-        // No PDCobj_create_col exists yet, and PDCcont_put_entries_col below
+        // No PDCobj_create_col exists yet, and PDCcont_put_entries_coll below
         // only sends rank 0's entry_ids anyway, so only rank 0 needs to
         // actually create obj_c1 -- every other rank creating it too would
         // just collide on the same object name server-side.
@@ -292,10 +292,10 @@ main(int argc, char **argv)
             TASSERT((obj_c1 = PDCobj_create(branch_c, "nested_obj_c1", obj_prop)) != 0, "Created obj_c1",
                     "Failed to create obj_c1");
         }
-        TASSERT(PDCcont_put_entries_col(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
+        TASSERT(PDCcont_put_entries_coll(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
                 "Linked obj_c1 under branch_c via _col", "Failed to link obj_c1 under branch_c via _col");
 
-        TASSERT(PDCcont_get_entries_col(branch_c, &n_col_entries, &col_entries) == SUCCEED,
+        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries) == SUCCEED,
                 "Got branch_c entries via _col", "Failed to get branch_c entries via _col");
         TASSERT(n_col_entries == 1 && col_entries[0].type == PDC_ENTITY_OBJ,
                 "branch_c contains exactly obj_c1 (via _col)",
@@ -303,7 +303,7 @@ main(int argc, char **argv)
         free(col_entries);
         col_entries = NULL;
 
-        TASSERT(PDCcont_get_col((pdcid_t)branch_c_info->meta_id, &resolved_name) == SUCCEED,
+        TASSERT(PDCcont_get_coll((pdcid_t)branch_c_info->meta_id, &resolved_name) == SUCCEED,
                 "Resolved branch_c's name by id via _col",
                 "Failed to resolve branch_c's name by id via _col");
         TASSERT(resolved_name != NULL && strcmp(resolved_name, "nested_branch_c") == 0,
@@ -311,9 +311,9 @@ main(int argc, char **argv)
                 "branch_c's name-by-id does NOT match (via _col)");
         free(resolved_name);
 
-        TASSERT(PDCcont_del_entries_col(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
+        TASSERT(PDCcont_del_entries_coll(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
                 "Unlinked obj_c1 from branch_c via _col", "Failed to unlink obj_c1 from branch_c via _col");
-        TASSERT(PDCcont_get_entries_col(branch_c, &n_col_entries, &col_entries) == SUCCEED,
+        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries) == SUCCEED,
                 "Got branch_c entries after _col delete", "Failed to get branch_c entries after _col delete");
         TASSERT(n_col_entries == 0, "branch_c is empty after _col delete",
                 "branch_c still reports entries after _col delete");

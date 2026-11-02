@@ -106,9 +106,9 @@ A nested sub-container's id, as returned by :code:`PDCcont_get_entries`, may
 never have been opened locally by name, so its name is not otherwise known
 to the calling process; :code:`PDCcont_get` resolves a container's name from
 that id alone. Every container function above that talks to the server also
-has an :code:`_col` collective counterpart (:code:`PDCcont_get_col`,
-:code:`PDCcont_put_entries_col`, :code:`PDCcont_del_entries_col`,
-:code:`PDCcont_get_entries_col`, :code:`PDCcont_create_at_col`): all ranks
+has an :code:`_col` collective counterpart (:code:`PDCcont_get_coll`,
+:code:`PDCcont_put_entries_coll`, :code:`PDCcont_del_entries_coll`,
+:code:`PDCcont_get_entries_coll`, :code:`PDCcont_create_at_coll`): all ranks
 call these together, but only rank 0 talks to the server, with the result
 broadcast to every rank -- the same pattern as :code:`PDCcont_create_col`
 and :code:`PDCcont_open_col`.
@@ -140,31 +140,31 @@ and :code:`PDCcont_open_col`.
 .. doxygenfunction:: PDCcont_create_at
    :project: PDC
 
-.. doxygenfunction:: PDCcont_create_at_col
+.. doxygenfunction:: PDCcont_create_at_coll
    :project: PDC
 
 .. doxygenfunction:: PDCcont_get
    :project: PDC
 
-.. doxygenfunction:: PDCcont_get_col
+.. doxygenfunction:: PDCcont_get_coll
    :project: PDC
 
 .. doxygenfunction:: PDCcont_put_entries
    :project: PDC
 
-.. doxygenfunction:: PDCcont_put_entries_col
+.. doxygenfunction:: PDCcont_put_entries_coll
    :project: PDC
 
 .. doxygenfunction:: PDCcont_del_entries
    :project: PDC
 
-.. doxygenfunction:: PDCcont_del_entries_col
+.. doxygenfunction:: PDCcont_del_entries_coll
    :project: PDC
 
 .. doxygenfunction:: PDCcont_get_entries
    :project: PDC
 
-.. doxygenfunction:: PDCcont_get_entries_col
+.. doxygenfunction:: PDCcont_get_entries_coll
    :project: PDC
 
 .. doxygenfunction:: PDCcont_put_objids

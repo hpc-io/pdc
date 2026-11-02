@@ -28,7 +28,7 @@ Containers
   inspect a container's mix of object and container entries directly. A
   nested entry's id alone does not reveal its name (it may never have been
   opened locally); :code:`PDCcont_get` resolves a container's name from its
-  id. Every one of these has an :code:`_col` collective counterpart for use
+  id. Every one of these has an :code:`_coll` collective counterpart for use
   across MPI ranks. See :ref:`client_api_containers` for details.
 
 Objects

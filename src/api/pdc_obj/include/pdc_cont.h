@@ -174,7 +174,7 @@ perr_t PDCcont_get(pdcid_t cont_id, char **cont_name);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_get_col(pdcid_t cont_id, char **cont_name);
+perr_t PDCcont_get_coll(pdcid_t cont_id, char **cont_name);
 
 /**
  * Iterate over containers within a PDC
@@ -314,7 +314,7 @@ perr_t PDCcont_put_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entit
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_put_entries_col(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+perr_t PDCcont_put_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
 
 /**
  * Remove a number of entries (objects or containers) from a container
@@ -341,7 +341,7 @@ perr_t PDCcont_del_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entit
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_del_entries_col(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+perr_t PDCcont_del_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
 
 /**
  * Retrieve the entries (objects and/or nested containers) stored in a container
@@ -364,7 +364,7 @@ perr_t PDCcont_get_entries(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_get_entries_col(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
+perr_t PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
 
 /**
  * Create a container and nest it under an existing parent container in one call
@@ -390,6 +390,6 @@ pdcid_t PDCcont_create_at(pdcid_t parent_cont_id, const char *cont_name, pdcid_t
  *
  * \return Container id of the new child on success/Zero on failure
  */
-pdcid_t PDCcont_create_at_col(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop);
+pdcid_t PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop);
 
 #endif /* PDC_CONT_H */
