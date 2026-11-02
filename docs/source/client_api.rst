@@ -122,7 +122,7 @@ and :code:`PDCcont_open_col`.
 .. doxygenfunction:: PDCcont_create
    :project: PDC
 
-.. doxygenfunction:: PDCcont_create_col
+.. doxygenfunction:: PDCcont_create_coll
    :project: PDC
 
 .. doxygenfunction:: PDCcont_open

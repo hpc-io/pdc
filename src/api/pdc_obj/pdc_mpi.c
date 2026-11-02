@@ -29,8 +29,9 @@
 #include "pdc_client_connect.h"
 #include "pdc_mpi.h"
 
+#ifdef ENABLE_MPI
 pdcid_t
-PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id, MPI_Comm comm)
+PDCobj_create_coll(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id, MPI_Comm comm)
 {
     FUNC_ENTER(NULL);
 
@@ -61,7 +62,27 @@ PDCobj_create_mpi(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, in
 done:
     FUNC_LEAVE(ret_value);
 }
+#else
+pdcid_t
+PDCobj_create_coll(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, int rank_id, int comm)
+{
+    FUNC_ENTER(NULL);
 
+    pdcid_t ret_value;
+
+    (void)rank_id;
+    (void)comm;
+
+    ret_value = PDC_obj_create(cont_id, obj_name, obj_prop_id, PDC_OBJ_GLOBAL);
+    if (ret_value == 0)
+        PGOTO_ERROR(0, "PDC_obj_create failed");
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+#endif
+
+#ifdef ENABLE_MPI
 perr_t
 PDCobj_encode(pdcid_t obj_id, pdcid_t *meta_id)
 {
@@ -116,3 +137,4 @@ PDCobj_decode(pdcid_t obj_id, pdcid_t meta_id)
 done:
     FUNC_LEAVE(ret_value);
 }
+#endif
