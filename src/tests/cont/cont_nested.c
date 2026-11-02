@@ -281,8 +281,7 @@ main(int argc, char **argv)
         struct pdc_cont_info *branch_c_info;
 
         TASSERT((branch_c = PDCcont_create_at_coll(root, "nested_branch_c", cont_prop, MPI_COMM_WORLD)) != 0,
-                "Created+nested branch_c under root via _coll",
-                "Failed to create+nest branch_c via _coll");
+                "Created+nested branch_c under root via _coll", "Failed to create+nest branch_c via _coll");
         TASSERT((branch_c_info = PDCcont_get_info("nested_branch_c")) != NULL, "Got branch_c info",
                 "Failed to get branch_c info");
 
@@ -335,8 +334,7 @@ main(int argc, char **argv)
         free(col_entries);
         col_entries = NULL;
 
-        TASSERT(PDCcont_get_coll((pdcid_t)branch_c_info->meta_id, &resolved_name, MPI_COMM_WORLD) ==
-                    SUCCEED,
+        TASSERT(PDCcont_get_coll((pdcid_t)branch_c_info->meta_id, &resolved_name, MPI_COMM_WORLD) == SUCCEED,
                 "Resolved branch_c's name by id via _coll",
                 "Failed to resolve branch_c's name by id via _coll");
         TASSERT(resolved_name != NULL && strcmp(resolved_name, "nested_branch_c") == 0,

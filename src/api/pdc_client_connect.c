@@ -7410,11 +7410,11 @@ PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t co
 {
     FUNC_ENTER(NULL);
 
-    pdcid_t                ret_value     = 0;
+    pdcid_t                ret_value = 0;
     pdcid_t                cont_id;
-    pdc_entity_type_t      type          = PDC_ENTITY_CONT;
-    int                    n_entries     = 0;
-    pdc_cont_entry_t *     entries       = NULL;
+    pdc_entity_type_t      type      = PDC_ENTITY_CONT;
+    int                    n_entries = 0;
+    pdc_cont_entry_t *     entries   = NULL;
     int                    i;
     char *                 existing_name = NULL;
     struct _pdc_cont_prop *cont_prop     = NULL;
