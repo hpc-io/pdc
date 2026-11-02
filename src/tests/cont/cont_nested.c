@@ -280,10 +280,28 @@ main(int argc, char **argv)
         int                   n_col_entries = 0;
         struct pdc_cont_info *branch_c_info;
 
-        TASSERT((branch_c = PDCcont_create_at_coll(root, "nested_branch_c", cont_prop)) != 0,
-                "Created+nested branch_c under root via _col", "Failed to create+nest branch_c via _col");
+        TASSERT((branch_c = PDCcont_create_at_coll(root, "nested_branch_c", cont_prop, MPI_COMM_WORLD)) != 0,
+                "Created+nested branch_c under root via _coll",
+                "Failed to create+nest branch_c via _coll");
         TASSERT((branch_c_info = PDCcont_get_info("nested_branch_c")) != NULL, "Got branch_c info",
                 "Failed to get branch_c info");
+
+        // Calling the collective create again with the same name must be
+        // idempotent: it should return the SAME child rather than minting a
+        // duplicate (previously this left two same-named children both
+        // linked under root).
+        {
+            pdcid_t branch_c_again =
+                PDCcont_create_at_coll(root, "nested_branch_c", cont_prop, MPI_COMM_WORLD);
+            TASSERT(branch_c_again != 0, "Re-created+nested branch_c under root via _coll",
+                    "Failed to re-create+nest branch_c via _coll");
+            struct pdc_cont_info *branch_c_again_info = PDCcont_get_info("nested_branch_c");
+            TASSERT(branch_c_again_info != NULL && branch_c_again_info->meta_id == branch_c_info->meta_id,
+                    "Re-creating branch_c by name is idempotent (same meta_id)",
+                    "Re-creating branch_c by name minted a duplicate");
+            PDCcont_close(branch_c_again);
+        }
+
         // No PDCobj_create_col exists yet, and PDCcont_put_entries_coll below
         // only sends rank 0's entry_ids anyway, so only rank 0 needs to
         // actually create obj_c1 -- every other rank creating it too would
@@ -292,31 +310,57 @@ main(int argc, char **argv)
             TASSERT((obj_c1 = PDCobj_create(branch_c, "nested_obj_c1", obj_prop)) != 0, "Created obj_c1",
                     "Failed to create obj_c1");
         }
-        TASSERT(PDCcont_put_entries_coll(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
-                "Linked obj_c1 under branch_c via _col", "Failed to link obj_c1 under branch_c via _col");
+        TASSERT(PDCcont_put_entries_coll(branch_c, 1, &obj_c1, &obj_type, MPI_COMM_WORLD) == SUCCEED,
+                "Linked obj_c1 under branch_c via _coll", "Failed to link obj_c1 under branch_c via _coll");
 
-        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries) == SUCCEED,
-                "Got branch_c entries via _col", "Failed to get branch_c entries via _col");
+        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries, MPI_COMM_WORLD) == SUCCEED,
+                "Got branch_c entries via _coll", "Failed to get branch_c entries via _coll");
         TASSERT(n_col_entries == 1 && col_entries[0].type == PDC_ENTITY_OBJ,
-                "branch_c contains exactly obj_c1 (via _col)",
-                "branch_c does not match expected structure (via _col)");
+                "branch_c contains exactly obj_c1 (via _coll)",
+                "branch_c does not match expected structure (via _coll)");
+
+        // Object entries must also be resolvable by id, the same way
+        // container entries already are -- PDCcont_get() falls back to the
+        // object metadata table when the id isn't a container.
+        uint64_t discovered_obj_c1_meta_id = col_entries[0].meta_id;
+        {
+            char *obj_c1_name = NULL;
+            TASSERT(PDCcont_get_coll((pdcid_t)discovered_obj_c1_meta_id, &obj_c1_name, MPI_COMM_WORLD) ==
+                        SUCCEED,
+                    "Resolved obj_c1's name by id via _coll", "Failed to resolve obj_c1's name by id");
+            TASSERT(obj_c1_name != NULL && strcmp(obj_c1_name, "nested_obj_c1") == 0,
+                    "obj_c1's name-by-id matches", "obj_c1's name-by-id does NOT match");
+            free(obj_c1_name);
+        }
         free(col_entries);
         col_entries = NULL;
 
-        TASSERT(PDCcont_get_coll((pdcid_t)branch_c_info->meta_id, &resolved_name) == SUCCEED,
-                "Resolved branch_c's name by id via _col",
-                "Failed to resolve branch_c's name by id via _col");
+        TASSERT(PDCcont_get_coll((pdcid_t)branch_c_info->meta_id, &resolved_name, MPI_COMM_WORLD) ==
+                    SUCCEED,
+                "Resolved branch_c's name by id via _coll",
+                "Failed to resolve branch_c's name by id via _coll");
         TASSERT(resolved_name != NULL && strcmp(resolved_name, "nested_branch_c") == 0,
-                "branch_c's name-by-id matches (via _col)",
-                "branch_c's name-by-id does NOT match (via _col)");
+                "branch_c's name-by-id matches (via _coll)",
+                "branch_c's name-by-id does NOT match (via _coll)");
         free(resolved_name);
 
-        TASSERT(PDCcont_del_entries_coll(branch_c, 1, &obj_c1, &obj_type) == SUCCEED,
-                "Unlinked obj_c1 from branch_c via _col", "Failed to unlink obj_c1 from branch_c via _col");
-        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries) == SUCCEED,
-                "Got branch_c entries after _col delete", "Failed to get branch_c entries after _col delete");
-        TASSERT(n_col_entries == 0, "branch_c is empty after _col delete",
-                "branch_c still reports entries after _col delete");
+        // Delete by the raw meta id discovered via get_entries_coll above
+        // (NOT the local handle obj_c1 from PDCobj_create) -- this is
+        // exactly the pattern a VOL connector would need for an entry it
+        // only knows about from listing a container's contents, never
+        // having locally opened it.
+        {
+            pdcid_t discovered_obj_c1 = (pdcid_t)discovered_obj_c1_meta_id;
+            TASSERT(PDCcont_del_entries_coll(branch_c, 1, &discovered_obj_c1, &obj_type, MPI_COMM_WORLD) ==
+                        SUCCEED,
+                    "Unlinked obj_c1 (by discovered meta id) from branch_c via _coll",
+                    "Failed to unlink obj_c1 (by discovered meta id) from branch_c via _coll");
+        }
+        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries, MPI_COMM_WORLD) == SUCCEED,
+                "Got branch_c entries after _coll delete",
+                "Failed to get branch_c entries after _coll delete");
+        TASSERT(n_col_entries == 0, "branch_c is empty after _coll delete",
+                "branch_c still reports entries after _coll delete");
         free(col_entries);
         col_entries = NULL;
 

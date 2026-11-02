@@ -152,12 +152,13 @@ perr_t PDCprop_set_cont_lifetime(pdcid_t cont_create_prop, pdc_lifetime_t cont_l
 pdcid_t PDCcont_get_id(const char *cont_name, pdcid_t pdc_id);
 
 /**
- * Get a container's name from its meta id. Intended for ids returned by
- * PDCcont_get_entries() (e.g. a nested sub-container's id), which may never
- * have been locally opened and so have no name known to this process.
+ * Get an entry's name from its meta id. Works for both containers and plain
+ * objects (checks containers first, then falls back to object metadata),
+ * since an id returned by PDCcont_get_entries() may name either, and may
+ * never have been locally opened and so have no name known to this process.
  *
- * \param cont_id [IN]          Container meta id
- * \param cont_name [OUT]       Newly allocated copy of the container's name,
+ * \param cont_id [IN]          Container or object meta id
+ * \param cont_name [OUT]       Newly allocated copy of the entry's name,
  *                              caller must free()
  *
  * \return Non-negative on success/Negative on failure
@@ -166,15 +167,22 @@ perr_t PDCcont_get(pdcid_t cont_id, char **cont_name);
 
 /**
  * Collective version of PDCcont_get(). Only rank 0 queries the server; the
- * result is broadcast to all ranks.
+ * result is broadcast to all ranks over \a comm.
  *
- * \param cont_id [IN]          Container meta id
- * \param cont_name [OUT]       Newly allocated copy of the container's name,
+ * \param cont_id [IN]          Container or object meta id
+ * \param cont_name [OUT]       Newly allocated copy of the entry's name,
  *                              caller must free()
+ * \param comm [IN]             MPI communicator all callers share
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_get_coll(pdcid_t cont_id, char **cont_name);
+perr_t PDCcont_get_coll(pdcid_t cont_id, char **cont_name,
+#ifdef ENABLE_MPI
+                        MPI_Comm
+#else
+                        int
+#endif
+                            comm);
 
 /**
  * Iterate over containers within a PDC
@@ -304,17 +312,24 @@ perr_t PDCcont_put_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entit
 
 /**
  * Collective version of PDCcont_put_entries(). Only rank 0 sends the
- * request; all ranks get the same return value via broadcast.
+ * request; all ranks get the same return value via broadcast over \a comm.
  *
  * \param cont_id [IN]          Container ID
  * \param n [IN]                Number of entries
  * \param entry_ids [IN]        IDs of the entries to add, one per entry
  * \param entry_types [IN]      Kind of each entry (PDC_ENTITY_OBJ or PDC_ENTITY_CONT),
  *                              one per entry
+ * \param comm [IN]             MPI communicator all callers share
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_put_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+perr_t PDCcont_put_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types,
+#ifdef ENABLE_MPI
+                                MPI_Comm
+#else
+                                int
+#endif
+                                    comm);
 
 /**
  * Remove a number of entries (objects or containers) from a container
@@ -331,17 +346,24 @@ perr_t PDCcont_del_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entit
 
 /**
  * Collective version of PDCcont_del_entries(). Only rank 0 sends the
- * request; all ranks get the same return value via broadcast.
+ * request; all ranks get the same return value via broadcast over \a comm.
  *
  * \param cont_id [IN]          Container ID
  * \param n [IN]                Number of entries
  * \param entry_ids [IN]        IDs of the entries to remove, one per entry
  * \param entry_types [IN]      Kind of each entry (PDC_ENTITY_OBJ or PDC_ENTITY_CONT),
  *                              one per entry
+ * \param comm [IN]             MPI communicator all callers share
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_del_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types);
+perr_t PDCcont_del_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types,
+#ifdef ENABLE_MPI
+                                MPI_Comm
+#else
+                                int
+#endif
+                                    comm);
 
 /**
  * Retrieve the entries (objects and/or nested containers) stored in a container
@@ -356,15 +378,23 @@ perr_t PDCcont_get_entries(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
 
 /**
  * Collective version of PDCcont_get_entries(). Only rank 0 queries the
- * server; the result (count and entries) is broadcast to all ranks.
+ * server; the result (count and entries) is broadcast to all ranks over
+ * \a comm.
  *
  * \param cont_id [IN]          Container ID
  * \param n [OUT]               Number of entries returned
  * \param entries [OUT]         Newly allocated array of \a n entries, caller must free()
+ * \param comm [IN]             MPI communicator all callers share
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries);
+perr_t PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries,
+#ifdef ENABLE_MPI
+                                MPI_Comm
+#else
+                                int
+#endif
+                                    comm);
 
 /**
  * Create a container and nest it under an existing parent container in one call
@@ -381,15 +411,24 @@ pdcid_t PDCcont_create_at(pdcid_t parent_cont_id, const char *cont_name, pdcid_t
 /**
  * Collective version of PDCcont_create_at(). All ranks must call this
  * together; only rank 0 talks to the server and the resulting container id
- * is broadcast to all ranks.
+ * is broadcast to all ranks over \a comm. If a child with \a cont_name
+ * already exists directly under \a parent_cont_id, its existing id is
+ * returned instead of creating a duplicate.
  *
  * \param parent_cont_id [IN]   Container ID of the parent
  * \param cont_name [IN]        Name of the new child container
  * \param cont_create_prop [IN] ID of container property,
  *                              returned by PDCprop_create(PDC_CONT_CREATE)
+ * \param comm [IN]             MPI communicator all callers share
  *
- * \return Container id of the new child on success/Zero on failure
+ * \return Container id of the new (or already-existing) child on success/Zero on failure
  */
-pdcid_t PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop);
+pdcid_t PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop,
+#ifdef ENABLE_MPI
+                               MPI_Comm
+#else
+                               int
+#endif
+                                   comm);
 
 #endif /* PDC_CONT_H */

@@ -283,10 +283,13 @@ perr_t PDC_Server_container_get_entries(uint64_t cont_id, int *n_obj, uint64_t *
                                         uint8_t **entry_types);
 
 /**
- * Look up a container's name from its id
+ * Look up an entry's name from its id. Checks containers first, then falls
+ * back to object metadata, since a caller resolving an arbitrary entry id
+ * (e.g. from PDC_Server_container_get_entries()) may not know ahead of time
+ * whether it names a container or a plain object.
  *
- * \param cont_id [IN]          Container ID
- * \param cont_name [OUT]       Newly allocated copy of the container's name, caller must free()
+ * \param cont_id [IN]          Container or object ID
+ * \param cont_name [OUT]       Newly allocated copy of the entry's name, caller must free()
  *
  * \return Non-negative on success/Negative on failure
  */

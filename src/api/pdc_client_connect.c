@@ -4842,8 +4842,12 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Resolve each local id's global meta_id according to its declared entry
-// type (object vs. nested container) and add/delete them from a container.
+// Resolve each id's global meta_id according to its declared entry type
+// (object vs. nested container) and add/delete them from a container. Each
+// id may either be a locally-registered handle (resolved via PDC_find_id)
+// or an already-resolved meta id the caller discovered via
+// PDCcont_get_entries() and never locally opened -- the latter falls
+// straight through unchanged, since the server only ever deals in meta ids.
 //
 // struct _pdc_obj_info and struct _pdc_cont_info store their public "name"
 // and "meta_id" fields in different order, so resolving a container's local
@@ -4864,14 +4868,23 @@ PDC_Client_add_del_entries_to_container(int n, pdcid_t *local_ids, pdc_entity_ty
 
     entries = (pdc_cont_wire_entry_t *)PDC_malloc(sizeof(pdc_cont_wire_entry_t) * n);
     for (i = 0; i < n; i++) {
-        if ((id_info = PDC_find_id(local_ids[i])) == NULL) {
-            LOG_ERROR("Failed to find PDC ID: %" PRIu64 "\n", local_ids[i]);
-            continue;
+        id_info = PDC_find_id(local_ids[i]);
+        if (id_info != NULL) {
+            if (entry_types[i] == PDC_ENTITY_CONT)
+                entries[i].id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+            else
+                entries[i].id = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
         }
-        if (entry_types[i] == PDC_ENTITY_CONT)
-            entries[i].id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
-        else
-            entries[i].id = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
+        else {
+            // Not a locally-registered id -- treat it as an already-resolved
+            // meta id directly, e.g. one discovered via
+            // PDCcont_get_entries() that was never opened locally. Without
+            // this fallback there is no way to delete (or re-add) such an
+            // entry at all, and silently skipping it here used to leave
+            // entries[i] uninitialized while the call still reported
+            // success.
+            entries[i].id = (uint64_t)local_ids[i];
+        }
         entries[i].type = (uint64_t)entry_types[i];
     }
 
@@ -7075,10 +7088,15 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Collective version of PDCcont_get(): only rank 0 queries the server, result
-// is broadcast to all ranks.
+// Collective version of PDCcont_get(): only rank 0 of comm queries the
+// server, result is broadcast to every rank of comm.
 perr_t
-PDCcont_get_coll(pdcid_t cont_id, char **cont_name)
+PDCcont_get_coll(pdcid_t cont_id, char **cont_name,
+#ifdef ENABLE_MPI
+                 MPI_Comm comm)
+#else
+                 int comm ATTRIBUTE(unused))
+#endif
 {
     FUNC_ENTER(NULL);
 
@@ -7088,18 +7106,21 @@ PDCcont_get_coll(pdcid_t cont_id, char **cont_name)
 
 #ifdef ENABLE_MPI
     int name_len = 0;
+    int comm_rank;
 
-    if (pdc_client_mpi_rank_g == 0) {
+    MPI_Comm_rank(comm, &comm_rank);
+
+    if (comm_rank == 0) {
         ret_value = PDCcont_get(cont_id, cont_name);
         if (ret_value == SUCCEED && *cont_name != NULL)
             name_len = (int)strlen(*cont_name) + 1;
     }
-    MPI_Bcast(&ret_value, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
-    MPI_Bcast(&name_len, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
+    MPI_Bcast(&name_len, 1, MPI_INT, 0, comm);
     if (ret_value == SUCCEED && name_len > 0) {
-        if (pdc_client_mpi_rank_g != 0)
+        if (comm_rank != 0)
             *cont_name = (char *)PDC_malloc(name_len);
-        MPI_Bcast(*cont_name, name_len, MPI_CHAR, 0, PDC_CLIENT_COMM_WORLD_g);
+        MPI_Bcast(*cont_name, name_len, MPI_CHAR, 0, comm);
     }
 #else
     PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
@@ -7201,19 +7222,28 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Collective version of PDCcont_put_entries(): only rank 0 sends the
-// request, the resulting success/failure is broadcast to all ranks.
+// Collective version of PDCcont_put_entries(): only rank 0 of comm sends
+// the request, the resulting success/failure is broadcast to every rank of
+// comm.
 perr_t
-PDCcont_put_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
+PDCcont_put_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types,
+#ifdef ENABLE_MPI
+                         MPI_Comm comm)
+#else
+                         int comm ATTRIBUTE(unused))
+#endif
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
 
 #ifdef ENABLE_MPI
-    if (pdc_client_mpi_rank_g == 0)
+    int comm_rank;
+
+    MPI_Comm_rank(comm, &comm_rank);
+    if (comm_rank == 0)
         ret_value = PDCcont_put_entries(cont_id, n, entry_ids, entry_types);
-    MPI_Bcast(&ret_value, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
 #else
     PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
 #endif
@@ -7237,19 +7267,28 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Collective version of PDCcont_del_entries(): only rank 0 sends the
-// request, the resulting success/failure is broadcast to all ranks.
+// Collective version of PDCcont_del_entries(): only rank 0 of comm sends
+// the request, the resulting success/failure is broadcast to every rank of
+// comm.
 perr_t
-PDCcont_del_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
+PDCcont_del_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types,
+#ifdef ENABLE_MPI
+                         MPI_Comm comm)
+#else
+                         int comm ATTRIBUTE(unused))
+#endif
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
 
 #ifdef ENABLE_MPI
-    if (pdc_client_mpi_rank_g == 0)
+    int comm_rank;
+
+    MPI_Comm_rank(comm, &comm_rank);
+    if (comm_rank == 0)
         ret_value = PDCcont_del_entries(cont_id, n, entry_ids, entry_types);
-    MPI_Bcast(&ret_value, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
 #else
     PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
 #endif
@@ -7290,10 +7329,16 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Collective version of PDCcont_get_entries(): only rank 0 queries the
-// server, the count and entry array are broadcast to all ranks.
+// Collective version of PDCcont_get_entries(): only rank 0 of comm queries
+// the server, the count and entry array are broadcast to every rank of
+// comm.
 perr_t
-PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries)
+PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries,
+#ifdef ENABLE_MPI
+                         MPI_Comm comm)
+#else
+                         int comm ATTRIBUTE(unused))
+#endif
 {
     FUNC_ENTER(NULL);
 
@@ -7303,14 +7348,17 @@ PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries)
     *entries = NULL;
 
 #ifdef ENABLE_MPI
-    if (pdc_client_mpi_rank_g == 0)
+    int comm_rank;
+
+    MPI_Comm_rank(comm, &comm_rank);
+    if (comm_rank == 0)
         ret_value = PDCcont_get_entries(cont_id, n, entries);
-    MPI_Bcast(&ret_value, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
-    MPI_Bcast(n, 1, MPI_INT, 0, PDC_CLIENT_COMM_WORLD_g);
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
+    MPI_Bcast(n, 1, MPI_INT, 0, comm);
     if (ret_value == SUCCEED && *n > 0) {
-        if (pdc_client_mpi_rank_g != 0)
+        if (comm_rank != 0)
             *entries = (pdc_cont_entry_t *)PDC_malloc(sizeof(pdc_cont_entry_t) * (*n));
-        MPI_Bcast(*entries, (int)(sizeof(pdc_cont_entry_t) * (*n)), MPI_BYTE, 0, PDC_CLIENT_COMM_WORLD_g);
+        MPI_Bcast(*entries, (int)(sizeof(pdc_cont_entry_t) * (*n)), MPI_BYTE, 0, comm);
     }
 #else
     PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
@@ -7348,24 +7396,54 @@ done:
 // Collective version of PDCcont_create_at(): all ranks must call this
 // together. Only rank 0 talks to the server for both the create and the
 // nesting step; every rank ends up with the same locally-registered id.
+// Idempotent by name: if a child named cont_name already exists directly
+// under parent_cont_id, reopens and returns that existing child instead of
+// minting a duplicate (previously, calling this twice with the same name
+// left two same-named but distinct children both linked under parent).
 pdcid_t
-PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop)
+PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop,
+#ifdef ENABLE_MPI
+                       MPI_Comm comm)
+#else
+                       int comm ATTRIBUTE(unused))
+#endif
 {
     FUNC_ENTER(NULL);
 
-    pdcid_t           ret_value = 0;
-    pdcid_t           cont_id;
-    pdc_entity_type_t type = PDC_ENTITY_CONT;
+    pdcid_t                ret_value     = 0;
+    pdcid_t                cont_id;
+    pdc_entity_type_t      type          = PDC_ENTITY_CONT;
+    int                    n_entries     = 0;
+    pdc_cont_entry_t *     entries       = NULL;
+    int                    i;
+    char *                 existing_name = NULL;
+    struct _pdc_cont_prop *cont_prop     = NULL;
+    struct _pdc_id_info *  id_info       = NULL;
 
-#ifdef ENABLE_MPI
-    cont_id = PDCcont_create_coll(cont_name, cont_create_prop, PDC_CLIENT_COMM_WORLD_g);
-#else
-    cont_id = PDCcont_create_coll(cont_name, cont_create_prop, 0);
-#endif
+    if (PDCcont_get_entries_coll(parent_cont_id, &n_entries, &entries, comm) == SUCCEED) {
+        for (i = 0; i < n_entries; i++) {
+            if (entries[i].type != PDC_ENTITY_CONT)
+                continue;
+            if (PDCcont_get_coll((pdcid_t)entries[i].meta_id, &existing_name, comm) == SUCCEED &&
+                existing_name != NULL && strcmp(existing_name, cont_name) == 0) {
+                if ((id_info = PDC_find_id(cont_create_prop)) != NULL) {
+                    cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
+                    ret_value = PDCcont_open_coll(cont_name, cont_prop->pdc->local_id, comm);
+                }
+                existing_name = (char *)PDC_free(existing_name);
+                entries       = (pdc_cont_entry_t *)PDC_free(entries);
+                FUNC_LEAVE(ret_value);
+            }
+            existing_name = (char *)PDC_free(existing_name);
+        }
+        entries = (pdc_cont_entry_t *)PDC_free(entries);
+    }
+
+    cont_id = PDCcont_create_coll(cont_name, cont_create_prop, comm);
     if (cont_id == 0)
         PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
 
-    if (PDCcont_put_entries_coll(parent_cont_id, 1, &cont_id, &type) != SUCCEED) {
+    if (PDCcont_put_entries_coll(parent_cont_id, 1, &cont_id, &type, comm) != SUCCEED) {
         PDCcont_close(cont_id);
         PGOTO_ERROR(0, "Error nesting container [%s] under parent %" PRIu64, cont_name, parent_cont_id);
     }

@@ -102,16 +102,26 @@ below) and are the preferred way to manage a container's contents;
 :code:`PDCcont_get_objids` remain as an object-only convenience layer on
 top of them.
 
-A nested sub-container's id, as returned by :code:`PDCcont_get_entries`, may
-never have been opened locally by name, so its name is not otherwise known
-to the calling process; :code:`PDCcont_get` resolves a container's name from
-that id alone. Every container function above that talks to the server also
-has an :code:`_col` collective counterpart (:code:`PDCcont_get_coll`,
+A nested entry's id, as returned by :code:`PDCcont_get_entries`, may name
+either a container or a plain object, and may never have been opened
+locally by name, so its name and kind are not otherwise known to the
+calling process. :code:`PDCcont_get` resolves an entry's name from that id
+alone regardless of which kind it is (it checks containers first, then
+falls back to object metadata). :code:`PDCcont_put_entries`/
+:code:`PDCcont_del_entries` likewise accept such a raw, never-locally-opened
+id directly -- there is no need to open an entry first just to add or
+remove it.
+
+Every container function above that talks to the server also has an
+:code:`_coll` collective counterpart (:code:`PDCcont_get_coll`,
 :code:`PDCcont_put_entries_coll`, :code:`PDCcont_del_entries_coll`,
 :code:`PDCcont_get_entries_coll`, :code:`PDCcont_create_at_coll`): all ranks
-call these together, but only rank 0 talks to the server, with the result
-broadcast to every rank -- the same pattern as :code:`PDCcont_create_col`
-and :code:`PDCcont_open_col`.
+call these together over a shared :code:`comm`, but only rank 0 talks to the
+server, with the result broadcast to every rank of :code:`comm` -- the same
+pattern as :code:`PDCcont_create_coll` and :code:`PDCcont_open_coll`.
+:code:`PDCcont_create_at_coll` is additionally idempotent by name: calling
+it again with a child name that already exists directly under the same
+parent returns the existing child instead of creating a duplicate.
 
 .. doxygenenum:: pdc_entity_type_t
    :project: PDC

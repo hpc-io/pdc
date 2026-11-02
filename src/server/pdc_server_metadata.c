@@ -2347,7 +2347,10 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
     perr_t                       ret_value    = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry   = NULL;
     int                          realloc_size = 0;
-    int                          i;
+    int                          i, j, n_new;
+    uint64_t *                   new_ids;
+    uint8_t *                    new_types;
+    pbool_t                      is_dup;
 
     ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
 
@@ -2360,6 +2363,27 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
                 PGOTO_ERROR(FAIL, "Container %" PRIu64 " cannot contain itself", cont_id);
         }
 
+        // Filter out any (id, type) pair already present as a live entry,
+        // so adding the same entry twice (e.g. a retried or otherwise
+        // repeated call) is idempotent instead of creating a duplicate.
+        new_ids   = (uint64_t *)PDC_malloc(sizeof(uint64_t) * n_obj);
+        new_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * n_obj);
+        n_new     = 0;
+        for (i = 0; i < n_obj; i++) {
+            is_dup = FALSE;
+            for (j = 0; j < cont_entry->n_obj; j++) {
+                if (cont_entry->obj_ids[j] == obj_ids[i] && cont_entry->entry_types[j] == entry_types[i]) {
+                    is_dup = TRUE;
+                    break;
+                }
+            }
+            if (!is_dup) {
+                new_ids[n_new]   = obj_ids[i];
+                new_types[n_new] = entry_types[i];
+                n_new++;
+            }
+        }
+
         // Check if need to allocate space
         if (cont_entry->n_allocated == 0) {
             cont_entry->n_allocated = PDC_ALLOC_BASE_NUM;
@@ -2367,10 +2391,10 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
             cont_entry->entry_types = (uint8_t *)PDC_calloc(sizeof(uint8_t), PDC_ALLOC_BASE_NUM);
             total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_allocated;
         }
-        else if (cont_entry->n_allocated < cont_entry->n_obj + n_obj) {
+        else if (cont_entry->n_allocated < cont_entry->n_obj + n_new) {
             // Extend the allocated space by twice its original size
-            // or twice the n_obj size, whichever greater
-            realloc_size = cont_entry->n_allocated > n_obj ? cont_entry->n_allocated : n_obj;
+            // or twice the n_new size, whichever greater
+            realloc_size = cont_entry->n_allocated > n_new ? cont_entry->n_allocated : n_new;
             realloc_size *= 2;
 
             if (is_debug_g == 1) {
@@ -2391,14 +2415,18 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
             total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_allocated;
         }
 
-        // Append the new ids
-        memcpy(cont_entry->obj_ids + cont_entry->n_obj, obj_ids, n_obj * sizeof(uint64_t));
-        memcpy(cont_entry->entry_types + cont_entry->n_obj, entry_types, n_obj * sizeof(uint8_t));
-        cont_entry->n_obj += n_obj;
+        // Append the new (deduplicated) ids
+        if (n_new > 0) {
+            memcpy(cont_entry->obj_ids + cont_entry->n_obj, new_ids, n_new * sizeof(uint64_t));
+            memcpy(cont_entry->entry_types + cont_entry->n_obj, new_types, n_new * sizeof(uint8_t));
+            cont_entry->n_obj += n_new;
+        }
+        new_ids   = (uint64_t *)PDC_free(new_ids);
+        new_types = (uint8_t *)PDC_free(new_types);
 
         // Debug prints
         if (is_debug_g == 1) {
-            LOG_DEBUG("Add %d objects to container %" PRIu64 ", total %d\n", n_obj, cont_id,
+            LOG_DEBUG("Add %d objects to container %" PRIu64 ", total %d\n", n_new, cont_id,
                       cont_entry->n_obj - cont_entry->n_deleted);
         }
     }
@@ -2491,12 +2519,23 @@ PDC_Server_container_get_name(uint64_t cont_id, char **cont_name)
 
     perr_t                       ret_value  = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry = NULL;
+    pdc_metadata_t *             obj_meta   = NULL;
 
     *cont_name = NULL;
 
     ret_value = PDC_Server_find_container_by_id(cont_id, &cont_entry);
-    if (cont_entry == NULL)
-        PGOTO_ERROR(FAIL, "Container %" PRIu64 " not found", cont_id);
+    if (cont_entry == NULL) {
+        // Entries returned by PDC_Server_container_get_entries() can be
+        // either containers or plain objects (see pdc_entity_type_t), so a
+        // caller resolving an arbitrary entry's name by id has no way to
+        // know which lookup to use ahead of time. Fall back to the object
+        // metadata table before giving up.
+        ret_value = PDC_Server_get_local_metadata_by_id(cont_id, &obj_meta);
+        if (obj_meta == NULL)
+            PGOTO_ERROR(FAIL, "Entry %" PRIu64 " not found as container or object", cont_id);
+        *cont_name = strdup(obj_meta->obj_name);
+        PGOTO_DONE(SUCCEED);
+    }
 
     // Caller owns the returned copy; cont_entry->cont_name is live server
     // state that can be reused/freed independently of this lookup.
