@@ -11,6 +11,7 @@
 #include "hdf5.h"
 #include "pdc.h"
 #include "pdc_client_server_common.h"
+#include "pdc_client_connect.h"
 
 int
 main(int argc, char **argv)
