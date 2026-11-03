@@ -467,8 +467,7 @@ main(int argc, char **argv)
             // PDCcont_get_entries() directly on the RAW discovered id, with
             // no open in between -- confirms PDC_Client_get_container_entries()'s
             // discovered-id fallback.
-            TASSERT(PDCcont_get_entries((pdcid_t)a_child_meta, &n_direct_entries, &direct_entries) ==
-                        SUCCEED,
+            TASSERT(PDCcont_get_entries((pdcid_t)a_child_meta, &n_direct_entries, &direct_entries) == SUCCEED,
                     "Got entries directly from a never-opened discovered container id",
                     "Failed to get entries directly from a never-opened discovered container id");
             TASSERT(n_direct_entries == 1 && direct_entries[0].type == PDC_ENTITY_OBJ,
