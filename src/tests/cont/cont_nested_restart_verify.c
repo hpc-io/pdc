@@ -251,12 +251,12 @@ main(int argc, char **argv)
     // container and object now (mimicking a file being reopened and
     // extended) and confirm neither id collides with any id already in use.
     {
-        pdcid_t                new_cont, new_obj, new_cont_prop, new_obj_prop;
-        struct pdc_cont_info * new_cont_info;
-        struct pdc_obj_info *  new_obj_info;
-        uint64_t               new_cont_id, new_obj_id;
-        uint64_t               existing_ids[10];
-        int                    n_existing = 0, i;
+        pdcid_t               new_cont, new_obj, new_cont_prop, new_obj_prop;
+        struct pdc_cont_info *new_cont_info;
+        struct pdc_obj_info * new_obj_info;
+        uint64_t              new_cont_id, new_obj_id;
+        uint64_t              existing_ids[10];
+        int                   n_existing = 0, i;
 
         existing_ids[n_existing++] = root_info->meta_id;
         existing_ids[n_existing++] = branch_a_info->meta_id;
