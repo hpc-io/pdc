@@ -1267,6 +1267,11 @@ PDC_Server_checkpoint()
         PGOTO_ERROR(FAIL, "Checkpoint file open error");
     }
 
+    // Checkpoint the id counter. Without this, a restart reseeds it back to
+    // this rank's base (see PDC_Server_init) and starts handing out ids that
+    // existing containers/objects already use.
+    fwrite(&pdc_id_seq_g, sizeof(uint64_t), 1, file);
+
     // Checkpoint containers
     n_entry = hash_table_num_entries(container_hash_table_g);
     fwrite(&n_entry, sizeof(int), 1, file);
@@ -1494,6 +1499,20 @@ PDC_Server_restart(char *filename)
     FILE *file = fopen(filename, "r");
     if (file == NULL)
         PGOTO_ERROR(FAIL, "Error with fopen, filename: [%s]", filename);
+
+    // Restore the id counter saved by PDC_Server_checkpoint. PDC_Server_init
+    // already seeded pdc_id_seq_g to this rank's base before calling us; keep
+    // whichever is larger so a corrupt/short read can't move it backwards
+    // into a range that's already in use.
+    {
+        uint64_t saved_id_seq = 0;
+        if (fread(&saved_id_seq, sizeof(uint64_t), 1, file) != 1) {
+            LOG_ERROR("Read failed for pdc_id_seq_g\n");
+        }
+        else if (saved_id_seq > pdc_id_seq_g) {
+            pdc_id_seq_g = saved_id_seq;
+        }
+    }
 
     if (fread(&n_cont, sizeof(int), 1, file) != 1) {
         LOG_ERROR("Read failed for n_count\n");

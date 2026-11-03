@@ -55,6 +55,7 @@ main(int argc, char **argv)
     pdcid_t           root, branch_a, branch_b, branch_a_sub;
     pdcid_t           obj_root1, obj_a1, obj_sub1, obj_b1;
     pdcid_t           dup_parent_a, dup_parent_b;
+    uint64_t          child_a_meta_id, child_b_meta_id;
     int               ret_value = TSUCCEED;
     int               n_entries;
     pdc_cont_entry_t *entries = NULL;
@@ -191,9 +192,8 @@ main(int argc, char **argv)
     // one silently clobbering the other via a hash collision (see
     // cont_nested_restart_build.c for how/why this was built).
     {
-        uint64_t child_a_meta_id, child_b_meta_id;
-        char *   resolved_name_a = NULL;
-        char *   resolved_name_b = NULL;
+        char *resolved_name_a = NULL;
+        char *resolved_name_b = NULL;
 
         TASSERT((dup_parent_a = PDCcont_open("restart_dup_parent_a", pdc)) > 0,
                 "Reopened restart_dup_parent_a after restart",
@@ -243,6 +243,56 @@ main(int argc, char **argv)
                 "parent_b's child resolves to the right name after restart",
                 "parent_b's child resolved to the wrong name after restart");
         free(resolved_name_b);
+    }
+
+    // The server's id counter (pdc_id_seq_g) was not saved in the checkpoint,
+    // so a restart reseeded it back to this rank's base and started handing
+    // out ids that pre-restart containers/objects already use. Create a new
+    // container and object now (mimicking a file being reopened and
+    // extended) and confirm neither id collides with any id already in use.
+    {
+        pdcid_t                new_cont, new_obj, new_cont_prop, new_obj_prop;
+        struct pdc_cont_info * new_cont_info;
+        struct pdc_obj_info *  new_obj_info;
+        uint64_t               new_cont_id, new_obj_id;
+        uint64_t               existing_ids[10];
+        int                    n_existing = 0, i;
+
+        existing_ids[n_existing++] = root_info->meta_id;
+        existing_ids[n_existing++] = branch_a_info->meta_id;
+        existing_ids[n_existing++] = branch_b_info->meta_id;
+        existing_ids[n_existing++] = branch_a_sub_info->meta_id;
+        existing_ids[n_existing++] = obj_root1_info->meta_id;
+        existing_ids[n_existing++] = obj_a1_info->meta_id;
+        existing_ids[n_existing++] = obj_sub1_info->meta_id;
+        existing_ids[n_existing++] = obj_b1_info->meta_id;
+        existing_ids[n_existing++] = child_a_meta_id;
+        existing_ids[n_existing++] = child_b_meta_id;
+
+        new_cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc);
+        TASSERT((new_cont = PDCcont_create("restart_post_new_cont", new_cont_prop)) != 0,
+                "Created a new container after restart", "Failed to create a new container after restart");
+        TASSERT((new_cont_info = PDCcont_get_info("restart_post_new_cont")) != NULL,
+                "Got new post-restart container's info", "Failed to get new post-restart container's info");
+
+        new_obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc);
+        TASSERT((new_obj = PDCobj_create(root, "restart_post_new_obj", new_obj_prop)) != 0,
+                "Created a new object after restart", "Failed to create a new object after restart");
+        TASSERT((new_obj_info = PDCobj_get_info(new_obj)) != NULL, "Got new post-restart object's info",
+                "Failed to get new post-restart object's info");
+
+        new_cont_id = new_cont_info->meta_id;
+        new_obj_id  = new_obj_info->meta_id;
+        for (i = 0; i < n_existing; i++) {
+            TASSERT(new_cont_id != existing_ids[i],
+                    "New post-restart container id does not collide with an existing id",
+                    "New post-restart container id REUSED an id already in use before restart");
+            TASSERT(new_obj_id != existing_ids[i],
+                    "New post-restart object id does not collide with an existing id",
+                    "New post-restart object id REUSED an id already in use before restart");
+        }
+        TASSERT(PDCcont_close(new_cont) >= 0, "Closed new post-restart container",
+                "Failed to close new post-restart container");
     }
 
     TASSERT(PDCcont_close(root) >= 0, "Closed root", "Failed to close root");
