@@ -2500,8 +2500,9 @@ PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
         LOG_DEBUG("Successfully deleted %d objects\n", n_deletes);
 
         if (n_deletes != n_obj)
-            PGOTO_ERROR(FAIL, "%d of %d entries requested for deletion from container %" PRIu64
-                              " were not found (already deleted, or never added)",
+            PGOTO_ERROR(FAIL,
+                        "%d of %d entries requested for deletion from container %" PRIu64
+                        " were not found (already deleted, or never added)",
                         n_obj - n_deletes, n_obj, cont_id);
     }
     else

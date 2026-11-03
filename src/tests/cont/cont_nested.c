@@ -375,10 +375,10 @@ main(int argc, char **argv)
     // "Zone" legitimately repeat under different parents.
     {
         pdcid_t           shared_under_a, shared_under_b;
-        pdc_cont_entry_t *a_entries   = NULL;
-        pdc_cont_entry_t *b_entries   = NULL;
-        int               n_a_entries = 0;
-        int               n_b_entries = 0;
+        pdc_cont_entry_t *a_entries    = NULL;
+        pdc_cont_entry_t *b_entries    = NULL;
+        int               n_a_entries  = 0;
+        int               n_b_entries  = 0;
         uint64_t          a_child_meta = 0;
         uint64_t          b_child_meta = 0;
         int               j;

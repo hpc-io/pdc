@@ -2552,8 +2552,7 @@ perr_t
 PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIBUTE(unused), pdcid_t *cont_id)
 {
     FUNC_ENTER(NULL);
-    FUNC_LEAVE(
-        PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(cont_name), cont_id));
+    FUNC_LEAVE(PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(cont_name), cont_id));
 }
 
 // Scoped variant used by nested-container creation (see
@@ -2579,8 +2578,7 @@ PDC_Client_create_cont_id_scoped(const char *cont_name, uint64_t scope_id, pdcid
 
     snprintf(scoped_name, sizeof(scoped_name), "%" PRIu64 "/%s", scope_id, cont_name);
 
-    FUNC_LEAVE(
-        PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(scoped_name), cont_id));
+    FUNC_LEAVE(PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(scoped_name), cont_id));
 }
 
 // Only one rand sends the request, others wait for MPI broadcast
