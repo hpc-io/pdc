@@ -2161,6 +2161,7 @@ PDC_Server_create_container(gen_cont_id_in_t *in, gen_cont_id_out_t *out)
             pdc_cont_hash_table_entry_t *entry =
                 (pdc_cont_hash_table_entry_t *)PDC_calloc(1, sizeof(pdc_cont_hash_table_entry_t));
             strcpy(entry->cont_name, in->cont_name);
+            entry->hash_value  = in->hash_value;
             entry->n_obj       = 0;
             entry->n_allocated = 0;
             entry->obj_ids     = NULL;
@@ -2263,20 +2264,41 @@ PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_table_ent
 {
     FUNC_ENTER(NULL);
 
-    perr_t   ret_value = SUCCEED;
-    uint32_t hash_key;
+    perr_t                       ret_value = SUCCEED;
+    uint32_t                     hash_key;
+    pdc_cont_hash_table_entry_t *cont_entry;
+    HashTableIterator            hash_table_iter;
+    int                          n_entry;
+    HashTablePair                pair;
 
     if (NULL == cont_name || NULL == out)
         PGOTO_ERROR(FAIL, "Input is NULL");
 
     if (container_hash_table_g != NULL) {
-        // lookup
+        // A top-level container is keyed by the unscoped hash of its own
+        // name, so try that direct lookup first.
         hash_key = PDC_get_hash_by_name(cont_name);
         *out     = hash_table_lookup(container_hash_table_g, &hash_key);
-        if (*out != NULL) {
-            // Double check with name match
-            if (strcmp(cont_name, (*out)->cont_name) != 0) {
-                *out = NULL;
+        if (*out != NULL && strcmp(cont_name, (*out)->cont_name) != 0)
+            *out = NULL;
+
+        // A nested container is keyed by a hash scoped with its parent's id
+        // (see PDC_Client_create_cont_id_scoped), which the caller has no way
+        // to reconstruct from the bare name alone -- fall back to a linear
+        // scan by name. This is inherently ambiguous if two containers share
+        // the same leaf name under different parents; callers that need to
+        // disambiguate should resolve by id instead (e.g. via
+        // PDCcont_get_entries()/PDCcont_get()).
+        if (*out == NULL) {
+            n_entry = hash_table_num_entries(container_hash_table_g);
+            hash_table_iterate(container_hash_table_g, &hash_table_iter);
+            while (n_entry != 0 && hash_table_iter_has_more(&hash_table_iter)) {
+                pair       = hash_table_iter_next(&hash_table_iter);
+                cont_entry = pair.value;
+                if (cont_entry != NULL && strcmp(cont_name, cont_entry->cont_name) == 0) {
+                    *out = cont_entry;
+                    break;
+                }
             }
         }
     }

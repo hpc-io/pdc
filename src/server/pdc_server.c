@@ -1276,7 +1276,12 @@ PDC_Server_checkpoint()
         pair      = hash_table_iter_next(&hash_table_iter);
         cont_head = pair.value;
 
-        hash_key = PDC_get_hash_by_name(cont_head->cont_name);
+        // Containers nested under a parent are keyed by a hash scoped with the
+        // parent's id (see PDC_Client_create_cont_id_scoped), not by the bare
+        // name -- recomputing PDC_get_hash_by_name(cont_head->cont_name) here
+        // would collide whenever two containers share a leaf name under
+        // different parents, so persist the actual key instead.
+        hash_key = cont_head->hash_value;
         fwrite(&hash_key, sizeof(uint32_t), 1, file);
         // Write the fixed-size fields individually rather than raw-dumping the
         // struct: obj_ids/entry_types/kvtag_list_head are heap pointers private
@@ -1508,6 +1513,7 @@ PDC_Server_restart(char *filename)
         // in the process that wrote them).
         cont_entry = (pdc_cont_hash_table_entry_t *)PDC_calloc(1, sizeof(pdc_cont_hash_table_entry_t));
         total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
+        cont_entry->hash_value = *hash_key;
         if (fread(&cont_entry->cont_id, sizeof(uint64_t), 1, file) != 1) {
             LOG_ERROR("Read failed for cont_entry cont_id\n");
         }

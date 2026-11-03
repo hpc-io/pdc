@@ -54,6 +54,7 @@ main(int argc, char **argv)
     pdcid_t           pdc;
     pdcid_t           root, branch_a, branch_b, branch_a_sub;
     pdcid_t           obj_root1, obj_a1, obj_sub1, obj_b1;
+    pdcid_t           dup_parent_a, dup_parent_b;
     int               ret_value = TSUCCEED;
     int               n_entries;
     pdc_cont_entry_t *entries = NULL;
@@ -185,10 +186,71 @@ main(int argc, char **argv)
         free(resolved_name);
     }
 
+    // Two parents each nesting a child container named "restart_dup_child":
+    // confirm both survived the restart as distinct containers rather than
+    // one silently clobbering the other via a hash collision (see
+    // cont_nested_restart_build.c for how/why this was built).
+    {
+        uint64_t child_a_meta_id, child_b_meta_id;
+        char *   resolved_name_a = NULL;
+        char *   resolved_name_b = NULL;
+
+        TASSERT((dup_parent_a = PDCcont_open("restart_dup_parent_a", pdc)) > 0,
+                "Reopened restart_dup_parent_a after restart",
+                "Failed to reopen restart_dup_parent_a after restart");
+        TASSERT((dup_parent_b = PDCcont_open("restart_dup_parent_b", pdc)) > 0,
+                "Reopened restart_dup_parent_b after restart",
+                "Failed to reopen restart_dup_parent_b after restart");
+
+        TASSERT(PDCcont_get_entries(dup_parent_a, &n_entries, &entries) == SUCCEED,
+                "Got restart_dup_parent_a entries after restart",
+                "Failed to get restart_dup_parent_a entries after restart");
+        TASSERT(n_entries == 1 && entries[0].type == PDC_ENTITY_CONT,
+                "restart_dup_parent_a has exactly its one nested child after restart",
+                "restart_dup_parent_a's nested child did not survive the restart");
+        child_a_meta_id = entries[0].meta_id;
+        free(entries);
+        entries = NULL;
+
+        TASSERT(PDCcont_get_entries(dup_parent_b, &n_entries, &entries) == SUCCEED,
+                "Got restart_dup_parent_b entries after restart",
+                "Failed to get restart_dup_parent_b entries after restart");
+        TASSERT(n_entries == 1 && entries[0].type == PDC_ENTITY_CONT,
+                "restart_dup_parent_b has exactly its one nested child after restart",
+                "restart_dup_parent_b's nested child did not survive the restart");
+        child_b_meta_id = entries[0].meta_id;
+        free(entries);
+        entries = NULL;
+
+        TASSERT(child_a_meta_id != child_b_meta_id,
+                "Same-named children under different parents kept distinct ids after restart",
+                "Same-named children under different parents collided onto one id after restart");
+
+        // Both ids must still resolve to a live container -- not one that was
+        // silently freed when the other's checkpoint entry collided with it.
+        TASSERT(PDCcont_get((pdcid_t)child_a_meta_id, &resolved_name_a) == SUCCEED,
+                "Resolved parent_a's child by id after restart",
+                "parent_a's child did not survive the restart (not found as container)");
+        TASSERT(resolved_name_a != NULL && strcmp(resolved_name_a, "restart_dup_child") == 0,
+                "parent_a's child resolves to the right name after restart",
+                "parent_a's child resolved to the wrong name after restart");
+        free(resolved_name_a);
+
+        TASSERT(PDCcont_get((pdcid_t)child_b_meta_id, &resolved_name_b) == SUCCEED,
+                "Resolved parent_b's child by id after restart",
+                "parent_b's child did not survive the restart (not found as container)");
+        TASSERT(resolved_name_b != NULL && strcmp(resolved_name_b, "restart_dup_child") == 0,
+                "parent_b's child resolves to the right name after restart",
+                "parent_b's child resolved to the wrong name after restart");
+        free(resolved_name_b);
+    }
+
     TASSERT(PDCcont_close(root) >= 0, "Closed root", "Failed to close root");
     TASSERT(PDCcont_close(branch_a) >= 0, "Closed branch_a", "Failed to close branch_a");
     TASSERT(PDCcont_close(branch_b) >= 0, "Closed branch_b", "Failed to close branch_b");
     TASSERT(PDCcont_close(branch_a_sub) >= 0, "Closed branch_a_sub", "Failed to close branch_a_sub");
+    TASSERT(PDCcont_close(dup_parent_a) >= 0, "Closed dup_parent_a", "Failed to close dup_parent_a");
+    TASSERT(PDCcont_close(dup_parent_b) >= 0, "Closed dup_parent_b", "Failed to close dup_parent_b");
     TASSERT(PDCclose(pdc) >= 0, "Call to PDCclose succeeded", "Call to PDCclose failed");
 
 done:
