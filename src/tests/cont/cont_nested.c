@@ -365,6 +365,73 @@ main(int argc, char **argv)
         TASSERT(PDCcont_close(branch_c) >= 0, "Closed branch_c", "Failed to close branch_c");
     }
 
+    // Same leaf name under two different parents must create two DISTINCT
+    // containers, not alias onto the same one. PDC_Server_create_container()
+    // dedupes purely by name hash with no notion of "which parent", so
+    // without parent-scoped hashing, PDCcont_create_at(branch_a, "X", ...)
+    // and PDCcont_create_at(branch_b, "X", ...) used to return the exact
+    // same meta_id, and a child added under one showed up under the other
+    // too -- breaking any hierarchy (e.g. CGNS) where leaf names like
+    // "Zone" legitimately repeat under different parents.
+    {
+        pdcid_t           shared_under_a, shared_under_b;
+        pdc_cont_entry_t *a_entries   = NULL;
+        pdc_cont_entry_t *b_entries   = NULL;
+        int               n_a_entries = 0;
+        int               n_b_entries = 0;
+        uint64_t          a_child_meta = 0;
+        uint64_t          b_child_meta = 0;
+        int               j;
+        char *            name = NULL;
+
+        TASSERT((shared_under_a = PDCcont_create_at(branch_a, "nested_shared_name", cont_prop)) != 0,
+                "Created+nested nested_shared_name under branch_a",
+                "Failed to create+nest nested_shared_name under branch_a");
+        TASSERT((shared_under_b = PDCcont_create_at(branch_b, "nested_shared_name", cont_prop)) != 0,
+                "Created+nested nested_shared_name under branch_b",
+                "Failed to create+nest nested_shared_name under branch_b");
+
+        TASSERT(PDCcont_get_entries(branch_a, &n_a_entries, &a_entries) == SUCCEED,
+                "Got branch_a entries for shared-name check",
+                "Failed to get branch_a entries for shared-name check");
+        for (j = 0; j < n_a_entries; j++) {
+            if (a_entries[j].type != PDC_ENTITY_CONT)
+                continue;
+            if (PDCcont_get((pdcid_t)a_entries[j].meta_id, &name) == SUCCEED && name != NULL &&
+                strcmp(name, "nested_shared_name") == 0)
+                a_child_meta = a_entries[j].meta_id;
+            free(name);
+            name = NULL;
+        }
+        free(a_entries);
+
+        TASSERT(PDCcont_get_entries(branch_b, &n_b_entries, &b_entries) == SUCCEED,
+                "Got branch_b entries for shared-name check",
+                "Failed to get branch_b entries for shared-name check");
+        for (j = 0; j < n_b_entries; j++) {
+            if (b_entries[j].type != PDC_ENTITY_CONT)
+                continue;
+            if (PDCcont_get((pdcid_t)b_entries[j].meta_id, &name) == SUCCEED && name != NULL &&
+                strcmp(name, "nested_shared_name") == 0)
+                b_child_meta = b_entries[j].meta_id;
+            free(name);
+            name = NULL;
+        }
+        free(b_entries);
+
+        TASSERT(a_child_meta != 0 && b_child_meta != 0,
+                "Found nested_shared_name under both branch_a and branch_b",
+                "Could not find nested_shared_name under one or both parents");
+        TASSERT(a_child_meta != b_child_meta,
+                "Same leaf name under different parents creates distinct containers",
+                "Same leaf name under different parents aliased to the same container");
+
+        TASSERT(PDCcont_close(shared_under_a) >= 0, "Closed shared_under_a",
+                "Failed to close shared_under_a");
+        TASSERT(PDCcont_close(shared_under_b) >= 0, "Closed shared_under_b",
+                "Failed to close shared_under_b");
+    }
+
     TASSERT(PDCcont_close(root) >= 0, "Closed root", "Failed to close root");
     TASSERT(PDCcont_close(branch_a) >= 0, "Closed branch_a", "Failed to close branch_a");
     TASSERT(PDCcont_close(branch_b) >= 0, "Closed branch_b", "Failed to close branch_b");

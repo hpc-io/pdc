@@ -2347,7 +2347,7 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
     perr_t                       ret_value    = SUCCEED;
     pdc_cont_hash_table_entry_t *cont_entry   = NULL;
     int                          realloc_size = 0;
-    int                          i, j, n_new;
+    int                          i, j, n_new, n_invalid = 0;
     uint64_t *                   new_ids;
     uint8_t *                    new_types;
     pbool_t                      is_dup;
@@ -2366,10 +2366,38 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
         // Filter out any (id, type) pair already present as a live entry,
         // so adding the same entry twice (e.g. a retried or otherwise
         // repeated call) is idempotent instead of creating a duplicate.
+        //
+        // Also reject ids that are structurally impossible: every real
+        // container/object id is seeded as
+        // PDC_SERVER_ID_INTERVEL * (origin_server_rank + 1) + sequence (see
+        // PDC_Server_init() and PDC_get_server_by_obj_id()), so anything
+        // below PDC_SERVER_ID_INTERVEL was never minted by any server and
+        // is definitely bogus. This can't catch a well-formed id that
+        // simply was never allocated (that would need a server-to-server
+        // existence RPC this function doesn't have), but it's enough for
+        // obviously-garbage input. Deliberately NOT doing a full existence
+        // lookup via PDC_Server_find_container_by_id()/
+        // PDC_Server_get_local_metadata_by_id(): those only see this one
+        // server's own local hash tables, but containers are sharded
+        // across servers by hash, so a perfectly legitimate entry (e.g. a
+        // nested child routed to a different server than its parent, the
+        // common case once child placement is scoped by parent -- see
+        // PDC_Client_create_cont_id_scoped()) would otherwise be rejected
+        // as "doesn't exist" just because it isn't owned by the server
+        // handling this add -- breaking ordinary cross-server nesting,
+        // which is the whole point of this feature.
         new_ids   = (uint64_t *)PDC_malloc(sizeof(uint64_t) * n_obj);
         new_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * n_obj);
         n_new     = 0;
         for (i = 0; i < n_obj; i++) {
+            if (obj_ids[i] < PDC_SERVER_ID_INTERVEL) {
+                LOG_ERROR("Entry %" PRIu64 " (type %d) is not a valid id, not adding to container %" PRIu64
+                          "\n",
+                          obj_ids[i], entry_types[i], cont_id);
+                n_invalid++;
+                continue;
+            }
+
             is_dup = FALSE;
             for (j = 0; j < cont_entry->n_obj; j++) {
                 if (cont_entry->obj_ids[j] == obj_ids[i] && cont_entry->entry_types[j] == entry_types[i]) {
@@ -2377,11 +2405,12 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
                     break;
                 }
             }
-            if (!is_dup) {
-                new_ids[n_new]   = obj_ids[i];
-                new_types[n_new] = entry_types[i];
-                n_new++;
-            }
+            if (is_dup)
+                continue;
+
+            new_ids[n_new]   = obj_ids[i];
+            new_types[n_new] = entry_types[i];
+            n_new++;
         }
 
         // Check if need to allocate space
@@ -2429,6 +2458,12 @@ PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
             LOG_DEBUG("Add %d objects to container %" PRIu64 ", total %d\n", n_new, cont_id,
                       cont_entry->n_obj - cont_entry->n_deleted);
         }
+
+        if (n_invalid > 0)
+            PGOTO_ERROR(FAIL,
+                        "%d of %d entries requested for addition to container %" PRIu64
+                        " were not valid ids and were not added",
+                        n_invalid, n_obj, cont_id);
     }
     else
         PGOTO_ERROR(FAIL, "Container %" PRIu64 " not found", cont_id);
@@ -2464,9 +2499,10 @@ PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types
         }
         LOG_DEBUG("Successfully deleted %d objects\n", n_deletes);
 
-        if (n_deletes != n_obj) {
-            LOG_INFO("%d objects are not found to be deleted\n", n_obj - n_deletes);
-        }
+        if (n_deletes != n_obj)
+            PGOTO_ERROR(FAIL, "%d of %d entries requested for deletion from container %" PRIu64
+                              " were not found (already deleted, or never added)",
+                        n_obj - n_deletes, n_obj, cont_id);
     }
     else
         PGOTO_ERROR(FAIL, "Container %" PRIu64 " not found", cont_id);
@@ -2860,7 +2896,16 @@ PDC_Server_add_kvtag_someta(metadata_add_kvtag_in_t *in, metadata_add_tag_out_t 
         }
     }      // if lookup_value != NULL
     else { // look for containers
-        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        // Look up by the container's actual id, not by re-hashing a name:
+        // containers nested under a parent are filed in
+        // container_hash_table_g under a hash scoped by their parent (see
+        // PDC_Client_create_cont_id_scoped()), not a plain name hash, so a
+        // hash_key lookup here would miss any such container even though
+        // in->obj_id (its real meta id) is right there in the request.
+        // PDC_Server_find_container_by_id() is what every other
+        // container-by-id operation (add/del/get_entries/get_name) already
+        // uses for exactly this reason.
+        PDC_Server_find_container_by_id(in->obj_id, &cont_lookup_value);
         if (cont_lookup_value != NULL) {
             PDC_add_kvtag_to_list(&cont_lookup_value->kvtag_list_head, &in->kvtag);
             out->ret = 1;
@@ -3106,8 +3151,9 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
         }
     }
     else {
-
-        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        // See the matching comment in PDC_Server_add_kvtag_someta(): look
+        // up the container by its actual id, not by re-hashing a name.
+        PDC_Server_find_container_by_id(obj_id, &cont_lookup_value);
         if (cont_lookup_value != NULL) {
             PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
             out->ret = 1;
@@ -3302,7 +3348,9 @@ PDC_Server_del_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_add_tag_out_t 
         }
     }
     else {
-        cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
+        // See the matching comment in PDC_Server_add_kvtag_someta(): look
+        // up the container by its actual id, not by re-hashing a name.
+        PDC_Server_find_container_by_id(obj_id, &cont_lookup_value);
         if (cont_lookup_value != NULL) {
             PDC_del_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key);
             out->ret = 1;

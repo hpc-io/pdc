@@ -2481,7 +2481,7 @@ done:
 
 // Send a name to server and receive an container (object) id
 perr_t
-PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIBUTE(unused), pdcid_t *cont_id)
+PDC_Client_create_cont_id_with_hash(const char *cont_name, uint32_t hash_name_value, pdcid_t *cont_id)
 {
     FUNC_ENTER(NULL);
 
@@ -2489,7 +2489,6 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
     hg_return_t                    hg_ret;
     uint32_t                       server_id = 0;
     gen_cont_id_in_t               in;
-    uint32_t                       hash_name_value;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t                    rpc_handle;
 
@@ -2504,9 +2503,8 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
     // Fill input structure
     memset(&in, 0, sizeof(in));
 
-    hash_name_value = PDC_get_hash_by_name(cont_name);
-    in.hash_value   = hash_name_value;
-    in.cont_name    = cont_name;
+    in.hash_value = hash_name_value;
+    in.cont_name  = cont_name;
 
     // Calculate server id
     server_id = hash_name_value;
@@ -2548,6 +2546,41 @@ done:
     HG_Destroy(rpc_handle);
 
     FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIBUTE(unused), pdcid_t *cont_id)
+{
+    FUNC_ENTER(NULL);
+    FUNC_LEAVE(
+        PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(cont_name), cont_id));
+}
+
+// Scoped variant used by nested-container creation (see
+// PDC_Client_create_cont_id_at()): the dedup/routing hash is computed from
+// scope_id (the parent container's meta id) combined with cont_name, not
+// cont_name alone, so two different nested containers that happen to share
+// a leaf name under different parents (e.g. a CGNS-style tree where
+// "GridCoordinates" or "Zone" repeats under every zone) don't alias onto
+// the exact same global container the way two plain PDC_Client_create_cont_id()
+// calls with an identical bare name do (PDC_Server_create_container()
+// dedupes purely by hash, with no notion of "which parent"). cont_name
+// itself is still sent/stored unqualified -- only the hash/routing key
+// changes.
+static perr_t
+PDC_Client_create_cont_id_scoped(const char *cont_name, uint64_t scope_id, pdcid_t *cont_id)
+{
+    FUNC_ENTER(NULL);
+
+    char scoped_name[ADDR_MAX];
+
+    if (cont_name == NULL)
+        FUNC_LEAVE(FAIL);
+
+    snprintf(scoped_name, sizeof(scoped_name), "%" PRIu64 "/%s", scope_id, cont_name);
+
+    FUNC_LEAVE(
+        PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(scoped_name), cont_id));
 }
 
 // Only one rand sends the request, others wait for MPI broadcast
@@ -7368,19 +7401,45 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Create a container and nest it under an existing parent container in one call
+// Create a container and nest it under an existing parent container in one
+// call. Uses PDC_Client_create_cont_id_scoped() (scoped by parent_cont_id's
+// meta id), not plain PDCcont_create(): the latter dedupes purely by
+// cont_name with no notion of "which parent", so two different nested
+// containers sharing a leaf name under different parents (e.g. a
+// CGNS-style tree where "Zone" repeats under every parent) would otherwise
+// alias onto the exact same global container.
 pdcid_t
 PDCcont_create_at(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop)
 {
     FUNC_ENTER(NULL);
 
-    pdcid_t           ret_value = 0;
-    pdcid_t           cont_id;
-    pdc_entity_type_t type = PDC_ENTITY_CONT;
+    pdcid_t                ret_value      = 0;
+    pdcid_t                cont_id        = 0;
+    pdc_entity_type_t      type           = PDC_ENTITY_CONT;
+    struct _pdc_cont_prop *cont_prop      = NULL;
+    struct _pdc_cont_info *parent_info    = NULL;
+    struct _pdc_id_info *  id_info        = NULL;
+    pdcid_t                pdc_id         = 0;
+    pdcid_t                parent_meta_id = 0;
+    pdcid_t                new_meta_id    = 0;
 
-    cont_id = PDCcont_create(cont_name, cont_create_prop);
-    if (cont_id == 0)
+    if ((id_info = PDC_find_id(cont_create_prop)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, cont_create_prop);
+    cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
+    pdc_id    = cont_prop->pdc->local_id;
+
+    if ((id_info = PDC_find_id(parent_cont_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, parent_cont_id);
+    parent_info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
+    parent_meta_id = parent_info->cont_info_pub->meta_id;
+
+    if (PDC_Client_create_cont_id_scoped(cont_name, parent_meta_id, &new_meta_id) != SUCCEED ||
+        new_meta_id == 0)
         PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
+
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, new_meta_id);
+    if (cont_id == 0)
+        PGOTO_ERROR(0, "Error creating local handle for container [%s]", cont_name);
 
     if (PDCcont_put_entries(parent_cont_id, 1, &cont_id, &type) != SUCCEED) {
         PDCcont_close(cont_id);
@@ -7394,12 +7453,23 @@ done:
 }
 
 // Collective version of PDCcont_create_at(): all ranks must call this
-// together. Only rank 0 talks to the server for both the create and the
-// nesting step; every rank ends up with the same locally-registered id.
-// Idempotent by name: if a child named cont_name already exists directly
-// under parent_cont_id, reopens and returns that existing child instead of
-// minting a duplicate (previously, calling this twice with the same name
-// left two same-named but distinct children both linked under parent).
+// together over comm. Rank 0 of comm does the real create -- scoped by
+// parent_cont_id's meta id via PDC_Client_create_cont_id_scoped(), same as
+// PDCcont_create_at(), so two nested containers sharing a leaf name under
+// different parents don't alias onto the same global container -- then
+// that meta id is broadcast over comm and every other rank registers its
+// own local handle for it via PDC_cont_create_local(), the same primitive
+// PDCcont_open_coll() uses. This -- not a client-side name search -- is
+// what makes repeated calls with the same name under the same parent
+// idempotent: the server already refuses to mint a second meta id for an
+// existing (parent, name) pair, and PDC_Server_container_add_objs() already
+// skips an (id, type) pair that's already a live entry, so re-linking the
+// same child under the same parent is a no-op rather than a duplicate.
+//
+// Deliberately does NOT go through PDCcont_create_coll(): that function
+// (upstream, not ours) still gates on the global pdc_client_mpi_rank_g and
+// broadcasts over the global PDC_CLIENT_COMM_WORLD_g regardless of the comm
+// argument it's handed, which hangs when comm excludes global rank 0.
 pdcid_t
 PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop,
 #ifdef ENABLE_MPI
@@ -7410,36 +7480,49 @@ PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t co
 {
     FUNC_ENTER(NULL);
 
-    pdcid_t                ret_value = 0;
-    pdcid_t                cont_id;
-    pdc_entity_type_t      type      = PDC_ENTITY_CONT;
-    int                    n_entries = 0;
-    pdc_cont_entry_t *     entries   = NULL;
-    int                    i;
-    char *                 existing_name = NULL;
-    struct _pdc_cont_prop *cont_prop     = NULL;
-    struct _pdc_id_info *  id_info       = NULL;
+    pdcid_t                ret_value      = 0;
+    pdcid_t                cont_id        = 0;
+    pdc_entity_type_t      type           = PDC_ENTITY_CONT;
+    struct _pdc_cont_prop *cont_prop      = NULL;
+    struct _pdc_cont_info *parent_info    = NULL;
+    struct _pdc_id_info *  id_info        = NULL;
+    pdcid_t                pdc_id         = 0;
+    pdcid_t                parent_meta_id = 0;
 
-    if (PDCcont_get_entries_coll(parent_cont_id, &n_entries, &entries, comm) == SUCCEED) {
-        for (i = 0; i < n_entries; i++) {
-            if (entries[i].type != PDC_ENTITY_CONT)
-                continue;
-            if (PDCcont_get_coll((pdcid_t)entries[i].meta_id, &existing_name, comm) == SUCCEED &&
-                existing_name != NULL && strcmp(existing_name, cont_name) == 0) {
-                if ((id_info = PDC_find_id(cont_create_prop)) != NULL) {
-                    cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
-                    ret_value = PDCcont_open_coll(cont_name, cont_prop->pdc->local_id, comm);
-                }
-                existing_name = (char *)PDC_free(existing_name);
-                entries       = (pdc_cont_entry_t *)PDC_free(entries);
-                FUNC_LEAVE(ret_value);
-            }
-            existing_name = (char *)PDC_free(existing_name);
-        }
-        entries = (pdc_cont_entry_t *)PDC_free(entries);
+    if ((id_info = PDC_find_id(cont_create_prop)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, cont_create_prop);
+    cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
+    pdc_id    = cont_prop->pdc->local_id;
+
+    if ((id_info = PDC_find_id(parent_cont_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, parent_cont_id);
+    parent_info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
+    parent_meta_id = parent_info->cont_info_pub->meta_id;
+
+#ifdef ENABLE_MPI
+    int      comm_rank;
+    pdcid_t  rank0_meta_id = 0;
+    uint64_t cont_meta_id  = 0;
+
+    MPI_Comm_rank(comm, &comm_rank);
+
+    if (comm_rank == 0) {
+        if (PDC_Client_create_cont_id_scoped(cont_name, parent_meta_id, &rank0_meta_id) == SUCCEED)
+            cont_meta_id = (uint64_t)rank0_meta_id;
     }
+    MPI_Bcast(&cont_meta_id, 1, MPI_UINT64_T, 0, comm);
+    if (cont_meta_id == 0)
+        PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
 
-    cont_id = PDCcont_create_coll(cont_name, cont_create_prop, comm);
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, cont_meta_id);
+#else
+    pdcid_t new_meta_id = 0;
+
+    if (PDC_Client_create_cont_id_scoped(cont_name, parent_meta_id, &new_meta_id) != SUCCEED ||
+        new_meta_id == 0)
+        PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, new_meta_id);
+#endif
     if (cont_id == 0)
         PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
 

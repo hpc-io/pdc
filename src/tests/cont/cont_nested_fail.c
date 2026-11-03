@@ -104,18 +104,38 @@ main(int argc, char **argv)
                 "BUG: getting entries of a never-registered container id succeeded");
     }
 
-    // --- Things that look suspicious but must NOT fail ---
-
-    // Deleting an entry that was never added is a benign no-op, not an error.
-    TASSERT(PDCcont_del_objids(cont_a, 1, &obj1) == SUCCEED,
-            "Deleting a never-added entry is accepted as a benign no-op",
-            "BUG: deleting a never-added entry was rejected");
+    // Deleting an entry that was never added must be rejected, not treated
+    // as a silent no-op -- a caller relying on the return value to know
+    // whether something was actually removed needs this to fail.
+    TASSERT(PDCcont_del_objids(cont_a, 1, &obj1) != SUCCEED,
+            "Deleting a never-added entry was correctly rejected",
+            "BUG: deleting a never-added entry reported success");
     TASSERT(PDCcont_get_entries(cont_a, &n_entries, &entries) == SUCCEED,
-            "Got cont_a entries after no-op delete", "Failed to get cont_a entries after no-op delete");
-    TASSERT(n_entries == 0, "cont_a is still empty after the no-op delete",
-            "BUG: the no-op delete changed cont_a's entries");
+            "Got cont_a entries after rejected delete", "Failed to get cont_a entries after rejected delete");
+    TASSERT(n_entries == 0, "cont_a is still empty after the rejected delete",
+            "BUG: the rejected delete changed cont_a's entries");
     free(entries);
     entries = NULL;
+
+    // Adding an entry id that doesn't resolve to any real object or
+    // container must also be rejected, not linked in as a dead entry that
+    // can never be opened or named.
+    {
+        pdcid_t           bogus_entry_id = (pdcid_t)888888888;
+        pdc_entity_type_t type_obj       = PDC_ENTITY_OBJ;
+        TASSERT(PDCcont_put_entries(cont_a, 1, &bogus_entry_id, &type_obj) != SUCCEED,
+                "Adding a nonexistent entry id was correctly rejected",
+                "BUG: adding a nonexistent entry id succeeded");
+    }
+    TASSERT(PDCcont_get_entries(cont_a, &n_entries, &entries) == SUCCEED,
+            "Got cont_a entries after rejected bogus add",
+            "Failed to get cont_a entries after rejected bogus add");
+    TASSERT(n_entries == 0, "cont_a is still empty after the rejected bogus add",
+            "BUG: the rejected bogus add left a dead entry in cont_a");
+    free(entries);
+    entries = NULL;
+
+    // --- Things that look suspicious but must NOT fail ---
 
     // An empty container reports zero entries successfully, not an error.
     TASSERT((entries == NULL), "sanity: entries pointer reset before reuse", "unreachable");
