@@ -75,10 +75,10 @@ typedef struct pdc_hash_table_entry_head {
 } pdc_hash_table_entry_head;
 
 typedef struct pdc_cont_hash_table_entry_t {
-    uint64_t          cont_id;
-    uint32_t          hash_value; /* the (possibly parent-scoped) hash this entry is keyed under in
-                                      container_hash_table_g -- NOT necessarily PDC_get_hash_by_name(cont_name),
-                                      since nested containers are scoped by their parent's id */
+    uint64_t cont_id;
+    uint32_t hash_value; /* the (possibly parent-scoped) hash this entry is keyed under in
+                             container_hash_table_g -- NOT necessarily PDC_get_hash_by_name(cont_name),
+                             since nested containers are scoped by their parent's id */
     char              cont_name[ADDR_MAX];
     int               n_obj;
     int               n_deleted;
