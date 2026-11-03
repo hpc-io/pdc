@@ -108,9 +108,18 @@ locally by name, so its name and kind are not otherwise known to the
 calling process. :code:`PDCcont_get` resolves an entry's name from that id
 alone regardless of which kind it is (it checks containers first, then
 falls back to object metadata). :code:`PDCcont_put_entries`/
-:code:`PDCcont_del_entries` likewise accept such a raw, never-locally-opened
-id directly -- there is no need to open an entry first just to add or
-remove it.
+:code:`PDCcont_del_entries`/:code:`PDCcont_get_entries` likewise accept such
+a raw, never-locally-opened id directly -- there is no need to open an
+entry first just to add, remove, or list its contents.
+
+A nested container cannot always be reached by :code:`PDCcont_open`'s name
+lookup: a leaf name may repeat under different parents (ambiguous -- which
+one is meant is undefined), and even a unique name requires guessing which
+server holds it, since a nested container is keyed by a hash scoped with
+its parent's id rather than by its bare name. :code:`PDCcont_open_id`
+sidesteps both problems by opening a container directly from its meta id
+(e.g. one returned by :code:`PDCcont_get_entries`), giving a normal local
+handle usable with any other container function.
 
 Every container function above that talks to the server also has an
 :code:`_coll` collective counterpart (:code:`PDCcont_get_coll`,
@@ -139,6 +148,9 @@ parent returns the existing child instead of creating a duplicate.
    :project: PDC
 
 .. doxygenfunction:: PDCcont_open_col
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_open_id
    :project: PDC
 
 .. doxygenfunction:: PDCcont_close

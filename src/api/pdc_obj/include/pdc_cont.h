@@ -101,6 +101,20 @@ pdcid_t PDCcont_open_coll(const char *cont_name, pdcid_t pdc_id,
                               comm);
 
 /**
+ * Open a container (including a nested one) directly from its meta id,
+ * without needing its name. Unlike PDCcont_open(), this works for an id
+ * that was never opened locally -- e.g. one discovered via
+ * PDCcont_get_entries() -- and doesn't depend on a nested container's name
+ * being unique or on guessing which server holds it.
+ *
+ * \param cont_meta_id [IN]      Container meta id
+ * \param pdc_id [IN]            ID of pdc
+ *
+ * \return Container id on success/Zero on failure
+ */
+pdcid_t PDCcont_open_id(pdcid_t cont_meta_id, pdcid_t pdc_id);
+
+/**
  * Close a container
  *
  * \param cont_id [IN]          Container id, returned by

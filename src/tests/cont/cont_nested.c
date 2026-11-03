@@ -426,6 +426,60 @@ main(int argc, char **argv)
                 "Same leaf name under different parents creates distinct containers",
                 "Same leaf name under different parents aliased to the same container");
 
+        // a_child_meta/b_child_meta were never opened locally -- they were
+        // only ever discovered as ids via PDCcont_get_entries() above, and
+        // their shared name is ambiguous (PDCcont_open() can't tell them
+        // apart, and for a nested container may not even ask the right
+        // server -- see PDC_Client_query_container_name()). Confirm the
+        // public API still has a dependable way to reach them: resolving
+        // entries directly from the raw discovered id, and opening a real
+        // local handle from it via PDCcont_open_id().
+        {
+            pdcid_t           opened_a;
+            pdcid_t           obj_under_a;
+            int               n_direct_entries = 0;
+            pdc_cont_entry_t *direct_entries   = NULL;
+            char              obj_under_a_name[64];
+
+            // a_child_meta's name is ambiguous (two containers share it) and
+            // it was never opened by name -- PDCcont_open_id() is the
+            // dependable way to get a real local handle from just the
+            // discovered id.
+            TASSERT((opened_a = PDCcont_open_id((pdcid_t)a_child_meta, pdc)) > 0,
+                    "Opened the discovered nested_shared_name (branch_a) via PDCcont_open_id",
+                    "Failed to open the discovered nested_shared_name (branch_a) via PDCcont_open_id");
+
+            // cont_nested_mpi runs this whole test independently (and
+            // unsynchronized) on several MPI ranks sharing the same servers,
+            // so the object name must not be a fixed literal -- object
+            // names have no per-container scoping, and a_child_meta is
+            // already unique per rank, so folding it in keeps this unique
+            // too.
+            snprintf(obj_under_a_name, sizeof(obj_under_a_name), "nested_shared_name_obj_%" PRIu64,
+                     a_child_meta);
+            TASSERT((obj_under_a = PDCobj_create(opened_a, obj_under_a_name, obj_prop)) != 0,
+                    "Created an object under the discovered nested_shared_name (branch_a)",
+                    "Failed to create an object under the discovered nested_shared_name (branch_a)");
+            TASSERT(PDCcont_put_objids(opened_a, 1, &obj_under_a) == SUCCEED,
+                    "Linked object under the discovered nested_shared_name (branch_a)",
+                    "Failed to link object under the discovered nested_shared_name (branch_a)");
+
+            // PDCcont_get_entries() directly on the RAW discovered id, with
+            // no open in between -- confirms PDC_Client_get_container_entries()'s
+            // discovered-id fallback.
+            TASSERT(PDCcont_get_entries((pdcid_t)a_child_meta, &n_direct_entries, &direct_entries) ==
+                        SUCCEED,
+                    "Got entries directly from a never-opened discovered container id",
+                    "Failed to get entries directly from a never-opened discovered container id");
+            TASSERT(n_direct_entries == 1 && direct_entries[0].type == PDC_ENTITY_OBJ,
+                    "Discovered-id entries match what was just linked",
+                    "Discovered-id entries do not match what was just linked");
+            free(direct_entries);
+
+            TASSERT(PDCcont_close(opened_a) >= 0, "Closed container opened via PDCcont_open_id",
+                    "Failed to close container opened via PDCcont_open_id");
+        }
+
         TASSERT(PDCcont_close(shared_under_a) >= 0, "Closed shared_under_a",
                 "Failed to close shared_under_a");
         TASSERT(PDCcont_close(shared_under_b) >= 0, "Closed shared_under_b",

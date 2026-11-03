@@ -5039,9 +5039,15 @@ PDC_Client_get_container_entries(pdcid_t local_cont_id, int *n, uint64_t **entry
     *entry_types = NULL;
     memset(&args, 0, sizeof(args));
 
-    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
-        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %" PRIu64, local_cont_id);
-    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+    // local_cont_id is normally a locally-registered handle (from
+    // PDCcont_create()/PDCcont_open()/...), but it may also be a raw meta id
+    // discovered via PDCcont_get_entries() and never opened locally -- fall
+    // back to treating it as the meta id directly in that case, the same
+    // pattern used by PDCcont_get()/PDC_Client_add_del_entries_to_container().
+    if ((id_info = PDC_find_id(local_cont_id)) != NULL)
+        cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+    else
+        cont_meta_id = (uint64_t)local_cont_id;
 
     server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
     debug_server_id_count[server_id]++;
@@ -5253,41 +5259,63 @@ PDC_Client_query_container_name(const char *cont_name, uint64_t *cont_meta_id)
 
     perr_t                           ret_value = SUCCEED;
     hg_return_t                      hg_ret    = 0;
-    uint32_t                         hash_name_value, server_id;
+    uint32_t                         hash_name_value, server_id, i, try_server_id;
     container_query_in_t             in;
     struct _pdc_container_query_args lookup_args;
-    hg_handle_t                      container_query_handle;
+    hg_handle_t                      container_query_handle = HG_HANDLE_NULL;
 
-    // Compute server id
+    *cont_meta_id = 0;
+
+    // A top-level container is keyed by the hash of its own (unscoped) name,
+    // so the server that owns it can be computed directly. A nested
+    // container is keyed by a hash scoped with its parent's id instead (see
+    // PDC_Client_create_cont_id_scoped), which this caller has no way to
+    // reconstruct from the bare name alone, so the directly-computed server
+    // may not be the one that actually holds it. Try that server first
+    // (the common, fast case), then fall back to asking every other server
+    // in turn -- PDC_Server_find_container_by_name()'s own name-scan
+    // fallback only searches whichever single server receives this RPC.
     hash_name_value = PDC_get_hash_by_name(cont_name);
     server_id       = hash_name_value % pdc_server_num_g;
 
-    // Debug statistics for counting number of messages sent to each server.
-    debug_server_id_count[server_id]++;
-
-    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
-
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, container_query_register_id_g,
-              &container_query_handle);
-
-    // Fill input structure
-    in.cont_name = cont_name;
-
+    in.cont_name  = cont_name;
     in.hash_value = hash_name_value;
 
-    hg_ret = HG_Forward(container_query_handle, container_query_rpc_cb, &lookup_args, &in);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "Could not start HG_Forward()");
+    for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
+        try_server_id = (server_id + i) % pdc_server_num_g;
 
-    // Wait for response from server
-    hg_atomic_set32(&atomic_work_todo_g, 1);
-    PDC_Client_check_response(&send_context_g);
+        // Debug statistics for counting number of messages sent to each server.
+        debug_server_id_count[try_server_id]++;
 
-    *cont_meta_id = lookup_args.cont_id;
+        if (PDC_Client_try_lookup_server(try_server_id, 0) != SUCCEED)
+            PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+
+        hg_ret = HG_Create(send_context_g, pdc_server_info_g[try_server_id].addr,
+                           container_query_register_id_g, &container_query_handle);
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "Could not create handle");
+
+        lookup_args.cont_id = 0;
+        hg_ret              = HG_Forward(container_query_handle, container_query_rpc_cb, &lookup_args, &in);
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "Could not start HG_Forward()");
+
+        // Wait for response from server
+        hg_atomic_set32(&atomic_work_todo_g, 1);
+        PDC_Client_check_response(&send_context_g);
+
+        HG_Destroy(container_query_handle);
+        container_query_handle = HG_HANDLE_NULL;
+
+        if (lookup_args.cont_id != 0) {
+            *cont_meta_id = lookup_args.cont_id;
+            break;
+        }
+    }
 
 done:
-    HG_Destroy(container_query_handle);
+    if (container_query_handle != HG_HANDLE_NULL)
+        HG_Destroy(container_query_handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -7116,6 +7144,30 @@ PDCcont_get(pdcid_t cont_id, char **cont_name)
         PGOTO_ERROR(FAIL, "Error with PDC_Client_get_container_name");
 
 done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Open a container directly from its meta id, e.g. one discovered via
+// PDCcont_get_entries() and never opened locally by name -- PDCcont_open()
+// can only look a container up by name, which for a nested container
+// depends on reaching the server that actually holds it and on the name
+// being unambiguous (see PDC_Client_query_container_name).
+pdcid_t
+PDCcont_open_id(pdcid_t cont_meta_id, pdcid_t pdc_id)
+{
+    FUNC_ENTER(NULL);
+
+    pdcid_t ret_value = 0;
+    char *  cont_name = NULL;
+
+    if (PDCcont_get(cont_meta_id, &cont_name) != SUCCEED || cont_name == NULL)
+        PGOTO_ERROR(0, "Could not resolve container meta id %" PRIu64, (uint64_t)cont_meta_id);
+
+    ret_value = PDC_cont_create_local(pdc_id, cont_name, (uint64_t)cont_meta_id);
+
+done:
+    if (cont_name != NULL)
+        free(cont_name);
     FUNC_LEAVE(ret_value);
 }
 
