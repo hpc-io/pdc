@@ -23,18 +23,23 @@ ENV PDC_DIR=$WORK_SPACE/install/pdc
 # CUDA/cuSZ (GPU variants) are intentionally left out here -- those need
 # real GPU hardware to pass at runtime, not just a toolkit baked into the
 # image, so they stay compiled-out of this container.
+# libsodium is built from source into its own prefix rather than installed
+# via apt: PDC's find_library() for it runs before project(PDC C), so CMake
+# doesn't know this system's multiarch library triplet yet and can't see
+# apt's /usr/lib/x86_64-linux-gnu/libsodium.so.
 ENV ZFP_SRC_DIR=$WORK_SPACE/source/zfp
 ENV ZFP_ROOT_DIR=$WORK_SPACE/install/zfp
 ENV SZ3_SRC_DIR=$WORK_SPACE/source/sz3
 ENV SZ_CPU_DIR=$WORK_SPACE/install/sz3
 ENV TURBO_DIR=$WORK_SPACE/source/turbopfor
-ENV LIBSODIUM_ROOT_DIR=/usr
+ENV LIBSODIUM_SRC_DIR=$WORK_SPACE/source/libsodium
+ENV LIBSODIUM_ROOT_DIR=$WORK_SPACE/install/libsodium
 
 ENV LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 ENV LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
-ENV LD_LIBRARY_PATH="$ZFP_ROOT_DIR/lib:$SZ_CPU_DIR/lib:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="$ZFP_ROOT_DIR/lib:$SZ_CPU_DIR/lib:$LIBSODIUM_ROOT_DIR/lib:$LD_LIBRARY_PATH"
 
 
 ENV MERCURY_CMAKE_FLAGS="-DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DNA_OFI_TESTING_PROTOCOL=tcp "
@@ -56,6 +61,8 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     mkdir -p $SZ3_SRC_DIR && \
     mkdir -p $SZ_CPU_DIR && \
     mkdir -p $TURBO_DIR && \
+    mkdir -p $LIBSODIUM_SRC_DIR && \
+    mkdir -p $LIBSODIUM_ROOT_DIR && \
     rm -rf $LIBFABRIC_SRC_DIR/* && \
     rm -rf $MERCURY_SRC_DIR/* && \
     rm -rf $PDC_SRC_DIR/* && \
@@ -67,6 +74,8 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     rm -rf $SZ3_SRC_DIR/* && \
     rm -rf $SZ_CPU_DIR/* && \
     rm -rf $TURBO_DIR/* && \
+    rm -rf $LIBSODIUM_SRC_DIR/* && \
+    rm -rf $LIBSODIUM_ROOT_DIR/* && \
     echo "export LIBFABRIC_SRC_DIR=$WORK_SPACE/source/libfabric" > $WORK_SPACE/pdc_env.sh && \
     echo "export LIBFABRIC_DIR=$WORK_SPACE/install/libfabric" >> $WORK_SPACE/pdc_env.sh && \
     echo "export MERCURY_SRC_DIR=$WORK_SPACE/source/mercury" >> $WORK_SPACE/pdc_env.sh && \
@@ -76,12 +85,12 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     echo "export ZFP_ROOT_DIR=$WORK_SPACE/install/zfp" >> $WORK_SPACE/pdc_env.sh && \
     echo "export SZ_CPU_DIR=$WORK_SPACE/install/sz3" >> $WORK_SPACE/pdc_env.sh && \
     echo "export TURBO_DIR=$WORK_SPACE/source/turbopfor" >> $WORK_SPACE/pdc_env.sh && \
-    echo "export LIBSODIUM_ROOT_DIR=/usr" >> $WORK_SPACE/pdc_env.sh && \
+    echo "export LIBSODIUM_ROOT_DIR=$WORK_SPACE/install/libsodium" >> $WORK_SPACE/pdc_env.sh && \
     echo 'export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh  && \
     echo 'export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh && \
     echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh && \
-    echo 'export LD_LIBRARY_PATH=$ZFP_ROOT_DIR/lib:$SZ_CPU_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh && \
+    echo 'export LD_LIBRARY_PATH=$ZFP_ROOT_DIR/lib:$SZ_CPU_DIR/lib:$LIBSODIUM_ROOT_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh && \
     apt-get update && apt-get install -y \
     build-essential \
     git \
@@ -108,7 +117,6 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     curl \
     valgrind \
     python3 \
-    libsodium-dev \
     libzstd-dev && \
     cd $WORK_SPACE/software && \
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" && \
@@ -152,6 +160,11 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     cd $TURBO_DIR && \
     git checkout 1f646d98d65ee91befd3066f351f2cf386593442 && \
     make libic.a && \
+    wget -O $WORK_SPACE/software/libsodium-1.0.20.tar.gz https://download.libsodium.org/libsodium/releases/libsodium-1.0.20.tar.gz && \
+    tar xf $WORK_SPACE/software/libsodium-1.0.20.tar.gz -C $LIBSODIUM_SRC_DIR --strip-components=1 && \
+    cd $LIBSODIUM_SRC_DIR && \
+    ./configure --prefix=$LIBSODIUM_ROOT_DIR && \
+    make -j 8 && make install && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \

@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 sudo apt-get update
-sudo apt-get install libopenmpi-dev libhdf5-dev uuid-dev cmake libsodium-dev libzstd-dev
+sudo apt-get install libopenmpi-dev libhdf5-dev uuid-dev cmake libzstd-dev
 
 # libfabric
 wget https://github.com/ofiwg/libfabric/archive/refs/tags/v1.12.1.tar.gz
@@ -47,8 +47,19 @@ git checkout 1f646d98d65ee91befd3066f351f2cf386593442
 make libic.a
 cd ..
 
+# libsodium -- built from source into a plain (non-multiarch) prefix rather
+# than apt's libsodium-dev. PDC's find_library() for this runs before
+# project(PDC C), so CMake doesn't know this system's multiarch library
+# triplet yet and can't see apt's /usr/lib/x86_64-linux-gnu/libsodium.so.
+wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.20.tar.gz
+tar xf libsodium-1.0.20.tar.gz
+cd libsodium-1.0.20
+./configure --prefix="$HOME/opt/libsodium"
+make -j2 && make install
+cd ..
+
 echo "ZFP_ROOT_DIR=$HOME/opt/zfp" >> "$GITHUB_ENV"
 echo "SZ_CPU_DIR=$HOME/opt/sz3" >> "$GITHUB_ENV"
 echo "TURBO_DIR=$GITHUB_WORKSPACE/turbopfor" >> "$GITHUB_ENV"
-echo "LIBSODIUM_ROOT_DIR=/usr" >> "$GITHUB_ENV"
-echo "LD_LIBRARY_PATH=$HOME/opt/zfp/lib:$HOME/opt/sz3/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+echo "LIBSODIUM_ROOT_DIR=$HOME/opt/libsodium" >> "$GITHUB_ENV"
+echo "LD_LIBRARY_PATH=$HOME/opt/zfp/lib:$HOME/opt/sz3/lib:$HOME/opt/libsodium/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
