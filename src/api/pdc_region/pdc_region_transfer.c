@@ -37,6 +37,7 @@
 #include "pdc_prop_pkg.h"
 #include "pdc_region.h"
 #include "pdc_region_pkg.h"
+#include "pdc_client_cache.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_interface.h"
 #include "pdc_transforms_pkg.h"
@@ -105,6 +106,11 @@ typedef struct pdc_transfer_request {
     uint64_t *remote_region_offset;
     uint64_t *remote_region_size;
     uint64_t  total_data_size;
+
+#ifdef ENABLE_CLIENT_CACHE
+    int region_in_cache; // Flag for client-side cache
+#endif
+
     // Object dimensions
     int       obj_ndim;
     uint64_t *obj_dims;
@@ -406,7 +412,6 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
 done:
     PDC_Client_transfer_pthread_cnt_add(-1);
     PDC_Client_transfer_pthread_terminate();
-
     FUNC_LEAVE(ret_value);
 }
 
@@ -986,6 +991,10 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
     int                   set_output_buf = 0;
     int                   ret_value      = SUCCEED;
 
+#ifdef ENABLE_CLIENT_CACHE
+    int region_in_cache = 0; // Indicating requested region is within client-side cache
+#endif
+
     write_request_pkgs             = NULL;
     read_request_pkgs              = NULL;
     write_size                     = 0;
@@ -1003,6 +1012,30 @@ prepare_start_all_requests(pdcid_t *transfer_request_id, int size,
             posix_transfer_request_id_ptr[0][posix_size_ptr[0]] = transfer_request_id[i];
             posix_size_ptr[0]++;
         }
+
+#ifdef ENABLE_CLIENT_CACHE
+        // Check if the requested region is within the client-side region cache list
+        if (transfer_request->access_type == PDC_WRITE) {
+            PDC_client_cache_update(transfer_request->obj_id, transfer_request->remote_region_ndim,
+                                    transfer_request->unit, transfer_request->remote_region_offset,
+                                    transfer_request->remote_region_size, transfer_request->buf);
+        }
+
+        // Check if the requested region is within the client-side region cache list
+        if (transfer_request->access_type == PDC_READ) {
+            region_in_cache =
+                PDC_client_cache_search(transfer_request->obj_id, transfer_request->remote_region_ndim,
+                                        transfer_request->unit, transfer_request->remote_region_offset,
+                                        transfer_request->remote_region_size, transfer_request->buf);
+
+            if (region_in_cache) {
+                printf("PDC Client pdc_client_cache found requested region\n");
+                transfer_request->region_in_cache = region_in_cache;
+                transfer_request->metadata_id     = NULL;
+                continue;
+            }
+        }
+#endif
 
         attach_local_transfer_request(transfer_request->obj_pointer, transfer_request_id[i]);
         unit = transfer_request->unit;
@@ -1568,6 +1601,10 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
     int                   i;
     hg_bulk_t             bulk_handle;
 
+#ifdef ENABLE_CLIENT_CACHE
+    int region_in_cache = 0;
+#endif
+
     if ((transferinfo = PDC_find_id(transfer_request_id)) == NULL)
         PGOTO_DONE(ret_value);
 
@@ -1575,6 +1612,30 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
 
     if (transfer_request->metadata_id != NULL)
         PGOTO_ERROR(FAIL, "PDC_Client attempted to start existing transfer request");
+
+#ifdef ENABLE_CLIENT_CACHE
+    // Check if the requested region is within the client-side region cache list
+    if (transfer_request->access_type == PDC_WRITE) {
+        PDC_client_cache_update(transfer_request->obj_id, transfer_request->remote_region_ndim,
+                                transfer_request->unit, transfer_request->remote_region_offset,
+                                transfer_request->remote_region_size, transfer_request->buf);
+    }
+
+    // Check if the requested region is within the client-side region cache list
+    if (transfer_request->access_type == PDC_READ) {
+        region_in_cache =
+            PDC_client_cache_search(transfer_request->obj_id, transfer_request->remote_region_ndim,
+                                    transfer_request->unit, transfer_request->remote_region_offset,
+                                    transfer_request->remote_region_size, transfer_request->buf);
+
+        if (region_in_cache) {
+            // printf("PDC Client pdc_client_cache found requested region\n");
+            transfer_request->region_in_cache = region_in_cache;
+            transfer_request->metadata_id     = NULL;
+            goto done;
+        }
+    }
+#endif
 
     // Dynamic case is implemented within the the aggregated version. The main reason is that the target data
     // server may not be unique, so we may end up sending multiple requests to the same data server.
@@ -1838,6 +1899,10 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
 
     double t0, t1;
 
+#ifdef ENABLE_CLIENT_CACHE
+    perr_t ret_value_region_cache = SUCCEED;
+#endif
+
     if (!size)
         PGOTO_DONE(ret_value);
 
@@ -2038,6 +2103,18 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
             transfer_request->access_type, transfer_request->n_obj_servers, transfer_request->new_buf,
             transfer_request->bulk_buf, transfer_request->bulk_buf_ref, transfer_request->read_bulk_buf);
 
+#ifdef ENABLE_CLIENT_CACHE
+        // Insert the recently requested region into cache
+        if (transfer_request->access_type == PDC_READ) {
+            ret_value_region_cache =
+                PDC_client_cache_insert(transfer_request->obj_id, transfer_request->remote_region_ndim,
+                                        transfer_request->unit, transfer_request->remote_region_offset,
+                                        transfer_request->remote_region_size, transfer_request->buf);
+            if (ret_value_region_cache != SUCCEED)
+                printf("Failed to insert region_cache\n");
+        }
+#endif
+
         if (transfer_request->region_partition == PDC_REGION_STATIC ||
             transfer_request->region_partition == PDC_REGION_DYNAMIC ||
             transfer_request->region_partition == PDC_REGION_LOCAL) {
@@ -2075,6 +2152,10 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     pdc_transfer_request *transfer_request;
     size_t                unit;
     int                   i;
+
+#ifdef ENABLE_CLIENT_CACHE
+    perr_t ret_value_region_cache = SUCCEED;
+#endif
 
     if ((transferinfo = PDC_find_id(transfer_request_id)) == NULL)
         PGOTO_DONE(ret_value);
@@ -2138,8 +2219,24 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
                 transfer_request->access_type, transfer_request->n_obj_servers, transfer_request->new_buf,
                 transfer_request->bulk_buf, transfer_request->bulk_buf_ref, transfer_request->read_bulk_buf);
         }
+
         transfer_request->metadata_id = (uint64_t *)PDC_free(transfer_request->metadata_id);
+
+#ifdef ENABLE_CLIENT_CACHE
+        // Insert the recently requested region into cache
+        if (transfer_request->access_type == PDC_READ) {
+            ret_value_region_cache =
+                PDC_client_cache_insert(transfer_request->obj_id, transfer_request->remote_region_ndim,
+                                        transfer_request->unit, transfer_request->remote_region_offset,
+                                        transfer_request->remote_region_size, transfer_request->buf);
+            if (ret_value_region_cache != SUCCEED)
+                printf("Failed to insert region_cache\n");
+        }
+#endif
+
         transfer_request->is_done     = 1;
+        transfer_request->metadata_id = NULL;
+
         remove_local_transfer_request(transfer_request->obj_pointer, transfer_request_id);
     }
     else {
@@ -2148,5 +2245,6 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
     }
 
 done:
+    fflush(stdout);
     FUNC_LEAVE(ret_value);
 }
