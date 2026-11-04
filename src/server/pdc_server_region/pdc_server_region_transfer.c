@@ -721,8 +721,14 @@ PDC_Server_data_io_region_per_file_transformations(uint64_t obj_id, int obj_ndim
         int   fd               = open(storage_location, O_RDONLY);
         uint64_t bytes_to_read = PDC_get_region_desc_size_bytes(
             input_region.size, PDC_get_var_type_size(input_region.pdc_var_type), input_region.ndim);
+        LOG_WARNING("DIAG read: storage_location=%s fd=%d bytes_to_read=%" PRIu64
+                    " actual_region{ndim=%d var_type=%d size0=%" PRIu64 "}\n",
+                    storage_location, fd, bytes_to_read, region_mapping->actual_region.ndim,
+                    region_mapping->actual_region.pdc_var_type, region_mapping->actual_region.size[0]);
         buf = PDC_malloc(bytes_to_read);
         PDC_POSIX_IO(fd, buf, bytes_to_read, 0);
+        LOG_WARNING("DIAG read: first 4 bytes of buf = %02x %02x %02x %02x\n", ((unsigned char *)buf)[0],
+                    ((unsigned char *)buf)[1], ((unsigned char *)buf)[2], ((unsigned char *)buf)[3]);
         close(fd);
     }
 
@@ -769,8 +775,14 @@ PDC_Server_data_io_region_per_file_transformations(uint64_t obj_id, int obj_ndim
         // Update actual region mapping
         PDCtf_copy_tf_region_t(&output_region, &region_mapping->actual_region);
     }
-    else
+    else {
+        LOG_WARNING("DIAG post-exec: output_region{ndim=%d var_type=%d size0=%" PRIu64
+                    "} bytes=%" PRIu64 " buf[0..3]=%02x %02x %02x %02x\n",
+                    output_region.ndim, output_region.pdc_var_type, output_region.size[0],
+                    PDCtf_get_pdc_region_t_bytes(output_region), ((unsigned char *)buf)[0],
+                    ((unsigned char *)buf)[1], ((unsigned char *)buf)[2], ((unsigned char *)buf)[3]);
         memcpy(cpy_buf, buf, PDCtf_get_pdc_region_t_bytes(output_region));
+    }
 
     // Updating the current state to the desired state on a write
     if (is_write) {
