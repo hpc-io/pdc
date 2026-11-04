@@ -776,8 +776,8 @@ PDC_Server_data_io_region_per_file_transformations(uint64_t obj_id, int obj_ndim
         PDCtf_copy_tf_region_t(&output_region, &region_mapping->actual_region);
     }
     else {
-        LOG_WARNING("DIAG post-exec: output_region{ndim=%d var_type=%d size0=%" PRIu64
-                    "} bytes=%" PRIu64 " buf[0..3]=%02x %02x %02x %02x\n",
+        LOG_WARNING("DIAG post-exec: output_region{ndim=%d var_type=%d size0=%" PRIu64 "} bytes=%" PRIu64
+                    " buf[0..3]=%02x %02x %02x %02x\n",
                     output_region.ndim, output_region.pdc_var_type, output_region.size[0],
                     PDCtf_get_pdc_region_t_bytes(output_region), ((unsigned char *)buf)[0],
                     ((unsigned char *)buf)[1], ((unsigned char *)buf)[2], ((unsigned char *)buf)[3]);
