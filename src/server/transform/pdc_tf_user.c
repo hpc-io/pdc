@@ -95,7 +95,15 @@ PDCtf_get_func_param(pdc_dg_t *dg, char *func_name, pdc_tf_dev_t dev, uint64_t f
         }
     }
 
-    printf("Edge %s not found\n", func_name);
+    printf("Edge %s not found (dev=%d); dg=%p edge_count=%u dg->data=%s\n", func_name, dev, (void *)dg,
+           dg->edge_count, dg->data ? (char *)dg->data : "(null)");
+    for (int i = 0; i < dg->edge_count; i++) {
+        pdc_dg_edge_t *edge    = dg->edges[i];
+        pdc_tf_func_t *tf_func = edge->data;
+        printf("  edge[%d]: name=%s dev=%d params_vector=%p v1_id=%d v2_id=%d\n", i,
+               tf_func->name ? tf_func->name : "(null)", tf_func->dev,
+               (void *)tf_func->pdc_tf_dg_params_vector, edge->v1_id, edge->v2_id);
+    }
     ret_value = false;
 
 done:
