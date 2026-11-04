@@ -3,6 +3,8 @@
 #include "pdc_timing.h"
 #include "pdc_logger.h"
 #include "pdc_malloc.h"
+#include <errno.h>
+#include <string.h>
 
 static int io_by_region_g = 1;
 
@@ -366,6 +368,12 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
                 }
             }
         }
+    }
+    // PDC_SERVER_FSYNC=1: make data durable before the request (or cache flush) completes
+    if (is_write) {
+        char *fsync_env = getenv("PDC_SERVER_FSYNC");
+        if (fsync_env && atoi(fsync_env) != 0 && fsync(fd) != 0)
+            LOG_ERROR("fsync(%s) failed: %s\n", storage_location, strerror(errno));
     }
     close(fd);
 

@@ -1,0 +1,59 @@
+=== Job 2: server on a Rabbit's CPU, 84 clients on the compute node ===
+Sat Oct 31 08:05:07 PDT 2026
+--- targeting PDC server at rabbit host: tuolumne201 ---
+--- starting PDC server on the rabbit ---
+0.101s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+libhugetlbfs: ERROR: Line too long when parsing mounts
+[INFO] PDC_SERVER[0]: Using [/g/g17/lewis153/pdc_tmp_job2_rabbit/] as tmp dir, 256 OSTs, 256 OSTs per data file, 0% to BB
+[INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set, default to tuolumne201
+[INFO] PDC_SERVER[0]: Connection string: ofi+tcp://tuolumne201:7000
+[INFO] PDC_SERVER[0]: Without multi-thread
+[INFO] PDC_SERVER[0]: Read cache enabled
+[INFO] PDC_SERVER[0]: Max cache size: 34359738368
+[INFO] PDC_SERVER[0]: Successfully established connection to 0 other PDC servers
+[INFO] PDC_SERVER[0]: Server ready!
+
+
+--- starting 84 VPICIO client ranks on the compute node ---
+[INFO] PDC_CLIENT[0]: Writing 8388608 particles per rank for 1 steps with 0 sec sleep time.
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[INFO] PDC_CLIENT[0]: Found 1 PDC Metadata servers, running with 84 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was NOT set, default to tuolumne1014
+[INFO] PDC_CLIENT[0]: Connection string: ofi+tcp://tuolumne1014:8000
+[INFO] PDC_CLIENT[0]: Using [/g/g17/lewis153/pdc_tmp_job2_rabbit] as tmp dir, 84 clients per server
+[INFO] PDC_CLIENT[0]: 
+#Step  0
+[INFO] PDC_CLIENT[0]: Obj create time: 9.77347e-04
+[INFO] PDC_CLIENT[0]: Transfer create time: 5.30010e-05
+[INFO] PDC_CLIENT[0]: Transfer start time: 4.07471e-01
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1578s
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1448s
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1222s
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1329s
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1940s
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1427s
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1418s
+[INFO] PDC_SERVER[0]: Flushed 2 regions to storage, took 0.1478s
+[INFO] PDC_SERVER[0]: Flushed 26 regions to storage, took 1.1050s
+[INFO] PDC_CLIENT[0]: Transfer wait time: 2.61880e+01
+[INFO] PDC_CLIENT[0]: Transfer close time: 1.09118e-01
+[INFO] PDC_CLIENT[0]: Obj close time: 3.34800e-05
+--- closing PDC server ---
+[INFO] PDC_SERVER[0]: Flushed 30 regions to storage, took 4.6242s
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 6.0782s
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 6.1143s
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 6.1081s
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 6.1373s
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 6.1952s
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 6.1895s
+[INFO] PDC_SERVER[0]: Flushed 4 regions to storage, took 6.3351s
+flux-job: kill: job is not running
+Oct 31 08:24:16.736904 PDT 2026 broker.err[0]: rc2.0: /var/tmp/lewis153/jobtmp-0-f3hKxqze8bWX/script Terminated (rc=143) 1148.9s
+flux-job: task(s) Terminated
+1104.242s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+1104.377s: flux-shell[0]: FATAL: input.kvs: flux_job_event_watch_get: Function not implemented
+1104.380s: job.exception fMQamdou type=exec severity=0 flux_job_event_watch_get: Function not implemented
+flux-job: task(s) exited with exit code 1
+Oct 31 08:24:17.115032 PDT 2026 broker.err[0]: dead to Flux: tuolumne201 (rank 1)

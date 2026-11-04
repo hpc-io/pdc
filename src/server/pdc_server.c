@@ -59,6 +59,7 @@
 #include "pdc_server_region_transfer_metadata_query.h"
 #include "pdc_logger.h"
 #include "pdc_malloc.h"
+#include "pdc_mercury_auth.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
@@ -169,6 +170,97 @@ pdc_data_server_io_list_t *  pdc_data_server_read_list_head_g    = NULL;
 pdc_data_server_io_list_t *  pdc_data_server_write_list_head_g   = NULL;
 update_storage_meta_list_t * pdc_update_storage_meta_list_head_g = NULL;
 extern data_server_region_t *dataserver_region_g;
+
+static pbool_t
+PDC_is_cxi_mercury_transport(const char *hg_transport)
+{
+    return (hg_transport != NULL &&
+            (strcmp(hg_transport, "ofi+cxi") == 0 || strcmp(hg_transport, "cxi") == 0));
+}
+
+static pbool_t
+PDC_is_perlmutter_system(void)
+{
+    const char *nersc_host = getenv("NERSC_HOST");
+
+    return (nersc_host != NULL && strcmp(nersc_host, "perlmutter") == 0);
+}
+
+static int
+PDC_get_local_process_rank(int fallback_rank)
+{
+    const char *env_names[] = {"SLURM_LOCALID", "MPI_LOCALRANKID", "PMI_LOCAL_RANK",
+                               "OMPI_COMM_WORLD_LOCAL_RANK"};
+    size_t      i;
+
+    for (i = 0; i < sizeof(env_names) / sizeof(env_names[0]); i++) {
+        char *endptr     = NULL;
+        char *env_value  = getenv(env_names[i]);
+        long  local_rank = 0;
+
+        if (env_value == NULL || env_value[0] == '\0')
+            continue;
+
+        local_rank = strtol(env_value, &endptr, 10);
+        if (endptr != env_value && *endptr == '\0' && local_rank >= 0 && local_rank <= INT_MAX)
+            return (int)local_rank;
+    }
+
+    return fallback_rank;
+}
+
+static void
+PDC_get_default_cxi_endpoint(char *host_buf, size_t host_buf_len, int fallback_rank, int pid_base)
+{
+    const char *nic_name   = getenv("HG_CXI_NIC");
+    int         local_rank = PDC_get_local_process_rank(fallback_rank);
+    int         pid_offset = local_rank % 255;
+    int         pid        = pid_base + pid_offset;
+
+    if (nic_name == NULL || nic_name[0] == '\0')
+        nic_name = "cxi0";
+
+    snprintf(host_buf, host_buf_len, "%s:%d", nic_name, pid);
+}
+
+static const char *
+PDC_get_default_mercury_transport(void)
+{
+    return (PDC_is_perlmutter_system() == TRUE) ? "ofi+cxi" : "ofi+tcp";
+}
+
+static perr_t
+PDC_build_mercury_na_info_string(const char *hg_transport, int port, int cxi_pid_base, char *na_info_string,
+                                 size_t na_info_string_len, char *host_buf, size_t host_buf_len)
+{
+    perr_t      ret_value = SUCCEED;
+    const char *hostname  = getenv("HG_HOST");
+
+    if (hostname == NULL || hostname[0] == '\0') {
+        if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE) {
+            PDC_get_default_cxi_endpoint(host_buf, host_buf_len, pdc_server_rank_g, cxi_pid_base);
+            hostname = host_buf;
+            if (pdc_server_rank_g == 0)
+                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+        }
+        else {
+            memset(host_buf, 0, host_buf_len);
+            gethostname(host_buf, host_buf_len - 1);
+            hostname = host_buf;
+            if (pdc_server_rank_g == 0)
+                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+        }
+    }
+    else
+        LOG_INFO("Environment variable HG_HOST was set\n");
+
+    if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE)
+        snprintf(na_info_string, na_info_string_len, "%s://%s", hg_transport, hostname);
+    else
+        snprintf(na_info_string, na_info_string_len, "%s://%s:%d", hg_transport, hostname, port);
+
+    return ret_value;
+}
 
 /*
  * Init the remote server info structure
@@ -759,9 +851,8 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     int                 i         = 0;
     char                self_addr_string[ADDR_MAX];
     char                na_info_string[NA_STRING_INFO_LEN];
-    char *              hostname;
-    pbool_t             free_hostname = false;
-    struct hg_init_info init_info     = {0};
+    char                host_buf[HOSTNAME_LEN];
+    struct hg_init_info init_info = {0};
 
     /* Set the default mercury transport
      * but enable overriding that to any of:
@@ -769,8 +860,9 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
      *   "ofi+tcp"
      *   "cci+tcp"
      */
-    char *default_hg_transport = "ofi+tcp";
-    char *hg_transport;
+    const char *default_hg_transport = PDC_get_default_mercury_transport();
+    char *      hg_transport;
+    int         cxi_pid_base = 128;
 #ifdef PDC_HAS_CRAY_DRC
     uint32_t          credential = 0, cookie;
     drc_info_handle_t credential_info;
@@ -794,31 +886,23 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     total_mem_usage_g += (sizeof(char) + sizeof(char *));
 
     if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
-        hg_transport = default_hg_transport;
+        hg_transport = (char *)default_hg_transport;
         if (pdc_server_rank_g == 0)
             LOG_INFO("Environment variable HG_TRANSPORT was NOT set, default to %s\n", hg_transport);
     }
     else {
         LOG_INFO("Environment variable HG_TRANSPORT was set\n");
         if (strpbrk(hg_transport, ";&|`$<>") != NULL)
-            hg_transport = default_hg_transport;
+            hg_transport = (char *)default_hg_transport;
     }
-    if ((hostname = getenv("HG_HOST")) == NULL) {
-        hostname = PDC_malloc(HOSTNAME_LEN);
-        memset(hostname, 0, HOSTNAME_LEN);
-        gethostname(hostname, HOSTNAME_LEN - 1);
-        free_hostname = true;
-        if (pdc_server_rank_g == 0)
-            LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
-    }
-    else
-        LOG_INFO("Environment variable HG_HOST was set\n");
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+
+    ret_value = PDC_build_mercury_na_info_string(hg_transport, port, cxi_pid_base, na_info_string,
+                                                 sizeof(na_info_string), host_buf, sizeof(host_buf));
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error building Mercury connection string");
 
     if (pdc_server_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
-    if (free_hostname)
-        hostname = PDC_free(hostname);
 
     // Clean up all the tmp files etc
     HG_Cleanup();
@@ -857,7 +941,25 @@ drc_access_again:
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
-    *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
+    {
+        pdc_scoped_env_entry_t scoped_envs[PDC_PERLMUTTER_CXI_ENV_COUNT];
+        int                    scoped_env_count = 0;
+        unsigned int           scoped_svc_id    = 0;
+        unsigned int           scoped_vni       = 0;
+        char                   scoped_device[32];
+        perr_t                 scoped_auth_ret;
+
+        scoped_auth_ret =
+            PDC_scope_perlmutter_cxi_auth_env(hg_transport, scoped_envs, &scoped_env_count, &scoped_svc_id,
+                                              &scoped_vni, scoped_device, sizeof(scoped_device));
+        if (scoped_auth_ret != SUCCEED && pdc_server_rank_g == 0)
+            LOG_WARNING("Unable to scope Slingshot CXI auth for Mercury, falling back to provider defaults");
+        else if (scoped_env_count > 0 && pdc_server_rank_g == 0)
+            LOG_INFO("Scoped Slingshot CXI auth for Mercury: svc=%u vni=%u device=%s\n", scoped_svc_id,
+                     scoped_vni, scoped_device);
+        *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
+        PDC_restore_scoped_env(scoped_envs, scoped_env_count);
+    }
     if (*hg_class == NULL) {
         LOG_ERROR("Error with HG_Init()\n");
         FUNC_LEAVE(FAIL);
@@ -1223,6 +1325,9 @@ PDC_Server_checkpoint()
     bool              use_tmpfs = false;
     FILE *            file;
     int               fd;
+    bool              flush_bb_on_close = false;
+    char *            bb_loc            = NULL;
+    size_t            bb_loc_len        = 0;
 
 #ifdef PDC_TIMING
     // Timing
@@ -1236,6 +1341,21 @@ PDC_Server_checkpoint()
     env_char = getenv("PDC_CHECKPOINT_TMPFS");
     if (env_char && atoi(env_char) != 0)
         use_tmpfs = true;
+
+    // If set, migrate every region still on the burst-buffer tier to its
+    // permanent PFS location before writing it into the checkpoint below,
+    // so the checkpoint records the PFS location rather than a BB path
+    // that won't exist once this server exits.
+    env_char = getenv("PDC_BB_FLUSH_ON_CLOSE");
+    if (env_char && atoi(env_char) != 0) {
+        bb_loc = getenv("PDC_BB_LOC");
+        if (bb_loc != NULL && bb_loc[0] != 0) {
+            flush_bb_on_close = true;
+            bb_loc_len        = strlen(bb_loc);
+        }
+        else
+            LOG_ERROR("PDC_BB_FLUSH_ON_CLOSE set but PDC_BB_LOC is not -- skipping BB flush\n");
+    }
 
     {
         char _dir[4096];
@@ -1322,6 +1442,12 @@ PDC_Server_checkpoint()
                 n_write_region = 0;
                 DL_FOREACH(elt->storage_region_list_head, region_elt)
                 {
+                    if (flush_bb_on_close && strncmp(region_elt->storage_location, bb_loc, bb_loc_len) == 0) {
+                        if (PDC_Server_move_region_bb_to_pfs(region_elt) != SUCCEED)
+                            LOG_ERROR("Failed to move region of obj %" PRIu64 " from BB to PFS during "
+                                      "checkpoint\n",
+                                      elt->obj_id);
+                    }
                     fwrite(region_elt, sizeof(region_list_t), 1, file);
                     n_write_region++;
                     int has_hist = 0;
@@ -1353,6 +1479,11 @@ PDC_Server_checkpoint()
     fwrite(&n_objs, sizeof(int), 1, file);
     DL_FOREACH(dataserver_region_g, region)
     {
+        if (flush_bb_on_close) {
+            if (PDC_Server_move_obj_file_bb_to_pfs(region) != SUCCEED)
+                LOG_ERROR("Failed to move obj %" PRIu64 " file from BB to PFS during checkpoint\n",
+                          region->obj_id);
+        }
         fwrite(&region->obj_id, sizeof(uint64_t), 1, file);
         DL_COUNT(region->region_storage_head, region_elt, n_region);
         fwrite(&n_region, sizeof(int), 1, file);

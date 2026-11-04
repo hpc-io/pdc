@@ -1,0 +1,8 @@
+=== Small Job 2: server on a Rabbit's CPU, 2 clients on the compute node ===
+Sat Oct 31 08:44:34 PDT 2026
+--- targeting PDC server at rabbit host: tuolumne201 ---
+--- starting PDC server on the rabbit (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_rabbit_small/server.out) ---
+--- starting 2 VPICIO client ranks on the compute node (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_rabbit_small/vpicio.out) ---
+--- closing PDC server (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_rabbit_small/close_server.out) ---
+Oct 31 08:46:39.751297 PDT 2026 broker.err[0]: rc2.0: /var/tmp/lewis153/jobtmp-0-f3hLGrGLPeqm/script Terminated (rc=143) 125.1s
+Oct 31 08:46:40.125804 PDT 2026 broker.err[0]: dead to Flux: tuolumne201 (rank 1)

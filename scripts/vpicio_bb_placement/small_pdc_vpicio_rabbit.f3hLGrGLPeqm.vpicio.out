@@ -1,0 +1,33 @@
+[INFO] PDC_CLIENT[0]: Writing 8388608 particles per rank for 1 steps with 0 sec sleep time.
+[08:44:38.085618] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[1]: My client rank = 1, client communicator size = 2
+[08:44:38.085566] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[0]: My client rank = 0, client communicator size = 2
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[INFO] PDC_CLIENT[0]: Found 1 PDC Metadata servers, running with 2 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was NOT set, default to tuolumne1015
+[INFO] PDC_CLIENT[0]: Connection string: ofi+tcp://tuolumne1015:8000
+[INFO] PDC_CLIENT[0]: Using [/g/g17/lewis153/pdc_tmp_job2_rabbit_small] as tmp dir, 2 clients per server
+[INFO] PDC_CLIENT[0]: 
+#Step  0
+[08:44:39.062331] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name dX-0
+[08:44:39.062343] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[08:44:39.062499] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name dY-0
+[08:44:39.062508] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[08:44:39.062593] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name dZ-0
+[08:44:39.062604] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[08:44:39.062680] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name Ux-0
+[08:44:39.062688] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[08:44:39.062768] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name Uy-0
+[08:44:39.062776] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[08:44:39.062847] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name Uz-0
+[08:44:39.062854] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[08:44:39.062926] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name q-0
+[08:44:39.062933] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[08:44:39.063004] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name i-0
+[08:44:39.063012] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 2, pdc_server_num_g = 1, data_server_id = 0
+[INFO] PDC_CLIENT[0]: Obj create time: 7.77306e-04
+[INFO] PDC_CLIENT[0]: Transfer create time: 5.22100e-05
+[INFO] PDC_CLIENT[0]: Transfer start time: 2.82766e-01
+[INFO] PDC_CLIENT[0]: Transfer wait time: 6.48208e-01
+[INFO] PDC_CLIENT[0]: Transfer close time: 7.21700e-02
+[INFO] PDC_CLIENT[0]: Obj close time: 3.06500e-05
