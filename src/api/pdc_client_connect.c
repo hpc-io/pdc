@@ -66,7 +66,13 @@
 #include <inttypes.h>
 #include <math.h>
 #include <sys/time.h>
-#include <errno.h>
+#include "pdc_timing.h"
+#include "errno.h"
+
+/* #define TANG_DEBUG 1 */
+#ifdef PDC_ENABLE_PHT
+#define ROOT_BUCKET "#"
+#endif /* PDC_ENABLE_PHT */
 
 int                    is_client_debug_g      = 0;
 pdc_server_selection_t pdc_server_selection_g = PDC_SERVER_DEFAULT;
@@ -144,6 +150,10 @@ static hg_id_t metadata_delete_by_id_register_id_g;
 static hg_id_t metadata_update_register_id_g;
 static hg_id_t metadata_add_tag_register_id_g;
 static hg_id_t metadata_add_kvtag_register_id_g;
+#ifdef PDC_ENABLE_PHT
+static hg_id_t metadata_check_prefix_register_id_g;
+static hg_id_t metadata_key_add_register_id_g;
+#endif /* PDC_ENABLE_PHT */
 static hg_id_t metadata_del_kvtag_register_id_g;
 static hg_id_t metadata_get_kvtag_register_id_g;
 static hg_id_t region_lock_register_id_g;
@@ -1271,7 +1281,12 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     else
         LOG_INFO("Environment variable HG_HOST was set\n");
 
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+    // CXI selects a NIC and endpoint ID instead of a hostname and TCP port.
+    if (strcmp(hg_transport, "ofi+cxi") == 0)
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s", hg_transport,
+                 getenv("HG_HOST") ? hostname : "");
+    else
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
@@ -1335,13 +1350,18 @@ drc_access_again:
     obj_reset_dims_register_id_g      = PDC_obj_reset_dims_register(*hg_class);
     // HG_Registered_disable_response(*hg_class, close_server_register_id_g, HG_TRUE);
 
-    metadata_query_register_id_g           = PDC_metadata_query_register(*hg_class);
-    container_query_register_id_g          = PDC_container_query_register(*hg_class);
-    metadata_delete_register_id_g          = PDC_metadata_delete_register(*hg_class);
-    metadata_delete_by_id_register_id_g    = PDC_metadata_delete_by_id_register(*hg_class);
-    metadata_update_register_id_g          = PDC_metadata_update_register(*hg_class);
-    metadata_add_tag_register_id_g         = PDC_metadata_add_tag_register(*hg_class);
-    metadata_add_kvtag_register_id_g       = PDC_metadata_add_kvtag_register(*hg_class);
+    metadata_query_register_id_g        = PDC_metadata_query_register(*hg_class);
+    container_query_register_id_g       = PDC_container_query_register(*hg_class);
+    metadata_delete_register_id_g       = PDC_metadata_delete_register(*hg_class);
+    metadata_delete_by_id_register_id_g = PDC_metadata_delete_by_id_register(*hg_class);
+    metadata_update_register_id_g       = PDC_metadata_update_register(*hg_class);
+    metadata_add_tag_register_id_g      = PDC_metadata_add_tag_register(*hg_class);
+    metadata_add_kvtag_register_id_g    = PDC_metadata_add_kvtag_register(*hg_class);
+#ifdef PDC_ENABLE_PHT
+    metadata_check_prefix_register_id_g  = PDC_metadata_check_prefix_register(*hg_class);
+    metadata_create_bucket_register_id_g = PDC_metadata_create_bucket_register(*hg_class);
+    metadata_key_add_register_id_g       = PDC_metadata_key_add_register(*hg_class);
+#endif /* PDC_ENABLE_PHT */
     metadata_del_kvtag_register_id_g       = PDC_metadata_del_kvtag_register(*hg_class);
     metadata_get_kvtag_register_id_g       = PDC_metadata_get_kvtag_register(*hg_class);
     region_lock_register_id_g              = PDC_region_lock_register(*hg_class);
@@ -2043,6 +2063,47 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+
+#ifdef PDC_ENABLE_PHT
+static hg_return_t
+metadata_check_prefix_rpc_cb(const struct hg_cb_info *info)
+{
+    metadata_check_prefix_out_t *result = info->arg;
+    metadata_check_prefix_out_t  output = {0};
+    hg_handle_t                  handle = info->info.forward.handle;
+    hg_return_t                  ret    = info->ret;
+    result->ret                         = -1;
+    if (ret == HG_SUCCESS) {
+        ret = HG_Get_output(handle, &output);
+        if (ret == HG_SUCCESS) {
+            *result = output;
+            HG_Free_output(handle, &output);
+        }
+    }
+    hg_atomic_decr32(&atomic_work_todo_g);
+    return ret;
+}
+
+static hg_return_t
+metadata_key_add_rpc_cb(const struct hg_cb_info *info)
+{
+    metadata_key_add_out_t *result = info->arg;
+    metadata_key_add_out_t  output = {0};
+    hg_handle_t             handle = info->info.forward.handle;
+    hg_return_t             ret    = info->ret;
+    result->ret                    = -1;
+    if (ret == HG_SUCCESS) {
+        ret = HG_Get_output(handle, &output);
+        if (ret == HG_SUCCESS) {
+            *result = output;
+            HG_Free_output(handle, &output);
+        }
+    }
+    hg_atomic_decr32(&atomic_work_todo_g);
+    return ret;
+}
+
+#endif /* PDC_ENABLE_PHT */
 
 perr_t
 PDC_Client_add_tag(pdcid_t obj_id, const char *tag)
@@ -6361,6 +6422,7 @@ PDC_add_kvtag(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
     }
 
     server_id = PDC_get_server_by_obj_id(meta_id, pdc_server_num_g);
+    printf("Object ID %" PRIu64 " mapped to server %" PRIu32 "\n", obj_id, server_id);
 
     // Debug statistics for counting number of messages sent to each server.
     debug_server_id_count[server_id]++;
@@ -6398,6 +6460,127 @@ done:
 
     FUNC_LEAVE(ret_value);
 }
+#ifdef PDC_ENABLE_PHT
+/***
+ * Check if the prefix exists in the PHT
+ * @param server: The server to check against
+ * @param prefix: The prefix to check
+ *
+ * This function will send mercury RPC request to the server and check if the prefix exists
+ */
+
+static perr_t
+PDC_check_prefix(uint32_t server, char *prefix, metadata_check_prefix_out_t *out)
+{
+    perr_t                     ret    = FAIL;
+    hg_handle_t                handle = HG_HANDLE_NULL;
+    metadata_check_prefix_in_t in     = {.prefix = prefix};
+    *out                              = (metadata_check_prefix_out_t){.ret = -1};
+    if (server >= (uint32_t)pdc_server_num_g || PDC_Client_try_lookup_server(server, 0) != SUCCEED)
+        goto done;
+    if (HG_Create(send_context_g, pdc_server_info_g[server].addr, metadata_check_prefix_register_id_g,
+                  &handle) != HG_SUCCESS)
+        goto done;
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    if (HG_Forward(handle, metadata_check_prefix_rpc_cb, out, &in) != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        goto done;
+    }
+    PDC_Client_check_response(&send_context_g);
+    if (out->ret == 1)
+        ret = SUCCEED;
+done:
+    if (handle != HG_HANDLE_NULL)
+        HG_Destroy(handle);
+    return ret;
+}
+
+uint32_t
+PDC_prefix_binary_search(char *prefix, char **target_prefix)
+{
+    if (!target_prefix)
+        return UINT32_MAX;
+    *target_prefix = NULL;
+    if (!prefix || !*prefix || pdc_server_num_g <= 0)
+        return UINT32_MAX;
+    char *slice = strdup(prefix);
+    if (!slice)
+        return UINT32_MAX;
+    size_t length = strlen(prefix);
+    for (size_t i = 1; i <= length; i++) {
+        metadata_check_prefix_out_t out;
+        memcpy(slice, prefix, i);
+        slice[i]        = '\0';
+        uint32_t server = PDC_get_server_using_pht(prefix_hash(slice), pdc_server_num_g);
+        if (PDC_check_prefix(server, slice, &out) != SUCCEED || !out.found)
+            break;
+        if (out.leaf) {
+            *target_prefix = slice;
+            return server;
+        }
+    }
+    free(slice);
+    return UINT32_MAX;
+}
+
+perr_t
+PDC_metadata_key_add(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
+{
+    perr_t                 ret    = FAIL;
+    hg_handle_t            handle = HG_HANDLE_NULL;
+    char *                 binary = NULL, *prefix = NULL, *target_prefix = NULL;
+    metadata_key_add_out_t out = {.ret = -1};
+    (void)obj_id;
+    (void)is_cont;
+    if (!kvtag || !kvtag->name || !kvtag->value || !kvtag->size || pdc_server_num_g <= 0)
+        goto done;
+    /* Creation is idempotent; each client can insert immediately after init. */
+    if (PDC_Client_create_bucket(ROOT_BUCKET) != SUCCEED)
+        goto done;
+    binary = string_to_binary(kvtag->name);
+    if (!binary)
+        goto done;
+    prefix = malloc(strlen(binary) + 2);
+    if (!prefix)
+        goto done;
+    prefix[0] = '#';
+    strcpy(prefix + 1, binary);
+    uint32_t server = PDC_prefix_binary_search(prefix, &target_prefix);
+    if (server >= (uint32_t)pdc_server_num_g || PDC_Client_try_lookup_server(server, 0) != SUCCEED)
+        goto done;
+    if (HG_Create(send_context_g, pdc_server_info_g[server].addr, metadata_key_add_register_id_g, &handle) !=
+        HG_SUCCESS)
+        goto done;
+    metadata_key_add_in_t in = {
+        .prefix = target_prefix, .key = kvtag->name, .value = kvtag->value, .size = kvtag->size};
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    if (HG_Forward(handle, metadata_key_add_rpc_cb, &out, &in) != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        goto done;
+    }
+    PDC_Client_check_response(&send_context_g);
+    if (out.ret == 1)
+        ret = SUCCEED;
+done:
+    if (handle != HG_HANDLE_NULL)
+        HG_Destroy(handle);
+    free(binary);
+    free(prefix);
+    free(target_prefix);
+    return ret;
+}
+
+perr_t
+PDC_metadata_key_delete(pdcid_t obj_id, pdc_kvtag_t *kvtag, int is_cont)
+{
+    (void)obj_id;
+    (void)kvtag;
+    (void)is_cont;
+    /* No deletion protocol has been implemented yet. */
+    return FAIL;
+}
+
+#endif /* PDC_ENABLE_PHT */
 
 static hg_return_t
 metadata_get_kvtag_rpc_cb(const struct hg_cb_info *callback_info)
@@ -6502,11 +6685,8 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
 
     hg_return_t         ret_value = HG_SUCCESS;
     struct bulk_args_t *bulk_args;
-    hg_bulk_t           origin_bulk_handle = hg_cb_info->info.bulk.origin_handle;
-    hg_bulk_t           local_bulk_handle  = hg_cb_info->info.bulk.local_handle;
+    hg_bulk_t           local_bulk_handle = hg_cb_info->info.bulk.local_handle;
     uint32_t            n_meta, actual_cnt;
-    void *              buf = NULL;
-    uint64_t            buf_sizes[1];
     uint32_t            bulk_sgnum;
     uint64_t *          ids_buf_sizes;
     void **             ids_buf;
@@ -6529,16 +6709,14 @@ kvtag_query_bulk_cb(const struct hg_cb_info *hg_cb_info)
             bulk_args->obj_ids[i] = *u64_arr_ptr;
             u64_arr_ptr++;
         }
+        PDC_free(ids_buf);
+        PDC_free(ids_buf_sizes);
     }
     else
         PGOTO_ERROR(HG_PROTOCOL_ERROR, "Error with bulk handle");
 
-    // Free local bulk handle
+    // HG_Free_output releases the decoded origin handle; only free our local handle.
     ret_value = HG_Bulk_free(local_bulk_handle);
-    if (ret_value != HG_SUCCESS)
-        PGOTO_ERROR(ret_value, "Could not free HG bulk handle");
-
-    ret_value = HG_Bulk_free(origin_bulk_handle);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not free HG bulk handle");
 
@@ -6559,6 +6737,7 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
     struct bulk_args_t *          bulk_arg;
     hg_handle_t                   handle;
     metadata_query_transfer_out_t output;
+    hg_bool_t                     destroy_handle = HG_FALSE;
     uint32_t                      n_meta;
     hg_op_id_t                    hg_bulk_op_id;
     hg_bulk_t                     local_bulk_handle  = HG_BULK_NULL;
@@ -6580,8 +6759,7 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
         hg_atomic_decr32(&bulk_todo_g);
         bulk_arg->n_meta  = 0;
         bulk_arg->obj_ids = NULL;
-        HG_Free_output(handle, &output);
-        HG_Destroy(handle);
+        destroy_handle    = HG_TRUE;
         PGOTO_DONE(ret_value);
     }
 
@@ -6610,6 +6788,8 @@ kvtag_query_forward_cb(const struct hg_cb_info *callback_info)
 done:
     hg_atomic_decr32(&atomic_work_todo_g);
     HG_Free_output(handle, &output);
+    if (destroy_handle)
+        HG_Destroy(handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -8449,6 +8629,58 @@ PDC_Client_search_obj_ref_through_dart_mpi(dart_hash_algo_t hash_algo, char *que
     *out   = dart_out;
     FUNC_LEAVE(ret_value);
 }
+
 #endif
 
 /******************** Collective Object Selection Query Ends *******************************/
+
+#ifdef PDC_ENABLE_PHT
+perr_t
+PDC_Client_create_bucket(char *prefix)
+{
+    perr_t                       ret    = FAIL;
+    hg_handle_t                  handle = HG_HANDLE_NULL;
+    metadata_create_bucket_out_t out    = {.ret = -1};
+    metadata_create_bucket_in_t  in     = {.prefix = prefix};
+    if (!prefix || !*prefix || pdc_server_num_g <= 0)
+        goto done;
+    uint32_t server = PDC_get_server_using_pht(prefix_hash(prefix), pdc_server_num_g);
+    if (PDC_Client_try_lookup_server(server, 0) != SUCCEED)
+        goto done;
+    if (HG_Create(send_context_g, pdc_server_info_g[server].addr, metadata_create_bucket_register_id_g,
+                  &handle) != HG_SUCCESS)
+        goto done;
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    if (HG_Forward(handle, metadata_create_bucket_client_rpc_cb, &out, &in) != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        goto done;
+    }
+    PDC_Client_check_response(&send_context_g);
+    if (out.ret == 1)
+        ret = SUCCEED;
+done:
+    if (handle != HG_HANDLE_NULL)
+        HG_Destroy(handle);
+    return ret;
+}
+
+hg_return_t
+metadata_create_bucket_client_rpc_cb(const struct hg_cb_info *info)
+{
+    metadata_create_bucket_out_t *result = info->arg;
+    metadata_create_bucket_out_t  output = {0};
+    hg_handle_t                   handle = info->info.forward.handle;
+    hg_return_t                   ret    = info->ret;
+    result->ret                          = -1;
+    if (ret == HG_SUCCESS) {
+        ret = HG_Get_output(handle, &output);
+        if (ret == HG_SUCCESS) {
+            *result = output;
+            HG_Free_output(handle, &output);
+        }
+    }
+    hg_atomic_decr32(&atomic_work_todo_g);
+    return ret;
+}
+
+#endif /* PDC_ENABLE_PHT */

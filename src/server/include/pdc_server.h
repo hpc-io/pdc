@@ -32,7 +32,6 @@
 #include "mercury_proc_string.h"
 
 #include "mercury_atomic.h"
-#include "mercury_list.h"
 
 #include "pdc_hash_table.h"
 
@@ -105,6 +104,7 @@ extern double   server_update_time_g;
 extern double   server_hash_insert_time_g;
 extern double   server_bloom_init_time_g;
 extern uint32_t n_metadata_g;
+extern int      pdc_client_num_g;
 
 /***************************************/
 /* Library-private Function Prototypes */
@@ -210,5 +210,4 @@ hg_return_t PDC_Server_recv_shm_cb(const struct hg_cb_info *callback_info);
  * \return Non-negative on success/Negative on failure
  */
 int server_run(int argc, char *argv[]);
-
 #endif /* PDC_SERVER_H */

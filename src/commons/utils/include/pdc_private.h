@@ -34,7 +34,6 @@
 #include "mercury.h"
 #include "mercury_macros.h"
 #include "mercury_proc_string.h"
-#include "mercury_list.h"
 #include "mercury_config.h"
 #include "mercury_thread_pool.h"
 #include "mercury_atomic.h"

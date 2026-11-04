@@ -78,6 +78,10 @@ add_library(pdc_server_lib
                ${PDC_SOURCE_DIR}/src/api/pdc_transform/pdc_transforms_common.c
                ${PDC_SOURCE_DIR}/src/api/pdc_analysis/pdc_hist_pkg.c
 )
+if(PDC_ENABLE_PHT)
+    target_sources(pdc_server_lib PRIVATE pdc_server_metadata_pht.c)
+endif()
+
 if(PDC_ENABLE_FASTBIT)
     message(STATUS "Enabled fastbit")
     target_link_libraries(pdc_server_lib ${MERCURY_LIBRARY} ${PDC_COMMONS_LIBRARIES} -lm -ldl ${PDC_EXT_LIB_DEPENDENCIES} ${FASTBIT_LIBRARY}/libfastbit.so)
@@ -116,4 +120,11 @@ install(
   ARCHIVE DESTINATION ${PDC_INSTALL_LIB_DIR}
   RUNTIME DESTINATION ${PDC_INSTALL_BIN_DIR}
 )
+endif()
+
+if(BUILD_TESTING AND PDC_ENABLE_PHT)
+  add_executable(pht_regression ${PDC_SOURCE_DIR}/src/tests/pht/pht_regression.c)
+  target_link_libraries(pht_regression pdc_server_lib)
+  add_executable(pht_serialization ${PDC_SOURCE_DIR}/src/tests/pht/pht_serialization.c)
+  target_link_libraries(pht_serialization pdc_commons ${MERCURY_LIBRARIES})
 endif()
