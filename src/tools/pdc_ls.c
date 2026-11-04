@@ -11,7 +11,7 @@
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "../src/server/include/pdc_server_metadata.h"
-#include "cjson/cJSON.h"
+#include "cJSON.h"
 
 const char *avail_args[] = {"-n", "-i", "-json", "-ln", "-li", "-s", "-tree"};
 const int   num_args     = 7;

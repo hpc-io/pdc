@@ -9,7 +9,7 @@
 #include <string.h>
 #include <assert.h>
 #include <inttypes.h>
-#include "cjson/cJSON.h"
+#include "cJSON.h"
 #include <dirent.h>
 #include <unistd.h>
 #include "fs/fs_ops.h"
