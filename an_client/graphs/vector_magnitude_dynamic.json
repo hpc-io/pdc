@@ -1,0 +1,17 @@
+{
+  "name": "vector_magnitude_dynamic",
+  "states": [
+    { "name": "vx", "persistence": "persistent" },
+    { "name": "vy", "persistence": "persistent" },
+    { "name": "vz", "persistence": "persistent" },
+    { "name": "magnitude", "persistence": "persistent", "trigger": "eager" }
+  ],
+  "transformations": [
+    {
+      "name": "vector_magnitude",
+      "location": "builtin",
+      "inputs": [ "vx", "vy", "vz" ],
+      "outputs": [ "magnitude" ]
+    }
+  ]
+}

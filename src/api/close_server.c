@@ -53,10 +53,8 @@ main(int argc, char *argv[])
     if (PDCclose(pdc) < 0)
         LOG_ERROR("Failed to close PDC\n");
 
+    LOG_WARNING("total close time = %lf\n", MPI_Wtime() - start);
 #ifdef ENABLE_MPI
-    if (!rank) {
-        LOG_INFO("total close time = %lf\n", MPI_Wtime() - start);
-    }
     MPI_Finalize();
 #endif
 

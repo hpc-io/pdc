@@ -1,0 +1,28 @@
+{
+  "states": [
+    {
+      "name": "client"
+    },
+    {
+      "name": "server"
+    }
+  ],
+  "functions": [
+    {
+      "device": "CPU",
+      "input_state": "client",
+      "output_state": "server",
+      "location": "external",
+      "name": "tf_client_write"
+    },
+    {
+      "device": "CPU",
+      "input_state": "server",
+      "output_state": "client",
+      "location": "external",
+      "name": "tf_client_read"
+    }
+  ],
+  "lib_path": "/pscratch/sd/n/nlewi26/src/work_space/source/pdc/tf_client/src/libtf_client.so",
+  "name": "custom_graph"
+}

@@ -1,0 +1,44 @@
+{
+    "states": [
+        {
+            "name": "decompressed"
+        },
+        {
+            "name": "compressed"
+        },
+        {
+            "name": "encrypted"
+        }
+    ],
+    "functions": [
+        {
+            "device": "GPU",
+            "input_state": "decompressed",
+            "output_state": "compressed",
+            "location": "builtin",
+            "name": "zfp_compress"
+        },
+        {
+            "device": "GPU",
+            "input_state": "compressed",
+            "output_state": "decompressed",
+            "location": "builtin",
+            "name": "zfp_decompress"
+        },
+        {
+            "device": "CPU",
+            "input_state": "compressed",
+            "output_state": "encrypted",
+            "location": "builtin",
+            "name": "secret_box_encrypt"
+        },
+        {
+            "device": "CPU",
+            "input_state": "encrypted",
+            "output_state": "compressed",
+            "location": "builtin",
+            "name": "secret_box_decrypt"
+        }
+    ],
+    "name": "zfp_libsod"
+}

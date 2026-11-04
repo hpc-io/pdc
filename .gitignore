@@ -1,15 +1,16 @@
 # ignore swp files
 *.swp
+.cache
 
 # exes
 *.exe
-
 *.pdf
-
 src/install
 
 # ignore vscode files
 .vscode
+# ignore jetbrains
+.idea
 
 # ignore intellij files
 .idea

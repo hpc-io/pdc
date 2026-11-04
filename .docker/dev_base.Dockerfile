@@ -16,10 +16,25 @@ ENV MERCURY_DIR=$WORK_SPACE/install/mercury
 ENV PDC_SRC_DIR=$WORK_SPACE/source/pdc
 ENV PDC_DIR=$WORK_SPACE/install/pdc
 
+# In-flight transformation + analysis optional dependencies (see the
+# "Optional dependencies" table on PR #317 / docs/source/client_api.rst):
+# the env var names below are exactly what PDC's top-level CMakeLists.txt
+# looks for, so no extra cmake flags are needed when building PDC itself.
+# CUDA/cuSZ (GPU variants) are intentionally left out here -- those need
+# real GPU hardware to pass at runtime, not just a toolkit baked into the
+# image, so they stay compiled-out of this container.
+ENV ZFP_SRC_DIR=$WORK_SPACE/source/zfp
+ENV ZFP_ROOT_DIR=$WORK_SPACE/install/zfp
+ENV SZ3_SRC_DIR=$WORK_SPACE/source/sz3
+ENV SZ_CPU_DIR=$WORK_SPACE/install/sz3
+ENV TURBO_DIR=$WORK_SPACE/source/turbopfor
+ENV LIBSODIUM_ROOT_DIR=/usr
+
 ENV LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH"
 ENV LD_LIBRARY_PATH="$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
 ENV PATH="$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH"
+ENV LD_LIBRARY_PATH="$ZFP_ROOT_DIR/lib:$SZ_CPU_DIR/lib:$LD_LIBRARY_PATH"
 
 
 ENV MERCURY_CMAKE_FLAGS="-DCMAKE_INSTALL_PREFIX=$MERCURY_DIR -DCMAKE_C_COMPILER=mpicc -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DNA_USE_OFI=ON -DNA_USE_SM=OFF -DNA_OFI_TESTING_PROTOCOL=tcp "
@@ -36,22 +51,37 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     mkdir -p $LIBFABRIC_DIR && \
     mkdir -p $MERCURY_DIR && \
     mkdir -p $PDC_DIR && \
+    mkdir -p $ZFP_SRC_DIR && \
+    mkdir -p $ZFP_ROOT_DIR && \
+    mkdir -p $SZ3_SRC_DIR && \
+    mkdir -p $SZ_CPU_DIR && \
+    mkdir -p $TURBO_DIR && \
     rm -rf $LIBFABRIC_SRC_DIR/* && \
     rm -rf $MERCURY_SRC_DIR/* && \
     rm -rf $PDC_SRC_DIR/* && \
     rm -rf $LIBFABRIC_DIR/* && \
     rm -rf $MERCURY_DIR/* && \
     rm -rf $PDC_DIR/* && \
+    rm -rf $ZFP_SRC_DIR/* && \
+    rm -rf $ZFP_ROOT_DIR/* && \
+    rm -rf $SZ3_SRC_DIR/* && \
+    rm -rf $SZ_CPU_DIR/* && \
+    rm -rf $TURBO_DIR/* && \
     echo "export LIBFABRIC_SRC_DIR=$WORK_SPACE/source/libfabric" > $WORK_SPACE/pdc_env.sh && \
     echo "export LIBFABRIC_DIR=$WORK_SPACE/install/libfabric" >> $WORK_SPACE/pdc_env.sh && \
     echo "export MERCURY_SRC_DIR=$WORK_SPACE/source/mercury" >> $WORK_SPACE/pdc_env.sh && \
     echo "export MERCURY_DIR=$WORK_SPACE/install/mercury" >> $WORK_SPACE/pdc_env.sh && \
     echo "export PDC_SRC_DIR=$WORK_SPACE/source/pdc" >> $WORK_SPACE/pdc_env.sh && \
     echo "export PDC_DIR=$WORK_SPACE/install/pdc" >> $WORK_SPACE/pdc_env.sh && \
+    echo "export ZFP_ROOT_DIR=$WORK_SPACE/install/zfp" >> $WORK_SPACE/pdc_env.sh && \
+    echo "export SZ_CPU_DIR=$WORK_SPACE/install/sz3" >> $WORK_SPACE/pdc_env.sh && \
+    echo "export TURBO_DIR=$WORK_SPACE/source/turbopfor" >> $WORK_SPACE/pdc_env.sh && \
+    echo "export LIBSODIUM_ROOT_DIR=/usr" >> $WORK_SPACE/pdc_env.sh && \
     echo 'export LD_LIBRARY_PATH=$LIBFABRIC_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh  && \
     echo 'export PATH=$LIBFABRIC_DIR/include:$LIBFABRIC_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh && \
     echo 'export LD_LIBRARY_PATH=$MERCURY_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh \
     echo 'export PATH=$MERCURY_DIR/include:$MERCURY_DIR/lib:$PATH' >> $WORK_SPACE/pdc_env.sh && \
+    echo 'export LD_LIBRARY_PATH=$ZFP_ROOT_DIR/lib:$SZ_CPU_DIR/lib:$LD_LIBRARY_PATH' >> $WORK_SPACE/pdc_env.sh && \
     apt-get update && apt-get install -y \
     build-essential \
     git \
@@ -77,7 +107,9 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     cgdb \
     curl \
     valgrind \
-    python3 && \
+    python3 \
+    libsodium-dev \
+    libzstd-dev && \
     cd $WORK_SPACE/software && \
     bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" && \
     sed -i 's/OSH_THEME="font"/OSH_THEME="powerline-multiline"/g' ~/.bashrc && \
@@ -106,6 +138,20 @@ RUN echo "ARCH=${ARCH}" && echo "ARCH_CODE=${ARCH_CODE}" && sleep 3 && mkdir -p 
     cmake $MERCURY_CMAKE_FLAGS ../ && \
     make -j 16 && make install && \
     ctest && \
+    git clone --branch 1.0.1 --depth 1 https://github.com/LLNL/zfp.git $ZFP_SRC_DIR && \
+    cd $ZFP_SRC_DIR && \
+    mkdir -p build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=$ZFP_ROOT_DIR ../ && \
+    make -j 8 && make install && \
+    git clone --branch v3.4.0 --depth 1 https://github.com/szcompressor/SZ3.git $SZ3_SRC_DIR && \
+    cd $SZ3_SRC_DIR && \
+    mkdir -p build && cd build && \
+    cmake -DCMAKE_INSTALL_PREFIX=$SZ_CPU_DIR ../ && \
+    make -j 8 && make install && \
+    git clone https://github.com/powturbo/TurboPFor-Integer-Compression.git $TURBO_DIR && \
+    cd $TURBO_DIR && \
+    git checkout 1f646d98d65ee91befd3066f351f2cf386593442 && \
+    make libic.a && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \

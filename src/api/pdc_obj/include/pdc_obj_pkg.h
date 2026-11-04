@@ -51,6 +51,8 @@ struct _pdc_obj_info {
     pdc_local_transfer_request *local_transfer_request_head;
     pdc_local_transfer_request *local_transfer_request_end;
     int                         local_transfer_request_size;
+    struct pdc_tf_obj_t *       pdc_tf_obj;
+    struct pdc_an_obj_t *       pdc_an_obj;
 };
 
 /***************************************/
