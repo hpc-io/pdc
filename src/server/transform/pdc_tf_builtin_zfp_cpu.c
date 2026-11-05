@@ -103,7 +103,15 @@ pdc_tf_builtin_zfp_compress_helper(pdc_tf_internal_param *internal_param, char *
     void *      compressed_buffer = PDC_malloc(bufsize);
 
     bitstream *stream = stream_open(compressed_buffer, bufsize);
-    zfp_stream_set_rate(zfp, bits_per_value, z_type, input_region.ndim, 1);
+    /* FIXED_CR_RATIO is always 1 here, i.e. this path is meant to be
+     * lossless. zfp_stream_set_rate() at a "full" bits_per_value is still
+     * zfp's lossy fixed-rate mode -- its per-block floating-point transform
+     * does not guarantee bit-exact reconstruction even at nominal full
+     * precision, and round-tripped integer data came back corrupted (see
+     * hpc-io/pdc#317 CI failures). zfp_stream_set_reversible() is zfp's
+     * actual bit-exact lossless mode; use that instead whenever a real
+     * (lossy) rate isn't being requested. */
+    zfp_stream_set_reversible(zfp);
     zfp_stream_set_bit_stream(zfp, stream);
     zfp_stream_rewind(zfp);
 
@@ -168,13 +176,13 @@ pdc_tf_builtin_zfp_decompress_helper(pdc_tf_internal_param *internal_param, char
     }
     print_ztype(z_type);
 
-    size_t bits_per_value =
-        (8 * PDC_get_var_type_size(in_params->decompressed_region.pdc_var_type)) / FIXED_CR_RATIO;
     size_t compressed_size = input_region.size[0];
 
     bitstream * stream = stream_open(*region_data, compressed_size);
     zfp_stream *zfp    = zfp_stream_open(NULL);
-    zfp_stream_set_rate(zfp, bits_per_value, z_type, in_params->decompressed_region.ndim, 1);
+    /* Must match the mode used to compress -- see the comment in
+     * pdc_tf_builtin_zfp_compress_helper(). */
+    zfp_stream_set_reversible(zfp);
     zfp_stream_set_bit_stream(zfp, stream);
     zfp_stream_rewind(zfp);
 
