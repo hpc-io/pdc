@@ -42,6 +42,9 @@
 /* Define if use shared server */
 #cmakedefine PDC_HAS_SHARED_SERVER
 
+/* Define if runtime YAML configuration (libfyaml) support is compiled in */
+#cmakedefine PDC_HAS_YAML_CONFIG
+
 /* Define if closing server by application */
 #cmakedefine ENABLE_APP_CLOSE_SERVER
 

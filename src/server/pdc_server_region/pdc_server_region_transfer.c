@@ -3,6 +3,7 @@
 #include "pdc_timing.h"
 #include "pdc_logger.h"
 #include "pdc_malloc.h"
+#include "pdc_config_yaml.h"
 
 static int io_by_region_g = 1;
 
@@ -285,7 +286,7 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
     if (obj_ndim != (int)region_info->ndim)
         PGOTO_ERROR(FAIL, "Obj dim does not match obj dim\n");
 
-    user_specified_data_path = getenv("PDC_DATA_LOC");
+    user_specified_data_path = pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL;
     if (user_specified_data_path != NULL) {
         if (strpbrk(user_specified_data_path, ";&|`$<>") != NULL)
             user_specified_data_path = NULL;

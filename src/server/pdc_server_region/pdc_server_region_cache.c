@@ -2,20 +2,9 @@
 #include "pdc_server_region_cache.h"
 #include "pdc_timing.h"
 #include "pdc_logger.h"
+#include "pdc_config_yaml.h"
 
 #ifdef PDC_SERVER_CACHE
-
-#ifdef PDC_SERVER_CACHE_MAX_GB
-#define MAX_CACHE_SIZE_GB PDC_SERVER_CACHE_MAX_GB
-#else
-#define MAX_CACHE_SIZE_GB 32
-#endif
-
-#ifdef PDC_SERVER_IDLE_CACHE_FLUSH_TIME
-#define PDC_IDLE_CACHE_FLUSH_TIME_INT PDC_SERVER_IDLE_CACHE_FLUSH_TIME
-#else
-#define PDC_IDLE_CACHE_FLUSH_TIME_INT 2
-#endif
 
 typedef struct pdc_region_cache {
     struct pdc_region_info * region_cache_info;
@@ -47,27 +36,16 @@ PDC_region_server_cache_init()
 {
     FUNC_ENTER(NULL);
 
-    int   server_rank = 0;
-    char *p;
+    int server_rank = 0;
 
     pdc_recycle_close_flag = 0;
     pthread_mutex_init(&pdc_obj_cache_list_mutex, NULL);
     pthread_mutex_init(&pdc_cache_mutex, NULL);
     total_cache_size = 0;
 
-    p = getenv("PDC_SERVER_CACHE_MAX_SIZE");
-    if (p != NULL) {
-        maximum_cache_size = atol(p) * 1024llu * 1024llu * 1024llu;
-    }
-    else {
-        maximum_cache_size = MAX_CACHE_SIZE_GB * 1024llu * 1024llu * 1024llu;
-    }
-
-    p = getenv("PDC_SERVER_IDLE_CACHE_FLUSH_TIME");
-    if (p != NULL)
-        pdc_idle_flush_time_g = atol(p);
-    else
-        pdc_idle_flush_time_g = PDC_IDLE_CACHE_FLUSH_TIME_INT;
+    PDC_config_load();
+    maximum_cache_size    = pdc_config_g.cache_max_size_gb * 1024llu * 1024llu * 1024llu;
+    pdc_idle_flush_time_g = pdc_config_g.cache_idle_flush_time_sec;
 
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &server_rank);
@@ -715,7 +693,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
     pdc_region_cache *       region_cache_iter, *region_cache_temp;
     struct pdc_region_info * region_cache_info;
     uint64_t                 write_size = 0;
-    char **                  buf, **new_buf, *buf_ptr = NULL, *env_char;
+    char **                  buf, **new_buf, *buf_ptr = NULL;
     uint64_t *               start, *end, *new_start, *new_end;
     int                      merged_request_size = 0;
     uint64_t                 unit;
@@ -724,8 +702,7 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
 #ifdef PDC_TIMING
     double start_time = MPI_Wtime();
 #endif
-    env_char = getenv("PDC_SERVER_CACHE_NO_FLUSH");
-    if (env_char && atoi(env_char) != 0) {
+    if (pdc_config_g.cache_disable_flush) {
         LOG_ERROR("Flushed disabled\n");
         FUNC_LEAVE(0);
     }

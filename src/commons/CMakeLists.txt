@@ -34,6 +34,17 @@ if(MERCURY_FOUND)
   set(PDC_EXT_LIB_DEPENDENCIES ${MERCURY_LIBRARIES} ${PDC_EXT_LIB_DEPENDENCIES})
 endif()
 
+# FYAML (runtime YAML configuration file support)
+if(PDC_ENABLE_YAML_CONFIG)
+  find_package(FYAML REQUIRED)
+  if(FYAML_FOUND)
+    set(PDC_EXT_INCLUDE_DEPENDENCIES ${FYAML_INCLUDE_DIRS}
+      ${PDC_EXT_INCLUDE_DEPENDENCIES}
+      )
+    set(PDC_EXT_LIB_DEPENDENCIES ${FYAML_LIBRARIES} ${PDC_EXT_LIB_DEPENDENCIES})
+  endif()
+endif()
+
 include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
 
 #------------------------------------------------------------------------------
