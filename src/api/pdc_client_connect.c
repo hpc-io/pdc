@@ -45,6 +45,7 @@
 #include "pdc_logger.h"
 #include "pdc_timing.h"
 #include "pdc_malloc.h"
+#include "pdc_config_yaml.h"
 
 #include "mercury.h"
 #include "mercury_macros.h"
@@ -1242,8 +1243,7 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
      *   "ofi+tcp"
      *   "cci+tcp"
      */
-    struct hg_init_info init_info            = {0};
-    char *              default_hg_transport = "ofi+tcp";
+    struct hg_init_info init_info = {0};
     char *              hg_transport;
 #ifdef PDC_HAS_CRAY_DRC
     uint32_t          credential, cookie;
@@ -1253,23 +1253,23 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     int               rc;
 #endif
 
-    if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
-        hg_transport = default_hg_transport;
-        if (pdc_client_mpi_rank_g == 0)
-            LOG_INFO("Environment variable HG_TRANSPORT was NOT set, default to %s\n", default_hg_transport);
-    }
-    else
-        LOG_INFO("Environment variable HG_TRANSPORT was set\n");
-    if ((hostname = getenv("HG_HOST")) == NULL) {
+    PDC_config_load();
+    hg_transport = pdc_config_g.transport;
+    if (pdc_client_mpi_rank_g == 0)
+        LOG_INFO("Using transport %s\n", hg_transport);
+
+    if (pdc_config_g.hostname[0] == '\0') {
         hostname = PDC_malloc(HOSTNAME_LEN);
         memset(hostname, 0, HOSTNAME_LEN);
         gethostname(hostname, HOSTNAME_LEN - 1);
         free_hostname = true;
         if (pdc_client_mpi_rank_g == 0)
-            LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+            LOG_INFO("communication.hostname was NOT set, default to %s\n", hostname);
     }
-    else
-        LOG_INFO("Environment variable HG_HOST was set\n");
+    else {
+        hostname = pdc_config_g.hostname;
+        LOG_INFO("communication.hostname was set\n");
+    }
 
     snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
@@ -1282,7 +1282,7 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 #ifdef PDC_HAS_CRAY_DRC
     /* Acquire credential */
     if (pdc_client_mpi_rank_g == 0) {
-        credential = atoi(getenv("PDC_DRC_KEY"));
+        credential = pdc_config_g.drc_key;
     }
     MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, PDC_CLIENT_COMM_WORLD_g);
 
@@ -1412,15 +1412,14 @@ drc_access_again:
     hg_thread_mutex_init(&meta_obj_map_mutex_g);
 #endif
 
-    char *client_lookup_env = getenv("PDC_CLIENT_LOOKUP");
-    if (client_lookup_env == NULL) {
+    if (pdc_config_g.client_lookup_mode == PDC_CLIENT_LOOKUP_LOCAL) {
         // Each client connect to its node local server only at start time
         local_server_id =
             PDC_get_local_server_id(pdc_client_mpi_rank_g, pdc_nclient_per_server_g, pdc_server_num_g);
         if (PDC_Client_try_lookup_server(local_server_id, 1) != SUCCEED)
             PGOTO_ERROR(FAIL, "Error lookup server %d", local_server_id);
     }
-    else if (strcmp(client_lookup_env, "ALL") == 0) {
+    else if (pdc_config_g.client_lookup_mode == PDC_CLIENT_LOOKUP_ALL) {
         if (pdc_client_mpi_rank_g == 0)
             LOG_INFO("Client lookup all servers at start time\n");
         for (local_server_id = 0; local_server_id < pdc_server_num_g; local_server_id++) {
@@ -1450,25 +1449,15 @@ PDC_Client_init()
 
     perr_t ret_value  = SUCCEED;
     pdc_server_info_g = NULL;
-    char *   tmp_dir;
     uint32_t port;
     int      is_mpi_init = 0;
 
-    // Get up tmp dir env var
-    tmp_dir = getenv("PDC_TMPDIR");
-    if (tmp_dir == NULL) {
-        strncpy(pdc_client_tmp_dir_g, "./pdc_tmp", sizeof(pdc_client_tmp_dir_g));
-    }
-    else {
-        strncpy(pdc_client_tmp_dir_g, tmp_dir, sizeof(pdc_client_tmp_dir_g));
-    }
+    PDC_config_load();
+
+    strncpy(pdc_client_tmp_dir_g, pdc_config_g.tmp_dir, sizeof(pdc_client_tmp_dir_g));
     pdc_client_tmp_dir_g[sizeof(pdc_client_tmp_dir_g) - 1] = '\0';
 
-    // Get debug environment var
-    char *is_debug_env = getenv("PDC_DEBUG");
-    if (is_debug_env != NULL) {
-        is_client_debug_g = atoi(is_debug_env);
-    }
+    is_client_debug_g = pdc_config_g.debug;
 
     pdc_client_mpi_rank_g = 0;
     pdc_client_mpi_size_g = 1;
@@ -1506,12 +1495,11 @@ PDC_Client_init()
 
     pdc_nclient_per_server_g = pdc_client_same_node_size_g;
 #endif
-    // Get the number of clients per server(node) through environment variable
-    tmp_dir = getenv("PDC_NCLIENT_PER_SERVER");
-    if (tmp_dir == NULL)
-        pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g;
+    // Get the number of clients per server(node)
+    if (pdc_config_g.nclient_per_server > 0)
+        pdc_nclient_per_server_g = pdc_config_g.nclient_per_server;
     else
-        pdc_nclient_per_server_g = atoi(tmp_dir);
+        pdc_nclient_per_server_g = pdc_client_mpi_size_g / pdc_server_num_g;
 
     if (pdc_nclient_per_server_g <= 0)
         pdc_nclient_per_server_g = 1;
@@ -4142,13 +4130,7 @@ PDC_Client_data_server_read(struct pdc_request *request)
     if (meta == NULL || region == NULL)
         PGOTO_ERROR(FAIL, "Invalid metadata or region");
 
-    // TODO TEMPWORK
-    char *tmp_env = getenv("PDC_CACHE_PERCENTAGE");
-    int   cache_percentage;
-    if (tmp_env != NULL)
-        cache_percentage = atoi(tmp_env);
-    else
-        cache_percentage = 0;
+    int cache_percentage = pdc_config_g.cache_percentage;
 
     // Dummy value fill
     in.client_id        = pdc_client_mpi_rank_g;

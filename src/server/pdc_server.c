@@ -59,6 +59,7 @@
 #include "pdc_server_region_transfer_metadata_query.h"
 #include "pdc_logger.h"
 #include "pdc_malloc.h"
+#include "pdc_config_yaml.h"
 
 #ifdef PDC_HAS_CRAY_DRC
 #include <rdmacred.h>
@@ -763,13 +764,12 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     pbool_t             free_hostname = false;
     struct hg_init_info init_info     = {0};
 
-    /* Set the default mercury transport
-     * but enable overriding that to any of:
+    /* Mercury transport, settable via communication.transport in the PDC_CONFIG
+     * YAML file, e.g.:
      *   "ofi+gni"
      *   "ofi+tcp"
      *   "cci+tcp"
      */
-    char *default_hg_transport = "ofi+tcp";
     char *hg_transport;
 #ifdef PDC_HAS_CRAY_DRC
     uint32_t          credential = 0, cookie;
@@ -793,26 +793,25 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     all_addr_strings_g    = (char **)PDC_calloc(sizeof(char *), pdc_server_size_g);
     total_mem_usage_g += (sizeof(char) + sizeof(char *));
 
-    if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
-        hg_transport = default_hg_transport;
-        if (pdc_server_rank_g == 0)
-            LOG_INFO("Environment variable HG_TRANSPORT was NOT set, default to %s\n", hg_transport);
-    }
-    else {
-        LOG_INFO("Environment variable HG_TRANSPORT was set\n");
-        if (strpbrk(hg_transport, ";&|`$<>") != NULL)
-            hg_transport = default_hg_transport;
-    }
-    if ((hostname = getenv("HG_HOST")) == NULL) {
+    PDC_config_load();
+    hg_transport = pdc_config_g.transport;
+    if (strpbrk(hg_transport, ";&|`$<>") != NULL)
+        hg_transport = "ofi+tcp";
+    if (pdc_server_rank_g == 0)
+        LOG_INFO("Using transport %s\n", hg_transport);
+
+    if (pdc_config_g.hostname[0] == '\0') {
         hostname = PDC_malloc(HOSTNAME_LEN);
         memset(hostname, 0, HOSTNAME_LEN);
         gethostname(hostname, HOSTNAME_LEN - 1);
         free_hostname = true;
         if (pdc_server_rank_g == 0)
-            LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+            LOG_INFO("communication.hostname was NOT set, default to %s\n", hostname);
     }
-    else
-        LOG_INFO("Environment variable HG_HOST was set\n");
+    else {
+        hostname = pdc_config_g.hostname;
+        LOG_INFO("communication.hostname was set\n");
+    }
     snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_server_rank_g == 0)
@@ -826,7 +825,7 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
 // gni starts here
 #ifdef PDC_HAS_CRAY_DRC
     if (pdc_server_rank_g == 0) {
-        credential = atoi(getenv("PDC_DRC_KEY"));
+        credential = pdc_config_g.drc_key;
     }
     MPI_Bcast(&credential, 1, MPI_UINT32_T, 0, MPI_COMM_WORLD);
 
@@ -903,10 +902,7 @@ drc_access_again:
 
 #ifdef ENABLE_MULTITHREAD
     // Init threadpool
-    char *nthread_env = getenv("PDC_SERVER_NTHREAD");
-    int   n_thread    = 4;
-    if (nthread_env != NULL)
-        n_thread = atoi(nthread_env);
+    int n_thread = pdc_config_g.nthread;
 
     if (n_thread < 1)
         n_thread = 2;
@@ -1218,9 +1214,8 @@ PDC_Server_checkpoint()
     char              checkpoint_file[ADDR_MAX], checkpoint_file_local[ADDR_MAX], cmd[4096];
     HashTableIterator hash_table_iter;
     char *            checkpoint;
-    char *            env_char;
     uint64_t          checkpoint_size;
-    bool              use_tmpfs = false;
+    bool              use_tmpfs = pdc_config_g.checkpoint_use_tmpfs;
     FILE *            file;
     int               fd;
 
@@ -1232,10 +1227,6 @@ PDC_Server_checkpoint()
     double         checkpoint_time, checkpoint_time_rank;
     gettimeofday(&pdc_timer_start, 0);
 #endif
-
-    env_char = getenv("PDC_CHECKPOINT_TMPFS");
-    if (env_char && atoi(env_char) != 0)
-        use_tmpfs = true;
 
     {
         char _dir[4096];
@@ -2065,30 +2056,21 @@ PDC_Server_get_env()
 {
     FUNC_ENTER(NULL);
 
-    char *tmp_env_char;
-    int   default_nclient_per_node = 31;
+    char *tmp_dir;
+
+    PDC_config_load();
 
     // Set up tmp dir
-    tmp_env_char = getenv("PDC_TMPDIR");
-    if (tmp_env_char == NULL)
-        tmp_env_char = "./pdc_tmp";
-
-    if (strpbrk(tmp_env_char, ";&|`$<>\\") != NULL) {
-        fprintf(stderr, "Invalid characters in PDC_TMPDIR, using default\n");
-        tmp_env_char = "./pdc_tmp";
+    tmp_dir = pdc_config_g.tmp_dir;
+    if (strpbrk(tmp_dir, ";&|`$<>\\") != NULL) {
+        fprintf(stderr, "Invalid characters in general.tmp_dir, using default\n");
+        tmp_dir = "./pdc_tmp";
     }
-    snprintf(pdc_server_tmp_dir_g, TMP_DIR_STRING_LEN, "%s/", tmp_env_char);
+    snprintf(pdc_server_tmp_dir_g, TMP_DIR_STRING_LEN, "%s/", tmp_dir);
 
     lustre_total_ost_g = 1;
 #ifdef ENABLE_LUSTRE
-    tmp_env_char = getenv("PDC_LUSTRE_STRIPE_SIZE");
-    if (tmp_env_char != NULL) {
-        lustre_stripe_size_mb_g = atoi(tmp_env_char);
-        // Make sure it is a sane value
-        if (lustre_stripe_size_mb_g < 1 || lustre_stripe_size_mb_g > 128) {
-            lustre_stripe_size_mb_g = 16;
-        }
-    }
+    lustre_stripe_size_mb_g = pdc_config_g.lustre_stripe_size_mb;
 
     lustre_total_ost_g = PDC_LUSTRE_TOTAL_OST;
     if (lustre_total_ost_g < 1) {
@@ -2096,19 +2078,12 @@ PDC_Server_get_env()
     }
 #endif
     // Get data sieving flag
-    tmp_env_char = getenv("PDC_DATA_SIEVING");
-    if (tmp_env_char != NULL) {
-        data_sieving_g = atoi(tmp_env_char);
-    }
-    else {
-        data_sieving_g = 1;
-    }
+    data_sieving_g = pdc_config_g.data_sieving;
 
     // Get number of OST per file
     pdc_nost_per_file_g = lustre_total_ost_g;
-    tmp_env_char        = getenv("PDC_NOST_PER_FILE");
-    if (tmp_env_char != NULL) {
-        pdc_nost_per_file_g = atoi(tmp_env_char);
+    if (pdc_config_g.lustre_ost_per_file > 0) {
+        pdc_nost_per_file_g = pdc_config_g.lustre_ost_per_file;
         // Make sure it is a sane value
         if (pdc_nost_per_file_g < 1 || pdc_nost_per_file_g > lustre_total_ost_g) {
             pdc_nost_per_file_g = 1;
@@ -2116,60 +2091,37 @@ PDC_Server_get_env()
     }
 
     // Get number of clients per node
-    tmp_env_char = (getenv("NCLIENT"));
-    if (tmp_env_char == NULL)
-        nclient_per_node = default_nclient_per_node;
-    else
-        nclient_per_node = atoi(tmp_env_char);
+    nclient_per_node = pdc_config_g.nclient_per_node;
 
     // Get bb write percentage
-    tmp_env_char = getenv("PDC_BB_WRITE_PERCENT");
-    if (tmp_env_char == NULL)
-        write_to_bb_percentage_g = 0;
-    else
-        write_to_bb_percentage_g = atoi(tmp_env_char);
+    write_to_bb_percentage_g = pdc_config_g.bb_write_percentage;
 
-    if (write_to_bb_percentage_g < 0 || write_to_bb_percentage_g > 100)
-        write_to_bb_percentage_g = 0;
+    // Get debug flag
+    is_debug_g = pdc_config_g.debug;
+    if (pdc_server_rank_g == 0)
+        LOG_INFO("general.debug set to %d\n", is_debug_g);
 
-    // Get debug environment var
-    char *is_debug_env = getenv("PDC_DEBUG");
-    if (is_debug_env != NULL) {
-        is_debug_g = atoi(is_debug_env);
-        if (pdc_server_rank_g == 0)
-            LOG_INFO("PDC_DEBUG set to %d\n", is_debug_g);
-    }
+    gen_hist_g        = pdc_config_g.gen_histogram;
+    gen_fastbit_idx_g = pdc_config_g.gen_fastbit_index;
 
-    tmp_env_char = getenv("PDC_GEN_HIST");
-    if (tmp_env_char != NULL)
-        gen_hist_g = atoi(tmp_env_char);
-
-    tmp_env_char = getenv("PDC_GEN_FASTBIT_IDX");
-    if (tmp_env_char != NULL)
-        gen_fastbit_idx_g = 1;
-
-    tmp_env_char = getenv("PDC_USE_FASTBIT_IDX");
-    if (tmp_env_char != NULL) {
+    if (pdc_config_g.use_fastbit_index) {
         use_fastbit_idx_g = 1;
         LOG_INFO("Using FastBit for data indexing and querying\n");
     }
 
-    tmp_env_char = getenv("PDC_USE_ROCKSDB");
-    if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
+    if (pdc_config_g.use_rocksdb) {
         use_rocksdb_g = 1;
         if (pdc_server_rank_g == 0)
             LOG_INFO("Using RocksDB for kvtag\n");
     }
 
-    tmp_env_char = getenv("PDC_USE_SQLITE3");
-    if (tmp_env_char != NULL && strcmp(tmp_env_char, "1") == 0) {
+    if (pdc_config_g.use_sqlite3) {
         use_sqlite3_g = 1;
         if (pdc_server_rank_g == 0)
             LOG_INFO("Using SQLite3 for kvtag\n");
     }
 
-    tmp_env_char = getenv("PDC_DISABLE_CHECKPOINT");
-    if (tmp_env_char != NULL && strcmp(tmp_env_char, "TRUE") == 0) {
+    if (!pdc_config_g.checkpoint_enabled) {
         pdc_disable_checkpoint_g = 1;
         if (pdc_server_rank_g == 0)
             LOG_INFO("Checkpoint disabled\n");
@@ -2220,7 +2172,7 @@ server_run(int argc, char *argv[])
     // Get environmental variables
     PDC_Server_get_env();
 
-    port      = pdc_server_rank_g % 32 + 7000;
+    port      = pdc_server_rank_g % pdc_config_g.port_range + pdc_config_g.base_port;
     ret_value = PDC_Server_init(port, &hg_class_g, &hg_context_g);
     if (ret_value != SUCCEED)
         PGOTO_ERROR(FAIL, "Error with PDC_Server_init");
@@ -2233,8 +2185,7 @@ server_run(int argc, char *argv[])
 #endif
 
     // Lookup and get addresses of other servers
-    char *lookup_on_demand = getenv("PDC_LOOKUP_ON_DEMAND");
-    if (lookup_on_demand != NULL && pdc_server_rank_g == 0)
+    if (pdc_config_g.server_lookup_on_demand && pdc_server_rank_g == 0)
         LOG_INFO("Rank 0 will lookup other PDC servers on demand\n");
     else
         PDC_Server_lookup_all_servers();

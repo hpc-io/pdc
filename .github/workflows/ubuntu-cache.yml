@@ -28,4 +28,6 @@ jobs:
 
       - name: Test PDC
         working-directory: build
+        env:
+          PDC_CONFIG: ${{ github.workspace }}/.github/ci-config/pdc-ci.yaml
         run: ctest -L serial --output-on-failure

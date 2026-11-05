@@ -34,6 +34,17 @@ if(MERCURY_FOUND)
   set(PDC_EXT_LIB_DEPENDENCIES ${MERCURY_LIBRARIES} ${PDC_EXT_LIB_DEPENDENCIES})
 endif()
 
+# FYAML (runtime YAML configuration file support)
+if(PDC_ENABLE_YAML_CONFIG)
+  find_package(FYAML REQUIRED)
+  if(FYAML_FOUND)
+    set(PDC_EXT_INCLUDE_DEPENDENCIES ${FYAML_INCLUDE_DIRS}
+      ${PDC_EXT_INCLUDE_DEPENDENCIES}
+      )
+    set(PDC_EXT_LIB_DEPENDENCIES ${FYAML_LIBRARIES} ${PDC_EXT_LIB_DEPENDENCIES})
+  endif()
+endif()
+
 include_directories(${PDC_EXT_INCLUDE_DEPENDENCIES})
 
 #------------------------------------------------------------------------------
@@ -130,6 +141,18 @@ target_include_directories(${PDC_COMMON_LIBRARY_NAME}
 target_link_libraries(${PDC_COMMON_LIBRARY_NAME} INTERFACE
   ${PDC_EXT_LIB_DEPENDENCIES}
 )
+
+# pdc_config_yaml.c (built directly into this library) calls libfyaml
+# functions, so pdc_commons itself -- not just its consumers -- must link
+# against it. On Linux an undefined symbol in a .so is tolerated at link
+# time (resolved later, at load time, from whichever binary ends up
+# providing it), but macOS's linker rejects an undefined symbol in a
+# .dylib outright, so the INTERFACE-only link above is not enough there.
+if(PDC_ENABLE_YAML_CONFIG AND FYAML_FOUND)
+  target_link_libraries(${PDC_COMMON_LIBRARY_NAME} PUBLIC
+    ${FYAML_LIBRARIES}
+  )
+endif()
 
 set(PDC_EXPORTED_LIBS ${PDC_COMMON_LIBRARY_NAME} ${PDC_EXPORTED_LIBS})
 
