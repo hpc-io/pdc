@@ -129,6 +129,11 @@ and optional dependencies along with their recommended versions below:
 
   - libfabric (version 1.18.0 or later)
   - Mercury (version 2.2.0 or later)
+  - `libfyaml <https://github.com/pantoniou/libfyaml>`_ (required by default so PDC can load a
+    :ref:`runtime YAML configuration file <runtime_options>`; on Ubuntu/Debian,
+    ``sudo apt-get install libfyaml-dev``, on macOS, ``brew install libfyaml``. Build with
+    ``-DPDC_ENABLE_YAML_CONFIG=OFF`` to drop this dependency and fall back to
+    environment-variable-only configuration.)
 
 * **Optional dependencies**:
 
@@ -362,6 +367,10 @@ The following table lists all available compile-time options for PDC, along with
      - OFF
      - Wait for data finalized in FS when object unmap is called.
      - 🟢
+   * - PDC_ENABLE_YAML_CONFIG
+     - ON
+     - Link against libfyaml so PDC can load a runtime configuration file (see :ref:`Runtime Options <runtime_options>`). Does not affect which runtime values are used, only whether a config file can be read at all.
+     - 🟢
    * - PDC_ENABLE_ZFP
      - OFF
      - Enable ZFP.
@@ -394,20 +403,64 @@ Legend:
 - 🔴 = Not supported or currently disabled
 
 Several parameters can be specified at compile-time
-and then subsequently overwritten at runtime by
-setting the appropriate environment variable.
+and then subsequently overwritten at runtime, either through a YAML
+configuration file or by setting an environment variable.
+
+.. _runtime_options:
 
 Runtime Options
 ~~~~~~~~~~~~~~~
 
+As of PDC's YAML runtime configuration support, the recommended way to set
+any of the parameters below is a single YAML file shared by both the
+client(s) and server(s), pointed to by one environment variable:
+
+.. code-block:: Bash
+
+   export PDC_CONFIG=/path/to/pdc.yaml
+
+A fully-commented sample file documenting every available key lives at
+``pdc.yaml`` in the repository root -- copy it and trim it down to just the
+values you want to override. Every key is optional; anything left out keeps
+its default. This requires PDC to have been built with
+``PDC_ENABLE_YAML_CONFIG`` (the default; see :ref:`Compile-Time Options
+<compile_time_options>`), which links PDC against `libfyaml
+<https://github.com/pantoniou/libfyaml>`_ so it can parse the file.
+
+For backward compatibility, the individual environment variables below still
+work exactly as before when ``PDC_CONFIG`` is not set (or doesn't mention a
+given key) -- they are not deprecated, just superseded by the YAML file as
+the recommended single place to look. If both are set for the same
+parameter, the YAML file wins.
+
+- PDC_DEBUG: Enable verbose debug logging.
+- PDC_TMPDIR: PDC's own scratch/bookkeeping directory (not object data; see PDC_DATA_LOC).
 - PDC_DATA_LOC: Data directory path.
-- PDC_TMPDIR: Metadata directory path.
 - PDC_BB_LOC: Burst buffer directory path.
+- PDC_BB_WRITE_PERCENT: Percentage of writes routed to the burst buffer instead of the main storage location.
 - PDC_SERVER_CACHE_MAX_SIZE: Max server side cache size (GB).
 - PDC_SERVER_IDLE_CACHE_FLUSH_TIME: Time interval of the server side cache inactivity before automatic flush (sec).
 - PDC_SERVER_CACHE_NO_FLUSH: Disable the flushing of the server side cache.
 - HG_TRANSPORT: Specifies the Mercury communication transport protocol.
 - HG_HOST: Defines the hostname or IP address used by the Mercury network layer.
+- PDC_DRC_KEY: Cray DRC credential (only used when built with Cray DRC support).
+- PDC_NCLIENT_PER_SERVER: Number of client processes sharing each PDC server.
+- PDC_CLIENT_LOOKUP: Which servers a client contacts at startup (unset = node-local only, ``ALL`` = every server, anything else = disabled/lazy).
+- PDC_SERVER_NTHREAD: Server Mercury thread-pool size (only with multithreading support).
+- PDC_LOOKUP_ON_DEMAND: Skip eagerly looking up every other server at server startup.
+- PDC_SORT_READ: Sort accumulated storage metadata before issuing a batched read.
+- PDC_DISABLE_CHECKPOINT: Disable checkpointing (set to ``TRUE`` to disable).
+- PDC_CHECKPOINT_TMPFS: Write checkpoint files to a tmpfs instead of the normal server tmp dir.
+- PDC_DATA_SIEVING: Coalesce overlapping/adjacent I/O requests (on by default).
+- PDC_GEN_HIST: Build a data histogram as objects are written.
+- PDC_GEN_FASTBIT_IDX / PDC_USE_FASTBIT_IDX: Build/use a FastBit index (requires ``PDC_ENABLE_FASTBIT``).
+- PDC_USE_ROCKSDB / PDC_USE_SQLITE3: Use RocksDB/SQLite3 for key-value tags (requires the matching ``PDC_ENABLE_*`` build option).
+- PDC_LUSTRE_STRIPE_SIZE / PDC_NOST_PER_FILE: Lustre striping for object data files (requires ``PDC_ENABLE_LUSTRE``).
+
+The logging level and destination (previously hardcoded to ``info``/stdout
+with no runtime override) are also configurable, but only via the YAML
+file's ``general.log_level`` and ``general.log_file`` keys -- there is no
+single-purpose legacy environment variable for these two.
 
 .. note::
 
