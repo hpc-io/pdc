@@ -1542,6 +1542,8 @@ PDC_Server_restart(char *filename)
         if (fread(&cont_entry->n_obj, sizeof(int), 1, file) != 1) {
             LOG_ERROR("Read failed for cont_entry n_obj\n");
         }
+        if (cont_entry->n_obj < 0 || cont_entry->n_obj > (1 << 24))
+            PGOTO_ERROR(FAIL, "Invalid cont_entry n_obj in checkpoint");
         if (fread(&cont_entry->n_deleted, sizeof(int), 1, file) != 1) {
             LOG_ERROR("Read failed for cont_entry n_deleted\n");
         }
