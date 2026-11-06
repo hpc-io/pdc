@@ -114,7 +114,14 @@ PDC_stats_print_csv(int my_rank, int nranks)
 
         char header[4096];
         int  off = snprintf(header, sizeof(header), "metric");
-        for (int r = 0; r < nranks; r++)
+        /* snprintf() returns how many bytes it *would* have written, not
+         * how many actually fit -- once a large nranks makes off exceed
+         * sizeof(header), "header + off" is an out-of-bounds pointer and
+         * "sizeof(header) - off" underflows to a huge size_t, both passed
+         * straight to the next snprintf() call. Stop appending once the
+         * buffer is (would be) full instead of corrupting memory past it;
+         * the printed line is simply truncated for very large nranks. */
+        for (int r = 0; r < nranks && (size_t)off < sizeof(header); r++)
             off += snprintf(header + off, sizeof(header) - (size_t)off, ",rank%d_avg_s/n", r);
         LOG_WARNING("%s\n", header);
     }
@@ -138,7 +145,10 @@ PDC_stats_print_csv(int my_rank, int nranks)
         if (my_rank == 0) {
             char line[4096];
             int  off = snprintf(line, sizeof(line), "%s", pdc_stat_metric_names_g[m]);
-            for (int r = 0; r < nranks; r++)
+            /* See the matching comment on the header above: stop once the
+             * buffer is (would be) full rather than form an out-of-bounds
+             * pointer / underflowed size on the next snprintf() call. */
+            for (int r = 0; r < nranks && (size_t)off < sizeof(line); r++)
                 off += snprintf(line + off, sizeof(line) - (size_t)off, ",%.6f/%llu", all_avg_time[r],
                                 (unsigned long long)all_count[r]);
             LOG_WARNING("%s\n", line);

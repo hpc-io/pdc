@@ -13,6 +13,7 @@
 
 typedef struct sz_compress_params_t {
     pdc_tf_region_t decompressed_region;
+    psz_header      header;
 } sz_compress_params_t;
 
 #define CUDA_CHECK(call)                                                                                     \
@@ -95,7 +96,12 @@ pdc_tf_builtin_sz_compress_cuda(pdc_tf_internal_param *internal_param, char *par
 
     sz_compress_params_t *out_params = (sz_compress_params_t *)PDC_malloc(sizeof(sz_compress_params_t));
     PDCtf_copy_tf_region_t(&input_region, &out_params->decompressed_region);
-    SET_FUNC_PARAMS("zfp_compress", PDC_TF_CPU_DEVICE, out_params, sizeof(sz_compress_params_t));
+    out_params->header = header;
+    /* "sz_compress" (not "zfp_compress") to match pdc_tf_builtin_sz_decompress_cuda's
+     * GET_FUNC_PARAMS below, and PDC_TF_GPU_DEVICE (not _CPU_DEVICE) so this doesn't
+     * collide with pdc_tf_builtin_sz_cpu.c's own "sz_compress"/PDC_TF_CPU_DEVICE
+     * entry if both are ever registered against the same graph. */
+    SET_FUNC_PARAMS("sz_compress", PDC_TF_GPU_DEVICE, out_params, sizeof(sz_compress_params_t));
 
     printf("Compressed %lu bytes\n", compressed_size);
     return true;
@@ -107,8 +113,21 @@ pdc_tf_builtin_sz_decompress_cuda(pdc_tf_internal_param *internal_param, char *p
 {
     LOG_DEBUG("pdc_tf_builtin_sz_decompress_cuda called\n");
 
-    psz_header      header;
-    psz_compressor *comp = psz_create_from_header(&header);
+    sz_compress_params_t *in_params = NULL;
+    uint64_t              in_params_size;
+    /* The header a decompressor is created from must be the exact one
+     * psz_compress() produced -- it's cuSZ's own compression metadata
+     * (quantization parameters, dimensions, etc.), not something that can
+     * be reconstructed from this call's arguments. It has to be persisted
+     * at compress time and restored here, exactly like decompressed_region
+     * already is for every other builtin transform. */
+    GET_FUNC_PARAMS("sz_compress", PDC_TF_GPU_DEVICE, (void **)&in_params, &in_params_size);
+    if (!in_params) {
+        LOG_ERROR("Failed to get cuSZ compression parameters\n");
+        return false;
+    }
+
+    psz_compressor *comp = psz_create_from_header(&in_params->header);
     if (!comp) {
         LOG_ERROR("Failed to create cuSZ decompressor\n");
         return false;
@@ -118,10 +137,14 @@ pdc_tf_builtin_sz_decompress_cuda(pdc_tf_internal_param *internal_param, char *p
     CUDA_CHECK(cudaMalloc((void **)&d_compressed, input_region.size[0]));
     CUDA_CHECK(cudaMemcpy(d_compressed, *region_data, input_region.size[0], cudaMemcpyHostToDevice));
 
-    psz_len3 len            = {output_region->size[0], output_region->ndim > 1 ? output_region->size[1] : 1,
-                    output_region->ndim > 2 ? output_region->size[2] : 1};
+    PDCtf_copy_tf_region_t(&in_params->decompressed_region, output_region);
+
+    psz_len3 len            = {in_params->decompressed_region.size[0],
+                    in_params->decompressed_region.ndim > 1 ? in_params->decompressed_region.size[1] : 1,
+                    in_params->decompressed_region.ndim > 2 ? in_params->decompressed_region.size[2] : 1};
     void *   d_decompressed = NULL;
-    size_t   nbytes         = len.x * len.y * len.z * sizeof(float);
+    size_t   nbytes =
+        len.x * len.y * len.z * PDC_get_var_type_size(in_params->decompressed_region.pdc_var_type);
     CUDA_CHECK(cudaMalloc(&d_decompressed, nbytes));
 
     void *   record = capi_psz_make_timerecord();

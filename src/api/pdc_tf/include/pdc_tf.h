@@ -10,10 +10,6 @@
 #include "pdc_dg.h"
 #include "pdc_tf_common.h"
 
-#ifndef TF_GRAPHS_DIR
-#error "TF_GRAPHS_DIR was undefined"
-#endif
-
 /**
  * - PDC_TF_OVERWRITE: the transformation modifies the existing object.
  * - PDC_TF_CREATE: the transformation creates a new object for the output.

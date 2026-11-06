@@ -185,6 +185,9 @@ set(PDC_HEADERS
   ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_private.h
   ${PDC_SOURCE_DIR}/src/server/transform/include/pdc_tf_builtin_common.h
   ${PDC_SOURCE_DIR}/src/server/transform/include/pdc_tf_common.h
+  ${PDC_SOURCE_DIR}/src/server/transform/include/pdc_tf_user.h
+  ${PDC_SOURCE_DIR}/src/server/analysis/include/pdc_an_common.h
+  ${PDC_SOURCE_DIR}/src/server/analysis/include/pdc_an_user.h
   ${PDC_SOURCE_DIR}/src/commons/collections/include/pdc_dg.h
   ${PDC_SOURCE_DIR}/src/commons/utils/include/pdc_timing.h
   ${PDC_SOURCE_DIR}/src/server/pdc_server_region/include/pdc_server_region_transfer_metadata_query.h

@@ -331,15 +331,28 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
 
     // Check if graph is attached to object
     if (access_type == PDC_WRITE && obj->pdc_tf_obj != NULL && obj->pdc_tf_obj->attach_to_all_regions) {
-        pdcid_t dg_id        = obj->pdc_tf_obj->all_regions_state.dg_id;
-        char *  client_state = obj->pdc_tf_obj->all_regions_state.client_state;
-        char *  store_state  = obj->pdc_tf_obj->all_regions_state.store_state;
+        pdc_tf_region_mapping_t *existing_mapping = NULL;
 
-        assert(client_state != NULL);
-        assert(store_state != NULL);
+        /* The object-level graph only needs to be attached to a given
+         * region once. PDCtf_attach_to_region() has no "replace"
+         * semantics and fails if the region already has a mapping (see
+         * its own comment), so calling it unconditionally on every
+         * write-request creation makes any write after the first one to
+         * the same region fail here and return request id 0 instead of
+         * actually transferring. Reuse the existing mapping instead of
+         * re-attaching when one is already there. */
+        if (!PDCtf_region_has_attached_graph(obj->pdc_tf_obj, reg2->ndim, PDC_get_var_type_size(p->mem_type),
+                                             reg2->offset, reg2->size, &existing_mapping)) {
+            pdcid_t dg_id        = obj->pdc_tf_obj->all_regions_state.dg_id;
+            char *  client_state = obj->pdc_tf_obj->all_regions_state.client_state;
+            char *  store_state  = obj->pdc_tf_obj->all_regions_state.store_state;
 
-        if (PDCtf_attach_to_region(dg_id, obj_id, remote_reg, client_state, store_state) != SUCCEED)
-            PGOTO_ERROR(0, "Failed to attach graph to region");
+            assert(client_state != NULL);
+            assert(store_state != NULL);
+
+            if (PDCtf_attach_to_region(dg_id, obj_id, remote_reg, client_state, store_state) != SUCCEED)
+                PGOTO_ERROR(0, "Failed to attach graph to region");
+        }
     }
 
     if (PDCregion_transfer_init_bulk_handles(p) != SUCCEED)

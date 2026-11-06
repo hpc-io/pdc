@@ -30,11 +30,22 @@ pdc_tf_builtin_sz_compress(pdc_tf_internal_param *internal_param, char *params_s
             break;
         case PDC_INT:
         case PDC_INT32:
-            sz_type = SZ_FLOAT;
-            break;
         case PDC_INT64:
-            sz_type = SZ_DOUBLE;
-            break;
+            /* SZ3 is an error-bounded *floating-point* compressor:
+             * SZ_compress_args(SZ_FLOAT/SZ_DOUBLE, ...) reinterprets the
+             * buffer's bits as float/double, it does not numerically
+             * convert integers. Labeling an int32/int64 buffer this way
+             * would apply the error bound to a reinterpreted bit pattern
+             * instead of the user's actual integer values, and
+             * decompression would hand back floating-point bytes mislabeled
+             * as the original integer type. Refuse rather than silently
+             * corrupt the data; numeric int<->float conversion with a
+             * defined integer error contract would need to be designed and
+             * tested separately. */
+            LOG_ERROR("SZ3 compression does not support integer types (var_type=%d); it would reinterpret "
+                      "the buffer as floating point rather than converting it\n",
+                      input_region.pdc_var_type);
+            return false;
         default:
             LOG_ERROR("Unsupported element type for SZ3: %d\n", input_region.pdc_var_type);
             return false;
@@ -95,11 +106,16 @@ pdc_tf_builtin_sz_decompress(pdc_tf_internal_param *internal_param, char *params
             break;
         case PDC_INT:
         case PDC_INT32:
-            sz_type = SZ_FLOAT;
-            break;
         case PDC_INT64:
-            sz_type = SZ_DOUBLE;
-            break;
+            /* See the matching comment in pdc_tf_builtin_sz_compress(): SZ3
+             * can't represent integer types without reinterpreting bits as
+             * float/double. Compression already refuses these types, so
+             * this should be unreachable in practice; refuse here too for
+             * symmetry/defense in depth rather than mislabel decompressed
+             * floating-point bytes as integers. */
+            LOG_ERROR("SZ3 decompression does not support integer types (var_type=%d)\n",
+                      in_params->decompressed_region.pdc_var_type);
+            return false;
         default:
             LOG_ERROR("Unsupported element type for SZ3: %d\n", in_params->decompressed_region.pdc_var_type);
             return false;

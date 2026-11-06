@@ -27,8 +27,7 @@ if(MERCURY_FOUND)
   set(TOOLS_EXT_LIB ${MERCURY_LIBRARIES} ${TOOLS_EXT_LIB})
 endif()
 include_directories(
-    /mnt/fast/nlewis/workspace/install/mercury/include
-    ${TOOLS_EXT_INCLUDE}   # your other includes
+    ${TOOLS_EXT_INCLUDE}
 )
 
 #HDF5
@@ -89,8 +88,6 @@ endif()
 #     message(FATAL_ERROR "Could not find HDF5, please check HDF5_DIR.")
 #   endif()
 # endif()
-
-set(PDC_SOURCE_DIR /mnt/fast/nlewis/workspace/source/pdc)
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}

@@ -918,6 +918,16 @@ PDCan_notify_input_written(pdcid_t obj_id, uint8_t ndim, uint64_t *offset, uint6
      * -- it's left to the existing lazy read-triggered path, which
      * computes transient intermediates fresh within one call regardless. */
     bool progress = true;
+    /* A transformation with an all-transient output set never gets a
+     * materialized binding to check (transient states aren't bound), so
+     * the binding-based "already_done" check below can never see it as
+     * done -- without this, such a transformation would be re-executed
+     * every single pass forever, since its (persistent) inputs stay
+     * ready and nothing else changes to end the loop. Track "executed in
+     * this call" per vertex, independent of bindings, so each
+     * transformation runs at most once per PDCan_notify_input_written()
+     * call regardless of its outputs' persistence. */
+    bool *executed_this_call = (bool *)calloc(entry->dg->vertex_count, sizeof(bool));
     while (progress) {
         progress = false;
 
@@ -926,6 +936,9 @@ PDCan_notify_input_written(pdcid_t obj_id, uint8_t ndim, uint64_t *offset, uint6
             if (node->kind != PDC_AN_NODE_FUNC)
                 continue;
             pdc_an_func_t *f = &node->u.func;
+
+            if (executed_this_call[i])
+                continue;
 
             bool already_done = false;
             for (int o = 0; o < f->num_outputs; o++) {
@@ -936,8 +949,10 @@ PDCan_notify_input_written(pdcid_t obj_id, uint8_t ndim, uint64_t *offset, uint6
                     break;
                 }
             }
-            if (already_done)
+            if (already_done) {
+                executed_this_call[i] = true;
                 continue;
+            }
 
             bool all_ready = true;
             for (int k = 0; k < f->num_inputs; k++) {
@@ -978,9 +993,11 @@ PDCan_notify_input_written(pdcid_t obj_id, uint8_t ndim, uint64_t *offset, uint6
                 LOG_ERROR("Eager write-triggered analysis failed for transformation \"%s\"\n", f->name);
                 continue;
             }
-            progress = true;
+            executed_this_call[i] = true;
+            progress              = true;
         }
     }
+    free(executed_this_call);
 
 done:
     if (acquired)

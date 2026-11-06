@@ -667,67 +667,6 @@ PDC_transfer_request_data_write_out(uint64_t obj_id, int obj_ndim, const uint64_
 }
 
 static int
-merge_requests(uint64_t *start, uint64_t *end, int request_size, char **buf, uint64_t **new_start,
-               uint64_t **new_end, char ***new_buf, uint64_t unit, int *request_size_ptr)
-{
-    FUNC_ENTER(NULL);
-
-    int      i, index;
-    int      merged_requests = 1;
-    char *   ptr;
-    size_t   total_data_size = end[0] - start[0];
-    uint64_t prev_end        = end[0];
-
-    for (i = 1; i < request_size; ++i) {
-        if (prev_end < start[i]) {
-            merged_requests++;
-            total_data_size += (end[i] - start[i]);
-            prev_end = end[i];
-        }
-        else {
-            if (end[i] > prev_end) {
-                total_data_size += (end[i] - prev_end);
-                prev_end = end[i];
-            }
-        }
-    }
-    *new_start = (uint64_t *)PDC_malloc(sizeof(uint64_t) * merged_requests * 2);
-    *new_end   = new_start[0] + merged_requests;
-
-    index           = 0;
-    new_start[0][0] = start[0];
-    new_end[0][0]   = end[0];
-
-    *new_buf      = (char **)PDC_malloc(merged_requests * sizeof(char *));
-    new_buf[0][0] = (char *)PDC_malloc(total_data_size * unit);
-    ptr           = new_buf[0][0];
-    memcpy(ptr, buf[0], (end[0] - start[0]) * unit);
-    ptr += (end[0] - start[0]) * unit;
-
-    for (i = 1; i < request_size; ++i) {
-        if (new_end[0][index] < start[i]) {
-            index++;
-            new_buf[0][index]   = ptr;
-            new_start[0][index] = start[i];
-            new_end[0][index]   = end[i];
-
-            memcpy(ptr, buf[i], (end[i] - start[i]) * unit);
-            ptr += (end[i] - start[i]) * unit;
-        }
-        else {
-            if (end[i] > new_end[0][index]) {
-                memcpy(ptr, buf[i] + new_end[0][index] - start[i], (end[i] - new_end[0][index]) * unit);
-                ptr += (end[i] - new_end[0][index]) * unit;
-                new_end[0][index] = end[i];
-            }
-        }
-    }
-
-    *request_size_ptr = merged_requests;
-    FUNC_LEAVE(0);
-}
-
-static int
 sort_by_offset(const void *elem1, const void *elem2)
 {
     FUNC_ENTER(NULL);
@@ -774,17 +713,13 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
 {
     FUNC_ENTER(NULL);
 
-    int                      i, nflush = 0;
-    pdc_region_cache *       region_cache_iter, *region_cache_temp;
-    struct pdc_region_info * region_cache_info;
-    uint64_t                 write_size = 0;
-    char **                  buf, **new_buf, *buf_ptr = NULL, *env_char;
-    uint64_t *               start, *end, *new_start, *new_end;
-    int                      merged_request_size = 0;
-    uint64_t                 unit;
-    struct pdc_region_info **obj_regions;
-    char                     cur_time[64];
-    int                      _pdc_server_rank_g = 0;
+    int                     nflush = 0;
+    pdc_region_cache *      region_cache_iter, *region_cache_temp;
+    struct pdc_region_info *region_cache_info;
+    uint64_t                write_size = 0;
+    char *                  env_char;
+    char                    cur_time[64];
+    int                     _pdc_server_rank_g = 0;
 
 #ifdef ENABLE_MPI
     MPI_Comm_rank(MPI_COMM_WORLD, &_pdc_server_rank_g);
@@ -822,8 +757,9 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
         if (_pdc_server_rank_g == 0)
             LOG_WARNING("Region mapping lookup took %.6f s\n", mapping_end_time - mapping_start_time);
 
-        if (!PDCtf_region_has_attached_graph(tf_obj, obj_cache->ndim, unit, region_cache_info->offset,
-                                             region_cache_info->size, &region_mapping)) {
+        if (!PDCtf_region_has_attached_graph(tf_obj, obj_cache->ndim, region_cache_info->unit,
+                                             region_cache_info->offset, region_cache_info->size,
+                                             &region_mapping)) {
             if (_pdc_server_rank_g == 0)
                 LOG_WARNING("No region mapping found for obj_id %" PRIu64 "\n", obj_id);
             double io_start = MPI_Wtime();
@@ -855,9 +791,15 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
 
         double free_start         = MPI_Wtime();
         region_cache_info->offset = (uint64_t *)PDC_free(region_cache_info->offset);
-        if (obj_cache->ndim > 1)
-            region_cache_info->buf = (void *)PDC_free(region_cache_info->buf);
-        region_cache_info = (struct pdc_region_info *)PDC_free(region_cache_info);
+        /* Always free the cached buffer here -- there used to be a 1D
+         * request-merging path that copied every 1D buffer into one
+         * merged allocation (freed separately below) and left the
+         * per-region buffers for the generic ndim>1 case only. That
+         * merge path was removed; region_cache_info->buf is now the one
+         * true buffer for the region regardless of dimensionality, so
+         * skipping the free for ndim==1 just leaks it on every flush. */
+        region_cache_info->buf = (void *)PDC_free(region_cache_info->buf);
+        region_cache_info      = (struct pdc_region_info *)PDC_free(region_cache_info);
 
         region_cache_temp = region_cache_iter;
         region_cache_iter = region_cache_iter->next;
@@ -872,10 +814,6 @@ PDC_region_cache_flush_by_pointer(uint64_t obj_id, pdc_obj_cache *obj_cache, int
         double region_end_time = MPI_Wtime();
         if (_pdc_server_rank_g == 0)
             LOG_INFO("Region flush iteration took %.6f s\n", region_end_time - region_start_time);
-    }
-
-    if (merged_request_size && obj_cache->ndim == 1) {
-        buf_ptr = (char *)PDC_free(buf_ptr);
     }
 
     obj_cache->region_cache      = NULL;

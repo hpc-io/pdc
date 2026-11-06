@@ -11,7 +11,7 @@
 #include "pdc.h"
 #include "pdc_client_server_common.h"
 #include "../src/server/include/pdc_server_metadata.h"
-#include "/mnt/fast/nlewis/workspace/source/pdc/src/server/transform/include/pdc_tf_server.h"
+#include "../src/server/transform/include/pdc_tf_server.h"
 #include "cJSON.h"
 
 const char *avail_args[] = {"-n", "-i", "-json", "-ln", "-li", "-s"};
@@ -468,6 +468,17 @@ pdc_ls(FileNameNode *file_name_node, int argc, char *argv[])
             LOG_ERROR("Checkpoint file open FAILED [%s]", filename);
             ret_value = FAIL;
             continue;
+        }
+
+        /* Must consume the same uint64_t next-object-id counter
+         * PDC_Server_checkpoint() now writes as the very first field
+         * (see the matching fread in PDC_Server_restart,
+         * src/server/pdc_server.c) -- pdc_ls doesn't need the value
+         * itself, but skipping it would shift every field after it by
+         * 8 bytes and misparse the rest of the file. */
+        uint64_t checkpointed_id_seq = 0;
+        if (fread(&checkpointed_id_seq, sizeof(uint64_t), 1, file) != 1) {
+            LOG_ERROR("Read failed for pdc_id_seq_g\n");
         }
 
         if (fread(&n_cont, sizeof(int), 1, file) != 1) {

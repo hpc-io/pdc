@@ -871,6 +871,28 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
      *
      * In addition, need a way for user's to set the file_dims
      */
+    /* Check analysis before the plain per-file transform dispatch below.
+     * An unmaterialized lazy analysis output can also have a PDC TF
+     * transform (e.g. compression) attached to its own storage;
+     * PDC_Server_data_io_region_analysis() already knows how to
+     * materialize such an output (if needed) and then correctly invert
+     * its transform when reading it back (see the detailed comment in
+     * that function). Calling the plain transform dispatch first would
+     * instead find that transform mapping on its own, with no way to
+     * know the output hasn't been computed yet, and try to read/invert
+     * storage that doesn't exist. */
+    // check if the obj/region is a bound region-analysis output
+    bool ran_analysis = false;
+    if (PDC_Server_data_io_region_analysis(obj_id, obj_ndim, obj_dims, region_info, buf, unit, is_write,
+                                           &ran_analysis) != SUCCEED) {
+        PGOTO_ERROR(FAIL, "Error with PDC_Server_data_io_region_analysis");
+    }
+    if (ran_analysis) {
+        if (my_rank == 0)
+            LOG_DEBUG("Ran %s as a region-analysis output\n", (is_write) ? "write" : "read");
+        PGOTO_DONE(SUCCEED);
+    }
+
     // check if the obj has transformations
     bool ran_transformation = false;
     LOG_DEBUG("Checking for transformations for obj_id %" PRIu64 "\n", obj_id);
@@ -883,18 +905,6 @@ PDC_Server_transfer_request_io(uint64_t obj_id, int obj_ndim, const uint64_t *ob
         if (my_rank == 0)
             LOG_DEBUG("Ran %s storage strategy STORE_FLATTENED_REGION_PER_FILE_TRANSFORMATION\n",
                       (is_write) ? "write" : "read");
-        PGOTO_DONE(SUCCEED);
-    }
-
-    // check if the obj/region is a bound region-analysis output
-    bool ran_analysis = false;
-    if (PDC_Server_data_io_region_analysis(obj_id, obj_ndim, obj_dims, region_info, buf, unit, is_write,
-                                           &ran_analysis) != SUCCEED) {
-        PGOTO_ERROR(FAIL, "Error with PDC_Server_data_io_region_analysis");
-    }
-    if (ran_analysis) {
-        if (my_rank == 0)
-            LOG_DEBUG("Ran %s as a region-analysis output\n", (is_write) ? "write" : "read");
         PGOTO_DONE(SUCCEED);
     }
 

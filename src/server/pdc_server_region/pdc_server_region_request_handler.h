@@ -350,6 +350,14 @@ done:
     remote_reg_info = (struct pdc_region_info *)PDC_free(remote_reg_info);
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
+    /* HG_Bulk_free() above only releases the bulk handle -- it does not
+     * free the application buffer Mercury received into. Neither the
+     * cache path (PDC_transfer_request_data_write_out, which copies the
+     * bytes into its own buffer) nor the ordinary storage path
+     * (PDC_Server_transfer_request_io) takes ownership of data_buf, so it
+     * must be freed here or every successful single-region write leaks
+     * it. */
+    local_bulk_args->data_buf = (void *)PDC_free(local_bulk_args->data_buf);
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
