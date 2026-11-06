@@ -34,6 +34,4 @@ uint64_t *bin_read_uint64(FILE *file);
 
 size_t *bin_read_size_t(FILE *file);
 
-size_t bin_skip_field(FILE *stream);
-
 #endif /* !BIN_FILE_OPS_H */

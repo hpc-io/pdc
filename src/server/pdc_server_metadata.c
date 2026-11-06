@@ -209,12 +209,9 @@ PDC_Server_metadata_init(pdc_metadata_t *a)
     a->region_buf_map_head = NULL;
     a->prev                = NULL;
     a->next                = NULL;
-    a->transform_state     = 0;
-    memset(&a->current_state, 0, sizeof(struct _pdc_transform_state));
 
     FUNC_LEAVE_VOID();
 }
-// ^ hash table
 
 /*
  * Concatenate the metadata's obj_name and time_step to one char array
@@ -819,31 +816,19 @@ PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
                             "Not enough space in target->tags to append new_metadata.tags with snprintf");
                     }
                 }
-                if (in->new_metadata.current_state != 0) {
-                    target->transform_state          = in->new_metadata.current_state;
-                    target->current_state.dtype      = in->new_metadata.t_dtype;
-                    target->current_state.ndim       = in->new_metadata.t_ndim;
-                    target->current_state.dims[0]    = in->new_metadata.t_dims0;
-                    target->current_state.dims[1]    = in->new_metadata.t_dims1;
-                    target->current_state.dims[2]    = in->new_metadata.t_dims2;
-                    target->current_state.dims[3]    = in->new_metadata.t_dims3;
-                    target->current_state.meta_index = in->new_metadata.t_meta_index;
-                }
                 out->ret = 1;
-            } // if (lookup_value != NULL)
+            }
             else {
                 // Object not found for deletion request
                 ret_value = -1;
                 out->ret  = -1;
             }
-
-        } // if lookup_value != NULL
+        }
         else {
             ret_value = -1;
             out->ret  = -1;
         }
-
-    } // if (metadata_hash_table_g != NULL)
+    }
     else {
         out->ret = -1;
         PGOTO_ERROR(FAIL, "metadata_hash_table_g not initialized");
@@ -856,7 +841,6 @@ PDC_Server_update_metadata(metadata_update_in_t *in, metadata_update_out_t *out)
 #endif
 
 #ifdef ENABLE_TIMING
-    // Timing
     gettimeofday(&pdc_timer_end, 0);
     ht_total_sec = PDC_get_elapsed_time_double(&pdc_timer_start, &pdc_timer_end);
 #endif
@@ -1226,9 +1210,10 @@ PDC_insert_metadata_to_hash_table(gen_obj_id_in_t *in, gen_obj_id_out_t *out)
             found_identical = find_identical_metadata(lookup_value, metadata);
             if (found_identical != NULL) {
                 out->obj_id = 0;
-                metadata    = (pdc_metadata_t *)PDC_free(metadata);
-                PGOTO_ERROR(FAIL, "Found identical metadata with name %s", pdc_server_rank_g,
-                            metadata->obj_name);
+                LOG_ERROR("Found identical metadata with name %s", metadata->obj_name);
+                LOG_JUST_PRINT("\n");
+                metadata = (pdc_metadata_t *)PDC_free(metadata);
+                PGOTO_DONE(FAIL);
             }
             else {
                 PDC_Server_hash_table_list_insert(lookup_value, metadata);
@@ -1898,7 +1883,7 @@ PDC_Server_search_with_name_timestep(const char *obj_name, uint32_t hash_key, ui
         // lookup
         lookup_value = hash_table_lookup(metadata_hash_table_g, &hash_key);
 
-        // Is this hash value exist in the Hash table?
+        // Does this hash value exist in the Hash table?
         if (lookup_value != NULL) {
             *out = find_identical_metadata(lookup_value, &metadata);
             if (*out == NULL)

@@ -89,6 +89,15 @@ void print_string(char *string);
 int read_line(FILE *fp, char *buffer, size_t size);
 
 /**
+ * \fn int get_file_size(const char *filename, size_t file_size)
+ * \brief Get file size. File pointer is not changed.
+ * \param fp Pointer to the file to read from.
+ * \param file_size Pointer to be updated with filesize.
+ * \return 0 if the file_size was retrieved successfully, non-zero value otherwise.
+ */
+int get_file_size(FILE *fp, size_t *file_size);
+
+/**
  * \fn int get_input(char *buffer, size_t size)
  * \brief Gets user input from the standard input into a buffer.
  * \param buffer Pointer to the buffer where the input will be stored.

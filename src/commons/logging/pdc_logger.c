@@ -164,7 +164,7 @@ _log_message(bool is_server, PDC_LogLevel level, const char *file, const char *f
 #endif
 
         // Print differently based on log level
-        if (level == LOG_LEVEL_ERROR || level == LOG_LEVEL_DEBUG) {
+        if (level == LOG_LEVEL_ERROR || level == LOG_LEVEL_DEBUG || level == LOG_LEVEL_WARNING) {
 #ifdef ENABLE_MPI
             if (is_server)
                 fprintf(logFile, "[%s.%06ld] [%s] [%s:%d] PDC_SERVER[%d]: %s", timestr, tv.tv_usec, prefix,

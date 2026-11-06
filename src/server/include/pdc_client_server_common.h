@@ -29,9 +29,10 @@
 #include "pdc_private.h"
 #include "pdc_linkedlist.h"
 #include "pdc_prop_pkg.h"
-#include "pdc_analysis_and_transforms_common.h"
 #include "pdc_query.h"
 #include "pdc_malloc.h"
+#include "pdc_tf_common.h"
+#include "pdc_an_common.h"
 
 #include "pdc_timing.h"
 #include "pdc_server_region_transfer_metadata_query.h"
@@ -89,6 +90,59 @@ extern uint64_t          pdc_id_seq_g;
 extern int               pdc_server_rank_g;
 extern hg_atomic_int32_t close_server_g;
 hg_handle_t              close_all_server_handle_g;
+
+/**
+ * Lightweight, always-on per-rank execution/IO counters -- not gated
+ * behind PDC_TIMING/ENABLE_PROFILING (see pdc_timing.h for that heavier,
+ * RPC-level system). Each metric tracks a call count and a running total
+ * of elapsed seconds; avg = total / count. Updated from whichever file
+ * actually performs that operation (pdc_tf_server.c for
+ * compress/decompress, pdc_an_server.c for magnitude,
+ * pdc_server_region/pdc_server_data.c for the POSIX ops). Defined in
+ * pdc_client_server_common.c (not pdc_server.c, where the sole caller of
+ * PDC_stats_print_csv actually lives) specifically because that file is
+ * compiled into both pdc_server_lib and the client-side pdc library --
+ * see its own comment beside the definition for why that placement
+ * matters.
+ */
+typedef enum pdc_stat_metric_t {
+    PDC_STAT_COMPRESS,
+    PDC_STAT_DECOMPRESS,
+    PDC_STAT_MAGNITUDE,
+    PDC_STAT_POSIX_OPEN,
+    PDC_STAT_POSIX_CLOSE,
+    PDC_STAT_POSIX_WRITE,
+    PDC_STAT_POSIX_READ,
+    PDC_STAT_NUM_METRICS
+} pdc_stat_metric_t;
+
+/** Records one execution of `metric`, taking `elapsed_sec` seconds. Not
+ * thread-safe -- fine as-is since the PDC server is single-threaded per
+ * rank (same assumption an_eager_exec_in_progress_g already relies on). */
+void PDC_stats_record(pdc_stat_metric_t metric, double elapsed_sec);
+
+/**
+ * Collective: every server rank must call this (it MPI_Gathers each
+ * metric to rank 0), typically once, from PDC_Server_set_close() right
+ * after checkpointing. Rank 0 prints one CSV row per metric via
+ * LOG_WARNING -- row label is the metric name, one column per rank,
+ * each cell "avg_seconds/count" -- plus a "metric,rank0,rank1,..." header
+ * row first.
+ *
+ * Takes this rank's id and the total server count as parameters (the
+ * caller's own pdc_server_rank_g/pdc_server_size_g) rather than reading
+ * those globals directly: this function lives in
+ * pdc_client_server_common.c, compiled into both pdc_server_lib and the
+ * client-side pdc library, but pdc_server_rank_g/pdc_server_size_g are
+ * only ever *defined* in pdc_server.c (server-only) -- referencing them
+ * directly here would leave any client executable linking pdc.so
+ * without also linking pdc_server_lib (e.g. close_server) with an
+ * unresolved symbol at link time, confirmed by hand while developing
+ * this (see PDC_stats_record's own placement comment for the identical
+ * issue that motivated moving these functions out of pdc_server.c in
+ * the first place).
+ */
+void PDC_stats_print_csv(int my_rank, int nranks);
 
 #define PDC_LOCK_OP_OBTAIN  0
 #define PDC_LOCK_OP_RELEASE 1
@@ -217,15 +271,6 @@ typedef struct pdc_metadata_transfer_t {
     uint32_t data_server_id;
     uint8_t  region_partition;
     uint8_t  consistency;
-
-    // The following support state changes to objects
-    // as a result of a transform.
-    int32_t  current_state;
-    int8_t   t_storage_order;
-    int8_t   t_dtype;
-    size_t   t_ndim;
-    uint64_t t_dims0, t_dims1, t_dims2, t_dims3;
-    int      t_meta_index;
 } pdc_metadata_transfer_t;
 
 typedef struct {
@@ -309,6 +354,10 @@ typedef struct pdc_data_server_io_list_t {
     struct pdc_data_server_io_list_t *next;
 } pdc_data_server_io_list_t;
 
+/**
+ * This data structure is used for STORE_REGION_BY_REGION_SINGLE_FILE strategy
+ * It has the metadata needed for checkpoint and restart
+ */
 typedef struct data_server_region_t {
     uint64_t obj_id;
     int      fd; // file handle
@@ -323,10 +372,7 @@ typedef struct data_server_region_t {
     // For region map
     region_map_t *region_map_head;
     // For region storage
-    region_list_t *region_storage_head;
-    // For non-mapped object analysis
-    // Used primarily as a local_temp
-    void *                       obj_data_ptr;
+    region_list_t *              region_storage_head;
     char *                       storage_location; // save the file location to enable reopening
     struct data_server_region_t *prev;
     struct data_server_region_t *next;
@@ -378,10 +424,6 @@ typedef struct pdc_metadata_t {
 
     // For buf to obj map
     region_buf_map_t *region_buf_map_head;
-
-    // For transforms
-    int                         transform_state;
-    struct _pdc_transform_state current_state;
 
     pdc_histogram_t *obj_hist;
 
@@ -548,57 +590,6 @@ typedef struct {
     size_t                 data_unit;
     uint8_t                lock_mode;
 } region_lock_in_t;
-
-/* FIXME:  The bulk_args->in structure (shown below) appears is defined as a
- * superset of the region_lock_in_t structure.  That way, we can simply pass
- * a pointer to our version into the PDC_Data_Server_release function...
- */
-/* Define region_transform_and_lock_in_t */
-typedef struct {
-    uint32_t               meta_server_id;
-    uint64_t               obj_id;
-    uint8_t                access_type;
-    pdcid_t                local_reg_id;
-    region_info_transfer_t region;
-    uint8_t                mapping;
-    uint8_t                data_type;
-    uint8_t                lock_mode;
-    /* The following are unique to the transform portion of the lock */
-    uint8_t   dest_type;
-    int32_t   transform_id;
-    int32_t   transform_state;
-    hg_bulk_t local_bulk_handle;
-    int64_t   transform_data_size;
-    uint64_t  client_data_ptr;
-
-} region_transform_and_lock_in_t;
-
-/* FIXME:  The region_analysis structure (shown below) is defined as a
- * superset of the region_lock_in_t structure.  That way, we can simply pass
- * a pointer to our version into the PDC_Data_Server_release function...
- */
-/* Define region_analysis_and_lock_in_t */
-typedef struct {
-    uint32_t               meta_server_id;
-    uint64_t               obj_id;
-    uint8_t                access_type;
-    pdcid_t                local_reg_id;
-    region_info_transfer_t region;
-    uint8_t                mapping;
-    uint8_t                data_type;
-    uint8_t                lock_mode;
-    /* -------------------------------------------------------------
-     * The following are unique to the analysis portion of the lock
-     * -------------------------------------------------------------
-     */
-    int32_t  analysis_meta_index;
-    int32_t  n_args;
-    uint64_t output_obj_id;
-    uint64_t type_extent;
-    uint64_t output_type_extent;
-    pdcid_t  input_iter;
-    pdcid_t  output_iter;
-} region_analysis_and_lock_in_t;
 
 /* Define metadata_delete_in_t */
 typedef struct {
@@ -787,8 +778,13 @@ typedef struct {
     size_t                 remote_unit;
     int32_t                obj_ndim;
     uint32_t               meta_server_id;
+    uint8_t                access_type;
 
-    uint8_t access_type;
+    // For region transformations
+    pdc_tf_pkg_t pdc_tf_pkg;
+
+    // For region analysis (DataFlyway) -- piggybacked exactly like pdc_tf_pkg
+    pdc_an_pkg_t an_pkg;
 } transfer_request_in_t;
 
 /* Define transfer_request_out_t */
@@ -800,11 +796,10 @@ typedef struct {
 /* Define transfer_request_all_in_t */
 typedef struct transfer_request_all_in_t {
     hg_bulk_t local_bulk_handle;
-    // hg_bulk_t              local_bulk_handle2;
-    uint64_t total_buf_size;
-    int32_t  n_objs;
-    uint8_t  access_type;
-    int      client_id;
+    uint64_t  total_buf_size;
+    int32_t   n_objs;
+    uint8_t   access_type;
+    int       client_id;
 } transfer_request_all_in_t;
 
 /* Define transfer_request_all_out_t */
@@ -816,10 +811,9 @@ typedef struct transfer_request_all_out_t {
 /* Define transfer_request_metadata_query_in_t */
 typedef struct transfer_request_metadata_query_in_t {
     hg_bulk_t local_bulk_handle;
-    // hg_bulk_t              local_bulk_handle2;
-    uint64_t total_buf_size;
-    int32_t  n_objs;
-    uint8_t  is_write;
+    uint64_t  total_buf_size;
+    int32_t   n_objs;
+    uint8_t   is_write;
 } transfer_request_metadata_query_in_t;
 
 /* Define transfer_request_metadata_query_out_t */
@@ -1029,6 +1023,35 @@ typedef struct {
 typedef struct {
     int ret;
 } pdc_int_ret_t;
+
+/* Define an_attach_region_in_t -- carries everything PDCan_store_attach_mapping()
+ * needs: which graph (by JSON filepath, exactly like PDC TF's pdc_tf_pkg), which
+ * state within it, and the rank-local (obj_id, region) to bind to it.
+ *
+ * tf_json_filepath/tf_client_state/tf_store_state are optional (NULL when
+ * absent, exactly like pdc_tf_pkg's fields on transfer_request_in_t): if
+ * the object/region being attached also has a PDC TF graph attached
+ * client-side (PDCtf_attach_to_region/_to_obj), the client fills these in
+ * so the server can proactively register that mapping itself
+ * (PDCtf_store_json_mapping) here. That registration would otherwise never
+ * happen for an analysis output, since it's normally a side effect of a
+ * *client* write RPC's pdc_tf_pkg piggyback -- and an analysis output's
+ * writes come from PDCan_exec_graph running server-side, never from a
+ * client write RPC. See docs/design/region_analysis.md. */
+typedef struct {
+    hg_string_t json_filepath;
+    hg_string_t state_name;
+    uint64_t    obj_id;
+    int32_t     obj_ndim;
+    uint64_t    obj_dims[DIM_MAX];
+    uint8_t     ndim;
+    uint64_t    offset[DIM_MAX];
+    uint64_t    size[DIM_MAX];
+    uint32_t    pdc_var_type;
+    hg_string_t tf_json_filepath;
+    hg_string_t tf_client_state;
+    hg_string_t tf_store_state;
+} an_attach_region_in_t;
 
 /* Define pdc_aggregated_io_to_server_t */
 typedef struct {
@@ -1323,148 +1346,6 @@ hg_proc_region_lock_out_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
-/* Define hg_proc_region_transform_and_lock_in_t */
-static HG_INLINE hg_return_t
-hg_proc_region_transform_and_lock_in_t(hg_proc_t proc, void *data)
-{
-    FUNC_ENTER(NULL);
-
-    hg_return_t                     ret;
-    region_transform_and_lock_in_t *struct_data = (region_transform_and_lock_in_t *)data;
-
-    ret = hg_proc_int32_t(proc, &struct_data->meta_server_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->mapping);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->lock_mode);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->dest_type);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->transform_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->transform_state);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_hg_bulk_t(proc, &struct_data->local_bulk_handle);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int64_t(proc, &struct_data->transform_data_size);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->client_data_ptr);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-
-    FUNC_LEAVE(ret);
-}
-
-/* Define hg_proc_region_analysis_and_lock_in_t */
-static HG_INLINE hg_return_t
-hg_proc_region_analysis_and_lock_in_t(hg_proc_t proc, void *data)
-{
-    FUNC_ENTER(NULL);
-
-    hg_return_t                    ret;
-    region_analysis_and_lock_in_t *struct_data = (region_analysis_and_lock_in_t *)data;
-
-    ret = hg_proc_int32_t(proc, &struct_data->meta_server_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->access_type);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->local_reg_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_region_info_transfer_t(proc, &struct_data->region);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->mapping);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->data_type);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint8_t(proc, &struct_data->lock_mode);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->analysis_meta_index);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->n_args);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->output_obj_id);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->type_extent);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->output_type_extent);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->input_iter);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->output_iter);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-
-    FUNC_LEAVE(ret);
-}
-
 /* Define hg_proc_metadata_query_transfer_in_t */
 static HG_INLINE hg_return_t
 hg_proc_metadata_query_transfer_in_t(hg_proc_t proc, void *data)
@@ -1625,43 +1506,6 @@ hg_proc_pdc_metadata_transfer_t(hg_proc_t proc, void *data)
         FUNC_LEAVE(ret);
     }
     ret = hg_proc_uint8_t(proc, &struct_data->consistency);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    // Added to support transforms
-    ret = hg_proc_int32_t(proc, &struct_data->current_state);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int8_t(proc, &struct_data->t_storage_order);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int8_t(proc, &struct_data->t_dtype);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_hg_size_t(proc, &struct_data->t_ndim);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->t_dims0);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->t_dims1);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->t_dims2);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_uint64_t(proc, &struct_data->t_dims3);
-    if (ret != HG_SUCCESS) {
-        FUNC_LEAVE(ret);
-    }
-    ret = hg_proc_int32_t(proc, &struct_data->t_meta_index);
     if (ret != HG_SUCCESS) {
         FUNC_LEAVE(ret);
     }
@@ -2642,6 +2486,85 @@ hg_proc_transfer_request_in_t(hg_proc_t proc, void *data)
     if (ret != HG_SUCCESS) {
         FUNC_LEAVE(ret);
     }
+    ret = hg_proc_uint32_t(proc, &struct_data->pdc_tf_pkg.pdc_var_type);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->pdc_tf_pkg.json_filepath);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->pdc_tf_pkg.cur_state);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->pdc_tf_pkg.client_state);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->pdc_tf_pkg.store_state);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->an_pkg.json_filepath);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->an_pkg.num_entries);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    for (int an_i = 0; an_i < PDC_AN_PKG_MAX_STATES; an_i++) {
+        pdc_an_pkg_entry_t *an_e = &struct_data->an_pkg.entries[an_i];
+        ret                      = hg_proc_uint32_t(proc, &an_e->pdc_var_type);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+        ret = hg_proc_hg_string_t(proc, &an_e->state_name);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+        ret = hg_proc_uint8_t(proc, &an_e->ndim);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+        for (int d = 0; d < DIM_MAX; d++) {
+            ret = hg_proc_uint64_t(proc, &an_e->offset[d]);
+            if (ret != HG_SUCCESS) {
+                FUNC_LEAVE(ret);
+            }
+            ret = hg_proc_uint64_t(proc, &an_e->size[d]);
+            if (ret != HG_SUCCESS) {
+                FUNC_LEAVE(ret);
+            }
+        }
+        ret = hg_proc_uint64_t(proc, &an_e->obj_id);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+        ret = hg_proc_int32_t(proc, &an_e->obj_ndim);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+        for (int d = 0; d < DIM_MAX; d++) {
+            ret = hg_proc_uint64_t(proc, &an_e->obj_dims[d]);
+            if (ret != HG_SUCCESS) {
+                FUNC_LEAVE(ret);
+            }
+        }
+        ret = hg_proc_hg_string_t(proc, &an_e->tf_json_filepath);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+        ret = hg_proc_hg_string_t(proc, &an_e->tf_client_state);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+        ret = hg_proc_hg_string_t(proc, &an_e->tf_store_state);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+    }
 
     FUNC_LEAVE(ret);
 }
@@ -3439,6 +3362,73 @@ hg_proc_pdc_int_ret_t(hg_proc_t proc, void *data)
     FUNC_LEAVE(ret);
 }
 
+/* Define hg_proc_an_attach_region_in_t */
+static HG_INLINE hg_return_t
+hg_proc_an_attach_region_in_t(hg_proc_t proc, void *data)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t            ret;
+    an_attach_region_in_t *struct_data = (an_attach_region_in_t *)data;
+
+    ret = hg_proc_hg_string_t(proc, &struct_data->json_filepath);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->state_name);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_uint64_t(proc, &struct_data->obj_id);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_int32_t(proc, &struct_data->obj_ndim);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint64_t(proc, &struct_data->obj_dims[i]);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+    }
+    ret = hg_proc_uint8_t(proc, &struct_data->ndim);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint64_t(proc, &struct_data->offset[i]);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+    }
+    for (int i = 0; i < DIM_MAX; i++) {
+        ret = hg_proc_uint64_t(proc, &struct_data->size[i]);
+        if (ret != HG_SUCCESS) {
+            FUNC_LEAVE(ret);
+        }
+    }
+    ret = hg_proc_uint32_t(proc, &struct_data->pdc_var_type);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->tf_json_filepath);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->tf_client_state);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+    ret = hg_proc_hg_string_t(proc, &struct_data->tf_store_state);
+    if (ret != HG_SUCCESS) {
+        FUNC_LEAVE(ret);
+    }
+
+    FUNC_LEAVE(ret);
+}
+
 /* Define hg_proc_pdc_aggregated_io_to_server_t */
 static HG_INLINE hg_return_t
 hg_proc_pdc_aggregated_io_to_server_t(hg_proc_t proc, void *data)
@@ -3988,52 +3978,6 @@ struct buf_map_release_bulk_args {
     region_lock_in_t        in;
 };
 
-//  The following two tructures are the same as: buf_map_release_bulk_args
-//  (above) with one modified field, i.e. the region_transform_and_lock_in_t
-//  and the region_analysis_and_lock_in_t rather than region_lock_in_t.
-//  This should allow the normal thread processing for IO operations
-//  to work correctly.  N.B. I moved the region_lock_in_t structure in
-//  the struct buf_map_release_bulk_args above, to be the last element.
-//  Thus, the size difference in the last element shouldn't matter
-//  to normal processing of things...
-
-struct buf_map_transform_and_release_bulk_args {
-    hg_handle_t                    handle;
-    void *                         data_buf;
-    pdcid_t                        remote_obj_id; /* target of object id */
-    pdcid_t                        remote_reg_id; /* target of region id */
-    int32_t                        remote_client_id;
-    struct pdc_region_info *       remote_reg_info;
-    region_info_transfer_t         remote_region;
-    hg_bulk_t                      remote_bulk_handle;
-    hg_bulk_t                      local_bulk_handle;
-    hg_addr_t                      local_addr;
-    struct hg_thread_work          work;
-    hg_thread_mutex_t              work_mutex;
-    hg_thread_cond_t               work_cond;
-    int                            work_completed;
-    region_transform_and_lock_in_t in;
-};
-
-struct buf_map_analysis_and_release_bulk_args {
-    hg_handle_t             handle;
-    void *                  data_buf;
-    pdcid_t                 remote_obj_id; /* target of object id */
-    pdcid_t                 remote_reg_id; /* target of region id */
-    int32_t                 remote_client_id;
-    struct pdc_region_info *remote_reg_info;
-    region_info_transfer_t  remote_region;
-    hg_bulk_t               remote_bulk_handle;
-    hg_bulk_t               local_bulk_handle;
-    hg_addr_t               local_addr;
-    struct hg_thread_work   work;
-    hg_thread_mutex_t       work_mutex;
-    hg_thread_cond_t        work_cond;
-    int                     work_completed;
-    /* region_analysis_and_lock_in_t is a superset of region_lock_in_t */
-    region_analysis_and_lock_in_t in;
-};
-
 struct lock_bulk_args {
     hg_handle_t             handle;
     region_lock_in_t        in;
@@ -4208,6 +4152,8 @@ hg_id_t PDC_metadata_del_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_metadata_get_kvtag_register(hg_class_t *hg_class);
 hg_id_t PDC_send_rpc_register(hg_class_t *hg_class);
 
+hg_id_t PDC_an_attach_region_rpc_register(hg_class_t *hg_class);
+
 hg_id_t PDC_transfer_request_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_all_register(hg_class_t *hg_class);
 hg_id_t PDC_transfer_request_metadata_query_register(hg_class_t *hg_class);
@@ -4221,9 +4167,6 @@ hg_id_t PDC_region_lock_register(hg_class_t *hg_class);
 hg_id_t PDC_data_server_write_register(hg_class_t *hg_class);
 hg_id_t PDC_notify_region_update_register(hg_class_t *hg_class);
 hg_id_t PDC_region_release_register(hg_class_t *hg_class);
-hg_id_t PDC_region_analysis_release_register(hg_class_t *hg_class);
-hg_id_t PDC_region_transform_release_register(hg_class_t *hg_class);
-hg_id_t PDC_transform_region_release_register(hg_class_t *hg_class);
 hg_id_t PDC_buf_map_server_register(hg_class_t *hg_class);
 hg_id_t PDC_buf_unmap_server_register(hg_class_t *hg_class);
 

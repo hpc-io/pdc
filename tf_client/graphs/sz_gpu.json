@@ -1,0 +1,27 @@
+{
+  "states": [
+    {
+      "name": "decompressed"
+    },
+    {
+      "name": "compressed"
+    }
+  ],
+  "functions": [
+    {
+      "device": "GPU",
+      "input_state": "decompressed",
+      "output_state": "compressed",
+      "location": "builtin",
+      "name": "sz_compress"
+    },
+    {
+      "device": "GPU",
+      "input_state": "compressed",
+      "output_state": "decompressed",
+      "location": "builtin",
+      "name": "sz_decompress"
+    }
+  ],
+  "name": "sz_gpu"
+}
