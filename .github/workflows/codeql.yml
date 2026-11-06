@@ -68,7 +68,7 @@ jobs:
     - name: Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install libopenmpi-dev libhdf5-dev uuid-dev cmake
+        sudo apt-get install libhdf5-dev uuid-dev cmake
 
     - name: Build PDC Dependencies
       run: |
@@ -111,7 +111,7 @@ jobs:
       shell: bash
       run: |
         mkdir build && cd build
-        cmake ../ -DBUILD_MPI_TESTING=ON -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=ON -DCMAKE_C_COMPILER=mpicc -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        cmake ../ -DBUILD_SHARED_LIBS=ON -DPDC_SERVER_CACHE=ON -DBUILD_TESTING=ON -DPDC_ENABLE_MPI=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         make -j2 && sudo make install
 
     - name: Perform CodeQL Analysis
