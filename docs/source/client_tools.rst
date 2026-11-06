@@ -43,6 +43,9 @@ Arguments:
 - :code:`-ln`: List all object names as an additional field in the output.
 - :code:`-li`: List all object IDs as an additional field in the output.
 - :code:`-s`: Display summary statistics (number of objects, containers, regions) as an additional field in the output.
+- :code:`-tree`: Print the nested container hierarchy (containers inside containers, and the objects inside each) as an indented tree.
+
+The JSON output always includes a :code:`containers` field listing every container's raw entries (each with its :code:`id` and :code:`type`, either :code:`"object"` or :code:`"container"`), independent of :code:`-tree`.
 
 Examples:
 
@@ -177,6 +180,22 @@ Examples:
         "all_obj_names": ["obj-var-pxx", "obj-var-pyy", "obj-var-pzz"],
         "all_obj_ids": [1000004, 1000005, 1000006]
     }
+
+.. code-block:: Bash
+
+    $ ./pdc_ls pdc_tmp -tree
+    [INFO] File [pdc_tmp/metadata_checkpoint.0] last modified at: Fri Oct 31 13:57:33 2026
+
+    Container hierarchy:
+    restart_root (cont_id=1000000000)
+      restart_branch_a (cont_id=1000000001)
+        restart_branch_a_sub (cont_id=1000000003)
+          [object] restart_obj_sub1 (obj_id=1000000006)
+        [object] restart_obj_a1 (obj_id=1000000005)
+      restart_branch_b (cont_id=1000000002)
+        [object] restart_obj_b1 (obj_id=1000000007)
+      [object] restart_obj_root1 (obj_id=1000000004)
+    { ... }
 
 pdc_import
 ~~~~~~~~~~

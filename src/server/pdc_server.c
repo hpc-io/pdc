@@ -1267,6 +1267,11 @@ PDC_Server_checkpoint()
         PGOTO_ERROR(FAIL, "Checkpoint file open error");
     }
 
+    // Checkpoint the id counter. Without this, a restart reseeds it back to
+    // this rank's base (see PDC_Server_init) and starts handing out ids that
+    // existing containers/objects already use.
+    fwrite(&pdc_id_seq_g, sizeof(uint64_t), 1, file);
+
     // Checkpoint containers
     n_entry = hash_table_num_entries(container_hash_table_g);
     fwrite(&n_entry, sizeof(int), 1, file);
@@ -1276,9 +1281,40 @@ PDC_Server_checkpoint()
         pair      = hash_table_iter_next(&hash_table_iter);
         cont_head = pair.value;
 
-        hash_key = PDC_get_hash_by_name(cont_head->cont_name);
+        // Containers nested under a parent are keyed by a hash scoped with the
+        // parent's id (see PDC_Client_create_cont_id_scoped), not by the bare
+        // name -- recomputing PDC_get_hash_by_name(cont_head->cont_name) here
+        // would collide whenever two containers share a leaf name under
+        // different parents, so persist the actual key instead.
+        hash_key = cont_head->hash_value;
         fwrite(&hash_key, sizeof(uint32_t), 1, file);
-        fwrite(cont_head, sizeof(pdc_cont_hash_table_entry_t), 1, file);
+        // Write the fixed-size fields individually rather than raw-dumping the
+        // struct: obj_ids/entry_types/kvtag_list_head are heap pointers private
+        // to this process and are meaningless (dangling) to a future restart --
+        // their pointed-to contents are serialized explicitly below instead.
+        fwrite(&cont_head->cont_id, sizeof(uint64_t), 1, file);
+        fwrite(cont_head->cont_name, sizeof(cont_head->cont_name), 1, file);
+        fwrite(&cont_head->n_obj, sizeof(int), 1, file);
+        fwrite(&cont_head->n_deleted, sizeof(int), 1, file);
+        fwrite(cont_head->tags, sizeof(cont_head->tags), 1, file);
+
+        // Write structured kv tags (same format as object kv tags below)
+        DL_COUNT(cont_head->kvtag_list_head, kvlist_elt, n_kvtag);
+        fwrite(&n_kvtag, sizeof(int), 1, file);
+        DL_FOREACH(cont_head->kvtag_list_head, kvlist_elt)
+        {
+            key_len = strlen(kvlist_elt->kvtag->name) + 1;
+            fwrite(&key_len, sizeof(int), 1, file);
+            fwrite(kvlist_elt->kvtag->name, key_len, 1, file);
+            fwrite(&kvlist_elt->kvtag->size, sizeof(uint32_t), 1, file);
+            fwrite(&kvlist_elt->kvtag->type, sizeof(int8_t), 1, file);
+            fwrite(kvlist_elt->kvtag->value, kvlist_elt->kvtag->size, 1, file);
+        }
+
+        if (cont_head->n_obj > 0) {
+            fwrite(cont_head->obj_ids, sizeof(uint64_t) * cont_head->n_obj, 1, file);
+            fwrite(cont_head->entry_types, sizeof(uint8_t) * cont_head->n_obj, 1, file);
+        }
     }
 
     // DHT
@@ -1464,6 +1500,20 @@ PDC_Server_restart(char *filename)
     if (file == NULL)
         PGOTO_ERROR(FAIL, "Error with fopen, filename: [%s]", filename);
 
+    // Restore the id counter saved by PDC_Server_checkpoint. PDC_Server_init
+    // already seeded pdc_id_seq_g to this rank's base before calling us; keep
+    // whichever is larger so a corrupt/short read can't move it backwards
+    // into a range that's already in use.
+    {
+        uint64_t saved_id_seq = 0;
+        if (fread(&saved_id_seq, sizeof(uint64_t), 1, file) != 1) {
+            LOG_ERROR("Read failed for pdc_id_seq_g\n");
+        }
+        else if (saved_id_seq > pdc_id_seq_g) {
+            pdc_id_seq_g = saved_id_seq;
+        }
+    }
+
     if (fread(&n_cont, sizeof(int), 1, file) != 1) {
         LOG_ERROR("Read failed for n_count\n");
     }
@@ -1475,11 +1525,79 @@ PDC_Server_restart(char *filename)
         }
         total_mem_usage_g += sizeof(uint32_t);
 
-        // Reconstruct hash table
-        cont_entry = (pdc_cont_hash_table_entry_t *)PDC_malloc(sizeof(pdc_cont_hash_table_entry_t));
+        // Reconstruct hash table. Read the fixed-size fields individually and
+        // reallocate obj_ids/entry_types fresh in this process; they were
+        // written out as their own variable-length arrays by the checkpoint
+        // (not raw struct bytes, since the pointers themselves are only valid
+        // in the process that wrote them).
+        cont_entry = (pdc_cont_hash_table_entry_t *)PDC_calloc(1, sizeof(pdc_cont_hash_table_entry_t));
         total_mem_usage_g += sizeof(pdc_cont_hash_table_entry_t);
-        if (fread(cont_entry, sizeof(pdc_cont_hash_table_entry_t), 1, file) != 1) {
-            LOG_ERROR("Read failed for cont_entry\n");
+        cont_entry->hash_value = *hash_key;
+        if (fread(&cont_entry->cont_id, sizeof(uint64_t), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry cont_id\n");
+        }
+        if (fread(cont_entry->cont_name, sizeof(cont_entry->cont_name), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry cont_name\n");
+        }
+        if (fread(&cont_entry->n_obj, sizeof(int), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry n_obj\n");
+        }
+        if (cont_entry->n_obj < 0 || cont_entry->n_obj > (1 << 24))
+            PGOTO_ERROR(FAIL, "Invalid cont_entry n_obj in checkpoint");
+        if (fread(&cont_entry->n_deleted, sizeof(int), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry n_deleted\n");
+        }
+        if (fread(cont_entry->tags, sizeof(cont_entry->tags), 1, file) != 1) {
+            LOG_ERROR("Read failed for cont_entry tags\n");
+        }
+        cont_entry->kvtag_list_head = NULL;
+
+        // Read structured kv tags (same format as object kv tags above)
+        if (fread(&n_kvtag, sizeof(int), 1, file) != 1) {
+            LOG_ERROR("Read failed for n_kvtag\n");
+        }
+        for (j = 0; j < n_kvtag; j++) {
+            pdc_kvtag_list_t *kvtag_list = (pdc_kvtag_list_t *)PDC_calloc(1, sizeof(pdc_kvtag_list_t));
+            kvtag_list->kvtag            = (pdc_kvtag_t *)PDC_malloc(sizeof(pdc_kvtag_t));
+            if (fread(&key_len, sizeof(int), 1, file) != 1) {
+                LOG_ERROR("Read failed for key_len\n");
+            }
+            if (key_len <= 0 || key_len > 65536) {
+                LOG_ERROR("Invalid key_len\n");
+                break;
+            }
+            kvtag_list->kvtag->name = PDC_malloc(key_len);
+            if (fread((void *)(kvtag_list->kvtag->name), key_len, 1, file) != 1) {
+                LOG_ERROR("Read failed for kvtag_list->kvtag->name\n");
+            }
+            if (fread(&kvtag_list->kvtag->size, sizeof(uint32_t), 1, file) != 1) {
+                LOG_ERROR("Read failed for kvtag_list->kvtag->size\n");
+            }
+            kv_size = kvtag_list->kvtag->size;
+            if (kv_size == 0 || kv_size > (1u << 24))
+                PGOTO_ERROR(FAIL, "Invalid kvtag size in checkpoint");
+            kvtag_list->kvtag->size = kv_size;
+            if (fread(&kvtag_list->kvtag->type, sizeof(int8_t), 1, file) != 1) {
+                LOG_ERROR("Read failed for kvtag_list->kvtag->type\n");
+            }
+            kvtag_list->kvtag->value = PDC_malloc((size_t)kv_size);
+            if (fread(kvtag_list->kvtag->value, (size_t)kv_size, 1, file) != 1) {
+                LOG_ERROR("Read failed for kvtag_list->kvtag->value\n");
+            }
+            DL_APPEND(cont_entry->kvtag_list_head, kvtag_list);
+        }
+
+        if (cont_entry->n_obj > 0) {
+            cont_entry->obj_ids     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * cont_entry->n_obj);
+            cont_entry->entry_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * cont_entry->n_obj);
+            if (fread(cont_entry->obj_ids, sizeof(uint64_t) * cont_entry->n_obj, 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry obj_ids\n");
+            }
+            if (fread(cont_entry->entry_types, sizeof(uint8_t) * cont_entry->n_obj, 1, file) != 1) {
+                LOG_ERROR("Read failed for cont_entry entry_types\n");
+            }
+            cont_entry->n_allocated = cont_entry->n_obj;
+            total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_obj;
         }
 
 #ifdef ENABLE_MULTITHREAD
@@ -1992,6 +2110,8 @@ PDC_Server_mercury_register()
     PDC_query_partial_register(hg_class_g);
     PDC_query_kvtag_register(hg_class_g);
     PDC_cont_add_del_objs_rpc_register(hg_class_g);
+    PDC_cont_get_entries_rpc_register(hg_class_g);
+    PDC_cont_get_name_rpc_register(hg_class_g);
     PDC_cont_add_tags_rpc_register(hg_class_g);
     PDC_query_read_obj_name_rpc_register(hg_class_g);
     PDC_query_read_obj_name_client_rpc_register(hg_class_g);

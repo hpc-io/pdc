@@ -75,12 +75,16 @@ typedef struct pdc_hash_table_entry_head {
 } pdc_hash_table_entry_head;
 
 typedef struct pdc_cont_hash_table_entry_t {
-    uint64_t          cont_id;
+    uint64_t cont_id;
+    uint32_t hash_value; /* the (possibly parent-scoped) hash this entry is keyed under in
+                             container_hash_table_g -- NOT necessarily PDC_get_hash_by_name(cont_name),
+                             since nested containers are scoped by their parent's id */
     char              cont_name[ADDR_MAX];
     int               n_obj;
     int               n_deleted;
     int               n_allocated;
     uint64_t *        obj_ids;
+    uint8_t *         entry_types; /* parallel to obj_ids, values from pdc_entity_type_t */
     char              tags[TAG_LEN_MAX];
     pdc_kvtag_list_t *kvtag_list_head;
 } pdc_cont_hash_table_entry_t;
@@ -253,18 +257,46 @@ perr_t PDC_Server_find_container_by_name(const char *cont_name, pdc_cont_hash_ta
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
+perr_t PDC_Server_container_del_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types, uint64_t cont_id);
 
 /**
  * Delete the kvtag with the given key
  *
  * \param n_obj [IN]            Number of objects to be added
  * \param obj_ids [IN]          Pointer to object array with nobj objects
+ * \param entry_types [IN]      Pointer to entry type array with nobj entries,
+ *                              values from pdc_entity_type_t
  * \param cont_id [IN]          Container ID
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint64_t cont_id);
+perr_t PDC_Server_container_add_objs(int n_obj, uint64_t *obj_ids, uint8_t *entry_types, uint64_t cont_id);
+
+/**
+ * Retrieve the list of entries (objects and/or nested containers) stored in a container
+ *
+ * \param cont_id [IN]          Container ID
+ * \param n_obj [OUT]           Number of live entries found
+ * \param obj_ids [OUT]         Newly allocated array of *n_obj ids, caller must free()
+ * \param entry_types [OUT]     Newly allocated array of *n_obj entry types, caller must free()
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_container_get_entries(uint64_t cont_id, int *n_obj, uint64_t **obj_ids,
+                                        uint8_t **entry_types);
+
+/**
+ * Look up an entry's name from its id. Checks containers first, then falls
+ * back to object metadata, since a caller resolving an arbitrary entry id
+ * (e.g. from PDC_Server_container_get_entries()) may not know ahead of time
+ * whether it names a container or a plain object.
+ *
+ * \param cont_id [IN]          Container or object ID
+ * \param cont_name [OUT]       Newly allocated copy of the entry's name, caller must free()
+ *
+ * \return Non-negative on success/Negative on failure
+ */
+perr_t PDC_Server_container_get_name(uint64_t cont_id, char **cont_name);
 
 /**
  * Print all existing metadata in the hash table

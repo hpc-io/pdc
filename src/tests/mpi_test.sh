@@ -25,7 +25,13 @@ rm -rf pdc_tmp pdc_data
 # START the server (in the background)
 echo "$mpi_cmd -n $n_servers $extra_cmd ./pdc_server &"
 $mpi_cmd -n $n_servers $extra_cmd ./pdc_server &
-# WAIT a bit, for 1 second
+# WAIT a bit, for 1 second (every sibling test runner script -- run_test.sh,
+# run_checkpoint_restart_test.sh, run_multiple_test.sh, run_multiple_mpi_test.sh
+# -- actually sleeps here; this one only had the comment, not the sleep,
+# which let the client race the server's startup often enough to fail
+# rank 0's HG_Init() and hang the rest of the ranks waiting on it in a
+# later collective call)
+sleep 1
 # RUN the actual test
 echo "$mpi_cmd -n $n_client $extra_cmd $test_exe $test_args"
 $mpi_cmd -n $n_client $extra_cmd $test_exe $test_args

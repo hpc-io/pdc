@@ -92,6 +92,52 @@ quickly navigate to each subsection:
 **4.4.** Containers
 -------------------
 
+A container can hold objects, other containers, or a mix of both, so
+hierarchical structures (e.g. an HDF5-style tree of groups and datasets) can
+be represented directly. :code:`PDCcont_put_entries`,
+:code:`PDCcont_del_entries`, and :code:`PDCcont_get_entries` operate on
+typed entries (see :code:`pdc_entity_type_t` and :code:`pdc_cont_entry_t`
+below) and are the preferred way to manage a container's contents;
+:code:`PDCcont_put_objids`, :code:`PDCcont_del_objids`, and
+:code:`PDCcont_get_objids` remain as an object-only convenience layer on
+top of them.
+
+A nested entry's id, as returned by :code:`PDCcont_get_entries`, may name
+either a container or a plain object, and may never have been opened
+locally by name, so its name and kind are not otherwise known to the
+calling process. :code:`PDCcont_get` resolves an entry's name from that id
+alone regardless of which kind it is (it checks containers first, then
+falls back to object metadata). :code:`PDCcont_put_entries`/
+:code:`PDCcont_del_entries`/:code:`PDCcont_get_entries` likewise accept such
+a raw, never-locally-opened id directly -- there is no need to open an
+entry first just to add, remove, or list its contents.
+
+A nested container cannot always be reached by :code:`PDCcont_open`'s name
+lookup: a leaf name may repeat under different parents (ambiguous -- which
+one is meant is undefined), and even a unique name requires guessing which
+server holds it, since a nested container is keyed by a hash scoped with
+its parent's id rather than by its bare name. :code:`PDCcont_open_id`
+sidesteps both problems by opening a container directly from its meta id
+(e.g. one returned by :code:`PDCcont_get_entries`), giving a normal local
+handle usable with any other container function.
+
+Every container function above that talks to the server also has an
+:code:`_coll` collective counterpart (:code:`PDCcont_get_coll`,
+:code:`PDCcont_put_entries_coll`, :code:`PDCcont_del_entries_coll`,
+:code:`PDCcont_get_entries_coll`, :code:`PDCcont_create_at_coll`): all ranks
+call these together over a shared :code:`comm`, but only rank 0 talks to the
+server, with the result broadcast to every rank of :code:`comm` -- the same
+pattern as :code:`PDCcont_create_coll` and :code:`PDCcont_open_coll`.
+:code:`PDCcont_create_at_coll` is additionally idempotent by name: calling
+it again with a child name that already exists directly under the same
+parent returns the existing child instead of creating a duplicate.
+
+.. doxygenenum:: pdc_entity_type_t
+   :project: PDC
+
+.. doxygenstruct:: pdc_cont_entry_t
+   :project: PDC
+
 .. doxygenfunction:: PDCcont_create
    :project: PDC
 
@@ -104,10 +150,52 @@ quickly navigate to each subsection:
 .. doxygenfunction:: PDCcont_open_col
    :project: PDC
 
+.. doxygenfunction:: PDCcont_open_id
+   :project: PDC
+
 .. doxygenfunction:: PDCcont_close
    :project: PDC
 
 .. doxygenfunction:: PDCcont_persist
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_create_at
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_create_at_coll
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_coll
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_put_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_put_entries_coll
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_del_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_del_entries_coll
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_entries
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_entries_coll
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_put_objids
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_del_objids
+   :project: PDC
+
+.. doxygenfunction:: PDCcont_get_objids
    :project: PDC
 
 .. _client_api_objects:

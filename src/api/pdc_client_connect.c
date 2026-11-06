@@ -174,6 +174,8 @@ static hg_id_t buf_map_register_id_g;
 static hg_id_t buf_unmap_register_id_g;
 
 static hg_id_t cont_add_del_objs_rpc_register_id_g;
+static hg_id_t cont_get_entries_rpc_register_id_g;
+static hg_id_t cont_get_name_rpc_register_id_g;
 static hg_id_t cont_add_tags_rpc_register_id_g;
 static hg_id_t query_read_obj_name_register_id_g;
 static hg_id_t query_read_obj_name_client_register_id_g;
@@ -1362,6 +1364,8 @@ drc_access_again:
     query_kvtag_register_id_g   = PDC_query_kvtag_register(*hg_class);
 
     cont_add_del_objs_rpc_register_id_g      = PDC_cont_add_del_objs_rpc_register(*hg_class);
+    cont_get_entries_rpc_register_id_g       = PDC_cont_get_entries_rpc_register(*hg_class);
+    cont_get_name_rpc_register_id_g          = PDC_cont_get_name_rpc_register(*hg_class);
     cont_add_tags_rpc_register_id_g          = PDC_cont_add_tags_rpc_register(*hg_class);
     query_read_obj_name_register_id_g        = PDC_query_read_obj_name_rpc_register(*hg_class);
     query_read_obj_name_client_register_id_g = PDC_query_read_obj_name_client_rpc_register(*hg_class);
@@ -2477,7 +2481,7 @@ done:
 
 // Send a name to server and receive an container (object) id
 perr_t
-PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIBUTE(unused), pdcid_t *cont_id)
+PDC_Client_create_cont_id_with_hash(const char *cont_name, uint32_t hash_name_value, pdcid_t *cont_id)
 {
     FUNC_ENTER(NULL);
 
@@ -2485,7 +2489,6 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
     hg_return_t                    hg_ret;
     uint32_t                       server_id = 0;
     gen_cont_id_in_t               in;
-    uint32_t                       hash_name_value;
     struct _pdc_client_lookup_args lookup_args;
     hg_handle_t                    rpc_handle;
 
@@ -2500,9 +2503,8 @@ PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIB
     // Fill input structure
     memset(&in, 0, sizeof(in));
 
-    hash_name_value = PDC_get_hash_by_name(cont_name);
-    in.hash_value   = hash_name_value;
-    in.cont_name    = cont_name;
+    in.hash_value = hash_name_value;
+    in.cont_name  = cont_name;
 
     // Calculate server id
     server_id = hash_name_value;
@@ -2544,6 +2546,39 @@ done:
     HG_Destroy(rpc_handle);
 
     FUNC_LEAVE(ret_value);
+}
+
+perr_t
+PDC_Client_create_cont_id(const char *cont_name, pdcid_t cont_create_prop ATTRIBUTE(unused), pdcid_t *cont_id)
+{
+    FUNC_ENTER(NULL);
+    FUNC_LEAVE(PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(cont_name), cont_id));
+}
+
+// Scoped variant used by nested-container creation (see
+// PDC_Client_create_cont_id_at()): the dedup/routing hash is computed from
+// scope_id (the parent container's meta id) combined with cont_name, not
+// cont_name alone, so two different nested containers that happen to share
+// a leaf name under different parents (e.g. a CGNS-style tree where
+// "GridCoordinates" or "Zone" repeats under every zone) don't alias onto
+// the exact same global container the way two plain PDC_Client_create_cont_id()
+// calls with an identical bare name do (PDC_Server_create_container()
+// dedupes purely by hash, with no notion of "which parent"). cont_name
+// itself is still sent/stored unqualified -- only the hash/routing key
+// changes.
+static perr_t
+PDC_Client_create_cont_id_scoped(const char *cont_name, uint64_t scope_id, pdcid_t *cont_id)
+{
+    FUNC_ENTER(NULL);
+
+    char scoped_name[ADDR_MAX];
+
+    if (cont_name == NULL)
+        FUNC_LEAVE(FAIL);
+
+    snprintf(scoped_name, sizeof(scoped_name), "%" PRIu64 "/%s", scope_id, cont_name);
+
+    FUNC_LEAVE(PDC_Client_create_cont_id_with_hash(cont_name, PDC_get_hash_by_name(scoped_name), cont_id));
 }
 
 // Only one rand sends the request, others wait for MPI broadcast
@@ -4731,21 +4766,31 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
+// Dedicated to this RPC only (unlike the generic update_region_storage_meta_bulk_args_t,
+// this carries the server's ret code back out to the synchronous caller below).
+struct _pdc_cont_add_del_objs_cb_args {
+    hg_bulk_t   bulk_handle;
+    hg_handle_t rpc_handle;
+    int         ret;
+};
+
 static hg_return_t
 PDC_Client_add_del_objects_to_container_cb(const struct hg_cb_info *callback_info)
 {
     FUNC_ENTER(NULL);
 
-    hg_return_t                             ret_value = HG_SUCCESS;
-    hg_handle_t                             handle    = callback_info->info.forward.handle;
-    pdc_int_ret_t                           bulk_rpc_ret;
-    update_region_storage_meta_bulk_args_t *cb_args;
+    hg_return_t                            ret_value = HG_SUCCESS;
+    hg_handle_t                            handle    = callback_info->info.forward.handle;
+    cont_add_del_objs_rpc_out_t            bulk_rpc_ret;
+    struct _pdc_cont_add_del_objs_cb_args *cb_args;
 
-    cb_args = (update_region_storage_meta_bulk_args_t *)callback_info->arg;
+    cb_args = (struct _pdc_cont_add_del_objs_cb_args *)callback_info->arg;
     // Sent the bulk handle with rpc and get a response
     ret_value = HG_Get_output(handle, &bulk_rpc_ret);
     if (ret_value != HG_SUCCESS)
         PGOTO_ERROR(ret_value, "Could not get output");
+
+    cb_args->ret = (int)bulk_rpc_ret.ret;
 
     ret_value = HG_Free_output(handle, &bulk_rpc_ret);
     if (ret_value != HG_SUCCESS)
@@ -4764,21 +4809,23 @@ done:
     FUNC_LEAVE(ret_value);
 }
 
-// Add/delete a number of objects to one container
+// Add/delete a number of entries (objects or nested containers) to one container
 perr_t
-PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t cont_meta_id, int op)
+PDC_Client_add_del_objects_to_container(int nobj, pdc_cont_wire_entry_t *entries, uint64_t cont_meta_id,
+                                        int op)
 {
     FUNC_ENTER(NULL);
 
-    perr_t                     ret_value = SUCCEED;
-    hg_return_t                hg_ret    = HG_SUCCESS;
-    hg_handle_t                rpc_handle;
-    hg_bulk_t                  bulk_handle;
-    uint32_t                   server_id;
-    hg_size_t                  buf_sizes[3];
-    cont_add_del_objs_rpc_in_t bulk_rpc_in;
-    // Reuse the existing args structure
-    update_region_storage_meta_bulk_args_t cb_args;
+    perr_t                                ret_value = SUCCEED;
+    hg_return_t                           hg_ret    = HG_SUCCESS;
+    hg_handle_t                           rpc_handle;
+    hg_bulk_t                             bulk_handle;
+    uint32_t                              server_id;
+    hg_size_t                             buf_sizes[3];
+    cont_add_del_objs_rpc_in_t            bulk_rpc_in;
+    struct _pdc_cont_add_del_objs_cb_args cb_args;
+
+    cb_args.ret = 0;
 
     server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
 
@@ -4794,10 +4841,10 @@ PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t co
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create handle");
 
-    buf_sizes[0] = sizeof(uint64_t) * nobj;
+    buf_sizes[0] = sizeof(pdc_cont_wire_entry_t) * nobj;
 
     /* Register memory */
-    hg_ret = HG_Bulk_create(send_class_g, 1, (void **)&obj_ids, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
+    hg_ret = HG_Bulk_create(send_class_g, 1, (void **)&entries, buf_sizes, HG_BULK_READ_ONLY, &bulk_handle);
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create bulk data handle");
 
@@ -4819,7 +4866,67 @@ PDC_Client_add_del_objects_to_container(int nobj, uint64_t *obj_ids, uint64_t co
     hg_atomic_set32(&atomic_work_todo_g, 1);
     PDC_Client_check_response(&send_context_g);
 
+    if (cb_args.ret != 1)
+        PGOTO_ERROR(FAIL, "Server rejected container add/del entries operation");
+
 done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Resolve each id's global meta_id according to its declared entry type
+// (object vs. nested container) and add/delete them from a container. Each
+// id may either be a locally-registered handle (resolved via PDC_find_id)
+// or an already-resolved meta id the caller discovered via
+// PDCcont_get_entries() and never locally opened -- the latter falls
+// straight through unchanged, since the server only ever deals in meta ids.
+//
+// struct _pdc_obj_info and struct _pdc_cont_info store their public "name"
+// and "meta_id" fields in different order, so resolving a container's local
+// id through the object struct (or vice versa) silently reads the wrong
+// 64-bit field instead of crashing. Branching on the caller-supplied type is
+// what makes mixing object and container ids in the same container safe.
+perr_t
+PDC_Client_add_del_entries_to_container(int n, pdcid_t *local_ids, pdc_entity_type_t *entry_types,
+                                        pdcid_t local_cont_id, int op)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                 ret_value = SUCCEED;
+    int                    i;
+    pdc_cont_wire_entry_t *entries;
+    uint64_t               cont_meta_id;
+    struct _pdc_id_info *  id_info = NULL;
+
+    entries = (pdc_cont_wire_entry_t *)PDC_malloc(sizeof(pdc_cont_wire_entry_t) * n);
+    for (i = 0; i < n; i++) {
+        id_info = PDC_find_id(local_ids[i]);
+        if (id_info != NULL) {
+            if (entry_types[i] == PDC_ENTITY_CONT)
+                entries[i].id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+            else
+                entries[i].id = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
+        }
+        else {
+            // Not a locally-registered id -- treat it as an already-resolved
+            // meta id directly, e.g. one discovered via
+            // PDCcont_get_entries() that was never opened locally. Without
+            // this fallback there is no way to delete (or re-add) such an
+            // entry at all, and silently skipping it here used to leave
+            // entries[i] uninitialized while the call still reported
+            // success.
+            entries[i].id = (uint64_t)local_ids[i];
+        }
+        entries[i].type = (uint64_t)entry_types[i];
+    }
+
+    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
+        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %" PRIu64, local_cont_id);
+    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+
+    ret_value = PDC_Client_add_del_objects_to_container(n, entries, cont_meta_id, op);
+
+done:
+    entries = (pdc_cont_wire_entry_t *)PDC_free(entries);
     FUNC_LEAVE(ret_value);
 }
 
@@ -4829,28 +4936,18 @@ PDC_Client_add_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
 {
     FUNC_ENTER(NULL);
 
-    perr_t               ret_value = SUCCEED;
-    int                  i;
-    uint64_t *           obj_ids;
-    uint64_t             cont_meta_id;
-    struct _pdc_id_info *id_info = NULL;
+    perr_t             ret_value = SUCCEED;
+    int                i;
+    pdc_entity_type_t *entry_types;
 
-    obj_ids = (uint64_t *)PDC_malloc(sizeof(uint64_t) * nobj);
-    for (i = 0; i < nobj; i++) {
-        if ((id_info = PDC_find_id(local_obj_ids[i])) == NULL) {
-            LOG_ERROR("Failed to find PDC ID: %d\n", local_obj_ids[i]);
-            continue;
-        }
-        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
-    }
+    entry_types = (pdc_entity_type_t *)PDC_malloc(sizeof(pdc_entity_type_t) * nobj);
+    for (i = 0; i < nobj; i++)
+        entry_types[i] = PDC_ENTITY_OBJ;
 
-    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
-        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_cont_id);
-    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+    ret_value =
+        PDC_Client_add_del_entries_to_container(nobj, local_obj_ids, entry_types, local_cont_id, ADD_OBJ);
+    entry_types = (pdc_entity_type_t *)PDC_free(entry_types);
 
-    ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, ADD_OBJ);
-
-done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -4860,28 +4957,216 @@ PDC_Client_del_objects_to_container(int nobj, pdcid_t *local_obj_ids, pdcid_t lo
 {
     FUNC_ENTER(NULL);
 
-    perr_t               ret_value = SUCCEED;
-    int                  i;
-    uint64_t *           obj_ids;
-    uint64_t             cont_meta_id;
-    struct _pdc_id_info *id_info = NULL;
+    perr_t             ret_value = SUCCEED;
+    int                i;
+    pdc_entity_type_t *entry_types;
 
-    obj_ids = (uint64_t *)PDC_malloc(sizeof(uint64_t) * nobj);
-    for (i = 0; i < nobj; i++) {
-        if ((id_info = PDC_find_id(local_obj_ids[i])) == NULL) {
-            LOG_ERROR("Failed to find PDC ID: %d\n", local_obj_ids[i]);
-            continue;
+    entry_types = (pdc_entity_type_t *)PDC_malloc(sizeof(pdc_entity_type_t) * nobj);
+    for (i = 0; i < nobj; i++)
+        entry_types[i] = PDC_ENTITY_OBJ;
+
+    ret_value =
+        PDC_Client_add_del_entries_to_container(nobj, local_obj_ids, entry_types, local_cont_id, DEL_OBJ);
+    entry_types = (pdc_entity_type_t *)PDC_free(entry_types);
+
+    FUNC_LEAVE(ret_value);
+}
+
+struct _pdc_cont_get_entries_args {
+    perr_t    ret;
+    int       cnt;
+    uint64_t *ids;
+    uint8_t * types;
+};
+
+static hg_return_t
+cont_get_entries_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                        ret_value;
+    struct _pdc_cont_get_entries_args *args;
+    hg_handle_t                        handle;
+    cont_get_entries_rpc_out_t         output;
+
+    args   = (struct _pdc_cont_get_entries_args *)callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS)
+        PGOTO_ERROR(ret_value, "Error with HG_Get_output");
+
+    if (output.ret <= 0) {
+        args->ret = FAIL;
+    }
+    else {
+        args->ret = SUCCEED;
+        args->cnt = output.cnt;
+        if (output.cnt > 0) {
+            args->ids   = (uint64_t *)PDC_malloc(sizeof(uint64_t) * output.cnt);
+            args->types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * output.cnt);
+            memcpy(args->ids, output.ids, sizeof(uint64_t) * output.cnt);
+            memcpy(args->types, output.types, sizeof(uint8_t) * output.cnt);
         }
-        obj_ids[i] = ((struct _pdc_obj_info *)(id_info->obj_ptr))->obj_info_pub->meta_id;
     }
 
-    if ((id_info = PDC_find_id(local_cont_id)) == NULL)
-        PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", local_cont_id);
-    cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+done:
+    hg_atomic_decr32(&atomic_work_todo_g);
+    HG_Free_output(handle, &output);
 
-    ret_value = PDC_Client_add_del_objects_to_container(nobj, obj_ids, cont_meta_id, DEL_OBJ);
+    FUNC_LEAVE(ret_value);
+}
+
+// Retrieve the entries (objects and/or nested containers) stored in a container
+perr_t
+PDC_Client_get_container_entries(pdcid_t local_cont_id, int *n, uint64_t **entry_ids,
+                                 pdc_entity_type_t **entry_types)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                            ret_value  = SUCCEED;
+    hg_return_t                       hg_ret     = HG_SUCCESS;
+    hg_handle_t                       rpc_handle = HG_HANDLE_NULL;
+    uint32_t                          server_id;
+    uint64_t                          cont_meta_id;
+    int                               i;
+    struct _pdc_id_info *             id_info = NULL;
+    cont_get_entries_rpc_in_t         in;
+    struct _pdc_cont_get_entries_args args;
+
+    *n           = 0;
+    *entry_ids   = NULL;
+    *entry_types = NULL;
+    memset(&args, 0, sizeof(args));
+
+    // local_cont_id is normally a locally-registered handle (from
+    // PDCcont_create()/PDCcont_open()/...), but it may also be a raw meta id
+    // discovered via PDCcont_get_entries() and never opened locally -- fall
+    // back to treating it as the meta id directly in that case, the same
+    // pattern used by PDCcont_get()/PDC_Client_add_del_entries_to_container().
+    if ((id_info = PDC_find_id(local_cont_id)) != NULL)
+        cont_meta_id = ((struct _pdc_cont_info *)(id_info->obj_ptr))->cont_info_pub->meta_id;
+    else
+        cont_meta_id = (uint64_t)local_cont_id;
+
+    server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, cont_get_entries_rpc_register_id_g,
+                       &rpc_handle);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not create handle");
+
+    in.cont_id = cont_meta_id;
+
+    hg_ret = HG_Forward(rpc_handle, cont_get_entries_rpc_cb, &args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not forward call");
+
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    PDC_Client_check_response(&send_context_g);
+
+    if (args.ret != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Server_container_get_entries");
+
+    *n = args.cnt;
+    if (args.cnt > 0) {
+        *entry_ids   = args.ids;
+        *entry_types = (pdc_entity_type_t *)PDC_malloc(sizeof(pdc_entity_type_t) * args.cnt);
+        for (i = 0; i < args.cnt; i++)
+            (*entry_types)[i] = (pdc_entity_type_t)args.types[i];
+        args.types = (uint8_t *)PDC_free(args.types);
+    }
 
 done:
+    HG_Destroy(rpc_handle);
+
+    FUNC_LEAVE(ret_value);
+}
+
+struct _pdc_cont_get_name_args {
+    perr_t ret;
+    char * cont_name;
+};
+
+static hg_return_t
+cont_get_name_rpc_cb(const struct hg_cb_info *callback_info)
+{
+    FUNC_ENTER(NULL);
+
+    hg_return_t                     ret_value;
+    struct _pdc_cont_get_name_args *args;
+    hg_handle_t                     handle;
+    cont_get_name_rpc_out_t         output;
+
+    args   = (struct _pdc_cont_get_name_args *)callback_info->arg;
+    handle = callback_info->info.forward.handle;
+
+    ret_value = HG_Get_output(handle, &output);
+    if (ret_value != HG_SUCCESS)
+        PGOTO_ERROR(ret_value, "Error with HG_Get_output");
+
+    if (output.ret <= 0 || output.cont_name == NULL)
+        args->ret = FAIL;
+    else {
+        args->ret       = SUCCEED;
+        args->cont_name = strdup(output.cont_name);
+    }
+
+done:
+    hg_atomic_decr32(&atomic_work_todo_g);
+    HG_Free_output(handle, &output);
+
+    FUNC_LEAVE(ret_value);
+}
+
+// Look up a container's name from its meta id
+perr_t
+PDC_Client_get_container_name(uint64_t cont_meta_id, char **cont_name)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t                         ret_value  = SUCCEED;
+    hg_return_t                    hg_ret     = HG_SUCCESS;
+    hg_handle_t                    rpc_handle = HG_HANDLE_NULL;
+    uint32_t                       server_id;
+    cont_get_name_rpc_in_t         in;
+    struct _pdc_cont_get_name_args args;
+
+    *cont_name = NULL;
+    memset(&args, 0, sizeof(args));
+
+    server_id = PDC_get_server_by_obj_id(cont_meta_id, pdc_server_num_g);
+    debug_server_id_count[server_id]++;
+
+    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+
+    hg_ret = HG_Create(send_context_g, pdc_server_info_g[server_id].addr, cont_get_name_rpc_register_id_g,
+                       &rpc_handle);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not create handle");
+
+    in.cont_id = cont_meta_id;
+
+    hg_ret = HG_Forward(rpc_handle, cont_get_name_rpc_cb, &args, &in);
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not forward call");
+
+    hg_atomic_set32(&atomic_work_todo_g, 1);
+    PDC_Client_check_response(&send_context_g);
+
+    if (args.ret != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Server_container_get_name");
+
+    *cont_name = args.cont_name;
+
+done:
+    HG_Destroy(rpc_handle);
+
     FUNC_LEAVE(ret_value);
 }
 
@@ -4974,41 +5259,63 @@ PDC_Client_query_container_name(const char *cont_name, uint64_t *cont_meta_id)
 
     perr_t                           ret_value = SUCCEED;
     hg_return_t                      hg_ret    = 0;
-    uint32_t                         hash_name_value, server_id;
+    uint32_t                         hash_name_value, server_id, i, try_server_id;
     container_query_in_t             in;
     struct _pdc_container_query_args lookup_args;
-    hg_handle_t                      container_query_handle;
+    hg_handle_t                      container_query_handle = HG_HANDLE_NULL;
 
-    // Compute server id
+    *cont_meta_id = 0;
+
+    // A top-level container is keyed by the hash of its own (unscoped) name,
+    // so the server that owns it can be computed directly. A nested
+    // container is keyed by a hash scoped with its parent's id instead (see
+    // PDC_Client_create_cont_id_scoped), which this caller has no way to
+    // reconstruct from the bare name alone, so the directly-computed server
+    // may not be the one that actually holds it. Try that server first
+    // (the common, fast case), then fall back to asking every other server
+    // in turn -- PDC_Server_find_container_by_name()'s own name-scan
+    // fallback only searches whichever single server receives this RPC.
     hash_name_value = PDC_get_hash_by_name(cont_name);
     server_id       = hash_name_value % pdc_server_num_g;
 
-    // Debug statistics for counting number of messages sent to each server.
-    debug_server_id_count[server_id]++;
-
-    if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
-
-    HG_Create(send_context_g, pdc_server_info_g[server_id].addr, container_query_register_id_g,
-              &container_query_handle);
-
-    // Fill input structure
-    in.cont_name = cont_name;
-
+    in.cont_name  = cont_name;
     in.hash_value = hash_name_value;
 
-    hg_ret = HG_Forward(container_query_handle, container_query_rpc_cb, &lookup_args, &in);
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "Could not start HG_Forward()");
+    for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
+        try_server_id = (server_id + i) % pdc_server_num_g;
 
-    // Wait for response from server
-    hg_atomic_set32(&atomic_work_todo_g, 1);
-    PDC_Client_check_response(&send_context_g);
+        // Debug statistics for counting number of messages sent to each server.
+        debug_server_id_count[try_server_id]++;
 
-    *cont_meta_id = lookup_args.cont_id;
+        if (PDC_Client_try_lookup_server(try_server_id, 0) != SUCCEED)
+            PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+
+        hg_ret = HG_Create(send_context_g, pdc_server_info_g[try_server_id].addr,
+                           container_query_register_id_g, &container_query_handle);
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "Could not create handle");
+
+        lookup_args.cont_id = 0;
+        hg_ret              = HG_Forward(container_query_handle, container_query_rpc_cb, &lookup_args, &in);
+        if (hg_ret != HG_SUCCESS)
+            PGOTO_ERROR(FAIL, "Could not start HG_Forward()");
+
+        // Wait for response from server
+        hg_atomic_set32(&atomic_work_todo_g, 1);
+        PDC_Client_check_response(&send_context_g);
+
+        HG_Destroy(container_query_handle);
+        container_query_handle = HG_HANDLE_NULL;
+
+        if (lookup_args.cont_id != 0) {
+            *cont_meta_id = lookup_args.cont_id;
+            break;
+        }
+    }
 
 done:
-    HG_Destroy(container_query_handle);
+    if (container_query_handle != HG_HANDLE_NULL)
+        HG_Destroy(container_query_handle);
 
     FUNC_LEAVE(ret_value);
 }
@@ -6824,15 +7131,85 @@ PDCcont_get_id(const char *cont_name, pdcid_t pdc_id)
     FUNC_LEAVE(cont_id);
 }
 
-// Get container name
+// Get container name from its meta id
 perr_t
-PDCcont_get(pdcid_t cont_id ATTRIBUTE(unused), char **cont_name ATTRIBUTE(unused))
+PDCcont_get(pdcid_t cont_id, char **cont_name)
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
-    LOG_ERROR("PDCcont_get not implemented\n");
 
+    ret_value = PDC_Client_get_container_name((uint64_t)cont_id, cont_name);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_get_container_name");
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Open a container directly from its meta id, e.g. one discovered via
+// PDCcont_get_entries() and never opened locally by name -- PDCcont_open()
+// can only look a container up by name, which for a nested container
+// depends on reaching the server that actually holds it and on the name
+// being unambiguous (see PDC_Client_query_container_name).
+pdcid_t
+PDCcont_open_id(pdcid_t cont_meta_id, pdcid_t pdc_id)
+{
+    FUNC_ENTER(NULL);
+
+    pdcid_t ret_value = 0;
+    char *  cont_name = NULL;
+
+    if (PDCcont_get(cont_meta_id, &cont_name) != SUCCEED || cont_name == NULL)
+        PGOTO_ERROR(0, "Could not resolve container meta id %" PRIu64, (uint64_t)cont_meta_id);
+
+    ret_value = PDC_cont_create_local(pdc_id, cont_name, (uint64_t)cont_meta_id);
+
+done:
+    if (cont_name != NULL)
+        free(cont_name);
+    FUNC_LEAVE(ret_value);
+}
+
+// Collective version of PDCcont_get(): only rank 0 of comm queries the
+// server, result is broadcast to every rank of comm.
+perr_t
+PDCcont_get_coll(pdcid_t cont_id, char **cont_name,
+#ifdef ENABLE_MPI
+                 MPI_Comm comm)
+#else
+                 int comm ATTRIBUTE(unused))
+#endif
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+
+    *cont_name = NULL;
+
+#ifdef ENABLE_MPI
+    int name_len = 0;
+    int comm_rank;
+
+    MPI_Comm_rank(comm, &comm_rank);
+
+    if (comm_rank == 0) {
+        ret_value = PDCcont_get(cont_id, cont_name);
+        if (ret_value == SUCCEED && *cont_name != NULL)
+            name_len = (int)strlen(*cont_name) + 1;
+    }
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
+    MPI_Bcast(&name_len, 1, MPI_INT, 0, comm);
+    if (ret_value == SUCCEED && name_len > 0) {
+        if (comm_rank != 0)
+            *cont_name = (char *)PDC_malloc(name_len);
+        MPI_Bcast(*cont_name, name_len, MPI_CHAR, 0, comm);
+    }
+#else
+    PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
+#endif
+
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -6880,13 +7257,333 @@ done:
 }
 
 perr_t
-PDCcont_get_objids(pdcid_t cont_id ATTRIBUTE(unused), int *nobj ATTRIBUTE(unused),
-                   pdcid_t **obj_ids ATTRIBUTE(unused))
+PDCcont_get_objids(pdcid_t cont_id, int *nobj, pdcid_t **obj_ids)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t            ret_value = SUCCEED;
+    int               i, n, n_obj_only;
+    pdc_cont_entry_t *entries = NULL;
+
+    ret_value = PDCcont_get_entries(cont_id, &n, &entries);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDCcont_get_entries");
+
+    n_obj_only = 0;
+    for (i = 0; i < n; i++)
+        if (entries[i].type == PDC_ENTITY_OBJ)
+            n_obj_only++;
+
+    *nobj    = n_obj_only;
+    *obj_ids = NULL;
+    if (n_obj_only > 0) {
+        *obj_ids   = (pdcid_t *)PDC_malloc(sizeof(pdcid_t) * n_obj_only);
+        n_obj_only = 0;
+        for (i = 0; i < n; i++) {
+            if (entries[i].type == PDC_ENTITY_OBJ)
+                (*obj_ids)[n_obj_only++] = (pdcid_t)entries[i].meta_id;
+        }
+    }
+
+done:
+    entries = (pdc_cont_entry_t *)PDC_free(entries);
+    FUNC_LEAVE(ret_value);
+}
+
+// Add a number of entries (objects or nested containers) to a container
+perr_t
+PDCcont_put_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+    ret_value        = PDC_Client_add_del_entries_to_container(n, entry_ids, entry_types, cont_id, ADD_OBJ);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_add_del_entries_to_container");
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Collective version of PDCcont_put_entries(): only rank 0 of comm sends
+// the request, the resulting success/failure is broadcast to every rank of
+// comm.
+perr_t
+PDCcont_put_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types,
+#ifdef ENABLE_MPI
+                         MPI_Comm comm)
+#else
+                         int comm ATTRIBUTE(unused))
+#endif
 {
     FUNC_ENTER(NULL);
 
     perr_t ret_value = SUCCEED;
 
+#ifdef ENABLE_MPI
+    int comm_rank;
+
+    MPI_Comm_rank(comm, &comm_rank);
+    if (comm_rank == 0)
+        ret_value = PDCcont_put_entries(cont_id, n, entry_ids, entry_types);
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
+#else
+    PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
+#endif
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Remove a number of entries (objects or nested containers) from a container
+perr_t
+PDCcont_del_entries(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+    ret_value        = PDC_Client_add_del_entries_to_container(n, entry_ids, entry_types, cont_id, DEL_OBJ);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_add_del_entries_to_container");
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Collective version of PDCcont_del_entries(): only rank 0 of comm sends
+// the request, the resulting success/failure is broadcast to every rank of
+// comm.
+perr_t
+PDCcont_del_entries_coll(pdcid_t cont_id, int n, pdcid_t *entry_ids, pdc_entity_type_t *entry_types,
+#ifdef ENABLE_MPI
+                         MPI_Comm comm)
+#else
+                         int comm ATTRIBUTE(unused))
+#endif
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+
+#ifdef ENABLE_MPI
+    int comm_rank;
+
+    MPI_Comm_rank(comm, &comm_rank);
+    if (comm_rank == 0)
+        ret_value = PDCcont_del_entries(cont_id, n, entry_ids, entry_types);
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
+#else
+    PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
+#endif
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Retrieve the entries (objects and/or nested containers) stored in a container
+perr_t
+PDCcont_get_entries(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries)
+{
+    FUNC_ENTER(NULL);
+
+    perr_t             ret_value = SUCCEED;
+    int                i;
+    uint64_t *         entry_ids   = NULL;
+    pdc_entity_type_t *entry_types = NULL;
+
+    *n       = 0;
+    *entries = NULL;
+
+    ret_value = PDC_Client_get_container_entries(cont_id, n, &entry_ids, &entry_types);
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error with PDC_Client_get_container_entries");
+
+    if (*n > 0) {
+        *entries = (pdc_cont_entry_t *)PDC_malloc(sizeof(pdc_cont_entry_t) * (*n));
+        for (i = 0; i < *n; i++) {
+            (*entries)[i].meta_id = entry_ids[i];
+            (*entries)[i].type    = entry_types[i];
+        }
+    }
+
+done:
+    entry_ids   = (uint64_t *)PDC_free(entry_ids);
+    entry_types = (pdc_entity_type_t *)PDC_free(entry_types);
+    FUNC_LEAVE(ret_value);
+}
+
+// Collective version of PDCcont_get_entries(): only rank 0 of comm queries
+// the server, the count and entry array are broadcast to every rank of
+// comm.
+perr_t
+PDCcont_get_entries_coll(pdcid_t cont_id, int *n, pdc_cont_entry_t **entries,
+#ifdef ENABLE_MPI
+                         MPI_Comm comm)
+#else
+                         int comm ATTRIBUTE(unused))
+#endif
+{
+    FUNC_ENTER(NULL);
+
+    perr_t ret_value = SUCCEED;
+
+    *n       = 0;
+    *entries = NULL;
+
+#ifdef ENABLE_MPI
+    int comm_rank;
+
+    MPI_Comm_rank(comm, &comm_rank);
+    if (comm_rank == 0)
+        ret_value = PDCcont_get_entries(cont_id, n, entries);
+    MPI_Bcast(&ret_value, 1, MPI_INT, 0, comm);
+    MPI_Bcast(n, 1, MPI_INT, 0, comm);
+    if (ret_value == SUCCEED && *n > 0) {
+        if (comm_rank != 0)
+            *entries = (pdc_cont_entry_t *)PDC_malloc(sizeof(pdc_cont_entry_t) * (*n));
+        MPI_Bcast(*entries, (int)(sizeof(pdc_cont_entry_t) * (*n)), MPI_BYTE, 0, comm);
+    }
+#else
+    PGOTO_ERROR(FAIL, "Calling MPI collective operation without enabling MPI");
+#endif
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Create a container and nest it under an existing parent container in one
+// call. Uses PDC_Client_create_cont_id_scoped() (scoped by parent_cont_id's
+// meta id), not plain PDCcont_create(): the latter dedupes purely by
+// cont_name with no notion of "which parent", so two different nested
+// containers sharing a leaf name under different parents (e.g. a
+// CGNS-style tree where "Zone" repeats under every parent) would otherwise
+// alias onto the exact same global container.
+pdcid_t
+PDCcont_create_at(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop)
+{
+    FUNC_ENTER(NULL);
+
+    pdcid_t                ret_value      = 0;
+    pdcid_t                cont_id        = 0;
+    pdc_entity_type_t      type           = PDC_ENTITY_CONT;
+    struct _pdc_cont_prop *cont_prop      = NULL;
+    struct _pdc_cont_info *parent_info    = NULL;
+    struct _pdc_id_info *  id_info        = NULL;
+    pdcid_t                pdc_id         = 0;
+    pdcid_t                parent_meta_id = 0;
+    pdcid_t                new_meta_id    = 0;
+
+    if ((id_info = PDC_find_id(cont_create_prop)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, cont_create_prop);
+    cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
+    pdc_id    = cont_prop->pdc->local_id;
+
+    if ((id_info = PDC_find_id(parent_cont_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, parent_cont_id);
+    parent_info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
+    parent_meta_id = parent_info->cont_info_pub->meta_id;
+
+    if (PDC_Client_create_cont_id_scoped(cont_name, parent_meta_id, &new_meta_id) != SUCCEED ||
+        new_meta_id == 0)
+        PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
+
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, new_meta_id);
+    if (cont_id == 0)
+        PGOTO_ERROR(0, "Error creating local handle for container [%s]", cont_name);
+
+    if (PDCcont_put_entries(parent_cont_id, 1, &cont_id, &type) != SUCCEED) {
+        PDCcont_close(cont_id);
+        PGOTO_ERROR(0, "Error nesting container [%s] under parent %" PRIu64, cont_name, parent_cont_id);
+    }
+
+    ret_value = cont_id;
+
+done:
+    FUNC_LEAVE(ret_value);
+}
+
+// Collective version of PDCcont_create_at(): all ranks must call this
+// together over comm. Rank 0 of comm does the real create -- scoped by
+// parent_cont_id's meta id via PDC_Client_create_cont_id_scoped(), same as
+// PDCcont_create_at(), so two nested containers sharing a leaf name under
+// different parents don't alias onto the same global container -- then
+// that meta id is broadcast over comm and every other rank registers its
+// own local handle for it via PDC_cont_create_local(), the same primitive
+// PDCcont_open_coll() uses. This -- not a client-side name search -- is
+// what makes repeated calls with the same name under the same parent
+// idempotent: the server already refuses to mint a second meta id for an
+// existing (parent, name) pair, and PDC_Server_container_add_objs() already
+// skips an (id, type) pair that's already a live entry, so re-linking the
+// same child under the same parent is a no-op rather than a duplicate.
+//
+// Deliberately does NOT go through PDCcont_create_coll(): that function
+// (upstream, not ours) still gates on the global pdc_client_mpi_rank_g and
+// broadcasts over the global PDC_CLIENT_COMM_WORLD_g regardless of the comm
+// argument it's handed, which hangs when comm excludes global rank 0.
+pdcid_t
+PDCcont_create_at_coll(pdcid_t parent_cont_id, const char *cont_name, pdcid_t cont_create_prop,
+#ifdef ENABLE_MPI
+                       MPI_Comm comm)
+#else
+                       int comm ATTRIBUTE(unused))
+#endif
+{
+    FUNC_ENTER(NULL);
+
+    pdcid_t                ret_value      = 0;
+    pdcid_t                cont_id        = 0;
+    pdc_entity_type_t      type           = PDC_ENTITY_CONT;
+    struct _pdc_cont_prop *cont_prop      = NULL;
+    struct _pdc_cont_info *parent_info    = NULL;
+    struct _pdc_id_info *  id_info        = NULL;
+    pdcid_t                pdc_id         = 0;
+    pdcid_t                parent_meta_id = 0;
+
+    if ((id_info = PDC_find_id(cont_create_prop)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, cont_create_prop);
+    cont_prop = (struct _pdc_cont_prop *)(id_info->obj_ptr);
+    pdc_id    = cont_prop->pdc->local_id;
+
+    if ((id_info = PDC_find_id(parent_cont_id)) == NULL)
+        PGOTO_ERROR(0, "Failed to find PDC ID: %" PRIu64, parent_cont_id);
+    parent_info    = (struct _pdc_cont_info *)(id_info->obj_ptr);
+    parent_meta_id = parent_info->cont_info_pub->meta_id;
+
+#ifdef ENABLE_MPI
+    int      comm_rank;
+    pdcid_t  rank0_meta_id = 0;
+    uint64_t cont_meta_id  = 0;
+
+    MPI_Comm_rank(comm, &comm_rank);
+
+    if (comm_rank == 0) {
+        if (PDC_Client_create_cont_id_scoped(cont_name, parent_meta_id, &rank0_meta_id) == SUCCEED)
+            cont_meta_id = (uint64_t)rank0_meta_id;
+    }
+    MPI_Bcast(&cont_meta_id, 1, MPI_UINT64_T, 0, comm);
+    if (cont_meta_id == 0)
+        PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
+
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, cont_meta_id);
+#else
+    pdcid_t new_meta_id = 0;
+
+    if (PDC_Client_create_cont_id_scoped(cont_name, parent_meta_id, &new_meta_id) != SUCCEED ||
+        new_meta_id == 0)
+        PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
+    cont_id = PDC_cont_create_local(pdc_id, cont_name, new_meta_id);
+#endif
+    if (cont_id == 0)
+        PGOTO_ERROR(0, "Error creating container [%s]", cont_name);
+
+    if (PDCcont_put_entries_coll(parent_cont_id, 1, &cont_id, &type, comm) != SUCCEED) {
+        PDCcont_close(cont_id);
+        PGOTO_ERROR(0, "Error nesting container [%s] under parent %" PRIu64, cont_name, parent_cont_id);
+    }
+
+    ret_value = cont_id;
+
+done:
     FUNC_LEAVE(ret_value);
 }
 
