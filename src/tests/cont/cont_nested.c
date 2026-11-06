@@ -44,17 +44,6 @@
 #include "pdc.h"
 #include "test_helper.h"
 
-/* The _coll functions' comm parameter is MPI_Comm when built with MPI, and a
- * plain int otherwise (see pdc_cont.h) -- this test used MPI_COMM_WORLD
- * directly for them, which doesn't exist at all in a PDC_ENABLE_MPI=OFF
- * build. Use this instead so the test still builds and passes a value of
- * the right type either way. */
-#ifdef ENABLE_MPI
-#define PDC_TEST_COMM MPI_COMM_WORLD
-#else
-#define PDC_TEST_COMM 0
-#endif
-
 // Checks that `entries` (n_entries of them) is exactly the set
 // {expected_ids[i], expected_types[i]}, ignoring order.
 static int
@@ -282,12 +271,6 @@ main(int argc, char **argv)
     // Collective (_col) variants should behave identically to their
     // independent counterparts (exercised here at comm size 1, but the same
     // rank-0-queries-then-broadcasts code path runs regardless of size).
-    // Every _coll function's own PDC_ENABLE_MPI=OFF branch
-    // (pdc_client_connect.c) rejects the call outright ("Calling MPI
-    // collective operation without enabling MPI") since a collective needs
-    // a real communicator, so skip this block entirely rather than fail
-    // there.
-#ifdef ENABLE_MPI
     {
         pdcid_t               branch_c;
         pdcid_t               obj_c1;
@@ -297,7 +280,7 @@ main(int argc, char **argv)
         int                   n_col_entries = 0;
         struct pdc_cont_info *branch_c_info;
 
-        TASSERT((branch_c = PDCcont_create_at_coll(root, "nested_branch_c", cont_prop, PDC_TEST_COMM)) != 0,
+        TASSERT((branch_c = PDCcont_create_at_coll(root, "nested_branch_c", cont_prop, MPI_COMM_WORLD)) != 0,
                 "Created+nested branch_c under root via _coll", "Failed to create+nest branch_c via _coll");
         TASSERT((branch_c_info = PDCcont_get_info("nested_branch_c")) != NULL, "Got branch_c info",
                 "Failed to get branch_c info");
@@ -308,7 +291,7 @@ main(int argc, char **argv)
         // linked under root).
         {
             pdcid_t branch_c_again =
-                PDCcont_create_at_coll(root, "nested_branch_c", cont_prop, PDC_TEST_COMM);
+                PDCcont_create_at_coll(root, "nested_branch_c", cont_prop, MPI_COMM_WORLD);
             TASSERT(branch_c_again != 0, "Re-created+nested branch_c under root via _coll",
                     "Failed to re-create+nest branch_c via _coll");
             struct pdc_cont_info *branch_c_again_info = PDCcont_get_info("nested_branch_c");
@@ -326,10 +309,10 @@ main(int argc, char **argv)
             TASSERT((obj_c1 = PDCobj_create(branch_c, "nested_obj_c1", obj_prop)) != 0, "Created obj_c1",
                     "Failed to create obj_c1");
         }
-        TASSERT(PDCcont_put_entries_coll(branch_c, 1, &obj_c1, &obj_type, PDC_TEST_COMM) == SUCCEED,
+        TASSERT(PDCcont_put_entries_coll(branch_c, 1, &obj_c1, &obj_type, MPI_COMM_WORLD) == SUCCEED,
                 "Linked obj_c1 under branch_c via _coll", "Failed to link obj_c1 under branch_c via _coll");
 
-        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries, PDC_TEST_COMM) == SUCCEED,
+        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries, MPI_COMM_WORLD) == SUCCEED,
                 "Got branch_c entries via _coll", "Failed to get branch_c entries via _coll");
         TASSERT(n_col_entries == 1 && col_entries[0].type == PDC_ENTITY_OBJ,
                 "branch_c contains exactly obj_c1 (via _coll)",
@@ -341,7 +324,7 @@ main(int argc, char **argv)
         uint64_t discovered_obj_c1_meta_id = col_entries[0].meta_id;
         {
             char *obj_c1_name = NULL;
-            TASSERT(PDCcont_get_coll((pdcid_t)discovered_obj_c1_meta_id, &obj_c1_name, PDC_TEST_COMM) ==
+            TASSERT(PDCcont_get_coll((pdcid_t)discovered_obj_c1_meta_id, &obj_c1_name, MPI_COMM_WORLD) ==
                         SUCCEED,
                     "Resolved obj_c1's name by id via _coll", "Failed to resolve obj_c1's name by id");
             TASSERT(obj_c1_name != NULL && strcmp(obj_c1_name, "nested_obj_c1") == 0,
@@ -351,7 +334,7 @@ main(int argc, char **argv)
         free(col_entries);
         col_entries = NULL;
 
-        TASSERT(PDCcont_get_coll((pdcid_t)branch_c_info->meta_id, &resolved_name, PDC_TEST_COMM) == SUCCEED,
+        TASSERT(PDCcont_get_coll((pdcid_t)branch_c_info->meta_id, &resolved_name, MPI_COMM_WORLD) == SUCCEED,
                 "Resolved branch_c's name by id via _coll",
                 "Failed to resolve branch_c's name by id via _coll");
         TASSERT(resolved_name != NULL && strcmp(resolved_name, "nested_branch_c") == 0,
@@ -366,12 +349,12 @@ main(int argc, char **argv)
         // having locally opened it.
         {
             pdcid_t discovered_obj_c1 = (pdcid_t)discovered_obj_c1_meta_id;
-            TASSERT(PDCcont_del_entries_coll(branch_c, 1, &discovered_obj_c1, &obj_type, PDC_TEST_COMM) ==
+            TASSERT(PDCcont_del_entries_coll(branch_c, 1, &discovered_obj_c1, &obj_type, MPI_COMM_WORLD) ==
                         SUCCEED,
                     "Unlinked obj_c1 (by discovered meta id) from branch_c via _coll",
                     "Failed to unlink obj_c1 (by discovered meta id) from branch_c via _coll");
         }
-        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries, PDC_TEST_COMM) == SUCCEED,
+        TASSERT(PDCcont_get_entries_coll(branch_c, &n_col_entries, &col_entries, MPI_COMM_WORLD) == SUCCEED,
                 "Got branch_c entries after _coll delete",
                 "Failed to get branch_c entries after _coll delete");
         TASSERT(n_col_entries == 0, "branch_c is empty after _coll delete",
@@ -381,7 +364,6 @@ main(int argc, char **argv)
 
         TASSERT(PDCcont_close(branch_c) >= 0, "Closed branch_c", "Failed to close branch_c");
     }
-#endif /* ENABLE_MPI */
 
     // Same leaf name under two different parents must create two DISTINCT
     // containers, not alias onto the same one. PDC_Server_create_container()
