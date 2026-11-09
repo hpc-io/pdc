@@ -30,9 +30,38 @@ jobs:
         with:
           buildcache: true
 
-      - name: Install PDC dependencies via Spack
+      - name: Pick the pdc@<version> this PR builds against
+        id: ver
         run: |
-          spack install --only dependencies pdc \
+          # The pdc Spack recipe only knows two git-based versions,
+          # "develop" and "stable" (see its version(..., branch=...)
+          # entries) -- pick whichever one matches where this change is
+          # headed, so version-gated bits of the recipe (e.g. the
+          # mercury@2.2.0, when="@0.4:" pin) resolve the same way they
+          # would for a real install of that branch.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            target="${{ github.base_ref }}"
+          else
+            target="${{ github.ref_name }}"
+          fi
+          if [ "$target" = "stable" ]; then
+            echo "version=stable" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=develop" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build PDC from this PR via Spack
+        run: |
+          # "spack install pdc@develop" (or plain --only dependencies, as
+          # this workflow used to do) would fetch the pdc recipe's own
+          # pinned develop/stable branch from GitHub, never touching this
+          # PR's actual changes -- the one thing issue #235 asked this
+          # workflow to cover. "spack dev-build -d <path>" builds the
+          # exact same recipe (same cmake_args(), same dependency
+          # versions/variants) but takes the package's source from <path>
+          # instead of fetching it, so it builds this checkout.
+          spack dev-build -d "$GITHUB_WORKSPACE" \
+            pdc@${{ steps.ver.outputs.version }} \
             ^libfabric fabrics=sockets,tcp,udp,rxm
 
       - name: Capture Spack environment
@@ -44,22 +73,17 @@ jobs:
           echo "=== spack-env.sh ==="
           cat $GITHUB_WORKSPACE/spack-env.sh
 
-      - name: Build PDC with tests
-        run: |
-          source $GITHUB_WORKSPACE/spack-env.sh
-          mkdir build && cd build
-          cmake ../ \
-            -DBUILD_MPI_TESTING=ON \
-            -DBUILD_SHARED_LIBS=ON \
-            -DPDC_SERVER_CACHE=ON \
-            -DBUILD_TESTING=ON \
-            -DPDC_ENABLE_MPI=ON \
-            -DCMAKE_C_COMPILER=mpicc \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-          make -j$(nproc)
-
       - name: Run serial tests
-        working-directory: build
         run: |
           source $GITHUB_WORKSPACE/spack-env.sh
+          # spack dev-build builds out-of-source into
+          # <source dir>/spack-build-<hash>/ (the hash depends on the
+          # concretized spec, so it isn't known ahead of time).
+          build_dir=$(dirname "$(find "$GITHUB_WORKSPACE" -maxdepth 2 -name CMakeCache.txt | head -1)")
+          if [ -z "$build_dir" ] || [ ! -d "$build_dir" ]; then
+            echo "Could not locate the spack dev-build build directory under $GITHUB_WORKSPACE" >&2
+            exit 1
+          fi
+          echo "Using Spack dev-build directory: $build_dir"
+          cd "$build_dir"
           ctest -L serial --output-on-failure
