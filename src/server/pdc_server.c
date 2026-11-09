@@ -2263,9 +2263,9 @@ PDC_Server_loop(hg_context_t *hg_context)
 {
     FUNC_ENTER(NULL);
 
-    perr_t          ret_value = SUCCEED;
-    hg_return_t     hg_ret;
-    unsigned int    actual_count;
+    perr_t       ret_value = SUCCEED;
+    hg_return_t  hg_ret;
+    unsigned int actual_count;
 #ifdef PDC_ENABLE_CHECKPOINT
     int     checkpoint_interval  = 1;
     clock_t last_checkpoint_time = 0, cur_time;

@@ -1378,8 +1378,7 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
                 LOG_DEBUG("Region transfer json filepath: %s\n", json_filepath);
                 LOG_DEBUG("Region transfer current state: %s\n", region_mapping->region_state.cur_state);
                 LOG_DEBUG("Region transfer store state: %s\n", region_mapping->region_state.store_state);
-                LOG_DEBUG("Region transfer client state: %s\n",
-                          region_mapping->region_state.client_state);
+                LOG_DEBUG("Region transfer client state: %s\n", region_mapping->region_state.client_state);
 
                 cur_state_str    = strdup(region_mapping->region_state.client_state);
                 client_state_str = region_mapping->region_state.client_state;

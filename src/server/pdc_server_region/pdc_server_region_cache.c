@@ -690,8 +690,8 @@ PDCtf_get_region_mapping(pdcid_t obj_id, pdc_dg_t **dg)
 {
     FUNC_ENTER(NULL);
 
-    struct pdc_tf_obj_t *  ret_value                   = NULL;
-    PDC_VECTOR_ITERATOR *  tf_obj_id_to_dg_vector_iter = pdc_vector_iterator_new(tf_obj_id_to_dg_vector_g);
+    struct pdc_tf_obj_t *ret_value                   = NULL;
+    PDC_VECTOR_ITERATOR *tf_obj_id_to_dg_vector_iter = pdc_vector_iterator_new(tf_obj_id_to_dg_vector_g);
 
     while (pdc_vector_iterator_has_next(tf_obj_id_to_dg_vector_iter)) {
         pdc_tf_obj_id_to_dg_t *cur_obj_id_to_dg =
