@@ -86,18 +86,20 @@ jobs:
           # "spack location --build-dir pdc@... dev_path=..." does) is not
           # guaranteed to land on the same hash -- it didn't in CI -- and
           # then points at a stage directory that was never created.
-          pdc_hashes=$(spack find --format '{hash}' \
+          # --color=never: the job sets SPACK_COLOR=always, which would wrap
+          # the printed hash in escape codes that "spack location" rejects.
+          pdc_hashes=$(spack --color=never find --format '{hash}' \
             pdc@${{ steps.ver.outputs.version }} dev_path="$GITHUB_WORKSPACE" 2>/dev/null || true)
           if [ -z "$pdc_hashes" ]; then
             # Fresh runner: the dev-built pdc is the only pdc installed.
-            pdc_hashes=$(spack find --format '{hash}' pdc 2>/dev/null || true)
+            pdc_hashes=$(spack --color=never find --format '{hash}' pdc 2>/dev/null || true)
           fi
           if [ "$(echo "$pdc_hashes" | grep -c .)" -ne 1 ]; then
             echo "Expected exactly one dev-built pdc, found: '$pdc_hashes'" >&2
             spack find -lv pdc >&2 || true
             exit 1
           fi
-          build_dir=$(spack location --build-dir "/$pdc_hashes")
+          build_dir=$(spack --color=never location --build-dir "/$pdc_hashes")
           if [ -z "$build_dir" ] || [ ! -d "$build_dir" ]; then
             echo "Could not locate the spack dev-build build directory (got: '$build_dir')" >&2
             exit 1
