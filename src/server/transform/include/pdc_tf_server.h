@@ -1,5 +1,5 @@
-#ifndef PDC_TF_H
-#define PDC_TF_H
+#ifndef PDC_TF_SERVER_H
+#define PDC_TF_SERVER_H
 
 #include "pdc_tf_common.h"
 #include "pdc_logger.h"

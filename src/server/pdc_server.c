@@ -173,13 +173,6 @@ update_storage_meta_list_t * pdc_update_storage_meta_list_head_g = NULL;
 extern data_server_region_t *dataserver_region_g;
 
 static pbool_t
-PDC_is_cxi_mercury_transport(const char *hg_transport)
-{
-    return (hg_transport != NULL &&
-            (strcmp(hg_transport, "ofi+cxi") == 0 || strcmp(hg_transport, "cxi") == 0));
-}
-
-static pbool_t
 PDC_is_perlmutter_system(void)
 {
     const char *nersc_host = getenv("NERSC_HOST");
@@ -187,80 +180,10 @@ PDC_is_perlmutter_system(void)
     return (nersc_host != NULL && strcmp(nersc_host, "perlmutter") == 0);
 }
 
-static int
-PDC_get_local_process_rank(int fallback_rank)
-{
-    const char *env_names[] = {"SLURM_LOCALID", "MPI_LOCALRANKID", "PMI_LOCAL_RANK",
-                               "OMPI_COMM_WORLD_LOCAL_RANK"};
-    size_t      i;
-
-    for (i = 0; i < sizeof(env_names) / sizeof(env_names[0]); i++) {
-        char *endptr     = NULL;
-        char *env_value  = getenv(env_names[i]);
-        long  local_rank = 0;
-
-        if (env_value == NULL || env_value[0] == '\0')
-            continue;
-
-        local_rank = strtol(env_value, &endptr, 10);
-        if (endptr != env_value && *endptr == '\0' && local_rank >= 0 && local_rank <= INT_MAX)
-            return (int)local_rank;
-    }
-
-    return fallback_rank;
-}
-
-static void
-PDC_get_default_cxi_endpoint(char *host_buf, size_t host_buf_len, int fallback_rank, int pid_base)
-{
-    const char *nic_name   = getenv("HG_CXI_NIC");
-    int         local_rank = PDC_get_local_process_rank(fallback_rank);
-    int         pid_offset = local_rank % 255;
-    int         pid        = pid_base + pid_offset;
-
-    if (nic_name == NULL || nic_name[0] == '\0')
-        nic_name = "cxi0";
-
-    snprintf(host_buf, host_buf_len, "%s:%d", nic_name, pid);
-}
-
 static const char *
 PDC_get_default_mercury_transport(void)
 {
     return (PDC_is_perlmutter_system() == TRUE) ? "ofi+cxi" : "ofi+tcp";
-}
-
-static perr_t
-PDC_build_mercury_na_info_string(const char *hg_transport, int port, int cxi_pid_base, char *na_info_string,
-                                 size_t na_info_string_len, char *host_buf, size_t host_buf_len)
-{
-    perr_t      ret_value = SUCCEED;
-    const char *hostname  = getenv("HG_HOST");
-
-    if (hostname == NULL || hostname[0] == '\0') {
-        if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE) {
-            PDC_get_default_cxi_endpoint(host_buf, host_buf_len, pdc_server_rank_g, cxi_pid_base);
-            hostname = host_buf;
-            if (pdc_server_rank_g == 0)
-                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
-        }
-        else {
-            memset(host_buf, 0, host_buf_len);
-            gethostname(host_buf, host_buf_len - 1);
-            hostname = host_buf;
-            if (pdc_server_rank_g == 0)
-                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
-        }
-    }
-    else
-        LOG_INFO("Environment variable HG_HOST was set\n");
-
-    if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE)
-        snprintf(na_info_string, na_info_string_len, "%s://%s", hg_transport, hostname);
-    else
-        snprintf(na_info_string, na_info_string_len, "%s://%s:%d", hg_transport, hostname, port);
-
-    return ret_value;
 }
 
 /*
@@ -869,7 +792,6 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
      */
     const char *default_hg_transport = PDC_get_default_mercury_transport();
     char *      hg_transport;
-    int         cxi_pid_base = 128;
 #ifdef PDC_HAS_CRAY_DRC
     uint32_t          credential = 0, cookie;
     drc_info_handle_t credential_info;
@@ -2344,8 +2266,6 @@ PDC_Server_loop(hg_context_t *hg_context)
     perr_t          ret_value = SUCCEED;
     hg_return_t     hg_ret;
     unsigned int    actual_count;
-    struct timespec hg_progress_start, hg_progress_end;
-    struct timespec total_time_start, total_time_end;
 #ifdef PDC_ENABLE_CHECKPOINT
     int     checkpoint_interval  = 1;
     clock_t last_checkpoint_time = 0, cur_time;
@@ -2353,7 +2273,6 @@ PDC_Server_loop(hg_context_t *hg_context)
 
     /* Poke progress engine and check for events */
     do {
-        clock_gettime(CLOCK_MONOTONIC, &total_time_start);
 #ifdef PDC_ENABLE_CHECKPOINT
         checkpoint_interval++;
         // Avoid calling clock() every operation
@@ -2376,22 +2295,7 @@ PDC_Server_loop(hg_context_t *hg_context)
 
         if (hg_atomic_cas32(&close_server_g, 1, 1))
             break;
-        clock_gettime(CLOCK_MONOTONIC, &hg_progress_start);
         hg_ret = HG_Progress(hg_context, 200);
-        clock_gettime(CLOCK_MONOTONIC, &hg_progress_end);
-        clock_gettime(CLOCK_MONOTONIC, &total_time_end);
-
-        double elapsed_total_time_sec = (total_time_end.tv_sec - total_time_start.tv_sec) +
-                                        (total_time_end.tv_nsec - total_time_start.tv_nsec) / 1e9;
-        // NOTE: this must be called after HG_Progress
-        double elapsed_progress_time_sec = (hg_progress_end.tv_sec - hg_progress_start.tv_sec) +
-                                           (hg_progress_end.tv_nsec - hg_progress_start.tv_nsec) / 1e9;
-        // NOTE: this must be called after HG_Progress
-        /*if (pdc_tf_update_profiler(elapsed_total_time_sec, elapsed_progress_time_sec) != SUCCEED) {
-            LOG_ERROR("Error updating profiler\n");
-            ret_value = FAIL;
-            break;
-        }*/
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
     if (hg_ret == HG_SUCCESS)

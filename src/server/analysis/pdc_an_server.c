@@ -818,6 +818,8 @@ PDCan_exec_graph(pdc_an_dg_entry_t *entry, char **target_state_names, int num_ta
             char *          out_name  = f->output_names[o];
             pdc_an_state_t *out_state = PDCan_dg_get_state(dg, out_name);
 
+            if (out_state == NULL)
+                PGOTO_ERROR(FAIL, "Output state \"%s\" not found in analysis graph\n", out_name);
             if (out_state->persistence == PDC_AN_PERSISTENT) {
                 pdc_an_binding_t *binding =
                     PDCan_find_binding_by_region(entry, out_name, ref_ndim, ref_offset, ref_size);

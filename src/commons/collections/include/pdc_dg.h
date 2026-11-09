@@ -128,14 +128,19 @@ void PDCdg_destroy(pdc_dg_t *dg);
 pdc_dg_vertex_id_t PDCdg_add_vertex(pdc_dg_t *dg, void *data);
 
 /**
- * Add a directed edge between two vertices.
+ * Add a directed edge between two existing vertices.
+ *
+ * Both endpoints must already have been added with PDCdg_add_vertex();
+ * v1_data and v2_data are only used to look them up (via the graph's
+ * vertices_are_equal callback) and are never stored.
  *
  * \param dg        Pointer to the graph.
- * \param v1_data   Data of the source vertex.
- * \param v2_data   Data of the destination vertex.
+ * \param v1_data   Lookup key for the source vertex.
+ * \param v2_data   Lookup key for the destination vertex.
  * \param edge_data User data to associate with the edge.
  *
- * \return ID of the new edge, or PDC_DG_INVALID_EDGE on failure.
+ * \return ID of the new edge, or PDC_DG_INVALID_EDGE on failure (including
+ *         when either endpoint is not a vertex of the graph).
  */
 pdc_dg_edge_id_t PDCdg_add_edge(pdc_dg_t *dg, void *v1_data, void *v2_data, void *edge_data);
 

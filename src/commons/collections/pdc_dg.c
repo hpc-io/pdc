@@ -171,17 +171,20 @@ PDCdg_add_edge(pdc_dg_t *dg, void *v1_data, void *v2_data, void *edge_data)
         return PDC_DG_INVALID_EDGE;
     }
 
+    // Both endpoints must already be vertices of the graph. v1_data/v2_data
+    // are only lookup keys (callers commonly pass stack-allocated structs
+    // holding just a name), so they must never be stored in the graph.
+    pdc_dg_vertex_id_t v1_id = PDCdg_vertex_exists(dg, v1_data);
+    pdc_dg_vertex_id_t v2_id = PDCdg_vertex_exists(dg, v2_data);
+    if (v1_id == PDC_DG_INVALID_VERTEX || v2_id == PDC_DG_INVALID_VERTEX) {
+        printf("Edge endpoint is not a vertex of the graph\n");
+        return PDC_DG_INVALID_EDGE;
+    }
+
     ret_value                     = dg->edge_count;
     dg->edges[ret_value]          = (pdc_dg_edge_t *)calloc(1, sizeof(pdc_dg_edge_t));
     dg->edges[ret_value]->data    = edge_data;
     dg->edges[ret_value]->edge_id = ret_value;
-
-    pdc_dg_vertex_id_t v1_id, v2_id = PDC_DG_INVALID_VERTEX;
-
-    if ((v1_id = PDCdg_vertex_exists(dg, v1_data)) == PDC_DG_INVALID_VERTEX)
-        v1_id = PDCdg_add_vertex(dg, v1_data);
-    if ((v2_id = PDCdg_vertex_exists(dg, v2_data)) == PDC_DG_INVALID_VERTEX)
-        v2_id = PDCdg_add_vertex(dg, v2_data);
 
     dg->edges[ret_value]->v1_id = v1_id;
     dg->edges[ret_value]->v2_id = v2_id;

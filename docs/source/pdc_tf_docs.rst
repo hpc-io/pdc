@@ -758,8 +758,9 @@ Selection Algorithm
 
    The edge with the lowest expected time runs.
 
-The CPU utilization fed into this comes from the server's own event loop and
-GPU utilization from NVML (:ref:`tf_profiler`).
+GPU utilization comes from NVML (:ref:`tf_profiler`). CPU utilization sampling
+is currently disabled (see :ref:`tf_profiler`), so CPU utilization reads as 0
+and CPU edges are compared on their execution-time history alone.
 
 Logging
 -------
@@ -811,6 +812,12 @@ CPU utilization is estimated from the server's own event loop timing:
 Where ``elapsed_progress_time`` is the time the server spent doing useful work
 and ``elapsed_total_time`` is the total wall time of the loop iteration. This
 approximates the fraction of time the CPU was busy.
+
+.. note::
+
+   The server loop does not currently call :c:func:`pdc_tf_update_profiler`,
+   so no CPU samples are recorded and :c:func:`pdc_tf_avg_cpu_utilization`
+   returns 0. GPU samples are refreshed on demand by the scheduler.
 
 API
 ---

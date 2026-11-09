@@ -1365,18 +1365,26 @@ PDC_Client_pack_all_requests(int n_objs, pdc_transfer_request_start_all_pkg **tr
             pdcid_t   dg_id = region_mapping->region_state.dg_id;
             pdc_dg_t *dg    = PDCtf_get_dg(dg_id);
 
-            assert(dg != NULL);
+            if (dg == NULL) {
+                // The graph handle was closed (or never valid); send this
+                // request without transformation info rather than crash.
+                LOG_ERROR("Transformation graph %" PRIu64 " attached to this region no longer exists\n",
+                          (uint64_t)dg_id);
+                ret_value = FAIL;
+            }
+            else {
+                json_filepath = (char *)dg->data;
 
-            json_filepath = (char *)dg->data;
+                LOG_DEBUG("Region transfer json filepath: %s\n", json_filepath);
+                LOG_DEBUG("Region transfer current state: %s\n", region_mapping->region_state.cur_state);
+                LOG_DEBUG("Region transfer store state: %s\n", region_mapping->region_state.store_state);
+                LOG_DEBUG("Region transfer client state: %s\n",
+                          region_mapping->region_state.client_state);
 
-            LOG_DEBUG("Region transfer json filepath: %s\n", json_filepath);
-            LOG_DEBUG("Region transfer current state: %s\n", region_mapping->region_state.cur_state);
-            LOG_DEBUG("Region transfer store state: %s\n", region_mapping->region_state.store_state);
-            LOG_DEBUG("Region transfer client state: %s\n", region_mapping->region_state.client_state);
-
-            cur_state_str    = strdup(region_mapping->region_state.client_state);
-            client_state_str = region_mapping->region_state.client_state;
-            store_state_str  = region_mapping->region_state.store_state;
+                cur_state_str    = strdup(region_mapping->region_state.client_state);
+                client_state_str = region_mapping->region_state.client_state;
+                store_state_str  = region_mapping->region_state.store_state;
+            }
         }
         else if (access_type == PDC_WRITE)
             LOG_DEBUG("Region transfer does NOT have an attached graph\n");
