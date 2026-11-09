@@ -29,7 +29,8 @@
  * Performs a 3 1D region transfer writes and 3 corresponding reads.
  * No region transformation to the first region before the region write/read.
  * Attached a compression/decompression transformation to the 2nd region before the region write/read.
- * Attached a encryption/decryption transformation to the 2nd region before the region write/read.
+ * Attached a compression+encryption/decryption+decompression transformation to the 3rd region
+ * before the region write/read.
  */
 
 #include <stdio.h>
@@ -155,8 +156,11 @@ main(int argc, char **argv)
             "Call to PDCregion_create succeeded", "Call to PDCregion_create failed");
 
     // attach graph
-    pdcid_t dg_id = PDCtf_dg_json_create(TF_GRAPHS_DIR "zfp_libsod.json");
-    PDCtf_attach_to_region(dg_id, obj1, reg_global, "client", "compressed");
+    pdcid_t dg_id;
+    TASSERT((dg_id = PDCtf_dg_json_create(TF_GRAPHS_DIR "zfp_libsod.json")) != 0,
+            "Call to PDCtf_dg_json_create succeeded", "Call to PDCtf_dg_json_create failed");
+    TASSERT(PDCtf_attach_to_region(dg_id, obj1, reg_global, "decompressed", "compressed") >= 0,
+            "Call to PDCtf_attach_to_region succeeded", "Call to PDCtf_attach_to_region failed");
 
     // Write to data buffer
     for (i = 0; i < BUF_LEN; ++i)
@@ -192,7 +196,8 @@ main(int argc, char **argv)
             "Call to PDCregion_create succeeded", "Call to PDCregion_create failed");
 
     // attach graph
-    PDCtf_attach_to_region(dg_id, obj1, reg_global, "client", "encrypted");
+    TASSERT(PDCtf_attach_to_region(dg_id, obj1, reg_global, "decompressed", "encrypted") >= 0,
+            "Call to PDCtf_attach_to_region succeeded", "Call to PDCtf_attach_to_region failed");
 
     // Write to data buffer
     for (i = 0; i < BUF_LEN; ++i)

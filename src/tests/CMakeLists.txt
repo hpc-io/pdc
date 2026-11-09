@@ -336,29 +336,80 @@ add_test(NAME region_transfer_overlap_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPU
 add_test(NAME region_transfer_merge WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_merge )
 add_test(NAME region_transfer_write_read WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_write_read )
 
-# Transformations region transfer compression
-add_test(NAME compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform)
-add_test(NAME compression_transform_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_2D)
-add_test(NAME compression_transform_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_3D)
-# Transformations region transfer compression
-if(CUDA_ROOT)
-add_test(NAME compression_transform_gpu WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_gpu)
-endif()
-# Transformations attached to object region transfer compression
-add_test(NAME attach_obj_compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./attach_obj_compression_transform)
-# Transformations multi-region transfer
-add_test(NAME multi_region_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./multi_region_transform)
-# Transformations region transfer compression encryption
-add_test(NAME compression_encryption_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform)
-add_test(NAME compression_encryption_transform_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform_2D)
-add_test(NAME compression_encryption_transform_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform_3D)
-# Transformations region transfer compression all
-add_test(NAME all_compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./all_compression_transform 0 0)
+# ---------------------------------------------------------------------------
+# In-flight transformation + analysis tests
+#
+# Each built-in transformation is only compiled into the server when its
+# optional library was found at configure time (ZFP_ROOT_DIR,
+# LIBSODIUM_ROOT_DIR, CUDA_ROOT_DIR, ... -- see the top-level CMakeLists.txt
+# and docs/source/pdc_tf_docs.rst). A test whose graph uses a transformation
+# that was compiled out would just fail at runtime with "not compiled in", so
+# only register the tests whose dependencies are actually available.
+#
+#   test(s)                                   graph(s)                   needs
+#   compression_transform{,_2D,_3D},          tf_client/graphs/zfp.json  ZFP
+#     attach_obj_compression_transform,
+#     all_compression_transform
+#   compression_encryption_transform{,_2D,_3D}, zfp_libsod.json          ZFP + libsodium
+#     multi_region_transform
+#   compression_transform_gpu                 zfp_gpu.json               ZFP + CUDA
+#   vector_magnitude_test, _2d_test           an_client/graphs/*.json    (built-in only)
+#   vector_magnitude_compressed_test          vector_magnitude + zfp     ZFP
+#   cuda_smoke_test, vector_magnitude_gpu_test                           CUDA
+# ---------------------------------------------------------------------------
+set(PDC_TF_SKIPPED_TESTS "")
 
-# Region analysis
+if(ZFP_ENABLED)
+  # Transformations region transfer compression
+  add_test(NAME compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform)
+  add_test(NAME compression_transform_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_2D)
+  add_test(NAME compression_transform_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_3D)
+  # Transformations attached to object region transfer compression
+  add_test(NAME attach_obj_compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./attach_obj_compression_transform)
+  # Transformations region transfer compression, many objects
+  add_test(NAME all_compression_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./all_compression_transform 0 0)
+  set_tests_properties(compression_transform compression_transform_2D compression_transform_3D
+                       attach_obj_compression_transform all_compression_transform
+                       PROPERTIES LABELS transform)
+  # Region analysis whose inputs are also compressed
+  add_test(NAME vector_magnitude_compressed_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_compressed_test)
+  set_tests_properties(vector_magnitude_compressed_test PROPERTIES LABELS analysis)
+else()
+  list(APPEND PDC_TF_SKIPPED_TESTS
+       compression_transform compression_transform_2D compression_transform_3D
+       attach_obj_compression_transform all_compression_transform
+       vector_magnitude_compressed_test)
+endif()
+
+if(ZFP_ENABLED AND LIBSODIUM_ENABLED)
+  # Transformations region transfer compression -> encryption
+  add_test(NAME compression_encryption_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform)
+  add_test(NAME compression_encryption_transform_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform_2D)
+  add_test(NAME compression_encryption_transform_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_encryption_transform_3D)
+  # Transformations multi-region transfer
+  add_test(NAME multi_region_transform WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./multi_region_transform)
+  set_tests_properties(compression_encryption_transform compression_encryption_transform_2D
+                       compression_encryption_transform_3D multi_region_transform
+                       PROPERTIES LABELS transform)
+else()
+  list(APPEND PDC_TF_SKIPPED_TESTS
+       compression_encryption_transform compression_encryption_transform_2D
+       compression_encryption_transform_3D multi_region_transform)
+endif()
+
+if(ZFP_ENABLED AND CUDA_ENABLED)
+  # Transformations region transfer compression on the GPU
+  add_test(NAME compression_transform_gpu WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./compression_transform_gpu)
+  set_tests_properties(compression_transform_gpu PROPERTIES LABELS "transform;transform_gpu")
+else()
+  list(APPEND PDC_TF_SKIPPED_TESTS compression_transform_gpu)
+endif()
+
+# Region analysis -- the vector_magnitude built-in has no external dependency
 add_test(NAME vector_magnitude_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_test)
 add_test(NAME vector_magnitude_2d_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_2d_test)
-add_test(NAME vector_magnitude_compressed_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_compressed_test)
+set_tests_properties(vector_magnitude_test vector_magnitude_2d_test PROPERTIES LABELS analysis)
+
 if(CUDA_ENABLED)
   # No PDC server involved -- a pure CUDA runtime check, so run directly
   # rather than through run_test.sh.
@@ -366,6 +417,14 @@ if(CUDA_ENABLED)
   # Exercises the real (unforced) dynamic CPU/GPU scheduler in PDCan_exec_graph
   # against a graph whose "vector_magnitude" transformation has two variants.
   add_test(NAME vector_magnitude_gpu_test WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./vector_magnitude_gpu_test)
+  set_tests_properties(cuda_smoke_test vector_magnitude_gpu_test PROPERTIES LABELS "analysis;analysis_gpu")
+else()
+  list(APPEND PDC_TF_SKIPPED_TESTS cuda_smoke_test vector_magnitude_gpu_test)
+endif()
+
+if(PDC_TF_SKIPPED_TESTS)
+  list(JOIN PDC_TF_SKIPPED_TESTS ", " _pdc_tf_skipped)
+  message(STATUS "Transformation/analysis tests not registered (optional dependency missing): ${_pdc_tf_skipped}")
 endif()
 
 add_test(NAME region_transfer_all    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all )
@@ -475,33 +534,6 @@ set_tests_properties(read_obj_uint64   PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int16    PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int8     PROPERTIES LABELS serial)
 set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS serial)
-
-# Transformations region transfer compression
-set_tests_properties(compression_transform     PROPERTIES LABELS transform)
-set_tests_properties(compression_transform_2D     PROPERTIES LABELS transform)
-set_tests_properties(compression_transform_3D     PROPERTIES LABELS transform)
-# Transformations region transfer compression GPU
-if(CUDA_ROOT)
-set_tests_properties(compression_transform     PROPERTIES LABELS transform_gpu)
-endif()
-# Transformations attached to object region transfer compression
-set_tests_properties(attach_obj_compression_transform PROPERTIES LABELS transform)
-# Transformations region transfer multiregion
-set_tests_properties(multi_region_transform     PROPERTIES LABELS transform)
-# Transformations region transfer compression encryption
-set_tests_properties(compression_encryption_transform     PROPERTIES LABELS transform)
-set_tests_properties(compression_encryption_transform_2D     PROPERTIES LABELS transform)
-set_tests_properties(compression_encryption_transform_3D     PROPERTIES LABELS transform)
-# Transformations region transfer compression
-set_tests_properties(all_compression_transform     PROPERTIES LABELS transform)
-# Region analysis
-set_tests_properties(vector_magnitude_test     PROPERTIES LABELS analysis)
-set_tests_properties(vector_magnitude_2d_test  PROPERTIES LABELS analysis)
-set_tests_properties(vector_magnitude_compressed_test  PROPERTIES LABELS analysis)
-if(CUDA_ENABLED)
-  set_tests_properties(cuda_smoke_test PROPERTIES LABELS analysis)
-  set_tests_properties(vector_magnitude_gpu_test PROPERTIES LABELS analysis)
-endif()
 
 if(BUILD_MPI_TESTING)
     add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int)
