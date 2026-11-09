@@ -39,7 +39,9 @@
 #include "pdc_transforms_pkg.h"
 #include "pdc_client_connect.h"
 #include "pdc_analysis_pkg.h"
+#ifdef ENABLE_MPI
 #include <mpi.h>
+#endif
 
 static perr_t pdc_region_close(struct pdc_region_info *op);
 static perr_t pdc_transfer_request_close();

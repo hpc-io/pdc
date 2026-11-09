@@ -75,7 +75,7 @@ create_pdc_object(pdcid_t pdc_id, pdcid_t cont_id, const char *obj_name, pdc_var
     PDCprop_set_obj_user_id(*obj_prop, getuid());
     PDCprop_set_obj_app_name(*obj_prop, "HACCIO");
 
-    pdcid_t obj_id = PDCobj_create_mpi(cont_id, obj_name, *obj_prop, 0, comm);
+    pdcid_t obj_id = PDCobj_create_coll(cont_id, obj_name, *obj_prop, 0, comm);
     if (obj_id == 0) {
         LOG_ERROR("Error getting an object id of %s from server, exit...\n", "obj-var-xx");
         exit(-1);
@@ -117,7 +117,7 @@ main(int argc, char **argv)
     cont_prop = PDCprop_create(PDC_CONT_CREATE, pdc_id);
 
     // create a container
-    cont_id = PDCcont_create_col("c1", cont_prop);
+    cont_id = PDCcont_create_coll("c1", cont_prop, MPI_COMM_WORLD);
 
     uint64_t offset = 0, offset_remote = mpi_rank * NUM_PARTICLES, mysize = NUM_PARTICLES;
 

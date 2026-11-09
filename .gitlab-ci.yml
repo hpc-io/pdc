@@ -70,10 +70,12 @@ perlmutter-no-cache-build:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
-        - module unload libfabric darshan
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - module list
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -101,10 +103,12 @@ perlmutter-cache-build:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
-        - module unload libfabric darshan
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - module list
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/cache
@@ -136,11 +140,14 @@ perlmutter-no-cache-parallel-pdc:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-pdc"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-pdc"
     script:    
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -160,11 +167,14 @@ perlmutter-no-cache-parallel-obj:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-obj"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-obj"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -184,11 +194,14 @@ perlmutter-no-cache-parallel-cont:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-cont"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-cont"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -208,11 +221,14 @@ perlmutter-no-cache-parallel-prop:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-prop"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-prop"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -232,11 +248,14 @@ perlmutter-no-cache-parallel-region:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-region"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-region"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -256,11 +275,14 @@ perlmutter-no-cache-parallel-region-all:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-tmp-paralell-region-all"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/no-cache/pdc-data-paralell-region-all"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/no-cache
@@ -285,11 +307,14 @@ perlmutter-cache-parallel-pdc:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-pdc"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-pdc"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -309,11 +334,14 @@ perlmutter-cache-parallel-obj:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-obj"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-obj"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -333,11 +361,14 @@ perlmutter-cache-parallel-cont:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-cont"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-cont"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -357,11 +388,14 @@ perlmutter-cache-parallel-prop:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-prop"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-prop"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -381,11 +415,14 @@ perlmutter-cache-parallel-region:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-region"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-region"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -405,11 +442,14 @@ perlmutter-cache-parallel-region-all:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-tmp-paralell-region-all"
         PDC_DATA_LOC: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/cache/pdc-data-paralell-region-all"
     script:        
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
         - cd ${PDC_BUILD_PATH}/perlmutter/cache
@@ -427,10 +467,12 @@ perlmutter-metrics-build:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=debug --constraint=cpu --tasks-per-node=64 -N 1 -t 00:30:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
     script:
-        - module unload libfabric darshan
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - module list
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - mkdir -p ${PDC_BUILD_PATH}/perlmutter/metrics
@@ -457,6 +499,7 @@ perlmutter-metrics:
     variables:
         SCHEDULER_PARAMETERS: "-A ${PDC_PROJECT} --qos=${PDC_QUEUE} --constraint=cpu --tasks-per-node=${PDC_N_CLIENTS} -N ${PDC_N_NODES} -t 01:00:00"
         SUPERCOMPUTER: "perlmutter"
+        MPICH_OFI_USE_PROVIDER: "tcp;ofi_rxm"
         LIBFABRIC_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/libfabric/install"
         MERCURY_DIR: "/global/cfs/cdirs/${PDC_PROJECT}/pdc-perlmutter/mercury/install"
         PDC_TMPDIR: "${CI_BUILDS_DIR}/${CI_PROJECT_NAME}/${CI_JOB_ID}/pdc-tmp-metrics"
@@ -471,7 +514,8 @@ perlmutter-metrics:
         - echo "JOBID ${SLURM_JOB_ID}"
         - export NERSC_HOST=`cat /etc/clustername`
         - export MPICH_OFI_USE_PROVIDER="tcp;ofi_rxm"
-        - module unload libfabric darshan
+        - module unload libfabric darshan craype-accel-nvidia80
+        - module swap cray-mpich cray-mpich/9.0.1
         - module load python
         - export LD_LIBRARY_PATH="$LIBFABRIC_DIR/lib:$MERCURY_DIR/lib:$LD_LIBRARY_PATH"
         - export LD_LIBRARY_PATH="$PDC_INSTALL_PATH/lib:$LD_LIBRARY_PATH"
