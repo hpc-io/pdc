@@ -3341,6 +3341,16 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
+
+    /* Arm the completion counter before forwarding.  hg_progress_fn() runs on a
+     * separate thread over this same context, started by
+     * PDC_Client_transfer_pthread_create(), so it can trigger this RPC's
+     * callback -- and that callback's hg_atomic_decr32() -- before HG_Forward()
+     * returns here.  Arming afterwards overwrites a decrement that already
+     * happened (0 -> -1, forced back to 1) and leaves nothing to clear it, so
+     * PDC_Client_check_response() never returns.
+     * PDC_Client_transfer_request_all() already arms in this order. */
+    hg_atomic_set32(&atomic_work_todo_g, 1);
     hg_ret = HG_Forward(client_send_transfer_request_wait_all_handle,
                         client_send_transfer_request_wait_all_rpc_cb, &transfer_args, &in);
 
@@ -3348,9 +3358,11 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     pdc_timings.PDCtransfer_request_wait_all_rpc += MPI_Wtime() - start;
     start = MPI_Wtime();
 #endif
-    if (hg_ret != HG_SUCCESS)
+    if (hg_ret != HG_SUCCESS) {
+        /* Nothing was sent, so no callback will decrement the counter. */
+        hg_atomic_set32(&atomic_work_todo_g, 0);
         PGOTO_ERROR(FAIL, "Could not start HG_Forward");
-    hg_atomic_set32(&atomic_work_todo_g, 1);
+    }
     PDC_Client_check_response(&send_context_g);
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer request wait all failed");
@@ -3639,6 +3651,8 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
+    /* Arm before forwarding; see PDC_Client_transfer_request_wait_all(). */
+    hg_atomic_set32(&atomic_work_todo_g, 1);
     hg_ret = HG_Forward(client_send_transfer_request_wait_handle, client_send_transfer_request_wait_rpc_cb,
                         &transfer_args, &in);
 #ifdef PDC_TIMING
@@ -3652,9 +3666,10 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     start = MPI_Wtime();
 #endif
 
-    if (hg_ret != HG_SUCCESS)
+    if (hg_ret != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward()");
-    hg_atomic_set32(&atomic_work_todo_g, 1);
+    }
     PDC_Client_check_response(&send_context_g);
 
 #ifdef PDC_TIMING
