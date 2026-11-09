@@ -78,17 +78,26 @@ jobs:
           source $GITHUB_WORKSPACE/spack-env.sh
           # A dev-build's out-of-source build directory lives under Spack's
           # own stage area (e.g. /tmp/.../spack-stage/spack-stage-pdc-<ver>-<hash>/
-          # spack-build-<hash>/), not under $GITHUB_WORKSPACE, and the hash
-          # depends on the concretized spec so it isn't known ahead of time.
-          # "spack location --build-dir" re-concretizes the same spec we
-          # dev-built (same constraints -> same hash -> same path) and
-          # prints it directly, so we don't have to search for it. Dev
-          # specs always keep their stage around after a successful build
-          # (see spack.installer.core: keep_stage = keep_stage or is_develop),
-          # so the directory is guaranteed to still be there.
-          build_dir=$(spack location --build-dir \
-            pdc@${{ steps.ver.outputs.version }} dev_path="$GITHUB_WORKSPACE" \
-            ^libfabric fabrics=sockets,tcp,udp,rxm)
+          # spack-build-<hash7>/), not under $GITHUB_WORKSPACE. Dev specs keep
+          # their stage after a successful build, so it is still there.
+          #
+          # Look it up by the hash of the pdc that dev-build actually
+          # installed. Re-concretizing the same abstract spec (as
+          # "spack location --build-dir pdc@... dev_path=..." does) is not
+          # guaranteed to land on the same hash -- it didn't in CI -- and
+          # then points at a stage directory that was never created.
+          pdc_hashes=$(spack find --format '{hash}' \
+            pdc@${{ steps.ver.outputs.version }} dev_path="$GITHUB_WORKSPACE" 2>/dev/null || true)
+          if [ -z "$pdc_hashes" ]; then
+            # Fresh runner: the dev-built pdc is the only pdc installed.
+            pdc_hashes=$(spack find --format '{hash}' pdc 2>/dev/null || true)
+          fi
+          if [ "$(echo "$pdc_hashes" | grep -c .)" -ne 1 ]; then
+            echo "Expected exactly one dev-built pdc, found: '$pdc_hashes'" >&2
+            spack find -lv pdc >&2 || true
+            exit 1
+          fi
+          build_dir=$(spack location --build-dir "/$pdc_hashes")
           if [ -z "$build_dir" ] || [ ! -d "$build_dir" ]; then
             echo "Could not locate the spack dev-build build directory (got: '$build_dir')" >&2
             exit 1
