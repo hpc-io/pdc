@@ -2,7 +2,7 @@
 
 set -eu -o pipefail
 
-brew install open-mpi automake m4 libtool
+brew install open-mpi automake m4 libtool libfyaml
 
 export CMAKE_POLICY_VERSION_MINIMUM=3.5
 export CFLAGS="-Wno-error=incompatible-function-pointer-types"

@@ -1,0 +1,27 @@
+# YAML runtime configuration used by CI (see hpc-io/pdc#307).
+#
+# This is NOT the same file as the documented sample at the repo root
+# (pdc.yaml) -- that one is for end users and is heavily commented. This one
+# exists so CI actually exercises PDC_CONFIG end-to-end (parses a real file,
+# applies the values, runs the existing test suite against them) instead of
+# only compiling the feature in. Keep the two in sync if the schema changes.
+
+general:
+  debug: true
+  tmp_dir: ./pdc_tmp
+  log_level: debug
+  log_file: stdout
+
+communication:
+  transport: ofi+tcp
+  hostname: ""
+  base_port: 7000
+  port_range: 32
+
+server:
+  cache:
+    max_size_gb: 8
+    idle_flush_time_sec: 1
+
+optimization:
+  data_sieving: true

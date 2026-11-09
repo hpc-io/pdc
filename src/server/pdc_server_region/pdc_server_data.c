@@ -39,6 +39,7 @@
 #include <sys/mman.h>
 
 #include "pdc_config.h"
+#include "pdc_config_yaml.h"
 
 #ifdef ENABLE_MPI
 #include "mpi.h"
@@ -107,7 +108,7 @@ fill_storage_path(char *storage_location, pdcid_t obj_id)
 #endif
     // Generate a location for data storage for data server to write
     char *data_path                = NULL;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    char *user_specified_data_path = (pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL);
 
     data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
@@ -120,7 +121,7 @@ fill_storage_path(char *storage_location, pdcid_t obj_id)
         stripe_count = lustre_total_ost_g / pdc_server_size_g;
     else
         stripe_count = pdc_nost_per_file_g;
-    stripe_size = 16; // MB
+    stripe_size = lustre_stripe_size_mb_g; // MB
     PDC_Server_set_lustre_stripe(storage_location, stripe_count, stripe_size);
 
     if (is_debug_g == 1 && pdc_server_rank_g == 0) {
@@ -1158,7 +1159,7 @@ PDC_Data_Server_buf_map(const struct hg_info *info, buf_map_in_t *in, region_lis
 
         new_obj_reg->fd = server_open_storage(storage_location, in->remote_obj_id);
         // Generate a location for data storage for data server to write
-        user_specified_data_path = getenv("PDC_DATA_LOC");
+        user_specified_data_path = (pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL);
         data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
         // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
         snprintf(storage_location, ADDR_MAX, "%.200s/pdc_data/%" PRIu64 "/server%d/s%04d.bin", data_path,
@@ -1818,7 +1819,7 @@ PDC_Server_cache_region_to_BB(region_list_t *region)
 #endif
 
     if (pdc_cache_file_ptr_g == NULL) {
-        char *bb_data_path = getenv("PDC_BB_LOC");
+        char *bb_data_path = (pdc_config_g.bb_loc[0] != '\0' ? pdc_config_g.bb_loc : NULL);
         if (bb_data_path != NULL) {
             if (strpbrk(bb_data_path, ";&|`$<>") != NULL)
                 bb_data_path = NULL;
@@ -1828,7 +1829,8 @@ PDC_Server_cache_region_to_BB(region_list_t *region)
                      pdc_server_rank_g);
         }
         else {
-            char *user_specified_data_path = getenv("PDC_DATA_LOC");
+            char *user_specified_data_path =
+                (pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL);
             bb_data_path =
                 (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
             snprintf(pdc_cache_file_path_g, sizeof(pdc_cache_file_path_g), "%s/PDCcacheBB.%d", bb_data_path,
@@ -2622,9 +2624,10 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
             io_list_target->dims[i] = io_info->meta.dims[i];
 
         if (io_info->io_type == PDC_WRITE) {
-            char *data_path                = NULL;
-            char *bb_data_path             = NULL;
-            char *user_specified_data_path = getenv("PDC_DATA_LOC");
+            char *data_path    = NULL;
+            char *bb_data_path = NULL;
+            char *user_specified_data_path =
+                (pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL);
             if (user_specified_data_path != NULL)
                 data_path = user_specified_data_path;
             else {
@@ -2633,7 +2636,7 @@ PDC_Server_data_io_via_shm(const struct hg_cb_info *callback_info)
                     data_path = ".";
             }
 
-            bb_data_path = getenv("PDC_BB_LOC");
+            bb_data_path = (pdc_config_g.bb_loc[0] != '\0' ? pdc_config_g.bb_loc : NULL);
             if (bb_data_path != NULL)
                 snprintf(io_list_target->bb_path, ADDR_MAX, "%.200s/pdc_data/cont_%" PRIu64 "", bb_data_path,
                          io_info->meta.cont_id);
@@ -3967,7 +3970,7 @@ PDC_Server_data_io_direct(pdc_access_t io_type, uint64_t obj_id, struct pdc_regi
 
     // Generate a location for data storage for data server to write
     char *data_path                = NULL;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    char *user_specified_data_path = (pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL);
     data_path = (char *)safe_data_path(user_specified_data_path, safe_data_path(getenv("SCRATCH"), "."));
 
     // Data path prefix will be $SCRATCH/pdc_data/$obj_id/
@@ -4865,10 +4868,7 @@ PDC_Server_accumulate_storage_meta_then_read(storage_meta_query_one_name_args_t 
 
     // Trigger the read procedure when we have accumulated all storage meta
     if (accu_meta->n_accumulated >= accu_meta->n_total) {
-        is_sort_read       = 0;
-        char *sort_request = getenv("PDC_SORT_READ");
-        if (NULL != sort_request)
-            is_sort_read = 1;
+        is_sort_read = pdc_config_g.sort_read;
 
 #ifdef ENABLE_TIMING
         struct timeval pdc_timer_start, pdc_timer_end;
@@ -6035,7 +6035,7 @@ generate_write_fastbit_idx(uint64_t obj_id, void *data, uint64_t dataCount, Fast
     // Need to write out bms, key, and offset
     char  storage_location[256];
     char *data_path;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    char *user_specified_data_path = (pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL);
     if (user_specified_data_path != NULL)
         data_path = user_specified_data_path;
     else {
@@ -6146,7 +6146,7 @@ PDC_load_fastbit_index(char *idx_name, uint64_t obj_id, FastBitDataType dtype, i
 
     char  storage_location[256];
     char *data_path;
-    char *user_specified_data_path = getenv("PDC_DATA_LOC");
+    char *user_specified_data_path = (pdc_config_g.data_loc[0] != '\0' ? pdc_config_g.data_loc : NULL);
     if (user_specified_data_path != NULL)
         data_path = user_specified_data_path;
 

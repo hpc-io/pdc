@@ -501,6 +501,19 @@ if(PDC_ENABLE_ZFP)
     set(ENABLE_ZFP 1)
 endif()
 
+#-----------------------------------------------------------------------------
+# YAML runtime configuration option
+#-----------------------------------------------------------------------------
+# This is a compile-time switch that decides whether PDC is linked against
+# libfyaml and therefore able to load a runtime configuration file (see
+# PDC_CONFIG below). It does NOT itself hold any of the runtime parameter
+# values -- those live in the YAML file / environment and are resolved at
+# startup, not at build time.
+option(PDC_ENABLE_YAML_CONFIG "Enable loading runtime configuration from a YAML file (requires libfyaml)." ON)
+if(PDC_ENABLE_YAML_CONFIG)
+  set(PDC_HAS_YAML_CONFIG 1)
+endif()
+
 # Check availability of symbols
 #-----------------------------------------------------------------------------
 check_symbol_exists(malloc_usable_size "malloc.h" HAVE_MALLOC_USABLE_SIZE)

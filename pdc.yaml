@@ -1,0 +1,261 @@
+# =============================================================================
+# Sample PDC runtime configuration file (see hpc-io/pdc#307)
+# =============================================================================
+#
+# What this file is for
+# ----------------------
+# Historically, changing PDC's behavior (cache size, flush interval, Lustre
+# striping, debug verbosity, communication transport/host, ...) meant either
+# recompiling PDC or juggling a dozen different, inconsistently-named
+# environment variables spread across the client and server code. This file
+# puts all of those *runtime* policy knobs in one place.
+#
+# How to use it
+# -------------
+# Point both the PDC client(s) and server(s) at a copy of this file by
+# exporting a single environment variable before launching either one:
+#
+#   export PDC_CONFIG=/path/to/pdc.yaml
+#
+# Every key below is optional -- delete anything you don't want to override
+# and it keeps its compiled-in default. The struct and defaults live in
+# src/commons/config/include/pdc_config_yaml.h, which is the source of truth
+# if this file and the code ever disagree.
+#
+# Precedence (highest wins), for every key below:
+#   1. this YAML file (if PDC_CONFIG is set and the key is present)
+#   2. the legacy single-purpose environment variable it replaces (listed in
+#      each comment below) -- kept working for backward compatibility
+#   3. the compiled-in default
+#
+# None of these settings require recompiling PDC -- each process (client or
+# server) reads this file once, at startup, and keeps the resolved values for
+# its own lifetime.
+#
+# What is deliberately NOT in this file
+# --------------------------------------
+# Decisions that change what code/libraries get compiled or linked into the
+# PDC binaries -- e.g. whether Lustre, RocksDB, SQLite3, multithreading, or
+# Cray DRC support exist in the build at all, or whether the server cache or
+# checkpointing feature is compiled in -- remain ordinary CMake options (see
+# the PDC_ENABLE_* options in CMakeLists.txt). Those are compile-time
+# decisions: no config file can turn on a feature whose code was never built.
+# This file only controls the *behavior* of whatever was compiled in.
+
+# -----------------------------------------------------------------------------
+# general: process-wide basics, read identically by both client and server.
+# -----------------------------------------------------------------------------
+general:
+  # Verbose debug logging throughout the client/server code paths.
+  # Legacy env var: PDC_DEBUG (any nonzero value enabled it).
+  debug: false
+
+  # Scratch directory PDC uses for its own bookkeeping files (e.g. the
+  # server-address file clients read to find servers). Does NOT control
+  # where object data gets written -- see server.data_loc for that.
+  # Legacy env var: PDC_TMPDIR (default was "./pdc_tmp").
+  tmp_dir: ./pdc_tmp
+
+  # Minimum severity that actually gets printed. Messages less severe than
+  # this are silently dropped. One of: error | warning | info | debug
+  # (each level includes everything above it, e.g. "debug" prints everything).
+  # Previously hardcoded to "info" with no supported way to change it at
+  # runtime. No legacy env var; PDC_LOG_LEVEL also works as a shortcut.
+  log_level: info
+
+  # Where log lines are written: "stdout", "stderr", or a path to a file.
+  # Previously hardcoded to stdout. No legacy env var; PDC_LOG_FILE also
+  # works as a shortcut.
+  log_file: stdout
+
+# -----------------------------------------------------------------------------
+# communication: how clients and servers find and talk to each other over
+# Mercury (the RPC layer PDC is built on).
+# -----------------------------------------------------------------------------
+communication:
+  # Mercury NA transport/plugin string. Common values: ofi+tcp (default,
+  # works everywhere), ofi+gni (Cray Aries/Slingshot), cci+tcp.
+  # Legacy env var: HG_TRANSPORT.
+  transport: ofi+tcp
+
+  # Hostname/IP servers advertise themselves as, and clients connect to.
+  # Leave as "" to auto-detect via gethostname() on each server.
+  # Legacy env var: HG_HOST.
+  hostname: ""
+
+  # Each server rank listens on: base_port + (rank mod port_range).
+  # E.g. with the defaults below, rank 0 listens on 7000, rank 1 on 7001,
+  # ..., rank 32 wraps back around to 7000. Raise port_range if you run more
+  # than 32 server ranks per node and hit port collisions.
+  # Previously hardcoded to 7000/32 with no way to change either value.
+  base_port: 7000
+  port_range: 32
+
+  # Cray DRC (Dynamic RDMA Credentials) authentication key. Only meaningful
+  # when PDC was built with Cray DRC support (PDC_HAS_CRAY_DRC); ignored
+  # otherwise. Leave at 0 unless your site's Cray DRC setup requires a
+  # specific credential.
+  # Legacy env var: PDC_DRC_KEY.
+  drc_key: 0
+
+# -----------------------------------------------------------------------------
+# client: knobs that only affect client-side behavior.
+# -----------------------------------------------------------------------------
+client:
+  # How many client processes share each PDC server. 0 = auto-compute as
+  # (MPI world size) / (number of PDC servers).
+  # Legacy env var: PDC_NCLIENT_PER_SERVER.
+  nclient_per_server: 0
+
+  # Which servers each client contacts when it starts up:
+  #   local    - only its node-local server (default; fastest startup)
+  #   all      - every server, up front (useful for small runs/debugging)
+  #   disabled - none up front; servers get looked up lazily, on demand
+  # Legacy env var: PDC_CLIENT_LOOKUP (unset=local, "ALL"=all, anything
+  # else=disabled).
+  lookup_mode: local
+
+  # Percentage hint passed to the server describing how much of this
+  # client's metadata update can be served from cache. Leave at 0 unless
+  # you're specifically tuning this (it's an experimental knob).
+  # Legacy env var: PDC_CACHE_PERCENTAGE.
+  cache_percentage: 0
+
+# -----------------------------------------------------------------------------
+# server: knobs that only affect server-side behavior.
+# -----------------------------------------------------------------------------
+server:
+  # Size of the server's internal Mercury thread pool. Only used when PDC
+  # was built with multithreading support (PDC_ENABLE_MULTITHREAD); ignored
+  # otherwise.
+  # Legacy env var: PDC_SERVER_NTHREAD.
+  threads: 4
+
+  # Expected number of clients per compute node. Currently informational
+  # only (not read anywhere else in the code), kept for compatibility with
+  # scripts that already set it.
+  # Legacy env var: NCLIENT.
+  nclient_per_node: 31
+
+  # If true, rank 0 does NOT eagerly look up every other server at startup;
+  # servers get looked up lazily instead. If false (default), rank 0 looks
+  # up all servers up front.
+  # Legacy env var: PDC_LOOKUP_ON_DEMAND (presence alone used to enable it).
+  lookup_on_demand: false
+
+  # Sort accumulated storage-metadata before issuing the batched read. Can
+  # help read locality/performance for some access patterns, at the cost of
+  # the sort itself.
+  # Legacy env var: PDC_SORT_READ (presence alone used to enable it).
+  sort_read: false
+
+  # Where object data files get written. "" = use $SCRATCH if set in the
+  # environment, otherwise fall back to the current directory.
+  # Legacy env var: PDC_DATA_LOC.
+  data_loc: ""
+
+  # Checkpoint/restart: periodically persists server metadata so a server
+  # can be restarted without losing state.
+  checkpoint:
+    # Turn checkpointing on/off at runtime (checkpoint support must still
+    # be compiled in via PDC_ENABLE_CHECKPOINT for this to have any effect).
+    # Legacy env var: PDC_DISABLE_CHECKPOINT=TRUE had the *opposite* sense
+    # (it disabled checkpointing); this key uses the more intuitive
+    # positive sense.
+    enabled: true
+
+    # Write checkpoint files to a tmpfs (RAM-backed filesystem) instead of
+    # the normal server tmp dir, for speed, at the cost of durability across
+    # a node reboot/power loss.
+    # Legacy env var: PDC_CHECKPOINT_TMPFS.
+    use_tmpfs: false
+
+  # In-memory region cache that batches/coalesces writes before they hit
+  # storage (cache support must be compiled in via PDC_SERVER_CACHE).
+  cache:
+    # Maximum total size of the region cache, in GiB, before older entries
+    # must be flushed to make room.
+    # Legacy env var: PDC_SERVER_CACHE_MAX_SIZE (compiled-in default comes
+    # from the CMake PDC_SERVER_CACHE_MAX_GB option).
+    max_size_gb: 32
+
+    # How many seconds a cached region may sit idle before it's eligible to
+    # be flushed to storage in the background.
+    # Legacy env var: PDC_SERVER_IDLE_CACHE_FLUSH_TIME (compiled-in default
+    # comes from the CMake PDC_SERVER_IDLE_CACHE_FLUSH_TIME option).
+    idle_flush_time_sec: 2
+
+    # Emergency override that disables cache flushing entirely (writes stay
+    # in memory and are never flushed to storage). Mainly useful for
+    # microbenchmarking the cache itself -- leave false for real workloads.
+    # Legacy env var: PDC_SERVER_CACHE_NO_FLUSH.
+    disable_flush: false
+
+# -----------------------------------------------------------------------------
+# optimization: I/O and indexing strategy toggles.
+# -----------------------------------------------------------------------------
+optimization:
+  # Let the server coalesce/sieve overlapping or adjacent I/O requests
+  # instead of issuing them individually. Usually a net win; disable only
+  # if you suspect it's causing incorrect or slow behavior for your
+  # access pattern.
+  # Legacy env var: PDC_DATA_SIEVING (default was enabled).
+  data_sieving: true
+
+  # Build a histogram of object data as it's written, used to accelerate
+  # certain analysis/query operations later.
+  # Legacy env var: PDC_GEN_HIST.
+  build_histogram: false
+
+  # Build a FastBit bitmap index for object data as it's written.
+  # Requires PDC was compiled with FastBit support (PDC_ENABLE_FASTBIT).
+  # Legacy env var: PDC_GEN_FASTBIT_IDX (presence alone used to enable it).
+  build_fastbit_index: false
+
+  # Use a previously-built FastBit index to accelerate queries. Requires
+  # PDC_ENABLE_FASTBIT.
+  # Legacy env var: PDC_USE_FASTBIT_IDX (presence alone used to enable it).
+  use_fastbit_index: false
+
+# -----------------------------------------------------------------------------
+# backend: storage-backend-specific tuning.
+# -----------------------------------------------------------------------------
+backend:
+  # Burst buffer: an optional fast intermediate storage tier that absorbs
+  # writes before they drain to the main (usually slower) parallel file
+  # system.
+  burst_buffer:
+    # Directory to use as the burst buffer. "" = fall back to server.data_loc.
+    # Legacy env var: PDC_BB_LOC.
+    path: ""
+
+    # Percentage (0-100) of writes that should land on the burst buffer
+    # instead of going straight to the main storage location.
+    # Legacy env var: PDC_BB_WRITE_PERCENT.
+    write_percentage: 0
+
+  # Lustre-specific striping, applied to each object's data file.
+  # Requires PDC was compiled with Lustre support (PDC_ENABLE_LUSTRE); has
+  # no effect otherwise.
+  lustre:
+    # Stripe size in MiB for newly-created object data files. Must be
+    # between 1 and 128; out-of-range values fall back to 16.
+    # Legacy env var: PDC_LUSTRE_STRIPE_SIZE.
+    stripe_size_mb: 16
+
+    # Number of OSTs (Object Storage Targets) each data file is striped
+    # across. 0 = spread across all OSTs available to this server rank.
+    # Legacy env var: PDC_NOST_PER_FILE.
+    ost_per_file: 0
+
+  # RocksDB-backed storage for key-value tags. Requires PDC was compiled
+  # with RocksDB support (PDC_ENABLE_ROCKSDB).
+  rocksdb:
+    # Legacy env var: PDC_USE_ROCKSDB=1.
+    enabled: false
+
+  # SQLite3-backed storage for key-value tags. Requires PDC was compiled
+  # with SQLite3 support (PDC_ENABLE_SQLITE3).
+  sqlite3:
+    # Legacy env var: PDC_USE_SQLITE3=1.
+    enabled: false
