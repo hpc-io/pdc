@@ -114,8 +114,8 @@ main(int argc, char **argv)
     // create a container
     /* sprintf(cont_name, "c%d", rank); */
     sprintf(cont_name, "c");
-    TASSERT((cont = PDCcont_create_col(cont_name, cont_prop)) != 0, "Call to PDCcont_create_col succeeded",
-            "Call to PDCcont_create_col failed");
+    TASSERT((cont = PDCcont_create_coll(cont_name, cont_prop, comm)) != 0,
+            "Call to PDCcont_create_coll succeeded", "Call to PDCcont_create_coll failed");
     // create an object property
     TASSERT((obj_prop = PDCprop_create(PDC_OBJ_CREATE, pdc)) != 0, "Call to PDCprop_create succeeded",
             "Call to PDCprop_create failed");
@@ -140,7 +140,7 @@ main(int argc, char **argv)
 
     // Create a object
 #ifdef ENABLE_MPI
-    TASSERT((global_obj = PDCobj_create_mpi(cont, obj_name, obj_prop, 0, comm)) != 0,
+    TASSERT((global_obj = PDCobj_create_coll(cont, obj_name, obj_prop, 0, comm)) != 0,
             "Call to PDCobj_create succeeded", "Call to PDCobj_create failed");
 #else
     TASSERT((global_obj = PDCobj_create(cont, obj_name, obj_prop)) != 0, "Call to PDCobj_create succeeded",

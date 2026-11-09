@@ -72,7 +72,7 @@ This is shown in the example below:
     pdcid_t cont_id = PDCcont_create("cont", cont_prop_id)
 
     // Collective container creation
-    pdcid_t cont_col_id = PDCcont_create_col("cont", cont_prop_id);
+    pdcid_t cont_col_id = PDCcont_create_coll("cont", cont_prop_id, MPI_COMM_WORLD);
 
 To open an existing container:
 
@@ -115,7 +115,7 @@ Below is an example of setting up an object property and creating objects:
     pdcid_t obj_id = PDCobj_create(cont_id, "obj", obj_prop_id);
 
     // Collective object creation
-    pdcid_t obj_col_id = PDCobj_create_col(cont_id, "obj", obj_prop_id, my_rank, comm);
+    pdcid_t obj_col_id = PDCobj_create_coll(cont_id, "obj", obj_prop_id, my_rank, comm);
 
 To open an existing object by name within a container:
 
@@ -141,7 +141,7 @@ Regions define logical subranges within a PDC object and are used to specify wha
 Transfers can be performed in three main modes:
 
 - Individually, with ``PDCregion_transfer_start()``
-- Collectively, with ``PDCregion_transfer_start_mpi()`` across MPI processes
+- Collectively, with ``PDCregion_transfer_start_coll()`` across MPI processes
 - In batches, with ``PDCregion_transfer_start_all()`` and ``PDCregion_transfer_wait_all()``
 
 Basic Region Transfer
@@ -177,7 +177,8 @@ If the transfer is intended to be performed collectively across MPI ranks, use:
 
 .. code-block:: C
 
-    PDCregion_transfer_start_mpi(xfer);
+    MPI_Comm comm = MPI_COMM_WORLD;
+    PDCregion_transfer_start_coll(xfer, comm);
 
 This function should be called by all processes participating in 
 the transfer and is useful for coordinated I/O in distributed 

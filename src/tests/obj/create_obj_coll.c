@@ -58,7 +58,7 @@ main(int argc, char **argv)
     // create first object
     sprintf(obj_name1, "o1");
 #ifdef ENABLE_MPI
-    TASSERT((obj1 = PDCobj_create_mpi(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD)) != 0,
+    TASSERT((obj1 = PDCobj_create_coll(cont, obj_name1, obj_prop, 0, MPI_COMM_WORLD)) != 0,
             "Call to PDCobj_create succeeded", "Call to PDCobj_create failed");
 #else
     TASSERT((obj1 = PDCobj_create(cont, obj_name1, obj_prop)) != 0, "Call to PDCobj_create succeeded",
@@ -68,7 +68,7 @@ main(int argc, char **argv)
     // create second object
     sprintf(obj_name2, "o2");
 #ifdef ENABLE_MPI
-    TASSERT((obj2 = PDCobj_create_mpi(cont, obj_name2, obj_prop, 0, MPI_COMM_WORLD)) != 0,
+    TASSERT((obj2 = PDCobj_create_coll(cont, obj_name2, obj_prop, 0, MPI_COMM_WORLD)) != 0,
             "Call to PDCobj_create succeeded", "Call to PDCobj_create failed");
 #else
     TASSERT((obj2 = PDCobj_create(cont, obj_name2, obj_prop)) != 0, "Call to PDCobj_create succeeded",

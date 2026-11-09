@@ -101,7 +101,6 @@ set(PROGRAMS
   region/region_transfer_set_dims_2D
   region/region_transfer_set_dims_3D
   query/query_data
-  misc/producer_waitall
   tags/kvtag_add_scale
   tags/kvtag_get_verify_scale
 )
@@ -138,6 +137,7 @@ if(BUILD_MPI_TESTING)
     tags/kvtag_affix_query_scale
     tags/kvtag_add_get_benchmark
     tags/kvtag_add_get_scale
+    misc/producer_waitall
   )
 
 if(PDC_ENABLE_IDIOMS)

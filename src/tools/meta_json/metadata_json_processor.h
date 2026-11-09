@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include "cjson/cJSON.h"
+#include "cJSON.h"
 
 typedef struct {
     void *   processor_args; // pdc_importer_args_t
