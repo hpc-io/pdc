@@ -1478,6 +1478,7 @@ PDC_Server_restart(char *filename)
     int    n_entry, count, i, j, nobj = 0, all_nobj = 0, all_n_region, n_region, n_objs, total_region = 0,
                               n_kvtag, key_len, nbin;
     uint32_t                     kv_size;
+    int                          cont_n_obj, cont_n_deleted;
     int                          n_cont, all_cont;
     pdc_metadata_t *             metadata, *elt;
     region_list_t *              region_list;
@@ -1539,14 +1540,22 @@ PDC_Server_restart(char *filename)
         if (fread(cont_entry->cont_name, sizeof(cont_entry->cont_name), 1, file) != 1) {
             LOG_ERROR("Read failed for cont_entry cont_name\n");
         }
-        if (fread(&cont_entry->n_obj, sizeof(int), 1, file) != 1) {
-            LOG_ERROR("Read failed for cont_entry n_obj\n");
-        }
-        if (cont_entry->n_obj < 0 || cont_entry->n_obj > (1 << 24))
+        // Validate the counts in locals before storing them: they size the
+        // obj_ids/entry_types allocations below and in
+        // PDC_Server_container_{add_objs,get_entries}, so a corrupt checkpoint
+        // must not be able to request an arbitrary allocation.
+        cont_n_obj     = 0;
+        cont_n_deleted = 0;
+        if (fread(&cont_n_obj, sizeof(int), 1, file) != 1)
+            PGOTO_ERROR(FAIL, "Read failed for cont_entry n_obj");
+        if (cont_n_obj < 0 || cont_n_obj > (1 << 24))
             PGOTO_ERROR(FAIL, "Invalid cont_entry n_obj in checkpoint");
-        if (fread(&cont_entry->n_deleted, sizeof(int), 1, file) != 1) {
-            LOG_ERROR("Read failed for cont_entry n_deleted\n");
-        }
+        if (fread(&cont_n_deleted, sizeof(int), 1, file) != 1)
+            PGOTO_ERROR(FAIL, "Read failed for cont_entry n_deleted");
+        if (cont_n_deleted < 0 || cont_n_deleted > cont_n_obj)
+            PGOTO_ERROR(FAIL, "Invalid cont_entry n_deleted in checkpoint");
+        cont_entry->n_obj     = cont_n_obj;
+        cont_entry->n_deleted = cont_n_deleted;
         if (fread(cont_entry->tags, sizeof(cont_entry->tags), 1, file) != 1) {
             LOG_ERROR("Read failed for cont_entry tags\n");
         }
@@ -1587,17 +1596,17 @@ PDC_Server_restart(char *filename)
             DL_APPEND(cont_entry->kvtag_list_head, kvtag_list);
         }
 
-        if (cont_entry->n_obj > 0) {
-            cont_entry->obj_ids     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * cont_entry->n_obj);
-            cont_entry->entry_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * cont_entry->n_obj);
-            if (fread(cont_entry->obj_ids, sizeof(uint64_t) * cont_entry->n_obj, 1, file) != 1) {
+        if (cont_n_obj > 0) {
+            cont_entry->obj_ids     = (uint64_t *)PDC_malloc(sizeof(uint64_t) * (size_t)cont_n_obj);
+            cont_entry->entry_types = (uint8_t *)PDC_malloc(sizeof(uint8_t) * (size_t)cont_n_obj);
+            if (fread(cont_entry->obj_ids, sizeof(uint64_t) * (size_t)cont_n_obj, 1, file) != 1) {
                 LOG_ERROR("Read failed for cont_entry obj_ids\n");
             }
-            if (fread(cont_entry->entry_types, sizeof(uint8_t) * cont_entry->n_obj, 1, file) != 1) {
+            if (fread(cont_entry->entry_types, sizeof(uint8_t) * (size_t)cont_n_obj, 1, file) != 1) {
                 LOG_ERROR("Read failed for cont_entry entry_types\n");
             }
-            cont_entry->n_allocated = cont_entry->n_obj;
-            total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * cont_entry->n_obj;
+            cont_entry->n_allocated = cont_n_obj;
+            total_mem_usage_g += (sizeof(uint64_t) + sizeof(uint8_t)) * (size_t)cont_n_obj;
         }
 
 #ifdef ENABLE_MULTITHREAD
