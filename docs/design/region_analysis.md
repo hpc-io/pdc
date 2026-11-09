@@ -1,8 +1,14 @@
 # Region Analysis — Client-Facing Design
 
-Status: implemented (server executor, checkpoint/restart, client-server RPC
-wiring, and the client API below). No client test/example program yet.
-Companion to the existing PDC Transformation Framework (PDC TF) — see `docs/source/pdc_tf_docs.rst`.
+Status: implemented (server executor, eager/lazy triggers, CPU/GPU variant
+selection, checkpoint/restart, client API). Tests/examples:
+`src/tests/analysis/vector_magnitude*_test.c`.
+
+This is the design/rationale document. **The user-facing guide is
+`docs/source/pdc_an_docs.rst`** (client API, graph schema, semantics,
+built-ins, writing external functions); building and testing are covered in
+`docs/source/data_flyway.rst`. Companion to the PDC Transformation Framework
+(PDC TF) — see `docs/source/pdc_tf_docs.rst`.
 
 ## 1. What this is
 
@@ -123,11 +129,15 @@ Notes:
 
 ## 4. Client API, in the order you use it
 
+(Full reference with parameters and return values: `docs/source/pdc_an_docs.rst`.)
+
 ```c
 pdcid_t PDCan_dg_json_create(char *json_filepath);
 
 /* Attach a graph state (input or output) to this rank's local region of an
- * object. Direction is inferred from the graph:
+ * object. Client-local: the binding is delivered to the server piggybacked
+ * on the next region transfer of a bound object (see section 10). Direction
+ * is inferred from the graph:
  *  - state is a leaf (input)  -> region is a data source for execution.
  *  - state is produced (output) -> region is where results are written,
  *    AND the region is registered so that reading it is recognized as
@@ -188,11 +198,12 @@ pdcid_t pres_obj  = PDCobj_create(cont, "pressure",    obj_prop);
 pdcid_t mean_obj  = PDCobj_create(cont, "stats_mean",  stats_prop);
 pdcid_t debug_obj = PDCobj_create(cont, "stats_debug", stats_prop);
 
-pdcid_t reg = PDCregion_create(...);   /* this rank's local region, reused
-                                           across all four objects for
-                                           simplicity — need not match in
-                                           general, just needs to make
-                                           sense to the transformation */
+pdcid_t reg = PDCregion_create(...);   /* this rank's region, used for all
+                                           four objects: the server matches
+                                           the bindings of one execution by
+                                           region (ndim/offset/size), so
+                                           every state must be bound with
+                                           the same region */
 
 pdcid_t dg = PDCan_dg_json_create(AN_GRAPHS_DIR "multi_field_stats.json");
 PDCan_attach_to_region(dg, "temp_in",     temp_obj,  reg);
@@ -291,10 +302,14 @@ program, identical to how PDC TF works today.
 ## 10. Where this lives in the codebase (implementation pointers)
 
 - Client API: `src/api/pdc_an/` — `pdc_an.h`/`pdc_an.c`, mirrors `src/api/pdc_tf/`.
-- Client-server RPC: `an_attach_region_in_t` + `hg_proc_an_attach_region_in_t`
-  in `src/server/include/pdc_client_server_common.h`; server callback in
-  `src/server/pdc_client_server_common.c`; client-issuing function
-  `PDC_Client_an_attach_region` in `src/api/pdc_client_connect.c`.
+  `PDCan_attach_to_region` is client-local; it only records the binding.
+- Client-server wiring: bindings are piggybacked on region-transfer RPCs as
+  `an_pkg` (`pdc_an_pkg_t` in `transfer_request_in_t`,
+  `src/server/include/pdc_client_server_common.h`), filled in
+  `PDC_Client_transfer_request` (`src/api/pdc_client_connect.c`). That RPC is
+  already routed to the server owning the object's data. The standalone
+  `an_attach_region` RPC and `PDC_Client_an_attach_region` from the first
+  implementation are still registered but no longer called.
 - Server graph/registry/executor: `src/server/analysis/` — `pdc_an_common.{c,h}`
   (JSON parsing into a bipartite `pdc_dg_t`, function vertices namespaced
   `fn:<name>`), `pdc_an_server.{c,h}` (registries, `PDCan_store_attach_mapping`,

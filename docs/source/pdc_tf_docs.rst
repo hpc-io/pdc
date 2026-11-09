@@ -1,82 +1,217 @@
-PDC Transformation Framework
-=============================
+PDC Transformations
+===================
 
-The PDC Transformation Framework (PDC TF) is a server-side pipeline system that allows
-data regions to be automatically transformed (compressed, encrypted, etc.) as they flow
-between clients and the PDC data server. Transformations are described as **directed graphs**
-where nodes are named **states** (e.g. ``"raw"``, ``"compressed"``) and edges are **functions**
-that convert data from one state to another. The framework supports both CPU and GPU execution
-and can dynamically schedule work across available devices based on real-time utilization metrics.
+The PDC Transformation Framework (PDC TF, the ``PDCtf_*`` API) lets a client
+attach a pipeline of functions -- compression, encryption, or your own code --
+to a region or an entire object. The PDC server then runs the pipeline
+**transparently inside ordinary region transfers**: data is transformed on its
+way to storage when written and inverted on its way back when read, so the
+client always reads back the representation it wrote.
 
-Here's how to navigate:
+Pipelines are described as **directed graphs** in JSON: the nodes are named
+**states** (e.g. ``"decompressed"``, ``"compressed"``, ``"encrypted"``) and the
+edges are **functions** that convert data from one state to another. Edges run
+on a CPU or a GPU, and when both are available the server picks one at runtime.
 
-- **Architecture & Core Concepts**
-  Understand how states, functions, regions, and directed graphs fit together.
+See :doc:`data_flyway` for building PDC with the optional compression and
+encryption libraries and for running the transformation tests, and
+:doc:`pdc_an_docs` for deriving *new* objects from existing ones.
 
-- **JSON Graph Format**
-  Learn how to describe transformation pipelines in JSON.
+.. contents:: On this page
+   :local:
+   :depth: 1
 
-- **Client & Server API**
-  Reference for attaching graphs to objects and executing transformations.
 
-- **Scheduler & Profiler**
-  How the framework selects between CPU and GPU edges at runtime.
+.. _tf_quick_start:
 
-- **Builtin Transformations**
-  Descriptions of every builtin compression and encryption function.
+Quick Start
+===========
 
-- **Extending the Framework**
-  How to add your own external transformation functions.
+Compress one region of an integer object with ZFP (requires a build with
+``ZFP_ROOT_DIR`` set). The graph, ``tf_client/graphs/zfp.json``:
 
-Use the table of contents below to explore each section in detail.
+.. code-block:: json
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Architecture & Core Concepts
+   {
+     "name": "zfp",
+     "states": [
+       { "name": "decompressed" },
+       { "name": "compressed" }
+     ],
+     "functions": [
+       { "name": "zfp_compress",   "device": "CPU", "location": "builtin",
+         "input_state": "decompressed", "output_state": "compressed" },
+       { "name": "zfp_decompress", "device": "CPU", "location": "builtin",
+         "input_state": "compressed",   "output_state": "decompressed" }
+     ]
+   }
 
-   tf_architecture
-   tf_core_concepts
+The client:
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Configuration & Graph Format
+.. code-block:: c
 
-   tf_json_format
-   tf_compile_flags
+   #include "pdc.h"
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Client & Server API
+   /* obj was created from a property with its type set (here PDC_INT),
+    * e.g. PDCprop_set_obj_type(prop, PDC_INT); the type must be set
+    * before a graph can be attached. */
+   uint64_t off[1] = {0}, len[1] = {N};
+   pdcid_t  reg        = PDCregion_create(1, off, len);   /* local buffer region  */
+   pdcid_t  reg_global = PDCregion_create(1, off, len);   /* region in the object */
 
-   tf_client_api
-   tf_server_api
-   tf_parameter_macros
+   /* 1. Load the graph. Returns 0 if the JSON is invalid or a function is not
+    *    available in this build (e.g. PDC built without ZFP). */
+   pdcid_t dg = PDCtf_dg_json_create("/shared/graphs/zfp.json");
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Scheduler & Profiler
+   /* 2. Data in this region is "decompressed" in client memory and must be
+    *    stored "compressed". */
+   PDCtf_attach_to_region(dg, obj, reg_global, "decompressed", "compressed");
 
-   tf_scheduler
-   tf_profiler
+   /* 3. Write as usual. The server runs zfp_compress before storing. */
+   pdcid_t t = PDCregion_transfer_create(data, PDC_WRITE, obj, reg, reg_global);
+   PDCregion_transfer_start(t);
+   PDCregion_transfer_wait(t);
+   PDCregion_transfer_close(t);
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Builtin Transformations
+   /* 4. Read the SAME region as usual. The server runs zfp_decompress and
+    *    returns the original integers. */
+   t = PDCregion_transfer_create(data_read, PDC_READ, obj, reg, reg_global);
+   PDCregion_transfer_start(t);
+   PDCregion_transfer_wait(t);
+   PDCregion_transfer_close(t);
 
-   tf_builtin_registry
-   tf_builtin_zfp_cpu
-   tf_builtin_zfp_gpu
-   tf_builtin_sz_cpu
-   tf_builtin_sz_gpu
-   tf_builtin_encrypt
-   tf_builtin_turbo
+   /* 5. Release the client-side handle. */
+   PDCtf_close_dg(dg);
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Extending the Framework
+The full, runnable program is ``src/tests/transformation/compression_transform.c``.
 
-   tf_external_transforms
-   tf_contributing
+
+.. _tf_client_guide:
+
+Client Guide
+============
+
+Choosing ``client_state`` and ``store_state``
+---------------------------------------------
+
+Every attach names two states of the graph:
+
+- ``client_state`` -- the representation in the client's buffers. Writes start
+  here and reads end here.
+- ``store_state`` -- the representation kept on storage.
+
+On write the server follows the **shortest path** from ``client_state`` to
+``store_state`` and runs each edge in order; on read it follows the shortest
+path back. So a graph must contain a path in *both* directions, typically a
+forward and an inverse function for each step. One graph can serve several
+pipelines: with ``tf_client/graphs/zfp_libsod.json``
+
+.. code-block:: text
+
+   decompressed --zfp_compress--> compressed --secret_box_encrypt--> encrypted
+   decompressed <-zfp_decompress- compressed <-secret_box_decrypt--- encrypted
+
+attaching ``("decompressed", "compressed")`` only compresses, while
+``("decompressed", "encrypted")`` compresses and then encrypts (and on read
+decrypts, then decompresses). See
+``src/tests/transformation/compression_encryption_transform.c``.
+
+.. note::
+
+   State names are **not** checked when you attach. A name that is not a state
+   of the graph, or a pair of states with no path between them, is only
+   discovered by the server when it tries to run the pipeline (logged as
+   ``No path to desired state``). Double-check names against the JSON and
+   check the return value of every transfer call.
+
+Attaching to a region, an object, or many objects
+-------------------------------------------------
+
+``PDCtf_attach_to_region(dg, obj, reg_global, client_state, store_state)``
+   Only transfers whose object region matches ``reg_global`` **exactly**
+   (same ``ndim``, ``offset``, ``size`` and element type) go through the graph.
+   Different regions of the same object can use different store states of the
+   same graph; a region can have only one graph attached (a second attach to
+   the same region returns ``FAIL``).
+
+``PDCtf_attach_to_obj(dg, obj, client_state, store_state)``
+   Every region written to ``obj`` goes through the graph. Each newly written
+   region is registered with the server on its first write.
+   See ``src/tests/transformation/attach_obj_compression_transform.c``.
+
+``PDCtf_attach_to_objs(dg, obj_ids, n, client_state, store_state)``
+   Shorthand for ``PDCtf_attach_to_obj`` on each of ``n`` objects.
+
+An object can use only one graph *file* on the server, though different
+regions can use different states of it.
+
+Writes, reads, and other processes
+----------------------------------
+
+- **Attach before the first write.** The attachment is delivered to the server
+  piggybacked on the next write RPC of a matching region; nothing is sent by
+  the attach call itself. Data written before attaching is stored as-is.
+- **Read exactly the region you wrote.** A transformed region is stored as one
+  opaque blob (e.g. a compressed byte stream), so it can only be read back as
+  a whole: use the same ``reg_global`` (offset and size) for the read. A read
+  of a different or partial region is an ordinary read of the stored bytes.
+- **Readers do not need to attach.** The server remembers, per object region,
+  which graph and which states were used, and reads are inverted
+  automatically -- including from a different process, a later job, or after a
+  server restart (the mapping and every function's per-region parameters are
+  saved in the server checkpoint).
+- **Many regions, many ranks.** Each rank attaches and writes its own
+  regions; regions are transformed independently (per-region parameters such
+  as the original shape before compression are kept separately).
+
+Element types
+-------------
+
+The object's element type (``PDCprop_set_obj_type``) must be set before
+attaching, and must be one the graph's functions support -- see each built-in
+below. In short: ZFP handles ``PDC_FLOAT``/``PDC_DOUBLE``/``PDC_INT``/
+``PDC_INT64``; SZ3 only ``PDC_FLOAT``/``PDC_DOUBLE``; TurboPFor only
+``PDC_INT``/``PDC_INT32``/``PDC_INT64``; SecretBox any type (it operates on
+bytes). A function that rejects a type fails the transfer.
+
+CPU and GPU edges
+-----------------
+
+Listing two functions with the same name, endpoints and different ``device``
+creates parallel edges, and the server chooses one per transfer
+(:ref:`tf_scheduler`). ``tf_client/graphs/zfp_gpu_or_cpu.json`` does this for
+ZFP. GPU edges only exist in builds with ``CUDA_ROOT_DIR``; a graph that names
+a GPU edge fails to load otherwise.
+
+Troubleshooting
+---------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Symptom
+     - Likely cause
+   * - ``PDCtf_dg_json_create`` returns ``0``, log says
+       ``Failed to link to builtin function``
+     - The built-in was not compiled in. Reconfigure with the matching
+       ``*_ROOT_DIR``/``*_DIR`` variable (:ref:`flyway_build`).
+   * - ``PDCtf_attach_*`` fails with
+       ``Data type must be set on object before attaching transformations``
+     - Call ``PDCprop_set_obj_type`` on the object property before creating
+       the object.
+   * - Read returns wrong data
+     - The read region differs from the attached/written region.
+   * - Server log shows ``No path to desired state``
+     - ``client_state``/``store_state`` are misspelled or not connected in
+       both directions in the graph.
+   * - Server cannot open the graph
+     - The JSON (or ``lib_path``) path is not visible on the server node. Use
+       an absolute path on a shared file system (:ref:`flyway_graph_paths`).
+   * - Lossy results
+     - ``sz_compress`` (error bound 0.01) and GPU ``zfp_compress``
+       (fixed-rate) are lossy; CPU ``zfp_compress`` and ``turbo_compress``
+       are lossless.
 
 
 -------------------------------------------------------------------------------
@@ -184,11 +319,11 @@ Every builtin and user-defined external transform function must match this proto
 .. code-block:: c
 
    typedef bool (*c_func_t)(
-       pdc_tf_internal_param internal_param,  // Graph handle + flat offset
-       char                 *params_str,      // Optional params string from JSON
-       void                **region_data,     // Pointer to data buffer (may be replaced)
-       pdc_tf_region_t       input_region,    // Describes input data shape/type
-       pdc_tf_region_t      *output_region    // Must be populated if shape/type changes
+       pdc_tf_internal_param *internal_param, // Graph handle + flat offset + timing
+       char                  *params_str,     // "params" string from the JSON, or NULL
+       void                 **region_data,    // Pointer to data buffer (may be replaced)
+       pdc_tf_region_t        input_region,   // Describes input data shape/type
+       pdc_tf_region_t       *output_region   // Must be populated if shape/type changes
    );
 
 **Contract:**
@@ -321,10 +456,15 @@ framework decide which to use:
 
 .. code-block:: json
 
-   { "name": "zfp_compress",      "device": "CPU", "location": "builtin",
-     "input_state": "raw", "output_state": "compressed" },
-   { "name": "zfp_compress_cuda", "device": "GPU", "location": "builtin",
-     "input_state": "raw", "output_state": "compressed" }
+   { "name": "zfp_compress", "device": "CPU", "location": "builtin",
+     "input_state": "decompressed", "output_state": "compressed" },
+   { "name": "zfp_compress", "device": "GPU", "location": "builtin",
+     "input_state": "decompressed", "output_state": "compressed" }
+
+Built-ins are registered per ``(name, device)`` pair, so the CPU and GPU
+variants share a name and differ only in ``device``. Remember to provide the
+inverse edges (``zfp_decompress``) as well; ``tf_client/graphs/zfp_gpu_or_cpu.json``
+is a complete example.
 
 
 -------------------------------------------------------------------------------
@@ -332,30 +472,42 @@ framework decide which to use:
 .. _tf_compile_flags:
 
 Compile-Time Feature Flags
-===========================
+==========================
 
-The following CMake flags control which builtin transformations are compiled in.
-They are currently also ``#define``'d at the top of ``pdc_tf_builtin_common.h``
-as a temporary workaround (marked ``FIXME`` — these should be driven solely by CMake).
+Which built-ins exist is decided at configure time by the optional-dependency
+environment variables described in :ref:`flyway_build`. Internally they map to
+these preprocessor symbols (set in the top-level ``CMakeLists.txt`` and
+``src/server/transform/include/pdc_tf_builtin_common.h``):
 
 .. list-table::
    :header-rows: 1
-   :widths: 40 60
+   :widths: 26 26 48
 
-   * - Flag
-     - Effect
-   * - ``ENABLE_TF_ZFP_COMPRESSION``
-     - Enables ZFP CPU compress/decompress
-   * - ``CUDA_ENABLED``
-     - Enables ZFP GPU compress/decompress (requires ZFP built with CUDA support)
-   * - ``ENABLE_TF_SZ_COMPRESSION``
-     - Enables SZ3 CPU compress/decompress
-   * - ``ENABLE_TF_SZ_GPU_COMPRESSSION``
-     - Enables cuSZ GPU compress/decompress
-   * - ``ENABLE_TF_SECRET_BOX_ENCRYPTION``
-     - Enables libsodium SecretBox encrypt/decrypt
-   * - ``ENABLE_TF_TURBO_COMPRESSION``
-     - Enables TurboPFor integer compress/decompress
+   * - Environment variable
+     - CMake definition
+     - Derived TF macro / effect
+   * - ``ZFP_ROOT_DIR``
+     - ``ZFP_ENABLED``
+     - ``ENABLE_TF_ZFP_COMPRESSION``: ZFP CPU (plus GPU with ``CUDA_ENABLED``)
+   * - ``SZ_CPU_DIR``
+     - ``SZ3_ENABLED``
+     - ``ENABLE_TF_SZ_COMPRESSION``: SZ3 CPU
+   * - ``SZ_CPU_DIR`` + ``CUDA_ROOT_DIR`` + ``CUSZ_GPU_DIR``
+     - ``SZ3_ENABLED`` + ``CUDA_ENABLED``
+     - ``ENABLE_TF_SZ_GPU_COMPRESSSION``: cuSZ GPU
+   * - ``LIBSODIUM_ROOT_DIR``
+     - ``LIBSODIUM_ENABLED``
+     - ``ENABLE_TF_SECRET_BOX_ENCRYPTION``: SecretBox encrypt/decrypt
+   * - ``TURBO_DIR``
+     - ``TURBO_ENABLED``
+     - ``ENABLE_TF_TURBO_COMPRESSION``: TurboPFor
+   * - ``CUDA_ROOT_DIR``
+     - ``CUDA_ENABLED``, ``USE_CUDA``
+     - GPU variants, NVML profiling, polynomial GPU scheduler
+
+The same CMake variables (``ZFP_ENABLED``, ``LIBSODIUM_ENABLED``,
+``CUDA_ENABLED``) decide which transformation/analysis tests are registered
+with CTest (:ref:`flyway_testing`).
 
 
 -------------------------------------------------------------------------------
@@ -365,54 +517,81 @@ as a temporary workaround (marked ``FIXME`` — these should be driven solely by
 Client API
 ==========
 
-Declared in ``pdc_tf.h``. These functions are called from client applications to
-attach transformation graphs to PDC objects and regions.
-
-Initialization
---------------
-
-.. c:function:: perr_t PDCtf_init()
-
-   Must be called once during PDC initialization. Registers the ``PDC_TF_DG`` type
-   and populates the builtin function registry by calling :c:func:`PDCtf_init_builtin_funcs`.
+Declared in ``pdc_tf.h`` (included by ``pdc.h``). ``PDCinit`` initializes the
+framework (it calls ``PDCtf_init`` internally); applications never need to call
+``PDCtf_init`` themselves.
 
 Graph Loading
 -------------
 
 .. c:function:: pdcid_t PDCtf_dg_json_create(char *json_filepath)
 
-   Parses a JSON graph file and returns a handle (``pdcid_t``) to the in-memory directed
-   graph. External functions referenced in the JSON are loaded via ``dlopen``/``dlsym``
-   using the ``lib_path`` field. Returns ``0`` on failure.
+   Parse a JSON graph file (:ref:`tf_json_format`) and return a client-local
+   handle. Every function is resolved immediately: built-ins against the
+   registry, ``external`` functions by ``dlopen``-ing ``lib_path`` and
+   ``dlsym``-ing the function name.
+
+   :param json_filepath: Path to the graph. The server re-opens the same path
+      later, so it must be readable there too.
+   :returns: Graph handle, or ``0`` on failure (unreadable file, invalid JSON,
+      bad ``device``/``location``, missing ``lib_path``, or a function that is
+      not compiled into this build).
 
 .. c:function:: perr_t PDCtf_close_dg(pdcid_t dg_id)
 
-   Frees all resources associated with a directed graph, including all state and function
-   nodes and their per-region parameter storage.
+   Release the client-local graph handle and its state/function nodes.
+   Attachments already delivered to the server, and data already written, are
+   unaffected.
+
+   :returns: ``SUCCEED``, or ``FAIL`` for an unknown handle.
+
+.. c:function:: pdc_dg_t *PDCtf_get_dg(pdcid_t dg_id)
+
+   Return the parsed in-memory graph behind a handle (debugging/introspection),
+   or ``NULL``.
 
 Attaching Graphs
 ----------------
 
+All attach calls are client-local: they validate the object and region,
+record the mapping, and the mapping is sent to the server piggybacked on the
+next **write** of a matching region. Attach before writing.
+
 .. c:function:: perr_t PDCtf_attach_to_region(pdcid_t dg_id, pdcid_t obj_id, pdcid_t remote_reg, char *client_state, char *store_state)
 
-   Attaches a transformation graph to a **specific region** of an object. Only transfers
-   touching that exact region (matched by ndim, offset, size, and element type) will be
-   routed through the graph.
+   Route transfers of exactly one object region through the graph. A transfer
+   matches only if its object region has the same ``ndim``, ``offset``,
+   ``size`` and element type as ``remote_reg``.
 
-   :param dg_id: Handle to the directed graph returned by :c:func:`PDCtf_dg_json_create`.
-   :param obj_id: PDC object to attach the graph to.
-   :param remote_reg: Region ID describing the specific region.
-   :param client_state: The state name representing data as the client sees it (e.g. ``"raw"``).
-   :param store_state: The state name representing data as stored on disk (e.g. ``"compressed"``).
+   :param dg_id: Handle from :c:func:`PDCtf_dg_json_create`.
+   :param obj_id: Object to attach to. Its element type must be set.
+   :param remote_reg: The region *in the object* -- the ``reg_global`` you pass
+      to ``PDCregion_transfer_create`` -- not the local buffer region.
+   :param client_state: State of the data in client memory (e.g. ``"decompressed"``).
+   :param store_state: State of the data on storage (e.g. ``"compressed"``).
+   :returns: ``SUCCEED``; ``FAIL`` if the object type is not set, the IDs are
+      invalid, or this region already has a graph attached.
 
 .. c:function:: perr_t PDCtf_attach_to_obj(pdcid_t dg_id, pdcid_t obj_id, char *client_state, char *store_state)
 
-   Attaches a transformation graph to **all regions** of an object. Every read/write on
-   the object will be routed through the graph regardless of region.
+   Route every region written to ``obj_id`` through the graph. Each distinct
+   region is registered with the server on its first write, and must later be
+   read back with the same region.
+
+   :returns: ``SUCCEED`` or ``FAIL`` (invalid IDs or object type not set).
 
 .. c:function:: perr_t PDCtf_attach_to_objs(pdcid_t dg_id, pdcid_t *obj_ids, int num_ids, char *client_state, char *store_state)
 
-   Convenience wrapper that calls :c:func:`PDCtf_attach_to_obj` for each object in the array.
+   Call :c:func:`PDCtf_attach_to_obj` for each of the ``num_ids`` objects in
+   ``obj_ids``; stops and returns ``FAIL`` at the first failure.
+
+.. c:function:: perr_t PDCtf_set_output_mode(pdcid_t dg_id, pdc_tf_output_mode_t mode, pdcid_t *obj_ids, char **result_names, int num_ids)
+
+   Reserved for future use: intended to choose between transforming an object
+   in place (``PDC_TF_OVERWRITE``, the behavior today) and writing the result
+   to a new object (``PDC_TF_CREATE``). **Currently a no-op** that always
+   returns ``SUCCEED``. To derive new objects from existing ones, use
+   :doc:`pdc_an_docs`.
 
 Diagnostics
 -----------
@@ -513,16 +692,35 @@ The typical pattern for a compress/decompress pair is:
 
 .. code-block:: c
 
-   // In the compress function — save the original region so decompress can restore it
-   my_params_t *out_params = malloc(sizeof(my_params_t));
-   PDCtf_copy_tf_region_t(&input_region, &out_params->decompressed_region);
+   typedef struct { pdc_tf_region_t decompressed_region; } my_params_t;
+
+   // In the compress function -- save the original region so decompress can restore it
+   my_params_t *out_params        = malloc(sizeof(my_params_t));
+   out_params->decompressed_region = input_region;
    SET_FUNC_PARAMS("my_compress", PDC_TF_CPU_DEVICE, out_params, sizeof(my_params_t));
 
-   // In the decompress function — retrieve the saved region
-   my_params_t *in_params = NULL;
-   uint64_t     in_params_size;
+   // In the decompress function -- retrieve the saved region
+   my_params_t *in_params      = NULL;
+   uint64_t     in_params_size = 0;
    GET_FUNC_PARAMS("my_compress", PDC_TF_CPU_DEVICE, (void **)&in_params, &in_params_size);
-   PDCtf_copy_tf_region_t(&in_params->decompressed_region, output_region);
+   if (in_params == NULL)
+       return false;
+   *output_region = in_params->decompressed_region;
+
+Parameters are keyed by the name of the function that *stored* them (note
+``"my_compress"`` in both calls) and by device. Saved parameters are part of
+the server checkpoint, so a region written before a server restart can still
+be decompressed after it.
+
+.. note::
+
+   ``SET_FUNC_PARAMS``/``GET_FUNC_PARAMS`` expect a variable named
+   ``internal_param`` of type ``pdc_tf_internal_param *`` in scope, which is
+   the first parameter of every ``c_func_t``. ``SET_STATE_PARAMS`` /
+   ``GET_STATE_PARAMS`` currently dereference it with ``.`` instead of ``->``,
+   so they do not compile inside a ``c_func_t``; call
+   ``PDCtf_set_state_param``/``PDCtf_get_state_param`` directly if you need
+   per-state parameters.
 
 
 -------------------------------------------------------------------------------
@@ -532,40 +730,36 @@ The typical pattern for a compress/decompress pair is:
 Scheduler
 =========
 
-When multiple edges exist between the same two states (e.g. both a CPU and a GPU
-``zfp_compress``), :c:func:`PDCtf_exec_graph` selects one using the following priority:
+When the path from one state to the next has several parallel edges (e.g. a
+CPU and a GPU ``zfp_compress``), :c:func:`PDCtf_exec_graph` picks one per
+transfer. Graphs with a single edge per step are never affected.
 
 Selection Algorithm
 -------------------
 
-1. **Force GPU** — If the environment variable ``USE_GPU`` is set, or if ``close_time_g``
-   is set (indicating the server is approaching a deadline), always pick the GPU edge
-   on device 0.
+1. **Forced GPU** -- if ``USE_GPU`` is set in the server's environment, or the
+   server is in its close/flush phase (``close_time_g``), the GPU edge is used
+   on GPU 0.
 
-2. **Skip overloaded GPU** — If the least-loaded GPU has average utilization above 50%,
-   skip all GPU edges and fall back to CPU.
+2. **Choose a GPU** (CUDA builds) -- the server picks which GPU a GPU edge would
+   run on. With ``PDC_POLY_COEFF_FILE`` pointing at a coefficients file, a
+   degree-3 polynomial model (``pdc_tf_poly_sched.c``) predicts the total
+   host→device + compute + device→host time on each GPU from the data size and
+   live NVML metrics (utilization, power, memory) and picks the lowest.
+   Without it, the least-utilized GPU is used.
 
-3. **Expected time** — For each remaining candidate edge, compute:
+3. **Compare edges by expected time** -- for each candidate edge:
 
-   .. math::
+   - GPU edge with a polynomial prediction: the predicted time;
+   - otherwise: ``avg_past_time / max(0.1, 1 - utilization)`` of that device,
+     where ``avg_past_time`` is the rolling average of the edge's last
+     ``NUM_TF_FUNC_TIMES = 5`` executions (an edge with no history is assumed
+     to take 0.75 s, so each edge is tried early on).
 
-      \text{expected\_time} = \frac{\text{avg\_past\_time}}{\max(0.1,\ 1.0 - \text{device\_utilization})}
+   The edge with the lowest expected time runs.
 
-   The edge with the lowest expected time is selected.
-
-Execution Time History
------------------------
-
-After each transformation, the actual elapsed wall-clock time is scaled by the
-device's free capacity to produce a *projected free-device time*:
-
-.. code-block:: text
-
-   projected_time = transform_time * (1.0 - max(device_utilization, 0.1))
-
-This projected time is stored in a rolling history buffer (``prev_cpu_times`` /
-``prev_gpu_times``, length ``NUM_TF_FUNC_TIMES = 5``) and used to compute
-``avg_past_time`` in future scheduling decisions.
+The CPU utilization fed into this comes from the server's own event loop and
+GPU utilization from NVML (:ref:`tf_profiler`).
 
 Logging
 -------
@@ -689,23 +883,18 @@ ZFP Compression — CPU
 
 **Source file:** ``pdc_tf_builtin_zfp_cpu.c``
 
-**Requires:** ``ENABLE_TF_ZFP_COMPRESSION``
+**Requires:** ``ZFP_ROOT_DIR`` (``ENABLE_TF_ZFP_COMPRESSION``)
 
 ZFP is a floating-point and integer array compression library optimized for
-multidimensional scientific data. The CPU implementation uses the standard ZFP
-bitstream API in fixed-rate mode.
+multidimensional scientific data. The CPU implementation uses ZFP's
+**reversible (lossless) mode**: decompressed data is bit-for-bit identical to
+the input.
 
 Supported Types
 ---------------
 
-``PDC_FLOAT``, ``PDC_DOUBLE``, ``PDC_INT32``, ``PDC_INT64``.
+``PDC_FLOAT``, ``PDC_DOUBLE``, ``PDC_INT``/``PDC_INT32``, ``PDC_INT64``.
 Supports 1D–4D arrays.
-
-Rate
-----
-
-The rate is set to ``8 * sizeof(element)`` bits/value (``FIXED_CR_RATIO = 1``).
-This corresponds to lossless-equivalent throughput at the ZFP bitstream level.
 
 pdc_tf_builtin_zfp_compress
 -----------------------------
@@ -735,10 +924,19 @@ ZFP Compression — GPU
 
 **Source file:** ``pdc_tf_builtin_zfp_gpu.c``
 
-**Requires:** ``ENABLE_TF_ZFP_COMPRESSION`` and ``CUDA_ENABLED``
+**Requires:** ``ZFP_ROOT_DIR`` and ``CUDA_ROOT_DIR``, with ZFP built with CUDA
+support (``ENABLE_TF_ZFP_COMPRESSION`` + ``CUDA_ENABLED``)
 
 Same logical operation as :ref:`tf_builtin_zfp_cpu` but executes on the GPU using
 ``zfp_stream_set_execution(zfp, zfp_exec_cuda)``.
+
+.. warning::
+
+   ZFP's CUDA backend does not support reversible mode, so the GPU variant
+   uses **fixed-rate** mode at ``8 * sizeof(element)`` bits per value. This is
+   near-lossless but not guaranteed bit-exact. If a graph offers both CPU and
+   GPU edges, the result's exactness depends on which one the scheduler
+   picked.
 
 pdc_tf_builtin_zfp_compress_cuda
 ----------------------------------
@@ -777,7 +975,7 @@ SZ3 Compression — CPU
 
 **Source file:** ``pdc_tf_builtin_sz_cpu.c``
 
-**Requires:** ``ENABLE_TF_SZ_COMPRESSION``
+**Requires:** ``SZ_CPU_DIR`` (``ENABLE_TF_SZ_COMPRESSION``)
 
 SZ3 is an error-bounded lossy scientific data compressor that achieves high
 compression ratios on floating-point arrays by exploiting value predictability.
@@ -785,9 +983,9 @@ compression ratios on floating-point arrays by exploiting value predictability.
 Supported Types
 ---------------
 
-``PDC_FLOAT``, ``PDC_DOUBLE``, ``PDC_INT32``, ``PDC_INT64``.
-Integer types are mapped to their nearest float equivalent for SZ3 internally
-(``PDC_INT32`` → ``SZ_FLOAT``, ``PDC_INT64`` → ``SZ_DOUBLE``).
+``PDC_FLOAT`` and ``PDC_DOUBLE`` only. Integer types are rejected (the
+transfer fails): SZ3 would reinterpret the integer bits as floating point
+rather than converting them. Use ZFP or TurboPFor for integer data.
 
 Error Bound
 -----------
@@ -821,7 +1019,8 @@ SZ (cuSZ) Compression — GPU
 
 **Source file:** ``pdc_tf_builtin_sz_gpu.c``
 
-**Requires:** ``ENABLE_TF_SZ_GPU_COMPRESSSION``
+**Requires:** ``SZ_CPU_DIR``, ``CUDA_ROOT_DIR`` and ``CUSZ_GPU_DIR``
+(``ENABLE_TF_SZ_GPU_COMPRESSSION``)
 
 cuSZ is the CUDA GPU port of the SZ compressor. It provides GPU-accelerated
 error-bounded lossy compression for scientific floating-point data.
@@ -846,19 +1045,13 @@ pdc_tf_builtin_sz_compress_cuda
 pdc_tf_builtin_sz_decompress_cuda
 -----------------------------------
 
-- Reconstructs the cuSZ compressor from the compressed data header via ``psz_create_from_header``.
+- Reconstructs the cuSZ decompressor via ``psz_create_from_header`` from the
+  cuSZ header that ``sz_compress`` saved with ``SET_FUNC_PARAMS``.
 - Copies compressed data to device.
-- Allocates a device output buffer sized for the decompressed data (``float`` assumed).
+- Allocates a device output buffer sized from the original element type and shape.
 - Runs ``psz_decompress`` and synchronizes the device.
 - Copies the decompressed result back to host.
 - Cleans up with ``psz_clear_buffer`` and ``psz_release``.
-
-.. note::
-
-   The output buffer is always sized as ``num_elements * sizeof(float)``
-   regardless of the original integer type. This is a current limitation of the
-   cuSZ integration.
-
 
 -------------------------------------------------------------------------------
 
@@ -869,7 +1062,7 @@ SecretBox Encryption — CPU
 
 **Source file:** ``pdc_tf_builtin_encrypt_cpu.c``
 
-**Requires:** ``ENABLE_TF_SECRET_BOX_ENCRYPTION``
+**Requires:** ``LIBSODIUM_ROOT_DIR`` (``ENABLE_TF_SECRET_BOX_ENCRYPTION``)
 
 Uses ``libsodium``'s ``crypto_secretbox_easy`` (XSalsa20-Poly1305) for authenticated
 symmetric encryption. Provides both confidentiality and integrity verification.
@@ -917,7 +1110,7 @@ Turbo Compression — CPU
 
 **Source file:** ``pdc_tf_builtin_turbo_cpu.c``
 
-**Requires:** ``ENABLE_TF_TURBO_COMPRESSION``
+**Requires:** ``TURBO_DIR`` (``ENABLE_TF_TURBO_COMPRESSION``)
 
 Uses the TurboPFor library (``ic.h``) which provides extremely fast SIMD-accelerated
 lossless compression for integer arrays using the P4NENC family of codecs.
@@ -925,8 +1118,8 @@ lossless compression for integer arrays using the P4NENC family of codecs.
 Supported Types
 ---------------
 
-``PDC_INT32`` and ``PDC_INT64`` only. Floating-point types are not supported by
-this codec.
+``PDC_INT``/``PDC_INT32`` and ``PDC_INT64`` only. Floating-point types are
+rejected (the transfer fails).
 
 pdc_tf_builtin_turbo_compress
 -------------------------------
@@ -977,9 +1170,9 @@ Your function must match the ``c_func_t`` prototype exactly:
        return true;
    }
 
-Compile it as a shared library::
+Compile it as a shared library against the installed PDC headers::
 
-   gcc -shared -fPIC -o libmytransform.so my_transform.c
+   gcc -shared -fPIC -I$PDC_DIR/include -o libmytransform.so my_transform.c
 
 Step 2 — Add to the JSON Graph
 --------------------------------
@@ -1009,17 +1202,23 @@ Step 3 — Use It
 
 .. code-block:: c
 
-   PDCtf_init();
    pdcid_t dg = PDCtf_dg_json_create("/path/to/my_graph.json");
    PDCtf_attach_to_obj(dg, obj_id, "raw", "my_format");
 
 The framework will ``dlopen`` your library and ``dlsym`` your function at graph-load
-time, then register it in the builtin function registry automatically.
+time (on the client and again on the server), then register it in the builtin
+function registry automatically.
+
+A usable pipeline also needs the inverse function (``my_format`` → ``raw``) so
+reads can be served; add it as a second ``external`` edge.
 
 Notes
 -----
 
 - The function symbol name in the library must exactly match the ``"name"`` field in the JSON.
+- ``lib_path`` must be loadable at the same path on the client and the server.
+- ``device`` and the return contract follow :ref:`tf_core_concepts`: return
+  ``false`` to fail the transfer, never free the incoming ``*region_data``.
 - Only ``pdc_tf_user.h`` is available to external libraries — do not include any other PDC headers.
 - If your function needs to persist parameters between compress/decompress calls, use the
   ``SET_FUNC_PARAMS`` / ``GET_FUNC_PARAMS`` macros as described in :ref:`tf_parameter_macros`.
