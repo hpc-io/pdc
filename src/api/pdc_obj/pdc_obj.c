@@ -225,13 +225,20 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     if (!p->obj_info_pub)
         PGOTO_ERROR(0, "PDC pub object memory allocation failed");
     p->obj_info_pub->name      = strdup(obj_name);
-    p->obj_info_pub->local_id  = PDC_id_register(PDC_OBJ, p);
     p->obj_info_pub->meta_id   = 0;
     p->obj_info_pub->server_id = 0;
     if (location == PDC_OBJ_GLOBAL) {
         ret = PDC_Client_send_name_recv_id(obj_name, p->cont->cont_info_pub->meta_id, obj_prop_id,
                                            &(p->obj_info_pub->meta_id), &data_server_id, &metadata_server_id);
         if (ret == FAIL)
+            // Deliberately not registered via PDC_id_register() yet (see
+            // below) -- if it were, this half-built p (obj_pt/obj_info_pub
+            // fields below are still unset) would sit in the global id
+            // table and PDCclose() would later walk into it and segfault
+            // in PDC_obj_close(), e.g. after a rejected duplicate-name
+            // create. p itself still leaks on this path, same as every
+            // other allocation-failure branch in this function; a crash
+            // is the problem being fixed here, not that leak.
             PGOTO_ERROR(0, "Unable to create object on server");
     }
 
@@ -252,7 +259,10 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
     for (i = 0; i < obj_prop->obj_prop_pub->ndim; i++)
         p->obj_info_pub->obj_pt->dims[i] = obj_prop->obj_prop_pub->dims[i];
 
-    ret_value = p->obj_info_pub->local_id;
+    // Only register once p is fully built -- see the comment above where
+    // this used to happen, right before the server-create call.
+    p->obj_info_pub->local_id = PDC_id_register(PDC_OBJ, p);
+    ret_value                 = p->obj_info_pub->local_id;
 
 done:
     FUNC_LEAVE(ret_value);

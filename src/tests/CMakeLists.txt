@@ -53,6 +53,10 @@ set(PROGRAMS
   cont/cont_del
   cont/cont_getid
   cont/cont_tags
+  cont/cont_nested
+  cont/cont_nested_fail
+  cont/cont_nested_restart_build
+  cont/cont_nested_restart_verify
   misc/consistency_semantics
   obj/create_obj
   obj/open_obj
@@ -255,6 +259,9 @@ add_test(NAME cont_info         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTO
 add_test(NAME cont_getid        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_getid )
 add_test(NAME cont_tags         WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_tags )
 add_test(NAME cont_del          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_del )
+add_test(NAME cont_nested        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_nested )
+add_test(NAME cont_nested_fail   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./cont_nested_fail )
+add_test(NAME cont_nested_restart WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_checkpoint_restart_test.sh ./cont_nested_restart_build ./cont_nested_restart_verify )
 add_test(NAME obj_del           WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_del )
 add_test(NAME open_obj          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./open_obj )
 add_test(NAME obj_iter          WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./obj_iter )
@@ -328,6 +335,9 @@ set_tests_properties(cont_info          PROPERTIES LABELS serial)
 set_tests_properties(cont_getid         PROPERTIES LABELS serial)
 set_tests_properties(cont_tags          PROPERTIES LABELS serial)
 set_tests_properties(cont_del           PROPERTIES LABELS serial)
+set_tests_properties(cont_nested          PROPERTIES LABELS "serial;nested_containers")
+set_tests_properties(cont_nested_fail     PROPERTIES LABELS "serial;nested_containers")
+set_tests_properties(cont_nested_restart  PROPERTIES LABELS "serial;nested_containers")
 set_tests_properties(obj_del            PROPERTIES LABELS serial)
 set_tests_properties(open_obj           PROPERTIES LABELS serial)
 set_tests_properties(obj_iter           PROPERTIES LABELS serial)
@@ -450,6 +460,7 @@ if(BUILD_MPI_TESTING)
     add_test(NAME cont_info_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_info ${MPI_RUN_CMD} 4 6 )
     add_test(NAME cont_getid_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_getid ${MPI_RUN_CMD} 4 6 )
     add_test(NAME cont_tags_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_tags ${MPI_RUN_CMD} 4 6 )
+    add_test(NAME cont_nested_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./cont_nested ${MPI_RUN_CMD} 4 6 )
     add_test(NAME consistency_semantics WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./consistency_semantics ${MPI_RUN_CMD} 2 4 )
     add_test(NAME open_obj_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./open_obj ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_iter_mpi    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_iter ${MPI_RUN_CMD} 4 6 )
@@ -524,6 +535,7 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(cont_info_mpi                        PROPERTIES LABELS "parallel;parallel_cont" )
     set_tests_properties(cont_getid_mpi                       PROPERTIES LABELS "parallel;parallel_cont" )
     set_tests_properties(cont_tags_mpi                        PROPERTIES LABELS "parallel;parallel_cont" )
+    set_tests_properties(cont_nested_mpi                      PROPERTIES LABELS "parallel;parallel_cont;nested_containers" )
     set_tests_properties(open_obj_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_iter_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_life_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
