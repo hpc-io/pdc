@@ -1,0 +1,2024 @@
+[INFO] PDC_CLIENT[0]: Writing 8388608 particles per rank for 10 steps with 5 sec sleep time.
+[07:39:19.389569] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[0]: My client rank = 0, client communicator size = 168
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[07:39:19.389585] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[6]: My client rank = 6, client communicator size = 168
+[07:39:19.389627] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[5]: My client rank = 5, client communicator size = 168
+[07:39:19.389577] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[4]: My client rank = 4, client communicator size = 168
+[07:39:19.389625] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[3]: My client rank = 3, client communicator size = 168
+[07:39:19.389577] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[2]: My client rank = 2, client communicator size = 168
+[07:39:19.389633] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[1]: My client rank = 1, client communicator size = 168
+[07:39:19.389936] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[61]: My client rank = 61, client communicator size = 168
+[07:39:19.389591] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[60]: My client rank = 60, client communicator size = 168
+[07:39:19.389918] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[59]: My client rank = 59, client communicator size = 168
+[07:39:19.389591] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[58]: My client rank = 58, client communicator size = 168
+[07:39:19.389954] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[57]: My client rank = 57, client communicator size = 168
+[07:39:19.389591] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[56]: My client rank = 56, client communicator size = 168
+[07:39:19.389962] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[55]: My client rank = 55, client communicator size = 168
+[07:39:19.389592] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[54]: My client rank = 54, client communicator size = 168
+[07:39:19.389963] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[53]: My client rank = 53, client communicator size = 168
+[07:39:19.389591] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[52]: My client rank = 52, client communicator size = 168
+[07:39:19.389946] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[51]: My client rank = 51, client communicator size = 168
+[07:39:19.389591] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[50]: My client rank = 50, client communicator size = 168
+[07:39:19.389946] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[49]: My client rank = 49, client communicator size = 168
+[07:39:19.389797] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[39]: My client rank = 39, client communicator size = 168
+[07:39:19.389587] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[38]: My client rank = 38, client communicator size = 168
+[07:39:19.389792] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[37]: My client rank = 37, client communicator size = 168
+[07:39:19.389588] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[36]: My client rank = 36, client communicator size = 168
+[07:39:19.389801] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[35]: My client rank = 35, client communicator size = 168
+[07:39:19.389811] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[19]: My client rank = 19, client communicator size = 168
+[07:39:19.389586] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[18]: My client rank = 18, client communicator size = 168
+[07:39:19.389778] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[17]: My client rank = 17, client communicator size = 168
+[07:39:19.389585] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[16]: My client rank = 16, client communicator size = 168
+[07:39:19.390010] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[83]: My client rank = 83, client communicator size = 168
+[07:39:19.389652] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[82]: My client rank = 82, client communicator size = 168
+[07:39:19.390010] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[81]: My client rank = 81, client communicator size = 168
+[07:39:19.389651] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[80]: My client rank = 80, client communicator size = 168
+[07:39:19.390080] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[79]: My client rank = 79, client communicator size = 168
+[07:39:19.389749] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[78]: My client rank = 78, client communicator size = 168
+[07:39:19.390083] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[77]: My client rank = 77, client communicator size = 168
+[07:39:19.389748] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[76]: My client rank = 76, client communicator size = 168
+[07:39:19.390081] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[75]: My client rank = 75, client communicator size = 168
+[07:39:19.389748] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[74]: My client rank = 74, client communicator size = 168
+[07:39:19.390072] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[73]: My client rank = 73, client communicator size = 168
+[07:39:19.389748] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[72]: My client rank = 72, client communicator size = 168
+[07:39:19.390024] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[71]: My client rank = 71, client communicator size = 168
+[07:39:19.389654] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[70]: My client rank = 70, client communicator size = 168
+[07:39:19.390036] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[69]: My client rank = 69, client communicator size = 168
+[07:39:19.389648] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[68]: My client rank = 68, client communicator size = 168
+[07:39:19.390036] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[67]: My client rank = 67, client communicator size = 168
+[07:39:19.389648] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[66]: My client rank = 66, client communicator size = 168
+[07:39:19.390036] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[65]: My client rank = 65, client communicator size = 168
+[07:39:19.389648] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[64]: My client rank = 64, client communicator size = 168
+[07:39:19.390050] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[63]: My client rank = 63, client communicator size = 168
+[07:39:19.389705] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[62]: My client rank = 62, client communicator size = 168
+[07:39:19.389598] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[48]: My client rank = 48, client communicator size = 168
+[07:39:19.390081] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[47]: My client rank = 47, client communicator size = 168
+[07:39:19.389733] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[46]: My client rank = 46, client communicator size = 168
+[07:39:19.390080] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[45]: My client rank = 45, client communicator size = 168
+[07:39:19.389734] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[44]: My client rank = 44, client communicator size = 168
+[07:39:19.390080] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[43]: My client rank = 43, client communicator size = 168
+[07:39:19.389734] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[42]: My client rank = 42, client communicator size = 168
+[07:39:19.390088] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[41]: My client rank = 41, client communicator size = 168
+[07:39:19.389733] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[40]: My client rank = 40, client communicator size = 168
+[07:39:19.389590] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[34]: My client rank = 34, client communicator size = 168
+[07:39:19.389977] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[33]: My client rank = 33, client communicator size = 168
+[07:39:19.389590] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[32]: My client rank = 32, client communicator size = 168
+[07:39:19.389977] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[31]: My client rank = 31, client communicator size = 168
+[07:39:19.389590] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[30]: My client rank = 30, client communicator size = 168
+[07:39:19.389977] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[29]: My client rank = 29, client communicator size = 168
+[07:39:19.389590] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[28]: My client rank = 28, client communicator size = 168
+[07:39:19.389974] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[27]: My client rank = 27, client communicator size = 168
+[07:39:19.389590] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[26]: My client rank = 26, client communicator size = 168
+[07:39:19.389974] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[25]: My client rank = 25, client communicator size = 168
+[07:39:19.389591] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[24]: My client rank = 24, client communicator size = 168
+[07:39:19.390056] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[23]: My client rank = 23, client communicator size = 168
+[07:39:19.389718] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[22]: My client rank = 22, client communicator size = 168
+[07:39:19.390057] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[21]: My client rank = 21, client communicator size = 168
+[07:39:19.389717] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[20]: My client rank = 20, client communicator size = 168
+[07:39:19.390059] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[15]: My client rank = 15, client communicator size = 168
+[07:39:19.389712] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[14]: My client rank = 14, client communicator size = 168
+[07:39:19.390064] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[13]: My client rank = 13, client communicator size = 168
+[07:39:19.389713] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[12]: My client rank = 12, client communicator size = 168
+[07:39:19.390064] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[11]: My client rank = 11, client communicator size = 168
+[07:39:19.389713] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[10]: My client rank = 10, client communicator size = 168
+[07:39:19.390064] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[9]: My client rank = 9, client communicator size = 168
+[07:39:19.389713] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[8]: My client rank = 8, client communicator size = 168
+[07:39:19.389994] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[7]: My client rank = 7, client communicator size = 168
+[07:39:19.389596] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[132]: My client rank = 132, client communicator size = 168
+[07:39:19.389751] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[131]: My client rank = 131, client communicator size = 168
+[07:39:19.389596] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[130]: My client rank = 130, client communicator size = 168
+[07:39:19.389751] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[129]: My client rank = 129, client communicator size = 168
+[07:39:19.389596] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[128]: My client rank = 128, client communicator size = 168
+[07:39:19.389994] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[167]: My client rank = 167, client communicator size = 168
+[07:39:19.389667] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[166]: My client rank = 166, client communicator size = 168
+[07:39:19.389994] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[165]: My client rank = 165, client communicator size = 168
+[07:39:19.389626] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[164]: My client rank = 164, client communicator size = 168
+[07:39:19.389994] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[163]: My client rank = 163, client communicator size = 168
+[07:39:19.389645] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[162]: My client rank = 162, client communicator size = 168
+[07:39:19.389998] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[161]: My client rank = 161, client communicator size = 168
+[07:39:19.389611] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[160]: My client rank = 160, client communicator size = 168
+[07:39:19.390017] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[159]: My client rank = 159, client communicator size = 168
+[07:39:19.389697] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[158]: My client rank = 158, client communicator size = 168
+[07:39:19.390021] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[157]: My client rank = 157, client communicator size = 168
+[07:39:19.389692] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[156]: My client rank = 156, client communicator size = 168
+[07:39:19.389815] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[155]: My client rank = 155, client communicator size = 168
+[07:39:19.389619] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[154]: My client rank = 154, client communicator size = 168
+[07:39:19.389940] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[153]: My client rank = 153, client communicator size = 168
+[07:39:19.389601] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[152]: My client rank = 152, client communicator size = 168
+[07:39:19.389997] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[151]: My client rank = 151, client communicator size = 168
+[07:39:19.389667] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[150]: My client rank = 150, client communicator size = 168
+[07:39:19.389964] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[149]: My client rank = 149, client communicator size = 168
+[07:39:19.389609] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[148]: My client rank = 148, client communicator size = 168
+[07:39:19.389945] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[147]: My client rank = 147, client communicator size = 168
+[07:39:19.389597] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[146]: My client rank = 146, client communicator size = 168
+[07:39:19.389778] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[145]: My client rank = 145, client communicator size = 168
+[07:39:19.389597] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[144]: My client rank = 144, client communicator size = 168
+[07:39:19.390000] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[143]: My client rank = 143, client communicator size = 168
+[07:39:19.389685] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[142]: My client rank = 142, client communicator size = 168
+[07:39:19.389982] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[141]: My client rank = 141, client communicator size = 168
+[07:39:19.389643] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[140]: My client rank = 140, client communicator size = 168
+[07:39:19.389804] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[139]: My client rank = 139, client communicator size = 168
+[07:39:19.389598] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[138]: My client rank = 138, client communicator size = 168
+[07:39:19.389868] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[137]: My client rank = 137, client communicator size = 168
+[07:39:19.389598] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[136]: My client rank = 136, client communicator size = 168
+[07:39:19.389901] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[135]: My client rank = 135, client communicator size = 168
+[07:39:19.389598] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[134]: My client rank = 134, client communicator size = 168
+[07:39:19.389906] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[133]: My client rank = 133, client communicator size = 168
+[07:39:19.390009] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[127]: My client rank = 127, client communicator size = 168
+[07:39:19.389687] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[126]: My client rank = 126, client communicator size = 168
+[07:39:19.390066] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[125]: My client rank = 125, client communicator size = 168
+[07:39:19.389679] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[124]: My client rank = 124, client communicator size = 168
+[07:39:19.390064] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[123]: My client rank = 123, client communicator size = 168
+[07:39:19.389679] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[122]: My client rank = 122, client communicator size = 168
+[07:39:19.390064] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[121]: My client rank = 121, client communicator size = 168
+[07:39:19.389679] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[120]: My client rank = 120, client communicator size = 168
+[07:39:19.390064] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[119]: My client rank = 119, client communicator size = 168
+[07:39:19.389678] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[118]: My client rank = 118, client communicator size = 168
+[07:39:19.390073] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[117]: My client rank = 117, client communicator size = 168
+[07:39:19.389678] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[116]: My client rank = 116, client communicator size = 168
+[07:39:19.390073] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[115]: My client rank = 115, client communicator size = 168
+[07:39:19.389678] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[114]: My client rank = 114, client communicator size = 168
+[07:39:19.390073] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[113]: My client rank = 113, client communicator size = 168
+[07:39:19.389678] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[112]: My client rank = 112, client communicator size = 168
+[07:39:19.390068] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[111]: My client rank = 111, client communicator size = 168
+[07:39:19.389683] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[110]: My client rank = 110, client communicator size = 168
+[07:39:19.390068] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[109]: My client rank = 109, client communicator size = 168
+[INFO] PDC_CLIENT[0]: Found 2 PDC Metadata servers, running with 168 PDC clients
+[07:39:19.389684] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[108]: My client rank = 108, client communicator size = 168
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[07:39:19.390067] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[107]: My client rank = 107, client communicator size = 168
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was NOT set, default to tuolumne1104
+[07:39:19.389680] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[106]: My client rank = 106, client communicator size = 168
+[INFO] PDC_CLIENT[0]: Connection string: ofi+tcp://tuolumne1104:8000
+[07:39:19.390067] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[105]: My client rank = 105, client communicator size = 168
+[07:39:19.389684] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[104]: My client rank = 104, client communicator size = 168
+[07:39:19.390043] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[103]: My client rank = 103, client communicator size = 168
+[07:39:19.389684] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[102]: My client rank = 102, client communicator size = 168
+[07:39:19.390043] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[101]: My client rank = 101, client communicator size = 168
+[07:39:19.389684] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[100]: My client rank = 100, client communicator size = 168
+[07:39:19.390043] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[99]: My client rank = 99, client communicator size = 168
+[07:39:19.389684] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[98]: My client rank = 98, client communicator size = 168
+[07:39:19.390034] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[97]: My client rank = 97, client communicator size = 168
+[07:39:19.389683] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[96]: My client rank = 96, client communicator size = 168
+[07:39:19.390034] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[95]: My client rank = 95, client communicator size = 168
+[07:39:19.389692] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[94]: My client rank = 94, client communicator size = 168
+[07:39:19.390034] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[93]: My client rank = 93, client communicator size = 168
+[07:39:19.389688] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[92]: My client rank = 92, client communicator size = 168
+[07:39:19.390034] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[91]: My client rank = 91, client communicator size = 168
+[07:39:19.389675] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[90]: My client rank = 90, client communicator size = 168
+[07:39:19.390024] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[89]: My client rank = 89, client communicator size = 168
+[07:39:19.389675] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[88]: My client rank = 88, client communicator size = 168
+[07:39:19.390018] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[87]: My client rank = 87, client communicator size = 168
+[07:39:19.389675] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[86]: My client rank = 86, client communicator size = 168
+[07:39:19.390024] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[85]: My client rank = 85, client communicator size = 168
+[07:39:19.389675] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[84]: My client rank = 84, client communicator size = 168
+# [250669.929861] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.880538] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[111]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.880556] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[111]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.880566] [ERROR] [pdc.c:110] PDC_CLIENT[111]: PDC client init error
+   cxi
+[07:39:19.880582] [ERROR] [pdc_prop.c:77] PDC_CLIENT[111]: Failed to find PDC ID: 0
+# [250669.929910] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.931564] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.882242] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[154]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.882258] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[154]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.882267] [ERROR] [pdc.c:110] PDC_CLIENT[154]: PDC client init error
+   cxi
+[07:39:19.882282] [ERROR] [pdc_prop.c:77] PDC_CLIENT[154]: Failed to find PDC ID: 0
+# [250669.931609] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.932733] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.883407] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[114]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.883426] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[114]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.883437] [ERROR] [pdc.c:110] PDC_CLIENT[114]: PDC client init error
+   cxi
+[07:39:19.883452] [ERROR] [pdc_prop.c:77] PDC_CLIENT[114]: Failed to find PDC ID: 0
+# [250669.932775] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.934964] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.885638] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[149]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.885657] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[149]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.885666] [ERROR] [pdc.c:110] PDC_CLIENT[149]: PDC client init error
+   cxi
+[07:39:19.885683] [ERROR] [pdc_prop.c:77] PDC_CLIENT[149]: Failed to find PDC ID: 0
+# [250669.935009] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.936900] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.887590] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[134]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.887607] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[134]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.887616] [ERROR] [pdc.c:110] PDC_CLIENT[134]: PDC client init error
+   cxi
+[07:39:19.887631] [ERROR] [pdc_prop.c:77] PDC_CLIENT[134]: Failed to find PDC ID: 0
+# [250669.936956] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.937328] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250669.937349] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.887999] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[152]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.887989] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[106]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.888013] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[152]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.888014] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[106]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.888023] [ERROR] [pdc.c:110] PDC_CLIENT[152]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.888025] [ERROR] [pdc.c:110] PDC_CLIENT[106]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.888036] [ERROR] [pdc_prop.c:77] PDC_CLIENT[152]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.888040] [ERROR] [pdc_prop.c:77] PDC_CLIENT[106]: Failed to find PDC ID: 0
+   cxi
+# [250669.937365] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.937377] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.938069] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.888717] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[133]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.888729] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[133]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.888738] [ERROR] [pdc.c:110] PDC_CLIENT[133]: PDC client init error
+   cxi
+[07:39:19.888747] [ERROR] [pdc_prop.c:77] PDC_CLIENT[133]: Failed to find PDC ID: 0
+# [250669.938098] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.938495] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.889143] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[137]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.889157] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[137]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.889166] [ERROR] [pdc.c:110] PDC_CLIENT[137]: PDC client init error
+   cxi
+[07:39:19.889177] [ERROR] [pdc_prop.c:77] PDC_CLIENT[137]: Failed to find PDC ID: 0
+# [250669.938524] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.939043] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.889706] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[110]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.889723] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[110]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.889733] [ERROR] [pdc.c:110] PDC_CLIENT[110]: PDC client init error
+   cxi
+[07:39:19.889746] [ERROR] [pdc_prop.c:77] PDC_CLIENT[110]: Failed to find PDC ID: 0
+# [250669.939079] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.939507] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.890166] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[151]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.890183] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[151]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.890193] [ERROR] [pdc.c:110] PDC_CLIENT[151]: PDC client init error
+   cxi
+[07:39:19.890205] [ERROR] [pdc_prop.c:77] PDC_CLIENT[151]: Failed to find PDC ID: 0
+# [250669.939540] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.940203] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.890868] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[139]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.890884] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[139]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.890893] [ERROR] [pdc.c:110] PDC_CLIENT[139]: PDC client init error
+   cxi
+[07:39:19.890906] [ERROR] [pdc_prop.c:77] PDC_CLIENT[139]: Failed to find PDC ID: 0
+# [250669.940410] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250669.940242] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.891083] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[118]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.891103] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[118]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.891113] [ERROR] [pdc.c:110] PDC_CLIENT[118]: PDC client init error
+   cxi
+[07:39:19.891129] [ERROR] [pdc_prop.c:77] PDC_CLIENT[118]: Failed to find PDC ID: 0
+# [250669.940451] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.940725] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.891392] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[143]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.891409] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[143]: Error with PDC_Client_mercury_init, exiting...
+# [250669.940786] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.891439] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[116]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.891421] [ERROR] [pdc.c:110] PDC_CLIENT[143]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.891453] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[116]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.891438] [ERROR] [pdc_prop.c:77] PDC_CLIENT[143]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.891462] [ERROR] [pdc.c:110] PDC_CLIENT[116]: PDC client init error
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.891472] [ERROR] [pdc_prop.c:77] PDC_CLIENT[116]: Failed to find PDC ID: 0
+# [250669.940766] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+# [250669.941168] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.941149] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.891809] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[119]: Error with HG_Init()
+# [250669.940816] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.891833] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[163]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.891829] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[119]: Error with PDC_Client_mercury_init, exiting...
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.891853] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[163]: Error with PDC_Client_mercury_init, exiting...
+# [250669.941348] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.891988] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[144]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.891839] [ERROR] [pdc.c:110] PDC_CLIENT[119]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.891862] [ERROR] [pdc.c:110] PDC_CLIENT[163]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.892000] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[144]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.891856] [ERROR] [pdc_prop.c:77] PDC_CLIENT[119]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.891884] [ERROR] [pdc_prop.c:77] PDC_CLIENT[163]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.892009] [ERROR] [pdc.c:110] PDC_CLIENT[144]: PDC client init error
+   cxi
+# [250669.941206] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.892019] [ERROR] [pdc_prop.c:77] PDC_CLIENT[144]: Failed to find PDC ID: 0
+# [250669.941182] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.941368] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.941895] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.892533] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[140]: Error with HG_Init()
+# [250669.941894] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.892545] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[140]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.892548] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[135]: Error with HG_Init()
+# [250669.942135] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.892555] [ERROR] [pdc.c:110] PDC_CLIENT[140]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.892566] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[135]: Error with PDC_Client_mercury_init, exiting...
+# [250669.942102] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250669.942065] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.892734] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[105]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.892800] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[150]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.892566] [ERROR] [pdc_prop.c:77] PDC_CLIENT[140]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.892577] [ERROR] [pdc.c:110] PDC_CLIENT[135]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.892777] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[127]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.892754] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[105]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.892819] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[150]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+   cxi
+[07:39:19.892590] [ERROR] [pdc_prop.c:77] PDC_CLIENT[135]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.892796] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[127]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.892765] [ERROR] [pdc.c:110] PDC_CLIENT[105]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.892829] [ERROR] [pdc.c:110] PDC_CLIENT[150]: PDC client init error
+# [250669.941913] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.941923] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.892806] [ERROR] [pdc.c:110] PDC_CLIENT[127]: PDC client init error
+# [250669.942465] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.893120] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[112]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.892778] [ERROR] [pdc_prop.c:77] PDC_CLIENT[105]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.892843] [ERROR] [pdc_prop.c:77] PDC_CLIENT[150]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+[07:39:19.892823] [ERROR] [pdc_prop.c:77] PDC_CLIENT[127]: Failed to find PDC ID: 0
+# [250669.942638] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.893286] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[113]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.893136] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[112]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+# [250669.942173] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.942147] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.893304] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[113]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.893146] [ERROR] [pdc.c:110] PDC_CLIENT[112]: PDC client init error
+# [250669.942108] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.893315] [ERROR] [pdc.c:110] PDC_CLIENT[113]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.893157] [ERROR] [pdc_prop.c:77] PDC_CLIENT[112]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.893328] [ERROR] [pdc_prop.c:77] PDC_CLIENT[113]: Failed to find PDC ID: 0
+   cxi
+   cxi
+# [250669.942497] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.942666] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.943373] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250669.943380] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.894030] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[109]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.894045] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[108]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.894047] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[109]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.894065] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[108]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.894056] [ERROR] [pdc.c:110] PDC_CLIENT[109]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.894075] [ERROR] [pdc.c:110] PDC_CLIENT[108]: PDC client init error
+   cxi
+[07:39:19.894067] [ERROR] [pdc_prop.c:77] PDC_CLIENT[109]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.894087] [ERROR] [pdc_prop.c:77] PDC_CLIENT[108]: Failed to find PDC ID: 0
+# [250669.943406] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.943416] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.944181] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.894845] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[156]: Error with HG_Init()
+# [250669.944183] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.894832] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[155]: Error with HG_Init()
+# [250669.944171] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.894830] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[141]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.894863] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[156]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.894850] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[155]: Error with PDC_Client_mercury_init, exiting...
+# [250669.944359] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.895028] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[148]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.894848] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[141]: Error with PDC_Client_mercury_init, exiting...
+[07:39:19.880593] [ERROR] [vpicio.c:106] PDC_CLIENT[111]: Failed to create container property   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.894875] [ERROR] [pdc.c:110] PDC_CLIENT[156]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.894862] [ERROR] [pdc.c:110] PDC_CLIENT[155]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.895045] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[148]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.894859] [ERROR] [pdc.c:110] PDC_CLIENT[141]: PDC client init error
+# [250669.944857] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.895530] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[164]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.894887] [ERROR] [pdc_prop.c:77] PDC_CLIENT[156]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.894876] [ERROR] [pdc_prop.c:77] PDC_CLIENT[155]: Failed to find PDC ID: 0
+# [250669.944761] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.895409] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[153]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.895054] [ERROR] [pdc.c:110] PDC_CLIENT[148]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.894873] [ERROR] [pdc_prop.c:77] PDC_CLIENT[141]: Failed to find PDC ID: 0
+# [250669.944767] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.895416] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[125]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.895556] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[164]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.895424] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[153]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.895067] [ERROR] [pdc_prop.c:77] PDC_CLIENT[148]: Failed to find PDC ID: 0
+# [250669.945220] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.895884] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[147]: Error with HG_Init()
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.895432] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[125]: Error with PDC_Client_mercury_init, exiting...
+# [250669.945422] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250669.945192] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.895851] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[120]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.895566] [ERROR] [pdc.c:110] PDC_CLIENT[164]: PDC client init error
+# [250669.944216] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.944208] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.895433] [ERROR] [pdc.c:110] PDC_CLIENT[153]: PDC client init error
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.895903] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[147]: Error with PDC_Client_mercury_init, exiting...
+# [250669.944204] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.945567] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.896232] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[136]: Error with HG_Init()
+# [250669.945504] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.896170] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[130]: Error with HG_Init()
+# [250669.945488] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.896145] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[126]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.895442] [ERROR] [pdc.c:110] PDC_CLIENT[125]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896075] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[123]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.895870] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[120]: Error with PDC_Client_mercury_init, exiting...
+# [250669.945632] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.896309] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[166]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.895579] [ERROR] [pdc_prop.c:77] PDC_CLIENT[164]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.895444] [ERROR] [pdc_prop.c:77] PDC_CLIENT[153]: Failed to find PDC ID: 0
+# [250669.944398] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.895913] [ERROR] [pdc.c:110] PDC_CLIENT[147]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896248] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[136]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896186] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[130]: Error with PDC_Client_mercury_init, exiting...
+# [250669.946098] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.896750] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[129]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896160] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[126]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.895453] [ERROR] [pdc_prop.c:77] PDC_CLIENT[125]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896093] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[123]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.895881] [ERROR] [pdc.c:110] PDC_CLIENT[120]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896329] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[166]: Error with PDC_Client_mercury_init, exiting...
+# [250669.946116] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250669.946228] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.896894] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[165]: Error with HG_Init()
+   cxi
+# [250669.946229] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+   cxi
+[07:39:19.896885] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[167]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.895926] [ERROR] [pdc_prop.c:77] PDC_CLIENT[147]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896258] [ERROR] [pdc.c:110] PDC_CLIENT[136]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896195] [ERROR] [pdc.c:110] PDC_CLIENT[130]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896769] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[129]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896169] [ERROR] [pdc.c:110] PDC_CLIENT[126]: PDC client init error
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896103] [ERROR] [pdc.c:110] PDC_CLIENT[123]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.895893] [ERROR] [pdc_prop.c:77] PDC_CLIENT[120]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896340] [ERROR] [pdc.c:110] PDC_CLIENT[166]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896782] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[107]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.896913] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[165]: Error with PDC_Client_mercury_init, exiting...
+# [250669.944901] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+# [250669.944790] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+[07:39:19.896903] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[167]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+# [250669.946515] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897192] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[142]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896270] [ERROR] [pdc_prop.c:77] PDC_CLIENT[136]: Failed to find PDC ID: 0
+# [250669.946498] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897143] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[131]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896208] [ERROR] [pdc_prop.c:77] PDC_CLIENT[130]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896778] [ERROR] [pdc.c:110] PDC_CLIENT[129]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896182] [ERROR] [pdc_prop.c:77] PDC_CLIENT[126]: Failed to find PDC ID: 0
+# [250669.944798] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.946482] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897132] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[124]: Error with HG_Init()
+   cxi
+[07:39:19.896116] [ERROR] [pdc_prop.c:77] PDC_CLIENT[123]: Failed to find PDC ID: 0
+# [250669.946487] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897130] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[121]: Error with HG_Init()
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896354] [ERROR] [pdc_prop.c:77] PDC_CLIENT[166]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896802] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[107]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.896922] [ERROR] [pdc.c:110] PDC_CLIENT[165]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+[07:39:19.896912] [ERROR] [pdc.c:110] PDC_CLIENT[167]: PDC client init error
+# [250669.945259] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.947081] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897743] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[146]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897212] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[142]: Error with PDC_Client_mercury_init, exiting...
+# [250669.947075] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897744] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[138]: Error with HG_Init()
+   cxi
+# [250669.946887] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897553] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[132]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897158] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[131]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896790] [ERROR] [pdc_prop.c:77] PDC_CLIENT[129]: Failed to find PDC ID: 0
+# [250669.946884] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897551] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[128]: Error with HG_Init()
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897146] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[124]: Error with PDC_Client_mercury_init, exiting...
+# [250669.945452] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897146] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[121]: Error with PDC_Client_mercury_init, exiting...
+# [250669.945221] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896812] [ERROR] [pdc.c:110] PDC_CLIENT[107]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896936] [ERROR] [pdc_prop.c:77] PDC_CLIENT[165]: Failed to find PDC ID: 0
+# [250669.947409] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.898072] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[162]: Error with HG_Init()
+# [250669.947179] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897829] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[160]: Error with HG_Init()
+# [250669.947186] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.897847] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[159]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.896925] [ERROR] [pdc_prop.c:77] PDC_CLIENT[167]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897759] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[146]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897223] [ERROR] [pdc.c:110] PDC_CLIENT[142]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897760] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[138]: Error with PDC_Client_mercury_init, exiting...
+# [250669.945601] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897569] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[132]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897170] [ERROR] [pdc.c:110] PDC_CLIENT[131]: PDC client init error
+# [250669.945539] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897569] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[128]: Error with PDC_Client_mercury_init, exiting...
+# [250669.945523] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897156] [ERROR] [pdc.c:110] PDC_CLIENT[124]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897155] [ERROR] [pdc.c:110] PDC_CLIENT[121]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.945676] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+[07:39:19.896826] [ERROR] [pdc_prop.c:77] PDC_CLIENT[107]: Failed to find PDC ID: 0
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.898088] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[162]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897845] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[160]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.897866] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[159]: Error with PDC_Client_mercury_init, exiting...
+# [250669.947675] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.898331] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[157]: Error with HG_Init()
+   cxi
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897769] [ERROR] [pdc.c:110] PDC_CLIENT[146]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897240] [ERROR] [pdc_prop.c:77] PDC_CLIENT[142]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897770] [ERROR] [pdc.c:110] PDC_CLIENT[138]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897578] [ERROR] [pdc.c:110] PDC_CLIENT[132]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897181] [ERROR] [pdc_prop.c:77] PDC_CLIENT[131]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.946127] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897579] [ERROR] [pdc.c:110] PDC_CLIENT[128]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897166] [ERROR] [pdc_prop.c:77] PDC_CLIENT[124]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897166] [ERROR] [pdc_prop.c:77] PDC_CLIENT[121]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.946157] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.898096] [ERROR] [pdc.c:110] PDC_CLIENT[162]: PDC client init error
+# [250669.948119] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.898781] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[161]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897855] [ERROR] [pdc.c:110] PDC_CLIENT[160]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.897876] [ERROR] [pdc.c:110] PDC_CLIENT[159]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.898345] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[157]: Error with PDC_Client_mercury_init, exiting...
+# [250669.946264] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897782] [ERROR] [pdc_prop.c:77] PDC_CLIENT[146]: Failed to find PDC ID: 0
+   cxi
+# [250669.946267] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897783] [ERROR] [pdc_prop.c:77] PDC_CLIENT[138]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897591] [ERROR] [pdc_prop.c:77] PDC_CLIENT[132]: Failed to find PDC ID: 0
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897593] [ERROR] [pdc_prop.c:77] PDC_CLIENT[128]: Failed to find PDC ID: 0
+   cxi
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.898107] [ERROR] [pdc_prop.c:77] PDC_CLIENT[162]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.898801] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[161]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897865] [ERROR] [pdc_prop.c:77] PDC_CLIENT[160]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.897889] [ERROR] [pdc_prop.c:77] PDC_CLIENT[159]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.898354] [ERROR] [pdc.c:110] PDC_CLIENT[157]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+# [250669.946559] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+   cxi
+# [250669.946524] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+# [250669.946511] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.946512] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.948621] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250669.948623] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+   cxi
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.898811] [ERROR] [pdc.c:110] PDC_CLIENT[161]: PDC client init error
+   cxi
+   cxi
+# [250669.948638] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.899291] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[158]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.898365] [ERROR] [pdc_prop.c:77] PDC_CLIENT[157]: Failed to find PDC ID: 0
+# [250669.947112] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.947109] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.946922] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.946924] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.899287] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[117]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.899291] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[115]: Error with HG_Init()
+# [250669.947446] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.898828] [ERROR] [pdc_prop.c:77] PDC_CLIENT[161]: Failed to find PDC ID: 0
+# [250669.947206] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.947222] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.899308] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[158]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.949000] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.899659] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[145]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.899307] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[117]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.899311] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[115]: Error with PDC_Client_mercury_init, exiting...
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.899319] [ERROR] [pdc.c:110] PDC_CLIENT[158]: PDC client init error
+# [250669.947710] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.899673] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[145]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.899317] [ERROR] [pdc.c:110] PDC_CLIENT[117]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.899321] [ERROR] [pdc.c:110] PDC_CLIENT[115]: PDC client init error
+# [250669.948156] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.899332] [ERROR] [pdc_prop.c:77] PDC_CLIENT[158]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.899683] [ERROR] [pdc.c:110] PDC_CLIENT[145]: PDC client init error
+   cxi
+[07:39:19.899330] [ERROR] [pdc_prop.c:77] PDC_CLIENT[117]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.899334] [ERROR] [pdc_prop.c:77] PDC_CLIENT[115]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.899696] [ERROR] [pdc_prop.c:77] PDC_CLIENT[145]: Failed to find PDC ID: 0
+# [250669.948658] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.948664] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.948668] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.949033] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.950177] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.900824] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[122]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.900839] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[122]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.900848] [ERROR] [pdc.c:110] PDC_CLIENT[122]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.900858] [ERROR] [pdc_prop.c:77] PDC_CLIENT[122]: Failed to find PDC ID: 0
+   cxi
+# [250669.950203] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.956019] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.906690] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[91]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.906710] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[91]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.906719] [ERROR] [pdc.c:110] PDC_CLIENT[91]: PDC client init error
+   cxi
+[07:39:19.906733] [ERROR] [pdc_prop.c:77] PDC_CLIENT[91]: Failed to find PDC ID: 0
+# [250669.956063] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.956630] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907294] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[84]: Error with HG_Init()
+# [250669.956820] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907484] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[86]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907310] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[84]: Error with PDC_Client_mercury_init, exiting...
+# [250669.957014] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907664] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[94]: Error with HG_Init()
+# [250669.956957] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907604] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[93]: Error with HG_Init()
+# [250669.956969] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907616] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[90]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907500] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[86]: Error with PDC_Client_mercury_init, exiting...
+# [250669.956949] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907594] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[85]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907319] [ERROR] [pdc.c:110] PDC_CLIENT[84]: PDC client init error
+# [250669.957189] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907836] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[97]: Error with HG_Init()
+# [250669.957449] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908107] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[96]: Error with HG_Init()
+# [250669.957248] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907901] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[95]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907680] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[94]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907621] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[93]: Error with PDC_Client_mercury_init, exiting...
+# [250669.957196] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907845] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[92]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907631] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[90]: Error with PDC_Client_mercury_init, exiting...
+# [250669.957195] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907847] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[89]: Error with HG_Init()
+# [250669.957077] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.907733] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[88]: Error with HG_Init()
+# [250669.957545] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908190] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[87]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907508] [ERROR] [pdc.c:110] PDC_CLIENT[86]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907609] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[85]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+[07:39:19.907334] [ERROR] [pdc_prop.c:77] PDC_CLIENT[84]: Failed to find PDC ID: 0
+# [250669.957851] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908505] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[104]: Error with HG_Init()
+# [250669.957868] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908519] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[103]: Error with HG_Init()
+# [250669.957812] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908466] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[102]: Error with HG_Init()
+# [250669.957842] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908482] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[101]: Error with HG_Init()
+# [250669.957778] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908421] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[100]: Error with HG_Init()
+# [250669.957816] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908464] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[99]: Error with HG_Init()
+# [250669.957698] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.908359] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[98]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907859] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[97]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908123] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[96]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907915] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[95]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907689] [ERROR] [pdc.c:110] PDC_CLIENT[94]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907630] [ERROR] [pdc.c:110] PDC_CLIENT[93]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907860] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[92]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907639] [ERROR] [pdc.c:110] PDC_CLIENT[90]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907864] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[89]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.907746] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[88]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908206] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[87]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907519] [ERROR] [pdc_prop.c:77] PDC_CLIENT[86]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907618] [ERROR] [pdc.c:110] PDC_CLIENT[85]: PDC client init error
+# [250669.956670] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908523] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[104]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908537] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[103]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908483] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[102]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908496] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[101]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908435] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[100]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908478] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[99]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.908373] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[98]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907867] [ERROR] [pdc.c:110] PDC_CLIENT[97]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908131] [ERROR] [pdc.c:110] PDC_CLIENT[96]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907923] [ERROR] [pdc.c:110] PDC_CLIENT[95]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907700] [ERROR] [pdc_prop.c:77] PDC_CLIENT[94]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907642] [ERROR] [pdc_prop.c:77] PDC_CLIENT[93]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907868] [ERROR] [pdc.c:110] PDC_CLIENT[92]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907650] [ERROR] [pdc_prop.c:77] PDC_CLIENT[90]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907871] [ERROR] [pdc.c:110] PDC_CLIENT[89]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.907755] [ERROR] [pdc.c:110] PDC_CLIENT[88]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908217] [ERROR] [pdc.c:110] PDC_CLIENT[87]: PDC client init error
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907628] [ERROR] [pdc_prop.c:77] PDC_CLIENT[85]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908533] [ERROR] [pdc.c:110] PDC_CLIENT[104]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908546] [ERROR] [pdc.c:110] PDC_CLIENT[103]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908492] [ERROR] [pdc.c:110] PDC_CLIENT[102]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908505] [ERROR] [pdc.c:110] PDC_CLIENT[101]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908445] [ERROR] [pdc.c:110] PDC_CLIENT[100]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908486] [ERROR] [pdc.c:110] PDC_CLIENT[99]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.908381] [ERROR] [pdc.c:110] PDC_CLIENT[98]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907877] [ERROR] [pdc_prop.c:77] PDC_CLIENT[97]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908140] [ERROR] [pdc_prop.c:77] PDC_CLIENT[96]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907932] [ERROR] [pdc_prop.c:77] PDC_CLIENT[95]: Failed to find PDC ID: 0
+   cxi
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907878] [ERROR] [pdc_prop.c:77] PDC_CLIENT[92]: Failed to find PDC ID: 0
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907884] [ERROR] [pdc_prop.c:77] PDC_CLIENT[89]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.907764] [ERROR] [pdc_prop.c:77] PDC_CLIENT[88]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908227] [ERROR] [pdc_prop.c:77] PDC_CLIENT[87]: Failed to find PDC ID: 0
+# [250669.956856] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908545] [ERROR] [pdc_prop.c:77] PDC_CLIENT[104]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908557] [ERROR] [pdc_prop.c:77] PDC_CLIENT[103]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908504] [ERROR] [pdc_prop.c:77] PDC_CLIENT[102]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908515] [ERROR] [pdc_prop.c:77] PDC_CLIENT[101]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908455] [ERROR] [pdc_prop.c:77] PDC_CLIENT[100]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908496] [ERROR] [pdc_prop.c:77] PDC_CLIENT[99]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.908394] [ERROR] [pdc_prop.c:77] PDC_CLIENT[98]: Failed to find PDC ID: 0
+   cxi
+   cxi
+   cxi
+# [250669.957041] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.956982] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+# [250669.956995] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.956976] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+   cxi
+   cxi
+   cxi
+   cxi
+   cxi
+# [250669.957217] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957485] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957282] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.957223] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.957224] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957112] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957572] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250669.957878] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957894] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957838] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957864] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957800] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957847] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250669.957735] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.456574] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.925630] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[41]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.925648] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[41]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.925658] [ERROR] [pdc.c:110] PDC_CLIENT[41]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.925674] [ERROR] [pdc_prop.c:77] PDC_CLIENT[41]: Failed to find PDC ID: 0
+   cxi
+# [250673.456612] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.457920] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.926961] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[39]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.926978] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[39]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.926987] [ERROR] [pdc.c:110] PDC_CLIENT[39]: PDC client init error
+   cxi
+[07:39:19.926999] [ERROR] [pdc_prop.c:77] PDC_CLIENT[39]: Failed to find PDC ID: 0
+# [250673.457948] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.458595] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.927642] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[40]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.927659] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[40]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.927667] [ERROR] [pdc.c:110] PDC_CLIENT[40]: PDC client init error
+   cxi
+[07:39:19.927679] [ERROR] [pdc_prop.c:77] PDC_CLIENT[40]: Failed to find PDC ID: 0
+# [250673.458625] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.460708] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.929754] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[37]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.929773] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[37]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.929782] [ERROR] [pdc.c:110] PDC_CLIENT[37]: PDC client init error
+   cxi
+[07:39:19.929793] [ERROR] [pdc_prop.c:77] PDC_CLIENT[37]: Failed to find PDC ID: 0
+# [250673.460738] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.461791] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.930850] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[36]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.930866] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[36]: Error with PDC_Client_mercury_init, exiting...
+# [250673.461939] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250673.461943] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.930875] [ERROR] [pdc.c:110] PDC_CLIENT[36]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.931000] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[79]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.931007] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[67]: Error with HG_Init()
+   cxi
+[07:39:19.930887] [ERROR] [pdc_prop.c:77] PDC_CLIENT[36]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.931015] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[79]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.931025] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[67]: Error with PDC_Client_mercury_init, exiting...
+# [250673.461829] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.931025] [ERROR] [pdc.c:110] PDC_CLIENT[79]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.931035] [ERROR] [pdc.c:110] PDC_CLIENT[67]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+[07:39:19.931040] [ERROR] [pdc_prop.c:77] PDC_CLIENT[79]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.931049] [ERROR] [pdc_prop.c:77] PDC_CLIENT[67]: Failed to find PDC ID: 0
+# [250673.461979] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.461990] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.462344] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.931423] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[54]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.931441] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[54]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.931451] [ERROR] [pdc.c:110] PDC_CLIENT[54]: PDC client init error
+   cxi
+[07:39:19.931466] [ERROR] [pdc_prop.c:77] PDC_CLIENT[54]: Failed to find PDC ID: 0
+# [250673.462397] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.463402] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.932473] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[44]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.932493] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[44]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.932503] [ERROR] [pdc.c:110] PDC_CLIENT[44]: PDC client init error
+   cxi
+[07:39:19.932518] [ERROR] [pdc_prop.c:77] PDC_CLIENT[44]: Failed to find PDC ID: 0
+# [250673.463449] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.463811] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.932858] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[80]: Error with HG_Init()
+# [250673.463811] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.932874] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[80]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.932890] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[70]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.932882] [ERROR] [pdc.c:110] PDC_CLIENT[80]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.932911] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[70]: Error with PDC_Client_mercury_init, exiting...
+# [250673.464175] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.933217] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[83]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.932894] [ERROR] [pdc_prop.c:77] PDC_CLIENT[80]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.932920] [ERROR] [pdc.c:110] PDC_CLIENT[70]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.933231] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[83]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+   cxi
+[07:39:19.932935] [ERROR] [pdc_prop.c:77] PDC_CLIENT[70]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.933239] [ERROR] [pdc.c:110] PDC_CLIENT[83]: PDC client init error
+# [250673.463839] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.463861] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.933251] [ERROR] [pdc_prop.c:77] PDC_CLIENT[83]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+# [250673.464203] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.465558] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250673.465561] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.934602] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[63]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.934608] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[43]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.934620] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[63]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.934626] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[43]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.934628] [ERROR] [pdc.c:110] PDC_CLIENT[63]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.934635] [ERROR] [pdc.c:110] PDC_CLIENT[43]: PDC client init error
+   cxi
+[07:39:19.934640] [ERROR] [pdc_prop.c:77] PDC_CLIENT[63]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.934648] [ERROR] [pdc_prop.c:77] PDC_CLIENT[43]: Failed to find PDC ID: 0
+# [250673.465590] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.465594] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.466498] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.935547] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[47]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.935563] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[47]: Error with PDC_Client_mercury_init, exiting...
+# [250673.466606] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.935655] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[35]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.935573] [ERROR] [pdc.c:110] PDC_CLIENT[47]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.935673] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[35]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+[07:39:19.935585] [ERROR] [pdc_prop.c:77] PDC_CLIENT[47]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.935682] [ERROR] [pdc.c:110] PDC_CLIENT[35]: PDC client init error
+# [250673.466532] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.935695] [ERROR] [pdc_prop.c:77] PDC_CLIENT[35]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+# [250673.466640] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.467382] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.936433] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[81]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.936448] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[81]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.936457] [ERROR] [pdc.c:110] PDC_CLIENT[81]: PDC client init error
+   cxi
+[07:39:19.936468] [ERROR] [pdc_prop.c:77] PDC_CLIENT[81]: Failed to find PDC ID: 0
+# [250673.467579] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250673.467419] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.936630] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[71]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.936649] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[71]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.936658] [ERROR] [pdc.c:110] PDC_CLIENT[71]: PDC client init error
+   cxi
+[07:39:19.936669] [ERROR] [pdc_prop.c:77] PDC_CLIENT[71]: Failed to find PDC ID: 0
+# [250673.467614] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.468020] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.937063] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[65]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.937080] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[65]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.937089] [ERROR] [pdc.c:110] PDC_CLIENT[65]: PDC client init error
+# [250673.468181] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.937229] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[64]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.937100] [ERROR] [pdc_prop.c:77] PDC_CLIENT[65]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.937245] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[64]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.937254] [ERROR] [pdc.c:110] PDC_CLIENT[64]: PDC client init error
+# [250673.468368] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250673.468050] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.937265] [ERROR] [pdc_prop.c:77] PDC_CLIENT[64]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.937412] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[55]: Error with HG_Init()
+# [250673.468529] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.937576] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[66]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.937432] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[55]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.937590] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[66]: Error with PDC_Client_mercury_init, exiting...
+# [250673.468210] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.468623] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.937686] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[57]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.937440] [ERROR] [pdc.c:110] PDC_CLIENT[55]: PDC client init error
+# [250673.468687] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.937734] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[48]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.937598] [ERROR] [pdc.c:110] PDC_CLIENT[66]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.937706] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[57]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+[07:39:19.937452] [ERROR] [pdc_prop.c:77] PDC_CLIENT[55]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.937754] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[48]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.937609] [ERROR] [pdc_prop.c:77] PDC_CLIENT[66]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.937717] [ERROR] [pdc.c:110] PDC_CLIENT[57]: PDC client init error
+# [250673.468398] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.937764] [ERROR] [pdc.c:110] PDC_CLIENT[48]: PDC client init error
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.937734] [ERROR] [pdc_prop.c:77] PDC_CLIENT[57]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.937774] [ERROR] [pdc_prop.c:77] PDC_CLIENT[48]: Failed to find PDC ID: 0
+# [250673.468560] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.468663] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.468715] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.469378] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.938443] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[30]: Error with HG_Init()
+# [250673.469566] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.938460] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[30]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.938627] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[78]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.938470] [ERROR] [pdc.c:110] PDC_CLIENT[30]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.938642] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[78]: Error with PDC_Client_mercury_init, exiting...
+# [250673.469719] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.938774] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[74]: Error with HG_Init()
+# [250673.469734] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.938780] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[68]: Error with HG_Init()
+# [250673.469739] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.938795] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[62]: Error with HG_Init()
+# [250673.469743] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.938795] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[58]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.938487] [ERROR] [pdc_prop.c:77] PDC_CLIENT[30]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.938649] [ERROR] [pdc.c:110] PDC_CLIENT[78]: PDC client init error
+# [250673.469876] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.938943] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[77]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.938793] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[74]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.938797] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[68]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.938814] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[62]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.938815] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[58]: Error with PDC_Client_mercury_init, exiting...
+# [250673.470032] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939086] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[49]: Error with HG_Init()
+   cxi
+   cxi
+[07:39:19.938660] [ERROR] [pdc_prop.c:77] PDC_CLIENT[78]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.938961] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[77]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.938803] [ERROR] [pdc.c:110] PDC_CLIENT[74]: PDC client init error
+# [250673.470224] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939273] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[73]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.938805] [ERROR] [pdc.c:110] PDC_CLIENT[68]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.938823] [ERROR] [pdc.c:110] PDC_CLIENT[62]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.938824] [ERROR] [pdc.c:110] PDC_CLIENT[58]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939104] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[49]: Error with PDC_Client_mercury_init, exiting...
+# [250673.469419] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.469608] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.938971] [ERROR] [pdc.c:110] PDC_CLIENT[77]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.938814] [ERROR] [pdc_prop.c:77] PDC_CLIENT[74]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939291] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[73]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.938817] [ERROR] [pdc_prop.c:77] PDC_CLIENT[68]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.938839] [ERROR] [pdc_prop.c:77] PDC_CLIENT[62]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.938838] [ERROR] [pdc_prop.c:77] PDC_CLIENT[58]: Failed to find PDC ID: 0
+# [250673.470571] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939622] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[50]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939112] [ERROR] [pdc.c:110] PDC_CLIENT[49]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.938985] [ERROR] [pdc_prop.c:77] PDC_CLIENT[77]: Failed to find PDC ID: 0
+# [250673.470725] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939780] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[76]: Error with HG_Init()
+   cxi
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939300] [ERROR] [pdc.c:110] PDC_CLIENT[73]: PDC client init error
+# [250673.470731] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939784] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[72]: Error with HG_Init()
+   cxi
+   cxi
+# [250673.470870] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939927] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[60]: Error with HG_Init()
+   cxi
+# [250673.470985] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250673.470857] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939903] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[53]: Error with HG_Init()
+# [250673.470861] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939912] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[52]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939639] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[50]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939124] [ERROR] [pdc_prop.c:77] PDC_CLIENT[49]: Failed to find PDC ID: 0
+# [250673.470748] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939800] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[46]: Error with HG_Init()
+# [250673.470733] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.939792] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[38]: Error with HG_Init()
+# [250673.471299] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939798] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[76]: Error with PDC_Client_mercury_init, exiting...
+# [250673.471294] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.940341] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[75]: Error with HG_Init()
+# [250673.469756] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939311] [ERROR] [pdc_prop.c:77] PDC_CLIENT[73]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939802] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[72]: Error with PDC_Client_mercury_init, exiting...
+# [250673.471495] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.940541] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[69]: Error with HG_Init()
+# [250673.469762] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.469776] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.471494] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.940546] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[61]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939947] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[60]: Error with PDC_Client_mercury_init, exiting...
+# [250673.469775] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.940039] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[56]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939920] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[53]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939929] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[52]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939647] [ERROR] [pdc.c:110] PDC_CLIENT[50]: PDC client init error
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939819] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[46]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.939815] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[38]: Error with PDC_Client_mercury_init, exiting...
+[07:39:19.940360] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[82]: Error with HG_Init()
+# [250673.471594] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.940639] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[26]: Error with HG_Init()
+# [250673.471284] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.940342] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[22]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+# [250673.469926] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939806] [ERROR] [pdc.c:110] PDC_CLIENT[76]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.940358] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[75]: Error with PDC_Client_mercury_init, exiting...
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939813] [ERROR] [pdc.c:110] PDC_CLIENT[72]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.940559] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[69]: Error with PDC_Client_mercury_init, exiting...
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.940565] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[61]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939955] [ERROR] [pdc.c:110] PDC_CLIENT[60]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.940059] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[56]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939929] [ERROR] [pdc.c:110] PDC_CLIENT[53]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939938] [ERROR] [pdc.c:110] PDC_CLIENT[52]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939658] [ERROR] [pdc_prop.c:77] PDC_CLIENT[50]: Failed to find PDC ID: 0
+# [250673.470068] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939828] [ERROR] [pdc.c:110] PDC_CLIENT[46]: PDC client init error
+# [250673.472088] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.941141] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[42]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.939824] [ERROR] [pdc.c:110] PDC_CLIENT[38]: PDC client init error
+[07:39:19.940377] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[82]: Error with PDC_Client_mercury_init, exiting...
+# [250673.471687] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.940732] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[28]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.940655] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[26]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.940360] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[22]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939822] [ERROR] [pdc_prop.c:77] PDC_CLIENT[76]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.940368] [ERROR] [pdc.c:110] PDC_CLIENT[75]: PDC client init error
+# [250673.470259] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939827] [ERROR] [pdc_prop.c:77] PDC_CLIENT[72]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.940568] [ERROR] [pdc.c:110] PDC_CLIENT[69]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.940573] [ERROR] [pdc.c:110] PDC_CLIENT[61]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939968] [ERROR] [pdc_prop.c:77] PDC_CLIENT[60]: Failed to find PDC ID: 0
+# [250673.472366] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.941412] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[59]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.940067] [ERROR] [pdc.c:110] PDC_CLIENT[56]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939940] [ERROR] [pdc_prop.c:77] PDC_CLIENT[53]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939950] [ERROR] [pdc_prop.c:77] PDC_CLIENT[52]: Failed to find PDC ID: 0
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939840] [ERROR] [pdc_prop.c:77] PDC_CLIENT[46]: Failed to find PDC ID: 0
+# [250673.472418] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.941461] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[45]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.941158] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[42]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.939839] [ERROR] [pdc_prop.c:77] PDC_CLIENT[38]: Failed to find PDC ID: 0
+[07:39:19.940386] [ERROR] [pdc.c:110] PDC_CLIENT[82]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.940747] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[28]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.940664] [ERROR] [pdc.c:110] PDC_CLIENT[26]: PDC client init error
+# [250673.472733] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.941778] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[25]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.940370] [ERROR] [pdc.c:110] PDC_CLIENT[22]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.940380] [ERROR] [pdc_prop.c:77] PDC_CLIENT[75]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.940580] [ERROR] [pdc_prop.c:77] PDC_CLIENT[69]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.940585] [ERROR] [pdc_prop.c:77] PDC_CLIENT[61]: Failed to find PDC ID: 0
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.941430] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[59]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+[07:39:19.940079] [ERROR] [pdc_prop.c:77] PDC_CLIENT[56]: Failed to find PDC ID: 0
+   cxi
+   cxi
+# [250673.473302] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.942348] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[51]: Error with HG_Init()
+# [250673.470605] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.941478] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[45]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.941167] [ERROR] [pdc.c:110] PDC_CLIENT[42]: PDC client init error
+   cxi
+[07:39:19.940399] [ERROR] [pdc_prop.c:77] PDC_CLIENT[82]: Failed to find PDC ID: 0
+# [250673.473069] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.942115] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[29]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.940756] [ERROR] [pdc.c:110] PDC_CLIENT[28]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.940676] [ERROR] [pdc_prop.c:77] PDC_CLIENT[26]: Failed to find PDC ID: 0
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.941795] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[25]: Error with PDC_Client_mercury_init, exiting...
+# [250673.473249] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.942293] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[24]: Error with HG_Init()
+# [250673.473097] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.942138] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[23]: Error with HG_Init()
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.940385] [ERROR] [pdc_prop.c:77] PDC_CLIENT[22]: Failed to find PDC ID: 0
+# [250673.472926] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.941967] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[21]: Error with HG_Init()
+   cxi
+# [250673.470760] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+# [250673.470763] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+# [250673.470907] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.941438] [ERROR] [pdc.c:110] PDC_CLIENT[59]: PDC client init error
+# [250673.471019] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.470889] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.470891] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.942364] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[51]: Error with PDC_Client_mercury_init, exiting...
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.470779] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.941486] [ERROR] [pdc.c:110] PDC_CLIENT[45]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.941180] [ERROR] [pdc_prop.c:77] PDC_CLIENT[42]: Failed to find PDC ID: 0
+# [250673.470771] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.474312] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.943354] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[33]: Error with HG_Init()
+# [250673.473690] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.942740] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[32]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.942131] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[29]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.940766] [ERROR] [pdc_prop.c:77] PDC_CLIENT[28]: Failed to find PDC ID: 0
+# [250673.474180] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.943228] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[27]: Error with HG_Init()
+   cxi
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.941803] [ERROR] [pdc.c:110] PDC_CLIENT[25]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.942308] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[24]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.942154] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[23]: Error with PDC_Client_mercury_init, exiting...
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+flux-job: task(s) Unknown signal 127
+[07:39:19.941983] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[21]: Error with PDC_Client_mercury_init, exiting...
+# [250673.471341] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.471326] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.471526] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.471530] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.941449] [ERROR] [pdc_prop.c:77] PDC_CLIENT[59]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.942373] [ERROR] [pdc.c:110] PDC_CLIENT[51]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.941497] [ERROR] [pdc_prop.c:77] PDC_CLIENT[45]: Failed to find PDC ID: 0
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.474498] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.943558] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[34]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.943372] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[33]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.942757] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[32]: Error with PDC_Client_mercury_init, exiting...
+# [250673.474833] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.943881] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[31]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.942139] [ERROR] [pdc.c:110] PDC_CLIENT[29]: PDC client init error
+   cxi
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.943244] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[27]: Error with PDC_Client_mercury_init, exiting...
+# [250673.471623] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.941815] [ERROR] [pdc_prop.c:77] PDC_CLIENT[25]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.942316] [ERROR] [pdc.c:110] PDC_CLIENT[24]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.942162] [ERROR] [pdc.c:110] PDC_CLIENT[23]: PDC client init error
+# [250673.471320] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.941992] [ERROR] [pdc.c:110] PDC_CLIENT[21]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.942384] [ERROR] [pdc_prop.c:77] PDC_CLIENT[51]: Failed to find PDC ID: 0
+   cxi
+# [250673.472123] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.943575] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[34]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.943379] [ERROR] [pdc.c:110] PDC_CLIENT[33]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.942766] [ERROR] [pdc.c:110] PDC_CLIENT[32]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.943900] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[31]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.942150] [ERROR] [pdc_prop.c:77] PDC_CLIENT[29]: Failed to find PDC ID: 0
+# [250673.471715] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.943252] [ERROR] [pdc.c:110] PDC_CLIENT[27]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.942327] [ERROR] [pdc_prop.c:77] PDC_CLIENT[24]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.942174] [ERROR] [pdc_prop.c:77] PDC_CLIENT[23]: Failed to find PDC ID: 0
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.942004] [ERROR] [pdc_prop.c:77] PDC_CLIENT[21]: Failed to find PDC ID: 0
+# [250673.472397] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+# [250673.472446] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.943584] [ERROR] [pdc.c:110] PDC_CLIENT[34]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.943390] [ERROR] [pdc_prop.c:77] PDC_CLIENT[33]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.942780] [ERROR] [pdc_prop.c:77] PDC_CLIENT[32]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.943908] [ERROR] [pdc.c:110] PDC_CLIENT[31]: PDC client init error
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.943263] [ERROR] [pdc_prop.c:77] PDC_CLIENT[27]: Failed to find PDC ID: 0
+# [250673.472764] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.473333] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.943595] [ERROR] [pdc_prop.c:77] PDC_CLIENT[34]: Failed to find PDC ID: 0
+   cxi
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.943920] [ERROR] [pdc_prop.c:77] PDC_CLIENT[31]: Failed to find PDC ID: 0
+# [250673.473099] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.473276] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.473124] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.472954] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.476870] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.945911] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[11]: Error with HG_Init()
+# [250673.476848] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.945904] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[9]: Error with HG_Init()
+# [250673.476849] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.945905] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[7]: Error with HG_Init()
+# [250673.476634] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.945683] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[4]: Error with HG_Init()
+# [250673.476736] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.945769] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[0]: Error with HG_Init()
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+   cxi
+# [250673.474340] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.473720] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.474212] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477721] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250673.477621] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946664] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[16]: Error with HG_Init()
+# [250673.477714] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+# [250673.477175] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946213] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[13]: Error with HG_Init()
+# [250673.477585] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946642] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[12]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.945926] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[11]: Error with PDC_Client_mercury_init, exiting...
+# [250673.477689] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.945920] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[9]: Error with PDC_Client_mercury_init, exiting...
+# [250673.477577] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946632] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[8]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.945920] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[7]: Error with PDC_Client_mercury_init, exiting...
+# [250673.477076] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946114] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[6]: Error with HG_Init()
+# [250673.477706] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946739] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[5]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.945698] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[4]: Error with PDC_Client_mercury_init, exiting...
+# [250673.477697] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946730] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[3]: Error with HG_Init()
+# [250673.477682] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946735] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[2]: Error with HG_Init()
+# [250673.477059] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946093] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[1]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.945782] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[0]: Error with PDC_Client_mercury_init, exiting...
+# [250673.474537] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.474866] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477845] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946880] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[20]: Error with HG_Init()
+# [250673.477829] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946858] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[19]: Error with HG_Init()
+# [250673.477843] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946879] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[18]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946753] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[17]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946678] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[16]: Error with PDC_Client_mercury_init, exiting...
+# [250673.477813] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na_ofi.c:2612
+[07:39:19.946846] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[15]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946751] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[14]: Error with HG_Init()
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946228] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[13]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946658] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[12]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.945934] [ERROR] [pdc.c:110] PDC_CLIENT[11]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946743] [ERROR] [pdc_client_connect.c:1323] PDC_CLIENT[10]: Error with HG_Init()
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.945928] [ERROR] [pdc.c:110] PDC_CLIENT[9]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946649] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[8]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.945928] [ERROR] [pdc.c:110] PDC_CLIENT[7]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946127] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[6]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946754] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[5]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.945707] [ERROR] [pdc.c:110] PDC_CLIENT[4]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946743] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[3]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946750] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[2]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946105] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[1]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.945792] [ERROR] [pdc.c:110] PDC_CLIENT[0]: PDC client init error
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946893] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[20]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946871] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[19]: Error with PDC_Client_mercury_init, exiting...
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946892] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[18]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946768] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[17]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946688] [ERROR] [pdc.c:110] PDC_CLIENT[16]: PDC client init error
+ # na_ofi_provider_check(): Requested OFI provider "tcp;ofi_rxm" (derived from "tcp"
+[07:39:19.946859] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[15]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946766] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[14]: Error with PDC_Client_mercury_init, exiting...
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946236] [ERROR] [pdc.c:110] PDC_CLIENT[13]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946667] [ERROR] [pdc.c:110] PDC_CLIENT[12]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.945946] [ERROR] [pdc_prop.c:77] PDC_CLIENT[11]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946761] [ERROR] [pdc_client_connect.c:1540] PDC_CLIENT[10]: Error with PDC_Client_mercury_init, exiting...
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.945942] [ERROR] [pdc_prop.c:77] PDC_CLIENT[9]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946660] [ERROR] [pdc.c:110] PDC_CLIENT[8]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.945942] [ERROR] [pdc_prop.c:77] PDC_CLIENT[7]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946136] [ERROR] [pdc.c:110] PDC_CLIENT[6]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946762] [ERROR] [pdc.c:110] PDC_CLIENT[5]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.945720] [ERROR] [pdc_prop.c:77] PDC_CLIENT[4]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946753] [ERROR] [pdc.c:110] PDC_CLIENT[3]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946758] [ERROR] [pdc.c:110] PDC_CLIENT[2]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946114] [ERROR] [pdc.c:110] PDC_CLIENT[1]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.945803] [ERROR] [pdc_prop.c:77] PDC_CLIENT[0]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946901] [ERROR] [pdc.c:110] PDC_CLIENT[20]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946879] [ERROR] [pdc.c:110] PDC_CLIENT[19]: PDC client init error
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946900] [ERROR] [pdc.c:110] PDC_CLIENT[18]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946776] [ERROR] [pdc.c:110] PDC_CLIENT[17]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946698] [ERROR] [pdc_prop.c:77] PDC_CLIENT[16]: Failed to find PDC ID: 0
+   protocol) is not available. Please re-compile libfabric with support for
+[07:39:19.946867] [ERROR] [pdc.c:110] PDC_CLIENT[15]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946776] [ERROR] [pdc.c:110] PDC_CLIENT[14]: PDC client init error
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946248] [ERROR] [pdc_prop.c:77] PDC_CLIENT[13]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946679] [ERROR] [pdc_prop.c:77] PDC_CLIENT[12]: Failed to find PDC ID: 0
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946770] [ERROR] [pdc.c:110] PDC_CLIENT[10]: PDC client init error
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946671] [ERROR] [pdc_prop.c:77] PDC_CLIENT[8]: Failed to find PDC ID: 0
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946146] [ERROR] [pdc_prop.c:77] PDC_CLIENT[6]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946773] [ERROR] [pdc_prop.c:77] PDC_CLIENT[5]: Failed to find PDC ID: 0
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946765] [ERROR] [pdc_prop.c:77] PDC_CLIENT[3]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946769] [ERROR] [pdc_prop.c:77] PDC_CLIENT[2]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946125] [ERROR] [pdc_prop.c:77] PDC_CLIENT[1]: Failed to find PDC ID: 0
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946912] [ERROR] [pdc_prop.c:77] PDC_CLIENT[20]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946890] [ERROR] [pdc_prop.c:77] PDC_CLIENT[19]: Failed to find PDC ID: 0
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946910] [ERROR] [pdc_prop.c:77] PDC_CLIENT[18]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.946787] [ERROR] [pdc_prop.c:77] PDC_CLIENT[17]: Failed to find PDC ID: 0
+   cxi
+   "tcp;ofi_rxm" or use one of the following available providers:
+[07:39:19.946877] [ERROR] [pdc_prop.c:77] PDC_CLIENT[15]: Failed to find PDC ID: 0
+   cxi
+[07:39:19.946786] [ERROR] [pdc_prop.c:77] PDC_CLIENT[14]: Failed to find PDC ID: 0
+   cxi
+   cxi
+# [250673.476895] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+[07:39:19.946782] [ERROR] [pdc_prop.c:77] PDC_CLIENT[10]: Failed to find PDC ID: 0
+# [250673.476882] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+# [250673.476889] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+# [250673.476665] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+   cxi
+# [250673.476760] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+   cxi
+   cxi
+# [250673.477743] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477646] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+   cxi
+# [250673.477737] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477199] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477623] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477722] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477611] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477100] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477727] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477718] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477720] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477082] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477866] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477848] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+# [250673.477863] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+# [250673.477836] mercury->fatal: [error] /p/lustre5/lewis153/src/workspace/source/mercury/src/na/na.c:323
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+[07:39:19.925688] [ERROR] [vpicio.c:106] PDC_CLIENT[41]: Failed to create container property # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+ # NA_Initialize_opt(): Specified class name "ofi" does not support requested protocol
+[07:39:19.927688] [ERROR] [vpicio.c:106] PDC_CLIENT[40]: Failed to create container property[07:39:19.927009] [ERROR] [vpicio.c:106] PDC_CLIENT[39]: Failed to create container property[07:39:19.929803] [ERROR] [vpicio.c:106] PDC_CLIENT[37]: Failed to create container property[07:39:19.883462] [ERROR] [vpicio.c:106] PDC_CLIENT[114]: Failed to create container property[07:39:19.891481] [ERROR] [vpicio.c:106] PDC_CLIENT[116]: Failed to create container property[07:39:19.891139] [ERROR] [vpicio.c:106] PDC_CLIENT[118]: Failed to create container property[07:39:19.882291] [ERROR] [vpicio.c:106] PDC_CLIENT[154]: Failed to create container property[07:39:19.885694] [ERROR] [vpicio.c:106] PDC_CLIENT[149]: Failed to create container property[07:39:19.892788] [ERROR] [vpicio.c:106] PDC_CLIENT[105]: Failed to create container property[07:39:19.930897] [ERROR] [vpicio.c:106] PDC_CLIENT[36]: Failed to create container property[07:39:19.888046] [ERROR] [vpicio.c:106] PDC_CLIENT[152]: Failed to create container property[07:39:19.889757] [ERROR] [vpicio.c:106] PDC_CLIENT[110]: Failed to create container property[07:39:19.894077] [ERROR] [vpicio.c:106] PDC_CLIENT[109]: Failed to create container property[07:39:19.890916] [ERROR] [vpicio.c:106] PDC_CLIENT[139]: Failed to create container property[07:39:19.897176] [ERROR] [vpicio.c:106] PDC_CLIENT[121]: Failed to create container property[07:39:19.891873] [ERROR] [vpicio.c:106] PDC_CLIENT[119]: Failed to create container property[07:39:19.893339] [ERROR] [vpicio.c:106] PDC_CLIENT[113]: Failed to create container property[07:39:19.893168] [ERROR] [vpicio.c:106] PDC_CLIENT[112]: Failed to create container property[07:39:19.894097] [ERROR] [vpicio.c:106] PDC_CLIENT[108]: Failed to create container property[07:39:19.888051] [ERROR] [vpicio.c:106] PDC_CLIENT[106]: Failed to create container property[07:39:19.895465] [ERROR] [vpicio.c:106] PDC_CLIENT[125]: Failed to create container property[07:39:19.892028] [ERROR] [vpicio.c:106] PDC_CLIENT[144]: Failed to create container property[07:39:19.892576] [ERROR] [vpicio.c:106] PDC_CLIENT[140]: Failed to create container property[07:39:19.896836] [ERROR] [vpicio.c:106] PDC_CLIENT[107]: Failed to create container property[07:39:19.899341] [ERROR] [vpicio.c:106] PDC_CLIENT[117]: Failed to create container property[07:39:19.889186] [ERROR] [vpicio.c:106] PDC_CLIENT[137]: Failed to create container property[07:39:19.892601] [ERROR] [vpicio.c:106] PDC_CLIENT[135]: Failed to create container property[07:39:19.888755] [ERROR] [vpicio.c:106] PDC_CLIENT[133]: Failed to create container property[07:39:19.900869] [ERROR] [vpicio.c:106] PDC_CLIENT[122]: Failed to create container property[07:39:19.899343] [ERROR] [vpicio.c:106] PDC_CLIENT[115]: Failed to create container property[07:39:19.896127] [ERROR] [vpicio.c:106] PDC_CLIENT[123]: Failed to create container property[07:39:19.897176] [ERROR] [vpicio.c:106] PDC_CLIENT[124]: Failed to create container property[07:39:19.896198] [ERROR] [vpicio.c:106] PDC_CLIENT[126]: Failed to create container property[07:39:19.892834] [ERROR] [vpicio.c:106] PDC_CLIENT[127]: Failed to create container property[07:39:19.891450] [ERROR] [vpicio.c:106] PDC_CLIENT[143]: Failed to create container property[07:39:19.896801] [ERROR] [vpicio.c:106] PDC_CLIENT[129]: Failed to create container property[07:39:19.895076] [ERROR] [vpicio.c:106] PDC_CLIENT[148]: Failed to create container property[07:39:19.895902] [ERROR] [vpicio.c:106] PDC_CLIENT[120]: Failed to create container property[07:39:19.887642] [ERROR] [vpicio.c:106] PDC_CLIENT[134]: Failed to create container property[07:39:19.892853] [ERROR] [vpicio.c:106] PDC_CLIENT[150]: Failed to create container property[07:39:19.890216] [ERROR] [vpicio.c:106] PDC_CLIENT[151]: Failed to create container property[07:39:19.894884] [ERROR] [vpicio.c:106] PDC_CLIENT[141]: Failed to create container property[07:39:19.935705] [ERROR] [vpicio.c:106] PDC_CLIENT[35]: Failed to create container property[07:39:19.932529] [ERROR] [vpicio.c:106] PDC_CLIENT[44]: Failed to create container property[07:39:19.896279] [ERROR] [vpicio.c:106] PDC_CLIENT[136]: Failed to create container property[07:39:19.897793] [ERROR] [vpicio.c:106] PDC_CLIENT[138]: Failed to create container property[07:39:19.894886] [ERROR] [vpicio.c:106] PDC_CLIENT[155]: Failed to create container property[07:39:19.894897] [ERROR] [vpicio.c:106] PDC_CLIENT[156]: Failed to create container property[07:39:19.896218] [ERROR] [vpicio.c:106] PDC_CLIENT[130]: Failed to create container property[07:39:19.898374] [ERROR] [vpicio.c:106] PDC_CLIENT[157]: Failed to create container property[07:39:19.895936] [ERROR] [vpicio.c:106] PDC_CLIENT[147]: Failed to create container property[07:39:19.897252] [ERROR] [vpicio.c:106] PDC_CLIENT[142]: Failed to create container property[07:39:19.895453] [ERROR] [vpicio.c:106] PDC_CLIENT[153]: Failed to create container property[07:39:19.897603] [ERROR] [vpicio.c:106] PDC_CLIENT[128]: Failed to create container property[07:39:19.897791] [ERROR] [vpicio.c:106] PDC_CLIENT[146]: Failed to create container property[07:39:19.897600] [ERROR] [vpicio.c:106] PDC_CLIENT[132]: Failed to create container property[07:39:19.897191] [ERROR] [vpicio.c:106] PDC_CLIENT[131]: Failed to create container property[07:39:19.899705] [ERROR] [vpicio.c:106] PDC_CLIENT[145]: Failed to create container property[07:39:19.908556] [ERROR] [vpicio.c:106] PDC_CLIENT[104]: Failed to create container property[07:39:19.908566] [ERROR] [vpicio.c:106] PDC_CLIENT[103]: Failed to create container property[07:39:19.908513] [ERROR] [vpicio.c:106] PDC_CLIENT[102]: Failed to create container property[07:39:19.908524] [ERROR] [vpicio.c:106] PDC_CLIENT[101]: Failed to create container property[07:39:19.908465] [ERROR] [vpicio.c:106] PDC_CLIENT[100]: Failed to create container property[07:39:19.908504] [ERROR] [vpicio.c:106] PDC_CLIENT[99]: Failed to create container property[07:39:19.908403] [ERROR] [vpicio.c:106] PDC_CLIENT[98]: Failed to create container property[07:39:19.907885] [ERROR] [vpicio.c:106] PDC_CLIENT[97]: Failed to create container property[07:39:19.908150] [ERROR] [vpicio.c:106] PDC_CLIENT[96]: Failed to create container property[07:39:19.907941] [ERROR] [vpicio.c:106] PDC_CLIENT[95]: Failed to create container property[07:39:19.907712] [ERROR] [vpicio.c:106] PDC_CLIENT[94]: Failed to create container property[07:39:19.907651] [ERROR] [vpicio.c:106] PDC_CLIENT[93]: Failed to create container property[07:39:19.907886] [ERROR] [vpicio.c:106] PDC_CLIENT[92]: Failed to create container property[07:39:19.906743] [ERROR] [vpicio.c:106] PDC_CLIENT[91]: Failed to create container property[07:39:19.939848] [ERROR] [vpicio.c:106] PDC_CLIENT[38]: Failed to create container property[07:39:19.907659] [ERROR] [vpicio.c:106] PDC_CLIENT[90]: Failed to create container property[07:39:19.907892] [ERROR] [vpicio.c:106] PDC_CLIENT[89]: Failed to create container property[07:39:19.907773] [ERROR] [vpicio.c:106] PDC_CLIENT[88]: Failed to create container property[07:39:19.931477] [ERROR] [vpicio.c:106] PDC_CLIENT[54]: Failed to create container property[07:39:19.908236] [ERROR] [vpicio.c:106] PDC_CLIENT[87]: Failed to create container property[07:39:19.907528] [ERROR] [vpicio.c:106] PDC_CLIENT[86]: Failed to create container property[07:39:19.907637] [ERROR] [vpicio.c:106] PDC_CLIENT[85]: Failed to create container property[07:39:19.907344] [ERROR] [vpicio.c:106] PDC_CLIENT[84]: Failed to create container property[07:39:19.896365] [ERROR] [vpicio.c:106] PDC_CLIENT[166]: Failed to create container property[07:39:19.895590] [ERROR] [vpicio.c:106] PDC_CLIENT[164]: Failed to create container property[07:39:19.891896] [ERROR] [vpicio.c:106] PDC_CLIENT[163]: Failed to create container property[07:39:19.899342] [ERROR] [vpicio.c:106] PDC_CLIENT[158]: Failed to create container property[07:39:19.896945] [ERROR] [vpicio.c:106] PDC_CLIENT[165]: Failed to create container property[07:39:19.898116] [ERROR] [vpicio.c:106] PDC_CLIENT[162]: Failed to create container property[07:39:19.896934] [ERROR] [vpicio.c:106] PDC_CLIENT[167]: Failed to create container property[07:39:19.898838] [ERROR] [vpicio.c:106] PDC_CLIENT[161]: Failed to create container property[07:39:19.897875] [ERROR] [vpicio.c:106] PDC_CLIENT[160]: Failed to create container property[07:39:19.897900] [ERROR] [vpicio.c:106] PDC_CLIENT[159]: Failed to create container property[07:39:19.935595] [ERROR] [vpicio.c:106] PDC_CLIENT[47]: Failed to create container property[07:39:19.937783] [ERROR] [vpicio.c:106] PDC_CLIENT[48]: Failed to create container property[07:39:19.934658] [ERROR] [vpicio.c:106] PDC_CLIENT[43]: Failed to create container property[07:39:19.934650] [ERROR] [vpicio.c:106] PDC_CLIENT[63]: Failed to create container property[07:39:19.937617] [ERROR] [vpicio.c:106] PDC_CLIENT[66]: Failed to create container property[07:39:19.939849] [ERROR] [vpicio.c:106] PDC_CLIENT[46]: Failed to create container property[07:39:19.941506] [ERROR] [vpicio.c:106] PDC_CLIENT[45]: Failed to create container property[07:39:19.936477] [ERROR] [vpicio.c:106] PDC_CLIENT[81]: Failed to create container property[07:39:19.937273] [ERROR] [vpicio.c:106] PDC_CLIENT[64]: Failed to create container property[07:39:19.931050] [ERROR] [vpicio.c:106] PDC_CLIENT[79]: Failed to create container property[07:39:19.938667] [ERROR] [vpicio.c:106] PDC_CLIENT[78]: Failed to create container property[07:39:19.939133] [ERROR] [vpicio.c:106] PDC_CLIENT[49]: Failed to create container property[07:39:19.941190] [ERROR] [vpicio.c:106] PDC_CLIENT[42]: Failed to create container property[07:39:19.940389] [ERROR] [vpicio.c:106] PDC_CLIENT[75]: Failed to create container property[07:39:19.932945] [ERROR] [vpicio.c:106] PDC_CLIENT[70]: Failed to create container property[07:39:19.933259] [ERROR] [vpicio.c:106] PDC_CLIENT[83]: Failed to create container property[07:39:19.939667] [ERROR] [vpicio.c:106] PDC_CLIENT[50]: Failed to create container property[07:39:19.942392] [ERROR] [vpicio.c:106] PDC_CLIENT[51]: Failed to create container property[07:39:19.940407] [ERROR] [vpicio.c:106] PDC_CLIENT[82]: Failed to create container property[07:39:19.939949] [ERROR] [vpicio.c:106] PDC_CLIENT[53]: Failed to create container property[07:39:19.931060] [ERROR] [vpicio.c:106] PDC_CLIENT[67]: Failed to create container property[07:39:19.939958] [ERROR] [vpicio.c:106] PDC_CLIENT[52]: Failed to create container property[07:39:19.943604] [ERROR] [vpicio.c:106] PDC_CLIENT[34]: Failed to create container property[07:39:19.943400] [ERROR] [vpicio.c:106] PDC_CLIENT[33]: Failed to create container property[07:39:19.939836] [ERROR] [vpicio.c:106] PDC_CLIENT[72]: Failed to create container property[07:39:19.942789] [ERROR] [vpicio.c:106] PDC_CLIENT[32]: Failed to create container property[07:39:19.943929] [ERROR] [vpicio.c:106] PDC_CLIENT[31]: Failed to create container property[07:39:19.940590] [ERROR] [vpicio.c:106] PDC_CLIENT[69]: Failed to create container property[07:39:19.938496] [ERROR] [vpicio.c:106] PDC_CLIENT[30]: Failed to create container property[07:39:19.942158] [ERROR] [vpicio.c:106] PDC_CLIENT[29]: Failed to create container property[07:39:19.940775] [ERROR] [vpicio.c:106] PDC_CLIENT[28]: Failed to create container property[07:39:19.938849] [ERROR] [vpicio.c:106] PDC_CLIENT[62]: Failed to create container property[07:39:19.943271] [ERROR] [vpicio.c:106] PDC_CLIENT[27]: Failed to create container property[07:39:19.937110] [ERROR] [vpicio.c:106] PDC_CLIENT[65]: Failed to create container property[07:39:19.940686] [ERROR] [vpicio.c:106] PDC_CLIENT[26]: Failed to create container property[07:39:19.938995] [ERROR] [vpicio.c:106] PDC_CLIENT[77]: Failed to create container property[07:39:19.941824] [ERROR] [vpicio.c:106] PDC_CLIENT[25]: Failed to create container property[07:39:19.942335] [ERROR] [vpicio.c:106] PDC_CLIENT[24]: Failed to create container property[07:39:19.938823] [ERROR] [vpicio.c:106] PDC_CLIENT[74]: Failed to create container property[07:39:19.942182] [ERROR] [vpicio.c:106] PDC_CLIENT[23]: Failed to create container property[07:39:19.940396] [ERROR] [vpicio.c:106] PDC_CLIENT[22]: Failed to create container property[07:39:19.938827] [ERROR] [vpicio.c:106] PDC_CLIENT[68]: Failed to create container property[07:39:19.942013] [ERROR] [vpicio.c:106] PDC_CLIENT[21]: Failed to create container property[07:39:19.946920] [ERROR] [vpicio.c:106] PDC_CLIENT[20]: Failed to create container property[07:39:19.940595] [ERROR] [vpicio.c:106] PDC_CLIENT[61]: Failed to create container property[07:39:19.946899] [ERROR] [vpicio.c:106] PDC_CLIENT[19]: Failed to create container property[07:39:19.946918] [ERROR] [vpicio.c:106] PDC_CLIENT[18]: Failed to create container property[07:39:19.939977] [ERROR] [vpicio.c:106] PDC_CLIENT[60]: Failed to create container property[07:39:19.946799] [ERROR] [vpicio.c:106] PDC_CLIENT[17]: Failed to create container property[07:39:19.939320] [ERROR] [vpicio.c:106] PDC_CLIENT[73]: Failed to create container property[07:39:19.946709] [ERROR] [vpicio.c:106] PDC_CLIENT[16]: Failed to create container property[07:39:19.946890] [ERROR] [vpicio.c:106] PDC_CLIENT[15]: Failed to create container property[07:39:19.941458] [ERROR] [vpicio.c:106] PDC_CLIENT[59]: Failed to create container property[07:39:19.946799] [ERROR] [vpicio.c:106] PDC_CLIENT[14]: Failed to create container property[07:39:19.946256] [ERROR] [vpicio.c:106] PDC_CLIENT[13]: Failed to create container property[07:39:19.946689] [ERROR] [vpicio.c:106] PDC_CLIENT[12]: Failed to create container property[07:39:19.938848] [ERROR] [vpicio.c:106] PDC_CLIENT[58]: Failed to create container property[07:39:19.945955] [ERROR] [vpicio.c:106] PDC_CLIENT[11]: Failed to create container property[07:39:19.936677] [ERROR] [vpicio.c:106] PDC_CLIENT[71]: Failed to create container property[07:39:19.946792] [ERROR] [vpicio.c:106] PDC_CLIENT[10]: Failed to create container property[07:39:19.945951] [ERROR] [vpicio.c:106] PDC_CLIENT[9]: Failed to create container property[07:39:19.937745] [ERROR] [vpicio.c:106] PDC_CLIENT[57]: Failed to create container property[07:39:19.946680] [ERROR] [vpicio.c:106] PDC_CLIENT[8]: Failed to create container property[07:39:19.945950] [ERROR] [vpicio.c:106] PDC_CLIENT[7]: Failed to create container property[07:39:19.946155] [ERROR] [vpicio.c:106] PDC_CLIENT[6]: Failed to create container property[07:39:19.940088] [ERROR] [vpicio.c:106] PDC_CLIENT[56]: Failed to create container property[07:39:19.946782] [ERROR] [vpicio.c:106] PDC_CLIENT[5]: Failed to create container property[07:39:19.945728] [ERROR] [vpicio.c:106] PDC_CLIENT[4]: Failed to create container property[07:39:19.939831] [ERROR] [vpicio.c:106] PDC_CLIENT[76]: Failed to create container property[07:39:19.946774] [ERROR] [vpicio.c:106] PDC_CLIENT[3]: Failed to create container property[07:39:19.946779] [ERROR] [vpicio.c:106] PDC_CLIENT[2]: Failed to create container property[07:39:19.937460] [ERROR] [vpicio.c:106] PDC_CLIENT[55]: Failed to create container property[07:39:19.946133] [ERROR] [vpicio.c:106] PDC_CLIENT[1]: Failed to create container property[07:39:19.932903] [ERROR] [vpicio.c:106] PDC_CLIENT[80]: Failed to create container property[07:39:19.945812] [ERROR] [vpicio.c:106] PDC_CLIENT[0]: Failed to create container property

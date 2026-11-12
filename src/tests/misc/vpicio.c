@@ -42,10 +42,33 @@ uniform_random_number()
     return (((double)rand()) / ((double)(RAND_MAX)));
 }
 
+// Burns this rank's core for approximately `seconds` of real floating-point
+// work, instead of sleep()'s idle yield. Used to emulate a simulation's
+// compute phase between I/O steps: sleep() never contends for a CPU core no
+// matter how a rank is placed, so it can't show the effect of e.g. sharing
+// a core with the PDC server; real work does.
+static void
+hard_compute(int seconds)
+{
+    struct timeval  start, now;
+    volatile double acc = 1.0;
+    uint64_t        i;
+
+    if (seconds <= 0)
+        return;
+
+    gettimeofday(&start, NULL);
+    do {
+        for (i = 0; i < 1000000; i++)
+            acc = sin(acc) * cos(acc) + sqrt(fabs(acc) + 1.0);
+        gettimeofday(&now, NULL);
+    } while ((now.tv_sec - start.tv_sec) + (now.tv_usec - start.tv_usec) / 1e6 < (double)seconds);
+}
+
 void
 print_usage()
 {
-    LOG_JUST_PRINT("Usage: srun -n ./vpicio #particles #steps sleep_time(s)\n");
+    LOG_JUST_PRINT("Usage: srun -n ./vpicio #particles #steps compute_time(s)\n");
 }
 
 int
@@ -57,7 +80,7 @@ main(int argc, char **argv)
     pdcid_t     obj_ids[8];
     float *     dx, *dy, *dz, *ux, *uy, *uz, *q;
     int *       id;
-    int         x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, sleeptime = 0;
+    int         x_dim = 64, y_dim = 64, z_dim = 64, ndim = 1, steps = 1, compute_time = 0;
     uint64_t    numparticles, dims[1], offset_local[1], offset_remote[1], mysize[1];
     double      t0, t1;
     const char *obj_names[] = {"dX", "dY", "dZ", "Ux", "Uy", "Uz", "q", "i"};
@@ -77,11 +100,11 @@ main(int argc, char **argv)
     if (argc >= 3)
         steps = atoi(argv[2]);
     if (argc >= 4)
-        sleeptime = atoi(argv[3]);
+        compute_time = atoi(argv[3]);
 
     if (rank == 0)
-        LOG_INFO("Writing %" PRIu64 " particles per rank for %d steps with %d sec sleep time.\n",
-                 numparticles, steps, sleeptime);
+        LOG_INFO("Writing %" PRIu64 " particles per rank for %d steps with %d sec compute time.\n",
+                 numparticles, steps, compute_time);
 
     dims[0] = numparticles * size;
 
@@ -212,13 +235,13 @@ main(int argc, char **argv)
         if (rank == 0)
             LOG_INFO("Transfer start time: %.5e\n", t1 - t0);
 #endif
-        // Emulate compute with sleep
+        // Emulate compute with real CPU work (not sleep -- see hard_compute()).
         if (iter != steps - 1) {
             if (rank == 0)
-                LOG_INFO("Sleep start: %llu.00\n", sleeptime);
-            sleep(sleeptime);
+                LOG_INFO("Compute start: %d sec\n", compute_time);
+            hard_compute(compute_time);
             if (rank == 0)
-                LOG_INFO("Sleep end: %llu.00\n", sleeptime);
+                LOG_INFO("Compute end: %d sec\n", compute_time);
         }
 
 #ifdef ENABLE_MPI

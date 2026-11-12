@@ -1,0 +1,115 @@
+[INFO] PDC_CLIENT[0]: Writing 8388608 particles per rank for 1 steps with 0 sec sleep time.
+[08:54:54.351992] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[0]: My client rank = 0, client communicator size = 84
+[INFO] PDC_CLIENT[0]: PDC_DEBUG set to 0
+[08:54:54.351997] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[6]: My client rank = 6, client communicator size = 84
+[08:54:54.352026] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[5]: My client rank = 5, client communicator size = 84
+[08:54:54.351997] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[4]: My client rank = 4, client communicator size = 84
+[08:54:54.352025] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[1]: My client rank = 1, client communicator size = 84
+[08:54:54.352152] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[83]: My client rank = 83, client communicator size = 84
+[08:54:54.352115] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[82]: My client rank = 82, client communicator size = 84
+[08:54:54.352151] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[81]: My client rank = 81, client communicator size = 84
+[08:54:54.352114] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[80]: My client rank = 80, client communicator size = 84
+[08:54:54.352117] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[79]: My client rank = 79, client communicator size = 84
+[08:54:54.352036] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[78]: My client rank = 78, client communicator size = 84
+[08:54:54.352117] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[77]: My client rank = 77, client communicator size = 84
+[08:54:54.352032] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[76]: My client rank = 76, client communicator size = 84
+[08:54:54.352101] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[75]: My client rank = 75, client communicator size = 84
+[08:54:54.352038] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[74]: My client rank = 74, client communicator size = 84
+[08:54:54.352101] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[73]: My client rank = 73, client communicator size = 84
+[08:54:54.352032] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[72]: My client rank = 72, client communicator size = 84
+[08:54:54.352101] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[71]: My client rank = 71, client communicator size = 84
+[08:54:54.352027] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[70]: My client rank = 70, client communicator size = 84
+[08:54:54.352104] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[69]: My client rank = 69, client communicator size = 84
+[08:54:54.352022] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[68]: My client rank = 68, client communicator size = 84
+[08:54:54.352108] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[67]: My client rank = 67, client communicator size = 84
+[08:54:54.352059] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[66]: My client rank = 66, client communicator size = 84
+[08:54:54.352217] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[65]: My client rank = 65, client communicator size = 84
+[08:54:54.352012] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[64]: My client rank = 64, client communicator size = 84
+[08:54:54.352282] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[27]: My client rank = 27, client communicator size = 84
+[08:54:54.352139] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[26]: My client rank = 26, client communicator size = 84
+[08:54:54.352274] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[25]: My client rank = 25, client communicator size = 84
+[08:54:54.352139] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[24]: My client rank = 24, client communicator size = 84
+[08:54:54.352274] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[23]: My client rank = 23, client communicator size = 84
+[08:54:54.352139] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[22]: My client rank = 22, client communicator size = 84
+[08:54:54.352281] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[21]: My client rank = 21, client communicator size = 84
+[08:54:54.352085] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[11]: My client rank = 11, client communicator size = 84
+[08:54:54.352011] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[10]: My client rank = 10, client communicator size = 84
+[08:54:54.352072] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[9]: My client rank = 9, client communicator size = 84
+[08:54:54.352009] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[8]: My client rank = 8, client communicator size = 84
+[08:54:54.352072] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[7]: My client rank = 7, client communicator size = 84
+[08:54:54.352192] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[3]: My client rank = 3, client communicator size = 84
+[08:54:54.352130] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[2]: My client rank = 2, client communicator size = 84
+[08:54:54.352386] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[63]: My client rank = 63, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[62]: My client rank = 62, client communicator size = 84
+[08:54:54.352419] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[61]: My client rank = 61, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[60]: My client rank = 60, client communicator size = 84
+[08:54:54.352419] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[59]: My client rank = 59, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[58]: My client rank = 58, client communicator size = 84
+[08:54:54.352420] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[57]: My client rank = 57, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[56]: My client rank = 56, client communicator size = 84
+[08:54:54.352412] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[55]: My client rank = 55, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[54]: My client rank = 54, client communicator size = 84
+[08:54:54.352410] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[53]: My client rank = 53, client communicator size = 84
+[08:54:54.352174] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[52]: My client rank = 52, client communicator size = 84
+[08:54:54.352413] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[51]: My client rank = 51, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[50]: My client rank = 50, client communicator size = 84
+[08:54:54.352417] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[49]: My client rank = 49, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[48]: My client rank = 48, client communicator size = 84
+[08:54:54.352407] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[47]: My client rank = 47, client communicator size = 84
+[08:54:54.352174] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[46]: My client rank = 46, client communicator size = 84
+[08:54:54.352419] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[45]: My client rank = 45, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[44]: My client rank = 44, client communicator size = 84
+[08:54:54.352407] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[43]: My client rank = 43, client communicator size = 84
+[08:54:54.352174] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[42]: My client rank = 42, client communicator size = 84
+[08:54:54.352391] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[41]: My client rank = 41, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[40]: My client rank = 40, client communicator size = 84
+[08:54:54.352389] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[39]: My client rank = 39, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[38]: My client rank = 38, client communicator size = 84
+[08:54:54.352389] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[37]: My client rank = 37, client communicator size = 84
+[08:54:54.352175] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[36]: My client rank = 36, client communicator size = 84
+[08:54:54.352392] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[35]: My client rank = 35, client communicator size = 84
+[08:54:54.352172] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[34]: My client rank = 34, client communicator size = 84
+[08:54:54.352362] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[33]: My client rank = 33, client communicator size = 84
+[08:54:54.352171] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[32]: My client rank = 32, client communicator size = 84
+[08:54:54.352292] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[31]: My client rank = 31, client communicator size = 84
+[08:54:54.352141] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[30]: My client rank = 30, client communicator size = 84
+[08:54:54.352314] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[29]: My client rank = 29, client communicator size = 84
+[08:54:54.352141] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[28]: My client rank = 28, client communicator size = 84
+[08:54:54.352138] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[20]: My client rank = 20, client communicator size = 84
+[08:54:54.352369] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[19]: My client rank = 19, client communicator size = 84
+[08:54:54.352138] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[18]: My client rank = 18, client communicator size = 84
+[08:54:54.352340] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[17]: My client rank = 17, client communicator size = 84
+[08:54:54.352138] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[16]: My client rank = 16, client communicator size = 84
+[08:54:54.352294] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[15]: My client rank = 15, client communicator size = 84
+[08:54:54.352153] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[14]: My client rank = 14, client communicator size = 84
+[08:54:54.352380] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[13]: My client rank = 13, client communicator size = 84
+[08:54:54.352153] [DEBUG] [pdc_client_connect.c:1486] PDC_CLIENT[12]: My client rank = 12, client communicator size = 84
+[INFO] PDC_CLIENT[0]: Found 1 PDC Metadata servers, running with 84 PDC clients
+[INFO] PDC_CLIENT[0]: Environment variable HG_TRANSPORT was NOT set, default to ofi+tcp
+[INFO] PDC_CLIENT[0]: Environment variable HG_HOST was NOT set, default to tuolumne1015
+[INFO] PDC_CLIENT[0]: Connection string: ofi+tcp://tuolumne1015:8000
+[INFO] PDC_CLIENT[0]: Using [/g/g17/lewis153/pdc_tmp_job2_rabbit] as tmp dir, 84 clients per server
+[INFO] PDC_CLIENT[0]: 
+#Step  0
+[08:55:07.633087] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name dX-0
+[08:55:07.633095] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[08:55:07.633331] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name dY-0
+[08:55:07.633337] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[08:55:07.633482] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name dZ-0
+[08:55:07.633487] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[08:55:07.633588] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name Ux-0
+[08:55:07.633594] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[08:55:07.633692] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name Uy-0
+[08:55:07.633698] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[08:55:07.633793] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name Uz-0
+[08:55:07.633798] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[08:55:07.633890] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name q-0
+[08:55:07.633896] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[08:55:07.633987] [DEBUG] [pdc_client_connect.c:2663] PDC_CLIENT[0]: prepare for sending region partition 1 with obj name i-0
+[08:55:07.633993] [DEBUG] [pdc_client_connect.c:2666] PDC_CLIENT[0]: pdc_client_mpi_rank_g = 0, pdc_nclient_per_server_g = 84, pdc_server_num_g = 1, data_server_id = 0
+[INFO] PDC_CLIENT[0]: Obj create time: 1.02125e-03
+[INFO] PDC_CLIENT[0]: Transfer create time: 3.90610e-05
+[INFO] PDC_CLIENT[0]: Transfer start time: 6.03101e-01
+[INFO] PDC_CLIENT[0]: Transfer wait time: 2.50515e+01
+[INFO] PDC_CLIENT[0]: Transfer close time: 1.12606e-01
+[INFO] PDC_CLIENT[0]: Obj close time: 3.90400e-05

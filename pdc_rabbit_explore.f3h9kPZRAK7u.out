@@ -1,0 +1,121 @@
+
+==================================================
+flux version
+==================================================
+commands:    		0.90.0
+libflux-core:		0.90.0
+libflux-security:	0.16.0
+broker:  		0.90.0
+FLUX_URI:		local:///var/tmp/lewis153/flux-BcmHCd/local-0
+build-options:		+ascii-only+systemd+hwloc.api==2.12.0+zmq==4.3.4
+
+==================================================
+flux alloc --help=coral2-rabbit-cores (authoritative flag semantics)
+==================================================
+
+Documentation for plugin providing option `--coral2-rabbit-cores`:
+
+Adds a flag `--coral2-chassis` to set the chassis count on CORAL2 systems.
+
+The flag takes a positive integer, representing the number of chassis desired;
+the number of nodes specified via ``-N, --nodes`` will then be split evenly
+across that number of chassis.
+
+Use of the ``--coral2-chassis`` flag requires that ``-N, --nodes`` be specified.
+Also, current limitations require that the number of chassis evenly divide the
+number of nodes. For example, five total nodes across three chassis *is not*
+supported, but fifteen total nodes across three chassis is supported.
+
+When not specified, the number of chassis chosen is up to the scheduler.
+
+Note that the plugin does not validate that the jobspec is satisfiable. It will
+allow you, for instance, to request 500 nodes on a single chassis, even if there
+are only five nodes per chassis. In such cases, the job will not be rejected until
+it has reached the SCHED state.
+
+On El Cap systems, there are sixteen nodes per chassis. For other systems,
+consult local documentation.
+
+Use of the ``--coral2-chassis`` flag also requires that the Fluxion scheduler
+be initialized with information about chassis layout. Otherwise an exception
+will be raised with a message about "chassis" not being a known resource type.
+
+This plugin also provides an EXPERIMENTAL ``--coral2-rabbit-cores`` flag, which
+takes a positive integer and allocates that many compute cores on each rabbit
+associated with the job, in addition to the compute nodes. Because rabbits are
+allocated per chassis, ``--coral2-rabbit-cores`` requires that
+``--coral2-chassis`` also be set; the requested cores are reserved on the rabbit
+in each allocated chassis.
+
+EXAMPLES
+--------
+
+Request 15 nodes, all on a single chassis:
+
+``flux alloc -N15 --coral2-chassis=1 -q myqueue /bin/true``
+
+Request 200 nodes split evenly across 20 chassis:
+
+``flux alloc -N200 --coral2-chassis=20 -q myqueue /bin/true``
+
+Request 32 nodes across 2 chassis, with 4 cores on each chassis's rabbit:
+
+``flux alloc -N32 --coral2-chassis=2 --coral2-rabbit-cores=4 -q myqueue /bin/true``
+
+==================================================
+This job (as seen by the system instance)
+==================================================
+JOBID=f3h9kPZRAK7u
+JOBID QUEUE STATE NNODES NODELIST
+f3h9kPZRAK7u pdebug RUN 1 tuolumne1009
+
+==================================================
+flux resource list (inside this job's own instance)
+==================================================
+     STATE NNODES NCORES NGPUS NODELIST
+      free      1     96     4 tuolumne1009
+ allocated      0      0     0 
+      down      0      0     0 
+
+==================================================
+Rabbit storage: this job's #DW jobdw volume
+==================================================
+DW_WORKFLOW_NAME=fluxjob-1159835070145623040
+DW_WORKFLOW_NAMESPACE=default
+DW_JOBS=pdcexplore:/mnt/nnf/9435290e-8bf0-4ef0-8efb-917a54e5a974-0
+DW_JOB_XFS=/mnt/nnf/9435290e-8bf0-4ef0-8efb-917a54e5a974-0
+DW_JOB_pdcexplore=/mnt/nnf/9435290e-8bf0-4ef0-8efb-917a54e5a974-0
+Filesystem                                                    Size  Used Avail Use% Mounted on
+/dev/mapper/ffa9ed1c--487c--417a--9d65--60bf1f5d2e3e_0-lv--0   10G  105M  9.9G   2% /mnt/nnf/9435290e-8bf0-4ef0-8efb-917a54e5a974-0
+1 GiB write+fsync to Rabbit volume: 0.77 s (1325 MiB/s)
+
+==================================================
+flux getrabbit -j $JOBID (which Rabbit serves this job's storage)
+==================================================
+tuolumne201
+Parsed RABBIT_HOST=tuolumne201
+
+==================================================
+Rabbit-cores feasibility (submitted to the SYSTEM instance, cancelled immediately)
+==================================================
+ACCEPTED  pdebug: chassis only   (job f3h9m1NJpDWw, cancelling)
+REJECTED  pdebug: chassis + rabbit-cores=1   -> [Errno 19] Unsatisfiable request
+ACCEPTED  pdebug: chassis + rabbit-cores + DW   (job f3h9m1fnskGo, cancelling)
+ACCEPTED  pbatch: chassis only   (job f3h9m1rxkLRV, cancelling)
+REJECTED  pbatch: chassis + rabbit-cores=1   -> [Errno 19] Unsatisfiable request
+ACCEPTED  pbatch: chassis + rabbit-cores + DW   (job f3h9m2BLhS3R, cancelling)
+
+If every 'rabbit-cores' line is REJECTED, user processes can't be scheduled on a
+Rabbit's CPU on this system -- job 2's server-on-Rabbit design needs LC support
+(ask whether --coral2-rabbit-cores is enabled on Tuolumne).
+
+==================================================
+Hardware fingerprint: this job's compute node
+==================================================
+host: tuolumne1009
+model name	: AMD Instinct MI300A Accelerator
+2
+
+==================================================
+Done
+==================================================

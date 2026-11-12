@@ -317,6 +317,11 @@ add_test(NAME read_obj_uint64  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTOR
 add_test(NAME read_obj_int16   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int16)
 add_test(NAME read_obj_int8    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./read_obj o 1 int8)
 add_test(NAME vpicio_bdcats_transfer_request     WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
+# Same test, with PDC_BB_WRITE_PERCENT=100 so every object's transfer-request write lands on the
+# burst-buffer tier (see fill_storage_path()'s BB-vs-PFS split) and PDC_BB_FLUSH_ON_CLOSE=1 so
+# close_server's checkpoint migrates it back to PFS before exiting -- exercises the BB write path,
+# the BB->PFS migration, and their timing log lines end to end.
+add_test(NAME vpicio_bdcats_transfer_request_bb  WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_test.sh ./vpicio ./bdcats)
 
 
 set_tests_properties(pdc_init           PROPERTIES LABELS serial)
@@ -389,6 +394,8 @@ set_tests_properties(read_obj_uint64   PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int16    PROPERTIES LABELS serial)
 set_tests_properties(read_obj_int8     PROPERTIES LABELS serial)
 set_tests_properties(vpicio_bdcats_transfer_request      PROPERTIES LABELS serial)
+set_tests_properties(vpicio_bdcats_transfer_request_bb   PROPERTIES LABELS serial
+    ENVIRONMENT "PDC_BB_LOC=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pdc_bb_test_data;PDC_BB_WRITE_PERCENT=100;PDC_BB_FLUSH_ON_CLOSE=1")
 
 if(BUILD_MPI_TESTING)
     add_test(NAME read_obj_shared_int WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./read_obj_shared ${MPI_RUN_CMD} 4 6 o 1 int)
@@ -460,6 +467,9 @@ if(BUILD_MPI_TESTING)
     add_test(NAME obj_put_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_put_data ${MPI_RUN_CMD} 4 6 )
     add_test(NAME obj_get_data_mpi   WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./obj_get_data ${MPI_RUN_CMD} 4 6 )
     add_test(NAME vpicio_bdcats_mpi WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_mpi_test.sh ${MPI_RUN_CMD} 4 6 ./vpicio ./bdcats)
+    # Same test, with burst buffer forced on (see the serial vpicio_bdcats_transfer_request_bb
+    # test above for why) -- separate BB directory so a parallel ctest run can't collide with it.
+    add_test(NAME vpicio_bdcats_mpi_bb WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_multiple_mpi_test.sh ${MPI_RUN_CMD} 4 6 ./vpicio ./bdcats)
     add_test(NAME vpicio_mpi_small_cache WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND mpi_test.sh ./vpicio ${MPI_RUN_CMD} 1 16)
 
     set_tests_properties(read_obj_shared_int                  PROPERTIES LABELS "parallel;parallel_obj" )
@@ -484,6 +494,8 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(region_transfer_skewed_mpi           PROPERTIES LABELS "parallel;parallel_region_transfer" )
     set_tests_properties(region_transfer_write_read_mpi       PROPERTIES LABELS "parallel;parallel_region_transfer" )
     set_tests_properties(vpicio_bdcats_mpi                    PROPERTIES LABELS "parallel;parallel_region_transfer" )
+    set_tests_properties(vpicio_bdcats_mpi_bb                 PROPERTIES LABELS "parallel;parallel_region_transfer"
+        ENVIRONMENT "PDC_BB_LOC=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pdc_bb_test_data_mpi;PDC_BB_WRITE_PERCENT=100;PDC_BB_FLUSH_ON_CLOSE=1")
     set_tests_properties(vpicio_mpi_small_cache               PROPERTIES LABELS "parallel;parallel_region_transfer" )
     set_tests_properties(region_transfer_all_mpi              PROPERTIES LABELS "parallel;parallel_region_transfer_all" )
     set_tests_properties(region_transfer_all_2D_mpi           PROPERTIES LABELS "parallel;parallel_region_transfer_all" )

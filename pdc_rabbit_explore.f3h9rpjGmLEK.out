@@ -1,0 +1,137 @@
+
+==================================================
+flux version
+==================================================
+commands:    		0.90.0
+libflux-core:		0.90.0
+libflux-security:	0.16.0
+broker:  		0.90.0
+FLUX_URI:		local:///var/tmp/lewis153/flux-uvNkl4/local-0
+build-options:		+ascii-only+systemd+hwloc.api==2.12.0+zmq==4.3.4
+
+==================================================
+flux alloc --help=coral2-rabbit-cores (authoritative flag semantics)
+==================================================
+
+Documentation for plugin providing option `--coral2-rabbit-cores`:
+
+Adds a flag `--coral2-chassis` to set the chassis count on CORAL2 systems.
+
+The flag takes a positive integer, representing the number of chassis desired;
+the number of nodes specified via ``-N, --nodes`` will then be split evenly
+across that number of chassis.
+
+Use of the ``--coral2-chassis`` flag requires that ``-N, --nodes`` be specified.
+Also, current limitations require that the number of chassis evenly divide the
+number of nodes. For example, five total nodes across three chassis *is not*
+supported, but fifteen total nodes across three chassis is supported.
+
+When not specified, the number of chassis chosen is up to the scheduler.
+
+Note that the plugin does not validate that the jobspec is satisfiable. It will
+allow you, for instance, to request 500 nodes on a single chassis, even if there
+are only five nodes per chassis. In such cases, the job will not be rejected until
+it has reached the SCHED state.
+
+On El Cap systems, there are sixteen nodes per chassis. For other systems,
+consult local documentation.
+
+Use of the ``--coral2-chassis`` flag also requires that the Fluxion scheduler
+be initialized with information about chassis layout. Otherwise an exception
+will be raised with a message about "chassis" not being a known resource type.
+
+This plugin also provides an EXPERIMENTAL ``--coral2-rabbit-cores`` flag, which
+takes a positive integer and allocates that many compute cores on each rabbit
+associated with the job, in addition to the compute nodes. Because rabbits are
+allocated per chassis, ``--coral2-rabbit-cores`` requires that
+``--coral2-chassis`` also be set; the requested cores are reserved on the rabbit
+in each allocated chassis.
+
+EXAMPLES
+--------
+
+Request 15 nodes, all on a single chassis:
+
+``flux alloc -N15 --coral2-chassis=1 -q myqueue /bin/true``
+
+Request 200 nodes split evenly across 20 chassis:
+
+``flux alloc -N200 --coral2-chassis=20 -q myqueue /bin/true``
+
+Request 32 nodes across 2 chassis, with 4 cores on each chassis's rabbit:
+
+``flux alloc -N32 --coral2-chassis=2 --coral2-rabbit-cores=4 -q myqueue /bin/true``
+
+==================================================
+This job (as seen by the system instance)
+==================================================
+JOBID=f3h9rpjGmLEK
+JOBID QUEUE STATE NNODES NODELIST
+f3h9rpjGmLEK pdebug RUN 1 tuolumne1023
+
+==================================================
+flux resource list (inside this job's own instance)
+==================================================
+     STATE NNODES NCORES NGPUS NODELIST
+      free      1     96     4 tuolumne1023
+ allocated      0      0     0 
+      down      0      0     0 
+
+==================================================
+Rabbit storage: this job's #DW jobdw volume
+==================================================
+DW_WORKFLOW_NAME=fluxjob-1159849276236493824
+DW_WORKFLOW_NAMESPACE=default
+DW_JOBS=pdcexplore:/mnt/nnf/81bdea2e-a049-4424-b989-b848be3d7c6c-0
+DW_JOB_XFS=/mnt/nnf/81bdea2e-a049-4424-b989-b848be3d7c6c-0
+DW_JOB_pdcexplore=/mnt/nnf/81bdea2e-a049-4424-b989-b848be3d7c6c-0
+Filesystem                                                    Size  Used Avail Use% Mounted on
+/dev/mapper/22445962--9fce--4988--bf95--42ab7a6d01aa_0-lv--0   10G  105M  9.9G   2% /mnt/nnf/81bdea2e-a049-4424-b989-b848be3d7c6c-0
+1 GiB write+fsync to Rabbit volume: 0.72 s (1430 MiB/s)
+
+==================================================
+flux getrabbit -j $JOBID (which Rabbit serves this job's storage)
+==================================================
+tuolumne202
+Parsed RABBIT_HOST=tuolumne202
+
+==================================================
+Rabbit-cores feasibility (submitted to the SYSTEM instance, cancelled immediately)
+==================================================
+ACCEPTED  pdebug: chassis only   (job f3h9s1jfEAcf, cancelling)
+REJECTED  pdebug: chassis + rabbit-cores=1   -> [Errno 19] Unsatisfiable request
+ACCEPTED  pdebug: chassis + rabbit-cores + DW   (job f3h9s282TLCP, cancelling)
+ACCEPTED  pbatch: chassis only   (job f3h9s2bWC295, cancelling)
+REJECTED  pbatch: chassis + rabbit-cores=1   -> [Errno 19] Unsatisfiable request
+ACCEPTED  pbatch: chassis + rabbit-cores + DW   (job f3h9s34dAt8w, cancelling)
+
+If every 'rabbit-cores' line is REJECTED, user processes can't be scheduled on a
+Rabbit's CPU on this system -- job 2's server-on-Rabbit design needs LC support
+(ask whether --coral2-rabbit-cores is enabled on Tuolumne).
+
+==================================================
+Hardware fingerprint: this job's compute node
+==================================================
+host: tuolumne1023
+model name	: AMD Instinct MI300A Accelerator
+2
+
+==================================================
+Hardware fingerprint: an ACCEPTED chassis+rabbit-cores+DW job (this is the decisive check)
+==================================================
+host: tuolumne203
+host: tuolumne1048
+model name	: AMD Instinct MI300A Accelerator
+168
+model name	: AMD EPYC 7713 64-Core Processor
+2
+
+Compare the host/CPU model line above against the compute-node fingerprint section
+a few lines up. Match = rabbit-cores doesn't actually place work on the rabbit.
+Differ = job 2's design is sound; the remaining work is just getting the hostname
+flux --parent run itself landed on (shown above) into job 2's own --requires=host:
+targeting, which will need the same --parent framing this whole script had to adopt.
+
+==================================================
+Done
+==================================================

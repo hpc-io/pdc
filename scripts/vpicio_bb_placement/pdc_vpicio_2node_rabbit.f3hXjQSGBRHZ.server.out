@@ -1,0 +1,19 @@
+0.094s: flux-shell[2]: stderr: WARN: NUMA domains have intersecting CPUs
+[pin_cxi_nic] host=tuolumne254 local_rank=1 (source=FLUX_TASK_LOCAL_ID) num_nics=2 -> FI_CXI_DEVICE_NAME=cxi1
+[pin_cxi_nic] host=tuolumne254 local_rank=0 (source=FLUX_TASK_LOCAL_ID) num_nics=2 -> FI_CXI_DEVICE_NAME=cxi0
+libhugetlbfs: ERROR: Line too long when parsing mounts
+libhugetlbfs: ERROR: Line too long when parsing mounts
+[INFO] PDC_SERVER[0]: Using [/g/g17/lewis153/pdc_tmp_job2_2node_rabbit/] as tmp dir, 256 OSTs, 256 OSTs per data file, 0% to BB
+[INFO] PDC_SERVER[1]: Environment variable HG_TRANSPORT was set
+[INFO] PDC_SERVER[0]: Environment variable HG_TRANSPORT was set
+[INFO] PDC_SERVER[0]: Environment variable HG_HOST was NOT set, default to tuolumne254
+[INFO] PDC_SERVER[0]: Connection string: ofi+cxi://tuolumne254:7000
+[08:02:24.681711] [ERROR] [pdc_server.c:855] PDC_SERVER[0]: Error with HG_Init()
+[08:02:24.681721] [ERROR] [pdc_server.c:2248] PDC_SERVER[0]: Error with PDC_Server_init
+[08:02:24.681740] [ERROR] [pdc_server.c:1017] PDC_SERVER[0]: pdc_remote_server_info_g was NULL
+[08:02:24.681749] [ERROR] [pdc_server.c:1074] PDC_SERVER[0]: Error with PDC_Server_destroy_client_info
+[08:02:24.681823] [ERROR] [pdc_server.c:855] PDC_SERVER[1]: Error with HG_Init()
+[08:02:24.681832] [ERROR] [pdc_server.c:2248] PDC_SERVER[1]: Error with PDC_Server_init
+[08:02:24.681850] [ERROR] [pdc_server.c:1017] PDC_SERVER[1]: pdc_remote_server_info_g was NULL
+[08:02:24.681858] [ERROR] [pdc_server.c:1074] PDC_SERVER[1]: Error with PDC_Server_destroy_client_info
+flux-job: task(s) Unknown signal 127

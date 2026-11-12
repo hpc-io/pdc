@@ -28,3 +28,4 @@ docs/build
 
 # ignore .zed
 .zed
+scripts/vpicio_bb_placement/pdc_data/

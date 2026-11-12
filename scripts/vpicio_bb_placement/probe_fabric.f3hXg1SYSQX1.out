@@ -1,0 +1,1100 @@
+++ flux getattr jobid
++ JOBID=f3hXg1SYSQX1
+++ flux --parent getrabbit -j f3hXg1SYSQX1
++ GETRABBIT_OUT=tuolumne202
+++ echo tuolumne202
+++ tr -d '[] '
+++ cut -d, -f1
++ RABBIT_HOST=tuolumne202
++ echo RABBIT_HOST=tuolumne202
+RABBIT_HOST=tuolumne202
++ echo '=== fi_info on rabbit host (tuolumne202) ==='
+=== fi_info on rabbit host (tuolumne202) ===
++ flux run --requires=host:tuolumne202 -n1 fi_info
+0.092s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: psm3
+    fabric: TCP-192.168.192.0/18
+    domain: hsi0
+    version: 401.10
+    type: FI_EP_RDM
+    protocol: FI_PROTO_PSMX3
+provider: psm3
+    fabric: TCP-192.168.192.0/18
+    domain: hsi0
+    version: 401.10
+    type: FI_EP_RDM
+    protocol: FI_PROTO_PSMX3
+provider: psm3
+    fabric: TCP-192.168.192.0/18
+    domain: hsi0
+    version: 401.10
+    type: FI_EP_RDM
+    protocol: FI_PROTO_PSMX3
+provider: tcp
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp;ofi_rxm
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: udp;ofi_rxd
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: udp;ofi_rxd
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: udp;ofi_rxd
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: udp;ofi_rxd
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: udp;ofi_rxd
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: shm
+    fabric: shm
+    domain: shm
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SHM
+provider: shm
+    fabric: shm
+    domain: shm
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SHM
+provider: udp
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: udp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: udp
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: udp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: udp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: tcp
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 10.85.109.128/32
+    domain: vxlan.calico
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.68.0/23
+    domain: enp193s0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sm2
+    fabric: sm2
+    domain: sm2
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SM2
+provider: sm2
+    fabric: sm2
+    domain: sm2
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SM2
++ echo '=== NIC check on rabbit host (tuolumne202) ==='
+=== NIC check on rabbit host (tuolumne202) ===
++ flux run --requires=host:tuolumne202 -n1 bash -c 'lspci | grep -i -E "slingshot|cassini|cxi" ; echo "---lsmod---" ; lsmod | grep -i cxi ; echo "---ip link---" ; ip link'
+0.077s: flux-shell[1]: stderr: WARN: NUMA domains have intersecting CPUs
+01:00.0 Ethernet controller: Cray Inc Cassini 1 [Slingshot 200Gb] (rev 02)
+c2:00.0 Ethernet controller: Cray Inc Cassini 1 [Slingshot 200Gb] (rev 02)
+---lsmod---
+kfi_cxi               221184  1
+kfabric                16384  2 kkfilnd,kfi_cxi
+cxi_eth                65536  0
+cxi_user               49152  2
+cxi_ss1              1298432  3 kfi_cxi,cxi_user,cxi_eth
+iommu_v2               20480  1 cxi_ss1
+cxi_sl                905216  1 cxi_ss1
+cxi_sbl               393216  1 cxi_ss1
+---ip link---
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp193s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 00:40:a6:88:7d:c6 brd ff:ff:ff:ff:ff:ff
+3: hsi0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 02:00:00:00:21:fb brd ff:ff:ff:ff:ff:ff permaddr 00:40:a6:94:5b:b7
+4: hsi1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 02:00:00:00:21:fa brd ff:ff:ff:ff:ff:ff permaddr 00:40:a6:94:5b:b5
+7: vxlan.calico: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/ether 66:9a:50:df:83:0e brd ff:ff:ff:ff:ff:ff
+8: cali198cbad5677@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns 8df3bfc1-4fad-4c40-b39b-64059bcdb273
+9: caliddebcf85e1f@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns 50b91a9f-a43d-4f12-9500-417c014f0c96
+10: cali1422e813de6@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns 4e6e3459-8134-41c9-97da-7dfc439920a0
+11: cali8f0151985bb@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default qlen 1000
+    link/ether ee:ee:ee:ee:ee:ee brd ff:ff:ff:ff:ff:ff link-netns c8101e77-8ec2-4dd4-ae0a-bf072ca59472
++ echo '=== fi_info on compute node ==='
+=== fi_info on compute node ===
++ flux run --requires=-host:tuolumne202 -n1 fi_info
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi0
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi1
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi2
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: cxi
+    fabric: cxi
+    domain: cxi3
+    version: 0.2
+    type: FI_EP_RDM
+    protocol: FI_PROTO_CXI_RNR
+provider: psm3
+    fabric: TCP-192.168.192.0/18
+    domain: hsi0
+    version: 401.10
+    type: FI_EP_RDM
+    protocol: FI_PROTO_PSMX3
+provider: psm3
+    fabric: TCP-192.168.192.0/18
+    domain: hsi0
+    version: 401.10
+    type: FI_EP_RDM
+    protocol: FI_PROTO_PSMX3
+provider: psm3
+    fabric: TCP-192.168.192.0/18
+    domain: hsi0
+    version: 401.10
+    type: FI_EP_RDM
+    protocol: FI_PROTO_PSMX3
+provider: tcp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_XNET
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: tcp;ofi_rxm
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXM
+provider: udp;ofi_rxd
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: udp;ofi_rxd
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: udp;ofi_rxd
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: udp;ofi_rxd
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_RXD
+provider: shm
+    fabric: shm
+    domain: shm
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SHM
+provider: shm
+    fabric: shm
+    domain: shm
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SHM
+provider: udp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: udp
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: udp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: udp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_UDP
+provider: tcp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: tcp
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_DGRAM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.192.0/18
+    domain: hsi0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 192.168.68.0/23
+    domain: enp129s0
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: 127.0.0.1/32
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sockets
+    fabric: ::1/128
+    domain: lo
+    version: 206.0
+    type: FI_EP_MSG
+    protocol: FI_PROTO_SOCK_TCP
+provider: sm2
+    fabric: sm2
+    domain: sm2
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SM2
+provider: sm2
+    fabric: sm2
+    domain: sm2
+    version: 206.0
+    type: FI_EP_RDM
+    protocol: FI_PROTO_SM2
++ echo '=== NIC check on compute node ==='
+=== NIC check on compute node ===
++ flux run --requires=-host:tuolumne202 -n1 bash -c 'lspci | grep -i -E "slingshot|cassini|cxi" ; echo "---lsmod---" ; lsmod | grep -i cxi ; echo "---ip link---" ; ip link'
+0000:01:00.0 Ethernet controller: Cray Inc Cassini 1 [Slingshot 200Gb] (rev 02)
+0001:01:00.0 Ethernet controller: Cray Inc Cassini 1 [Slingshot 200Gb] (rev 02)
+0002:01:00.0 Ethernet controller: Cray Inc Cassini 1 [Slingshot 200Gb] (rev 02)
+0003:01:00.0 Ethernet controller: Cray Inc Cassini 1 [Slingshot 200Gb] (rev 02)
+---lsmod---
+kfi_cxi               221184  1
+kfabric                16384  2 kkfilnd,kfi_cxi
+cxi_eth                65536  0
+cxi_user               49152  4
+cxi_ss1              1298432  3 kfi_cxi,cxi_user,cxi_eth
+iommu_v2               20480  1 cxi_ss1
+cxi_sl                905216  1 cxi_ss1
+cxi_sbl               393216  1 cxi_ss1
+---ip link---
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: enp129s0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 00:40:a6:89:4f:04 brd ff:ff:ff:ff:ff:ff
+3: hsi0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 02:00:00:00:21:63 brd ff:ff:ff:ff:ff:ff permaddr 00:40:a6:95:b9:44
+4: hsi1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 02:00:00:00:21:62 brd ff:ff:ff:ff:ff:ff permaddr 00:40:a6:95:b9:42
+5: hsi2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 02:00:00:00:21:a3 brd ff:ff:ff:ff:ff:ff permaddr 00:40:a6:95:c3:40
+6: hsi3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9000 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 02:00:00:00:21:a2 brd ff:ff:ff:ff:ff:ff permaddr 00:40:a6:95:c3:3e

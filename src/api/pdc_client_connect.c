@@ -45,6 +45,7 @@
 #include "pdc_logger.h"
 #include "pdc_timing.h"
 #include "pdc_malloc.h"
+#include "pdc_mercury_auth.h"
 
 #include "mercury.h"
 #include "mercury_macros.h"
@@ -113,6 +114,97 @@ static int           mercury_has_init_g = 0;
 static hg_class_t *  send_class_g       = NULL;
 static hg_context_t *send_context_g     = NULL;
 int                  query_id_g         = 0;
+
+static pbool_t
+PDC_is_cxi_mercury_transport(const char *hg_transport)
+{
+    return (hg_transport != NULL &&
+            (strcmp(hg_transport, "ofi+cxi") == 0 || strcmp(hg_transport, "cxi") == 0));
+}
+
+static pbool_t
+PDC_is_perlmutter_system(void)
+{
+    const char *nersc_host = getenv("NERSC_HOST");
+
+    return (nersc_host != NULL && strcmp(nersc_host, "perlmutter") == 0);
+}
+
+static int
+PDC_get_local_process_rank(int fallback_rank)
+{
+    const char *env_names[] = {"SLURM_LOCALID", "MPI_LOCALRANKID", "PMI_LOCAL_RANK",
+                               "OMPI_COMM_WORLD_LOCAL_RANK"};
+    size_t      i;
+
+    for (i = 0; i < sizeof(env_names) / sizeof(env_names[0]); i++) {
+        char *endptr     = NULL;
+        char *env_value  = getenv(env_names[i]);
+        long  local_rank = 0;
+
+        if (env_value == NULL || env_value[0] == '\0')
+            continue;
+
+        local_rank = strtol(env_value, &endptr, 10);
+        if (endptr != env_value && *endptr == '\0' && local_rank >= 0 && local_rank <= INT_MAX)
+            return (int)local_rank;
+    }
+
+    return fallback_rank;
+}
+
+static void
+PDC_get_default_cxi_endpoint(char *host_buf, size_t host_buf_len, int fallback_rank, int pid_base)
+{
+    const char *nic_name   = getenv("HG_CXI_NIC");
+    int         local_rank = PDC_get_local_process_rank(fallback_rank);
+    int         pid_offset = local_rank % 255;
+    int         pid        = pid_base + pid_offset;
+
+    if (nic_name == NULL || nic_name[0] == '\0')
+        nic_name = "cxi0";
+
+    snprintf(host_buf, host_buf_len, "%s:%d", nic_name, pid);
+}
+
+static const char *
+PDC_get_default_mercury_transport(void)
+{
+    return (PDC_is_perlmutter_system() == TRUE) ? "ofi+cxi" : "ofi+tcp";
+}
+
+static perr_t
+PDC_build_mercury_na_info_string(const char *hg_transport, int port, int cxi_pid_base, char *na_info_string,
+                                 size_t na_info_string_len, char *host_buf, size_t host_buf_len)
+{
+    perr_t      ret_value = SUCCEED;
+    const char *hostname  = getenv("HG_HOST");
+
+    if (hostname == NULL || hostname[0] == '\0') {
+        if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE) {
+            PDC_get_default_cxi_endpoint(host_buf, host_buf_len, pdc_client_mpi_rank_g, cxi_pid_base);
+            hostname = host_buf;
+            if (pdc_client_mpi_rank_g == 0)
+                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+        }
+        else {
+            memset(host_buf, 0, host_buf_len);
+            gethostname(host_buf, host_buf_len - 1);
+            hostname = host_buf;
+            if (pdc_client_mpi_rank_g == 0)
+                LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
+        }
+    }
+    else
+        LOG_INFO("Environment variable HG_HOST was set\n");
+
+    if (PDC_is_cxi_mercury_transport(hg_transport) == TRUE)
+        snprintf(na_info_string, na_info_string_len, "%s://%s", hg_transport, hostname);
+    else
+        snprintf(na_info_string, na_info_string_len, "%s://%s:%d", hg_transport, hostname, port);
+
+    return ret_value;
+}
 
 // flags for RPC request and Bulk transfer.
 // When a work is put in the queue, increase todo_g by 1
@@ -1230,11 +1322,10 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 {
     FUNC_ENTER(NULL);
 
-    perr_t  ret_value = SUCCEED;
-    char    na_info_string[NA_STRING_INFO_LEN];
-    char *  hostname;
-    pbool_t free_hostname = false;
-    int     local_server_id;
+    perr_t ret_value = SUCCEED;
+    char   na_info_string[NA_STRING_INFO_LEN];
+    char   host_buf[HOSTNAME_LEN];
+    int    local_server_id;
 
     /* Set the default mercury transport
      * but enable overriding that to any of:
@@ -1242,9 +1333,15 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
      *   "ofi+tcp"
      *   "cci+tcp"
      */
-    struct hg_init_info init_info            = {0};
-    char *              default_hg_transport = "ofi+tcp";
-    char *              hg_transport;
+    struct hg_init_info    init_info            = {0};
+    const char *           default_hg_transport = PDC_get_default_mercury_transport();
+    char *                 hg_transport;
+    int                    cxi_pid_base = 256;
+    pdc_scoped_env_entry_t scoped_envs[PDC_PERLMUTTER_CXI_ENV_COUNT];
+    int                    scoped_env_count = 0;
+    unsigned int           scoped_svc_id    = 0;
+    unsigned int           scoped_vni       = 0;
+    char                   scoped_device[32];
 #ifdef PDC_HAS_CRAY_DRC
     uint32_t          credential, cookie;
     drc_info_handle_t credential_info;
@@ -1254,29 +1351,20 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
 #endif
 
     if ((hg_transport = getenv("HG_TRANSPORT")) == NULL) {
-        hg_transport = default_hg_transport;
+        hg_transport = (char *)default_hg_transport;
         if (pdc_client_mpi_rank_g == 0)
             LOG_INFO("Environment variable HG_TRANSPORT was NOT set, default to %s\n", default_hg_transport);
     }
     else
         LOG_INFO("Environment variable HG_TRANSPORT was set\n");
-    if ((hostname = getenv("HG_HOST")) == NULL) {
-        hostname = PDC_malloc(HOSTNAME_LEN);
-        memset(hostname, 0, HOSTNAME_LEN);
-        gethostname(hostname, HOSTNAME_LEN - 1);
-        free_hostname = true;
-        if (pdc_client_mpi_rank_g == 0)
-            LOG_INFO("Environment variable HG_HOST was NOT set, default to %s\n", hostname);
-    }
-    else
-        LOG_INFO("Environment variable HG_HOST was set\n");
 
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+    ret_value = PDC_build_mercury_na_info_string(hg_transport, port, cxi_pid_base, na_info_string,
+                                                 sizeof(na_info_string), host_buf, sizeof(host_buf));
+    if (ret_value != SUCCEED)
+        PGOTO_ERROR(FAIL, "Error building Mercury connection string");
 
     if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
-    if (free_hostname)
-        hostname = (char *)PDC_free(hostname);
 
 // gni starts here
 #ifdef PDC_HAS_CRAY_DRC
@@ -1318,7 +1406,15 @@ drc_access_again:
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
+    if (PDC_scope_perlmutter_cxi_auth_env(hg_transport, scoped_envs, &scoped_env_count, &scoped_svc_id,
+                                          &scoped_vni, scoped_device, sizeof(scoped_device)) != SUCCEED &&
+        pdc_client_mpi_rank_g == 0)
+        LOG_WARNING("Unable to scope Slingshot CXI auth for Mercury, falling back to provider defaults");
+    else if (scoped_env_count > 0 && pdc_client_mpi_rank_g == 0)
+        LOG_INFO("Scoped Slingshot CXI auth for Mercury: svc=%u vni=%u device=%s\n", scoped_svc_id,
+                 scoped_vni, scoped_device);
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
+    PDC_restore_scoped_env(scoped_envs, scoped_env_count);
     if (*hg_class == NULL)
         PGOTO_ERROR(FAIL, "Error with HG_Init()");
 
@@ -2952,35 +3048,40 @@ PDC_Client_flush_obj_all()
     perr_t             ret_value = SUCCEED;
     hg_return_t        hg_ret    = HG_SUCCESS;
     uint32_t           server_id = 0;
-    uint32_t           i;
+    uint32_t           i, nsent = 0;
     flush_obj_all_in_t in;
-    hg_handle_t        flush_obj_all_handle;
-    int                rpc_return;
+    hg_handle_t *      handles;
+    int *              rpc_return;
 
+    // Send to every server first, then wait for all: servers flush in parallel
+    handles    = (hg_handle_t *)PDC_calloc(pdc_server_num_g, sizeof(hg_handle_t));
+    rpc_return = (int *)PDC_calloc(pdc_server_num_g, sizeof(int));
+    in.tag     = 44;
+    hg_atomic_set32(&atomic_work_todo_g, 0);
     for (i = 0; i < (uint32_t)pdc_server_num_g; i++) {
         server_id = pdc_server_num_g - 1 - i;
         if (PDC_Client_try_lookup_server(server_id, 0) != SUCCEED)
             PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
 
         HG_Create(send_context_g, pdc_server_info_g[server_id].addr, flush_obj_all_register_id_g,
-                  &flush_obj_all_handle);
-
-        // Fill input structure
-        in.tag = 44;
-        hg_ret = HG_Forward(flush_obj_all_handle, client_send_flush_obj_all_rpc_cb, &rpc_return, &in);
-        if (hg_ret != HG_SUCCESS)
+                  &handles[i]);
+        hg_atomic_incr32(&atomic_work_todo_g);
+        hg_ret = HG_Forward(handles[i], client_send_flush_obj_all_rpc_cb, &rpc_return[i], &in);
+        if (hg_ret != HG_SUCCESS) {
+            hg_atomic_decr32(&atomic_work_todo_g);
             PGOTO_ERROR(FAIL, "Could not start HG_Forward");
-
-        // Wait for response from server
-
-        hg_atomic_set32(&atomic_work_todo_g, 1);
-        PDC_Client_check_response(&send_context_g);
-
-        hg_ret = HG_Destroy(flush_obj_all_handle);
-        if (hg_ret != HG_SUCCESS)
-            PGOTO_ERROR(FAIL, "PDC_Client_flush_obj_all(): Could not destroy handle");
+        }
+        nsent++;
     }
 done:
+    // Wait for response from every server reached
+    if (nsent)
+        PDC_Client_check_response(&send_context_g);
+    for (i = 0; i < (uint32_t)pdc_server_num_g; i++)
+        if (handles[i] != HG_HANDLE_NULL)
+            HG_Destroy(handles[i]);
+    PDC_free(handles);
+    PDC_free(rpc_return);
     FUNC_LEAVE(ret_value);
 }
 
@@ -4685,6 +4786,7 @@ PDC_Client_read(pdc_metadata_t *meta, struct pdc_region_info *region, void *buf)
     perr_t             ret_value = SUCCEED;
     struct pdc_request request;
 
+    memset(&request, 0, sizeof(request));
     request.n_update = 1;
     ret_value        = PDC_Client_iread(meta, region, &request, buf);
     if (ret_value != SUCCEED)
@@ -4706,7 +4808,7 @@ PDC_Client_write_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *regio
     FUNC_ENTER(NULL);
 
     perr_t              ret_value = SUCCEED;
-    struct pdc_request *request   = (struct pdc_request *)PDC_malloc(sizeof(struct pdc_request));
+    struct pdc_request *request   = (struct pdc_request *)PDC_calloc(1, sizeof(struct pdc_request));
 
     ret_value = PDC_Client_iwrite(meta, region, request, buf);
     if (ret_value != SUCCEED)
@@ -4730,7 +4832,7 @@ PDC_Client_read_wait_notify(pdc_metadata_t *meta, struct pdc_region_info *region
     FUNC_ENTER(NULL);
 
     perr_t              ret_value = SUCCEED;
-    struct pdc_request *request   = (struct pdc_request *)PDC_malloc(sizeof(struct pdc_request));
+    struct pdc_request *request   = (struct pdc_request *)PDC_calloc(1, sizeof(struct pdc_request));
 
     ret_value = PDC_Client_iread(meta, region, request, buf);
     if (ret_value != SUCCEED)

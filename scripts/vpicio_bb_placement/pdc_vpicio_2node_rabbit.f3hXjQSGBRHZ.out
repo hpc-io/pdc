@@ -1,0 +1,8 @@
+=== Job 2 (2 nodes): 2 server ranks on 1 Rabbit chassis (2 cores/rank) + 168 client ranks across 2 compute nodes ===
+Sun Nov  1 08:02:22 PST 2026
+--- targeting PDC server ranks at rabbit host: tuolumne254 ---
+--- starting 2-rank distributed PDC server on the rabbit, 2 cores/rank (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_2node_rabbit/server.out) ---
+--- starting 168 VPICIO client ranks across 2 compute nodes (stdout/stderr -> /g/g17/lewis153/pdc_tmp_job2_2node_rabbit/vpicio.out) ---
+Nov 01 08:10:08.604316 PST 2026 broker.err[0]: rc2.0: /var/tmp/lewis153/jobtmp-0-f3hXjQSGBRHZ/script Terminated (rc=143) 465.8s
+Nov 01 08:10:08.908666 PST 2026 broker.err[0]: dead to Flux: tuolumne254 (rank 2)
+Nov 01 08:10:09.008670 PST 2026 broker.err[0]: dead to Flux: tuolumne1864 (rank 1)
