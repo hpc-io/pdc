@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 {
     pdcid_t     pdc, cont_prop, cont, obj_prop;
     pdcid_t *   obj_ids;
-    int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s;
+    int         n_obj, n_add_tag, my_obj, my_obj_s, my_add_tag, my_add_tag_s, max_obj, max_add_tag;
     int         obj_1percent = 0, tag_1percent = 0;
     int         proc_num, my_rank, i, v;
     char        obj_name[128];
@@ -122,8 +122,19 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
     assign_tag_work_from_obj_partition(my_obj_s, my_obj, n_add_tag, &my_add_tag, &my_add_tag_s);
 
-    obj_1percent = my_obj / 100;
-    tag_1percent = my_add_tag / 100;
+    // The progress reports below call MPI_Barrier, so every rank must reach them the same
+    // number of times. Ranks can own different numbers of objects (n_obj % proc_num != 0)
+    // and of tags (all n_add_tag tags usually fall on rank 0), so all ranks iterate up to
+    // the largest per-rank count and pace progress by it; ranks past their own count
+    // only take part in the barriers.
+    max_obj     = my_obj;
+    max_add_tag = my_add_tag;
+#ifdef ENABLE_MPI
+    MPI_Allreduce(&my_obj, &max_obj, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(&my_add_tag, &max_add_tag, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+#endif
+    obj_1percent = max_obj / 100;
+    tag_1percent = max_add_tag / 100;
 
     if (my_rank == 0)
         LOG_INFO("Create %d obj, %d tags\n", my_obj, my_add_tag);
@@ -154,11 +165,13 @@ main(int argc, char *argv[])
     stime = MPI_Wtime();
 #endif
 
-    for (i = 0; i < my_obj; i++) {
-        sprintf(obj_name, "obj%d", my_obj_s + i);
-        obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
-        if (obj_ids[i] <= 0)
-            PGOTO_ERROR(FAIL, "Failed to create object");
+    for (i = 0; i < max_obj; i++) {
+        if (i < my_obj) {
+            sprintf(obj_name, "obj%d", my_obj_s + i);
+            obj_ids[i] = PDCobj_create(cont, obj_name, obj_prop);
+            if (obj_ids[i] <= 0)
+                PGOTO_ERROR(FAIL, "Failed to create object");
+        }
 
         if (i > 0 && obj_1percent > 0 && i % obj_1percent == 0) {
 #ifdef ENABLE_MPI
@@ -194,10 +207,12 @@ main(int argc, char *argv[])
     MPI_Barrier(MPI_COMM_WORLD);
     stime = MPI_Wtime();
 #endif
-    for (i = 0; i < my_add_tag; i++) {
-        v = my_add_tag_s + i;
-        if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
-            PGOTO_ERROR(FAIL, "Failed to add a kvtag to obj%d", v);
+    for (i = 0; i < max_add_tag; i++) {
+        if (i < my_add_tag) {
+            v = my_add_tag_s + i;
+            if (PDCobj_put_tag(obj_ids[i], kvtag.name, kvtag.value, kvtag.type, kvtag.size) < 0)
+                PGOTO_ERROR(FAIL, "Failed to add a kvtag to obj%d", v);
+        }
 
         if (tag_1percent > 0 && i % tag_1percent == 0) {
 #ifdef ENABLE_MPI

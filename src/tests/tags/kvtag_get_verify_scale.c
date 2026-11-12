@@ -89,7 +89,7 @@ main(int argc, char *argv[])
 {
     pdcid_t        pdc, cont;
     pdcid_t *      obj_ids;
-    int            n_obj, n_query, my_obj, my_obj_s, n_tag, n_tag_s;
+    int            n_obj, n_query, my_obj, my_obj_s, n_tag, n_tag_s, max_obj;
     int            obj_1percent = 0;
     int            proc_num, my_rank, i;
     char           obj_name[128];
@@ -130,7 +130,14 @@ main(int argc, char *argv[])
     assign_work_to_rank(my_rank, proc_num, n_obj, &my_obj, &my_obj_s);
     assign_tag_work_from_obj_partition(my_obj_s, my_obj, n_query, &n_tag, &n_tag_s);
 
-    obj_1percent = my_obj / 100;
+    // The object-open progress report calls MPI_Barrier, so every rank must reach it the
+    // same number of times even when ranks own different object counts
+    // (n_obj % proc_num != 0): iterate up to the largest per-rank count.
+    max_obj = my_obj;
+#ifdef ENABLE_MPI
+    MPI_Allreduce(&my_obj, &max_obj, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+#endif
+    obj_1percent = max_obj / 100;
 
     if (my_rank == 0)
         LOG_INFO("Open %d obj, query %d tags\n", my_obj, n_tag);
@@ -152,11 +159,13 @@ main(int argc, char *argv[])
 #endif
 
     // open already created PDC objects and query tags
-    for (i = 0; i < my_obj; i++) {
-        sprintf(obj_name, "obj%d", my_obj_s + i);
-        obj_ids[i] = PDCobj_open(obj_name, pdc);
-        if (obj_ids[i] <= 0)
-            PGOTO_ERROR(FAIL, "Failed to open object");
+    for (i = 0; i < max_obj; i++) {
+        if (i < my_obj) {
+            sprintf(obj_name, "obj%d", my_obj_s + i);
+            obj_ids[i] = PDCobj_open(obj_name, pdc);
+            if (obj_ids[i] <= 0)
+                PGOTO_ERROR(FAIL, "Failed to open object");
+        }
 
         // progress reporting for object opening
         if (i > 0 && obj_1percent > 0 && i % obj_1percent == 0) {
