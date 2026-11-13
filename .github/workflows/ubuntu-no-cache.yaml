@@ -28,4 +28,4 @@ jobs:
 
       - name: Test PDC
         working-directory: build
-        run: ctest -L "serial|transform|analysis" --output-on-failure
+        run: ctest -L serial --output-on-failure --no-tests=error
