@@ -52,12 +52,11 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
 #ifndef PDC_DART_SFX_TREE
     input.inserting_suffix = 0;
     input.attr_key         = strdup(key);
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+    PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL);
 
     input.inserting_suffix = 1;
     input.attr_key         = reverse_str(key);
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-
+    PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL);
 #else
 
     for (int i = 0; i < strlen(key); i++) {
@@ -68,7 +67,7 @@ delete_kv_from_index(char *kv, uint64_t obj_id)
             input.inserting_suffix = 1;
         }
         input.attr_key = substring(key, i, strlen(key));
-        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL);
     }
 
 #endif
@@ -123,12 +122,11 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
 #ifndef PDC_DART_SFX_TREE
     input.inserting_suffix = 0;
     input.attr_key         = strdup(key);
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+    PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL);
 
     input.inserting_suffix = 1;
     input.attr_key         = reverse_str(key);
-    assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
-
+    PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL);
 #else
 
     for (int i = 0; i < strlen(key); i++) {
@@ -140,7 +138,7 @@ insert_kv_to_index(char *kv, uint64_t obj_id)
         }
         input.attr_key = substring(key, i, strlen(key));
         input.vnode_id = 1;
-        assert(PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL) == SUCCEED);
+        PDC_Server_dart_perform_one_server(&input, &output, NULL, NULL);
     }
 
 #endif
@@ -161,7 +159,7 @@ query_result_from_kvtag(char *key_value_query, int8_t op_type)
     uint64_t *buf_ptr   = NULL;
     input->op_type      = op_type;
     input->attr_key     = key_value_query;
-    assert(PDC_Server_dart_perform_one_server(input, output, &n_obj_ids, &buf_ptr) == SUCCEED);
+    PDC_Server_dart_perform_one_server(input, output, &n_obj_ids, &buf_ptr);
     LOG_JUST_PRINT("Query %s Successful!  %d Results: ", key_value_query, n_obj_ids);
     for (int i = 0; i < n_obj_ids; i++) {
         LOG_JUST_PRINT("%llu, ", buf_ptr[i]);

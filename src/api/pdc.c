@@ -32,9 +32,9 @@
 #include "pdc_cont_pkg.h"
 #include "pdc_obj_pkg.h"
 #include "pdc_region_pkg.h"
-#include "pdc_analysis_pkg.h"
 #include "pdc_interface.h"
 #include "pdc_client_connect.h"
+#include "pdc_tf.h"
 
 #include "pdc_timing.h"
 
@@ -104,6 +104,10 @@ PDCinit(const char *pdc_name)
         PGOTO_ERROR(0, "PDC region init error");
     if (PDC_transfer_request_init() < 0)
         PGOTO_ERROR(0, "PDC region transfer init error");
+    if (PDCtf_init() < 0)
+        PGOTO_ERROR(0, "PDC tf init error");
+    if (PDCan_init() < 0)
+        PGOTO_ERROR(0, "PDC region-analysis init error");
 
     // PDC Client Server connection init
     if (PDC_Client_init() < 0)
@@ -199,13 +203,6 @@ PDCclose(pdcid_t pdcid)
         PGOTO_ERROR(FAIL, "Failed to destroy object");
     if (PDC_region_end() < 0)
         PGOTO_ERROR(FAIL, "Failed to destroy region");
-
-    if (PDC_iterator_end() < 0)
-        PGOTO_ERROR(FAIL, "Failed to destroy iterator");
-    if (PDC_analysis_end() < 0)
-        PGOTO_ERROR(FAIL, "Failed to destroy analysis");
-    if (PDC_transform_end() < 0)
-        PGOTO_ERROR(FAIL, "Failed to destroy transform");
 
     PDC_class_close(pdcid);
 
