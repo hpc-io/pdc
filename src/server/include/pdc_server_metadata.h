@@ -192,7 +192,7 @@ perr_t PDC_Server_get_kvtag_query_result(pdc_kvtag_t *in, uint32_t *n_meta, uint
  *
  * \return Non-negative on success/Negative on failure
  */
-perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out);
+perr_t PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out, void **snapshot);
 
 /**
  * Delete the kvtag with the given key

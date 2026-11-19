@@ -4455,14 +4455,34 @@ PDC_Server_data_read_from(uint64_t obj_id, struct pdc_region_info *region_info, 
                 // No need to update metadata
             }
             else {
+                const uint64_t read_max         = 1ULL << 30; // Keep individual reads at or below 1 GiB.
+                int            use_data_sieving = data_sieving_g;
+#ifndef ENABLE_ZFP
+                /* An exact uncompressed region read is already contiguous in both
+                 * buffers. Use the direct I/O path instead of allocating and
+                 * copying a second full-size buffer. Keep the chunked path for
+                 * larger regions, where a single pread may return a short read. */
+                if ((region_info->ndim == 2 || region_info->ndim == 3) &&
+                    overlap_region->data_size <= read_max &&
+                    overlap_region->data_size == (uint64_t)request_bytes) {
+                    int same_region = 1;
+                    for (uint64_t axis = 0; axis < region_info->ndim; axis++) {
+                        if (region_info->offset[axis] != overlap_region->start[axis] ||
+                            region_info->size[axis] != overlap_region->count[axis]) {
+                            same_region = 0;
+                            break;
+                        }
+                    }
+                    if (same_region)
+                        use_data_sieving = 0;
+                }
+#endif
                 // data_sieving_g = 1 by default, export PDC_DATA_SIEVING=0 to change
-                if (data_sieving_g) {
+                if (use_data_sieving) {
                     tmp_buf = (char *)PDC_malloc(overlap_region->data_size);
 #ifdef PDC_TIMING
                     start_posix = MPI_Wtime();
 #endif
-                    // Read up to 1GB at a time
-                    uint64_t read_max = 1 * 1024 * 1024 * 1024llu;
                     if (overlap_region->data_size > read_max) {
                         uint64_t buf_off   = 0;
                         uint64_t reg_off   = overlap_region->offset;

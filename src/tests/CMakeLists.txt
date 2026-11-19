@@ -90,6 +90,7 @@ set(PROGRAMS
   region/region_transfer_write_only
   region/region_transfer_read_only
   region/region_transfer_write_read
+  region/region_transfer_contiguous_read
   region/region_transfer_all
   region/region_transfer_all_2D
   region/region_transfer_all_3D
@@ -216,6 +217,8 @@ set(SCRIPTS
   run_multiple_test.sh
   run_multiple_mpi_test.sh
   run_checkpoint_restart_test.sh
+  run_contiguous_read_restart.sh
+  run_segmented_read_fallback.sh
 )
 
 foreach(script ${SCRIPTS})
@@ -282,6 +285,13 @@ add_test(NAME region_transfer_overlap_2D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPU
 add_test(NAME region_transfer_overlap_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_overlap_3D )
 add_test(NAME region_transfer_merge WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_merge )
 add_test(NAME region_transfer_write_read WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_write_read )
+add_test(NAME region_transfer_contiguous_read WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_contiguous_read )
+if(PDC_ENABLE_CHECKPOINT)
+  add_test(NAME region_transfer_contiguous_read_restart
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND run_contiguous_read_restart.sh)
+  set_tests_properties(region_transfer_contiguous_read_restart PROPERTIES LABELS serial TIMEOUT 90)
+endif()
 add_test(NAME region_transfer_all    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all )
 add_test(NAME region_transfer_all_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_2D )
 add_test(NAME region_transfer_all_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_3D )
@@ -354,6 +364,7 @@ set_tests_properties(region_transfer_overlap     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_overlap_2D     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_overlap_3D     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_write_read     PROPERTIES LABELS serial)
+set_tests_properties(region_transfer_contiguous_read PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_all     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_all_2D     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_all_3D     PROPERTIES LABELS serial)
@@ -532,4 +543,47 @@ if(BUILD_MPI_TESTING)
     set_tests_properties(obj_info_mpi                         PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_put_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
     set_tests_properties(obj_get_data_mpi                     PROPERTIES LABELS "parallel;parallel_obj" )
+endif()
+
+# Do not link PDC into this executable: it must be loaded after the fixture.
+if(BUILD_SHARED_LIBS AND UNIX)
+  add_library(profile_symbol_fixture SHARED misc/profile_symbol_fixture.c)
+  add_executable(profile_symbol_isolation misc/profile_symbol_isolation.c)
+  target_link_libraries(profile_symbol_isolation PRIVATE ${CMAKE_DL_LIBS})
+  # Keep the load order under test and bind both libraries at build time.
+  target_compile_definitions(profile_symbol_isolation PRIVATE
+    PDC_TEST_FOREIGN_LIBRARY="$<TARGET_FILE:profile_symbol_fixture>"
+    PDC_TEST_LIBRARY="$<TARGET_FILE:pdc>")
+  add_dependencies(profile_symbol_isolation profile_symbol_fixture pdc)
+  add_test(NAME library_profile_symbol_isolation COMMAND profile_symbol_isolation)
+  set_tests_properties(library_profile_symbol_isolation PROPERTIES LABELS serial TIMEOUT 30)
+endif()
+
+# This fixture uses ELF LD_PRELOAD interposition; ordinary read tests also run on macOS.
+if(BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
+  add_library(bulk_segment_fixture SHARED misc/bulk_segment_fixture.c)
+  target_link_libraries(bulk_segment_fixture PRIVATE ${CMAKE_DL_LIBS})
+  add_test(NAME region_transfer_segmented_fallback
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND run_segmented_read_fallback.sh $<TARGET_FILE:bulk_segment_fixture>)
+  set_tests_properties(region_transfer_segmented_fallback PROPERTIES LABELS serial TIMEOUT 90)
+endif()
+
+# Check async response ownership after a restart.
+if(PDC_ENABLE_CHECKPOINT AND BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
+  add_library(read_buffer_lifetime_fixture SHARED misc/read_buffer_lifetime_fixture.c)
+  target_link_libraries(read_buffer_lifetime_fixture PRIVATE ${CMAKE_DL_LIBS} pthread)
+  add_test(NAME region_transfer_read_buffer_lifetime
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND run_contiguous_read_restart.sh $<TARGET_FILE:read_buffer_lifetime_fixture>)
+  set_tests_properties(region_transfer_read_buffer_lifetime PROPERTIES LABELS serial TIMEOUT 90)
+endif()
+
+if(BUILD_SHARED_LIBS AND UNIX)
+  add_executable(profile_thread_safety misc/profile_thread_safety.c)
+  target_link_libraries(profile_thread_safety PRIVATE ${CMAKE_DL_LIBS} pthread)
+  target_compile_definitions(profile_thread_safety PRIVATE PDC_TEST_LIBRARY="$<TARGET_FILE:pdc>")
+  add_dependencies(profile_thread_safety pdc)
+  add_test(NAME library_profile_thread_safety COMMAND profile_thread_safety)
+  set_tests_properties(library_profile_thread_safety PROPERTIES LABELS serial TIMEOUT 30)
 endif()

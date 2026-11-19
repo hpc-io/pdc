@@ -284,7 +284,7 @@ PDC_obj_close(struct _pdc_obj_info *op)
 
     perr_t                      ret_value = SUCCEED;
     pdcid_t *                   transfer_request_id;
-    pdc_local_transfer_request *temp, *previous;
+    pdc_local_transfer_request *temp;
     int                         i, n;
 
     if (op->local_transfer_request_size) {
@@ -293,12 +293,13 @@ PDC_obj_close(struct _pdc_obj_info *op)
         n                   = 0;
         while (temp != NULL) {
             transfer_request_id[n] = temp->local_id;
-            previous               = temp;
             temp                   = temp->next;
-            previous               = (pdc_local_transfer_request *)PDC_free(previous);
             ++n;
         }
-        PDCregion_transfer_wait_all(transfer_request_id, n);
+        if (PDCregion_transfer_wait_all(transfer_request_id, n) == PDC_TRANSFER_INCOMPLETE) {
+            PDC_free(transfer_request_id);
+            FUNC_LEAVE(FAIL);
+        }
         for (i = 0; i < n; ++i) {
             PDCregion_transfer_close(transfer_request_id[i]);
         }
