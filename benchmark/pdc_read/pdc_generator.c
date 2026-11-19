@@ -23,8 +23,10 @@
 #define DIM2 10240
 #endif
 
-int main(int argc, char** argv) {
-    int rank, size;
+int
+main(int argc, char **argv)
+{
+    int     rank, size;
     pdcid_t pdc_id;
 
     MPI_Comm comm;
@@ -46,11 +48,13 @@ int main(int argc, char** argv) {
     }
 
     const char *data_dir = getenv("DATA_DIR");
-    if (!data_dir) data_dir = "pdc_data_dir";
+    if (!data_dir)
+        data_dir = "pdc_data_dir";
 
     int total_files = atoi(argv[1]);
     if (total_files <= 0) {
-        if (rank == 0) fprintf(stderr, "Error: total_files must be greater than 0.\n");
+        if (rank == 0)
+            fprintf(stderr, "Error: total_files must be greater than 0.\n");
         MPI_Finalize();
         return 1;
     }
@@ -60,20 +64,20 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-     if (rank == 0) {
+    if (rank == 0) {
         printf("--- Starting PDC Data Generator ---\n");
         printf("Generating %d files in %s...\n", total_files, data_dir);
     }
 
     // Record data allocation and initialization
-    uint8_t* record_data = (uint8_t *) malloc(RECORD_LENGTH_BYTES * sizeof(uint8_t));
+    uint8_t *record_data = (uint8_t *)malloc(RECORD_LENGTH_BYTES * sizeof(uint8_t));
     srand(10 + rank);
     for (size_t i = 0; i < RECORD_LENGTH_BYTES; i++) {
         record_data[i] = (uint8_t)(rand() % 255);
     }
 
     // Label data allocation and initialization
-    int* label_data = (int*) calloc(NUM_SAMPLES_PER_FILE, sizeof(int));
+    int *label_data = (int *)calloc(NUM_SAMPLES_PER_FILE, sizeof(int));
 
     double start_time = MPI_Wtime();
 
@@ -87,8 +91,8 @@ int main(int argc, char** argv) {
 
         // printf("[RANK %d] Generating PDC Data - file %d/%d\n", rank, file_idx + 1, total_files);
 
-        uint64_t dims[3] = {1, DIM1, DIM2}; // same as offset_length
-        uint64_t offset[3] = {0, 0, 0};
+        uint64_t dims[3]          = {1, DIM1, DIM2}; // same as offset_length
+        uint64_t offset[3]        = {0, 0, 0};
         uint64_t offset_length[3] = {1, DIM1, DIM2};
 
         // Create container
@@ -125,18 +129,20 @@ int main(int argc, char** argv) {
         pdcid_t lab_obj_id = PDCobj_create(cont_id, lab_out_path, obj_label_prop);
 
         // Create record region
-        pdcid_t rec_local_reg = PDCregion_create(3, offset, offset_length);
+        pdcid_t rec_local_reg  = PDCregion_create(3, offset, offset_length);
         pdcid_t rec_remote_reg = PDCregion_create(3, offset, offset_length);
 
         // Create label region
-        offset[0]        = 0;
-        offset_length[0] = NUM_SAMPLES_PER_FILE;
-        pdcid_t lab_local_reg = PDCregion_create(1, offset, offset_length);
+        offset[0]              = 0;
+        offset_length[0]       = NUM_SAMPLES_PER_FILE;
+        pdcid_t lab_local_reg  = PDCregion_create(1, offset, offset_length);
         pdcid_t lab_remote_reg = PDCregion_create(1, offset, offset_length);
 
         // Transfer request
-        pdcid_t transfer_request_record = PDCregion_transfer_create(record_data, PDC_WRITE, rec_obj_id, rec_local_reg, rec_remote_reg);
-        pdcid_t transfer_request_label = PDCregion_transfer_create(label_data, PDC_WRITE, lab_obj_id, lab_local_reg, lab_remote_reg);
+        pdcid_t transfer_request_record =
+            PDCregion_transfer_create(record_data, PDC_WRITE, rec_obj_id, rec_local_reg, rec_remote_reg);
+        pdcid_t transfer_request_label =
+            PDCregion_transfer_create(label_data, PDC_WRITE, lab_obj_id, lab_local_reg, lab_remote_reg);
 
         PDCregion_transfer_start(transfer_request_record);
         PDCregion_transfer_start(transfer_request_label);

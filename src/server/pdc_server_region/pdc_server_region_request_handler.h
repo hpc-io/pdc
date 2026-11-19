@@ -704,9 +704,9 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     else {
         /* Keep the handle live until the start reply is submitted, even if a read completes sooner. */
         HG_Ref_incr(handle);
-        ret_value = HG_Bulk_create(info->hg_class, 1, &local_bulk_args->data_buf,
-                                   &local_bulk_args->in.total_buf_size, HG_BULK_READWRITE,
-                                   &local_bulk_args->bulk_handle);
+        ret_value =
+            HG_Bulk_create(info->hg_class, 1, &local_bulk_args->data_buf, &local_bulk_args->in.total_buf_size,
+                           HG_BULK_READWRITE, &local_bulk_args->bulk_handle);
         if (ret_value == HG_SUCCESS) {
             ret_value = HG_Bulk_transfer(info->context, transfer_request_all_bulk_transfer_read_cb,
                                          local_bulk_args, HG_BULK_PULL, info->addr, in.local_bulk_handle, 0,
@@ -727,7 +727,7 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
         }
     }
 
-    out.ret = in.access_type == PDC_WRITE || ret_value == HG_SUCCESS;
+    out.ret   = in.access_type == PDC_WRITE || ret_value == HG_SUCCESS;
     ret_value = HG_Respond(handle, NULL, NULL, &out);
     if (in.access_type == PDC_READ)
         HG_Destroy(handle);

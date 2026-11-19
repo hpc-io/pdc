@@ -19,7 +19,9 @@
 #define DIM2 10240
 #endif
 
-int main(int argc, char** argv) {
+int
+main(int argc, char **argv)
+{
     MPI_Init(&argc, &argv);
 
     int rank, size;
@@ -36,11 +38,13 @@ int main(int argc, char** argv) {
     }
 
     const char *data_dir = getenv("DATA_DIR");
-    if (!data_dir) data_dir = "hdf5_data_dir";
+    if (!data_dir)
+        data_dir = "hdf5_data_dir";
 
     int total_files = atoi(argv[1]);
     if (total_files <= 0) {
-        if (rank == 0) fprintf(stderr, "Error: total_files must be greater than 0.\n");
+        if (rank == 0)
+            fprintf(stderr, "Error: total_files must be greater than 0.\n");
         MPI_Finalize();
         return 1;
     }
@@ -56,22 +60,22 @@ int main(int argc, char** argv) {
     }
 
     // Allocate buffer and fill with RANDOM data
-    uint8_t* dummy_data = (uint8_t*)malloc(RECORD_LENGTH_BYTES * sizeof(uint8_t));
+    uint8_t *dummy_data = (uint8_t *)malloc(RECORD_LENGTH_BYTES * sizeof(uint8_t));
     srand(10 + rank);
     for (size_t i = 0; i < RECORD_LENGTH_BYTES; i++) {
         dummy_data[i] = (uint8_t)(rand() % 255);
     }
 
     // Setup the record_label array
-    int* record_labels = (int*)calloc(NUM_SAMPLES_PER_FILE, sizeof(int));
+    int *record_labels = (int *)calloc(NUM_SAMPLES_PER_FILE, sizeof(int));
 
     // Define the 3D data space for records
-    hsize_t dims[3] = {NUM_SAMPLES_PER_FILE, DIM1, DIM2};
-    hid_t dataspace_id = H5Screate_simple(3, dims, NULL);
+    hsize_t dims[3]      = {NUM_SAMPLES_PER_FILE, DIM1, DIM2};
+    hid_t   dataspace_id = H5Screate_simple(3, dims, NULL);
 
     // Define the 1D data space for labels
-    hsize_t label_dims[1] = {NUM_SAMPLES_PER_FILE};
-    hid_t label_space_id = H5Screate_simple(1, label_dims, NULL);
+    hsize_t label_dims[1]  = {NUM_SAMPLES_PER_FILE};
+    hid_t   label_space_id = H5Screate_simple(1, label_dims, NULL);
 
     double start_time = MPI_Wtime();
 
@@ -83,14 +87,14 @@ int main(int argc, char** argv) {
         hid_t file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
         // Create records
-        hid_t dset_id = H5Dcreate(file_id, "records", H5T_NATIVE_UINT8, dataspace_id,
-                                  H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        hid_t dset_id = H5Dcreate(file_id, "records", H5T_NATIVE_UINT8, dataspace_id, H5P_DEFAULT,
+                                  H5P_DEFAULT, H5P_DEFAULT);
         H5Dwrite(dset_id, H5T_NATIVE_UINT8, H5S_ALL, H5S_ALL, H5P_DEFAULT, dummy_data);
         H5Dclose(dset_id);
 
         // Create labels
-        hid_t label_dset_id = H5Dcreate(file_id, "labels", H5T_NATIVE_INT, label_space_id,
-                                        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        hid_t label_dset_id = H5Dcreate(file_id, "labels", H5T_NATIVE_INT, label_space_id, H5P_DEFAULT,
+                                        H5P_DEFAULT, H5P_DEFAULT);
         H5Dwrite(label_dset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, record_labels);
         H5Dclose(label_dset_id);
 
