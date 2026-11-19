@@ -4069,17 +4069,18 @@ struct transfer_request_all_local_bulk_args {
     transfer_request_all_in_t in;
     uint64_t *                transfer_request_id;
     void *                    data_buf;
+#ifdef ENABLE_MULTITHREAD
+    struct hg_thread_work read_work;
+#endif
 #ifdef PDC_TIMING
     double start_time;
 #endif
 };
 
 struct transfer_request_all_local_bulk_args2 {
-    hg_handle_t               handle;
-    transfer_request_all_data request_data;
-    hg_bulk_t                 bulk_handle;
-    uint64_t *                transfer_request_id;
-    void *                    data_buf;
+    struct transfer_request_all_local_bulk_args *request;
+    hg_bulk_t                                    bulk_handle;
+    void *                                       data_buf;
 #ifdef PDC_TIMING
     double start_time;
 #endif

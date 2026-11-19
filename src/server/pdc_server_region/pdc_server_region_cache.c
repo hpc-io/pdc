@@ -971,11 +971,10 @@ PDC_transfer_request_data_read_from(uint64_t obj_id, int obj_ndim, const uint64_
 
     pthread_mutex_lock(&pdc_obj_cache_list_mutex);
     PDC_region_fetch(obj_id, obj_ndim, obj_dims, region_info, buf, unit);
-    pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
-
 #ifdef PDC_TIMING
     pdc_server_timings->PDCcache_read += MPI_Wtime() - start;
 #endif
+    pthread_mutex_unlock(&pdc_obj_cache_list_mutex);
 
     FUNC_LEAVE(ret_value);
 }

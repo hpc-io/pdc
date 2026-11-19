@@ -911,6 +911,12 @@ that the MPI implementation provides it before starting RPC workers. Those
 workers can checkpoint and synchronize through MPI. A lower provided level
 cannot safely run this server mode and causes a clear startup failure.
 
+For a batched read, the Mercury metadata-pull callback queues one task per
+server-side batch. The server worker reads the requested regions and submits
+the data push, so Mercury can keep dispatching RPCs during file I/O. The push
+completion releases the response and marks the transfers complete. With server
+multithreading disabled, the metadata callback runs the same read directly.
+
 Transfer identifiers are reserved under their server mutex. A batched request
 reserves its entire contiguous identifier range while holding the mutex, since
 its response carries only the first identifier. Independent concurrent RPCs
