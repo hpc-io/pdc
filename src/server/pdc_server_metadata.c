@@ -2839,14 +2839,26 @@ PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, metadata_
     DL_FOREACH(*list_head, elt)
     {
         if (strcmp(elt->kvtag->name, key) == 0) {
-            out->kvtag.name  = elt->kvtag->name;
-            out->kvtag.size  = elt->kvtag->size;
-            out->kvtag.value = elt->kvtag->value;
-            out->kvtag.type  = elt->kvtag->type;
+            pdc_kvtag_t *tag = elt->kvtag;
+            void        *value = NULL;
+
+            // Keep the reply valid after the metadata lock is released and the tag can be deleted.
+            if (tag->size > 0) {
+                value = malloc(tag->size);
+                if (value == NULL)
+                    PGOTO_ERROR(FAIL, "Could not copy tag value for RPC reply");
+                memcpy(value, tag->value, tag->size);
+            }
+            // The matching RPC key remains valid until the reply has been encoded.
+            out->kvtag.name  = key;
+            out->kvtag.size  = tag->size;
+            out->kvtag.value = value;
+            out->kvtag.type  = tag->type;
             break;
         }
     }
 
+done:
     FUNC_LEAVE(ret_value);
 }
 
@@ -2977,8 +2989,8 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
         pdc_metadata_t *target;
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
         if (target != NULL) {
-            PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
-            out->ret = 1;
+            ret_value = PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
+            out->ret = ret_value == SUCCEED ? 1 : -1;
         }
         else {
             ret_value = FAIL;
@@ -2989,8 +3001,8 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
 
         cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
         if (cont_lookup_value != NULL) {
-            PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
-            out->ret = 1;
+            ret_value = PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
+            out->ret = ret_value == SUCCEED ? 1 : -1;
         }
         else {
             ret_value = FAIL;
@@ -3002,7 +3014,7 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
 }
 
 perr_t
-PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
+PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out, void **snapshot)
 {
     FUNC_ENTER(NULL);
 
@@ -3037,10 +3049,10 @@ PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_t *out)
             PGOTO_ERROR(FAIL, "Error with PDC_Server_get_kvtag_sqlite3");
     }
     else {
-        // Someta
         ret_value = PDC_Server_get_kvtag_someta(in, out);
         if (ret_value != SUCCEED)
             PGOTO_ERROR(FAIL, "Error with PDC_Server_get_kvtag_someta");
+        *snapshot = out->kvtag.value;
     }
 
 done:

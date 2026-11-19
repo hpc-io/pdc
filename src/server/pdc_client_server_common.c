@@ -959,8 +959,8 @@ PDC_Server_del_kvtag(metadata_get_kvtag_in_t *in ATTRIBUTE(unused),
     FUNC_LEAVE(SUCCEED);
 }
 perr_t
-PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in   ATTRIBUTE(unused),
-                     metadata_get_kvtag_out_t *out ATTRIBUTE(unused))
+PDC_Server_get_kvtag(metadata_get_kvtag_in_t *in ATTRIBUTE(unused),
+                     metadata_get_kvtag_out_t *out ATTRIBUTE(unused), void **snapshot ATTRIBUTE(unused))
 {
     FUNC_ENTER(NULL);
     FUNC_LEAVE(SUCCEED);
@@ -1784,13 +1784,15 @@ HG_TEST_RPC_CB(metadata_get_kvtag, handle)
     hg_return_t              ret_value = HG_SUCCESS;
     metadata_get_kvtag_in_t  in;
     metadata_get_kvtag_out_t out;
+    void                    *snapshot = NULL;
 
-    memset(&out, 0, sizeof(metadata_get_kvtag_out_t));
-    memset(&out.kvtag, 0, sizeof(pdc_kvtag_t));
+    memset(&out, 0, sizeof(out));
     HG_Get_input(handle, &in);
-    PDC_Server_get_kvtag(&in, &out);
+    PDC_Server_get_kvtag(&in, &out, &snapshot);
     ret_value = HG_Respond(handle, NULL, NULL, &out);
 
+    // HG_Respond has encoded the reply, including any bytes in the snapshot.
+    free(snapshot);
     HG_Free_input(handle, &in);
     HG_Destroy(handle);
 
