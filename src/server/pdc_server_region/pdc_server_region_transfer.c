@@ -113,8 +113,8 @@ PDC_finish_request(uint64_t transfer_request_id, pdc_transfer_status_t status)
                     PDC_free(ptr->wait);
                 }
                 ptr->wait = NULL;
-                /* An aggregate waiter will retrieve each failed ID individually. */
-                if (status == PDC_TRANSFER_STATUS_FAILED && ptr->out_type == 1)
+                /* A lost failure reply must remain retryable until acknowledged. */
+                if (status == PDC_TRANSFER_STATUS_FAILED)
                     break;
                 if (tmp != NULL) {
                     /* Case for removing the any nodes but the first one. */

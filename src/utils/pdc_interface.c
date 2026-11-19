@@ -274,7 +274,7 @@ PDC_id_list_clear(PDC_type_t type)
             PDC_MUTEX_UNLOCK(type_ptr->ids);
         }
         else
-            ret_value = FAIL;
+            FUNC_LEAVE(FAIL);
     }
 
     FUNC_LEAVE(ret_value);

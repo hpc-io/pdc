@@ -1784,10 +1784,9 @@ PDCregion_transfer_start_common(pdcid_t transfer_request_id,
         PDCregion_transfer_add_bulk_handle(transfer_request, bulk_handle);
     }
 
-    // For POSIX consistency, we block here until the data is received by the server
-    if (transfer_request->consistency == PDC_CONSISTENCY_POSIX) {
-        PDCregion_transfer_wait(transfer_request_id);
-    }
+    // For POSIX consistency, we block here until the transfer completes.
+    if (ret_value == SUCCEED && transfer_request->consistency == PDC_CONSISTENCY_POSIX)
+        ret_value = PDCregion_transfer_wait(transfer_request_id);
 
 done:
     FUNC_LEAVE(ret_value);

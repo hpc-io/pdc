@@ -3555,6 +3555,8 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_se
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer request failed");
     *completed = transfer_args.status;
+    if (*completed == PDC_TRANSFER_STATUS_FAILED)
+        PDC_Client_transfer_request_wait(transfer_request_id, data_server_id, PDC_WAIT_ACK_FAILURE);
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -3634,8 +3636,13 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
 #endif
 
     HG_Destroy(client_send_transfer_request_wait_handle);
+    if (transfer_args.ret == PDC_WAIT_FAILED) {
+        if (access_type != PDC_WAIT_ACK_FAILURE)
+            PDC_Client_transfer_request_wait(transfer_request_id, data_server_id, PDC_WAIT_ACK_FAILURE);
+        PGOTO_DONE(FAIL);
+    }
     if (transfer_args.ret != PDC_WAIT_SUCCESS)
-        PGOTO_DONE(transfer_args.ret == PDC_WAIT_FAILED ? FAIL : PDC_TRANSFER_INCOMPLETE);
+        PGOTO_DONE(PDC_TRANSFER_INCOMPLETE);
 
 done:
     FUNC_LEAVE(ret_value);

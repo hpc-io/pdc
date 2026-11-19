@@ -765,6 +765,8 @@ typedef struct transfer_request_wait_all_in_t {
 
 /* A wait can fail before the server has confirmed transfer completion. */
 enum { PDC_WAIT_RETRY = -1, PDC_WAIT_FAILED = 0, PDC_WAIT_SUCCESS = 1 };
+/* Special access_type in a scalar wait after the client receives a failure. */
+enum { PDC_WAIT_ACK_FAILURE = -1 };
 
 /* Define transfer_request_wait_all_out_t */
 typedef struct transfer_request_wait_all_out_t {
