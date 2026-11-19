@@ -860,9 +860,10 @@ Batched reads of disjoint full static objects can register the caller's output
 buffers as Mercury bulk segments. This avoids a second data-sized receive
 allocation and the copy from that allocation to the outputs. The request and
 response use the existing RPC format. Partial layouts, overlapping outputs and
-small outputs that cannot hold request metadata retain the staging path. If a
-transport cannot register the segmented layout, registration is retried with the
-existing single staging buffer before an RPC is sent.
+small outputs that cannot hold request metadata retain the staging path.
+Segmented reads require one vector registration at the transport layer.
+Requests exceeding that limit or failing vector registration use a single
+staging buffer before an RPC is sent.
 
 A read output belongs to its active transfer until completion. Its contents are
 unspecified while the read is pending. Callers must keep it alive and must not
@@ -917,7 +918,10 @@ server-side batch. The server worker reads the requested regions and submits
 the data push, so Mercury can keep dispatching RPCs during file I/O. The push
 completion releases the response and records the transfer outcome. Mercury
 batch errors reach wait and status calls as failures. Failed read outputs are
-unspecified. With server multithreading disabled, the metadata callback runs
+unspecified. A wait that returns ``PDC_TRANSFER_INCOMPLETE`` could not confirm
+completion, so the caller must retain the request and output buffer for a
+later wait. A lost batch-start acknowledgement can also return this result.
+That request retains the buffer because the server ID is unknown. With server multithreading disabled, the metadata callback runs
 the same read directly.
 
 Transfer identifiers are reserved under their server mutex. A batched request

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "record_tag.h"
 #ifndef DIM1
 #define DIM1 10240
 #endif
@@ -120,9 +121,13 @@ main(int argc, char **argv)
         else
             REQUIRE(PDCregion_transfer_wait_all(requests, n) >= 0);
         for (int j = 0; j < n; j++) {
-            if (verify && memcmp(buffers[j], expected[samples[j] % ranks], RECORD_BYTES) != 0) {
-                fprintf(stderr, "rank %d sample %d: full record mismatch\n", rank, samples[j]);
-                MPI_Abort(MPI_COMM_WORLD, 21);
+            if (verify) {
+                uint8_t *record = expected[samples[j] % ranks];
+                tag_record(record, samples[j]);
+                if (memcmp(buffers[j], record, RECORD_BYTES) != 0) {
+                    fprintf(stderr, "rank %d sample %d: full record mismatch\n", rank, samples[j]);
+                    MPI_Abort(MPI_COMM_WORLD, 21);
+                }
             }
             REQUIRE(PDCregion_transfer_close(requests[j]) >= 0);
             printf("[RANK %d | EPOCH 1] Read Sample %d in %.4f sec\n", rank, samples[j],

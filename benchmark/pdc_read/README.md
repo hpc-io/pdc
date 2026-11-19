@@ -3,7 +3,9 @@
 [Performance results](PERFORMANCE.md) covers batch-16 PDC with batched reads on
 server workers and the measured core allocations. The workload is a synthetic
 C reader over 100 MiB records with deterministic data and shuffle order. It
-measures the first reader epoch, including PDC object opens, transfer starts,
+tags each payload with its record index so verification detects a record
+returned to the wrong request. It measures the first reader epoch, including
+PDC object opens, transfer starts,
 waits and request cleanup. Dataset generation, writeback, and the separate
 full-byte verification run outside that timer.
 
@@ -86,14 +88,14 @@ owned by the caller. It submits no new allocations.
 
 ## Reproduce the full-core comparison
 
-Use `--binding slurm` for the original disjoint Slurm step placement. Three
-fresh rounds with one timed pass per dataset reproduce the comparison
-protocol used for the fully provisioned server and HDF5.
+Use fixed binding for a matched comparison with the same reader cores in
+both modes. Three fresh rounds give one timed pass per independent dataset.
+Use `--binding slurm` to reproduce historical automatic placement.
 
 ```bash
 python3 benchmark/pdc_read/run.py --build "$PWD/build-pdc-read" \
     --scratch "$SCRATCH/pdc-full-cores" --output "$PWD/pdc-full-cores" \
-    --binding slurm --layout 4:4:8 --layout hdf5 --rounds 3
+    --binding fixed --layout 4:4:8 --layout hdf5 --rounds 3
 ```
 
 For threaded depth one, run the same `4:4:8` layout with
@@ -108,10 +110,12 @@ PDC_SOURCE="$PWD/pdc-dispatch" benchmark/pdc_read/build.sh "$PWD/build-pdc-dispa
 # Run inside the same allocation with fresh scratch and output directories.
 python3 benchmark/pdc_read/run.py --build "$PWD/build-pdc-dispatch" \
     --scratch "$SCRATCH/pdc-dispatch-control" --output "$PWD/pdc-dispatch-control" \
-    --binding slurm --layout 4:4:8 --rounds 3
+    --binding fixed --layout 4:4:8 --rounds 3
 ```
 
 Keep the PDC cache, VNI, client layout, and file count fixed across controls.
+This comparison uses the historical PDC revision, so it includes other
+transfer changes made since that revision.
 
 For scaling runs, use a homogeneous Perlmutter CPU allocation with four
 readers per node and the site-supported VNI mode. The default 840 records per

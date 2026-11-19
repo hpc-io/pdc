@@ -19,6 +19,10 @@ mercury_lib=${MERCURY_LIBDIR:-"$mercury/lib"}
 hdf5_lib=${HDF5_LIBDIR:-"$hdf5/lib"}
 dim1=${DIM1:-10240}
 dim2=${DIM2:-10240}
+if (( dim1 < 1 || dim2 < 1 || dim1 * dim2 < 8 )); then
+    printf 'Choose positive dimensions with at least eight bytes per record.\n' >&2
+    exit 2
+fi
 
 MERCURY_HOME="$mercury" "$cmake_bin" -S "$source_dir" -B "$build/pdc" \
     -DCMAKE_C_COMPILER="$compiler" -DCMAKE_BUILD_TYPE=RelWithDebInfo \

@@ -763,6 +763,9 @@ typedef struct transfer_request_wait_all_in_t {
     int32_t   n_objs;
 } transfer_request_wait_all_in_t;
 
+/* A wait can fail before the server has confirmed transfer completion. */
+enum { PDC_WAIT_RETRY = -1, PDC_WAIT_FAILED = 0, PDC_WAIT_SUCCESS = 1 };
+
 /* Define transfer_request_wait_all_out_t */
 typedef struct transfer_request_wait_all_out_t {
     int32_t ret;

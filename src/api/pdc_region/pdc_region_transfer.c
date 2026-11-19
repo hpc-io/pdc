@@ -115,6 +115,7 @@ typedef struct pdc_transfer_request {
     pdcid_t merged_request_id;
     int     is_done;
     int     failed;
+    int     unknown_start;
 
     // list of bulk handles used for region request
     hg_bulk_t *bulk_handles;
@@ -334,6 +335,7 @@ PDCregion_transfer_create(void *buf, pdc_access_t access_type, pdcid_t obj_id, p
     p->merged_request_id  = 0;
     p->is_done            = 0;
     p->failed             = 0;
+    p->unknown_start      = 0;
     PDCregion_transfer_init_bulk_handles(p);
     unit = p->unit;
 
@@ -383,6 +385,8 @@ PDCregion_transfer_close(pdcid_t transfer_request_id)
         PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", transfer_request_id);
 
     transfer_request = (pdc_transfer_request *)(transferinfo->obj_ptr);
+    if (transfer_request->metadata_id != NULL)
+        FUNC_LEAVE(PDC_TRANSFER_INCOMPLETE);
     for (int i = 0; i < transfer_request->num_bulk_handles; i++) {
         if (transfer_request->bulk_handles[i] == HG_BULK_NULL)
             LOG_WARNING("Bulk handle added to transfer request was NULL\n");
@@ -1451,10 +1455,11 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
         PDC_Client_pack_all_requests(
             n_objs, transfer_requests + start, transfer_requests[start]->transfer_request->access_type,
             &bulk_buf, &bulk_buf_size, &request_buf_size, group_read_bufs, allow_scatter, &scatter_read);
-        int *bulk_buf_ref = PDC_malloc(sizeof(*bulk_buf_ref));
-        if (start_packed_requests(&bulk_handle, n_objs, transfer_requests + start, &bulk_buf, bulk_buf_size,
-                                  request_buf_size, group_read_bufs, scatter_read, group_ids,
-                                  comm) != SUCCEED) {
+        int *  bulk_buf_ref = PDC_malloc(sizeof(*bulk_buf_ref));
+        perr_t group_result =
+            start_packed_requests(&bulk_handle, n_objs, transfer_requests + start, &bulk_buf, bulk_buf_size,
+                                  request_buf_size, group_read_bufs, scatter_read, group_ids, comm);
+        if (group_result != SUCCEED && group_result != PDC_TRANSFER_INCOMPLETE) {
             PDC_free(bulk_buf_ref);
             PDC_free(bulk_buf);
             for (int j = start; j < end; ++j)
@@ -1472,7 +1477,12 @@ PDC_Client_start_all_requests(pdc_transfer_request_start_all_pkg **transfer_requ
             request->bulk_buf_ref[index]  = bulk_buf_ref;
             if (request->access_type == PDC_READ)
                 request->read_bulk_buf[index] = group_read_bufs[j - start];
-            request->metadata_id[index] = group_ids[j - start];
+            if (group_result == PDC_TRANSFER_INCOMPLETE) {
+                request->unknown_start = 1;
+                ret_value              = FAIL;
+            }
+            else
+                request->metadata_id[index] = group_ids[j - start];
         }
     }
     PDC_free(read_bulk_buf);
@@ -1624,7 +1634,8 @@ PDCregion_transfer_start_all_common(pdcid_t *transfer_request_id, int size, int 
     if (ret_value != SUCCEED) {
         /* Some server groups may have started. Drain them before returning a
          * start error so the caller can safely release its buffers. */
-        PDCregion_transfer_wait_all(transfer_request_id, size);
+        if (PDCregion_transfer_wait_all(transfer_request_id, size) == PDC_TRANSFER_INCOMPLETE)
+            ret_value = PDC_TRANSFER_INCOMPLETE;
     }
     else if (posix_size > 0) {
         ret_value = PDCregion_transfer_wait_all(posix_transfer_request_id, posix_size);
@@ -1917,6 +1928,10 @@ PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *co
             request->failed = 1;
         request->metadata_id[i] = 0;
     }
+    if (request->unknown_start) {
+        *completed = PDC_TRANSFER_STATUS_PENDING;
+        PGOTO_DONE(PDC_TRANSFER_INCOMPLETE);
+    }
     for (int i = 0; i < request->n_obj_servers; ++i)
         collect_partition_read(request, i);
 
@@ -1967,7 +1982,7 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
             continue;
         transfer_request = (pdc_transfer_request *)(transferinfos[i]->obj_ptr);
         if (transfer_request->is_done) {
-            if (transfer_request->failed)
+            if (transfer_request->failed && ret_value == SUCCEED)
                 ret_value = FAIL;
             continue;
         }
@@ -2024,14 +2039,26 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         n_objs = i - index;
 
         hg_bulk_t bulk_handle = HG_BULK_NULL;
-        if (PDC_Client_transfer_request_wait_all(&bulk_handle, n_objs, metadata_ids + index, server) !=
-            SUCCEED) {
-            ret_value = FAIL;
-            for (j = index; j < i; ++j)
-                transfer_requests[j]->transfer_request->failed = 1;
-        }
+        perr_t    group_result =
+            PDC_Client_transfer_request_wait_all(&bulk_handle, n_objs, metadata_ids + index, server);
         if (bulk_handle != HG_BULK_NULL)
             HG_Bulk_free(bulk_handle);
+        for (j = index; j < i; ++j) {
+            pdc_transfer_request_wait_all_pkg *entry   = transfer_requests[j];
+            pdc_transfer_request *             request = entry->transfer_request;
+            perr_t                             result  = group_result;
+            /* A failed aggregate wait retains failed server IDs. Resolve the
+             * individual outcomes so successful siblings can still be read. */
+            if (group_result == FAIL)
+                result = PDC_Client_transfer_request_wait(entry->metadata_id, server, request->access_type);
+            if (result == PDC_TRANSFER_INCOMPLETE) {
+                ret_value = PDC_TRANSFER_INCOMPLETE;
+                continue;
+            }
+            request->metadata_id[entry->index] = 0;
+            if (result != SUCCEED)
+                request->failed = 1;
+        }
     }
 
     // Deal with merged read requests, need to copy a large buffer to each of the original request buf
@@ -2063,10 +2090,17 @@ PDCregion_transfer_wait_all(pdcid_t *transfer_request_id, int size)
         transfer_request = (pdc_transfer_request *)(transferinfos[i]->obj_ptr);
         if (transfer_request->is_done || transfer_request->metadata_id == NULL)
             continue;
+        int pending = transfer_request->unknown_start;
+        for (j = 0; j < transfer_request->n_obj_servers; ++j)
+            pending |= transfer_request->metadata_id[j] != 0;
+        if (pending) {
+            ret_value = PDC_TRANSFER_INCOMPLETE;
+            continue;
+        }
         for (j = 0; j < transfer_request->n_obj_servers; ++j)
             collect_partition_read(transfer_request, j);
         complete_local_transfer(transfer_request, my_transfer_request_id[i]);
-        if (transfer_request->failed)
+        if (transfer_request->failed && ret_value == SUCCEED)
             ret_value = FAIL;
     }
 
@@ -2103,10 +2137,18 @@ PDCregion_transfer_wait(pdcid_t transfer_request_id)
             continue;
         uint32_t server =
             request->region_partition == PDC_OBJ_STATIC ? request->data_server_id : request->obj_servers[i];
-        if (PDC_Client_transfer_request_wait(request->metadata_id[i], server, request->access_type) !=
-            SUCCEED)
+        perr_t result =
+            PDC_Client_transfer_request_wait(request->metadata_id[i], server, request->access_type);
+        if (result == PDC_TRANSFER_INCOMPLETE) {
+            ret_value = PDC_TRANSFER_INCOMPLETE;
+            continue;
+        }
+        request->metadata_id[i] = 0;
+        if (result != SUCCEED)
             request->failed = 1;
     }
+    if (request->unknown_start || ret_value == PDC_TRANSFER_INCOMPLETE)
+        PGOTO_DONE(PDC_TRANSFER_INCOMPLETE);
     for (int i = 0; i < request->n_obj_servers; ++i)
         collect_partition_read(request, i);
     complete_local_transfer(request, transfer_request_id);

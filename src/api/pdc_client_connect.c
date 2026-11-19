@@ -3060,7 +3060,7 @@ PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc
     hg_class_t *                          hg_class;
     int                                   i;
     hg_handle_t                           client_send_transfer_request_all_handle;
-    struct _pdc_transfer_request_all_args transfer_args;
+    struct _pdc_transfer_request_all_args transfer_args = {.ret = PDC_WAIT_RETRY};
     char                                  cur_time[64];
 
 #ifdef PDC_TIMING
@@ -3090,6 +3090,17 @@ PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc
     debug_server_id_count[data_server_id]++;
 
     hg_class = HG_Context_get_class(send_context_g);
+    if (segment_count > 1) {
+        na_class_t *na = HG_Core_class_get_na(hg_class->core_class);
+        /* Mercury may build multiple provider operations when it cannot
+         * register one vector. A later submission failure then has no
+         * completion callback for earlier operations. Use staging instead. */
+        if (segment_count > NA_Mem_handle_get_max_segments(na)) {
+            if (registration_failed)
+                *registration_failed = 1;
+            PGOTO_DONE(FAIL);
+        }
+    }
 
     if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
         PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
@@ -3146,16 +3157,18 @@ PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc
     PDC_Client_wait_pthread_progress();
     HG_Destroy(client_send_transfer_request_all_handle);
 
-    if (transfer_args.ret != 1) {
+    if (transfer_args.ret == 0) {
         HG_Bulk_free(in.local_bulk_handle);
-        PGOTO_ERROR(FAIL, "Transfer request failed");
+        PGOTO_ERROR(FAIL, "Server rejected the transfer request");
     }
     *bulk_handle = in.local_bulk_handle;
+    if (transfer_args.ret != 1)
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE, "Transfer start was not acknowledged");
 
-    /* #ifdef ENABLE_MPI */
-    /*     if (comm != 0) */
-    /*         MPI_Barrier(comm); */
-    /* #endif */
+        /* #ifdef ENABLE_MPI */
+        /*     if (comm != 0) */
+        /*         MPI_Barrier(comm); */
+        /* #endif */
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3321,15 +3334,17 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     transfer_request_wait_all_in_t             in;
     hg_class_t *                               hg_class;
     hg_handle_t                                client_send_transfer_request_wait_all_handle;
-    struct _pdc_transfer_request_wait_all_args transfer_args;
+    struct _pdc_transfer_request_wait_all_args transfer_args = {.ret = PDC_WAIT_RETRY};
     char                                       cur_time[64];
 
 #ifdef PDC_TIMING
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
-    in.n_objs         = n_objs;
-    in.total_buf_size = sizeof(pdcid_t) * n_objs;
+    *bulk_handle         = HG_BULK_NULL;
+    in.local_bulk_handle = HG_BULK_NULL;
+    in.n_objs            = n_objs;
+    in.total_buf_size    = sizeof(pdcid_t) * n_objs;
 
     // Compute metadata server id
 
@@ -3338,18 +3353,23 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     hg_class = HG_Context_get_class(send_context_g);
 
     if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE, "Error with PDC_Client_try_lookup_server");
     hg_ret =
         HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr,
                   transfer_request_wait_all_register_id_g, &client_send_transfer_request_wait_all_handle);
+
+    if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE, "Could not create wait-all RPC handle");
 
     // Create bulk handles
     // For sending metadata
     hg_ret = HG_Bulk_create(hg_class, 1, (void **)&transfer_request_id, (hg_size_t *)&(in.total_buf_size),
                             HG_BULK_READWRITE, &(in.local_bulk_handle));
+    if (hg_ret != HG_SUCCESS) {
+        HG_Destroy(client_send_transfer_request_wait_all_handle);
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE, "Could not create local bulk data handle");
+    }
     *bulk_handle = in.local_bulk_handle;
-    if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
     /* Arm the completion counter before forwarding.  hg_progress_fn() runs on a
      * separate thread over this same context, started by
@@ -3370,13 +3390,14 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     if (hg_ret != HG_SUCCESS) {
         /* Nothing was sent, so no callback will decrement the counter. */
         hg_atomic_set32(&atomic_work_todo_g, 0);
-        PGOTO_ERROR(FAIL, "Could not start HG_Forward");
+        HG_Destroy(client_send_transfer_request_wait_all_handle);
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE, "Could not start HG_Forward");
     }
     PDC_Client_check_response(&send_context_g);
 
     HG_Destroy(client_send_transfer_request_wait_all_handle);
-    if (transfer_args.ret != 1)
-        PGOTO_ERROR(FAIL, "Transfer request wait all failed");
+    if (transfer_args.ret != PDC_WAIT_SUCCESS)
+        PGOTO_DONE(transfer_args.ret == PDC_WAIT_FAILED ? FAIL : PDC_TRANSFER_INCOMPLETE);
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3548,7 +3569,7 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     hg_return_t                            hg_ret    = HG_SUCCESS;
     transfer_request_wait_in_t             in;
     hg_handle_t                            client_send_transfer_request_wait_handle;
-    struct _pdc_transfer_request_wait_args transfer_args;
+    struct _pdc_transfer_request_wait_args transfer_args = {.ret = PDC_WAIT_RETRY};
     char                                   cur_time[64];
 
     // Join the thread of trasfer start
@@ -3569,13 +3590,13 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     in.access_type         = access_type;
 
     if (PDC_Client_try_lookup_server(data_server_id, 0) != SUCCEED)
-        PGOTO_ERROR(FAIL, "Error with PDC_Client_try_lookup_server");
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE, "Error with PDC_Client_try_lookup_server");
 
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr,
                        transfer_request_wait_register_id_g, &client_send_transfer_request_wait_handle);
 
     if (hg_ret != HG_SUCCESS)
-        PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE, "Could not create local bulk data handle");
 
     /* Arm before forwarding; see PDC_Client_transfer_request_wait_all(). */
     hg_atomic_set32(&atomic_work_todo_g, 1);
@@ -3594,7 +3615,9 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
 
     if (hg_ret != HG_SUCCESS) {
         hg_atomic_set32(&atomic_work_todo_g, 0);
-        PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request(): Could not start HG_Forward()");
+        HG_Destroy(client_send_transfer_request_wait_handle);
+        PGOTO_ERROR(PDC_TRANSFER_INCOMPLETE,
+                    "PDC_Client_send_transfer_request(): Could not start HG_Forward()");
     }
     PDC_Client_check_response(&send_context_g);
 
@@ -3611,8 +3634,8 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
 #endif
 
     HG_Destroy(client_send_transfer_request_wait_handle);
-    if (transfer_args.ret != 1)
-        PGOTO_ERROR(FAIL, "Transfer request failed");
+    if (transfer_args.ret != PDC_WAIT_SUCCESS)
+        PGOTO_DONE(transfer_args.ret == PDC_WAIT_FAILED ? FAIL : PDC_TRANSFER_INCOMPLETE);
 
 done:
     FUNC_LEAVE(ret_value);

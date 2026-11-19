@@ -91,12 +91,10 @@ static void
 transfer_request_all_read_finish(struct transfer_request_all_local_bulk_args *request, hg_return_t result)
 {
     pthread_mutex_lock(&transfer_request_status_mutex);
-    for (int i = 0; i < request->in.n_objs; ++i) {
-        if (result == HG_SUCCESS)
-            PDC_finish_request(request->transfer_request_id[i]);
-        else
-            PDC_fail_request(request->transfer_request_id[i]);
-    }
+    pdc_transfer_status_t status =
+        result == HG_SUCCESS ? PDC_TRANSFER_STATUS_COMPLETE : PDC_TRANSFER_STATUS_FAILED;
+    for (int i = 0; i < request->in.n_objs; ++i)
+        PDC_finish_request(request->transfer_request_id[i], status);
     pthread_mutex_unlock(&transfer_request_status_mutex);
 }
 
@@ -335,7 +333,7 @@ transfer_request_all_bulk_transfer_write_cb(const struct hg_cb_info *info)
         LOG_ERROR("\n");
 #endif
         pthread_mutex_lock(&transfer_request_status_mutex);
-        PDC_finish_request(local_bulk_args->transfer_request_id[i]);
+        PDC_finish_request(local_bulk_args->transfer_request_id[i], PDC_TRANSFER_STATUS_COMPLETE);
         pthread_mutex_unlock(&transfer_request_status_mutex);
     }
 
@@ -386,22 +384,22 @@ transfer_request_wait_all_bulk_transfer_cb(const struct hg_cb_info *info)
 
     /* Free decoded input while this callback still owns the RPC handle. */
     HG_Free_input(handle, &local_bulk_args->in);
-    wait->succeeded = info->ret == HG_SUCCESS;
+    wait->result = info->ret == HG_SUCCESS ? PDC_WAIT_SUCCESS : PDC_WAIT_RETRY;
     pthread_mutex_lock(&transfer_request_status_mutex);
-    if (wait->succeeded) {
+    if (info->ret == HG_SUCCESS) {
         for (int i = 0; i < n_objs; ++i) {
-            pdc_transfer_status_t status = PDC_check_request(ids[i]);
-            if (status == PDC_TRANSFER_STATUS_PENDING)
-                PDC_try_finish_request(ids[i], handle, wait, 1);
-            else if (status != PDC_TRANSFER_STATUS_COMPLETE)
-                wait->succeeded = 0;
+            pdc_transfer_status_t status = PDC_check_request(ids[i], 1);
+            if (status == PDC_TRANSFER_STATUS_PENDING && !PDC_try_finish_request(ids[i], handle, wait, 1))
+                wait->result = PDC_WAIT_RETRY;
+            else if (status == PDC_TRANSFER_STATUS_FAILED && wait->result == PDC_WAIT_SUCCESS)
+                wait->result = PDC_WAIT_FAILED;
         }
     }
     int respond = wait->pending == 0;
     pthread_mutex_unlock(&transfer_request_status_mutex);
 
     if (respond) {
-        out.ret = wait->succeeded;
+        out.ret = wait->result;
         PDC_free(wait);
         ret = HG_Respond(handle, NULL, NULL, &out);
         HG_Destroy(handle);
@@ -475,7 +473,7 @@ transfer_request_bulk_transfer_write_cb(const struct hg_cb_info *info)
 #endif
 #endif
     pthread_mutex_lock(&transfer_request_status_mutex);
-    PDC_finish_request(local_bulk_args->transfer_request_id);
+    PDC_finish_request(local_bulk_args->transfer_request_id, PDC_TRANSFER_STATUS_COMPLETE);
     pthread_mutex_unlock(&transfer_request_status_mutex);
     local_bulk_args->data_buf = (void *)PDC_free(local_bulk_args->data_buf);
     remote_reg_info           = (struct pdc_region_info *)PDC_free(remote_reg_info);
@@ -509,7 +507,7 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     gettimeofday(&last_cache_activity_timeval_g, NULL);
 
     pthread_mutex_lock(&transfer_request_status_mutex);
-    PDC_finish_request(local_bulk_args->transfer_request_id);
+    PDC_finish_request(local_bulk_args->transfer_request_id, PDC_TRANSFER_STATUS_COMPLETE);
     pthread_mutex_unlock(&transfer_request_status_mutex);
 
     ret = HG_SUCCESS;
@@ -540,7 +538,7 @@ HG_TEST_RPC_CB(transfer_request_status, handle)
     HG_Get_input(handle, &in);
 
     pthread_mutex_lock(&transfer_request_status_mutex);
-    out.status = PDC_check_request(in.transfer_request_id);
+    out.status = PDC_check_request(in.transfer_request_id, 0);
     pthread_mutex_unlock(&transfer_request_status_mutex);
     out.ret   = 1;
     ret_value = HG_Respond(handle, NULL, NULL, &out);
@@ -570,15 +568,20 @@ HG_TEST_RPC_CB(transfer_request_wait, handle)
     pdcid_t request_id = in.transfer_request_id;
     HG_Free_input(handle, &in);
     pthread_mutex_lock(&transfer_request_status_mutex);
-    status = PDC_check_request(request_id);
+    status       = PDC_check_request(request_id, 0);
+    int deferred = 0;
     if (status == PDC_TRANSFER_STATUS_PENDING) {
-        wait            = PDC_calloc(1, sizeof(*wait));
-        wait->succeeded = 1;
-        PDC_try_finish_request(request_id, handle, wait, 0);
+        wait         = PDC_calloc(1, sizeof(*wait));
+        wait->result = PDC_WAIT_SUCCESS;
+        deferred     = PDC_try_finish_request(request_id, handle, wait, 0);
+        if (!deferred)
+            PDC_free(wait);
     }
     pthread_mutex_unlock(&transfer_request_status_mutex);
-    if (status != PDC_TRANSFER_STATUS_PENDING) {
-        out.ret   = status != PDC_TRANSFER_STATUS_FAILED;
+    if (!deferred) {
+        out.ret = status == PDC_TRANSFER_STATUS_PENDING
+                      ? PDC_WAIT_RETRY
+                      : status == PDC_TRANSFER_STATUS_FAILED ? PDC_WAIT_FAILED : PDC_WAIT_SUCCESS;
         ret_value = HG_Respond(handle, NULL, NULL, &out);
         HG_Destroy(handle);
     }
@@ -717,8 +720,8 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
             /* A start failure has not published the request IDs. */
             pthread_mutex_lock(&transfer_request_status_mutex);
             for (i = 0; i < in.n_objs; ++i) {
-                PDC_finish_request(local_bulk_args->transfer_request_id[i]);
-                PDC_check_request(local_bulk_args->transfer_request_id[i]);
+                PDC_finish_request(local_bulk_args->transfer_request_id[i], PDC_TRANSFER_STATUS_COMPLETE);
+                PDC_check_request(local_bulk_args->transfer_request_id[i], 0);
             }
             pthread_mutex_unlock(&transfer_request_status_mutex);
             transfer_request_all_read_cleanup(local_bulk_args);

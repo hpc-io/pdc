@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "record_tag.h"
 #ifndef DIM1
 #define DIM1 10240
 #endif
@@ -58,6 +59,7 @@ main(int argc, char **argv)
             H5Dclose(obj);
             H5Fclose(input);
         }
+        tag_record(expected, file);
         if (memcmp(actual, expected, RECORD_BYTES) != 0) {
             fprintf(stderr, "rank %d file %d: record mismatch\n", rank, file);
             MPI_Abort(MPI_COMM_WORLD, 7);

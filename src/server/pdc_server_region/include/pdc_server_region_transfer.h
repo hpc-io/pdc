@@ -17,7 +17,7 @@ typedef struct transfer_request_all_data {
 
 typedef struct {
     int pending;
-    int succeeded;
+    int result;
 } pdc_transfer_wait_t;
 
 typedef struct pdc_transfer_request_status {
@@ -54,11 +54,10 @@ perr_t PDC_commit_request(uint64_t transfer_request_id);
 
 /*
  * Search a linked list for a transfer request.
- * Set the entry status to PDC_TRANSFER_STATUS_COMPLETE.
+ * Record the terminal transfer status and report it to a waiting RPC.
  * Thread-safe function, lock required ahead of time.
  */
-perr_t PDC_finish_request(uint64_t transfer_request_id);
-perr_t PDC_fail_request(uint64_t transfer_request_id);
+perr_t PDC_finish_request(uint64_t transfer_request_id, pdc_transfer_status_t status);
 
 /*
  * Search a linked list for a region transfer request.
@@ -66,15 +65,15 @@ perr_t PDC_fail_request(uint64_t transfer_request_id);
  * Return the status of the region transfer request.
  * Thread-safe function, lock required ahead of time.
  */
-pdc_transfer_status_t PDC_check_request(uint64_t transfer_request_id);
+pdc_transfer_status_t PDC_check_request(uint64_t transfer_request_id, int keep_failure);
 
 /*
  * Search a linked list for a region transfer request.
  * Bind an RPC handle to the transfer request, so the RPC can be returned when the PDC_finish_request function
  * is called. Thread-safe function, lock required ahead of time.
  */
-pdc_transfer_status_t PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle,
-                                             pdc_transfer_wait_t *wait, int out_type);
+int PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle, pdc_transfer_wait_t *wait,
+                           int out_type);
 
 /*
  * Generate a remote transfer request ID in a very fast way.

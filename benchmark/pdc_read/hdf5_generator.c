@@ -7,6 +7,7 @@
 #include <mpi.h>
 #include <hdf5.h>
 #include <math.h>
+#include "record_tag.h"
 
 #ifndef NUM_SAMPLES_PER_FILE
 #define NUM_SAMPLES_PER_FILE 1
@@ -98,6 +99,7 @@ main(int argc, char **argv)
         hid_t file_id = H5Fcreate(filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
         require_hdf5(file_id >= 0, rank, "Create file", filename);
 
+        tag_record(dummy_data, file_idx);
         // Create records
         hid_t dset_id = H5Dcreate(file_id, "records", H5T_NATIVE_UINT8, dataspace_id, H5P_DEFAULT,
                                   H5P_DEFAULT, H5P_DEFAULT);

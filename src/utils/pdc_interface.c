@@ -177,8 +177,11 @@ PDC_dec_ref(pdcid_t id)
             ret_value = 0;
             PDC_MUTEX_UNLOCK(type_ptr->ids);
         }
-        else
+        else {
+            /* A failed close leaves the object available to its caller. */
+            hg_atomic_incr32(&id_ptr->count);
             ret_value = FAIL;
+        }
     }
 
 done:

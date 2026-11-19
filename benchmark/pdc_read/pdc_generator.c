@@ -12,6 +12,7 @@
 #include <inttypes.h>
 #include <mpi.h>
 #include "pdc.h"
+#include "record_tag.h"
 
 #ifndef NUM_SAMPLES_PER_FILE
 #define NUM_SAMPLES_PER_FILE 1
@@ -139,6 +140,7 @@ main(int argc, char **argv)
         pdcid_t lab_local_reg  = PDCregion_create(1, offset, offset_length);
         pdcid_t lab_remote_reg = PDCregion_create(1, offset, offset_length);
 
+        tag_record(record_data, file_idx);
         // Transfer request
         pdcid_t transfer_request_record =
             PDCregion_transfer_create(record_data, PDC_WRITE, rec_obj_id, rec_local_reg, rec_remote_reg);
