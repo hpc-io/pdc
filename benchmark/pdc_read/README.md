@@ -26,8 +26,9 @@ export LD_LIBRARY_PATH="$MERCURY_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 benchmark/pdc_read/build.sh "$PWD/build-pdc-read"
 ```
 
-`CC` and `CMAKE` select the compiler wrapper and CMake. Additional arguments
-to `build.sh` are PDC CMake options. For example, a serial server build can
+`CC` and `CMAKE` select the compiler wrapper and CMake. Set `CC` to the
+Cray MPI compiler wrapper if your shell resolves `cc` to a system compiler.
+Additional arguments to `build.sh` are PDC CMake options. For example, a serial server build can
 pass `-DPDC_ENABLE_MULTITHREAD=OFF` and use worker count 0 in the run layout.
 For a small functional check, set `DIM1=1024 DIM2=1024` at build time and run
 with `--files 64`. Use the default dimensions for the performance measurements.
@@ -96,9 +97,20 @@ python3 benchmark/pdc_read/run.py --build "$PWD/build-pdc-read" \
 ```
 
 For threaded depth one, run the same `4:4:8` layout with
-`--depth 1 --mode each` and fresh directories. The threaded control commit `d34881d5c07877da513ce45a0fac232235aa831c` provides the server with
-batched reads still on Mercury dispatch. Build that commit in a separate worktree and pass its build
-directory to the same `run.py` to reproduce the dispatch-thread control.
+`--depth 1 --mode each` and fresh directories. For the batch-16 Mercury
+dispatch control, build the pinned PDC revision with the benchmark scripts in
+this checkout. Use the same dependencies and record dimensions for both builds.
+
+```bash
+git worktree add --detach "$PWD/pdc-dispatch" d34881d5c07877da513ce45a0fac232235aa831c
+PDC_SOURCE="$PWD/pdc-dispatch" benchmark/pdc_read/build.sh "$PWD/build-pdc-dispatch"
+
+# Run inside the same allocation with fresh scratch and output directories.
+python3 benchmark/pdc_read/run.py --build "$PWD/build-pdc-dispatch" \
+    --scratch "$SCRATCH/pdc-dispatch-control" --output "$PWD/pdc-dispatch-control" \
+    --binding slurm --layout 4:4:8 --rounds 3
+```
+
 Keep the PDC cache, VNI, client layout, and file count fixed across controls.
 
 For scaling runs, use a homogeneous Perlmutter CPU allocation with four

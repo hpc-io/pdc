@@ -52,18 +52,18 @@ PDC_commit_request(uint64_t transfer_request_id)
         transfer_request_status_list =
             (pdc_transfer_request_status *)PDC_malloc(sizeof(pdc_transfer_request_status));
         transfer_request_status_list->status              = PDC_TRANSFER_STATUS_PENDING;
-        transfer_request_status_list->handle_ref          = NULL;
+        transfer_request_status_list->wait                = NULL;
         transfer_request_status_list->out_type            = -1;
         transfer_request_status_list->transfer_request_id = transfer_request_id;
         transfer_request_status_list->next                = NULL;
         transfer_request_status_list_end                  = transfer_request_status_list;
     }
     else {
-        ptr               = transfer_request_status_list_end;
-        ptr->next         = (pdc_transfer_request_status *)PDC_malloc(sizeof(pdc_transfer_request_status));
-        ptr->next->status = PDC_TRANSFER_STATUS_PENDING;
-        ptr->next->handle_ref            = NULL;
-        ptr->next->out_type              = -1;
+        ptr                 = transfer_request_status_list_end;
+        ptr->next           = (pdc_transfer_request_status *)PDC_malloc(sizeof(pdc_transfer_request_status));
+        ptr->next->status   = PDC_TRANSFER_STATUS_PENDING;
+        ptr->next->wait     = NULL;
+        ptr->next->out_type = -1;
         ptr->next->transfer_request_id   = transfer_request_id;
         ptr->next->next                  = NULL;
         transfer_request_status_list_end = ptr->next;
@@ -74,11 +74,11 @@ PDC_commit_request(uint64_t transfer_request_id)
 
 /*
  * Search a linked list for a transfer request.
- * Set the entry status to PDC_TRANSFER_STATUS_COMPLETE.
+ * Set the final entry status and report the aggregate result to any waiter.
  * Thread-safe function, lock required ahead of time.
  */
-perr_t
-PDC_finish_request(uint64_t transfer_request_id)
+static perr_t
+finish_request(uint64_t transfer_request_id, pdc_transfer_status_t status)
 {
     FUNC_ENTER(NULL);
 
@@ -91,25 +91,26 @@ PDC_finish_request(uint64_t transfer_request_id)
     ptr = transfer_request_status_list;
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
-            ptr->status = PDC_TRANSFER_STATUS_COMPLETE;
-            if (ptr->handle_ref != NULL) {
+            ptr->status = status;
+            if (ptr->wait != NULL) {
                 /* Wait request is going to be returned, so we are not expecting any further checks for the
                  * current request. Immediately eject the current transfer request out of the list.*/
-                ptr->handle_ref[0]--;
-                if (!ptr->handle_ref[0]) {
+                if (status == PDC_TRANSFER_STATUS_FAILED)
+                    ptr->wait->succeeded = 0;
+                if (--ptr->wait->pending == 0) {
                     if (ptr->out_type == -1) {
                         LOG_ERROR("PDC SERVER PDC_finish_request out type unset error\n");
                     }
                     if (ptr->out_type) {
-                        out_all.ret = 1;
+                        out_all.ret = ptr->wait->succeeded;
                         ret_value   = HG_Respond(ptr->handle, NULL, NULL, &out_all);
                     }
                     else {
-                        out.ret   = 1;
+                        out.ret   = ptr->wait->succeeded;
                         ret_value = HG_Respond(ptr->handle, NULL, NULL, &out);
                     }
                     HG_Destroy(ptr->handle);
-                    ptr->handle_ref = (int *)PDC_free(ptr->handle_ref);
+                    PDC_free(ptr->wait);
                 }
                 if (tmp != NULL) {
                     /* Case for removing the any nodes but the first one. */
@@ -140,6 +141,18 @@ PDC_finish_request(uint64_t transfer_request_id)
     FUNC_LEAVE(ret_value);
 }
 
+perr_t
+PDC_finish_request(uint64_t transfer_request_id)
+{
+    return finish_request(transfer_request_id, PDC_TRANSFER_STATUS_COMPLETE);
+}
+
+perr_t
+PDC_fail_request(uint64_t transfer_request_id)
+{
+    return finish_request(transfer_request_id, PDC_TRANSFER_STATUS_FAILED);
+}
+
 /*
  * Search a linked list for a region transfer request.
  * Remove the linked list node and free its memory.
@@ -158,11 +171,11 @@ PDC_check_request(uint64_t transfer_request_id)
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
             ret_value = ptr->status;
-            if (ptr->handle_ref != NULL) {
+            if (ptr->wait != NULL) {
                 ret_value = PDC_TRANSFER_STATUS_COMPLETE;
                 return ret_value;
             }
-            if (ret_value == PDC_TRANSFER_STATUS_COMPLETE) {
+            if (ret_value == PDC_TRANSFER_STATUS_COMPLETE || ret_value == PDC_TRANSFER_STATUS_FAILED) {
                 if (tmp != NULL) {
                     /* Case for removing the any nodes but the first one. */
                     tmp->next = ptr->next;
@@ -198,7 +211,8 @@ PDC_check_request(uint64_t transfer_request_id)
  * is called. Thread-safe function, lock required ahead of time.
  */
 pdc_transfer_status_t
-PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle, int *handle_ref, int out_type)
+PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle, pdc_transfer_wait_t *wait,
+                       int out_type)
 {
     FUNC_ENTER(NULL);
 
@@ -208,10 +222,10 @@ PDC_try_finish_request(uint64_t transfer_request_id, hg_handle_t handle, int *ha
     ptr = transfer_request_status_list;
     while (ptr != NULL) {
         if (ptr->transfer_request_id == transfer_request_id) {
-            ptr->handle     = handle;
-            ptr->out_type   = out_type;
-            ptr->handle_ref = handle_ref;
-            handle_ref[0]++;
+            ptr->handle   = handle;
+            ptr->out_type = out_type;
+            ptr->wait     = wait;
+            wait->pending++;
             break;
         }
         ptr = ptr->next;

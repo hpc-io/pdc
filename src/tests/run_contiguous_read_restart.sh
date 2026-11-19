@@ -27,7 +27,7 @@ start_server() {
     fi
     pdc_test_pid=$!
     local deadline=$((SECONDS + 30))
-    while [[ $(<"server-$phase.log") != *"Server ready!"* ]]; do
+    while ! grep -Eq 'Server ready(!| \(MPI disabled\))' "server-$phase.log"; do
         kill -0 "$pdc_test_pid" 2>/dev/null || { cat "server-$phase.log"; return 1; }
         (( SECONDS < deadline )) || { cat "server-$phase.log"; return 1; }
         sleep 0.05

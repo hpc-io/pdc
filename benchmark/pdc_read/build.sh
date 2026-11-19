@@ -20,7 +20,7 @@ hdf5_lib=${HDF5_LIBDIR:-"$hdf5/lib"}
 dim1=${DIM1:-10240}
 dim2=${DIM2:-10240}
 
-"$cmake_bin" -S "$source_dir" -B "$build/pdc" \
+MERCURY_HOME="$mercury" "$cmake_bin" -S "$source_dir" -B "$build/pdc" \
     -DCMAKE_C_COMPILER="$compiler" -DCMAKE_BUILD_TYPE=RelWithDebInfo \
     -DCMAKE_INSTALL_PREFIX="$build/install" \
     -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DPDC_ENABLE_MPI=ON \

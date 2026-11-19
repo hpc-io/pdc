@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <math.h>
 #include <inttypes.h>
+#include <mpi.h>
 #include "pdc.h"
 
 #ifndef NUM_SAMPLES_PER_FILE

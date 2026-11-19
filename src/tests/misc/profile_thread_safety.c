@@ -16,7 +16,7 @@ static char            names[NAMES][32];
 static const char      outer[]    = "pdc_thread_outer";
 static pthread_mutex_t gate_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  gate_cond  = PTHREAD_COND_INITIALIZER;
-static int             ready, released;
+static int             ready, released, finished, unloaded;
 static void *
 worker(void *unused)
 {
@@ -33,6 +33,12 @@ worker(void *unused)
         profile_pop();
         profile_pop();
     }
+    pthread_mutex_lock(&gate_mutex);
+    finished++;
+    pthread_cond_broadcast(&gate_cond);
+    while (!unloaded)
+        pthread_cond_wait(&gate_cond, &gate_mutex);
+    pthread_mutex_unlock(&gate_mutex);
     return NULL;
 }
 int
@@ -61,10 +67,9 @@ main(void)
         pthread_cond_wait(&gate_cond, &gate_mutex);
     released = 1;
     pthread_cond_broadcast(&gate_cond);
+    while (finished != NTHREADS)
+        pthread_cond_wait(&gate_cond, &gate_mutex);
     pthread_mutex_unlock(&gate_mutex);
-    for (int i = 0; i < NTHREADS; i++)
-        if (pthread_join(threads[i], NULL))
-            return EXIT_FAILURE;
     FILE *capture = tmpfile();
     if (!capture)
         return EXIT_FAILURE;
@@ -106,6 +111,16 @@ main(void)
     for (int i = 0; i < NAMES; i++)
         if (seen_inner[i] != 1)
             return EXIT_FAILURE;
-    puts("Concurrent nested profiler call counts verified");
-    return dlclose(library) == 0 ? EXIT_SUCCESS : EXIT_FAILURE;
+    if (dlclose(library) != 0)
+        return EXIT_FAILURE;
+    /* Release the application threads only after the profiled library unloads. */
+    pthread_mutex_lock(&gate_mutex);
+    unloaded = 1;
+    pthread_cond_broadcast(&gate_cond);
+    pthread_mutex_unlock(&gate_mutex);
+    for (int i = 0; i < NTHREADS; i++)
+        if (pthread_join(threads[i], NULL))
+            return EXIT_FAILURE;
+    puts("Concurrent nested profiling and thread exit after library unload verified");
+    return EXIT_SUCCESS;
 }

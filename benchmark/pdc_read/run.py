@@ -220,6 +220,9 @@ def trial(args, case, label, base, hosts, cores, largest, record_bytes):
         env['PDC_SERVER_NTHREAD'] = str(workers)
         if workers:
             env['PDC_DISABLE_CHECKPOINT'] = 'TRUE'
+    else:
+        # A user's PDC VOL setup must not change the HDF5 control backend.
+        env.pop('HDF5_VOL_CONNECTOR', None)
     server = None
     information = {'case': label, 'backend': backend, 'servers_per_node': servers,
                    'workers_per_server': workers, 'cores_per_server': width, 'records': args.files,

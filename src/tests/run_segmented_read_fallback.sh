@@ -17,7 +17,7 @@ cleanup() {
 }
 trap cleanup EXIT
 pdc_test_deadline=$((SECONDS + 30))
-while [[ $(<server.log) != *"Server ready!"* ]]; do
+while ! grep -Eq 'Server ready(!| \(MPI disabled\))' server.log; do
     kill -0 "$pdc_test_pid" 2>/dev/null || { cat server.log; exit 1; }
     (( SECONDS < pdc_test_deadline )) || { cat server.log; exit 1; }
     sleep 0.05

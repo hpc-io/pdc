@@ -640,9 +640,10 @@ client_send_transfer_request_all_rpc_cb(const struct hg_cb_info *callback_info)
 
     region_transfer_args->ret         = output.ret;
     region_transfer_args->metadata_id = output.metadata_id;
+    HG_Free_output(handle, &output);
+
 done:
     hg_atomic_decr32(&atomic_work_todo_g);
-    HG_Free_output(handle, &output);
 
     FUNC_LEAVE(ret_value);
 }
@@ -666,9 +667,10 @@ client_send_transfer_request_wait_all_rpc_cb(const struct hg_cb_info *callback_i
         PGOTO_ERROR(FAIL, "Error with HG_Get_output");
     }
     region_transfer_args->ret = output.ret;
+    HG_Free_output(handle, &output);
+
 done:
     hg_atomic_decr32(&atomic_work_todo_g);
-    HG_Free_output(handle, &output);
 
     FUNC_LEAVE(ret_value);
 }
@@ -723,9 +725,10 @@ client_send_transfer_request_status_rpc_cb(const struct hg_cb_info *callback_inf
     region_transfer_args->ret    = output.ret;
     region_transfer_args->status = output.status;
 
+    HG_Free_output(handle, &output);
+
 done:
     hg_atomic_decr32(&atomic_work_todo_g);
-    HG_Free_output(handle, &output);
 
     FUNC_LEAVE(ret_value);
 }
@@ -752,9 +755,10 @@ client_send_transfer_request_wait_rpc_cb(const struct hg_cb_info *callback_info)
 
     region_transfer_args->ret = output.ret;
 
+    HG_Free_output(handle, &output);
+
 done:
     hg_atomic_decr32(&atomic_work_todo_g);
-    HG_Free_output(handle, &output);
 
     FUNC_LEAVE(ret_value);
 }
@@ -3110,8 +3114,6 @@ PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc
         }
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
     }
-    *bulk_handle = in.local_bulk_handle;
-
     hg_atomic_set32(&atomic_work_todo_g, 1);
 
     hg_ret = HG_Forward(client_send_transfer_request_all_handle, client_send_transfer_request_all_rpc_cb,
@@ -3134,10 +3136,21 @@ PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc
     start = MPI_Wtime();
 #endif
 
-    if (hg_ret != HG_SUCCESS)
+    if (hg_ret != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        HG_Bulk_free(in.local_bulk_handle);
+        HG_Destroy(client_send_transfer_request_all_handle);
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_all(): Could not start HG_Forward()");
+    }
 
     PDC_Client_wait_pthread_progress();
+    HG_Destroy(client_send_transfer_request_all_handle);
+
+    if (transfer_args.ret != 1) {
+        HG_Bulk_free(in.local_bulk_handle);
+        PGOTO_ERROR(FAIL, "Transfer request failed");
+    }
+    *bulk_handle = in.local_bulk_handle;
 
     /* #ifdef ENABLE_MPI */
     /*     if (comm != 0) */
@@ -3158,11 +3171,6 @@ PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc
     for (i = 0; i < n_objs; ++i) {
         metadata_id[i] = transfer_args.metadata_id + i;
     }
-    if (transfer_args.ret != 1)
-        PGOTO_ERROR(FAIL, "Transfer request failed");
-
-    HG_Destroy(client_send_transfer_request_all_handle);
-
 done:
     FUNC_LEAVE(ret_value);
 }
@@ -3366,10 +3374,9 @@ PDC_Client_transfer_request_wait_all(hg_bulk_t *bulk_handle, int n_objs, pdcid_t
     }
     PDC_Client_check_response(&send_context_g);
 
+    HG_Destroy(client_send_transfer_request_wait_all_handle);
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer request wait all failed");
-
-    HG_Destroy(client_send_transfer_request_wait_all_handle);
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -3512,18 +3519,20 @@ PDC_Client_transfer_request_status(pdcid_t transfer_request_id, uint32_t data_se
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
+    hg_atomic_set32(&atomic_work_todo_g, 1);
     hg_ret = HG_Forward(client_send_transfer_request_status_handle,
                         client_send_transfer_request_status_rpc_cb, &transfer_args, &in);
 
-    if (hg_ret != HG_SUCCESS)
+    if (hg_ret != HG_SUCCESS) {
+        hg_atomic_set32(&atomic_work_todo_g, 0);
+        HG_Destroy(client_send_transfer_request_status_handle);
         PGOTO_ERROR(FAIL, "Could not start HG_Forward");
-    hg_atomic_set32(&atomic_work_todo_g, 1);
+    }
     PDC_Client_check_response(&send_context_g);
+    HG_Destroy(client_send_transfer_request_status_handle);
 
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer request failed");
-
-    HG_Destroy(client_send_transfer_request_status_handle);
     *completed = transfer_args.status;
 done:
     FUNC_LEAVE(ret_value);
@@ -3601,10 +3610,9 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     }
 #endif
 
+    HG_Destroy(client_send_transfer_request_wait_handle);
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer request failed");
-
-    HG_Destroy(client_send_transfer_request_wait_handle);
 
 done:
     FUNC_LEAVE(ret_value);

@@ -400,9 +400,10 @@ setting the appropriate environment variable.
 Runtime Options
 ~~~~~~~~~~~~~~~
 
-In builds without ZFP support, full 2D/3D reads that exactly match a stored region
-use contiguous file I/O directly into the transfer buffer. Partial intersections
-and ZFP-enabled builds retain the configured data-sieving path.
+In builds without ZFP support, 2D/3D reads of up to 1 GiB that exactly match a
+stored region use contiguous file I/O directly into the transfer buffer. Larger
+reads, partial intersections and ZFP-enabled builds retain the configured
+data-sieving path.
 
 Batched reads send only serialized region metadata in the request. The registered
 bulk buffer still has enough capacity for the returned data. Writes continue to
@@ -914,8 +915,10 @@ cannot safely run this server mode and causes a clear startup failure.
 For a batched read, the Mercury metadata-pull callback queues one task per
 server-side batch. The server worker reads the requested regions and submits
 the data push, so Mercury can keep dispatching RPCs during file I/O. The push
-completion releases the response and marks the transfers complete. With server
-multithreading disabled, the metadata callback runs the same read directly.
+completion releases the response and records the transfer outcome. Mercury
+batch errors reach wait and status calls as failures. Failed read outputs are
+unspecified. With server multithreading disabled, the metadata callback runs
+the same read directly.
 
 Transfer identifiers are reserved under their server mutex. A batched request
 reserves its entire contiguous identifier range while holding the mutex, since
@@ -923,8 +926,9 @@ its response carries only the first identifier. Independent concurrent RPCs
 therefore cannot interleave identifiers within a batch.
 
 Profiler call stacks are local to each pthread. Completed calls update shared
-profile totals under a mutex; worker-thread exit releases its stack storage.
-Concurrent RPC callbacks therefore cannot overwrite another thread's nesting
+profile totals under a mutex. Compiler-managed thread-local storage supports
+application threads that outlive the shared library. Concurrent RPC callbacks
+therefore cannot overwrite another thread's nesting
 or resize the totals table at the same time.
 
 Profiler bookkeeping disables both value and void return hooks, and its report

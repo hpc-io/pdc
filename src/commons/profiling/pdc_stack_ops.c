@@ -7,56 +7,16 @@
 #include "pdc_malloc.h"
 #include <pthread.h>
 
-/* A callback may run on a worker while another thread records a nested call. */
+/* Use compiler-managed TLS so a thread may outlive this shared library. */
+enum { PROFILE_INLINE_DEPTH = 16 };
 typedef struct {
     profileEntry_t *calltree;
-    profileEntry_t *freelist;
-    int             errors;
+    size_t          depth;
+    size_t          skipped;
+    profileEntry_t  frames[PROFILE_INLINE_DEPTH];
 } profile_stack_t;
-static pthread_key_t   profile_stack_key;
-static pthread_once_t  profile_stack_once = PTHREAD_ONCE_INIT;
-static int             profile_stack_key_status;
-static pthread_mutex_t profile_table_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static void
-profile_stack_destroy(void *value)
-{
-    profile_stack_t *stack = value;
-    profileEntry_t * entry;
-    while ((entry = stack->calltree) != NULL) {
-        stack->calltree = entry->prev;
-        free(entry);
-    }
-    while ((entry = stack->freelist) != NULL) {
-        stack->freelist = entry->next;
-        free(entry);
-    }
-    free(stack);
-}
-
-static void
-profile_stack_key_create(void)
-{
-    profile_stack_key_status = pthread_key_create(&profile_stack_key, profile_stack_destroy);
-}
-
-static profile_stack_t *
-profile_stack_get(void)
-{
-    profile_stack_t *stack;
-    pthread_once(&profile_stack_once, profile_stack_key_create);
-    if (profile_stack_key_status != 0)
-        return NULL;
-    stack = pthread_getspecific(profile_stack_key);
-    if (stack == NULL) {
-        stack = calloc(1, sizeof(*stack));
-        if (stack != NULL && pthread_setspecific(profile_stack_key, stack) != 0) {
-            free(stack);
-            return NULL;
-        }
-    }
-    return stack;
-}
+static _Thread_local profile_stack_t profile_stack;
+static pthread_mutex_t               profile_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 hash_table_t hashtable;
 htab_t       thisHashTable;
@@ -154,28 +114,29 @@ pbool_t enableProfiling = FALSE;
 void
 push(const char *ftnkey, const char *tags)
 {
-    profile_stack_t *stack = profile_stack_get();
-    profileEntry_t * thisEntry;
-    if (stack == NULL || stack->errors)
+    profile_stack_t *stack = &profile_stack;
+    if (stack->skipped) {
+        stack->skipped++;
         return;
-    if (stack->freelist != NULL) {
-        thisEntry       = stack->freelist;
-        stack->freelist = thisEntry->next;
     }
+
+    profileEntry_t *thisEntry;
+    if (stack->depth < PROFILE_INLINE_DEPTH)
+        thisEntry = &stack->frames[stack->depth];
     else {
-        if ((thisEntry = (profileEntry_t *)malloc(sizeof(profileEntry_t))) == NULL) {
-            perror("malloc");
-            stack->errors++;
+        thisEntry = malloc(sizeof(*thisEntry));
+        if (thisEntry == NULL) {
+            stack->skipped = 1;
+            return;
         }
     }
 
-    if (stack->errors)
-        return;
     thisEntry->ftnkey = ftnkey;
     thisEntry->tags   = tags;
     thisEntry->prev   = stack->calltree;
     thisEntry->next   = NULL;
     stack->calltree   = thisEntry;
+    stack->depth++;
 
     /* Timing */
     clock_gettime(CLOCK_REALTIME, &thisEntry->startTime);
@@ -186,9 +147,11 @@ push(const char *ftnkey, const char *tags)
 void
 pop()
 {
-    profile_stack_t *stack = profile_stack_get();
-    if (stack == NULL || stack->errors)
+    profile_stack_t *stack = &profile_stack;
+    if (stack->skipped) {
+        stack->skipped--;
         return;
+    }
     struct timespec current_time;
     profileEntry_t *master;
     profileEntry_t *thisEntry    = stack->calltree;
@@ -228,11 +191,8 @@ pop()
 
     pthread_mutex_unlock(&profile_table_mutex);
 
-    /* Rather than freeing the container, we add the
-     * current entry onto the stack->freelist.
-     */
-    thisEntry->next = stack->freelist;
-    stack->freelist = thisEntry;
+    if (--stack->depth >= PROFILE_INLINE_DEPTH)
+        free(thisEntry);
 }
 
 hashval_t

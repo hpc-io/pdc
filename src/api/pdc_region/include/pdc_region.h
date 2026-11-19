@@ -59,7 +59,8 @@ typedef struct region_info_transfer_t {
 typedef enum {
     PDC_TRANSFER_STATUS_COMPLETE  = 0,
     PDC_TRANSFER_STATUS_PENDING   = 1,
-    PDC_TRANSFER_STATUS_NOT_FOUND = 2
+    PDC_TRANSFER_STATUS_NOT_FOUND = 2,
+    PDC_TRANSFER_STATUS_FAILED    = 3
 } pdc_transfer_status_t;
 
 /*********************/
@@ -171,7 +172,7 @@ perr_t PDCregion_transfer_start_all_coll(pdcid_t *transfer_request_id, int size,
  * Retrieve the status of a region transfer request
  *
  * \param transfer_request_id [IN]           ID of the region transfer request
- * \param completed [OUT]                    Result
+ * \param completed [OUT]                    Result, including PDC_TRANSFER_STATUS_FAILED for a failed batch
  *
  * \return Non-negative on success/Negative on failure
  */

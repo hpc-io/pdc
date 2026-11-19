@@ -286,7 +286,12 @@ add_test(NAME region_transfer_overlap_3D WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPU
 add_test(NAME region_transfer_merge WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_merge )
 add_test(NAME region_transfer_write_read WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_write_read )
 add_test(NAME region_transfer_contiguous_read WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_contiguous_read )
-add_test(NAME region_transfer_contiguous_read_restart WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_contiguous_read_restart.sh )
+if(PDC_ENABLE_CHECKPOINT)
+  add_test(NAME region_transfer_contiguous_read_restart
+    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND run_contiguous_read_restart.sh)
+  set_tests_properties(region_transfer_contiguous_read_restart PROPERTIES LABELS serial TIMEOUT 90)
+endif()
 add_test(NAME region_transfer_all    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all )
 add_test(NAME region_transfer_all_2D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_2D )
 add_test(NAME region_transfer_all_3D    WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND run_test.sh ./region_transfer_all_3D )
@@ -360,7 +365,6 @@ set_tests_properties(region_transfer_overlap_2D     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_overlap_3D     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_write_read     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_contiguous_read PROPERTIES LABELS serial)
-set_tests_properties(region_transfer_contiguous_read_restart PROPERTIES LABELS serial TIMEOUT 90)
 set_tests_properties(region_transfer_all     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_all_2D     PROPERTIES LABELS serial)
 set_tests_properties(region_transfer_all_3D     PROPERTIES LABELS serial)
@@ -565,8 +569,8 @@ if(BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
   set_tests_properties(region_transfer_segmented_fallback PROPERTIES LABELS serial TIMEOUT 90)
 endif()
 
-# Check async response ownership independently of numerical correctness.
-if(BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
+# Check async response ownership after a restart.
+if(PDC_ENABLE_CHECKPOINT AND BUILD_SHARED_LIBS AND UNIX AND NOT APPLE)
   add_library(read_buffer_lifetime_fixture SHARED misc/read_buffer_lifetime_fixture.c)
   target_link_libraries(read_buffer_lifetime_fixture PRIVATE ${CMAKE_DL_LIBS} pthread)
   add_test(NAME region_transfer_read_buffer_lifetime

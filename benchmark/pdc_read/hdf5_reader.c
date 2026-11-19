@@ -1,6 +1,4 @@
 /* Derived from the SC26 I/O artifact by Hyunju Oh. See LICENSE.artifact. */
-#include <errno.h>
-#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -52,6 +50,15 @@ shuffle_indices(int *array, int n, uint64_t seed)
     }
 }
 
+static void
+require_hdf5(int success, int rank, const char *operation, const char *path)
+{
+    if (!success) {
+        fprintf(stderr, "Rank %d: %s failed for %s\n", rank, operation, path);
+        MPI_Abort(MPI_COMM_WORLD, 2);
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -84,17 +91,20 @@ main(int argc, char **argv)
     int total_global_samples = total_files * NUM_SAMPLES_PER_FILE;
 
     int *global_indices = (int *)malloc(total_global_samples * sizeof(int));
+    require_hdf5(global_indices != NULL, rank, "Allocate sample indices", data_dir);
     for (int i = 0; i < total_global_samples; i++) {
         global_indices[i] = i;
     }
 
     // Allocate buffers for both datasets
     uint8_t *image_buffer = (uint8_t *)malloc(RECORD_LENGTH_BYTES * sizeof(uint8_t));
+    require_hdf5(image_buffer != NULL, rank, "Allocate record buffer", data_dir);
 
     // Define memory spaces matching the generator
     // 3D space for records
     hsize_t mem_dims[3] = {1, DIM1, DIM2};
     hid_t   memspace_id = H5Screate_simple(3, mem_dims, NULL);
+    require_hdf5(memspace_id >= 0, rank, "Create memory dataspace", data_dir);
 
     MPI_Barrier(MPI_COMM_WORLD);
     if (rank == 0) {
@@ -122,32 +132,32 @@ main(int argc, char **argv)
             int target_file_idx  = current_global_idx / NUM_SAMPLES_PER_FILE;
             int local_sample_idx = current_global_idx % NUM_SAMPLES_PER_FILE;
 
-            // char filename[256];
-            // sprintf(filename, "dlio_data_file_%d.h5", target_file_idx);
-            char filename[512];
-            sprintf(filename, "%s/dlio_data_file_%d.h5", data_dir, target_file_idx);
+            char filename[1024];
+            int  length =
+                snprintf(filename, sizeof(filename), "%s/dlio_data_file_%d.h5", data_dir, target_file_idx);
+            require_hdf5(length >= 0 && (size_t)length < sizeof(filename), rank, "Format file path",
+                         data_dir);
 
             double sample_start_time = MPI_Wtime();
 
-            // Open File
             hid_t file_id = H5Fopen(filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-
-            // Read records
-            hid_t dset_id      = H5Dopen(file_id, "records", H5P_DEFAULT);
+            require_hdf5(file_id >= 0, rank, "Open file", filename);
+            hid_t dset_id = H5Dopen(file_id, "records", H5P_DEFAULT);
+            require_hdf5(dset_id >= 0, rank, "Open records", filename);
             hid_t filespace_id = H5Dget_space(dset_id);
+            require_hdf5(filespace_id >= 0, rank, "Get file dataspace", filename);
 
             hsize_t offset[3] = {local_sample_idx, 0, 0};
             hsize_t count[3]  = {1, DIM1, DIM2};
 
-            H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, NULL, count, NULL);
-            H5Dread(dset_id, H5T_NATIVE_UINT8, memspace_id, filespace_id, H5P_DEFAULT, image_buffer);
-
-            // if (rank == 0)
-            //     printf("image_buffer[100]: %u\n", image_buffer[100]);
-
-            H5Sclose(filespace_id);
-            H5Dclose(dset_id);
-            H5Fclose(file_id);
+            require_hdf5(H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, NULL, count, NULL) >= 0,
+                         rank, "Select record", filename);
+            require_hdf5(
+                H5Dread(dset_id, H5T_NATIVE_UINT8, memspace_id, filespace_id, H5P_DEFAULT, image_buffer) >= 0,
+                rank, "Read record", filename);
+            require_hdf5(H5Sclose(filespace_id) >= 0, rank, "Close file dataspace", filename);
+            require_hdf5(H5Dclose(dset_id) >= 0, rank, "Close records", filename);
+            require_hdf5(H5Fclose(file_id) >= 0, rank, "Close file", filename);
 
             double sample_end_time = MPI_Wtime();
             double sample_duration = sample_end_time - sample_start_time;
@@ -171,7 +181,7 @@ main(int argc, char **argv)
     double total_benchmark_end = MPI_Wtime();
 
     // Cleanup
-    H5Sclose(memspace_id);
+    require_hdf5(H5Sclose(memspace_id) >= 0, rank, "Close memory dataspace", data_dir);
     free(image_buffer);
     free(global_indices);
 
