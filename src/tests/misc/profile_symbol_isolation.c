@@ -3,11 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 int
-main(int argc, char **argv)
+main(void)
 {
-    if (argc != 3)
-        return EXIT_FAILURE;
-    void *foreign = dlopen(argv[1], RTLD_NOW | RTLD_GLOBAL);
+    void *foreign = dlopen(PDC_TEST_FOREIGN_LIBRARY, RTLD_NOW | RTLD_GLOBAL);
     if (!foreign) {
         fprintf(stderr, "foreign library: %s\n", dlerror());
         return EXIT_FAILURE;
@@ -16,7 +14,7 @@ main(int argc, char **argv)
     int (*fini_calls)(void) = (int (*)(void))dlsym(foreign, "foreign_profile_fini_calls");
     if (!init_calls || !fini_calls)
         return EXIT_FAILURE;
-    void *pdc = dlopen(argv[2], RTLD_NOW | RTLD_GLOBAL);
+    void *pdc = dlopen(PDC_TEST_LIBRARY, RTLD_NOW | RTLD_GLOBAL);
     if (!pdc) {
         fprintf(stderr, "PDC library: %s\n", dlerror());
         return EXIT_FAILURE;

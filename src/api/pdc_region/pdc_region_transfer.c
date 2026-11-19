@@ -25,6 +25,7 @@
  * perform publicly and display publicly, and to permit other to do so.
  */
 
+#include <limits.h>
 #include <time.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -1208,9 +1209,14 @@ static int
 can_scatter_read(int count, pdc_transfer_request_start_all_pkg **requests)
 {
     int eligible = 0;
-    if (count <= 0 || (size_t)count > SIZE_MAX / sizeof(pdc_read_buffer_range))
+    if (count <= 0)
         return 0;
-    pdc_read_buffer_range *ranges = PDC_malloc(sizeof(*ranges) * count);
+#if SIZE_MAX <= UINT_MAX
+    /* A positive int can exceed the allocation limit when size_t is the same width. */
+    if ((size_t)count > SIZE_MAX / sizeof(pdc_read_buffer_range))
+        return 0;
+#endif
+    pdc_read_buffer_range *ranges = PDC_malloc(sizeof(*ranges) * (size_t)count);
     if (ranges == NULL)
         return 0;
     for (int i = 0; i < count; i++) {

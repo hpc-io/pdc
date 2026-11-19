@@ -6,6 +6,7 @@ pdc_test_fixture=$1
 pdc_test_dir=$(mktemp -d "$PWD/segmented-fallback-XXXXXX")
 export PDC_TMPDIR="$pdc_test_dir/pdc_tmp" PDC_DATA_LOC="$pdc_test_dir"
 cd "$pdc_test_dir"
+: > server.log
 "$pdc_test_bin/pdc_server" > server.log 2>&1 &
 pdc_test_pid=$!
 cleanup() {

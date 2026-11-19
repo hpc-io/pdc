@@ -546,8 +546,12 @@ if(BUILD_SHARED_LIBS AND UNIX)
   add_library(profile_symbol_fixture SHARED misc/profile_symbol_fixture.c)
   add_executable(profile_symbol_isolation misc/profile_symbol_isolation.c)
   target_link_libraries(profile_symbol_isolation PRIVATE ${CMAKE_DL_LIBS})
-  add_test(NAME library_profile_symbol_isolation
-    COMMAND profile_symbol_isolation $<TARGET_FILE:profile_symbol_fixture> $<TARGET_FILE:pdc>)
+  # Keep the load order under test and bind both libraries at build time.
+  target_compile_definitions(profile_symbol_isolation PRIVATE
+    PDC_TEST_FOREIGN_LIBRARY="$<TARGET_FILE:profile_symbol_fixture>"
+    PDC_TEST_LIBRARY="$<TARGET_FILE:pdc>")
+  add_dependencies(profile_symbol_isolation profile_symbol_fixture pdc)
+  add_test(NAME library_profile_symbol_isolation COMMAND profile_symbol_isolation)
   set_tests_properties(library_profile_symbol_isolation PROPERTIES LABELS serial TIMEOUT 30)
 endif()
 
@@ -574,7 +578,8 @@ endif()
 if(BUILD_SHARED_LIBS AND UNIX)
   add_executable(profile_thread_safety misc/profile_thread_safety.c)
   target_link_libraries(profile_thread_safety PRIVATE ${CMAKE_DL_LIBS} pthread)
-  add_test(NAME library_profile_thread_safety
-    COMMAND profile_thread_safety $<TARGET_FILE:pdc>)
+  target_compile_definitions(profile_thread_safety PRIVATE PDC_TEST_LIBRARY="$<TARGET_FILE:pdc>")
+  add_dependencies(profile_thread_safety pdc)
+  add_test(NAME library_profile_thread_safety COMMAND profile_thread_safety)
   set_tests_properties(library_profile_thread_safety PROPERTIES LABELS serial TIMEOUT 30)
 endif()

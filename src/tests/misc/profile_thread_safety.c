@@ -36,13 +36,11 @@ worker(void *unused)
     return NULL;
 }
 int
-main(int argc, char **argv)
+main(void)
 {
-    if (argc != 2)
-        return EXIT_FAILURE;
     setenv("PROFILE_ENABLE", "true", 1);
     setenv("PROFILE_HASHTABLESIZE", "1", 1);
-    void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+    void *library = dlopen(PDC_TEST_LIBRARY, RTLD_NOW | RTLD_LOCAL);
     if (!library) {
         fprintf(stderr, "%s\n", dlerror());
         return EXIT_FAILURE;
