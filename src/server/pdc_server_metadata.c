@@ -2839,8 +2839,8 @@ PDC_get_kvtag_value_from_list(pdc_kvtag_list_t **list_head, char *key, metadata_
     DL_FOREACH(*list_head, elt)
     {
         if (strcmp(elt->kvtag->name, key) == 0) {
-            pdc_kvtag_t *tag = elt->kvtag;
-            void        *value = NULL;
+            pdc_kvtag_t *tag   = elt->kvtag;
+            void *       value = NULL;
 
             // Keep the reply valid after the metadata lock is released and the tag can be deleted.
             if (tag->size > 0) {
@@ -2990,7 +2990,7 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
         target = find_metadata_by_id_from_list(lookup_value->metadata, obj_id);
         if (target != NULL) {
             ret_value = PDC_get_kvtag_value_from_list(&target->kvtag_list_head, in->key, out);
-            out->ret = ret_value == SUCCEED ? 1 : -1;
+            out->ret  = ret_value == SUCCEED ? 1 : -1;
         }
         else {
             ret_value = FAIL;
@@ -3002,7 +3002,7 @@ PDC_Server_get_kvtag_someta(metadata_get_kvtag_in_t *in, metadata_get_kvtag_out_
         cont_lookup_value = hash_table_lookup(container_hash_table_g, &hash_key);
         if (cont_lookup_value != NULL) {
             ret_value = PDC_get_kvtag_value_from_list(&cont_lookup_value->kvtag_list_head, in->key, out);
-            out->ret = ret_value == SUCCEED ? 1 : -1;
+            out->ret  = ret_value == SUCCEED ? 1 : -1;
         }
         else {
             ret_value = FAIL;
