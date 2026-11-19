@@ -34,6 +34,9 @@ perr_t PDC_server_transfer_request_init();
 
 perr_t PDC_server_transfer_request_finalize();
 
+/* Release idle single-read response storage after request callbacks have drained. */
+void PDC_read_response_cache_finalize(void);
+
 int try_reset_dims();
 
 int get_server_rank();

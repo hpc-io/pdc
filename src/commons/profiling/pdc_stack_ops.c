@@ -5,11 +5,58 @@
 #include "pdc_logger.h"
 #include "pdc_hashtab.h"
 #include "pdc_malloc.h"
+#include <pthread.h>
 
-profileEntry_t *calltree = NULL;
-profileEntry_t *freelist = NULL;
+/* A callback may run on a worker while another thread records a nested call. */
+typedef struct {
+    profileEntry_t *calltree;
+    profileEntry_t *freelist;
+    int             errors;
+} profile_stack_t;
+static pthread_key_t   profile_stack_key;
+static pthread_once_t  profile_stack_once = PTHREAD_ONCE_INIT;
+static int             profile_stack_key_status;
+static pthread_mutex_t profile_table_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static int profilerrors = 0;
+static void
+profile_stack_destroy(void *value)
+{
+    profile_stack_t *stack = value;
+    profileEntry_t * entry;
+    while ((entry = stack->calltree) != NULL) {
+        stack->calltree = entry->prev;
+        free(entry);
+    }
+    while ((entry = stack->freelist) != NULL) {
+        stack->freelist = entry->next;
+        free(entry);
+    }
+    free(stack);
+}
+
+static void
+profile_stack_key_create(void)
+{
+    profile_stack_key_status = pthread_key_create(&profile_stack_key, profile_stack_destroy);
+}
+
+static profile_stack_t *
+profile_stack_get(void)
+{
+    profile_stack_t *stack;
+    pthread_once(&profile_stack_once, profile_stack_key_create);
+    if (profile_stack_key_status != 0)
+        return NULL;
+    stack = pthread_getspecific(profile_stack_key);
+    if (stack == NULL) {
+        stack = calloc(1, sizeof(*stack));
+        if (stack != NULL && pthread_setspecific(profile_stack_key, stack) != 0) {
+            free(stack);
+            return NULL;
+        }
+    }
+    return stack;
+}
 
 hash_table_t hashtable;
 htab_t       thisHashTable;
@@ -34,8 +81,10 @@ pbool_t enableProfiling = TRUE;
 
 #undef FUNC_ENTER
 #undef FUNC_LEAVE
+#undef FUNC_LEAVE_VOID
 #define FUNC_ENTER(x)
-#define FUNC_LEAVE(x) return (x)
+#define FUNC_LEAVE(x)     return (x)
+#define FUNC_LEAVE_VOID() return
 #else
 pbool_t enableProfiling = FALSE;
 #endif
@@ -105,25 +154,28 @@ pbool_t enableProfiling = FALSE;
 void
 push(const char *ftnkey, const char *tags)
 {
-    profileEntry_t *thisEntry;
-    if (freelist != NULL) {
-        thisEntry = freelist;
-        freelist  = thisEntry->next;
+    profile_stack_t *stack = profile_stack_get();
+    profileEntry_t * thisEntry;
+    if (stack == NULL || stack->errors)
+        return;
+    if (stack->freelist != NULL) {
+        thisEntry       = stack->freelist;
+        stack->freelist = thisEntry->next;
     }
     else {
-        if ((thisEntry = (profileEntry_t *)PDC_malloc(sizeof(profileEntry_t))) == NULL) {
+        if ((thisEntry = (profileEntry_t *)malloc(sizeof(profileEntry_t))) == NULL) {
             perror("malloc");
-            profilerrors++;
+            stack->errors++;
         }
     }
 
-    if (profilerrors)
+    if (stack->errors)
         return;
     thisEntry->ftnkey = ftnkey;
     thisEntry->tags   = tags;
-    thisEntry->prev   = calltree;
+    thisEntry->prev   = stack->calltree;
     thisEntry->next   = NULL;
-    calltree          = thisEntry;
+    stack->calltree   = thisEntry;
 
     /* Timing */
     clock_gettime(CLOCK_REALTIME, &thisEntry->startTime);
@@ -134,9 +186,12 @@ push(const char *ftnkey, const char *tags)
 void
 pop()
 {
+    profile_stack_t *stack = profile_stack_get();
+    if (stack == NULL || stack->errors)
+        return;
     struct timespec current_time;
     profileEntry_t *master;
-    profileEntry_t *thisEntry    = calltree;
+    profileEntry_t *thisEntry    = stack->calltree;
     int             update_entry = TRUE;
     if (thisEntry == NULL)
         return; /* This shouldn't happen */
@@ -145,16 +200,17 @@ pop()
     clock_gettime(CLOCK_REALTIME, &current_time);
     TIMER_DIFF(thisEntry->totalTime, current_time, thisEntry->startTime);
     TIMER_DIFF(thisEntry->selfTime, thisEntry->totalTime, thisEntry->callTime);
-    calltree = thisEntry->prev;
-    if (calltree != NULL) {
-        TIMER_ADD(calltree->callTime, thisEntry->totalTime);
+    stack->calltree = thisEntry->prev;
+    if (stack->calltree != NULL) {
+        TIMER_ADD(stack->calltree->callTime, thisEntry->totalTime);
     }
     /* Check to see if this function has already been added to the hashtable */
+    pthread_mutex_lock(&profile_table_mutex);
     void **tableEntry = htab_find_slot(thisHashTable, thisEntry, INSERT);
     if (*tableEntry == NULL) {
         /* No table entry found so add it now ... */
-        // do NOT use will cause infinite recursion between PDC_malloc and pop
-        master = (profileEntry_t *)PDC_malloc(sizeof(profileEntry_t));
+        /* Profiling bookkeeping must not enter profiled allocation or shared memory counters. */
+        master = (profileEntry_t *)malloc(sizeof(profileEntry_t));
         if (master) {
             thisEntry->count = 1;
             memcpy(master, thisEntry, sizeof(profileEntry_t));
@@ -170,11 +226,13 @@ pop()
         TIMER_ADD(master->selfTime, thisEntry->selfTime);
     }
 
+    pthread_mutex_unlock(&profile_table_mutex);
+
     /* Rather than freeing the container, we add the
-     * current entry onto the freelist.
+     * current entry onto the stack->freelist.
      */
-    thisEntry->next = freelist;
-    freelist        = thisEntry;
+    thisEntry->next = stack->freelist;
+    stack->freelist = thisEntry;
 }
 
 hashval_t
@@ -195,12 +253,15 @@ eq_profile_entry(const void *a, const void *b)
 void
 initialize_profile(void **hashtab, size_t size)
 {
+    pthread_mutex_lock(&profile_table_mutex);
     if (*hashtab == NULL) {
         if ((thisHashTable = htab_try_create(size, hash_profile_entry, eq_profile_entry, free)) == NULL) {
+            pthread_mutex_unlock(&profile_table_mutex);
             return;
         }
         *hashtab = thisHashTable;
     }
+    pthread_mutex_unlock(&profile_table_mutex);
 }
 
 int
@@ -217,9 +278,9 @@ show_profile_info(void **ht_live_entry, void *extraInfo ATTRIBUTE(unused))
         if (count == 0)
             puts(header);
         totalTime = thisEntry->totalTime;
-        LOG_JUST_PRINT("%s\n %d\t%-6" PRId64 " %6" PRId64 ",%6" PRId64 "\t\t %s\n", LineBreak, ++count,
-                       totalCalls, totalTime.tv_sec / totalCalls, totalTime.tv_nsec / totalCalls,
-                       thisEntry->ftnkey);
+        /* The logger is profiled and must not mutate the table during traversal. */
+        printf("%s\n %d\t%-6" PRId64 " %6" PRId64 ",%6" PRId64 "\t\t %s\n", LineBreak, ++count, totalCalls,
+               totalTime.tv_sec / totalCalls, totalTime.tv_nsec / totalCalls, thisEntry->ftnkey);
     }
 
     return TRUE;
@@ -245,7 +306,8 @@ toggle_profile_enable()
  * The profile_fini should probably be used to dump the contents of the profile
  * hashtable.
  */
-void __attribute__((constructor)) profile_init(void)
+static void
+pdc_profile_initialize(void)
 {
     int   default_HashtableSize = 128;
     char *size_override         = NULL;
@@ -278,10 +340,37 @@ void __attribute__((constructor)) profile_init(void)
     initialize_profile(&hashtable, default_HashtableSize);
 }
 
-void __attribute__((destructor)) finalize_profile(void)
+static void
+pdc_profile_finalize(void)
 {
     int count = 1;
+    pthread_mutex_lock(&profile_table_mutex);
     if (thisHashTable != NULL) {
         htab_traverse(thisHashTable, show_profile_info, &count);
     }
+    pthread_mutex_unlock(&profile_table_mutex);
+}
+
+/* Keep legacy entry points, but never use interposable symbols as loader hooks.
+ * Kerberos also exports profile_init and may already be loaded by Python/MPI. */
+void
+profile_init(void)
+{
+    pdc_profile_initialize();
+}
+
+void
+finalize_profile(void)
+{
+    pdc_profile_finalize();
+}
+
+static void __attribute__((constructor)) pdc_profile_load(void)
+{
+    pdc_profile_initialize();
+}
+
+static void __attribute__((destructor)) pdc_profile_unload(void)
+{
+    pdc_profile_finalize();
 }

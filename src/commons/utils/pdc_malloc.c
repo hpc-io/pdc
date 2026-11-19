@@ -31,8 +31,10 @@
 #ifdef ENABLE_PROFILING
 #undef FUNC_ENTER
 #undef FUNC_LEAVE
+#undef FUNC_LEAVE_VOID
 #define FUNC_ENTER(x)
-#define FUNC_LEAVE(x) return (x)
+#define FUNC_LEAVE(x)     return (x)
+#define FUNC_LEAVE_VOID() return
 #endif
 
 #ifdef HAVE_MALLOC_USABLE_SIZE

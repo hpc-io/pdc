@@ -194,8 +194,9 @@ pdc_data_server_io_list_t *client_cache_list_head_g = NULL;
 
 static uint64_t  object_selection_query_counter_g = 0;
 static pthread_t hg_progress_tid_g;
-static int       hg_progress_flag_g     = -1; // -1 thread unintialized, 0 thread created, 1 terminate thread
-static int       hg_progress_task_cnt_g = 0;
+/* Shared between the API caller and the progress worker. */
+static hg_atomic_int32_t hg_progress_flag_g     = HG_ATOMIC_VAR_INIT(-1); // -1 not started, 0 running, 1 stop
+static int               hg_progress_task_cnt_g = 0;
 
 /*
  *
@@ -270,13 +271,14 @@ hg_progress_fn(void *foo)
     unsigned int  actual_count;
     hg_context_t *hg_context = (hg_context_t *)foo;
 
-    while (hg_progress_flag_g != 1) {
+    while (hg_atomic_get32(&hg_progress_flag_g) != 1) {
         do {
             ret = HG_Trigger(hg_context, 0, 1, &actual_count);
-        } while ((ret == HG_SUCCESS) && actual_count && hg_progress_flag_g != 1);
-        if (hg_progress_flag_g != 1)
-            HG_Progress(hg_context, 100);
-        usleep(1000);
+        } while ((ret == HG_SUCCESS) && actual_count && hg_atomic_get32(&hg_progress_flag_g) != 1);
+        /* Closing the last transfer joins this worker. A long idle progress
+         * deadline would delay every single-request close after data arrived. */
+        if (hg_atomic_get32(&hg_progress_flag_g) != 1)
+            HG_Progress(hg_context, 1);
     }
 
     FUNC_LEAVE(NULL);
@@ -289,9 +291,9 @@ PDC_Client_transfer_pthread_create()
 
     perr_t ret_value = SUCCEED;
 
-    if (hg_progress_flag_g == -1) {
+    if (hg_atomic_get32(&hg_progress_flag_g) == -1) {
         pthread_create(&hg_progress_tid_g, NULL, hg_progress_fn, send_context_g);
-        hg_progress_flag_g = 0;
+        hg_atomic_set32(&hg_progress_flag_g, 0);
     }
 
     FUNC_LEAVE(ret_value);
@@ -304,10 +306,10 @@ PDC_Client_transfer_pthread_terminate()
 
     perr_t ret_value = SUCCEED;
 
-    if (hg_progress_flag_g == 0 && hg_progress_task_cnt_g == 0) {
-        hg_progress_flag_g = 1;
+    if (hg_atomic_get32(&hg_progress_flag_g) == 0 && hg_progress_task_cnt_g == 0) {
+        hg_atomic_set32(&hg_progress_flag_g, 1);
         pthread_join(hg_progress_tid_g, NULL);
-        hg_progress_flag_g = -1;
+        hg_atomic_set32(&hg_progress_flag_g, -1);
     }
 
     FUNC_LEAVE(ret_value);
@@ -335,6 +337,17 @@ PDC_Client_check_response(hg_context_t **hg_context)
     hg_return_t  hg_ret;
     unsigned int actual_count;
 
+    /* Keep one owner of context progress while a transfer worker is active.
+     * A competing progress call can spin until its deadline after the worker
+     * has already consumed the completion. A callback running on the worker
+     * itself must retain local progress rather than wait on its own thread. */
+    if (*hg_context == send_context_g && hg_atomic_get32(&hg_progress_flag_g) == 0 &&
+        !pthread_equal(pthread_self(), hg_progress_tid_g)) {
+        while (hg_atomic_get32(&atomic_work_todo_g) > 0)
+            usleep(1000);
+        FUNC_LEAVE(SUCCEED);
+    }
+
     do {
         do {
             hg_ret = HG_Trigger(*hg_context, 0 /* timeout */, 1 /* max count */, &actual_count);
@@ -344,7 +357,10 @@ PDC_Client_check_response(hg_context_t **hg_context)
         if (hg_atomic_get32(&atomic_work_todo_g) <= 0)
             break;
 
-        hg_ret = HG_Progress(*hg_context, 100);
+        /* The worker may consume a completion while this caller is in
+         * progress. Return promptly to recheck atomic_work_todo_g. This is
+         * a progress polling interval, not an operation timeout. */
+        hg_ret = HG_Progress(*hg_context, 1);
     } while (hg_ret == HG_SUCCESS || hg_ret == HG_TIMEOUT);
 
     ret_value = SUCCEED;
@@ -570,8 +586,8 @@ client_send_transfer_request_metadata_query_rpc_cb(const struct hg_cb_info *call
     region_transfer_args->total_buf_size = output.total_buf_size;
     region_transfer_args->ret            = output.ret;
 done:
-    hg_atomic_decr32(&atomic_work_todo_g);
     HG_Free_output(handle, &output);
+    hg_atomic_decr32(&atomic_work_todo_g);
 
     FUNC_LEAVE(ret_value);
 }
@@ -597,8 +613,8 @@ client_send_transfer_request_metadata_query2_rpc_cb(const struct hg_cb_info *cal
     }
     region_transfer_args->ret = output.ret;
 done:
-    hg_atomic_decr32(&atomic_work_todo_g);
     HG_Free_output(handle, &output);
+    hg_atomic_decr32(&atomic_work_todo_g);
 
     FUNC_LEAVE(ret_value);
 }
@@ -1271,7 +1287,11 @@ PDC_Client_mercury_init(hg_class_t **hg_class, hg_context_t **hg_context, int po
     else
         LOG_INFO("Environment variable HG_HOST was set\n");
 
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+    /* CXI host strings already include a PID, rather than a TCP port. */
+    if (strcmp(hg_transport, "ofi+cxi") == 0)
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s", hg_transport, hostname);
+    else
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_client_mpi_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
@@ -1318,6 +1338,9 @@ drc_access_again:
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
+    /* Separate Slurm steps need the job VNI for client/server communication. */
+    if (getenv("PDC_HG_AUTH_KEY") != NULL)
+        init_info.na_init_info.auth_key = getenv("PDC_HG_AUTH_KEY");
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL)
         PGOTO_ERROR(FAIL, "Error with HG_Init()");
@@ -1610,10 +1633,10 @@ PDC_Client_finalize()
         pdc_server_info_g = (struct _pdc_server_info *)PDC_free(pdc_server_info_g);
 
     // Terminate thread
-    if (hg_progress_flag_g == 0) {
-        hg_progress_flag_g = 1;
+    if (hg_atomic_get32(&hg_progress_flag_g) == 0) {
+        hg_atomic_set32(&hg_progress_flag_g, 1);
         pthread_join(hg_progress_tid_g, NULL);
-        hg_progress_flag_g = -1;
+        hg_atomic_set32(&hg_progress_flag_g, -1);
     }
 
 #ifndef ENABLE_MPI
@@ -2994,6 +3017,37 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
                                 int comm)
 #endif
 {
+    /* Preserve the existing internal entry point and its single-size contract. */
+    return PDC_Client_transfer_request_all_sized(bulk_handle, n_objs, access_type, data_server_id, bulk_buf,
+                                                 bulk_size, bulk_size, metadata_id, comm);
+}
+
+perr_t
+PDC_Client_transfer_request_all_sized(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
+                                      uint32_t data_server_id, char *bulk_buf, hg_size_t bulk_size,
+                                      hg_size_t request_size, uint64_t *metadata_id,
+#ifdef ENABLE_MPI
+                                      MPI_Comm comm)
+#else
+                                      int comm)
+#endif
+{
+    return PDC_Client_transfer_request_all_segments(bulk_handle, n_objs, access_type, data_server_id,
+                                                    (void **)&bulk_buf, &bulk_size, 1, request_size,
+                                                    metadata_id, NULL, comm);
+}
+
+perr_t
+PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
+                                         uint32_t data_server_id, void **buffers, hg_size_t *buffer_sizes,
+                                         hg_uint32_t segment_count, hg_size_t request_size,
+                                         uint64_t *metadata_id, int *registration_failed,
+#ifdef ENABLE_MPI
+                                         MPI_Comm comm)
+#else
+                                         int comm)
+#endif
+{
     FUNC_ENTER(NULL);
 
     perr_t                                ret_value = SUCCEED;
@@ -3009,11 +3063,24 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
     double start          = MPI_Wtime(), end;
     double function_start = start;
 #endif
+    *bulk_handle = HG_BULK_NULL;
+    if (registration_failed)
+        *registration_failed = 0;
     if (!(access_type == PDC_WRITE || access_type == PDC_READ))
         PGOTO_ERROR(FAIL, "Invalid PDC type");
+    hg_size_t bulk_size = 0;
+    if (segment_count == 0 || buffers == NULL || buffer_sizes == NULL)
+        PGOTO_ERROR(FAIL, "Invalid transfer buffers");
+    for (hg_uint32_t segment = 0; segment < segment_count; segment++) {
+        if (buffer_sizes[segment] > (hg_size_t)-1 - bulk_size)
+            PGOTO_ERROR(FAIL, "Transfer capacity overflow");
+        bulk_size += buffer_sizes[segment];
+    }
+    if (request_size == 0 || request_size > bulk_size)
+        PGOTO_ERROR(FAIL, "Invalid transfer request size");
     in.n_objs         = n_objs;
     in.access_type    = access_type;
-    in.total_buf_size = bulk_size;
+    in.total_buf_size = request_size;
     in.client_id      = pdc_client_mpi_rank_g;
 
     debug_server_id_count[data_server_id]++;
@@ -3026,12 +3093,24 @@ PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t
     hg_ret = HG_Create(send_context_g, pdc_server_info_g[data_server_id].addr,
                        transfer_request_all_register_id_g, &client_send_transfer_request_all_handle);
 
-    // Create bulk handles
-    hg_ret       = HG_Bulk_create(hg_class, 1, (void **)&bulk_buf, &bulk_size, HG_BULK_READWRITE,
-                            &(in.local_bulk_handle));
-    *bulk_handle = in.local_bulk_handle;
     if (hg_ret != HG_SUCCESS)
+        PGOTO_ERROR(FAIL, "Could not create transfer RPC handle");
+
+    // Create bulk handles
+    in.local_bulk_handle = HG_BULK_NULL;
+    hg_ret               = HG_Bulk_create(hg_class, segment_count, buffers, buffer_sizes, HG_BULK_READWRITE,
+                            &(in.local_bulk_handle));
+    if (hg_ret != HG_SUCCESS) {
+        HG_Destroy(client_send_transfer_request_all_handle);
+        /* No RPC has been forwarded. The caller may retry with one staging
+         * segment when a provider cannot register this output layout. */
+        if (registration_failed) {
+            *registration_failed = 1;
+            PGOTO_DONE(FAIL);
+        }
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
+    }
+    *bulk_handle = in.local_bulk_handle;
 
     hg_atomic_set32(&atomic_work_todo_g, 1);
 
@@ -3127,12 +3206,15 @@ PDC_Client_transfer_request_metadata_query2(hg_bulk_t *bulk_handle, char *buf, u
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
+    // The progress worker may complete the RPC before HG_Forward returns.
+    hg_atomic_incr32(&atomic_work_todo_g);
     hg_ret = HG_Forward(client_send_transfer_request_metadata_query2_handle,
                         client_send_transfer_request_metadata_query2_rpc_cb, &transfer_args, &in);
 
-    if (hg_ret != HG_SUCCESS)
+    if (hg_ret != HG_SUCCESS) {
+        hg_atomic_decr32(&atomic_work_todo_g);
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_metadata_query2(): Could not start HG_Forward()");
-    hg_atomic_set32(&atomic_work_todo_g, 1);
+    }
     PDC_Client_check_response(&send_context_g);
 
     if (transfer_args.ret != 1)
@@ -3192,12 +3274,15 @@ PDC_Client_transfer_request_metadata_query(hg_bulk_t *bulk_handle, char *buf, ui
     if (hg_ret != HG_SUCCESS)
         PGOTO_ERROR(FAIL, "Could not create local bulk data handle");
 
+    // The progress worker may complete the RPC before HG_Forward returns.
+    hg_atomic_incr32(&atomic_work_todo_g);
     hg_ret = HG_Forward(client_send_transfer_request_metadata_query_handle,
                         client_send_transfer_request_metadata_query_rpc_cb, &transfer_args, &in);
 
-    if (hg_ret != HG_SUCCESS)
+    if (hg_ret != HG_SUCCESS) {
+        hg_atomic_decr32(&atomic_work_todo_g);
         PGOTO_ERROR(FAIL, "PDC_Client_send_transfer_request_metadata_query(): Could not start HG_Forward()");
-    hg_atomic_set32(&atomic_work_todo_g, 1);
+    }
     PDC_Client_check_response(&send_context_g);
     if (transfer_args.ret != 1)
         PGOTO_ERROR(FAIL, "Transfer_request_metadata_query failed");
@@ -3458,10 +3543,10 @@ PDC_Client_transfer_request_wait(pdcid_t transfer_request_id, uint32_t data_serv
     char                                   cur_time[64];
 
     // Join the thread of trasfer start
-    /* if (hg_progress_flag_g == 0) { */
-    /*     hg_progress_flag_g = 1; */
+    /* if (hg_atomic_get32(&hg_progress_flag_g) == 0) { */
+    /*     hg_atomic_set32(&hg_progress_flag_g, 1); */
     /*     pthread_join(hg_progress_tid_g, NULL); */
-    /*     hg_progress_flag_g = -1; */
+    /*     hg_atomic_set32(&hg_progress_flag_g, -1); */
     /* } */
 
 #ifdef PDC_TIMING

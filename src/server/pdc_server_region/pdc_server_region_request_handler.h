@@ -3,6 +3,74 @@
 
 #include "pdc_timing.h"
 
+#include <errno.h>
+#include <stdlib.h>
+
+/* Only completed single-read responses may enter this one-slot cache. */
+static pthread_mutex_t read_response_mutex_g = PTHREAD_MUTEX_INITIALIZER;
+static pthread_once_t  read_response_once_g  = PTHREAD_ONCE_INIT;
+static void *          read_response_buffer_g;
+static size_t          read_response_bytes_g;
+static size_t          read_response_limit_g = (size_t)256 * 1024 * 1024;
+
+static void
+PDC_read_response_cache_init(void)
+{
+    const char *value = getenv("PDC_SERVER_READ_BUFFER_CACHE_MAX_MB");
+    if (value != NULL) {
+        char *end;
+        errno                 = 0;
+        unsigned long long mb = strtoull(value, &end, 10);
+        if (*value != '\0' && *value != '-' && *end == '\0' && errno == 0 && mb <= SIZE_MAX / (1024 * 1024))
+            read_response_limit_g = (size_t)mb * 1024 * 1024;
+        else
+            LOG_WARNING("Invalid PDC_SERVER_READ_BUFFER_CACHE_MAX_MB; using default\n");
+    }
+}
+
+static void *
+PDC_read_response_buffer_get(size_t bytes)
+{
+    void *buffer = NULL, *discard = NULL;
+    pthread_once(&read_response_once_g, PDC_read_response_cache_init);
+    pthread_mutex_lock(&read_response_mutex_g);
+    if (read_response_bytes_g == bytes) {
+        buffer = read_response_buffer_g;
+    }
+    else {
+        discard = read_response_buffer_g;
+    }
+    read_response_buffer_g = NULL;
+    read_response_bytes_g  = 0;
+    pthread_mutex_unlock(&read_response_mutex_g);
+    PDC_free(discard);
+    return buffer != NULL ? buffer : PDC_malloc(bytes);
+}
+
+static void
+PDC_read_response_buffer_put(void *buffer, size_t bytes)
+{
+    pthread_mutex_lock(&read_response_mutex_g);
+    if (buffer != NULL && bytes <= read_response_limit_g && read_response_buffer_g == NULL) {
+        read_response_buffer_g = buffer;
+        read_response_bytes_g  = bytes;
+        buffer                 = NULL;
+    }
+    pthread_mutex_unlock(&read_response_mutex_g);
+    PDC_free(buffer);
+}
+
+void
+PDC_read_response_cache_finalize(void)
+{
+    pthread_mutex_lock(&read_response_mutex_g);
+    void *buffer           = read_response_buffer_g;
+    read_response_buffer_g = NULL;
+    read_response_bytes_g  = 0;
+    pthread_mutex_unlock(&read_response_mutex_g);
+    PDC_free(buffer);
+}
+
 hg_return_t
 transfer_request_all_bulk_transfer_read_cb2(const struct hg_cb_info *info)
 {
@@ -399,6 +467,9 @@ transfer_request_bulk_transfer_read_cb(const struct hg_cb_info *info)
     ret = HG_SUCCESS;
 
     HG_Bulk_free(local_bulk_args->bulk_handle);
+    /* The response buffer is borrowed by Mercury until this completion callback. */
+    PDC_read_response_buffer_put(local_bulk_args->data_buf, local_bulk_args->total_mem_size);
+    local_bulk_args = PDC_free(local_bulk_args);
 
 #ifdef PDC_TIMING
     end = MPI_Wtime();
@@ -555,11 +626,12 @@ HG_TEST_RPC_CB(transfer_request_all, handle)
     local_bulk_args->transfer_request_id = (uint64_t *)PDC_malloc(sizeof(uint64_t) * in.n_objs);
 
     // [Tang]TODO is this necessary?
-    /* pthread_mutex_lock(&transfer_request_id_mutex); */
+    pthread_mutex_lock(&transfer_request_id_mutex);
+    /* The response carries the first ID, so every batch must reserve one contiguous range. */
     for (i = 0; i < in.n_objs; ++i) {
         local_bulk_args->transfer_request_id[i] = PDC_transfer_request_id_register();
     }
-    /* pthread_mutex_unlock(&transfer_request_id_mutex); */
+    pthread_mutex_unlock(&transfer_request_id_mutex);
 
     pthread_mutex_lock(&transfer_request_status_mutex);
     // Metadata ID is in ascending order. We only need to return the first value, the client knows the size.
@@ -761,18 +833,19 @@ HG_TEST_RPC_CB(transfer_request, handle)
     total_mem_size =
         PDC_get_region_desc_size_bytes(in.remote_region.count, in.remote_unit, in.remote_region.ndim);
 
-    /* pthread_mutex_lock(&transfer_request_id_mutex); */
+    pthread_mutex_lock(&transfer_request_id_mutex);
     out.metadata_id = PDC_transfer_request_id_register();
-    /* pthread_mutex_unlock(&transfer_request_id_mutex); */
+    pthread_mutex_unlock(&transfer_request_id_mutex);
     pthread_mutex_lock(&transfer_request_status_mutex);
     PDC_commit_request(out.metadata_id);
     pthread_mutex_unlock(&transfer_request_status_mutex);
 
     local_bulk_args = (struct transfer_request_local_bulk_args *)PDC_malloc(
         sizeof(struct transfer_request_local_bulk_args));
-    local_bulk_args->handle              = handle;
-    local_bulk_args->total_mem_size      = total_mem_size;
-    local_bulk_args->data_buf            = PDC_malloc(total_mem_size);
+    local_bulk_args->handle         = handle;
+    local_bulk_args->total_mem_size = total_mem_size;
+    local_bulk_args->data_buf = in.access_type == PDC_READ ? PDC_read_response_buffer_get(total_mem_size)
+                                                           : PDC_malloc(total_mem_size);
     local_bulk_args->in                  = in;
     local_bulk_args->transfer_request_id = out.metadata_id;
 #ifdef PDC_TIMING
@@ -827,7 +900,9 @@ HG_TEST_RPC_CB(transfer_request, handle)
         ret_value = HG_Bulk_transfer(info->context, transfer_request_bulk_transfer_read_cb, local_bulk_args,
                                      HG_BULK_PUSH, info->addr, in.local_bulk_handle, 0,
                                      local_bulk_args->bulk_handle, 0, total_mem_size, HG_OP_ID_IGNORE);
-        remote_reg_info = (struct pdc_region_info *)PDC_free(remote_reg_info);
+        remote_reg_info->offset = PDC_free(remote_reg_info->offset);
+        remote_reg_info->size   = PDC_free(remote_reg_info->size);
+        remote_reg_info         = PDC_free(remote_reg_info);
     }
     if (ret_value != HG_SUCCESS) {
         LOG_ERROR("Error at HG_TEST_RPC_CB(transfer_request, handle)\n");

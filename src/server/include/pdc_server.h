@@ -32,7 +32,6 @@
 #include "mercury_proc_string.h"
 
 #include "mercury_atomic.h"
-#include "mercury_list.h"
 
 #include "pdc_hash_table.h"
 

@@ -240,6 +240,28 @@ perr_t PDC_Client_transfer_request_all(hg_bulk_t *bulk_handle, int n_objs, pdc_a
                                        int comm);
 #endif
 
+/* Request bytes may be smaller than the registered read-response capacity. */
+perr_t PDC_Client_transfer_request_all_sized(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
+                                             uint32_t data_server_id, char *bulk_buf, hg_size_t bulk_size,
+                                             hg_size_t request_size, uint64_t *metadata_id,
+#ifdef ENABLE_MPI
+                                             MPI_Comm comm);
+#else
+                                             int comm);
+#endif
+
+/* Register disjoint caller-owned read outputs without a response staging buffer. */
+perr_t PDC_Client_transfer_request_all_segments(hg_bulk_t *bulk_handle, int n_objs, pdc_access_t access_type,
+                                                uint32_t data_server_id, void **buffers,
+                                                hg_size_t *buffer_sizes, hg_uint32_t segment_count,
+                                                hg_size_t request_size, uint64_t *metadata_id,
+                                                int *registration_failed,
+#ifdef ENABLE_MPI
+                                                MPI_Comm comm);
+#else
+                                                int comm);
+#endif
+
 perr_t PDC_Client_transfer_request_metadata_query(hg_bulk_t *bulk_handle, char *buf, uint64_t total_buf_size,
                                                   int n_objs, uint32_t metadata_server_id, uint8_t is_write,
                                                   uint64_t *output_buf_size, uint64_t *query_id);

@@ -14,6 +14,8 @@
 #include <inttypes.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <errno.h>
 #include <unistd.h>
 #include "bulki_serde.h"
 
@@ -527,6 +529,31 @@ load_dart_info(DART *dart, char *dir_path, uint32_t serverID)
     FUNC_LEAVE_VOID();
 }
 
+/* Empty indexes have no attribute checkpoint files. Avoid probing every
+ * virtual node on shared filesystems in that case. If inspection fails, keep
+ * the existing recovery path so an unreadable directory is never treated as
+ * an empty index. */
+static int
+checkpoint_has_index_files(const char *dir_path)
+{
+    DIR *dir = opendir(dir_path);
+    if (dir == NULL)
+        return 1;
+
+    struct dirent *entry;
+    errno = 0;
+    while ((entry = readdir(dir)) != NULL) {
+        if (strncmp(entry->d_name, "idioms_prefix_", sizeof("idioms_prefix_") - 1) == 0 ||
+            strncmp(entry->d_name, "idioms_suffix_", sizeof("idioms_suffix_") - 1) == 0) {
+            closedir(dir);
+            return 1;
+        }
+    }
+    int inspection_failed = errno != 0;
+    closedir(dir);
+    return inspection_failed;
+}
+
 perr_t
 idioms_metadata_index_recover(IDIOMS_t *idioms, char *dir_path, int num_server, uint32_t serverID)
 {
@@ -539,15 +566,18 @@ idioms_metadata_index_recover(IDIOMS_t *idioms, char *dir_path, int num_server, 
 
     load_dart_info(idioms->dart_info_g, dir_path, serverID);
 
-    uint64_t *vid_array = NULL;
-    size_t    num_vids  = get_vnode_ids_by_serverID(idioms->dart_info_g, serverID, &vid_array);
+    if (checkpoint_has_index_files(dir_path)) {
+        uint64_t *vid_array = NULL;
+        size_t    num_vids  = get_vnode_ids_by_serverID(idioms->dart_info_g, serverID, &vid_array);
 
-    // load the attribute region for each vnode
-    for (size_t vid = 0; vid < num_vids; vid++) {
-        for (size_t sid = 0; sid < num_server; sid++) {
-            read_attr_name_node(idioms, dir_path, "idioms_prefix", sid, vid_array[vid]);
-            read_attr_name_node(idioms, dir_path, "idioms_suffix", sid, vid_array[vid]);
+        // load the attribute region for each vnode
+        for (size_t vid = 0; vid < num_vids; vid++) {
+            for (size_t sid = 0; sid < num_server; sid++) {
+                read_attr_name_node(idioms, dir_path, "idioms_prefix", sid, vid_array[vid]);
+                read_attr_name_node(idioms, dir_path, "idioms_suffix", sid, vid_array[vid]);
+            }
         }
+        vid_array = (uint64_t *)PDC_free(vid_array);
     }
     timer_pause(&timer);
     LOG_JUST_PRINT("[IDIOMS_Index_Recover_%d] Timer to recover index = %.4f microseconds\n", serverID,
