@@ -119,13 +119,15 @@ PDC_obj_create(pdcid_t cont_id, const char *obj_name, pdcid_t obj_prop_id, _pdc_
 {
     FUNC_ENTER(NULL);
 
+    /* data_server_id and metadata_server_id are set only on the PDC_OBJ_GLOBAL path but read on
+     * both. Left uninitialized, clang treats the PDC_OBJ_LOCAL path as undefined and removes it. */
     pdcid_t                ret_value = 0;
     struct _pdc_obj_info * p         = NULL;
     struct _pdc_id_info *  id_info   = NULL;
     struct _pdc_cont_info *cont_info = NULL;
     struct _pdc_obj_prop * obj_prop;
     uint64_t               meta_id;
-    uint32_t               data_server_id, metadata_server_id;
+    uint32_t               data_server_id = 0, metadata_server_id = 0;
     size_t                 i;
     perr_t                 ret = SUCCEED;
 
@@ -406,7 +408,7 @@ PDCobj_open_common(const char *obj_name, pdcid_t pdc, int is_col)
     pdc_metadata_t *      out       = NULL;
     pdcid_t               obj_prop;
     size_t                i;
-    uint32_t              metadata_server_id;
+    uint32_t              metadata_server_id = 0;
     obj_handle *          oh;
     struct pdc_obj_info * info;
     int                   is_opened = 0;
