@@ -43,7 +43,6 @@
 
 // Mercury hash table and list
 #include "mercury_hash_table.h"
-#include "mercury_list.h"
 
 #include "pdc_config.h"
 

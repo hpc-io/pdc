@@ -53,8 +53,10 @@ Boston, MA 02111-1307, USA.  */
 
 #undef FUNC_ENTER
 #undef FUNC_LEAVE
+#undef FUNC_LEAVE_VOID
 #define FUNC_ENTER(x)
-#define FUNC_LEAVE(x) return (x)
+#define FUNC_LEAVE(x)     return (x)
+#define FUNC_LEAVE_VOID() return
 #endif
 
 /* This macro defines reserved value for empty table entry. */

@@ -79,7 +79,8 @@ transfer_request_metadata_query_init(int pdc_server_size_input, char *checkpoint
 
     if (checkpoint) {
         n_objs = *(int *)ptr;
-        if (n_objs <= 0 || n_objs > 1000000) {
+        /* Static-object transfers can legitimately checkpoint an empty query map. */
+        if (n_objs < 0 || n_objs > 1000000) {
             LOG_ERROR("transfer_request_metadata_query_init: invalid n_objs %d\n", n_objs);
             FUNC_LEAVE(FAIL);
         }
@@ -390,8 +391,8 @@ transfer_request_metadata_query_lookup_query_buf(uint64_t query_id, char **buf_p
     pdc_metadata_query_buf *metadata_query, *previous;
     perr_t                  ret_value = SUCCEED;
 
+    pthread_mutex_lock(&metadata_query_mutex);
     previous       = NULL;
-    int i          = 0;
     metadata_query = metadata_query_buf_head;
     while (metadata_query) {
         if (metadata_query->id == query_id) {
@@ -409,12 +410,12 @@ transfer_request_metadata_query_lookup_query_buf(uint64_t query_id, char **buf_p
             metadata_query = (pdc_metadata_query_buf *)PDC_free(metadata_query);
             PGOTO_DONE(ret_value);
         }
-        i++;
         previous       = metadata_query;
         metadata_query = metadata_query->next;
     }
     *buf_ptr = NULL;
 done:
+    pthread_mutex_unlock(&metadata_query_mutex);
     FUNC_LEAVE(ret_value);
 }
 
@@ -443,6 +444,8 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
     }
     region_metadata = (pdc_obj_region_metadata *)PDC_malloc(sizeof(pdc_obj_region_metadata) * n_objs);
 
+    // Keep region updates, both response-building passes, and queue insertion consistent.
+    pthread_mutex_lock(&metadata_query_mutex);
     for (i = 0; i < n_objs; ++i) {
         region_metadata[i].obj_id = *((uint64_t *)ptr);
         ptr += sizeof(uint64_t);
@@ -464,7 +467,8 @@ transfer_request_metadata_query_parse(int32_t n_objs, char *buf, uint8_t is_writ
                                                    unit, data_server_id, region_partition);
         }
     }
-    query_id        = metadata_query_buf_create(region_metadata, n_objs, total_buf_size_ptr);
+    query_id = metadata_query_buf_create(region_metadata, n_objs, total_buf_size_ptr);
+    pthread_mutex_unlock(&metadata_query_mutex);
     region_metadata = (pdc_obj_region_metadata *)PDC_free(region_metadata);
     FUNC_LEAVE(query_id);
 }

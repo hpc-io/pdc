@@ -813,7 +813,11 @@ PDC_Server_init(int port, hg_class_t **hg_class, hg_context_t **hg_context)
     }
     else
         LOG_INFO("Environment variable HG_HOST was set\n");
-    snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
+    /* CXI host strings already include a PID, rather than a TCP port. */
+    if (strcmp(hg_transport, "ofi+cxi") == 0)
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s", hg_transport, hostname);
+    else
+        snprintf(na_info_string, NA_STRING_INFO_LEN, "%s://%s:%d", hg_transport, hostname, port);
 
     if (pdc_server_rank_g == 0)
         LOG_INFO("Connection string: %s\n", na_info_string);
@@ -857,6 +861,9 @@ drc_access_again:
 #ifdef PDC_HAS_SHARED_SERVER
     init_info.auto_sm = HG_TRUE;
 #endif
+    /* Separate Slurm steps need the job VNI for client/server communication. */
+    if (getenv("PDC_HG_AUTH_KEY") != NULL)
+        init_info.na_init_info.auth_key = getenv("PDC_HG_AUTH_KEY");
     *hg_class = HG_Init_opt(na_info_string, HG_TRUE, &init_info);
     if (*hg_class == NULL) {
         LOG_ERROR("Error with HG_Init()\n");
@@ -1149,6 +1156,7 @@ PDC_Server_finalize()
     PDC_Server_clear_obj_region();
 
     PDC_server_transfer_request_finalize();
+    PDC_read_response_cache_finalize();
 
     if (pdc_server_rank_g == 0)
         PDC_Server_rm_config_file();
@@ -2192,7 +2200,18 @@ server_run(int argc, char *argv[])
     perr_t ret_value = SUCCEED;
 
 #ifdef ENABLE_MPI
+#ifdef ENABLE_MULTITHREAD
+    int mpi_thread_level;
+    if (MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &mpi_thread_level) != MPI_SUCCESS)
+        return EXIT_FAILURE;
+    if (mpi_thread_level < MPI_THREAD_MULTIPLE) {
+        fprintf(stderr, "PDC multithreaded server requires MPI_THREAD_MULTIPLE\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+        return EXIT_FAILURE;
+    }
+#else
     MPI_Init(&argc, &argv);
+#endif
     MPI_Comm_rank(MPI_COMM_WORLD, &pdc_server_rank_g);
     MPI_Comm_size(MPI_COMM_WORLD, &pdc_server_size_g);
 #else

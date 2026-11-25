@@ -763,6 +763,11 @@ typedef struct transfer_request_wait_all_in_t {
     int32_t   n_objs;
 } transfer_request_wait_all_in_t;
 
+/* A wait can fail before the server has confirmed transfer completion. */
+enum { PDC_WAIT_RETRY = -1, PDC_WAIT_FAILED = 0, PDC_WAIT_SUCCESS = 1 };
+/* Special access_type in a scalar wait after the client receives a failure. */
+enum { PDC_WAIT_ACK_FAILURE = -1 };
+
 /* Define transfer_request_wait_all_out_t */
 typedef struct transfer_request_wait_all_out_t {
     int32_t ret;
@@ -4069,17 +4074,18 @@ struct transfer_request_all_local_bulk_args {
     transfer_request_all_in_t in;
     uint64_t *                transfer_request_id;
     void *                    data_buf;
+#ifdef ENABLE_MULTITHREAD
+    struct hg_thread_work read_work;
+#endif
 #ifdef PDC_TIMING
     double start_time;
 #endif
 };
 
 struct transfer_request_all_local_bulk_args2 {
-    hg_handle_t               handle;
-    transfer_request_all_data request_data;
-    hg_bulk_t                 bulk_handle;
-    uint64_t *                transfer_request_id;
-    void *                    data_buf;
+    struct transfer_request_all_local_bulk_args *request;
+    hg_bulk_t                                    bulk_handle;
+    void *                                       data_buf;
 #ifdef PDC_TIMING
     double start_time;
 #endif

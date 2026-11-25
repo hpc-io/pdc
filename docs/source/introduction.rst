@@ -400,6 +400,21 @@ setting the appropriate environment variable.
 Runtime Options
 ~~~~~~~~~~~~~~~
 
+In builds without ZFP support, 2D/3D reads of up to 1 GiB that exactly match a
+stored region use contiguous file I/O directly into the transfer buffer. Larger
+reads, partial intersections and ZFP-enabled builds retain the configured
+data-sieving path.
+
+Batched reads send only serialized region metadata in the request. The registered
+bulk buffer still has enough capacity for the returned data. Writes continue to
+send both metadata and data. This uses the existing request format and requires
+no changes to the public region-transfer API.
+
+Full static-object reads with matching, zero-offset local layouts can reuse the
+caller's contiguous buffer in both single and batched transfers. The caller owns
+this buffer and must keep it valid and avoid accessing it until transfer
+completion. Partial local layouts retain their staging buffers.
+
 - PDC_DATA_LOC: Data directory path.
 - PDC_TMPDIR: Metadata directory path.
 - PDC_BB_LOC: Burst buffer directory path.
@@ -408,6 +423,23 @@ Runtime Options
 - PDC_SERVER_CACHE_NO_FLUSH: Disable the flushing of the server side cache.
 - HG_TRANSPORT: Specifies the Mercury communication transport protocol.
 - HG_HOST: Defines the hostname or IP address used by the Mercury network layer.
+  For ``HG_TRANSPORT=ofi+cxi``, supply a CXI endpoint such as ``cxi0:128``;
+  PDC passes the endpoint unchanged because its number is a CXI PID, not a TCP port.
+- PDC_HG_AUTH_KEY: Optional Mercury network authorization key. With separate
+  Slurm client/server steps on Slingshot, use the common job VNI and the local
+  device's service ID. Obtain these values inside each step from the scheduler;
+  do not log or hard-code them. If unset, Mercury's default authorization applies.
+
+On Perlmutter, use ``scripts/perlmutter/pdc-rank.sh`` inside the server and
+client Slurm steps to configure CXI endpoints and the shared job VNI. Use
+``scripts/perlmutter/pdc-mpi-step.sh`` as ``MPI_RUN_CMD`` for MPI CTests over
+the same transport. The Perlmutter CXI CTest launcher places servers and
+clients on separate nodes within the same Slurm job.
+
+On systems using the newer libfabric CXI address format, Mercury must be built
+against compatible libfabric headers. Mercury 2.4.1 built against libfabric 2.3.1
+supports that format; an older Mercury binary expecting a four-byte CXI address
+fails initialization when the provider returns an eight-byte address.
 
 .. note::
 
@@ -827,3 +859,88 @@ You can also explore the **PDC Dashboard** for an evaluation of **VPIC**, a part
 
 - **Project Page:** `https://github.com/hpc-io/pdc <https://github.com/hpc-io/pdc>`_
 - **PDC Dashboard:** `Google Sheets Link <https://docs.google.com/spreadsheets/d/1Ho5W4U56lT03OHS5AVFhn9hT6eJIfBj-sCa20F--3VY/edit?gid=1616818039#gid=1616818039>`_
+Direct reception for bounded reads
+----------------------------------
+
+Batched reads of disjoint full static objects can register the caller's output
+buffers as Mercury bulk segments. This avoids a second data-sized receive
+allocation and the copy from that allocation to the outputs. The request and
+response use the existing RPC format. Partial layouts, overlapping outputs and
+small outputs that cannot hold request metadata retain the staging path.
+Segmented reads require one vector registration at the transport layer.
+Requests exceeding that limit or failing vector registration use a single
+staging buffer before an RPC is sent.
+
+A read output belongs to its active transfer until completion. Its contents are
+unspecified while the read is pending. Callers must keep it alive and must not
+read, modify, reuse or free it until wait or status reports completion. The caller
+continues to own the output after completion. Python wrappers follow the same
+contract and must retain output arrays until all associated requests complete.
+
+Client progress and single reads
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Single and aggregated transfers keep the same completion and buffer-ownership
+contracts. The client progress loops use short polling intervals so that they
+can promptly observe completion handled by another thread and stop the worker
+when the last started request is closed. A polling timeout does not fail a
+pending I/O operation; progress continues until its completion is observed.
+Closing one completed request leaves progress available for other started
+requests. The worker stop state uses Mercury atomics for communication between
+the calling thread and the progress thread.
+When a transfer progress worker is active, the calling thread waits for the
+worker to dispatch responses instead of competing to progress the same context.
+Callbacks running on the worker can still make local progress for nested work.
+
+Single-transfer server response ownership
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A single read keeps its server response buffer alive until the bulk-transfer
+completion callback. Completion releases the Mercury handle and returns the response storage to
+the bounded response cache or allocator. The cache and disk-read routines only borrow this buffer. This bounds
+response storage by outstanding reads instead of all reads since server startup.
+The public read APIs and their buffer-lifetime requirements are unchanged.
+
+Single-read response storage can reuse one completed buffer per server. The
+server retains at most 256 MiB of idle response storage by default, separately
+from the object cache. Only identical byte sizes reuse this storage. A buffer
+never returns to the cache before its Mercury transfer completes; concurrent
+reads therefore have separate live storage. A different size replaces the idle
+buffer, and shutdown releases it. Set ``PDC_SERVER_READ_BUFFER_CACHE_MAX_MB`` to
+a nonnegative MiB limit; zero disables retention. Larger reads still complete
+normally and release their response storage immediately. This optimization
+uses no machine, filesystem, transport, dataset, or dimensionality assumptions.
+
+Multithreaded server MPI and transfer identifiers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+MPI-enabled multithreaded servers request ``MPI_THREAD_MULTIPLE`` and check
+that the MPI implementation provides it before starting RPC workers. Those
+workers can checkpoint and synchronize through MPI. A lower provided level
+cannot safely run this server mode and causes a clear startup failure.
+
+For a batched read, the Mercury metadata-pull callback queues one task per
+server-side batch. The server worker reads the requested regions and submits
+the data push, so Mercury can keep dispatching RPCs during file I/O. The push
+completion releases the response and records the transfer outcome. Mercury
+batch errors reach wait and status calls as failures. Failed read outputs are
+unspecified. A wait that returns ``PDC_TRANSFER_INCOMPLETE`` could not confirm
+completion, so the caller must retain the request and output buffer for a
+later wait. A lost batch-start acknowledgement can also return this result.
+That request retains the buffer because the server ID is unknown. With server multithreading disabled, the metadata callback runs
+the same read directly.
+
+Transfer identifiers are reserved under their server mutex. A batched request
+reserves its entire contiguous identifier range while holding the mutex, since
+its response carries only the first identifier. Independent concurrent RPCs
+therefore cannot interleave identifiers within a batch.
+
+Profiler call stacks are local to each pthread. Completed calls update shared
+profile totals under a mutex. Compiler-managed thread-local storage supports
+application threads that outlive the shared library. Concurrent RPC callbacks
+therefore cannot overwrite another thread's nesting
+or resize the totals table at the same time.
+
+Profiler bookkeeping disables both value and void return hooks, and its report
+prints directly without entering profiled logging functions. This preserves
+an active caller stack while reporting and avoids recursive totals-table updates.

@@ -475,6 +475,8 @@ PDCprop_set_cont_lifetime(pdcid_t cont_prop, pdc_lifetime_t cont_lifetime)
     perr_t               ret_value = SUCCEED;
     struct _pdc_id_info *info;
 
+    if (PDC_TYPE(cont_prop) != PDC_CONT_PROP)
+        PGOTO_ERROR(FAIL, "Expected a container property ID");
     if ((info = PDC_find_id(cont_prop)) == NULL)
         PGOTO_ERROR(FAIL, "Failed to find PDC ID: %d", cont_prop);
     ((struct _pdc_cont_prop *)(info->obj_ptr))->cont_life = cont_lifetime;

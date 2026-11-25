@@ -59,8 +59,12 @@ typedef struct region_info_transfer_t {
 typedef enum {
     PDC_TRANSFER_STATUS_COMPLETE  = 0,
     PDC_TRANSFER_STATUS_PENDING   = 1,
-    PDC_TRANSFER_STATUS_NOT_FOUND = 2
+    PDC_TRANSFER_STATUS_NOT_FOUND = 2,
+    PDC_TRANSFER_STATUS_FAILED    = 3
 } pdc_transfer_status_t;
+
+/* A wait did not confirm completion. Keep the request and its buffer alive until a later wait succeeds. */
+#define PDC_TRANSFER_INCOMPLETE (-2)
 
 /*********************/
 /* Public Prototypes */
@@ -171,14 +175,15 @@ perr_t PDCregion_transfer_start_all_coll(pdcid_t *transfer_request_id, int size,
  * Retrieve the status of a region transfer request
  *
  * \param transfer_request_id [IN]           ID of the region transfer request
- * \param completed [OUT]                    Result
+ * \param completed [OUT]                    Result, including PDC_TRANSFER_STATUS_FAILED for a failed batch
  *
  * \return Non-negative on success/Negative on failure
  */
 perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_status_t *completed);
 
 /**
- * Block and wait for a region transfer request to finish
+ * Block and wait for a region transfer request to finish.
+ * PDC_TRANSFER_INCOMPLETE means the request and buffer must remain valid for a later wait.
  *
  * \param transfer_request_id [IN]           ID of the region transfer request
  *
@@ -187,7 +192,8 @@ perr_t PDCregion_transfer_status(pdcid_t transfer_request_id, pdc_transfer_statu
 perr_t PDCregion_transfer_wait(pdcid_t transfer_request_id);
 
 /**
- * Block and wait for several region transfer requests to finish
+ * Block and wait for several region transfer requests to finish.
+ * PDC_TRANSFER_INCOMPLETE means the remaining requests and buffers must remain valid.
  *
  * \param transfer_request_id [IN]           ID of the region transfer request
  * \param size [IN]                          Number of requests in transfer_request_id

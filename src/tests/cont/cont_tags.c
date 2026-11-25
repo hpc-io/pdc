@@ -59,6 +59,11 @@ main(int argc, char **argv)
     TASSERT((cont2 = PDCcont_create("c2", cont_prop)) != 0, "Call to PDCcont_create succeeded",
             "Call to PDCcont_create failed");
 
+#ifdef ENABLE_MPI
+    // All ranks use the same containers and keys.
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     TASSERT(PDCcont_put_tag(cont, "some tag", tag_value, PDC_STRING, strlen(tag_value) + 1) >= 0,
             "Call to PDCcont_put_tag succeeded for container 1",
             "Call to PDCcont_put_tag failed for container 1");
@@ -72,38 +77,51 @@ main(int argc, char **argv)
     TASSERT(PDCcont_put_tag(cont2, "some tag 2", tag_value2, PDC_STRING, strlen(tag_value2) + 1) >= 0,
             "Call to PDCcont_put_tag succeeded for container 2",
             "Call to PDCcont_put_tag failed for container 2");
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     TASSERT(PDCcont_get_tag(cont, "some tag", (void **)&tag_value_ret, &value_type, &value_size) >= 0,
             "Call to PDCcont_get_tag succeeded for container 1",
             "Call to PDCcont_get_tag failed for container 1");
 
-    if (strcmp(tag_value, tag_value_ret) != 0)
-        TGOTO_ERROR(TFAIL, "Wrong tag value at container 1, expected = [%s], get [%s]", tag_value,
-                    tag_value_ret);
+    if (tag_value_ret == NULL || value_type != PDC_STRING || value_size != strlen(tag_value) + 1 ||
+        memcmp(tag_value, tag_value_ret, value_size) != 0)
+        TGOTO_ERROR(TFAIL, "Wrong tag value at container 1, expected [%s]", tag_value);
+    free(tag_value_ret);
 
     TASSERT(PDCcont_get_tag(cont, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size) >= 0,
             "Call to PDCcont_get_tag succeeded for container 1",
             "Call to PDCcont_get_tag failed for container 1");
 
-    if (strcmp(tag_value2, tag_value_ret) != 0)
-        TGOTO_ERROR(TFAIL, "Wrong tag value at container 1, expected = [%s], get [%s]", tag_value2,
-                    tag_value_ret);
+    if (tag_value_ret == NULL || value_type != PDC_STRING || value_size != strlen(tag_value2) + 1 ||
+        memcmp(tag_value2, tag_value_ret, value_size) != 0)
+        TGOTO_ERROR(TFAIL, "Wrong tag value at container 1, expected [%s]", tag_value2);
+    free(tag_value_ret);
 
     TASSERT(PDCcont_get_tag(cont2, "some tag", (void **)&tag_value_ret, &value_type, &value_size) >= 0,
             "Call to PDCcont_get_tag succeeded for container 2",
             "Call to PDCcont_get_tag failed for container 2");
 
-    if (strcmp(tag_value, tag_value_ret) != 0)
-        TGOTO_ERROR(TFAIL, "Wrong tag value at container 2, expected = [%s], get [%s]", tag_value,
-                    tag_value_ret);
+    if (tag_value_ret == NULL || value_type != PDC_STRING || value_size != strlen(tag_value) + 1 ||
+        memcmp(tag_value, tag_value_ret, value_size) != 0)
+        TGOTO_ERROR(TFAIL, "Wrong tag value at container 2, expected [%s]", tag_value);
+    free(tag_value_ret);
 
     TASSERT(PDCcont_get_tag(cont2, "some tag 2", (void **)&tag_value_ret, &value_type, &value_size) >= 0,
             "Call to PDCcont_get_tag succeeded for container 2",
             "Call to PDCcont_get_tag failed for container 2");
 
-    if (strcmp(tag_value2, tag_value_ret) != 0) {
-        LOG_ERROR("Wrong tag value at container 2, expected = [%s], get [%s]\n", tag_value2, tag_value_ret);
-        return -1;
-    }
+    if (tag_value_ret == NULL || value_type != PDC_STRING || value_size != strlen(tag_value2) + 1 ||
+        memcmp(tag_value2, tag_value_ret, value_size) != 0)
+        TGOTO_ERROR(TFAIL, "Wrong tag value at container 2, expected [%s]", tag_value2);
+    free(tag_value_ret);
+
+#ifdef ENABLE_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
     TASSERT(PDCcont_del_tag(cont2, "some tag 2") >= 0, "Call to PDCcont_del_tag succeeded for container 2",
             "Call to PDCcont_del_tag failed for container 2");
 
@@ -132,6 +150,8 @@ main(int argc, char **argv)
 
 done:
 #ifdef ENABLE_MPI
+    if (ret_value != TSUCCEED)
+        MPI_Abort(MPI_COMM_WORLD, ret_value);
     MPI_Finalize();
 #endif
     return ret_value;
