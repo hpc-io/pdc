@@ -85,7 +85,7 @@ def parse_args():
     parser.add_argument('--binding', choices=('fixed', 'slurm'), default='fixed',
                         help='Use fixed reader cores, or reproduce automatic Slurm disjoint steps')
     parser.add_argument('--logical-prefix', type=Path, help='Fixed PDC object-name prefix for all trials')
-    parser.add_argument('--network', default='job_vni', help='Slurm VNI mode for this allocation')
+    parser.add_argument('--network', help='Override the Slurm VNI mode for benchmark steps')
     parser.add_argument('--generation-timeout', type=positive, default=1500)
     parser.add_argument('--flush-timeout', type=positive, default=600)
     parser.add_argument('--read-timeout', type=positive, default=720)
@@ -387,7 +387,8 @@ def main():
     args.output.mkdir(parents=True)
     args.scratch.mkdir(parents=True)
     (args.output/'allocation.txt').write_text(info)
-    base = ['srun', '--jobid='+args.job_id, '--network='+args.network, '-N', str(len(hosts)),
+    network = args.network or ('job_vni,single_node_vni' if len(hosts) == 1 else 'job_vni')
+    base = ['srun', '--jobid='+args.job_id, '--network='+network, '-N', str(len(hosts)),
             '--immediate=30', '--distribution=block:block']
     cores = topology(args, base, hosts)
     largest = max(case[2] for case in args.layout)

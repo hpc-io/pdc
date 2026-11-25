@@ -43,6 +43,68 @@ runs, dataset generation used the previously built PDC client with the same
 generator source and object layout. Generation and the writeback barrier were
 outside the read timer.
 
+## Use CXI for PDC tests and debugging
+
+The benchmark uses `ofi+cxi` for all PDC ranks. Use the same Perlmutter rank
+launcher for MPI CTests and manual runs. Build with the CXI-compatible Mercury
+installation described above.
+
+For MPI CTests, configure PDC with these additional CMake options. Set
+`MERCURY_HOME` to the Mercury installation and load Cray MPI before configuration.
+
+```bash
+export MERCURY_HOME="$MERCURY_PREFIX"
+cmake -S . -B build-pdc-tests -DCMAKE_C_COMPILER=cc \
+    -DBUILD_TESTING=ON -DBUILD_MPI_TESTING=ON -DPDC_ENABLE_MPI=ON \
+    -DPDC_ENABLE_MULTITHREAD=ON \
+    -DMPI_RUN_CMD="$PWD/scripts/perlmutter/pdc-mpi-step.sh"
+cmake --build build-pdc-tests --parallel 2
+```
+
+Use a single-node Perlmutter compute allocation with
+`--network=job_vni,single_node_vni` and enough cores for the overlapping server
+and client steps. The MPI launcher reserves separate cores for each step and
+requests four cores per server rank and two per client rank. Set `PDC_TEST_SERVER_CPUS` for a different server CPU layout.
+Leave `SUPERCOMPUTER` unset. Run tests sequentially because they reuse the same
+endpoint ranges and working files.
+
+```bash
+export PDC_SERVER_NTHREAD=4
+SUPERCOMPUTER= ctest --test-dir build-pdc-tests --parallel 1 --output-on-failure \
+    -R '^(cont_tags_mpi|region_transfer_write_read_mpi)$'
+```
+
+For a manual run, invoke the rank launcher inside each `srun` step. Use the
+`server` role for `pdc_server` and the `client` role for the application, a
+debugger running the application, or `close_server`. Start those steps in the
+same job with `--network=job_vni,single_node_vni` on each step. The single-node
+option requests a Slingshot service even when a step runs on only one node.
+The launcher derives the endpoint and authorization from the rank's Slurm
+environment. For example, start a single server and run a one-rank client under
+a debugger inside the same allocation.
+
+```bash
+rank_launcher="$PWD/scripts/perlmutter/pdc-rank.sh"
+srun --exclusive --exact --network=job_vni,single_node_vni -N1 -n1 -c4 \
+    "$rank_launcher" server "$PDC_BIN/pdc_server" &
+srun --exclusive --exact --network=job_vni,single_node_vni -N1 -n1 -c2 --pty \
+    "$rank_launcher" client gdb --args "$PDC_BIN/pdc_init"
+srun --exclusive --exact --network=job_vni,single_node_vni -N1 -n1 -c2 \
+    "$rank_launcher" client "$PDC_BIN/close_server"
+wait
+```
+
+Here `PDC_BIN` is the directory containing the server, `close_server`, and the
+built test client. Run all three steps from the same working directory.
+
+To isolate a transport problem on one node, explicitly set
+`HG_TRANSPORT=ofi+tcp_rxm HG_HOST=127.0.0.1` when starting CTest. The same
+MPI launcher will select TCP for its PDC ranks. Loopback is only usable when
+all ranks are on the same node. Slurm must be able to provision CXI for
+concurrent server and client steps. An `Error configuring interconnect` from
+`srun` means the affected rank never started. Record the job ID and step error
+when diagnosing that failure.
+
 ## Reproduce the core sweep
 
 Request a four-node CPU allocation. This example uses one shared job VNI and

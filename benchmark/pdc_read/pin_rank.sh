@@ -4,16 +4,12 @@ set -euo pipefail
 role=$1
 shift
 if [[ "$role" != hdf5 ]]; then
+    rank_launcher="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)/scripts/perlmutter/pdc-rank.sh"
     export HG_TRANSPORT=ofi+cxi
-    base=256
-    if [[ "$role" == server ]]; then
-        base=128
-    fi
-    export HG_HOST="cxi0:$((base + SLURM_LOCALID))"
-    service=${SLINGSHOT_SVC_IDS%%,*}
-    vnis=${SLINGSHOT_VNIS#*,}
-    vni=${vnis%%,*}
-    export PDC_HG_AUTH_KEY="${service:?}:${vni:?}"
+    case "$role" in
+        server) set -- "$rank_launcher" server "$@" ;;
+        *) set -- "$rank_launcher" client "$@" ;;
+    esac
 fi
 if [[ -n ${PDC_BENCH_CPUSETS:-} ]]; then
     IFS=';' read -r -a masks <<< "$PDC_BENCH_CPUSETS"
