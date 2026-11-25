@@ -433,7 +433,8 @@ completion. Partial local layouts retain their staging buffers.
 On Perlmutter, use ``scripts/perlmutter/pdc-rank.sh`` inside the server and
 client Slurm steps to configure CXI endpoints and the shared job VNI. Use
 ``scripts/perlmutter/pdc-mpi-step.sh`` as ``MPI_RUN_CMD`` for MPI CTests over
-the same transport.
+the same transport. The Perlmutter CXI CTest launcher places servers and
+clients on separate nodes within the same Slurm job.
 
 On systems using the newer libfabric CXI address format, Mercury must be built
 against compatible libfabric headers. Mercury 2.4.1 built against libfabric 2.3.1

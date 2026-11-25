@@ -61,49 +61,50 @@ cmake -S . -B build-pdc-tests -DCMAKE_C_COMPILER=cc \
 cmake --build build-pdc-tests --parallel 2
 ```
 
-Use a single-node Perlmutter compute allocation with
-`--network=job_vni,single_node_vni` and enough cores for the overlapping server
-and client steps. The MPI launcher reserves separate cores for each step and
-requests four cores per server rank and two per client rank. Set `PDC_TEST_SERVER_CPUS` for a different server CPU layout.
-Leave `SUPERCOMPUTER` unset. Run tests sequentially because they reuse the same
-endpoint ranges and working files.
+Request two Perlmutter CPU nodes with a shared job VNI. The MPI CTest launcher
+puts PDC servers on the first node and clients, including `close_server`, on
+the second. This avoids a Slurm interconnect setup failure observed when
+starting two CXI services on the same node. The server step reserves 8 GiB.
+Client steps reserve 32 GiB to accommodate the 16-rank VPIC case. The launcher requests four cores per server rank and two per client rank.
+Set `PDC_TEST_SERVER_CPUS` for a different server CPU layout. Run the tests
+sequentially because they reuse endpoints and working files.
 
 ```bash
-export PDC_SERVER_NTHREAD=4
+salloc --account="$PDC_ACCOUNT" --constraint=cpu --qos=interactive \
+    --nodes=2 --ntasks-per-node=4 --cpus-per-task=32 --hint=nomultithread \
+    --network=job_vni,single_node_vni --resv-ports=40 --time=00:30:00
+```
+
+Inside the allocation, leave `SUPERCOMPUTER` unset so the generic MPI CTest
+scripts use only the flags in the Perlmutter launcher.
+
+```bash
+export PDC_SERVER_NTHREAD=4 PDC_SERVER_CACHE_MAX_SIZE=1
 SUPERCOMPUTER= ctest --test-dir build-pdc-tests --parallel 1 --output-on-failure \
     -R '^(cont_tags_mpi|region_transfer_write_read_mpi)$'
 ```
 
-For a manual run, invoke the rank launcher inside each `srun` step. Use the
-`server` role for `pdc_server` and the `client` role for the application, a
-debugger running the application, or `close_server`. Start those steps in the
-same job with `--network=job_vni,single_node_vni` on each step. The single-node
-option requests a Slingshot service even when a step runs on only one node.
-The launcher derives the endpoint and authorization from the rank's Slurm
-environment. For example, start a single server and run a one-rank client under
-a debugger inside the same allocation.
+For manual debugging in the same allocation, use the rank launcher inside
+each step. Request the job VNI and a service for each single-node step.
+Place the debugger and shutdown steps on the client node.
 
 ```bash
 rank_launcher="$PWD/scripts/perlmutter/pdc-rank.sh"
-srun --exclusive --exact --network=job_vni,single_node_vni -N1 -n1 -c4 \
-    "$rank_launcher" server "$PDC_BIN/pdc_server" &
-srun --exclusive --exact --network=job_vni,single_node_vni -N1 -n1 -c2 --pty \
-    "$rank_launcher" client gdb --args "$PDC_BIN/pdc_init"
-srun --exclusive --exact --network=job_vni,single_node_vni -N1 -n1 -c2 \
-    "$rank_launcher" client "$PDC_BIN/close_server"
+step=(--mpi=cray_shasta --exact --network=job_vni,single_node_vni -N1 -n1 --mem=8192M)
+srun "${step[@]}" --relative=0 -c4 "$rank_launcher" server "$PDC_BIN/pdc_server" &
+srun "${step[@]}" --relative=1 -c2 --pty "$rank_launcher" client gdb --args "$PDC_BIN/pdc_init"
+srun "${step[@]}" --relative=1 -c2 "$rank_launcher" client "$PDC_BIN/close_server"
 wait
 ```
 
-Here `PDC_BIN` is the directory containing the server, `close_server`, and the
-built test client. Run all three steps from the same working directory.
+Here `PDC_BIN` is the directory containing the server, `close_server`, and
+the built test client. Run all three steps from the same shared working
+directory.
 
-To isolate a transport problem on one node, explicitly set
+For a one-node diagnostic allocation, explicitly set
 `HG_TRANSPORT=ofi+tcp_rxm HG_HOST=127.0.0.1` when starting CTest. The same
-MPI launcher will select TCP for its PDC ranks. Loopback is only usable when
-all ranks are on the same node. Slurm must be able to provision CXI for
-concurrent server and client steps. An `Error configuring interconnect` from
-`srun` means the affected rank never started. Record the job ID and step error
-when diagnosing that failure.
+MPI launcher will select TCP for its PDC ranks. Allocate enough cores and
+memory for concurrent steps, which together request 40 GiB.
 
 ## Reproduce the core sweep
 
