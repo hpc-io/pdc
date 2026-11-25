@@ -50,14 +50,14 @@ main(int argc, char **argv)
     TASSERT(PDCcont_prop_get_info(create_prop) != NULL, "Call to PDCcont_prop_get_info succeeded",
             "Call to PDCcont_prop_get_info failed");
 
-    // create a container
+    // Create the container with a transient creation property.
+    TASSERT(PDCprop_set_cont_lifetime(create_prop, PDC_TRANSIENT) >= 0,
+            "Call to PDCprop_set_cont_lifetime succeeded", "Call to PDCprop_set_cont_lifetime failed");
     TASSERT((cont = PDCcont_create("c1", create_prop)) != 0, "Call to PDCcont_create succeeded",
             "Call to PDCcont_create failed");
-    // set container lifetime to transient
-    TASSERT(PDCprop_set_cont_lifetime(cont, PDC_TRANSIENT) >= 0,
-            "Call to PDCprop_set_cont_lifetime succeeded", "Call to PDCprop_set_cont_lifetime failed");
-    TASSERT(PDCcont_prop_get_info(create_prop) != NULL, "Call to PDCcont_prop_get_info succeeded",
-            "Call to PDCcont_prop_get_info failed");
+    TASSERT(PDCprop_set_cont_lifetime(cont, PDC_TRANSIENT) < 0,
+            "PDCprop_set_cont_lifetime rejected a container ID",
+            "PDCprop_set_cont_lifetime accepted a container ID");
     // set container lifetime to persistent
     TASSERT(PDCcont_persist(cont) >= 0, "Call to PDCcont_persist succeeded",
             "Call to PDCcont_persist failed");
